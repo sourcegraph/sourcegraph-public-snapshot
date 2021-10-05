@@ -16,9 +16,16 @@ import { getDaysActiveCount } from './util'
 const shouldShowToast = (): boolean =>
     localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY) !== 'true' && getDaysActiveCount() % 30 === 3
 
-export const SurveyToast: React.FunctionComponent = () => {
+interface SurveyToastProps {
+    /**
+     * For testing only
+     */
+    forceVisible?: boolean
+}
+
+export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
     const daysActive = getDaysActiveCount()
-    const [visible, setVisible] = useState(shouldShowToast())
+    const [visible, setVisible] = useState(forceVisible || shouldShowToast())
 
     useEffect(() => {
         if (visible) {

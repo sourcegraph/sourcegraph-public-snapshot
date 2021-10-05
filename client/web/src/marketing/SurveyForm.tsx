@@ -16,8 +16,6 @@ import styles from './SurveyPage.module.scss'
 interface SurveyFormProps {
     authenticatedUser: AuthenticatedUser | null
     score?: number
-    onScoreChange?: (score: number) => void
-    onSubmit?: () => void
 }
 
 export const SUBMIT_SURVEY = gql`
@@ -28,46 +26,45 @@ export const SUBMIT_SURVEY = gql`
     }
 `
 
-export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({
-    authenticatedUser,
-    score,
-    onScoreChange,
-    onSubmit,
-}) => {
-    const history = useHistory()
+/**
+ * Form Data that is persisted to `location` and retrieved in other components.
+ */
+export interface SurveyFormLocationState {
+    score: number
+    feedback: string
+}
+
+export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authenticatedUser, score }) => {
+    const history = useHistory<SurveyFormLocationState>()
     const [reason, setReason] = useState('')
     const [betterProduct, setBetterProduct] = useState('')
     const [email, setEmail] = useState('')
-    const [validationMessage, setValidationMessage] = useState('')
+    const [validationError, setValidationError] = useState<Error | null>(null)
 
     const [submitSurvey, response] = useMutation<SubmitSurveyResult, SubmitSurveyVariables>(SUBMIT_SURVEY, {
         onCompleted: () => {
-            if (onSubmit) {
-                onSubmit()
-            }
-
             history.push({
                 pathname: '/survey/thanks',
                 state: {
-                    score,
+                    // Mutation is only submitted when score is defined
+                    score: score!,
                     feedback: reason,
                 },
             })
         },
     })
 
-    const handleScoreChange = (score: number): void => {
-        if (onScoreChange) {
-            onScoreChange(score)
+    const handleScoreChange = (): void => {
+        if (validationError) {
+            setValidationError(null)
         }
-        setValidationMessage('')
     }
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault()
 
         if (score === undefined) {
-            setValidationMessage('Please select a score')
+            setValidationError(new Error('Please select a score'))
             return
         }
 
@@ -85,11 +82,11 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({
         })
     }
 
-    const error = validationMessage || response.error?.message
+    const error = validationError || response.error
 
     return (
         <Form className={styles.surveyForm} onSubmit={handleSubmit}>
-            {error && <p className={styles.error}>{error}</p>}
+            {error && <p className={styles.error}>{error.message}</p>}
             {/* Label is associated with control through aria-labelledby */}
             {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
             <label id="survey-form-scores" className={styles.label}>

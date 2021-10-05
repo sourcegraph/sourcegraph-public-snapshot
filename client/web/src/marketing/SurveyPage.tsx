@@ -7,20 +7,25 @@ import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SurveyForm } from './SurveyForm'
+import { SurveyForm, SurveyFormLocationState } from './SurveyForm'
 import styles from './SurveyPage.module.scss'
 import { TweetFeedback } from './TweetFeedback'
 
 interface SurveyPageProps {
     authenticatedUser: AuthenticatedUser | null
+    /**
+     * For testing only
+     */
+    forceScore?: string
 }
 
 const getScoreFromString = (score?: string): number | undefined =>
     score ? Math.max(0, Math.min(10, Math.round(+score))) : undefined
 
 export const SurveyPage: React.FunctionComponent<SurveyPageProps> = props => {
-    const location = useLocation()
-    const { score } = useParams<{ score?: string }>()
+    const location = useLocation<SurveyFormLocationState>()
+    const matchParameters = useParams<{ score?: string }>()
+    const score = props.forceScore || matchParameters.score
 
     useEffect(() => {
         eventLogger.logViewEvent('Survey')
@@ -42,7 +47,10 @@ export const SurveyPage: React.FunctionComponent<SurveyPageProps> = props => {
     return (
         <div className={styles.surveyPage}>
             <PageTitle title="Almost there..." />
-            <HeroPage title="Almost there..." cta={<SurveyForm score={getScoreFromString(score)} {...props} />} />
+            <HeroPage
+                title="Almost there..."
+                cta={<SurveyForm score={getScoreFromString(score)} authenticatedUser={props.authenticatedUser} />}
+            />
         </div>
     )
 }
