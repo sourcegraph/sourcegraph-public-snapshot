@@ -1,6 +1,6 @@
 import { SearchPatternType } from 'src/graphql-operations'
 
-import { FILTERS, FilterType } from './filters'
+import { FILTERS, FilterType, isNegatedFilter, resolveFieldAlias, resolveNegatedFilter } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
 
@@ -87,3 +87,14 @@ export const containsLiteralOrPattern = (query: string, searchPatternType?: Sear
 export const isRepoFilter = (token: Token): token is Filter =>
     token.type === 'filter' &&
     (token.field.value === FilterType.repo || token.field.value === FILTERS[FilterType.repo].alias)
+
+/**
+ * Type guard for arbitrary filter type. Also handles aliased and negated filters.
+ *
+ * @param token - query parsed lexical token
+ */
+export const isFilterType = (token: Token, filterType: FilterType): token is Filter =>
+    token.type === 'filter' &&
+    (token.field.value === filterType ||
+        resolveFieldAlias(token.field.value) === filterType ||
+        (isNegatedFilter(token.field.value) && resolveNegatedFilter(token.field.value) === filterType))

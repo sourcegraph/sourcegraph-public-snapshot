@@ -89,7 +89,6 @@ const fileToCompletion = (
     insertText = (options.isFilterValue ? insertText : `${FilterType.file}:${insertText}`) + ' '
     return {
         label: path,
-        // TODO: kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
         kind: Monaco.languages.CompletionItemKind.File,
         insertText,
         filterText: path,
@@ -130,28 +129,31 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
     TYPEPARAMETER: Monaco.languages.CompletionItemKind.TypeParameter,
 }
 
-const symbolToCompletion = ({ name, kind }: MatchedSymbol, repository: string): PartialCompletionItem => ({
+const symbolToCompletion = (
+    { name, kind }: MatchedSymbol,
+    path: string,
+    repository: string
+): PartialCompletionItem => ({
     label: name,
     kind: symbolKindToCompletionItemKind[kind],
     insertText: name + ' ',
     filterText: name,
-    detail: `${startCase(kind.toLowerCase())} - ${repository}`,
+    detail: `${startCase(kind.toLowerCase())} - ${path} - ${repository}`,
 })
 
 const suggestionToCompletionItem = (
     suggestion: SearchMatch,
     options: { isFilterValue: boolean; globbing: boolean }
-): PartialCompletionItem | undefined => {
+): PartialCompletionItem[] => {
     switch (suggestion.type) {
         case 'path':
-            return fileToCompletion(suggestion, options)
+            return [fileToCompletion(suggestion, options)]
         case 'repo':
-            return repositoryToCompletion(suggestion, options)
+            return [repositoryToCompletion(suggestion, options)]
         case 'symbol':
-            return symbolToCompletion(suggestion.symbols[0], suggestion.repository)
+            return suggestion.symbols.map(symbol => symbolToCompletion(symbol, suggestion.path, suggestion.repository))
     }
-
-    return undefined
+    return []
 }
 
 /**
@@ -209,7 +211,7 @@ async function completeDefault(
         suggestions: [
             ...staticSuggestions,
             ...(await dynamicSuggestions.pipe(first()).toPromise())
-                .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
+                .flatMap(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
                 .filter(isDefined)
                 .map(completionItem => ({
                     ...completionItem,
@@ -271,7 +273,7 @@ async function completeFilter(
         const suggestions = await serverSuggestions.toPromise()
         dynamicSuggestions = suggestions
             .filter(({ type }) => type === resolvedFilter.definition.suggestions)
-            .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
+            .flatMap(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
             .filter(isDefined)
             .map((partialCompletionItem, index) => ({
                 ...partialCompletionItem,

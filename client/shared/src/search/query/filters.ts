@@ -213,7 +213,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.context]: {
         description: 'Search only repositories within a specified context',
         singular: true,
-        // suggestions: 'SearchContext',
     },
     [FilterType.count]: {
         description: 'Number of results to fetch (integer) or "all"',

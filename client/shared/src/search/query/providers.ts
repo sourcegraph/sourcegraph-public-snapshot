@@ -7,9 +7,11 @@ import { SearchMatch } from '../stream'
 
 import { getCompletionItems } from './completion'
 import { getMonacoTokens } from './decoratedToken'
+import { FilterType } from './filters'
 import { getHoverResult } from './hover'
 import { scanSearchQuery } from './scanner'
-import { isRepoFilter } from './validate'
+import { Filter, KeywordKind, Token } from './token'
+import { isFilterType } from './validate'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider
@@ -27,6 +29,40 @@ const SCANNER_STATE: Monaco.languages.IState = {
 
 const printable = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
+
+function collectFilterTokens(tokens: Token[], filterType: FilterType): Filter[] {
+    return tokens.filter(token => isFilterType(token, filterType)) as Filter[]
+}
+
+function serializeFilterTokens(filters: Filter[]): string {
+    return filters
+        .map(filter => (filter.value ? `${filter.field.value}:${filter.value.value}` : ''))
+        .filter(filter => !!filter)
+        .join(' ')
+}
+
+const MAX_SUGGESTION_COUNT = 50
+
+function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string | null {
+    const hasAndOrOperators = tokens.some(
+        token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
+    )
+
+    if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
+        return `repo:${tokenAtColumn.value.value} type:repo count:${MAX_SUGGESTION_COUNT}`
+    }
+    if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value && !hasAndOrOperators) {
+        const repoQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.repo))
+        return `${repoQueryPart} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`
+    }
+    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value && !hasAndOrOperators) {
+        const repoQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.repo))
+        const fileQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.file))
+        return `${repoQueryPart} ${fileQueryPart} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
+    }
+
+    return null
+}
 
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
@@ -82,34 +118,33 @@ export function getProviders(
                     ({ range }) => range.start + 1 <= position.column && range.end + 1 >= position.column
                 )
                 if (!tokenAtColumn) {
-                    throw new Error('getCompletionItems: no token at column')
+                    return null
                 }
 
-                if (isRepoFilter(tokenAtColumn)) {
-                    const suggestionQuery = `${tokenAtColumn.value?.value ?? ''} type:repo patterntype:regexp count:50`
+                const suggestionQuery = getSuggestionQuery(scanned.term, tokenAtColumn)
+                if (!suggestionQuery) {
+                    return null
+                }
 
-                    return of(suggestionQuery)
-                        .pipe(
-                            // We use a delay here to implement a custom debounce. In the next step we check if the current
-                            // completion request was cancelled in the meantime (`token.isCancellationRequested`).
-                            // This prevents us from needlessly running multiple suggestion queries.
-                            delay(100),
-                            switchMap(query =>
-                                cancellationToken.isCancellationRequested
-                                    ? Promise.resolve(null)
-                                    : getCompletionItems(
-                                          tokenAtColumn,
-                                          position,
-                                          fetchSuggestions(query),
-                                          options.globbing,
-                                          options.isSourcegraphDotCom
-                                      )
-                            )
+                return of(suggestionQuery)
+                    .pipe(
+                        // We use a delay here to implement a custom debounce. In the next step we check if the current
+                        // completion request was cancelled in the meantime (`token.isCancellationRequested`).
+                        // This prevents us from needlessly running multiple suggestion queries.
+                        delay(200),
+                        switchMap(query =>
+                            cancellationToken.isCancellationRequested
+                                ? Promise.resolve(null)
+                                : getCompletionItems(
+                                      tokenAtColumn,
+                                      position,
+                                      fetchSuggestions(query),
+                                      options.globbing,
+                                      options.isSourcegraphDotCom
+                                  )
                         )
-                        .toPromise()
-                }
-
-                return null
+                    )
+                    .toPromise()
             },
         },
     }

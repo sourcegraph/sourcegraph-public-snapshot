@@ -293,61 +293,6 @@ export function isSearchContextAvailable(
     ).pipe(map(result => result.data?.isSearchContextAvailable ?? false))
 }
 
-export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
-    return combineLatest([
-        repogroupSuggestions,
-        queryGraphQL(
-            gql`
-                query SearchSuggestions($query: String!) {
-                    search(query: $query) {
-                        suggestions {
-                            __typename
-                            ... on Repository {
-                                name
-                            }
-                            ... on File {
-                                path
-                                name
-                                isDirectory
-                                url
-                                repository {
-                                    name
-                                }
-                            }
-                            ... on Symbol {
-                                name
-                                containerName
-                                url
-                                kind
-                                location {
-                                    resource {
-                                        path
-                                        repository {
-                                            name
-                                        }
-                                    }
-                                }
-                            }
-                            ... on SearchContext {
-                                spec
-                                description
-                            }
-                        }
-                    }
-                }
-            `,
-            { query }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data?.search?.suggestions) {
-                    throw createAggregateError(errors)
-                }
-                return data.search.suggestions
-            })
-        ),
-    ]).pipe(map(([repogroups, dynamicSuggestions]) => [...repogroups, ...dynamicSuggestions]))
-}
-
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
     return queryGraphQL(
         gql`
