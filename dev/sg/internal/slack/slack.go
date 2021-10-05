@@ -78,7 +78,11 @@ func queryUserCurrentTime(token, nick string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	str := fmt.Sprintf("%s's current time is %s", nick, time.Now().In(loc).Format(time.RFC822))
+	t := time.Now().In(loc)
+	t2 := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
+	diff := t2.Sub(t) / time.Hour
+
+	str := fmt.Sprintf("%s's current time is %s (%dh from your local time)", nick, t.Format(time.RFC822), diff)
 	return str, nil
 }
 
