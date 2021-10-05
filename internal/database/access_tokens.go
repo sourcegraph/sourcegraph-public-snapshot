@@ -264,14 +264,14 @@ func (s *AccessTokenStore) Count(ctx context.Context, opt AccessTokensListOption
 	return count, nil
 }
 
-// DeleteByID deletes an access token given its ID and associated subject user.
+// DeleteByID deletes an access token given its ID.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
-func (s *AccessTokenStore) DeleteByID(ctx context.Context, id int64, subjectUserID int32) error {
+func (s *AccessTokenStore) DeleteByID(ctx context.Context, id int64) error {
 	if Mocks.AccessTokens.DeleteByID != nil {
-		return Mocks.AccessTokens.DeleteByID(id, subjectUserID)
+		return Mocks.AccessTokens.DeleteByID(id)
 	}
-	return s.delete(ctx, sqlf.Sprintf("id=%d AND subject_user_id=%d", id, subjectUserID))
+	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
 }
 
 // DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
@@ -310,7 +310,7 @@ func toSHA256Bytes(input []byte) []byte {
 
 type MockAccessTokens struct {
 	Create     func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
-	DeleteByID func(id int64, subjectUserID int32) error
+	DeleteByID func(id int64) error
 	Lookup     func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
 	GetByID    func(id int64) (*AccessToken, error)
 }

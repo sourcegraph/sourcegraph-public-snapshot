@@ -123,13 +123,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
+		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 
