@@ -15,7 +15,7 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"github.com/sourcegraph/sourcegraph/internaligorem/n
+	"github.com/sourcegraph/sourcegraph/internal/goreman"
 	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
