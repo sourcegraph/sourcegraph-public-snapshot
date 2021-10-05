@@ -2,8 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -49,7 +47,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 				return
 			}
 			log15.Debug("DashboardCompute", "afterID", afterID)
-			args.After = int(afterID.arg)
+			args.After = int(afterID.Arg)
 		}
 		if d.args.First != nil {
 			args.Limit = int(*d.args.First)
@@ -60,10 +58,12 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 			return
 		}
 		d.dashboards = dashboards
-		next := 0
 		for _, dashboard := range dashboards {
-			if dashboard.ID > next {
-				next = dashboard.ID
+			log15.Info("dashboard iterate", "dbid", dashboard.ID, "dnext", d.next)
+			if int64(dashboard.ID) > d.next {
+				log15.Info("dnext replace", "dbid", dashboard.ID, "dnext", d.next)
+
+				d.next = int64(dashboard.ID)
 			}
 		}
 	})
@@ -84,7 +84,14 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 }
 
 func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	panic("implement me")
+	_, _, err := d.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if d.next != 0 {
+		return graphqlutil.NextPageCursor(string(newRealDashboardID(d.next).marshal())), nil
+	}
+	return graphqlutil.HasNextPage(false), nil
 }
 
 type insightDashboardResolver struct {
@@ -104,35 +111,21 @@ func (i *insightDashboardResolver) Views() graphqlbackend.InsightViewConnectionR
 	panic("implement me")
 }
 
-// _, next, err := r.compute(ctx)
-// if err != nil {
-// return nil, err
-// }
-//
-// if next != 0 {
-// return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
-// }
-//
-// return graphqlutil.HasNextPage(false), nil
-
 func newRealDashboardID(arg int64) dashboardID {
 	return newDashboardID("real", arg)
 }
 func newDashboardID(idType string, arg int64) dashboardID {
-	raw := fmt.Sprintf("%s:%s", idType, arg)
 	return dashboardID{
-		raw:    raw,
-		idType: idType,
-		arg:    arg,
+		IdType: idType,
+		Arg:    arg,
 	}
 }
 
 const dashboardKind = "dashboard"
 
 type dashboardID struct {
-	raw    string
-	idType string
-	arg    int64
+	IdType string
+	Arg    int64
 }
 
 func (id dashboardID) isVirtualized() bool {
@@ -140,39 +133,26 @@ func (id dashboardID) isVirtualized() bool {
 }
 
 func (id dashboardID) isUser() bool {
-	return strings.HasPrefix(id.raw, "user")
+	return strings.EqualFold(id.IdType, "user")
 }
 
 func (id dashboardID) isOrg() bool {
-	return strings.HasPrefix(id.raw, "organization")
+	return strings.EqualFold(id.IdType, "organization")
 }
 
 func (id dashboardID) isReal() bool {
-	return strings.HasPrefix(id.raw, "custom")
+	return strings.EqualFold(id.IdType, "custom")
 }
 
 func unmarshal(id graphql.ID) (dashboardID, error) {
-	var raw string
-	err := relay.UnmarshalSpec(id, &raw)
+	var dbid dashboardID
+	err := relay.UnmarshalSpec(id, &dbid)
 	if err != nil {
-		return dashboardID{}, errors.Wrap(err, "UnmarshalRelay")
+		return dashboardID{}, errors.Wrap(err, "unmarshalDashboardID")
 	}
-
-	i := strings.IndexByte(raw, ':')
-	if i == -1 {
-		return dashboardID{}, errors.New("invalid dashboardID format - missing arg")
-	}
-
-	idType := raw[:i]
-	argStr := raw[i+1:]
-	arg, err := strconv.ParseInt(argStr, 10, 64)
-	if err != nil {
-		return dashboardID{}, errors.Wrap(err, "unable to parse arg")
-	}
-
-	return dashboardID{raw: raw, arg: arg, idType: idType}, nil
+	return dbid, nil
 }
 
 func (id dashboardID) marshal() graphql.ID {
-	return relay.MarshalID(dashboardKind, id.raw)
+	return relay.MarshalID(dashboardKind, id)
 }

@@ -1,8 +1,9 @@
 package resolvers
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/graph-gophers/graphql-go/relay"
 )
@@ -24,14 +25,29 @@ func Test(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			if result.arg != test.arg {
-				t.Errorf("mismatched arg (want/got): %v/%v", test.arg, result.arg)
+			if result.Arg != test.arg {
+				t.Errorf("mismatched arg (want/got): %v/%v", test.arg, result.Arg)
 			}
 		})
 	}
 }
 
-func TestA(t *testing.T) {
-	out := relay.MarshalID("dashboard", "real:6")
-	fmt.Println(out)
+func TestMarshalUnmarshalID(t *testing.T) {
+	dbid := dashboardID{
+		IdType: "test",
+		Arg:    1,
+	}
+
+	out := relay.MarshalID("dashboard", dbid)
+
+	var final dashboardID
+
+	err := relay.UnmarshalSpec(out, &final)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(dbid, final); diff != "" {
+		t.Errorf("mismatch %v", diff)
+	}
 }
