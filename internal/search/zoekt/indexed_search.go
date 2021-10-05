@@ -434,7 +434,12 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
 		apply(zoektquery.RcNoForks, repoOptions.NoForks)
 
-		qs = append(qs, zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc))
+		children := []zoektquery.Q{&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc}
+		for _, pat := range repoOptions.MinusRepoFilters {
+			children = append(children, &zoektquery.Not{Child: &zoektquery.Repo{Pattern: pat}})
+		}
+
+		qs = append(qs, zoektquery.NewAnd(children...))
 	}
 
 	// Private or Any
