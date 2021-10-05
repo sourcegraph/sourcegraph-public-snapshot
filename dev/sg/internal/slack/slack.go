@@ -81,7 +81,7 @@ func queryUserCurrentTime(token, nick string) (string, error) {
 	t2 := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
 	diff := t2.Sub(t) / time.Hour
 
-	str := fmt.Sprintf("%s's current time is %s (%dh from your local time)", nick, t.Format(time.RFC822), diff)
+	str := fmt.Sprintf("%s's current time is %s (%dh from your local time)", u.Profile.RealName, t.Format(time.RFC822), diff)
 	return str, nil
 }
 
@@ -121,8 +121,6 @@ func queryUserHandbook(token, nick string) (string, error) {
 }
 
 // findUserByNickname searches for a user by its nickname, e.g. what we type in Slack after a '@' character.
-// TODO would be great to have some "did you mean" and use Levenshtein distance or something else to return
-// a list of possible matches.
 func findUserByNickname(users []slack.User, nickname string) *slack.User {
 	nickname = strings.ToLower(nickname)
 	nickname = strings.TrimPrefix(nickname, "@")
@@ -133,14 +131,14 @@ func findUserByNickname(users []slack.User, nickname string) *slack.User {
 	}
 
 	// No user found, try to guess now
-	candidates := []*slack.User{}
+	candidates := []slack.User{}
 	for _, u := range users {
 		if strings.HasPrefix(strings.ToLower(u.Profile.RealName), nickname) {
-			candidates = append(candidates, &u)
+			candidates = append(candidates, u)
 		}
 	}
-	if len(candidates) > 1 {
-		return nil
+	if len(candidates) == 1 {
+		return &candidates[0]
 	}
-	return candidates[0]
+	return nil
 }
