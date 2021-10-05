@@ -47,7 +47,10 @@ func maybeTaggedImage(rootImage, tag string) string {
 // - app must be a legal Docker image name (e.g. no `/`)
 //
 
-// Used to cross check images in the deploy-sourcegraph repo. If you are adding a new image to https://github.com/sourcegraph/deploy-sourcegraph
+// DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
+// deploy-sourcegraph installation.
+//
+// Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
 var DeploySourcegraphDockerImages = []string{
 	"alpine-3.12",
