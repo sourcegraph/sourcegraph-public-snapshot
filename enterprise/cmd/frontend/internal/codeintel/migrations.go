@@ -45,20 +45,6 @@ func registerMigrations(ctx context.Context, db dbutil.DB, outOfBandMigrationRun
 	}
 
 	if err := outOfBandMigrationRunner.Register(
-		lsifmigrations.APIDocsSearchMigrationID, // 12
-		lsifmigrations.NewAPIDocsSearchMigrator(
-			services.lsifStore,
-			services.dbStore,
-			services.repoStore,
-			services.gitserverClient,
-			config.APIDocsSearchMigrationBatchSize,
-		),
-		oobmigration.MigratorOptions{Interval: config.APIDocsSearchMigrationBatchInterval},
-	); err != nil {
-		return err
-	}
-
-	if err := outOfBandMigrationRunner.Register(
 		dbmigrations.CommittedAtMigrationID, // 8
 		dbmigrations.NewCommittedAtMigrator(services.dbStore, services.gitserverClient, config.CommittedAtMigrationBatchSize),
 		oobmigration.MigratorOptions{Interval: config.CommittedAtMigrationBatchInterval},
