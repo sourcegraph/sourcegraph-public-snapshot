@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -111,7 +110,7 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 	if err == nil {
 		// If we have no error then the commit is resolvable and we shouldn't touch it.
 		shouldDelete = false
-	} else if vcs.IsRepoNotExist(err) {
+	} else if domain.IsRepoNotExist(err) {
 		// If we have a repository not found error, then we'll just update the timestamp
 		// of the record so we can move on to other data; we deleted records associated
 		// with deleted repositories in a separate janitor process.

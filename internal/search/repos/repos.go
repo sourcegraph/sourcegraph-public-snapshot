@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -583,7 +582,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if errors.HasType(err, &domain.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+					if errors.HasType(err, &domain.RevisionNotFoundError{}) || domain.IsRepoNotExist(err) {
 						continue
 					}
 
@@ -640,8 +639,8 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		status |= search.RepoStatusLimitHit
 	}
 
-	if vcs.IsRepoNotExist(searchErr) {
-		if vcs.IsCloneInProgress(searchErr) {
+	if domain.IsRepoNotExist(searchErr) {
+		if domain.IsCloneInProgress(searchErr) {
 			status |= search.RepoStatusCloning
 		} else {
 			status |= search.RepoStatusMissing

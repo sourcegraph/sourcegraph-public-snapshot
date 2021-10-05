@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
@@ -16,7 +18,6 @@ import (
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -234,7 +235,7 @@ func TestHandleCloneInProgress(t *testing.T) {
 	}
 
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return api.CommitID(""), &vcs.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
+		return "", &domain.RepoNotExistError{Repo: repo.Name, CloneInProgress: true}
 	}
 
 	upload := dbstore.Upload{

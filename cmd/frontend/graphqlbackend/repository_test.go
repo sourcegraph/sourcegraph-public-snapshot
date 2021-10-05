@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
@@ -185,7 +184,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		},
 		{
 			name:           "clone in progress",
-			symbolicRefErr: &vcs.RepoNotExistError{CloneInProgress: true},
+			symbolicRefErr: &domain.RepoNotExistError{CloneInProgress: true},
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,

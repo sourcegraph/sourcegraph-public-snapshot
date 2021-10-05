@@ -39,7 +39,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
@@ -201,8 +200,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
-			if vcs.IsRepoNotExist(err) {
-				if vcs.IsCloneInProgress(err) {
+			if domain.IsRepoNotExist(err) {
+				if domain.IsCloneInProgress(err) {
 					// Repo is cloning.
 					return common, nil
 				}

@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -63,9 +62,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/empty":
 			return false, nil
 		case "foo/cloning":
-			return false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
+			return false, &domain.RepoNotExistError{Repo: repoName, CloneInProgress: true}
 		case "foo/missing":
-			return false, &vcs.RepoNotExistError{Repo: repoName}
+			return false, &domain.RepoNotExistError{Repo: repoName}
 		case "foo/missing-database":
 			return false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
 		case "foo/timedout":

@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 func TestCommittedAtMigrator(t *testing.T) {
@@ -137,7 +136,7 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &vcs.RepoNotExistError{}
+				return time.Time{}, &domain.RepoNotExistError{}
 			}
 
 			return allDates[i], nil

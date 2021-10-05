@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 var clientFactory = httpcli.NewInternalClientFactory("gitserver")
@@ -217,7 +216,7 @@ func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOpti
 		}
 		resp.Body.Close()
 		return nil, &badRequestError{
-			error: &vcs.RepoNotExistError{
+			error: &domain.RepoNotExistError{
 				Repo:            repo,
 				CloneInProgress: payload.CloneInProgress,
 				CloneProgress:   payload.CloneProgress,
@@ -275,7 +274,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		return nil, nil, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		return nil, nil, &domain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
 
 	default:
 		resp.Body.Close()

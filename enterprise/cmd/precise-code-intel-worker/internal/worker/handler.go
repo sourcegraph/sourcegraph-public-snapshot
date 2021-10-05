@@ -15,6 +15,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
@@ -215,7 +215,7 @@ const CloneInProgressDelay = time.Minute
 // increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
 func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	if _, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit); err != nil {
-		if !vcs.IsCloneInProgress(err) {
+		if !domain.IsCloneInProgress(err) {
 			return false, errors.Wrap(err, "Repos.ResolveRev")
 		}
 

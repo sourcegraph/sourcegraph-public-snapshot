@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.
@@ -60,7 +59,7 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // used.
 //
 // Error cases:
-// * Repo does not exist: vcs.RepoNotExistError
+// * Repo does not exist: domain.RepoNotExistError
 // * Commit does not exist: RevisionNotFoundError
 // * Empty repository: RevisionNotFoundError
 // * Other unexpected errors.
@@ -113,7 +112,7 @@ func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt Re
 func runRevParse(ctx context.Context, cmd *gitserver.Cmd, spec string) (api.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if domain.IsRepoNotExist(err) {
 			return "", err
 		}
 		if bytes.Contains(stderr, []byte("unknown revision")) {

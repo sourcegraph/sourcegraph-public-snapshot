@@ -8,7 +8,6 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // TODO: This is our domain package, we don't want it importing anything
@@ -64,7 +63,7 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 
 	sha, err := s.RevParser.RevParse(ctx, repo, objectName)
 	if err != nil {
-		if vcs.IsRepoNotExist(err) {
+		if IsRepoNotExist(err) {
 			return nil, err
 		}
 		if strings.Contains(sha, "unknown revision") {

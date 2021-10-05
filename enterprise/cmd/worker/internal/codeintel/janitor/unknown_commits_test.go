@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -49,7 +48,7 @@ func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 func TestUnknownCommitsJanitorUnknownRepository(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if strings.HasPrefix(commit, "foo-") {
-			return &vcs.RepoNotExistError{}
+			return &domain.RepoNotExistError{}
 		}
 
 		return nil

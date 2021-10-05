@@ -9,10 +9,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/domain"
+
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/schema"
-
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes
@@ -30,9 +30,9 @@ func HTTP(err error) int {
 		return http.StatusRequestTimeout
 	}
 
-	if vcs.IsCloneInProgress(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{CloneInProgress: true}).Error()) {
+	if domain.IsCloneInProgress(err) || strings.Contains(err.Error(), (&domain.RepoNotExistError{CloneInProgress: true}).Error()) {
 		return http.StatusAccepted
-	} else if vcs.IsRepoNotExist(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{}).Error()) {
+	} else if domain.IsRepoNotExist(err) || strings.Contains(err.Error(), (&domain.RepoNotExistError{}).Error()) {
 		return http.StatusNotFound
 	}
 

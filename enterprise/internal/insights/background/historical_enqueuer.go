@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
@@ -316,7 +315,7 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 		// Find the first commit made to the repository on the default branch.
 		firstHEADCommit, err := h.gitFirstEverCommit(ctx, api.RepoName(repoName))
 		if err != nil {
-			if errors.HasType(err, &domain.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+			if errors.HasType(err, &domain.RevisionNotFoundError{}) || domain.IsRepoNotExist(err) {
 				return nil // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			if strings.Contains(err.Error(), `failed (output: "usage: git rev-list [OPTION] <commit-id>...`) {
@@ -487,7 +486,7 @@ func (h *historicalEnqueuer) buildSeries(ctx context.Context, bctx *buildSeriesC
 	} else {
 		recentCommits, err := h.gitFindRecentCommit(ctx, bctx.repo.Name, bctx.execution.RecordingTime)
 		if err != nil {
-			if errors.HasType(err, &domain.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+			if errors.HasType(err, &domain.RevisionNotFoundError{}) || domain.IsRepoNotExist(err) {
 				return // no error - repo may not be cloned yet (or not even pushed to code host yet)
 			}
 			hardErr = errors.Wrap(err, "FindNearestCommit")
