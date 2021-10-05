@@ -82,6 +82,22 @@ func (s *AccessTokenStore) Create(ctx context.Context, subjectUserID int32, scop
 	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, false)
 }
 
+// CreateInternal creates an *internal* access token for the specified user. An
+// internal access token will be used by Sourcegraph to talk to its API from
+// other services, i.e. executor jobs. Internal tokens do not show up in the UI.
+//
+// See the documentation for Create for more details.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to create tokens for the
+// specified user (i.e., that the actor is either the user or a site admin).
+func (s *AccessTokenStore) CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
+	if Mocks.AccessTokens.CreateInternal != nil {
+		return Mocks.AccessTokens.CreateInternal(subjectUserID, scopes, note, creatorUserID)
+	}
+
+	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
+}
+
 func (s *AccessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
 	var b [20]byte
 	if _, err := rand.Read(b[:]); err != nil {
@@ -116,14 +132,6 @@ INSERT INTO access_tokens(subject_user_id, scopes, value_sha256, note, creator_u
 		return 0, "", err
 	}
 	return id, token, nil
-}
-
-func (s *AccessTokenStore) CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error) {
-	if Mocks.AccessTokens.CreateInternal != nil {
-		return Mocks.AccessTokens.CreateInternal(subjectUserID, scopes, note, creatorUserID)
-	}
-
-	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
 }
 
 // Lookup looks up the access token. If it's valid and contains the required scope, it returns the
@@ -206,10 +214,9 @@ func (s *AccessTokenStore) get(ctx context.Context, conds []*sqlf.Query) (*Acces
 
 // AccessTokensListOptions contains options for listing access tokens.
 type AccessTokensListOptions struct {
-	SubjectUserID   int32 // only list access tokens with this user as the subject
-	LastUsedAfter   *time.Time
-	LastUsedBefore  *time.Time
-	IncludeInternal bool
+	SubjectUserID  int32 // only list access tokens with this user as the subject
+	LastUsedAfter  *time.Time
+	LastUsedBefore *time.Time
 	*LimitOffset
 }
 
@@ -227,7 +234,7 @@ func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
 	return conds
 }
 
-// List lists all access tokens that satisfy the options.
+// List lists all access tokens that satisfy the options, except internal tokens.
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to list with the specified
 // options.
@@ -268,7 +275,7 @@ created_at DESC
 	return results, nil
 }
 
-// Count counts all access tokens that satisfy the options (ignoring limit and offset).
+// Count counts all access tokens, except internal tokens, that satisfy the options (ignoring limit and offset).
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to count the tokens.
 func (s *AccessTokenStore) Count(ctx context.Context, opt AccessTokensListOptions) (int, error) {
