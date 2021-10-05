@@ -24,8 +24,15 @@ const (
 	accessTokenScope = "user:all"
 )
 
-func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (int64, string, error) {
-	return database.AccessTokens(db).CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+func createAndAttachInternalAccessToken(ctx context.Context, s batchesStore, jobID int64, userID int32) (string, error) {
+	tokenID, token, err := database.AccessTokens(s.DB()).CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+	if err != nil {
+		return "", err
+	}
+	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobID, tokenID); err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func makeURL(base, username, password string) (string, error) {
@@ -72,12 +79,9 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 
 	// Create an internal access token that will get cleaned up when the job
 	// finishes.
-	tokenID, token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
+	token, err := createAndAttachInternalAccessToken(ctx, s, job.ID, batchSpec.UserID)
 	if err != nil {
-		return apiclient.Job{}, err
-	}
-	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-		return apiclient.Job{}, err
+		return apiclient.Job{}, errors.Wrap(err, "creating internal access token")
 	}
 
 	executionInput := batcheslib.WorkspacesExecutionInput{
