@@ -189,7 +189,6 @@ extend type Query {
 }
 
 type InsightsDashboardConnection {
-
     """
     A list of dashboards.
     """
