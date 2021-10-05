@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/sqliteutil"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -37,7 +37,19 @@ func main() {
 		cacheDir       = env.Get("CACHE_DIR", "/tmp/symbols-cache", "directory to store cached symbols")
 		cacheSizeMB    = env.Get("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache in megabytes")
 		ctagsProcesses = env.Get("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of ctags child processes to run")
+		sanityCheck    = env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not")
 	)
+
+	if sanityCheck == "true" {
+		fmt.Print("Running sanity check...")
+		if err := symbols.SanityCheck(); err != nil {
+			fmt.Println("failed ❌", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("passed ✅")
+		os.Exit(0)
+	}
 
 	env.Lock()
 	env.HandleHelpFlag()
@@ -47,8 +59,6 @@ func main() {
 	tracer.Init()
 	sentry.Init()
 	trace.Init()
-
-	sqliteutil.MustRegisterSqlite3WithPcre()
 
 	// Ready immediately
 	ready := make(chan struct{})

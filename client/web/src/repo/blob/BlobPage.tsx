@@ -33,6 +33,7 @@ import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
+import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { GoToRawAction } from './GoToRawAction'
@@ -60,12 +61,13 @@ interface Props
     globbing: boolean
     isMacPlatform: boolean
     showSearchNotebook: boolean
+    repoUrl: string
 }
 
 export const BlobPage: React.FunctionComponent<Props> = props => {
     const [wrapCode, setWrapCode] = useState(ToggleLineWrap.getValue())
-    let renderMode = ToggleRenderedFileMode.getModeFromURL(props.location)
-    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode } = props
+    let renderMode = getModeFromURL(props.location)
+    const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -89,10 +91,11 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                         revision={revision}
                         filePath={filePath}
                         isDir={false}
+                        repoUrl={repoUrl}
                     />
                 ),
             }
-        }, [filePath, revision, repoName])
+        }, [filePath, revision, repoName, repoUrl])
     )
 
     // Bundle latest blob with all other file info to pass to `Blob`
@@ -282,12 +285,11 @@ export const BlobPage: React.FunctionComponent<Props> = props => {
                     id="toggle-rendered-file-mode"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
-                    {context => (
+                    {({ actionType }) => (
                         <ToggleRenderedFileMode
                             key="toggle-rendered-file-mode"
                             mode={renderMode || 'rendered'}
-                            location={props.location}
-                            {...context}
+                            actionType={actionType}
                         />
                     )}
                 </RepoHeaderContributionPortal>

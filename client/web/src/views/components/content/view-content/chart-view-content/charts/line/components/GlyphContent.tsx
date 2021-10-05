@@ -2,23 +2,24 @@ import { GlyphDot as Glyph } from '@visx/glyph'
 import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types'
 import classnames from 'classnames'
 import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
+import { LineChartSeries } from 'sourcegraph'
 
 import { MaybeLink } from '../../MaybeLink'
-import { Accessors } from '../types'
+import { Point } from '../types'
 
-import { getLineStroke, LineChartContentProps } from './LineChartContent'
+import { getLineStroke } from './LineChartContent'
 import { dateLabelFormatter } from './TickComponent'
 
 /**
  * Type for active datum state in LineChartContent component. In order to render active state
  * for hovered or focused point we need to track active datum to calculate styles for active glyph.
  */
-export interface ActiveDatum<Datum extends object> extends EventHandlerParams<Datum> {
+export interface ActiveDatum<Datum extends object> extends EventHandlerParams<Point> {
     /** Series of data of active datum */
-    line?: LineChartContentProps<Datum>['series'][number]
+    line?: LineChartSeries<Datum>
 }
 
-interface GlyphContentProps<Datum extends object> extends Omit<GlyphProps<Datum>, 'key' | 'index'> {
+interface GlyphContentProps<Datum extends object> extends Omit<GlyphProps<Point>, 'key' | 'index'> {
     /**
      * Just because GlyphProps has a bug with types.
      * GlyphProps key is an index of current datum and
@@ -32,9 +33,6 @@ interface GlyphContentProps<Datum extends object> extends Omit<GlyphProps<Datum>
     /** Focused point info (datum) to calculate proper styles for particular Glyph */
     focusedDatum: ActiveDatum<Datum> | null
 
-    /** Map with getters to have a proper value of by x and y axis value for current point */
-    accessors: Accessors<Datum, keyof Datum>
-
     /** Line (series) index of current point */
     lineIndex: number
 
@@ -42,7 +40,7 @@ interface GlyphContentProps<Datum extends object> extends Omit<GlyphProps<Datum>
     totalNumberOfLines: number
 
     /** Data of particular line of current glyph (chart point) */
-    line: LineChartContentProps<Datum>['series'][number]
+    line: LineChartSeries<Datum>
 
     /** Focus handler for glyph (chart point) */
     setFocusedDatum: (datum: ActiveDatum<Datum> | null) => void
@@ -62,7 +60,6 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
         hoveredDatum,
         focusedDatum,
         datum,
-        accessors,
         lineIndex,
         totalNumberOfLines,
         x: xCoordinate,
@@ -77,14 +74,15 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
     const focused = focusedDatum?.index === currentDatumIndex && focusedDatum.key === line.dataKey
 
     const linkURL = line.linkURLs?.[currentDatumIndex]
+
     const currentDatum = {
         key: line.dataKey.toString(),
         index: currentDatumIndex,
         datum,
     }
 
-    const xAxisValue = dateLabelFormatter(new Date(accessors.x(datum)))
-    const yAxisValue = (accessors.y?.[line.dataKey](datum) as string) ?? ''
+    const xAxisValue = dateLabelFormatter(new Date(datum.x))
+    const yAxisValue = ((datum.y as unknown) as string) ?? ''
     const ariaLabel = `Point ${currentDatumIndex + 1} of line ${
         lineIndex + 1
     } of ${totalNumberOfLines}. X value: ${xAxisValue}. Y value: ${yAxisValue}`

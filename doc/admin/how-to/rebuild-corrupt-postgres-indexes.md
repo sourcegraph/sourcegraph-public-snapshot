@@ -18,6 +18,19 @@ kubectl port-forward "deploy/$DB" 3333:5432 # doesn't use the service that we ju
 psql -U sg -d sg -h localhost -p 3333
 ```
 
+In docker compose, you will need to scale down all the other services to prevent new connections from being established.
+You must run these commands from the machine where sourcegraph is running. 
+
+> NOTE: You can refer to the following instructions for accessing databases on your deployment type: [Docker Compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), [Kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database).
+
+```shell
+export DB=pgsql # change for other databases
+docker-compose down # bring all containers down
+docker start $DB # bring only the db container back up
+docker exec -it $DB sh
+psql -U sg -d sg -h localhost -p 3333
+```
+
 Terminate existing client connections first. This will also terminate your own connection to the database, which you'll need to re-establish.
 
 ```sql
@@ -41,7 +54,8 @@ If any duplicate errors are reported, we must delete some rows by adapting and r
 
 After deleting duplicates, just re-run the above statement. Repeat the process until there are no errors.
 
-At the end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes — an error is raised if there are.
+At the end of the index rebuilding process, as a last sanity check, we use the amcheck extension to verify there are no corrupt indexes — an error is raised if there are (you should expect to see some output from this command).
+
 
 ```sql
 create extension amcheck;

@@ -64,6 +64,14 @@ similar to other hooks like `useState`. The value will be updated automatically 
 the user's authentication state changes or the setting is modified elsewhere in the
 application.
 
+An optional second argument can be provided to specify a default value if the
+setting hasn't been set yet.
+
+NOTE: Settings might be loaded asynchronously, in which case the initial value
+of the setting will be `undefined`. You might have to account for this in your
+component to prevent a flash of content. The optional default value is only used
+if the setting hasn't been set yet; it is *not* used as an initial value.
+
 #### Example usage:
 
 ```typescript
@@ -80,7 +88,56 @@ return <>
 
 ### 🚨 Data sync warning
 
-Currently, settings are not kept up-to-date if modified in more than one tab/browser at once,
-which can cause settings to be out of sync and lost. **Do not use temporary settings for
-important data that may not be easily recoverable with a few clicks.**
-We will address this in the future.
+Temporary settings for authenticated users are only updated every 5 minutes.
+This can cause settings to become out-of-sync or lost if modified in more than
+one tab/browser at once. **Do not use temporary settings for data that may not
+be easily recoverable with a few clicks.**
+
+
+## Viewing and modifying raw temporary settings
+
+For debugging and testing purposes, it can be useful to view and modify the raw
+temporary settings data. In particular, clearing temporary settings can help
+emulate the flow of what a new user would see.
+
+### Unauthenticated users
+
+You can view and modify temporary settings using the `localStorage` in the browser
+developer tools' Storage (Firefox & Safari) or Application (Chromium) tab, or by
+calling `localStorage` directly from the console. Temporary settings are stored in
+`localStorage` with the `temporarySettings` key. Deleting the item with this key will
+clear all temporary settings.
+
+Useful console commands:
+
+```js
+localStorage['temporarySettings'] // Get settings
+
+localStorage.removeItem('temporarySettings') // Clear settings
+```
+
+### Authenticated users
+
+You can view and modify temporary settings via the GraphQL API using the
+[GraphQL console](https://sourcegraph.com/api/console).
+
+You can view your temporary settings with the `temporarySettings` GraphQL query:
+
+```graphql
+query {
+  temporarySettings {
+    contents
+  }
+}
+```
+
+You can modify your temporary settings with the `overwriteTemporarySettings` GraphQL mutation.
+For example, the following mutation will clear your temporary settings:
+
+```graphql
+mutation {
+  overwriteTemporarySettings(contents: "{}") {
+    alwaysNil
+  }
+}
+```

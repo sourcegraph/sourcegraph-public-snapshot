@@ -2,32 +2,29 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import {
-    BatchSpecExecutionCreateFields,
-    CreateBatchSpecExecutionResult,
-    CreateBatchSpecExecutionVariables,
+    BatchSpecCreateFields,
+    CreateBatchSpecResult,
+    CreateBatchSpecVariables,
     Scalars,
 } from '../../../graphql-operations'
 
-export async function createBatchSpecExecution(
-    spec: string,
-    namespace: Scalars['ID']
-): Promise<BatchSpecExecutionCreateFields> {
-    const result = await requestGraphQL<CreateBatchSpecExecutionResult, CreateBatchSpecExecutionVariables>(
+export async function createBatchSpec(spec: Scalars['ID']): Promise<BatchSpecCreateFields> {
+    const result = await requestGraphQL<CreateBatchSpecResult, CreateBatchSpecVariables>(
         gql`
-            mutation CreateBatchSpecExecution($spec: String!, $namespace: ID) {
-                createBatchSpecExecution(spec: $spec, namespace: $namespace) {
-                    ...BatchSpecExecutionCreateFields
+            mutation CreateBatchSpec($id: ID!) {
+                executeBatchSpec(batchSpec: $id) {
+                    ...BatchSpecCreateFields
                 }
             }
 
-            fragment BatchSpecExecutionCreateFields on BatchSpecExecution {
+            fragment BatchSpecCreateFields on BatchSpec {
                 id
                 namespace {
                     url
                 }
             }
         `,
-        { spec, namespace }
+        { id: spec }
     ).toPromise()
-    return dataOrThrowErrors(result).createBatchSpecExecution
+    return dataOrThrowErrors(result).executeBatchSpec
 }

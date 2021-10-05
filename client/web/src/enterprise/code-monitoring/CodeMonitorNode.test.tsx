@@ -4,7 +4,7 @@ import * as React from 'react'
 import sinon from 'sinon'
 
 import { CodeMonitorNode } from './CodeMonitoringNode'
-import { mockCodeMonitor } from './testing/util'
+import { mockCodeMonitorFields } from './testing/util'
 
 describe('CreateCodeMonitorPage', () => {
     const history = H.createMemoryHistory()
@@ -14,7 +14,7 @@ describe('CreateCodeMonitorPage', () => {
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
-                node={mockCodeMonitor.node}
+                node={mockCodeMonitorFields}
                 isSiteAdminUser={true}
                 showCodeMonitoringTestEmailButton={false}
             />
@@ -27,7 +27,7 @@ describe('CreateCodeMonitorPage', () => {
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
-                node={mockCodeMonitor.node}
+                node={mockCodeMonitorFields}
                 isSiteAdminUser={true}
                 showCodeMonitoringTestEmailButton={true}
             />
@@ -36,11 +36,15 @@ describe('CreateCodeMonitorPage', () => {
     })
 
     test('Does not show "Send test email" option when code monitor is disabled', () => {
+        const disabledCodeMonitor = {
+            ...mockCodeMonitorFields,
+            enabled: false,
+        }
         const component = mount(
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
-                node={{ ...mockCodeMonitor.node, enabled: false }}
+                node={disabledCodeMonitor}
                 isSiteAdminUser={true}
                 showCodeMonitoringTestEmailButton={true}
             />
@@ -53,7 +57,7 @@ describe('CreateCodeMonitorPage', () => {
             <CodeMonitorNode
                 toggleCodeMonitorEnabled={sinon.spy()}
                 location={history.location}
-                node={mockCodeMonitor.node}
+                node={mockCodeMonitorFields}
                 isSiteAdminUser={false}
                 showCodeMonitoringTestEmailButton={true}
             />

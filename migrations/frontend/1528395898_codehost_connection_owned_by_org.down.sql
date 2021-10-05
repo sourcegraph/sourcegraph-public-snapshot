@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS external_services DROP COLUMN IF EXISTS namespace_org_id;

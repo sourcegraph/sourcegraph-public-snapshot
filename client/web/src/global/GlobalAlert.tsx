@@ -10,10 +10,10 @@ import { DismissibleAlert } from '../components/DismissibleAlert'
 /**
  * A global alert that is shown at the top of the viewport.
  */
-export const GlobalAlert: React.FunctionComponent<{ alert: GQL.IAlert; className: string }> = ({
-    alert,
-    className: commonClassName,
-}) => {
+export const GlobalAlert: React.FunctionComponent<{
+    alert: Pick<GQL.IAlert, 'message' | 'isDismissibleWithKey' | 'type'>
+    className: string
+}> = ({ alert, className: commonClassName }) => {
     const content = <Markdown dangerousInnerHTML={renderMarkdown(alert.message)} />
     const className = `${commonClassName} alert alert-${alertClassForType(alert.type)} d-flex`
     if (alert.isDismissibleWithKey) {

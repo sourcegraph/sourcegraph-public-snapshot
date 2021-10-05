@@ -1,0 +1,54 @@
+.overlay {
+    display: flex;
+    background-color: #343a4d4d; // --color-bg-3 with 30% opacity
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: auto;
+    padding: 1.5rem;
+}
+
+.content {
+    max-width: 32rem;
+    width: 100%;
+    margin: auto;
+    background-color: var(--color-bg-1);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+}
+
+.title {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.media-hero-content {
+    display: flex;
+    // Stretch the charts container to the full width ignore parent paddings and border
+    // stylelint-disable-next-line declaration-property-unit-whitelist
+    margin: 1.5rem calc((-1px - 1.5rem));
+    padding: 1rem 1.5rem;
+    background: var(--marketing-gradient);
+    height: 10.625rem;
+    gap: 0.5rem;
+}
+
+.chart {
+    box-shadow: var(--dropdown-shadow);
+    border-radius: var(--border-radius);
+}
+
+.text-content {
+    margin-top: 1.5rem;
+    margin-bottom: 0;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+}

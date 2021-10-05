@@ -150,6 +150,10 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			// can only be used with the 'repo:' scope. In that case,
 			// we shouldn't be getting any repositoy name matches back.
 			addRepoFilter(v.Name, v.ID, "", 1)
+		case *result.CommitMatch:
+			// We leave "rev" empty, instead of using "CommitMatch.Commit.ID". This way we
+			// get 1 filter per repo instead of 1 filter per sha in the side-bar.
+			addRepoFilter(v.Repo.Name, v.Repo.ID, "", int32(v.ResultCount()))
 		}
 	}
 }

@@ -51,9 +51,10 @@ func RandomID() (string, error) {
 // from persistent storage.
 type Store struct {
 	*basestore.Store
-	key        encryption.Key
-	now        func() time.Time
-	operations *operations
+	key                encryption.Key
+	now                func() time.Time
+	operations         *operations
+	observationContext *observation.Context
 }
 
 // New returns a new Store backed by the given database.
@@ -65,11 +66,17 @@ func New(db dbutil.DB, observationContext *observation.Context, key encryption.K
 // clock for timestamps.
 func NewWithClock(db dbutil.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		Store:      basestore.NewWithDB(db, sql.TxOptions{}),
-		key:        key,
-		now:        clock,
-		operations: newOperations(observationContext),
+		Store:              basestore.NewWithDB(db, sql.TxOptions{}),
+		key:                key,
+		now:                clock,
+		operations:         newOperations(observationContext),
+		observationContext: observationContext,
 	}
+}
+
+// ObservationContext returns the observation context wrapped in this store.
+func (s *Store) ObservationContext() *observation.Context {
+	return s.observationContext
 }
 
 // Clock returns the clock used by the Store.
@@ -91,7 +98,13 @@ func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle()
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), key: s.key, operations: s.operations, now: s.now}
+	return &Store{
+		Store:              s.Store.With(other),
+		key:                s.key,
+		operations:         s.operations,
+		observationContext: s.observationContext,
+		now:                s.now,
+	}
 }
 
 // Transact creates a new transaction.
@@ -102,7 +115,13 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Store{Store: txBase, key: s.key, operations: s.operations, now: s.now}, nil
+	return &Store{
+		Store:              txBase,
+		key:                s.key,
+		operations:         s.operations,
+		observationContext: s.observationContext,
+		now:                s.now,
+	}, nil
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
@@ -173,14 +192,15 @@ type operations struct {
 	createChangesetJob *observation.Operation
 	getChangesetJob    *observation.Operation
 
-	createChangesetSpec         *observation.Operation
-	updateChangesetSpec         *observation.Operation
-	deleteChangesetSpec         *observation.Operation
-	countChangesetSpecs         *observation.Operation
-	getChangesetSpec            *observation.Operation
-	listChangesetSpecs          *observation.Operation
-	deleteExpiredChangesetSpecs *observation.Operation
-	getRewirerMappings          *observation.Operation
+	createChangesetSpec                      *observation.Operation
+	updateChangesetSpec                      *observation.Operation
+	deleteChangesetSpec                      *observation.Operation
+	countChangesetSpecs                      *observation.Operation
+	getChangesetSpec                         *observation.Operation
+	listChangesetSpecs                       *observation.Operation
+	deleteExpiredChangesetSpecs              *observation.Operation
+	getRewirerMappings                       *observation.Operation
+	listChangesetSpecsWithConflictingHeadRef *observation.Operation
 
 	createChangeset                   *observation.Operation
 	deleteChangeset                   *observation.Operation
@@ -209,6 +229,20 @@ type operations struct {
 	getSiteCredential    *observation.Operation
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
+
+	createBatchSpecWorkspace *observation.Operation
+	getBatchSpecWorkspace    *observation.Operation
+	listBatchSpecWorkspaces  *observation.Operation
+
+	createBatchSpecWorkspaceExecutionJob  *observation.Operation
+	createBatchSpecWorkspaceExecutionJobs *observation.Operation
+	getBatchSpecWorkspaceExecutionJob     *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
+
+	createBatchSpecResolutionJob *observation.Operation
+	getBatchSpecResolutionJob    *observation.Operation
+	listBatchSpecResolutionJobs  *observation.Operation
 }
 
 var (
@@ -278,14 +312,15 @@ func newOperations(observationContext *observation.Context) *operations {
 			createChangesetJob: op("CreateChangesetJob"),
 			getChangesetJob:    op("GetChangesetJob"),
 
-			createChangesetSpec:         op("CreateChangesetSpec"),
-			updateChangesetSpec:         op("UpdateChangesetSpec"),
-			deleteChangesetSpec:         op("DeleteChangesetSpec"),
-			countChangesetSpecs:         op("CountChangesetSpecs"),
-			getChangesetSpec:            op("GetChangesetSpec"),
-			listChangesetSpecs:          op("ListChangesetSpecs"),
-			deleteExpiredChangesetSpecs: op("DeleteExpiredChangesetSpecs"),
-			getRewirerMappings:          op("GetRewirerMappings"),
+			createChangesetSpec:                      op("CreateChangesetSpec"),
+			updateChangesetSpec:                      op("UpdateChangesetSpec"),
+			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
+			countChangesetSpecs:                      op("CountChangesetSpecs"),
+			getChangesetSpec:                         op("GetChangesetSpec"),
+			listChangesetSpecs:                       op("ListChangesetSpecs"),
+			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			getRewirerMappings:                       op("GetRewirerMappings"),
+			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
 
 			createChangeset:                   op("CreateChangeset"),
 			deleteChangeset:                   op("DeleteChangeset"),
@@ -314,6 +349,20 @@ func newOperations(observationContext *observation.Context) *operations {
 			getSiteCredential:    op("GetSiteCredential"),
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
+
+			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+
+			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
+			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
+			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
+			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
+
+			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
+			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
+			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
 		}
 	})
 

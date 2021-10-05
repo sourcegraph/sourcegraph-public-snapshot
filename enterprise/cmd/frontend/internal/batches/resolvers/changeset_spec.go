@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/go-diff/diff"
@@ -12,6 +13,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -96,6 +98,11 @@ func (r *changesetSpecResolver) ExpiresAt() *graphqlbackend.DateTime {
 func (r *changesetSpecResolver) repoAccessible() bool {
 	// If the repository is not nil, it's accessible
 	return r.repo != nil
+}
+
+func (r *changesetSpecResolver) Workspace(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented")
 }
 
 func (r *changesetSpecResolver) ToHiddenChangesetSpec() (graphqlbackend.HiddenChangesetSpecResolver, bool) {
@@ -205,10 +212,10 @@ func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 }
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Subject() string {
-	return git.Message(r.message).Subject()
+	return gitapi.Message(r.message).Subject()
 }
 func (r *gitCommitDescriptionResolver) Body() *string {
-	body := git.Message(r.message).Body()
+	body := gitapi.Message(r.message).Body()
 	if body == "" {
 		return nil
 	}

@@ -1,4 +1,5 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
+import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -23,6 +24,7 @@ import {
 import { eventLogger } from '../tracking/eventLogger'
 import { userURL } from '../user'
 
+import styles from './SiteAdminSurveyResponsesPage.module.scss'
 import { USER_ACTIVITY_FILTERS } from './SiteAdminUsageStatisticsPage'
 
 interface SurveyResponseNodeProps {
@@ -161,7 +163,7 @@ class UserSurveyResponseNode extends React.PureComponent<UserSurveyResponseNodeP
                         <td colSpan={4}>
                             {responses.map((response, index) => (
                                 <dl key={index}>
-                                    <div className="pl-3 border-left site-admin-survey-responses-connection__wide-border">
+                                    <div className={classNames('pl-3 border-left', styles.wideBorder)}>
                                         <Timestamp date={response.createdAt} />
                                         <ScoreBadge score={response.score} />
                                         <br />
@@ -228,17 +230,17 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
                 : 'text-info'
         const roundAvg = Math.round(this.state.summary.averageScore * 10) / 10
         return (
-            <div className="msite-admin-survey-responses-summary mb-2">
+            <div className="mb-2">
                 <h3>Summary</h3>
-                <div className="site-admin-survey-responses-summary__container">
+                <div className={styles.container}>
                     <SingleValueCard
-                        className="site-admin-survey-responses-summary__item"
+                        className={styles.item}
                         value={this.state.summary.last30DaysCount}
                         title="Number of submissions"
                         subTitle="Last 30 days"
                     />
                     <SingleValueCard
-                        className="site-admin-survey-responses-summary__item"
+                        className={styles.item}
                         value={anyResults ? roundAvg : '-'}
                         title="Average score"
                         subTitle="Last 30 days"
@@ -246,7 +248,7 @@ class SiteAdminSurveyResponsesSummary extends React.PureComponent<{}, SiteAdminS
                         valueClassName={anyResults ? `text-${scoreToClassSuffix(roundAvg)}` : ''}
                     />
                     <SingleValueCard
-                        className="site-admin-survey-responses-summary__item"
+                        className={styles.item}
                         value={anyResults ? npsText : '-'}
                         title="Net promoter score"
                         subTitle="Last 30 days"

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
@@ -26,7 +27,7 @@ func TestGitTree(t *testing.T) {
 		}
 		return exampleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &git.Commit{ID: exampleCommitSHA1})
+	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitapi.Commit{ID: exampleCommitSHA1})
 
 	git.Mocks.Stat = func(commit api.CommitID, path string) (fs.FileInfo, error) {
 		if string(commit) != exampleCommitSHA1 {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -47,6 +49,11 @@ type ResolveRevisionOptions struct {
 	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
 }
 
+var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
+	Name: "src_resolve_revision_total",
+	Help: "The number of times we call internal/vcs/git/ResolveRevision",
+}, []string{"ensure_revision"})
+
 // ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 // used.
 //
@@ -59,6 +66,12 @@ func ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt Re
 	if Mocks.ResolveRevision != nil {
 		return Mocks.ResolveRevision(spec, opt)
 	}
+
+	labelEnsureRevisionValue := "true"
+	if opt.NoEnsureRevision {
+		labelEnsureRevisionValue = "false"
+	}
+	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: ResolveRevision")
 	span.SetTag("Spec", spec)

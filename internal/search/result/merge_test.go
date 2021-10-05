@@ -8,13 +8,13 @@ import (
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func commitResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		Repo: types.RepoName{Name: api.RepoName(repo)},
-		Commit: git.Commit{
+		Commit: gitapi.Commit{
 			ID: api.CommitID(commit),
 		},
 	}
@@ -24,7 +24,7 @@ func diffResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		DiffPreview: &HighlightedString{},
 		Repo:        types.RepoName{Name: api.RepoName(repo)},
-		Commit: git.Commit{
+		Commit: gitapi.Commit{
 			ID: api.CommitID(commit),
 		},
 	}

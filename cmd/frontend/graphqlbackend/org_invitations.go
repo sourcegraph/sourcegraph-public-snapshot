@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -105,11 +106,8 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	OrganizationInvitation graphql.ID
 	ResponseType           string
 }) (*EmptyResponse, error) {
-	currentUser, err := CurrentUser(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
-	if currentUser == nil {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
 
@@ -131,14 +129,14 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 
 	// 🚨 SECURITY: This fails if the org invitation's recipient is not the one given (or if the
 	// invitation is otherwise invalid), so we do not need to separately perform that check.
-	orgID, err := database.OrgInvitations(r.db).Respond(ctx, id, currentUser.user.ID, accept)
+	orgID, err := database.OrgInvitations(r.db).Respond(ctx, id, a.UID, accept)
 	if err != nil {
 		return nil, err
 	}
 
 	if accept {
 		// The recipient accepted the invitation.
-		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, currentUser.user.ID); err != nil {
+		if _, err := database.OrgMembers(r.db).Create(ctx, orgID, a.UID); err != nil {
 			return nil, err
 		}
 	}

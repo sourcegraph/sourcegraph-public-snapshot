@@ -6,11 +6,11 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
-	"github.com/sourcegraph/batch-change-utils/env"
-	"github.com/sourcegraph/batch-change-utils/overridable"
-	"github.com/sourcegraph/batch-change-utils/yaml"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches/env"
+	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
 
 // Some general notes about the struct definitions below.
@@ -129,7 +129,8 @@ func ParseBatchSpec(data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error)
 func parseBatchSpec(schema string, data []byte, opts ParseBatchSpecOptions) (*BatchSpec, error) {
 	var spec BatchSpec
 	if err := yaml.UnmarshalValidate(schema, data, &spec); err != nil {
-		if multiErr, ok := err.(*multierror.Error); ok {
+		var multiErr *multierror.Error
+		if errors.As(err, &multiErr) {
 			var newMultiError *multierror.Error
 
 			for _, e := range multiErr.Errors {

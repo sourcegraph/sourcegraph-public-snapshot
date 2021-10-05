@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as _monaco from 'monaco-editor' // type only
 import * as React from 'react'
@@ -11,6 +12,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SaveToolbar } from '../components/SaveToolbar'
 import { settingsActions } from '../site-admin/configHelpers'
+import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 import { eventLogger } from '../tracking/eventLogger'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -170,13 +172,13 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                     onSave={this.save}
                     onDiscard={this.discard}
                 />
-                <div className="site-admin-configuration-page__action-groups">
-                    <div className="site-admin-configuration-page__actions">
+                <div className={adminConfigurationStyles.actionGroups}>
+                    <div className={adminConfigurationStyles.actions}>
                         {settingsActions.map(({ id, label }) => (
                             <button
                                 type="button"
                                 key={id}
-                                className="btn btn-secondary btn-sm site-admin-configuration-page__action"
+                                className={classNames('btn btn-secondary btn-sm', adminConfigurationStyles.action)}
                                 onClick={() => this.runAction(id)}
                             >
                                 {label}

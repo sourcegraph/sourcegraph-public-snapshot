@@ -35,12 +35,6 @@ func suffixPattern(pattern *regexp.Regexp) *regexp.Regexp {
 	return regexp.MustCompile(pattern.String() + "$")
 }
 
-// segmentPattern creates a regular expression that matches strings containing the
-// given path segment (surrounded by path separators or occurring at the head or tail).
-func segmentPattern(pattern *regexp.Regexp) *regexp.Regexp {
-	return regexp.MustCompile("(^|/)" + pattern.String() + "($|/)")
-}
-
 // extensionPattern creates a regular expression that matches paths with the given
 // extension. The extension separator is added automatically.
 func extensionPattern(pattern *regexp.Regexp) *regexp.Regexp {

@@ -2,6 +2,7 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"container/list"
 	"context"
 	"log"
 	"net"
@@ -18,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -119,7 +121,10 @@ func main() {
 			return "", errors.Errorf("no sources for %q", repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			r, err := repoStore.GetByName(ctx, repo)
+			// We need an internal actor in case we are trying to access a private repo. We
+			// only need access in order to find out the type of code host we're using, so
+			// it's safe.
+			r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
 			if err != nil {
 				return nil, errors.Wrap(err, "get repository")
 			}
@@ -172,8 +177,9 @@ func main() {
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostname.Get(),
-		DB:       db,
+		Hostname:   hostname.Get(),
+		DB:         db,
+		CloneQueue: server.NewCloneQueue(list.New()),
 	}
 	gitserver.RegisterMetrics()
 
@@ -196,6 +202,10 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	gitserver.StartClonePipeline(ctx)
 
 	port := "3178"
 	host := ""

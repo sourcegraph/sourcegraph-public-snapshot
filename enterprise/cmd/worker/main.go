@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/insights"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -32,6 +33,7 @@ func main() {
 		"codeintel-auto-indexing":  codeintel.NewIndexingJob(),
 		"codehost-version-syncing": versions.NewSyncingJob(),
 		"insights-job":             insights.NewInsightsJob(),
+		"batches-janitor":          batches.NewJanitorJob(),
 	})
 }
 

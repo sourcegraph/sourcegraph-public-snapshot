@@ -25,8 +25,7 @@ func TestBulkProcessor(t *testing.T) {
 	tx := dbtest.NewTx(t, db)
 	bstore := store.New(tx, &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
-	repos, _ := ct.CreateTestRepos(t, ctx, db, 1)
-	repo := repos[0]
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, bstore, repo)
 	batchSpec := ct.CreateBatchSpec(t, ctx, bstore, "test-bulk", user.ID)
 	batchChange := ct.CreateBatchChange(t, ctx, bstore, "test-bulk", user.ID, batchSpec.ID)

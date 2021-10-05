@@ -1,4 +1,4 @@
-# Updating Sourcegraph
+# Updating Sourcegraph with Kubernetes
 
 A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
 

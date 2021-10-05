@@ -690,16 +690,13 @@ func (s *RepoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	return s.listRepos(ctx, tr, opt)
 }
 
-// ListRepoNames returns a list of repositories names and ids.
-func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListRepoNames", "")
+// StreamRepoNames calls the given callback for each of the repositories names and ids that match the given options.
+func (s *RepoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, cb func(*types.RepoName)) (err error) {
+	tr, ctx := trace.New(ctx, "repos.StreamRepoNames", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-	if Mocks.Repos.ListRepoNames != nil {
-		return Mocks.Repos.ListRepoNames(ctx, opt)
-	}
 	s.ensureStore()
 
 	opt.Select = minimalColumns(repoColumns)
@@ -707,7 +704,6 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var repos []types.RepoName
 	var privateIDs []api.RepoID
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
@@ -718,7 +714,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 			return err
 		}
 
-		repos = append(repos, r)
+		cb(&r)
 
 		if private {
 			privateIDs = append(privateIDs, r.ID)
@@ -727,7 +723,7 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(privateIDs) > 0 {
@@ -735,7 +731,18 @@ func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (re
 		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), privateIDs)
 	}
 
-	return repos, nil
+	return nil
+}
+
+// ListRepoNames returns a list of repositories names and ids.
+func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
+	if Mocks.Repos.ListRepoNames != nil {
+		return Mocks.Repos.ListRepoNames(ctx, opt)
+	}
+
+	return results, s.StreamRepoNames(ctx, opt, func(r *types.RepoName) {
+		results = append(results, *r)
+	})
 }
 
 func (s *RepoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
@@ -906,7 +913,24 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	}
 
 	if len(opt.Names) > 0 {
-		where = append(where, sqlf.Sprintf("name = ANY (%s)", pq.Array(opt.Names)))
+		lowerNames := make([]string, len(opt.Names))
+		for i, name := range opt.Names {
+			lowerNames[i] = strings.ToLower(name)
+		}
+
+		// Performance improvement
+		//
+		// Comparing JUST the name field will use the repo_name_unique index, which is
+		// a unique btree index over the citext name field. This tends to be a VERY SLOW
+		// comparison over a large table. We were seeing query plans growing linearly with
+		// the size of the result set such that each unique index scan would take ~0.1ms.
+		// This adds up as we regularly query 10k-40k repositories at a time.
+		//
+		// This condition instead forces the use of a btree index repo_name_idx defined over
+		// (lower(name::text) COLLATE "C"). This is a MUCH faster comparison as it does not
+		// need to fold the casing of either the input value nor the value in the index.
+
+		where = append(where, sqlf.Sprintf(`lower(name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
 	}
 
 	if len(opt.URIs) > 0 {
@@ -926,7 +950,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if len(opt.ExternalServiceIDs) != 0 && opt.UserID != 0 {
 		return nil, errors.New("options ExternalServiceIDs and UserID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
-		from = append(from, sqlf.Sprintf("JOIN external_service_repos esr ON (repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
+		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposQuery, opt.UserID)
 		if opt.IncludeUserPublicRepos {
@@ -1016,7 +1040,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 ))
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-// This includes all repos with >= 20 stars as well as user added repos.
+// This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
 func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
@@ -1032,13 +1056,13 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 			"LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id",
 		))
 		where = append(where, sqlf.Sprintf(
-			"(clone_status IS NULL OR clone_status = %s)",
+			"(gr.clone_status IS NULL OR gr.clone_status = %s)",
 			types.CloneStatusNotCloned,
 		))
 	}
 
 	if !opts.IncludePrivate {
-		where = append(where, sqlf.Sprintf("NOT private"))
+		where = append(where, sqlf.Sprintf("NOT repo.private"))
 	}
 
 	if len(where) == 0 {
@@ -1052,9 +1076,9 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	q := sqlf.Sprintf(
 		listIndexableReposQuery,
-		minStars,
 		sqlf.Join(joins, "\n"),
-		sqlf.Join(where, "\nAND "),
+		minStars,
+		sqlf.Join(where, "\nAND"),
 		opts.LimitOffset.SQL(),
 	)
 
@@ -1079,30 +1103,37 @@ func (s *RepoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 }
 
 const listIndexableReposQuery = `
-WITH s AS (
-	SELECT id as repo_id
-	FROM repo
-	WHERE stars >= %s
-
-	UNION ALL
-
-	SELECT repo_id
-	FROM external_service_repos
-	WHERE user_id IS NOT NULL
-
-	UNION ALL
-
-	SELECT repo_id
-	FROM user_public_repos
-)
-
-SELECT DISTINCT ON (stars, id) id, name
+-- source: internal/database/repos.go:ListIndexableRepos
+SELECT
+	repo.id, repo.name
 FROM repo
-JOIN s ON s.repo_id = repo.id
 %s
-WHERE deleted_at IS NULL
-AND blocked IS NULL
-AND %s
+WHERE
+	(
+		repo.stars >= %s
+		OR
+		repo.id IN (
+			SELECT
+				repo_id
+			FROM
+				external_service_repos
+			WHERE
+				external_service_repos.user_id IS NOT NULL
+
+			UNION ALL
+
+			SELECT
+				repo_id
+			FROM
+				user_public_repos
+		)
+	)
+	AND
+	deleted_at IS NULL
+	AND
+	blocked IS NULL
+	AND
+	%s
 ORDER BY stars DESC NULLS LAST
 %s
 `

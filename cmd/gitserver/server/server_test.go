@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"encoding/json"
 	"flag"
@@ -465,19 +466,23 @@ func makeSingleCommitRepo(cmd func(string, ...string) string) string {
 }
 
 func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *Server {
-	return &Server{
+	s := &Server{
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
+		CloneQueue:       NewCloneQueue(list.New()),
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
 	}
+
+	s.StartClonePipeline(ctx)
+	return s
 }
 
 func TestCloneRepo(t *testing.T) {

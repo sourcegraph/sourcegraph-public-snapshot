@@ -73,32 +73,6 @@ func mapPackageErrors(graph *graph.DependencyGraph, fn func(pkg string) (lintErr
 	return errs
 }
 
-// allDependencies returns an ordered list of transitive dependencies of the given package.
-func allDependencies(graph *graph.DependencyGraph, pkg string) []string {
-	dependencyMap := map[string]struct{}{}
-
-	var recur func(pkg string)
-	recur = func(pkg string) {
-		for _, dependency := range graph.Dependencies[pkg] {
-			if _, ok := dependencyMap[dependency]; ok {
-				continue
-			}
-
-			dependencyMap[dependency] = struct{}{}
-			recur(dependency)
-		}
-	}
-	recur(pkg)
-
-	dependencies := make([]string, 0, len(dependencyMap))
-	for dependency := range dependencyMap {
-		dependencies = append(dependencies, dependency)
-	}
-	sort.Strings(dependencies)
-
-	return dependencies
-}
-
 // allDependents returns an ordered list of transitive dependents of the given package.
 func allDependents(graph *graph.DependencyGraph, pkg string) []string {
 	dependentsMap := map[string]struct{}{}

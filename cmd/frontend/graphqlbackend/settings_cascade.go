@@ -3,15 +3,15 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"sort"
-
-	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // settingsCascade implements the GraphQL type SettingsCascade (and the deprecated type ConfigurationCascade).
@@ -72,26 +72,25 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 	return subjects, nil
 }
 
-// viewerFinalSettings returns the final (merged) settings for the viewer.
-func viewerFinalSettings(ctx context.Context, db dbutil.DB) (*configurationResolver, error) {
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return cascade.Merged(ctx)
-}
-
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
-	subjects, err := r.Subjects(ctx)
+	settings, err := r.finalTyped(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	// Each LatestSettings is a roundtrip to the database. So we do the
-	// requests concurrently. If the subject has no settings, then
-	// allSettings[i] will be the empty string. mergeSettings ignores empty
-	// strings.
-	allSettings := make([]string, len(subjects))
+	settingsBytes, err := json.Marshal(settings)
+	return string(settingsBytes), err
+}
+
+func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, error) {
+	subjects, err := r.Subjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	allSettings := make([]*schema.Settings, len(subjects))
+
+	// Each LatestSettings is a roundtrip to the database. So we do the requests concurrently.
 	bounded := goroutine.NewBounded(8)
 	for i := range subjects {
 		i := i
@@ -100,19 +99,31 @@ func (r *settingsCascade) Final(ctx context.Context) (string, error) {
 			if err != nil {
 				return err
 			}
-			if settings != nil {
-				allSettings[i] = settings.settings.Contents
+
+			if settings == nil {
+				return nil
 			}
+
+			var unmarshalled schema.Settings
+			if err := jsonc.Unmarshal(settings.settings.Contents, &unmarshalled); err != nil {
+				return err
+			}
+
+			allSettings[i] = &unmarshalled
+
 			return nil
 		})
 	}
 
 	if err := bounded.Wait(); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	final, err := mergeSettings(allSettings)
-	return string(final), err
+	var merged *schema.Settings
+	for _, subjectSettings := range allSettings {
+		merged = mergeSettingsLeft(merged, subjectSettings)
+	}
+	return merged, nil
 }
 
 // Deprecated: in the GraphQL API
@@ -130,71 +141,81 @@ func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver,
 	return &configurationResolver{contents: s, messages: messages}, nil
 }
 
-// deeplyMergedSettingsFields contains the names of top-level settings fields whose values should be
-// merged if they appear in multiple cascading settings. The value is the merge depth (how many
-// levels into the object should the merging occur).
-//
-// For example, suppose org settings is {"a":[1]} and user settings is {"a":[2]}. If "a" is NOT a
-// deeply merged field, the merged settings would be {"a":[2]}. If "a" IS a deeply merged field with
-// depth >= 1, then the merged settings would be {"a":[1,2].}
-var deeplyMergedSettingsFields = map[string]int{
-	"search.scopes":           1,
-	"search.savedQueries":     1,
-	"search.repositoryGroups": 1,
-	"insights.dashboards":     1,
-	"insights.allrepos":       1,
-	"quicklinks":              1,
-	"motd":                    1,
-	"extensions":              1,
+var settingsFieldMergeDepths = map[string]int{
+	"SearchScopes":           1,
+	"SearchSavedQueries":     1,
+	"SearchRepositoryGroups": 1,
+	"InsightsDashboards":     1,
+	"InsightsAllRepos":       1,
+	"Quicklinks":             1,
+	"Motd":                   1,
+	"Extensions":             1,
 }
 
-// mergeSettings merges the specified JSON settings documents together to produce a single JSON
-// settings document. The deep merging behavior is described in the documentation for
-// deeplyMergedSettingsFields.
-func mergeSettings(jsonSettingsStrings []string) ([]byte, error) {
-	var errs []error
-	merged := map[string]interface{}{}
-	for _, s := range jsonSettingsStrings {
-		var o map[string]interface{}
-		if err := jsonc.Unmarshal(s, &o); err != nil {
-			errs = append(errs, err)
-		}
-		for name, value := range o {
-			depth := deeplyMergedSettingsFields[name]
-			mergeSettingsValues(merged, name, value, depth)
-		}
-	}
-	out, err := json.Marshal(merged)
-	if err != nil {
-		errs = append(errs, err)
-	}
-	if len(errs) == 0 {
-		return out, nil
-	}
-	return out, errors.Errorf("errors merging settings: %q", errs)
+func mergeSettingsLeft(left, right *schema.Settings) *schema.Settings {
+	return mergeLeft(reflect.ValueOf(left), reflect.ValueOf(right), 1).Interface().(*schema.Settings)
 }
 
-func mergeSettingsValues(dst map[string]interface{}, field string, value interface{}, depth int) {
-	// Try to deeply merge this field.
-	if depth > 0 {
-		if mv, ok := dst[field].([]interface{}); dst[field] == nil || ok {
-			if cv, ok := value.([]interface{}); dst[field] != nil || (value != nil && ok) {
-				dst[field] = append(mv, cv...)
-				return
-			}
-		} else if mv, ok := dst[field].(map[string]interface{}); dst[field] == nil || ok {
-			if cv, ok := value.(map[string]interface{}); dst[field] != nil || (value != nil && ok) {
-				for key, value := range cv {
-					mergeSettingsValues(mv, key, value, depth-1)
-				}
-				dst[field] = mv
-				return
-			}
-		}
+// mergeLeft takes two values of the same type and merges them if possible, ignoring
+// any struct fields not listed in deeplyMergedSettingsFieldNames. Its depth parameter
+// specifies how many layers deeper to merge, and will be overridden if the struct
+// field name matches a name in settingsFieldMergeDepths.
+func mergeLeft(left, right reflect.Value, depth int) reflect.Value {
+	if left.IsZero() {
+		return right
 	}
 
-	// Otherwise just clobber any existing value.
-	dst[field] = value
+	if right.IsZero() {
+		return left
+	}
+
+	switch left.Kind() {
+	case reflect.Struct:
+		if depth <= 0 {
+			return right
+		}
+		leftType := left.Type()
+		for i := 0; i < left.NumField(); i++ {
+			fieldName := leftType.Field(i).Name
+			leftField := left.Field(i)
+			rightField := right.Field(i)
+
+			fieldDepth := settingsFieldMergeDepths[fieldName]
+			leftField.Set(mergeLeft(leftField, rightField, fieldDepth))
+		}
+		return left
+	case reflect.Map:
+		if depth <= 0 {
+			return right
+		}
+		iter := right.MapRange()
+		for iter.Next() {
+			k := iter.Key()
+			rightVal := iter.Value()
+			leftVal := left.MapIndex(k)
+			if (leftVal != reflect.Value{}) {
+				left.SetMapIndex(k, mergeLeft(leftVal, rightVal, depth-1))
+			} else {
+				left.SetMapIndex(k, rightVal)
+			}
+		}
+		return left
+	case reflect.Ptr:
+		if depth <= 0 {
+			return right
+		}
+		// Don't decrement depth for pointer deref
+		left.Elem().Set(mergeLeft(left.Elem(), right.Elem(), depth))
+		return left
+	case reflect.Slice:
+		if depth <= 0 {
+			return right
+		}
+		return reflect.AppendSlice(left, right)
+	}
+
+	// Type is not mergeable, so clobber existing value
+	return right
 }
 
 func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {

@@ -171,6 +171,20 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
 	}
 
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if job.PersistMode == string(store.SnapshotMode) {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// To avoid unbounded growth of the snapshots table we will prune it at the same time as adding new values.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
+		}
+	}
+
 	// Record the number of results we got, one data point per-repository.
 	for graphQLRepoID, matchCount := range matchesPerRepo {
 		dbRepoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
@@ -184,8 +198,9 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
 			continue
 		}
+
 		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
-		if recordErr := r.insightsStore.RecordSeriesPoints(ctx, args); recordErr != nil {
+		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
 			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
 		}
 	}
@@ -201,8 +216,9 @@ func ToRecording(record *Job, value float64, recordTime time.Time, repoName stri
 			Time:     recordTime,
 			Value:    value,
 		},
-		RepoName: &repoName,
-		RepoID:   &repoID,
+		RepoName:    &repoName,
+		RepoID:      &repoID,
+		PersistMode: store.PersistMode(record.PersistMode),
 	}
 	args = append(args, base)
 	for _, dependent := range record.DependentFrames {

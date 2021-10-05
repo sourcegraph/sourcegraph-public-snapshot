@@ -166,7 +166,7 @@ func (s *Server) cleanupRepos() {
 			return false, nil
 		}
 
-		ctx, cancel := context.WithTimeout(bCtx, longGitCommandTimeout)
+		ctx, cancel := context.WithTimeout(bCtx, conf.GitLongCommandTimeout())
 		defer cancel()
 
 		// name is the relative path to ReposDir, but without the .git suffix.
@@ -565,7 +565,7 @@ func (s *Server) cleanTmpFiles(dir GitDir) {
 		}
 		file := filepath.Base(path)
 		if strings.HasPrefix(file, "tmp_pack_") {
-			if now.Sub(info.ModTime()) > longGitCommandTimeout {
+			if now.Sub(info.ModTime()) > conf.GitLongCommandTimeout() {
 				err := os.Remove(path)
 				if err != nil {
 					return err

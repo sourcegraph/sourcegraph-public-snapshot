@@ -30,6 +30,7 @@ import { BreadcrumbSetters } from '../components/Breadcrumbs'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 import { RepositoryFields } from '../graphql-operations'
+import { CodeInsightsProps } from '../insights/types'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps, SearchStreamingProps } from '../search'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { RouteDescriptor } from '../util/contributions'
@@ -65,7 +66,8 @@ export interface RepoRevisionContainerContext
         ActionItemsBarProps,
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
-        BatchChangesProps {
+        BatchChangesProps,
+        CodeInsightsProps {
     repo: RepositoryFields
     resolvedRev: ResolvedRevision
 
@@ -102,7 +104,8 @@ interface RepoRevisionContainerProps
         SearchStreamingProps,
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
-        BatchChangesProps {
+        BatchChangesProps,
+        CodeInsightsProps {
     routes: readonly RepoRevisionContainerRoute[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]

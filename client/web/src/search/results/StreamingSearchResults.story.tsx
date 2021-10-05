@@ -11,7 +11,7 @@ import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
-    REPO_MATCH_RESULT,
+    REPO_MATCH_RESULTS_WITH_METADATA,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
@@ -25,7 +25,7 @@ history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
     state: 'complete',
-    results: [...MULTIPLE_SEARCH_RESULT.results, REPO_MATCH_RESULT],
+    results: [...MULTIPLE_SEARCH_RESULT.results, ...REPO_MATCH_RESULTS_WITH_METADATA],
     filters: MULTIPLE_SEARCH_RESULT.filters,
     progress: {
         durationMs: 500,
@@ -55,10 +55,6 @@ const defaultProps: StreamingSearchResultsProps = {
     } as AuthenticatedUser,
     isLightTheme: true,
 
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
-    isSourcegraphDotCom: false,
-
     settingsCascade: {
         subjects: null,
         final: null,
@@ -70,6 +66,7 @@ const defaultProps: StreamingSearchResultsProps = {
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
     enableCodeMonitoring: true,
     featureFlags: EMPTY_FEATURE_FLAGS,
+    extensionViews: () => null,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({

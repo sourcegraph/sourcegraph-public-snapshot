@@ -6,6 +6,7 @@ import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 
 import styles from './SelfHostInstructions.module.scss'
 
@@ -61,7 +62,7 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                 <div>
                     <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:3370
                 </div>
-                <div className={styles.codeWrapper}>
+                <MarketingBlock wrapperClassName={styles.codeWrapper} contentClassName={styles.codeContent}>
                     <button
                         type="button"
                         className={classNames('btn btn-link', styles.copyButton)}
@@ -72,8 +73,8 @@ export const SelfHostInstructions: React.FunctionComponent<TelemetryProps> = ({ 
                     >
                         <ContentCopyIcon className="icon-inline" />
                     </button>
-                    <code className={styles.code}>{dockerCommand}</code>
-                </div>
+                    <code className={styles.codeBlock}>{dockerCommand}</code>
+                </MarketingBlock>
                 <div className="d-flex justify-content-between">
                     <a
                         href="https://docs.sourcegraph.com/admin/install"

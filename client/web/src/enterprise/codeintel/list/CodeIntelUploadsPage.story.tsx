@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
+import { LsifUploadConnectionFields, LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelUploadsPage, CodeIntelUploadsPageProps } from './CodeIntelUploadsPage'
@@ -84,7 +84,8 @@ const testUploads: LsifUploadFields[] = [
 
 const now = () => new Date('2020-06-15T15:25:00+00:00')
 
-const makeResponse = (uploads: LsifUploadFields[]) => ({
+const makeResponse = (uploads: LsifUploadFields[]): LsifUploadConnectionFields => ({
+    __typename: 'LSIFUploadConnection',
     nodes: uploads,
     totalCount: uploads.length,
     pageInfo: {
@@ -122,18 +123,19 @@ const Template: Story<CodeIntelUploadsPageProps> = args => {
 
 const defaults: Partial<CodeIntelUploadsPageProps> = {
     now,
-    fetchLsifUploads: () => of(makeResponse([])),
+    queryLsifUploadsByRepository: () => of(makeResponse([])),
 }
 
 export const EmptyGlobalPage = Template.bind({})
 EmptyGlobalPage.args = {
     ...defaults,
+    queryLsifUploadsList: () => of(makeResponse([])),
 }
 
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
-    fetchLsifUploads: () => of(makeResponse(testUploads)),
+    queryLsifUploadsList: () => of(makeResponse(testUploads)),
 }
 
 export const EmptyRepositoryPage = Template.bind({})
@@ -146,5 +148,5 @@ export const RepositoryPage = Template.bind({})
 RepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
-    fetchLsifUploads: () => of(makeResponse(testUploads)),
+    queryLsifUploadsByRepository: () => of(makeResponse(testUploads)),
 }

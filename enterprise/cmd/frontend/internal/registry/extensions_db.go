@@ -268,7 +268,11 @@ func (o dbExtensionsListOptions) sqlConditions() []*sqlf.Query {
 			// "Other" or extensions with a manifest with no category. (Extensions with no manifest
 			// are omitted.) HACK: This ideally would be implemented at a different layer, but it is
 			// so much simpler to just special-case it here.
-			categoryConds = append(categoryConds, sqlf.Sprintf(`CASE WHEN rer.manifest IS NOT NULL THEN (rer.manifest->>'categories')::jsonb IS NULL ELSE false END`))
+			categoryConds = append(categoryConds, sqlf.Sprintf(`
+				CASE WHEN rer.manifest IS NOT NULL
+					THEN (rer.manifest->>'categories')::jsonb IS NULL
+					OR (rer.manifest->>'categories')::jsonb = '[]'
+				ELSE false END`))
 		}
 		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(categoryConds, ") OR (")))
 	}

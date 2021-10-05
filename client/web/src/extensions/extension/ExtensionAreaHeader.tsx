@@ -13,6 +13,7 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { ExtensionToggle } from '../ExtensionToggle'
 
 import { ExtensionAreaRouteContext } from './ExtensionArea'
+import styles from './ExtensionAreaHeader.module.scss'
 import { ExtensionStatusBadge } from './ExtensionStatusBadge'
 
 interface ExtensionAreaHeaderProps extends ExtensionAreaRouteContext, RouteComponentProps<{}> {
@@ -78,7 +79,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
     }, [ctaTimeoutManager, showCta, props.authenticatedUser])
 
     return (
-        <div className={classNames('extension-area-header', props.className)}>
+        <div className={props.className}>
             <div className="container">
                 {props.extension && (
                     <>
@@ -100,10 +101,10 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                 )
                             }
                             actions={
-                                <div className="position-relative extension-area-header__actions">
+                                <div className={classNames('position-relative', styles.actions)}>
                                     {change && (
                                         <div
-                                            className={classNames('alert px-2 py-1 mb-0 extension-area-header__alert', {
+                                            className={classNames(classNames('alert px-2 py-1 mb-0', styles.alert), {
                                                 'alert-secondary': change === 'disabled',
                                                 'alert-success': change === 'enabled',
                                             })}
@@ -112,7 +113,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         </div>
                                     )}
                                     {showCta && (
-                                        <div className="alert alert-info mb-0 px-2 py-1 extension-area-header__alert">
+                                        <div className={classNames('alert alert-info mb-0 px-2 py-1', styles.alert)}>
                                             An account is required to create and configure extensions.{' '}
                                             <Link to="/sign-up" className="alert-link">
                                                 Register now!
@@ -133,7 +134,12 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
 
                                             return (
                                                 <div className="d-flex flex-column justify-content-center text-muted">
-                                                    <div className="d-flex align-items-center mb-2 extension-area-header__toggle-wrapper">
+                                                    <div
+                                                        className={classNames(
+                                                            'd-flex align-items-center mb-2',
+                                                            styles.toggleWrapper
+                                                        )}
+                                                    >
                                                         <span>{enabledForMe ? 'Enabled' : 'Disabled'} for me</span>
                                                         <ExtensionToggle
                                                             className="ml-2 mb-1"
@@ -149,7 +155,12 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                                         />
                                                     </div>
                                                     {/* Site admin toggle */}
-                                                    <div className="d-flex align-items-center extension-area-header__toggle-wrapper">
+                                                    <div
+                                                        className={classNames(
+                                                            'd-flex align-items-center',
+                                                            styles.toggleWrapper
+                                                        )}
+                                                    >
                                                         <span>
                                                             {enabledForAllUsers ? 'Enabled' : 'Not enabled'} for all
                                                             users
