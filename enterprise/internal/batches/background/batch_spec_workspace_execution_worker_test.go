@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -27,6 +28,10 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
+	tokenID, _, err := database.AccessTokens(db).CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	s := store.New(db, &observation.TestContext, nil)
 	workStore := dbworkerstore.NewWithMetrics(s.Handle(), batchSpecWorkspaceExecutionWorkerStoreOptions, &observation.TestContext)
@@ -42,7 +47,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
+	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID, AccessTokenID: tokenID}
 	if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +83,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 		DurationMs: intptr(200),
 	}
 
-	_, err := workStore.AddExecutionLogEntry(ctx, int(job.ID), entry, dbworkerstore.ExecutionLogEntryOptions{})
+	_, err = workStore.AddExecutionLogEntry(ctx, int(job.ID), entry, dbworkerstore.ExecutionLogEntryOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}

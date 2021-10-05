@@ -115,7 +115,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Conte
 func resetAndDeleteAccessToken(ctx context.Context, batchesStore *store.Store, id int64) error {
 	tokenID, err := batchesStore.ResetSpecWorkspaceExecutionJobAccessToken(ctx, int64(id))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "everything goes in a wrap")
 	}
 	return database.AccessTokensWith(batchesStore).HardDeleteByID(ctx, tokenID)
 }
@@ -152,7 +152,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	}
 
 	if err := resetAndDeleteAccessToken(ctx, tx, int64(id)); err != nil {
-		return false, err
+		return false, errors.Wrap(err, "wrapping here")
 	}
 
 	return markBatchSpecWorkspaceExecutionJobComplete(ctx, tx, job, changesetSpecIDs, options.WorkerHostname)

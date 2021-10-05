@@ -89,7 +89,7 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs .
 			if err := inserter.Insert(
 				ctx,
 				job.BatchSpecWorkspaceID,
-				job.AccessTokenID,
+				dbutil.NewNullInt64(job.AccessTokenID),
 				job.CreatedAt,
 				job.UpdatedAt,
 			); err != nil {
@@ -330,14 +330,14 @@ func (s *Store) ResetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, j
 	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(resetSpecWorkspaceExecutionJobAccessTokenFmtstr, jobID, jobID)
-	id, ok, err := basestore.ScanFirstInt(s.Query(ctx, q))
+	id, ok, err := basestore.ScanFirstNullInt64(s.Query(ctx, q))
 	if err != nil {
 		return 0, err
 	}
 	if !ok {
 		return 0, ErrNoResults
 	}
-	return int64(id), nil
+	return id, nil
 }
 
 var resetSpecWorkspaceExecutionJobAccessTokenFmtstr = `
