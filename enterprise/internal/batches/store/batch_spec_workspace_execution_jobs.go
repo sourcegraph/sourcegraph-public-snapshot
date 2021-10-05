@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -318,38 +317,6 @@ SET
 	access_token_id = %s
 WHERE
 	id = %s
-`
-
-// ResetSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
-func (s *Store) ResetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID int64) (tokenID int64, err error) {
-	ctx, endObservation := s.operations.resetBatchSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(jobID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	q := sqlf.Sprintf(resetSpecWorkspaceExecutionJobAccessTokenFmtstr, jobID, jobID)
-	id, ok, err := basestore.ScanFirstNullInt64(s.Query(ctx, q))
-	if err != nil {
-		return 0, err
-	}
-	if !ok {
-		return 0, ErrNoResults
-	}
-	return id, nil
-}
-
-var resetSpecWorkspaceExecutionJobAccessTokenFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ResetSpecWorkspaceExecutionJobAccessToken
-WITH old AS (
-	SELECT access_token_id FROM batch_spec_workspace_execution_jobs WHERE id = %s
-)
-UPDATE
-	batch_spec_workspace_execution_jobs
-SET
-	access_token_id = NULL
-WHERE
-	id = %s
-RETURNING (SELECT access_token_id FROM old)
 `
 
 func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s scanner) error {
