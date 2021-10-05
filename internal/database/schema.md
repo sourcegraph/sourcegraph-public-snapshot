@@ -13,8 +13,8 @@
  scopes          | text[]                   |           | not null | 
 Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
-    "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
     "access_tokens_lookup" hash (value_sha256) WHERE deleted_at IS NULL
+    "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
 Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
@@ -71,8 +71,8 @@ Triggers:
  encryption_key_id     | text                     |           | not null | ''::text
 Indexes:
     "batch_changes_site_credentials_pkey" PRIMARY KEY, btree (id)
-    "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
     "batch_changes_site_credentials_credential_idx" btree ((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text])))
+    "batch_changes_site_credentials_unique" UNIQUE, btree (external_service_type, external_service_id)
 
 ```
 
@@ -323,12 +323,12 @@ Referenced by:
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
-    "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
     "changesets_reconciler_state_idx" btree (reconciler_state)
+    "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
 Check constraints:
     "changesets_batch_change_ids_check" CHECK (jsonb_typeof(batch_change_ids) = 'object'::text)
     "changesets_external_id_check" CHECK (external_id <> ''::text)
@@ -644,8 +644,8 @@ Check constraints:
  clone_url           | text    |           | not null | 
  user_id             | integer |           |          | 
 Indexes:
-    "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
+    "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
@@ -698,9 +698,9 @@ Foreign-key constraints:
  namespace_org_id  | integer                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
-    "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
     "external_services_namespace_org_id_idx" btree (namespace_org_id)
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
+    "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
 Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
     "external_services_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
@@ -725,9 +725,9 @@ Referenced by:
  updated_at        | timestamp with time zone |           | not null | now()
  deleted_at        | timestamp with time zone |           |          | 
 Indexes:
+    "feature_flag_overrides_org_id" btree (namespace_org_id) WHERE namespace_org_id IS NOT NULL
     "feature_flag_overrides_unique_org_flag" UNIQUE CONSTRAINT, btree (namespace_org_id, flag_name)
     "feature_flag_overrides_unique_user_flag" UNIQUE CONSTRAINT, btree (namespace_user_id, flag_name)
-    "feature_flag_overrides_org_id" btree (namespace_org_id) WHERE namespace_org_id IS NOT NULL
     "feature_flag_overrides_user_id" btree (namespace_user_id) WHERE namespace_user_id IS NOT NULL
 Check constraints:
     "feature_flag_overrides_has_org_or_user_id" CHECK (namespace_org_id IS NOT NULL OR namespace_user_id IS NOT NULL)
@@ -1251,11 +1251,11 @@ Stores the retention policy of code intellience data for a repository.
  last_retention_scan_at | timestamp with time zone |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
-    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_associated_index_id" btree (associated_index_id)
     "lsif_uploads_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
+    "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at" btree (uploaded_at)
 Check constraints:
@@ -1344,9 +1344,9 @@ Foreign-key constraints:
  deleted_at        | timestamp with time zone |           |          | 
 Indexes:
     "org_invitations_pkey" PRIMARY KEY, btree (id)
-    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
     "org_invitations_org_id" btree (org_id) WHERE deleted_at IS NULL
     "org_invitations_recipient_user_id" btree (recipient_user_id) WHERE deleted_at IS NULL
+    "org_invitations_singleflight" UNIQUE, btree (org_id, recipient_user_id) WHERE responded_at IS NULL AND revoked_at IS NULL AND deleted_at IS NULL
 Check constraints:
     "check_atomic_response" CHECK ((responded_at IS NULL) = (response_type IS NULL))
     "check_single_use" CHECK (responded_at IS NULL AND response_type IS NULL OR revoked_at IS NULL)
@@ -1588,9 +1588,9 @@ Referenced by:
  source_map            | text                     |           |          | 
 Indexes:
     "registry_extension_releases_pkey" PRIMARY KEY, btree (id)
-    "registry_extension_releases_version" UNIQUE, btree (registry_extension_id, release_version) WHERE release_version IS NOT NULL
     "registry_extension_releases_registry_extension_id" btree (registry_extension_id, release_tag, created_at DESC) WHERE deleted_at IS NULL
     "registry_extension_releases_registry_extension_id_created_at" btree (registry_extension_id, created_at) WHERE deleted_at IS NULL
+    "registry_extension_releases_version" UNIQUE, btree (registry_extension_id, release_version) WHERE release_version IS NOT NULL
 Foreign-key constraints:
     "registry_extension_releases_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "registry_extension_releases_registry_extension_id_fkey" FOREIGN KEY (registry_extension_id) REFERENCES registry_extensions(id) ON UPDATE CASCADE ON DELETE CASCADE
@@ -1648,16 +1648,16 @@ Referenced by:
  blocked               | jsonb                    |           |          | 
 Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
-    "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
-    "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
+    "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_fork" btree (fork)
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))
     "repo_metadata_gin_idx" gin (metadata)
     "repo_name_idx" btree (lower(name::text) COLLATE "C")
     "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
+    "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
     "repo_non_deleted_id_name_idx" btree (id, name) WHERE deleted_at IS NULL
     "repo_private" btree (private)
     "repo_stars_idx" btree (stars DESC NULLS LAST)
@@ -1920,8 +1920,8 @@ Stores per-user temporary settings used in the UI, for example, which modals hav
  encryption_key_id     | text                     |           | not null | ''::text
 Indexes:
     "user_credentials_pkey" PRIMARY KEY, btree (id)
-    "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
     "user_credentials_credential_idx" btree ((encryption_key_id = ANY (ARRAY[''::text, 'previously-migrated'::text])))
+    "user_credentials_domain_user_id_external_service_type_exter_key" UNIQUE CONSTRAINT, btree (domain, user_id, external_service_type, external_service_id)
 Foreign-key constraints:
     "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
@@ -1940,8 +1940,8 @@ Foreign-key constraints:
  is_primary                | boolean                  |           | not null | false
 Indexes:
     "user_emails_no_duplicates_per_user" UNIQUE CONSTRAINT, btree (user_id, email)
-    "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
     "user_emails_unique_verified_email" EXCLUDE USING btree (email WITH =) WHERE (verified_at IS NOT NULL)
+    "user_emails_user_id_is_primary_idx" UNIQUE, btree (user_id, is_primary) WHERE is_primary = true
 Foreign-key constraints:
     "user_emails_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
 
@@ -2047,8 +2047,8 @@ Foreign-key constraints:
 Indexes:
     "users_pkey" PRIMARY KEY, btree (id)
     "users_billing_customer_id" UNIQUE, btree (billing_customer_id) WHERE deleted_at IS NULL
-    "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
     "users_created_at_idx" btree (created_at)
+    "users_username" UNIQUE, btree (username) WHERE deleted_at IS NULL
 Check constraints:
     "users_display_name_max_length" CHECK (char_length(display_name) <= 255)
     "users_username_max_length" CHECK (char_length(username::text) <= 255)
