@@ -57,4 +57,22 @@ CREATE INDEX IF NOT EXISTS dashboard_grants_org_id_idx
 CREATE INDEX IF NOT EXISTS dashboard_grants_global_idx
     ON dashboard_grants (global) WHERE global IS TRUE;
 
+CREATE TABLE dashboard_insight_view
+(
+    id              SERIAL NOT NULL
+        CONSTRAINT dashboard_insight_view_pk
+            PRIMARY KEY,
+    dashboard_id    INT    NOT NULL
+        CONSTRAINT dashboard_insight_view_dashboard_id_fk
+            REFERENCES dashboard (id)
+            ON DELETE CASCADE,
+    insight_view_id INT    NOT NULL
+        CONSTRAINT dashboard_insight_view_insight_view_id_fk
+            REFERENCES insight_view (id)
+            ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS dashboard_insight_view_insight_view_id_fk_idx ON dashboard_insight_view (insight_view_id);
+CREATE INDEX IF NOT EXISTS dashboard_insight_view_dashboard_id_fk_idx ON dashboard_insight_view (dashboard_id);
+
 COMMIT;

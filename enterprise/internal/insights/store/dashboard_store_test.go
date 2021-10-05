@@ -37,6 +37,20 @@ func TestGetDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// assign some global grants just so the test can immediately fetch the created dashboard
+	_, err = timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES (1, 'my view', 'my description', 'unique1234')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// assign some global grants just so the test can immediately fetch the created dashboard
+	_, err = timescale.Exec(`INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
+									VALUES (1, 1)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	store := NewDashboardStore(timescale)
 	store.Now = func() time.Time {
 		return now

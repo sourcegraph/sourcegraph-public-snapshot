@@ -75,6 +75,7 @@ type DirtyQueryAggregate struct {
 }
 
 type Dashboard struct {
-	ID    int
-	Title string
+	ID         int
+	Title      string
+	InsightIDs []string // shallow references
 }

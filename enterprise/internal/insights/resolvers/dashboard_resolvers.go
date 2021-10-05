@@ -2,15 +2,15 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 	"sync"
+
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/inconshreveable/log15"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
@@ -24,6 +24,8 @@ import (
 
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
 var _ graphqlbackend.InsightDashboardResolver = &insightDashboardResolver{}
+var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
+var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
@@ -59,10 +61,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 		}
 		d.dashboards = dashboards
 		for _, dashboard := range dashboards {
-			log15.Info("dashboard iterate", "dbid", dashboard.ID, "dnext", d.next)
 			if int64(dashboard.ID) > d.next {
-				log15.Info("dnext replace", "dbid", dashboard.ID, "dnext", d.next)
-
 				d.next = int64(dashboard.ID)
 			}
 		}
@@ -108,51 +107,29 @@ func (i *insightDashboardResolver) ID() graphql.ID {
 }
 
 func (i *insightDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
+	return &stubDashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs}
+}
+
+type stubDashboardInsightViewConnectionResolver struct {
+	ids []string
+}
+
+func (d *stubDashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
+	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
+	for _, id := range d.ids {
+		resolvers = append(resolvers, &stubInsightViewResolver{id: id})
+	}
+	return resolvers, nil
+}
+
+func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	panic("implement me")
 }
 
-func newRealDashboardID(arg int64) dashboardID {
-	return newDashboardID("real", arg)
-}
-func newDashboardID(idType string, arg int64) dashboardID {
-	return dashboardID{
-		IdType: idType,
-		Arg:    arg,
-	}
+type stubInsightViewResolver struct {
+	id string
 }
 
-const dashboardKind = "dashboard"
-
-type dashboardID struct {
-	IdType string
-	Arg    int64
-}
-
-func (id dashboardID) isVirtualized() bool {
-	return id.isUser() || id.isOrg()
-}
-
-func (id dashboardID) isUser() bool {
-	return strings.EqualFold(id.IdType, "user")
-}
-
-func (id dashboardID) isOrg() bool {
-	return strings.EqualFold(id.IdType, "organization")
-}
-
-func (id dashboardID) isReal() bool {
-	return strings.EqualFold(id.IdType, "custom")
-}
-
-func unmarshal(id graphql.ID) (dashboardID, error) {
-	var dbid dashboardID
-	err := relay.UnmarshalSpec(id, &dbid)
-	if err != nil {
-		return dashboardID{}, errors.Wrap(err, "unmarshalDashboardID")
-	}
-	return dbid, nil
-}
-
-func (id dashboardID) marshal() graphql.ID {
-	return relay.MarshalID(dashboardKind, id)
+func (s *stubInsightViewResolver) ID() graphql.ID {
+	return relay.MarshalID("insight_view", s.id)
 }
