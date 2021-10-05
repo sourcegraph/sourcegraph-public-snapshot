@@ -1,8 +1,8 @@
+import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -18,7 +18,9 @@ import {
     parseSearchURLQuery,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { VersionContext } from '../../schema/site.schema'
+import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { submitSearch } from '../helpers'
 import { useNavbarQueryState } from '../navbarSearchQueryState'
 
@@ -64,6 +66,16 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         [props, queryState]
     )
 
+    useEffect(() => {
+        if (isSearchPage && isFuzzyFinderVisible) {
+            setIsFuzzyFinderVisible(false)
+        }
+    }, [isSearchPage, isFuzzyFinderVisible])
+
+    const { fuzzyFinder, fuzzyFinderCaseInsensitiveFileCountThreshold } = getExperimentalFeatures(
+        props.settingsCascade.final
+    )
+
     return (
         <Form
             className="search--navbar-item d-flex align-items-flex-start flex-grow-1 flex-shrink-past-contents"
@@ -81,19 +93,21 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}
             />
-            {isFuzzyFinderVisible &&
-                props.isRepositoryRelatedPage &&
-                !isErrorLike(props.settingsCascade.final) &&
-                !isErrorLike(props.settingsCascade.final?.experimentalFeatures) &&
-                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder && (
-                    <FuzzyFinder
-                        caseInsensitiveFileCountThreshold={
-                            props.settingsCascade.final?.experimentalFeatures
-                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
-                        }
-                        setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                    />
-                )}
+            <Shortcut
+                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
+                onMatch={() => {
+                    setIsFuzzyFinderVisible(true)
+                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                    input?.focus()
+                    input?.select()
+                }}
+            />
+            {isFuzzyFinderVisible && props.isRepositoryRelatedPage && fuzzyFinder && (
+                <FuzzyFinder
+                    caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
+                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                />
+            )}
         </Form>
     )
 }
