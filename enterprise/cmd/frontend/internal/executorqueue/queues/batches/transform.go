@@ -41,7 +41,7 @@ func makeURL(base, username, password string) (string, error) {
 type batchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
-	SetSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
+	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
 
 	DB() dbutil.DB
 }
@@ -76,7 +76,7 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 	if err != nil {
 		return apiclient.Job{}, err
 	}
-	if err := s.SetSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
+	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
 		return apiclient.Job{}, err
 	}
 
