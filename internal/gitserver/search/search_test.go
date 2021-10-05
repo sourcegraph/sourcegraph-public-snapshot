@@ -357,67 +357,28 @@ index 0000000000..7e54670557
 
 func TestQueryCNF(t *testing.T) {
 	t.Run("fuzz error 1", func(t *testing.T) {
-		rawQuery := &protocol.Operator{
-			Kind: protocol.And,
-			Operands: []protocol.Node{
-				&protocol.Operator{
-					Kind: protocol.Not,
-					Operands: []protocol.Node{
-						&protocol.Operator{
-							Kind: protocol.Or,
-							Operands: []protocol.Node{
-								&protocol.Operator{
-									Kind: protocol.Or,
-									Operands: []protocol.Node{
-										&protocol.AuthorMatches{Expr: "a"},
-										&protocol.AuthorMatches{Expr: "b"},
-									},
-								},
-								&protocol.Operator{
-									Kind: protocol.Or,
-									Operands: []protocol.Node{
-										&protocol.AuthorMatches{Expr: "h"},
-										&protocol.AuthorMatches{Expr: "i"},
-									},
-								},
-							},
-						},
-					},
-				},
-				&protocol.Operator{
-					Kind: protocol.And,
-					Operands: []protocol.Node{
-						&protocol.AuthorMatches{Expr: "a"},
-					},
-				},
-			},
-		}
-		rawMatchTree, err := ToMatchTree(rawQuery)
-		require.NoError(t, err)
-
-		reducedMatchTree, err := ToMatchTree(reduceQuery(rawQuery))
-		require.NoError(t, err)
-
-		lc := &LazyCommit{
-			RawCommit: &RawCommit{
-				AuthorName: []byte("dedjkibajj"),
-			},
-		}
-		rawMatches, _, err := rawMatchTree.Match(lc)
-		require.NoError(t, err)
-		require.Equal(t, false, rawMatches)
-
-		reducedMatches, _, err := reducedMatchTree.Match(lc)
-		require.NoError(t, err)
-		require.Equal(t, false, reducedMatches)
+		a := protocol.NewAnd(
+			&protocol.AuthorMatches{Expr: "b"},
+			&protocol.AuthorMatches{Expr: "g"},
+			&protocol.AuthorMatches{Expr: "k"},
+		)
+		println("A: ", a.String())
+		o := protocol.NewOr(
+			&protocol.AuthorMatches{Expr: "j"},
+			a,
+			&protocol.AuthorMatches{Expr: "k"},
+		)
+		println("O: ", o.String())
+		n1 := protocol.NewNot(o)
+		println("N1: ", n1.String())
+		n2 := protocol.NewNot(n1)
+		println("N2: ", n2.String())
 	})
 
 }
 
 func TestFuzzQueryCNF(t *testing.T) {
-	queryMatches := func(q queryGenerator, a authorNameGenerator) bool {
-		mt, err := ToMatchTree(q.RawQuery)
-		require.NoError(t, err)
+	matchTreeMatches := func(mt MatchTree, a authorNameGenerator) bool {
 		lc := &LazyCommit{
 			RawCommit: &RawCommit{
 				AuthorName: []byte(a),
@@ -427,19 +388,20 @@ func TestFuzzQueryCNF(t *testing.T) {
 		require.NoError(t, err)
 		return matches
 	}
+
+	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		mt, err := ToMatchTree(q.RawQuery)
+		require.NoError(t, err)
+		return matchTreeMatches(mt, a)
+	}
+
 	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
 		mt, err := ToMatchTree(q.ReducedQuery())
 		require.NoError(t, err)
-		lc := &LazyCommit{
-			RawCommit: &RawCommit{
-				AuthorName: []byte(a),
-			},
-		}
-		matches, _, err := mt.Match(lc)
-		require.NoError(t, err)
-		return matches
+		return matchTreeMatches(mt, a)
 	}
-	err := quick.CheckEqual(queryMatches, reducedQueryMatches, nil)
+
+	err := quick.CheckEqual(rawQueryMatches, reducedQueryMatches, nil)
 	var e *quick.CheckEqualError
 	if err != nil && errors.As(err, &e) {
 		t.Fatalf("Different outputs for same inputs\n  RawQuery: %s\n  ReducedQuery: %s\n  AuthorName: %s\n",
@@ -457,6 +419,7 @@ type queryGenerator struct {
 }
 
 func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
+	// Set max depth because these query trees can get ridiculously large
 	if size > 4 {
 		size = 4
 	}
@@ -492,9 +455,13 @@ func reduceQuery(q protocol.Node) protocol.Node {
 const chars = `abcdefghijkl`
 
 func generateAtom(rand *rand.Rand) protocol.Node {
-	return &protocol.AuthorMatches{
+	a := &protocol.AuthorMatches{
 		Expr: string(chars[rand.Int()%len(chars)]),
 	}
+	if rand.Int()%2 == 0 {
+		return a
+	}
+	return &protocol.Operator{Kind: protocol.Not, Operands: []protocol.Node{a}}
 }
 
 func generateQuery(rand *rand.Rand, depth int) protocol.Node {
@@ -502,22 +469,20 @@ func generateQuery(rand *rand.Rand, depth int) protocol.Node {
 		return generateAtom(rand)
 	}
 
-	switch rand.Int() % 4 {
+	switch rand.Int() % 3 {
 	case 0:
-		return &protocol.Operator{Kind: protocol.Not, Operands: []protocol.Node{generateQuery(rand, depth-1)}}
-	case 1:
 		var operands []protocol.Node
 		for i := 0; i < rand.Int()%4; i++ {
 			operands = append(operands, generateQuery(rand, depth-1))
 		}
 		return &protocol.Operator{Kind: protocol.And, Operands: operands}
-	case 2:
+	case 1:
 		var operands []protocol.Node
 		for i := 0; i < rand.Int()%4; i++ {
 			operands = append(operands, generateQuery(rand, depth-1))
 		}
 		return &protocol.Operator{Kind: protocol.Or, Operands: operands}
-	case 3:
+	case 2:
 		return generateAtom(rand)
 	default:
 		panic("unreachable")
