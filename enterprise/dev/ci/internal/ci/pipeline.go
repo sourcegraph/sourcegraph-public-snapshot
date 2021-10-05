@@ -151,7 +151,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
-	case ExecutorPatchNotest:
+	case ExecutorPatchNoTest:
 		ops = operations.NewSet([]operations.Operation{
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
