@@ -2,23 +2,12 @@ import React, { useEffect, useState } from 'react'
 
 import { Checkbox } from '@sourcegraph/wildcard'
 
+import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { HAS_DISMISSED_TOAST_STORAGE_KEY, HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY } from './constants'
 import { SurveyRatingRadio } from './SurveyRatingRadio'
 import { Toast } from './Toast'
 import { getDaysActiveCount } from './util'
-
-/**
- * Show a toast notification if:
- * 1. User has not recently dismissed the notification
- * 2. User has not permanently dismissed the notification
- * 3. User has been active for 3 days OR has been 30 days since they were last shown the notification
- */
-const shouldShowToast = (): boolean =>
-    localStorage.getItem(HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY) !== 'true' &&
-    localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY) !== 'true' &&
-    getDaysActiveCount() % 30 === 3
 
 interface SurveyToastProps {
     /**
@@ -28,8 +17,13 @@ interface SurveyToastProps {
 }
 
 export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
+    const [toastDismissal, setToastDismissal] = useTemporarySetting('survey.toastDismissal')
+    const [shouldPermanentlyDismissToast, setShouldPermanentlyDismissToast] = useState(false)
     const daysActive = getDaysActiveCount()
-    const [visible, setVisible] = useState(forceVisible || shouldShowToast())
+
+    console.log('toastDismissal', toastDismissal)
+
+    const visible = forceVisible || (!toastDismissal && daysActive % 30 === 3)
 
     useEffect(() => {
         if (visible) {
@@ -38,16 +32,12 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
     }, [visible])
 
     useEffect(() => {
-        if (daysActive % 30 === 0) {
-            // Reset toast dismissal 3 days before it will be shown
-            localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, 'false')
+        if (toastDismissal && toastDismissal !== 'permanent' && daysActive % 30 === 0) {
+            setToastDismissal(() => undefined)
         }
-    }, [daysActive])
+    }, [daysActive, setToastDismissal, toastDismissal])
 
-    const handleDismiss = (): void => {
-        localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, 'true')
-        setVisible(false)
-    }
+    const handleDismiss = (): void => setToastDismissal(shouldPermanentlyDismissToast ? 'permanent' : 'temporary')
 
     if (!visible) {
         return null
@@ -70,9 +60,8 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
                 <Checkbox
                     id="survey-toast-refuse"
                     label="Don't show this again"
-                    onChange={event =>
-                        localStorage.setItem(HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY, String(event.target.checked))
-                    }
+                    checked={shouldPermanentlyDismissToast}
+                    onChange={event => setShouldPermanentlyDismissToast(event.target.checked)}
                 />
             }
             onDismiss={handleDismiss}
