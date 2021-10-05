@@ -46,40 +46,6 @@ func maybeTaggedImage(rootImage, tag string) string {
 // - final images (releases, `insiders`) are published to `SourcegraphDockerPublishRegistry`
 // - app must be a legal Docker image name (e.g. no `/`)
 //
-// The `addDockerImages` pipeline step determines what images are built and published.
-var SourcegraphDockerImages = []string{
-	// Slow images first for faster CI
-	"server",
-	"frontend",
-	"grafana",
-	"prometheus",
-
-	"github-proxy",
-	"gitserver",
-	"query-runner",
-	"repo-updater",
-	"worker",
-	"searcher",
-	"symbols",
-	"precise-code-intel-worker",
-
-	// Images under docker-images/
-	"alpine-3.12",
-	"cadvisor",
-	"indexed-searcher",
-	"redis-cache",
-	"redis_exporter",
-	"redis-store",
-	"search-indexer",
-	"syntax-highlighter",
-	"jaeger-agent",
-	"jaeger-all-in-one",
-	"codeintel-db",
-	"codeinsights-db",
-	"minio",
-	"postgres-12.6-alpine",
-	"postgres_exporter",
-}
 
 // Used to cross check images in the deploy-sourcegraph repo. If you are adding a new image to https://github.com/sourcegraph/deploy-sourcegraph
 // it must also be added to this list.
@@ -111,6 +77,9 @@ var DeploySourcegraphDockerImages = []string{
 	"syntax-highlighter",
 	"worker",
 }
+
+// The `addDockerImages` pipeline step determines what images are built and published.
+var SourcegraphDockerImages = append(DeploySourcegraphDockerImages, []string{"server"}...)
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
 //
