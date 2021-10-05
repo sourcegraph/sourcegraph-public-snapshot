@@ -1,4 +1,6 @@
-package migration
+// Package postgresdsn exposes functionality for building a Postgres DSN from the environment for a
+// given DB, deriving information from the current user and .
+package postgresdsn
 
 import (
 	"fmt"
@@ -6,8 +8,7 @@ import (
 	"strings"
 )
 
-// Copied from internal/database/dbutil/dbutil.go
-func postgresDSN(prefix, currentUser string, getenv func(string) string) string {
+func New(prefix, currentUser string, getenv func(string) string) string {
 	if prefix != "" {
 		prefix = fmt.Sprintf("%s_", strings.ToUpper(prefix))
 	}

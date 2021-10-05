@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -443,9 +444,9 @@ func serviceConnections() conftypes.ServiceConnections {
 		}
 
 		serviceConnectionsVal = conftypes.ServiceConnections{
-			PostgresDSN:              dbutil.PostgresDSN("", username, os.Getenv),
-			CodeIntelPostgresDSN:     dbutil.PostgresDSN("codeintel", username, os.Getenv),
-			CodeInsightsTimescaleDSN: dbutil.PostgresDSN("codeinsights", username, os.Getenv),
+			PostgresDSN:              postgresdsn.New("", username, os.Getenv),
+			CodeIntelPostgresDSN:     postgresdsn.New("codeintel", username, os.Getenv),
+			CodeInsightsTimescaleDSN: postgresdsn.New("codeinsights", username, os.Getenv),
 		}
 
 		// We set this envvar in development to disable the following check
