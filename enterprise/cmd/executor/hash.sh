@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
+OUTPUT=$(mktemp -d -t sghashbuild_XXXXXXX)
 cleanup() {
   rm -rf "$OUTPUT" 2>/dev/null
 }
