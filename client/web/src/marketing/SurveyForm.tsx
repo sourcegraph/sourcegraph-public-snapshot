@@ -10,8 +10,8 @@ import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SurveyCTA } from './SurveyCta'
 import styles from './SurveyPage.module.scss'
+import { SurveyRatingRadio } from './SurveyRatingRadio'
 
 interface SurveyFormProps {
     authenticatedUser: AuthenticatedUser | null
@@ -92,7 +92,7 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
             <label id="survey-form-scores" className={styles.label}>
                 How likely is it that you would recommend Sourcegraph to a friend?
             </label>
-            <SurveyCTA
+            <SurveyRatingRadio
                 ariaLabelledby="survey-form-scores"
                 className={styles.scores}
                 onChange={handleScoreChange}

@@ -7,7 +7,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import toastStyles from './Toast.module.scss'
 
-interface SurveyCTAProps {
+interface SurveyRatingRadio {
     ariaLabelledby?: string
     className?: string
     score?: number
@@ -15,7 +15,7 @@ interface SurveyCTAProps {
     openSurveyInNewTab?: boolean
 }
 
-export const SurveyCTA: React.FunctionComponent<SurveyCTAProps> = props => {
+export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = props => {
     const history = useHistory()
     const [focusedIndex, setFocusedIndex] = useState<number | null>(null)
 

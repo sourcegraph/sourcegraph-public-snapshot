@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { HAS_DISMISSED_TOAST_STORAGE_KEY } from './constants'
-import { SurveyCTA } from './SurveyCta'
+import { SurveyRatingRadio } from './SurveyRatingRadio'
 import { Toast } from './Toast'
 import { getDaysActiveCount } from './util'
 
@@ -56,7 +56,13 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
             subtitle={
                 <span id="survey-toast-scores">How likely is it that you would recommend Sourcegraph to a friend?</span>
             }
-            cta={<SurveyCTA onChange={handleDismiss} openSurveyInNewTab={true} ariaLabelledby="survey-toast-scores" />}
+            cta={
+                <SurveyRatingRadio
+                    onChange={handleDismiss}
+                    openSurveyInNewTab={true}
+                    ariaLabelledby="survey-toast-scores"
+                />
+            }
             onDismiss={handleDismiss}
         />
     )
