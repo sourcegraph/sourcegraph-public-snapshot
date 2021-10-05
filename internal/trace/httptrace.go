@@ -64,7 +64,7 @@ func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
 	}
-	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 1*time.Second, "min duration before slow http requests are logged")
+	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
 	minCode = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 }
 
