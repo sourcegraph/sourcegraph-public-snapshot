@@ -123,7 +123,7 @@ func (d *stubDashboardInsightViewConnectionResolver) Nodes(ctx context.Context) 
 }
 
 func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	panic("implement me")
+	return graphqlutil.HasNextPage(false), nil
 }
 
 type stubInsightViewResolver struct {

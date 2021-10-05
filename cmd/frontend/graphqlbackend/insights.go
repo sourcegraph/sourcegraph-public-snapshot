@@ -73,10 +73,6 @@ type InsightDashboardsArgs struct {
 	After *string
 }
 
-// type InsightsDashboardResolver interface {
-// 	InsightDashboards(ctx context.Context, args InsightDashboardsArgs)
-// }
-
 type InsightsDashboardConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightDashboardResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)

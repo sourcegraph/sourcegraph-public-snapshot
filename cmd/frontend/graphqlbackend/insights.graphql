@@ -181,33 +181,6 @@ type InsightSeriesStatus {
     backfillQueuedAt: DateTime
 }
 
-#extend type Mutation {
-#    """
-#    Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
-#    """
-#    createInsightsDashboard(input: InsightDashboardInput!): InsightDashboard!
-#
-#    """
-#    Edit an existing dashboard.
-#    """
-#    updateInsightsDashboard(id: ID!, input: InsightDashboardInput!): InsightDashboard!
-#
-#    """
-#    Delete a dashboard. Any views that would become dangling will be deleted.
-#    """
-#    deleteInsightsDashboard(input: ID!): EmptyResponse!
-#
-#    """
-#    Associate an existing insight view with this dashboard.
-#    """
-#    attachInsightViewToDashboard(id: ID!, viewID: ID!): InsightDashboard!
-#
-#    """
-#    Remove an insight view from this dashboard. If the view would become dangling it will be deleted.
-#    """
-#    detachInsightViewFromDashboard(id: ID!, viewID: ID!): InsightDashboard!
-#}
-
 extend type Query {
     """
     Return dashboards visible to the authenticated user.
