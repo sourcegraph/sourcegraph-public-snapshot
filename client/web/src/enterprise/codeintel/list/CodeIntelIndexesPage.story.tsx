@@ -119,7 +119,8 @@ const Template: Story<CodeIntelIndexesPageProps> = args => (
 
 const defaults: Partial<CodeIntelIndexesPageProps> = {
     now,
-    fetchLsifIndexes: () => of(makeResponse([])),
+    queryLsifIndexListByRepository: () => of(makeResponse([])),
+    queryLsifIndexList: () => of(makeResponse([])),
 }
 
 export const EmptyGlobalPage = Template.bind({})
@@ -130,7 +131,8 @@ EmptyGlobalPage.args = {
 export const GlobalPage = Template.bind({})
 GlobalPage.args = {
     ...defaults,
-    fetchLsifIndexes: () => of(makeResponse(testIndexes)),
+    queryLsifIndexListByRepository: () => of(makeResponse(testIndexes)),
+    queryLsifIndexList: () => of(makeResponse(testIndexes)),
 }
 
 export const EmptyRepositoryPage = Template.bind({})
@@ -145,5 +147,6 @@ RepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
     enqueueIndexJob: () => of([]),
-    fetchLsifIndexes: () => of(makeResponse(testIndexes)),
+    queryLsifIndexListByRepository: () => of(makeResponse(testIndexes)),
+    queryLsifIndexList: () => of(makeResponse(testIndexes)),
 }
