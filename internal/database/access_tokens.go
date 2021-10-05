@@ -221,7 +221,11 @@ type AccessTokensListOptions struct {
 }
 
 func (o AccessTokensListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL"), sqlf.Sprintf("internal IS FALSE")}
+	conds := []*sqlf.Query{
+		sqlf.Sprintf("deleted_at IS NULL"),
+		// We never want internal access tokens to show up in the UI.
+		sqlf.Sprintf("internal IS FALSE"),
+	}
 	if o.SubjectUserID != 0 {
 		conds = append(conds, sqlf.Sprintf("subject_user_id=%d", o.SubjectUserID))
 	}
