@@ -1,9 +1,8 @@
-import { Observable, of, combineLatest, defer } from 'rxjs'
-import { map, publishReplay, refCount } from 'rxjs/operators'
+import { Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
@@ -39,28 +38,6 @@ import {
     FetchSearchContextBySpecResult,
     FetchSearchContextBySpecVariables,
 } from '../graphql-operations'
-
-/**
- * Repogroups to include in search suggestions.
- *
- * defer() is used here to avoid calling queryGraphQL in tests,
- * which would fail when accessing window.context.xhrHeaders.
- */
-const repogroupSuggestions = defer(() =>
-    queryGraphQL(gql`
-        query RepoGroups {
-            repoGroups {
-                __typename
-                name
-            }
-        }
-    `)
-).pipe(
-    map(dataOrThrowErrors),
-    map(({ repoGroups }) => repoGroups),
-    publishReplay(1),
-    refCount()
-)
 
 const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {

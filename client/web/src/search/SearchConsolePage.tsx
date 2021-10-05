@@ -6,6 +6,7 @@ import { debounceTime } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { MonacoEditor } from '../components/MonacoEditor'
@@ -16,7 +17,7 @@ import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
 import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
-import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps, fetchStreamSuggestions } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,

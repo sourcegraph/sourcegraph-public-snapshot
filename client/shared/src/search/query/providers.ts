@@ -43,7 +43,7 @@ function serializeFilterTokens(filters: Filter[]): string {
 
 const MAX_SUGGESTION_COUNT = 50
 
-function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string | null {
+function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
     const hasAndOrOperators = tokens.some(
         token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
     )
@@ -61,7 +61,7 @@ function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string | nul
         return `${repoQueryPart} ${fileQueryPart} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
     }
 
-    return null
+    return ''
 }
 
 /**
@@ -121,12 +121,7 @@ export function getProviders(
                     return null
                 }
 
-                const suggestionQuery = getSuggestionQuery(scanned.term, tokenAtColumn)
-                if (!suggestionQuery) {
-                    return null
-                }
-
-                return of(suggestionQuery)
+                return of(getSuggestionQuery(scanned.term, tokenAtColumn))
                     .pipe(
                         // We use a delay here to implement a custom debounce. In the next step we check if the current
                         // completion request was cancelled in the meantime (`token.isCancellationRequested`).

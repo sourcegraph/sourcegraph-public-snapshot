@@ -7,12 +7,7 @@ import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
-import {
-    AggregateStreamingSearchResults,
-    SearchMatch,
-    StreamSearchOptions,
-    firstMatchStreamingSearch,
-} from '@sourcegraph/shared/src/search/stream'
+import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { replaceRange } from '@sourcegraph/shared/src/util/strings'
@@ -32,7 +27,6 @@ import {
     deleteSearchContext,
     getUserSearchContextNamespaces,
 } from './backend'
-import { LATEST_VERSION } from './results/StreamingSearchResults'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -292,14 +286,3 @@ export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
         isSearchContextAvailable(spec).pipe(map(isAvailable => (isAvailable ? spec : defaultSpec))),
     ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
 )
-
-export function fetchStreamSuggestions(query: string): Observable<SearchMatch[]> {
-    return firstMatchStreamingSearch({
-        query,
-        version: LATEST_VERSION,
-        patternType: SearchPatternType.literal,
-        caseSensitive: false,
-        versionContext: undefined,
-        trace: undefined,
-    }).pipe(map(suggestions => suggestions.results))
-}

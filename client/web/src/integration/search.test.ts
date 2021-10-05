@@ -2,12 +2,10 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
-
-import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -53,18 +51,6 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
-const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
-    ...commonWebGraphQlResults,
-    SearchSuggestions: (): SearchSuggestionsResult => ({
-        search: {
-            suggestions: [],
-        },
-    }),
-    RepoGroups: (): RepoGroupsResult => ({
-        repoGroups: [],
-    }),
-}
-
 describe('Search', () => {
     let driver: Driver
     before(async () => {
@@ -92,9 +78,6 @@ describe('Search', () => {
 
     describe('Search filters', () => {
         test('Search filters are shown on search result pages and clicking them triggers a new search', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
@@ -120,14 +103,6 @@ describe('Search', () => {
 
     describe('Filter completion', () => {
         test('Completing a negated filter should insert the filter with - prefix', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-                SearchSuggestions: () => ({
-                    search: {
-                        suggestions: [],
-                    },
-                }),
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -149,38 +124,30 @@ describe('Search', () => {
 
     describe('Suggestions', () => {
         test('Typing in the search field shows relevant suggestions', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-                SearchSuggestions: () => ({
-                    search: {
-                        suggestions: [
-                            { __typename: 'Repository', name: 'github.com/auth0/go-jwt-middleware' },
-                            {
-                                __typename: 'Symbol',
-                                name: 'OnError',
-                                containerName: 'jwtmiddleware',
-                                url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
-                                kind: SymbolKind.STRUCT,
-                                location: {
-                                    resource: {
-                                        path: 'jwtmiddleware.go',
-                                        repository: { name: 'github.com/auth0/go-jwt-middleware' },
-                                    },
+            testContext.overrideSearchStreamEvents([
+                {
+                    type: 'matches',
+                    data: [
+                        { type: 'repo', repository: 'github.com/auth0/go-jwt-middleware' },
+                        {
+                            type: 'symbol',
+                            symbols: [
+                                {
+                                    name: 'OnError',
+                                    containerName: 'jwtmiddleware',
+                                    url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
+                                    kind: SymbolKind.FUNCTION,
                                 },
-                            },
-                            {
-                                __typename: 'File',
-                                path: 'jwtmiddleware.go',
-                                name: 'jwtmiddleware.go',
-                                isDirectory: false,
-                                url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go',
-                                repository: { name: 'github.com/auth0/go-jwt-middleware' },
-                            },
-                        ],
-                    },
-                }),
-            })
-            testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
+                            ],
+                            path: 'jwtmiddleware.go',
+                            repository: 'github.com/auth0/go-jwt-middleware',
+                        },
+                        { type: 'path', path: 'jwtmiddleware.go', repository: 'github.com/auth0/go-jwt-middleware' },
+                    ],
+                },
+
+                { type: 'done', data: {} },
+            ])
 
             // Repo autocomplete from homepage
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -229,7 +196,7 @@ describe('Search', () => {
     describe('Search field value', () => {
         test('Is set from the URL query parameter when loading a search-related page', async () => {
             testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
+                ...commonWebGraphQlResults,
                 RegistryExtensions: () => ({
                     extensionRegistry: {
                         __typename: 'ExtensionRegistry',
@@ -256,9 +223,6 @@ describe('Search', () => {
 
     describe('Case sensitivity toggle', () => {
         test('Clicking toggle turns on case sensitivity', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -271,9 +235,6 @@ describe('Search', () => {
         })
 
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
@@ -286,9 +247,6 @@ describe('Search', () => {
 
     describe('Structural search toggle', () => {
         test('Clicking toggle turns on structural search', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
@@ -301,9 +259,6 @@ describe('Search', () => {
         })
 
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
@@ -315,9 +270,6 @@ describe('Search', () => {
         })
 
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
@@ -330,9 +282,6 @@ describe('Search', () => {
 
     describe('Search button', () => {
         test('Clicking search button executes search', async () => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
@@ -376,7 +325,6 @@ describe('Search', () => {
                 { type: 'done', data: {} },
             ]
 
-            testContext.overrideGraphQL({ ...commonSearchGraphQLResults })
             testContext.overrideSearchStreamEvents(searchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
@@ -403,7 +351,6 @@ describe('Search', () => {
                 },
             ]
 
-            testContext.overrideGraphQL({ ...commonSearchGraphQLResults })
             testContext.overrideSearchStreamEvents(searchStreamEvents)
 
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
@@ -426,7 +373,7 @@ describe('Search', () => {
 
         test('diff search syntax highlighting', async () => {
             testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
+                ...commonWebGraphQlResults,
                 ...diffHighlightResult,
             })
             testContext.overrideSearchStreamEvents(diffSearchStreamEvents)
@@ -447,7 +394,7 @@ describe('Search', () => {
 
         test('commit search syntax highlighting', async () => {
             testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
+                ...commonWebGraphQlResults,
                 ...commitHighlightResult,
             })
             testContext.overrideSearchStreamEvents(commitSearchStreamEvents)
@@ -468,7 +415,7 @@ describe('Search', () => {
 
         test('code, file and repo results with filter suggestions', async () => {
             testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
+                ...commonWebGraphQlResults,
                 ...highlightFileResult,
             })
             testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
@@ -490,7 +437,7 @@ describe('Search', () => {
 
         test('symbol results', async () => {
             testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
+                ...commonWebGraphQlResults,
             })
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 
@@ -524,12 +471,6 @@ describe('Search', () => {
                         'div[data-shepherd-step-id="create-code-monitor-feature-tour"]'
                     ) !== null
             )
-
-        beforeEach(() => {
-            testContext.overrideGraphQL({
-                ...commonSearchGraphQLResults,
-            })
-        })
 
         test('Do not show create code monitor button feature tour with missing search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)

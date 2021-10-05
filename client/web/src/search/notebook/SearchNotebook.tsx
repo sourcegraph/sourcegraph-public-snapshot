@@ -2,10 +2,11 @@ import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { fetchStreamSuggestions, SearchStreamingProps } from '..'
+import { SearchStreamingProps } from '..'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 import { useQueryIntelligence } from '../useQueryIntelligence'
 

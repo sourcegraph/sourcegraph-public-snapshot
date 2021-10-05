@@ -1,3 +1,16 @@
-import { IRepoGroup, ISearchContext, SearchSuggestion as DynamicSearchSuggestion } from '../../graphql/schema'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
-export type SearchSuggestion = DynamicSearchSuggestion | IRepoGroup | ISearchContext
+import { SearchPatternType, SearchVersion } from '../../graphql-operations'
+import { firstMatchStreamingSearch, SearchMatch } from '../stream'
+
+export function fetchStreamSuggestions(query: string): Observable<SearchMatch[]> {
+    return firstMatchStreamingSearch({
+        query,
+        version: SearchVersion.V2,
+        patternType: SearchPatternType.literal,
+        caseSensitive: false,
+        versionContext: undefined,
+        trace: undefined,
+    }).pipe(map(suggestions => suggestions.results))
+}
