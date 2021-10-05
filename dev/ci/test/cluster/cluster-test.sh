@@ -34,7 +34,7 @@ function cluster_cleanup() {
 }
 
 function cluster_setup() {
-  git clone --depth 1 \
+  git clone \
     https://github.com/sourcegraph/deploy-sourcegraph.git \
     "$DIR/deploy-sourcegraph"
 
@@ -49,6 +49,7 @@ function cluster_setup() {
   kubectl get -n "$NAMESPACE" pods
 
   pushd "$DIR/deploy-sourcegraph/"
+  git checkout dax/ci_overlay
   set +e
   set +o pipefail
   pushd base
@@ -61,10 +62,12 @@ function cluster_setup() {
     grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
   popd
-  ./create-new-cluster.sh
+  #  ./create-new-cluster.sh
+  ./overlay-generate-cluster.sh ci generated-cluster
+  kubectl apply -n "$NAMESPACE" --recursive --validate -f generated-cluster
   popd
 
-  kubectl get pods
+  kubectl get pods -n "$NAMESPACE"
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
   set -e
   set -o pipefail
