@@ -188,6 +188,9 @@ extend type Query {
     insightDashboards(first: Int, after: String): InsightsDashboardConnection!
 }
 
+"""
+A paginated list of dashboards.
+"""
 type InsightsDashboardConnection {
     """
     A list of dashboards.
@@ -219,6 +222,9 @@ type InsightDashboard implements Node {
     views: InsightViewConnection
 }
 
+"""
+A dashboard of insight views.
+"""
 type InsightViewConnection {
     """
     A list of insights.
@@ -235,5 +241,8 @@ type InsightViewConnection {
 Stub for insight view
 """
 type InsightView implements Node {
+    """
+    The View ID.
+    """
     id: ID!
 }
