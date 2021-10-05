@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
@@ -21,6 +22,7 @@ import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
+    authenticatedUser: AuthenticatedUser
 }
 
 export interface CodeIntelAreaRoute extends RouteDescriptor<CodeIntelAreaRouteContext> {}
@@ -85,11 +87,13 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         path: '/configuration',
         exact: true,
         render: props => <CodeIntelConfigurationPage {...props} />,
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: '/configuration/:id',
         exact: true,
         render: props => <CodeIntelConfigurationPolicyPage {...props} />,
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
 ]
 
@@ -111,6 +115,7 @@ export interface RepositoryCodeIntelAreaPageProps
         TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
+    authenticatedUser: AuthenticatedUser
 }
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
@@ -129,6 +134,7 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             {
                 to: '/configuration',
                 label: 'Configuration',
+                condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
             },
         ],
     },

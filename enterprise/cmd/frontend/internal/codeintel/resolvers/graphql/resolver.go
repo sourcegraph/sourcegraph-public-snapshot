@@ -85,7 +85,11 @@ func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryAr
 
 func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (gql.LSIFUploadConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may see LSIF upload data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	// if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	// 	return nil, err
+	// }
+
+	if err := checkCurrentUserCanViewRepository(ctx, args.RepositoryID); err != nil {
 		return nil, err
 	}
 
@@ -99,6 +103,21 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	prefetcher := NewPrefetcher(r.resolver)
 
 	return NewUploadConnectionResolver(r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver), nil
+}
+
+func checkCurrentUserCanViewRepository(ctx context.Context, id graphql.ID) error {
+	//if repositoryID is zero then be site admin
+	repoID, err := resolveRepositoryID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if repoID == 0 {
+		return backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global)
+	}
+
+
+	// TODO: check for visibility into repo
+	return nil
 }
 
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
@@ -163,7 +182,10 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	}
 
 	// 🚨 SECURITY: Only site admins may see LSIF index data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	// if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	// 	return nil, err
+	// }
+	if err := checkCurrentUserCanViewRepository(ctx, args.RepositoryID); err != nil {
 		return nil, err
 	}
 
