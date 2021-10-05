@@ -282,6 +282,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			err := s.Exec(ctx, sqlf.Sprintf(
 				strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$TABLE_NAME", tableName),
 				upload.ID,
+				upload.Root,
 				node.PathID,
 				languageOrIndexerName,
 				upload.RepositoryName,
@@ -343,8 +344,8 @@ RETURNING dump_id
 
 const writeDocumentationSearchInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
-INSERT INTO $TABLE_NAME (dump_id, path_id, lang, repo_name, search_key, label, detail, tags, repo_id)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+INSERT INTO $TABLE_NAME (dump_id, dump_root, path_id, lang, repo_name, search_key, label, detail, tags, repo_id)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 var (
