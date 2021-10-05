@@ -122,6 +122,11 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 			t.Fatalf("reloaded changeset spec does not have correct batch spec id: %d", reloadedSpec.BatchSpecID)
 		}
 	}
+
+	_, err = database.AccessTokens(db).GetByID(ctx, tokenID)
+	if err != database.ErrAccessTokenNotFound {
+		t.Fatalf("access token was not deleted")
+	}
 }
 
 func TestExtractChangesetSpecIDs(t *testing.T) {

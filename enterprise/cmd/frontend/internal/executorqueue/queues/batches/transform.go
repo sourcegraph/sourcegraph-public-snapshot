@@ -25,7 +25,7 @@ const (
 )
 
 func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (int64, string, error) {
-	return database.AccessTokens(db).Create(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+	return database.AccessTokens(db).CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
 }
 
 func makeURL(base, username, password string) (string, error) {
@@ -70,6 +70,17 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
 
+	// Create an internal access token that will get cleaned up when the job
+	// finishes.
+	tokenID, token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
+	if err != nil {
+		return apiclient.Job{}, err
+	}
+	if err := s.SetSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
+		return apiclient.Job{}, err
+	}
+
+
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
 		Workspaces: []*batcheslib.Workspace{
@@ -88,29 +99,6 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 				SearchResultPaths:  workspace.FileMatches,
 			},
 		},
-	}
-
-	// TODO: createAccessToken is a bit of technical debt until we figure out a
-	// better solution. The problem is that src-cli needs to make requests to
-	// the Sourcegraph instance *on behalf of the user*.
-	//
-	// Ideally we'd have something like one-time tokens that
-	// * we could hand to src-cli
-	// * are not visible to the user in the Sourcegraph web UI
-	// * valid only for the duration of the batch spec execution
-	// * and cleaned up after batch spec is executed
-	//
-	// Until then we create a fresh access token every time.
-	//
-	// GetOrCreate doesn't work because once an access token has been created
-	// in the database Sourcegraph can't access the plain-text token anymore.
-	// Only a hash for verification is kept in the database.
-	tokenID, token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
-	if err != nil {
-		return apiclient.Job{}, err
-	}
-	if err := s.SetSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
-		return apiclient.Job{}, err
 	}
 
 	frontendURL := conf.Get().ExternalURL
