@@ -133,6 +133,13 @@ func newOperator(kind OperatorKind, operands ...Node) *Operator {
 	}
 }
 
+// NewOr creates a new Or node from the given operands
+// NewOr will always return the result in conjunctive normal form (CNF), so
+// the returned node may not always be an actual Or node.
+// Optimizations/simplifications:
+// - And() => Constant(true)
+// - And(x) => x
+// - And(x, And(y, z)) => And(x, y, z)
 func NewAnd(operands ...Node) Node {
 	// An empty And operator will always match a commit
 	if len(operands) == 0 {
@@ -158,6 +165,14 @@ func NewAnd(operands ...Node) Node {
 	return newOperator(And, flattened...)
 }
 
+// NewOr creates a new Or node from the given operands
+// NewOr will always return the result in conjunctive normal form (CNF), so
+// the returned node may not always be an actual Or node.
+// Optimizations/simplifications:
+// - Or() => Constant(false)
+// - Or(x) => x
+// - Or(x, Or(y, z)) => Or(x, y, z)
+// - Or(x, And(y, z)) => And(Or(x, y), Or(x, z))
 func NewOr(operands ...Node) Node {
 	// An empty Or operator will never match a commit
 	if len(operands) == 0 {
@@ -204,6 +219,14 @@ func NewOr(operands ...Node) Node {
 	return newOperator(Or, flattened...)
 }
 
+// NewNot creates a new negated node from the given operand. It will always
+// return a tree in conjunctive normal form (CNF).
+// If passed a non-atom node, it will recursively push the negation down to the
+// node's constituent atom nodes.
+// Optimizations/simplifications:
+// - Not(Not(x)) => x
+// - Not(And(x,y)) => Or(Not(x), Not(y))
+// - Not(Or(x,y)) => And(Not(x), Not(y))
 func NewNot(operand Node) Node {
 	// If an operator, push the negation down to the atom nodes recursively
 	if operator, ok := operand.(*Operator); ok {

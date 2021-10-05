@@ -414,6 +414,10 @@ func TestFuzzQueryCNF(t *testing.T) {
 	}
 }
 
+// queryGenerator is a type that satisfies the tesing/quick Generator interface,
+// generating random, unreduced queries in its RawQuery field. Additionally,
+// it exposes a ReducedQuery() convienence method that allows the caller to get the
+// query as if it had been created with the protocol.New* functions.
 type queryGenerator struct {
 	RawQuery protocol.Node
 }
@@ -430,6 +434,10 @@ func (q queryGenerator) ReducedQuery() protocol.Node {
 	return reduceQuery(q.RawQuery)
 }
 
+// reduceQuery takes any query and recursively reduces it with the
+// protocol.New* functions. This is not meant to be used outside of fuzz testing
+// because any caller should be using the protocol.New* functions directly, which
+// reduce the query on construction.
 func reduceQuery(q protocol.Node) protocol.Node {
 	switch v := q.(type) {
 	case *protocol.Operator:
@@ -452,11 +460,17 @@ func reduceQuery(q protocol.Node) protocol.Node {
 	}
 }
 
-const chars = `abcdefghijkl`
+const randomChars = `abcdefghijkl`
 
+// generateAtom generates a random AuthorMatches atom.
+// The AuthorMatches node will match a single, random character from `randomChars`.
+// 50% of the generated nodes will also be negated. We negate in the atom step
+// rather than in the generateQuery step because we only want to generate negated
+// nodes if they are wrapping leaf nodes. Negating non-leaf nodes works correctly,
+// but can lead to multiple-exponential behavior.
 func generateAtom(rand *rand.Rand) protocol.Node {
 	a := &protocol.AuthorMatches{
-		Expr: string(chars[rand.Int()%len(chars)]),
+		Expr: string(randomChars[rand.Int()%len(randomChars)]),
 	}
 	if rand.Int()%2 == 0 {
 		return a
@@ -464,6 +478,8 @@ func generateAtom(rand *rand.Rand) protocol.Node {
 	return &protocol.Operator{Kind: protocol.Not, Operands: []protocol.Node{a}}
 }
 
+// generateQuery generates a random query with configurable depth. Atom,
+// And, and Or nodes will occur with a 1:1:1 ratio on average.
 func generateQuery(rand *rand.Rand, depth int) protocol.Node {
 	if depth == 0 {
 		return generateAtom(rand)
@@ -489,15 +505,18 @@ func generateQuery(rand *rand.Rand, depth int) protocol.Node {
 	}
 }
 
+// authorNameGenerator is a type that implements the testing/quick Generator interface
+// so it can be randomly generated using the same characters that the AuthorMatches
+// nodes are generated with using generateAtom.
 type authorNameGenerator []byte
 
 func (authorNameGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
 	if size > 10 {
 		size = 10
 	}
-	var buf bytes.Buffer
-	for i := 0; i < size; i++ {
-		buf.WriteByte(chars[rand.Int()%len(chars)])
+	buf := make([]byte, size)
+	for i := 0; i < len(buf); i++ {
+		buf[i] = randomChars[rand.Int()%len(randomChars)]
 	}
-	return reflect.ValueOf(buf.Bytes())
+	return reflect.ValueOf(buf)
 }
