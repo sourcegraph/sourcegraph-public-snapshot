@@ -8,17 +8,25 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 /**
  * An Observable wrapper around ResizeObserver
  */
-export const observeResize = (target: HTMLElement): Observable<ResizeObserverEntry | undefined> =>
-    new Observable(function subscribe(observer) {
+export const observeResize = (target: HTMLElement): Observable<ResizeObserverEntry | undefined> => {
+    let animationFrameID: number
+
+    return new Observable(function subscribe(observer) {
         const resizeObserver = new ResizeObserver(entries => {
-            observer.next(head(entries))
+            // Move `ResizeObserver` measurements into a RAF to avoid the "ResizeObserver loop limit exceeded" error.
+            // See the thread for background info: https://github.com/WICG/resize-observer/issues/38
+            animationFrameID = window.requestAnimationFrame(() => {
+                observer.next(head(entries))
+            })
         })
         resizeObserver.observe(target)
 
         return function unsubscribe() {
+            window.cancelAnimationFrame(animationFrameID)
             resizeObserver.disconnect()
         }
     })
+}
 
 interface ObserveQuerySelectorInit {
     selector: string

@@ -1426,6 +1426,33 @@ func TestService(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("ValidateChangesetSpecs", func(t *testing.T) {
+		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
+		conflictingRef := "refs/heads/conflicting-head-ref"
+		for _, opts := range []ct.TestSpecOpts{
+			{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef, Repo: rs[1].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+			{HeadRef: conflictingRef + "-2", Repo: rs[2].ID, BatchSpec: batchSpec.ID},
+		} {
+			ct.CreateChangesetSpec(t, ctx, s, opts)
+		}
+		err := svc.ValidateChangesetSpecs(ctx, batchSpec.ID)
+		if err == nil {
+			t.Fatal("expected error, but got none")
+		}
+
+		want := `2 errors when validating changeset specs:
+* 2 changeset specs in repo-1-2 use the same branch: refs/heads/conflicting-head-ref
+* 3 changeset specs in repo-1-3 use the same branch: refs/heads/conflicting-head-ref-2
+`
+		if diff := cmp.Diff(want, err.Error()); diff != "" {
+			t.Fatalf("wrong error message: %s", diff)
+		}
+	})
 }
 
 func testBatchChange(user int32, spec *btypes.BatchSpec) *btypes.BatchChange {

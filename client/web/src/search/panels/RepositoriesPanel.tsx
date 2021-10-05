@@ -131,14 +131,16 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     const recentlySearchedRepos: string[] = []
 
     for (const node of eventLogResult.nodes) {
-        const url = new URL(node.url)
-        const queryFromURL = parseSearchURLQuery(url.search)
-        const scannedQuery = scanSearchQuery(queryFromURL || '')
-        if (scannedQuery.type === 'success') {
-            for (const token of scannedQuery.term) {
-                if (isRepoFilter(token)) {
-                    if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                        recentlySearchedRepos.push(token.value.value)
+        if (node.url) {
+            const url = new URL(node.url)
+            const queryFromURL = parseSearchURLQuery(url.search)
+            const scannedQuery = scanSearchQuery(queryFromURL || '')
+            if (scannedQuery.type === 'success') {
+                for (const token of scannedQuery.term) {
+                    if (isRepoFilter(token)) {
+                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
+                            recentlySearchedRepos.push(token.value.value)
+                        }
                     }
                 }
             }

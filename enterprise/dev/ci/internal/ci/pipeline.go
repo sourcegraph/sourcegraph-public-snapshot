@@ -194,7 +194,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// 	ops.Append(publishExecutor(c.Time, c.Version))
 		// }
 
-		// Propogate changes elsewhere
+		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
 			ops.Append(
 				// wait for all steps to pass

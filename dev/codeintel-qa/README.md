@@ -45,13 +45,13 @@ Alternatively, generate them by running the following command (this takes much l
 Upload the indexes to your the target instance by running the following command:
 
 ```
-go build && ./precise-code-intel-tester upload
+go build ./cmd/upload && ./upload
 ```
 
 Then run test queries against the target instance by running the following command:
 
 ```
-go build && ./precise-code-intel-tester query
+go build ./cmd/query && ./query
 ```
 
 ## Refreshing indexes

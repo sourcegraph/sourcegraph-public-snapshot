@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -eu
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-SCRIPTDIR=$(realpath './internal/cmd/precise-code-intel-tester/scripts')
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+SCRIPTDIR=$(realpath './scripts')
 
 declare -A REVS=(
   # This repository has not been changed

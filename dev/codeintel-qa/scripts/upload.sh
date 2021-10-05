@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 set -eu
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
-DATADIR=$(realpath './internal/cmd/precise-code-intel-tester/testdata')
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+DATADIR=$(realpath './testdata')
 INDEXDIR="${DATADIR}/indexes"
 
 # Compress and upload all index files

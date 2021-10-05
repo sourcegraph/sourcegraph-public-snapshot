@@ -25,6 +25,8 @@ type BuildOptions struct {
 	Env      map[string]string      `json:"env,omitempty"`
 }
 
+// Matches Buildkite pipeline JSON schema:
+// https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
 	Label                  string                 `json:"label"`
 	Key                    string                 `json:"key,omitempty"`
@@ -48,10 +50,16 @@ type Step struct {
 
 type RetryOptions struct {
 	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
+	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
 }
 
 type AutomaticRetryOptions struct {
 	Limit int `json:"limit,omitempty"`
+}
+
+type ManualRetryOptions struct {
+	Allowed bool   `json:"allowed"`
+	Reason  string `json:"reason,omitempty"`
 }
 
 // BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
@@ -157,11 +165,28 @@ func SoftFail(softFail bool) StepOpt {
 	}
 }
 
+// AutomaticRetry enables automatic retry for the step with the number of times this job can be retried.
+// The maximum value this can be set to is 10.
+// Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
 func AutomaticRetry(limit int) StepOpt {
 	return func(step *Step) {
 		step.Retry = &RetryOptions{
 			Automatic: &AutomaticRetryOptions{
 				Limit: limit,
+			},
+		}
+	}
+}
+
+// DisableManualRetry disables manual retry for the step. The reason string passed
+// will be displayed in a tooltip on the Retry button in the Buildkite interface.
+// Docs: https://buildkite.com/docs/pipelines/command-step#manual-retry-attributes
+func DisableManualRetry(reason string) StepOpt {
+	return func(step *Step) {
+		step.Retry = &RetryOptions{
+			Manual: &ManualRetryOptions{
+				Allowed: false,
+				Reason:  reason,
 			},
 		}
 	}

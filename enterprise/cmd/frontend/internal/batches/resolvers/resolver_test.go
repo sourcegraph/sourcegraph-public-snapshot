@@ -663,7 +663,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
-			HeadRef:   "main",
+			HeadRef:   "refs/heads/my-branch-1",
 		})
 
 		// We need a couple more changeset specs to make this useful: we need to
@@ -675,14 +675,14 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: otherBatchSpec.ID,
-			HeadRef:   "main",
+			HeadRef:   "refs/heads/my-branch-2",
 		})
 
 		publishedChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
 			BatchSpec: batchSpec.ID,
-			HeadRef:   "main",
+			HeadRef:   "refs/heads/my-branch-3",
 			Published: true,
 		})
 
