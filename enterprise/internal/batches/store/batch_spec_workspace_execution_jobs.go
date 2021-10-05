@@ -19,7 +19,6 @@ import (
 
 var batchSpecWorkspaceExecutionJobInsertColumns = []string{
 	"batch_spec_workspace_id",
-	"access_token_id",
 
 	"created_at",
 	"updated_at",
@@ -89,7 +88,6 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs .
 			if err := inserter.Insert(
 				ctx,
 				job.BatchSpecWorkspaceID,
-				dbutil.NewNullInt64(job.AccessTokenID),
 				job.CreatedAt,
 				job.UpdatedAt,
 			); err != nil {
