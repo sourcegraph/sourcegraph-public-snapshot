@@ -2,6 +2,7 @@ package zoekt
 
 import (
 	"context"
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -266,7 +267,10 @@ func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.Zoek
 		tr.Finish()
 	}()
 
-	zoektArgs.Query = zoektGlobalQuery(zoektArgs.Query, repoOptions, userPrivateRepos)
+	zoektArgs.Query, err = zoektGlobalQuery(zoektArgs.Query, repoOptions, userPrivateRepos)
+	if err != nil {
+		return nil, err
+	}
 	return &IndexedUniverseSearchRequest{Args: zoektArgs}, nil
 }
 
@@ -417,7 +421,7 @@ func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 // have a repo: filter and consequently no rev: filter. This makes the code a bit
 // simpler because we don't have to resolve revisions before sending off (global)
 // requests to Zoekt.
-func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) zoektquery.Q {
+func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
 	var qs []zoektquery.Q
 
 	// Public or Any
@@ -436,7 +440,11 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 
 		children := []zoektquery.Q{&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc}
 		for _, pat := range repoOptions.MinusRepoFilters {
-			children = append(children, &zoektquery.Not{Child: &zoektquery.Repo{Pattern: pat}})
+			re, err := regexp.Compile(`(?i)` + pat)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid regex for -repo filter %q", err)
+			}
+			children = append(children, &zoektquery.Not{Child: &zoektquery.RepoRegexp{Regexp: re}})
 		}
 
 		qs = append(qs, zoektquery.NewAnd(children...))
@@ -451,7 +459,7 @@ func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivat
 		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
 	}
 
-	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...)))
+	return zoektquery.Simplify(zoektquery.NewAnd(q, zoektquery.NewOr(qs...))), nil
 }
 
 func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
