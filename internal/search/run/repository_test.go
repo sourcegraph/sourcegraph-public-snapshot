@@ -142,7 +142,15 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				},
 			}}, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{
+			Pattern:                      "",
+			FilePatternsReposMustInclude: []string{"foo"},
+			IsRegExp:                     true,
+			FileMatchLimit:               1,
+			PathPatternsAreCaseSensitive: false,
+			PatternMatchesContent:        true,
+			PatternMatchesPath:           true,
+		}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -157,7 +165,15 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustInclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{
+			Pattern:                      "",
+			FilePatternsReposMustInclude: []string{"foo"},
+			IsRegExp:                     true,
+			FileMatchLimit:               1,
+			PathPatternsAreCaseSensitive: false,
+			PatternMatchesContent:        true,
+			PatternMatchesPath:           true,
+		}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -179,7 +195,15 @@ func TestRepoShouldBeAdded(t *testing.T) {
 				},
 			}}, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{
+			Pattern:                      "",
+			FilePatternsReposMustExclude: []string{"foo"},
+			IsRegExp:                     true,
+			FileMatchLimit:               1,
+			PathPatternsAreCaseSensitive: false,
+			PatternMatchesContent:        true,
+			PatternMatchesPath:           true,
+		}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
@@ -194,7 +218,15 @@ func TestRepoShouldBeAdded(t *testing.T) {
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
-		pat := &search.TextPatternInfo{Pattern: "", FilePatternsReposMustExclude: []string{"foo"}, IsRegExp: true, FileMatchLimit: 1, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
+		pat := &search.TextPatternInfo{
+			Pattern:                      "",
+			FilePatternsReposMustExclude: []string{"foo"},
+			IsRegExp:                     true,
+			FileMatchLimit:               1,
+			PathPatternsAreCaseSensitive: false,
+			PatternMatchesContent:        true,
+			PatternMatchesPath:           true,
+		}
 		shouldBeAdded, err := repoShouldBeAdded(context.Background(), zoekt, repo, pat)
 		if err != nil {
 			t.Fatal(err)
