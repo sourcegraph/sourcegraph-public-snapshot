@@ -93,12 +93,7 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
             <label id="survey-form-scores" className={styles.label}>
                 How likely is it that you would recommend Sourcegraph to a friend?
             </label>
-            <SurveyRatingRadio
-                ariaLabelledby="survey-form-scores"
-                className={styles.scores}
-                onChange={handleScoreChange}
-                score={score}
-            />
+            <SurveyRatingRadio ariaLabelledby="survey-form-scores" onChange={handleScoreChange} score={score} />
             {!authenticatedUser && (
                 <div className="form-group">
                     <input

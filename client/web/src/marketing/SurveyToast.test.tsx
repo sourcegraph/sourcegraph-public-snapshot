@@ -3,7 +3,7 @@ import React from 'react'
 
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
-import { DAYS_ACTIVE_STORAGE_KEY, HAS_DISMISSED_TOAST_STORAGE_KEY } from './constants'
+import { DAYS_ACTIVE_STORAGE_KEY, HAS_TEMPORARILY_DISMISSED_TOAST_STORAGE_KEY } from './constants'
 import { SurveyToast } from './SurveyToast'
 
 describe('SurveyToast', () => {
@@ -12,7 +12,8 @@ describe('SurveyToast', () => {
     afterEach(cleanup)
 
     const setDaysActive = (daysActive: string) => localStorage.setItem(DAYS_ACTIVE_STORAGE_KEY, daysActive)
-    const setToastDismissed = (dismissed: string) => localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, dismissed)
+    const setToastDismissed = (dismissed: string) =>
+        localStorage.setItem(HAS_TEMPORARILY_DISMISSED_TOAST_STORAGE_KEY, dismissed)
 
     describe('before day 3', () => {
         beforeEach(() => {
@@ -46,7 +47,7 @@ describe('SurveyToast', () => {
             const score10 = within(recommendRadioGroup).getByLabelText(mockScore)
             fireEvent.click(score10)
             expect(renderResult.history.location.pathname).toBe(`/survey/${mockScore}`)
-            expect(localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
+            expect(localStorage.getItem(HAS_TEMPORARILY_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
         })
     })
 
