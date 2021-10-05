@@ -39,7 +39,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
 	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
-		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
+		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
 		return []byte(wantDefaultBranchRef), nil, 0, nil
 	}
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
