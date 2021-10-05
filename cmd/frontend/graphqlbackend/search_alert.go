@@ -624,6 +624,20 @@ func alertForInvalidRevision(revision string) *searchAlert {
 	}
 }
 
+func alertForRepoGroupsDeprecation() *searchAlert {
+	return &searchAlert{
+		title:       "Repogroups are deprecated",
+		description: "Learn more here: http://example.com",
+	}
+}
+
+func alertForVersionContextsDeprecation() *searchAlert {
+	return &searchAlert{
+		title:       "Version contexts are deprecated",
+		description: "Learn more here: http://example.com",
+	}
+}
+
 type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
 	Inputs *run.SearchInputs
@@ -669,6 +683,14 @@ func (o *alertObserver) update(alert *searchAlert) {
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
 func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
+	if o.Inputs.VersionContext != nil {
+		o.update(alertForVersionContextsDeprecation())
+	}
+
+	if repoGroupFilters, _ := o.Inputs.Query.StringValues(query.FieldRepoGroup); len(repoGroupFilters) > 0 {
+		o.update(alertForRepoGroupsDeprecation())
+	}
+
 	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
 		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
 	}
