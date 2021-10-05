@@ -450,7 +450,7 @@ func zoektGlobalQueryScope(repoOptions search.RepoOptions, userPrivateRepos []ty
 		for _, pat := range repoOptions.MinusRepoFilters {
 			re, err := regexp.Compile(`(?i)` + pat)
 			if err != nil {
-				return nil, errors.Wrapf(err, "invalid regex for -repo filter %q", err)
+				return nil, errors.Wrapf(err, "invalid regex for -repo filter %q", pat)
 			}
 			children = append(children, &zoektquery.Not{Child: &zoektquery.RepoRegexp{Regexp: re}})
 		}
