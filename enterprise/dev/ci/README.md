@@ -14,7 +14,7 @@ go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
 
 Our CI pipeline must never leak secrets:
 
-- to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every steps.
+- to add a secret, use the Secret Manager on Google Cloud and then inject it at deployment time as an environment variable in the CI agents, which will make it available to every step.
 - use an environment variable name suffixed as following to ensure it gets redacted in the logs: `*_PASSWORD,*_SECRET,*_TOKEN,*_ACCESS_KEY,*_SECRET_KEY,*_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets:
   - they won't get redacted, even if they match the above pattern.
