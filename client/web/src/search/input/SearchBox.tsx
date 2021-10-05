@@ -1,12 +1,10 @@
 import classNames from 'classnames'
-import React, { useState } from 'react'
+import React from 'react'
 
-import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
