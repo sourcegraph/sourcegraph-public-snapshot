@@ -16,9 +16,9 @@ var (
 	teammateFlagSet = flag.NewFlagSet("sg teammate", flag.ExitOnError)
 	teammateCommand = &ffcli.Command{
 		Name:       "teammate",
-		ShortUsage: "sg teammate [time|handbook]",
-		ShortHelp:  "Run the given teammates command show informations about teammates",
-		LongHelp:   `Display current time, handbook link of sourcegraphers`,
+		ShortUsage: "sg teammate [time|handbook] nickname",
+		ShortHelp:  "Run the given teammates command show infos about your teammates.",
+		LongHelp:   `Display current time, handbook link of sourcegraphers.`,
 		FlagSet:    teammateFlagSet,
 		Exec:       teammateExec,
 	}
