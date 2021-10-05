@@ -201,20 +201,22 @@ type InsightsDashboardConnection {
     pageInfo: PageInfo!
 }
 
-input InsightDashboardInput {
-    title: String!
-    grants: InsightsPermissionGrants
-}
-
-input InsightsPermissionGrants {
-    users: [ID!]
-    organizations: [ID!]
-    global: Boolean
-}
-
+"""
+A dashboard of insights.
+"""
 type InsightDashboard implements Node {
+    """
+    The Dashboard ID.
+    """
     id: ID!
+    """
+    The Dashboard Title.
+    """
     title: String!
+
+    """
+    The list of associated insights to the dashboard.
+    """
     views: InsightViewConnection
 }
 
