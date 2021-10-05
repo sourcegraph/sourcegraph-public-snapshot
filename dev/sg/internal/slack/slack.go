@@ -125,10 +125,22 @@ func queryUserHandbook(token, nick string) (string, error) {
 // a list of possible matches.
 func findUserByNickname(users []slack.User, nickname string) *slack.User {
 	nickname = strings.ToLower(nickname)
+	nickname = strings.TrimPrefix(nickname, "@")
 	for _, u := range users {
 		if strings.ToLower(u.Profile.DisplayName) == nickname || strings.ToLower(u.Profile.RealName) == nickname {
 			return &u
 		}
 	}
-	return nil
+
+	// No user found, try to guess now
+	candidates := []*slack.User{}
+	for _, u := range users {
+		if strings.HasPrefix(strings.ToLower(u.Profile.RealName), nickname) {
+			candidates = append(candidates, &u)
+		}
+	}
+	if len(candidates) > 1 {
+		return nil
+	}
+	return candidates[0]
 }
