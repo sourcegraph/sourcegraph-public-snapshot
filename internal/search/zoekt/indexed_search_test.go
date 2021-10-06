@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -656,6 +659,70 @@ func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.Rep
 		m[string(r.Repo.Name)] = r
 	}
 	return m
+}
+
+func TestZoektGlobalQueryScope(t *testing.T) {
+	cases := []struct {
+		name    string
+		opts    search.RepoOptions
+		priv    []types.RepoName
+		want    string
+		wantErr string
+	}{{
+		name: "any",
+		opts: search.RepoOptions{
+			Visibility: query.Any,
+		},
+		want: `(and branch="HEAD" rawConfig:RcOnlyPublic)`,
+	}, {
+		name: "normal",
+		opts: search.RepoOptions{
+			Visibility: query.Any,
+			NoArchived: true,
+			NoForks:    true,
+		},
+		priv: []types.RepoName{{ID: 1}, {ID: 2}},
+		want: `(or (and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived) (branchesrepos HEAD:2))`,
+	}, {
+		name: "private",
+		opts: search.RepoOptions{
+			Visibility: query.Private,
+		},
+		priv: []types.RepoName{{ID: 1}, {ID: 2}},
+		want: `(branchesrepos HEAD:2)`,
+	}, {
+		name: "minusrepofilter",
+		opts: search.RepoOptions{
+			Visibility:       query.Public,
+			MinusRepoFilters: []string{"java"},
+		},
+		want: `(and branch="HEAD" rawConfig:RcOnlyPublic (not reporegex:"(?i)java"))`,
+	}, {
+		name: "bad minusrepofilter",
+		opts: search.RepoOptions{
+			Visibility:       query.Any,
+			MinusRepoFilters: []string{"())"},
+		},
+		wantErr: "invalid regex for -repo filter",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			q, err := zoektGlobalQueryScope(tc.opts, tc.priv)
+			if err != nil || tc.wantErr != "" {
+				if got := fmt.Sprintf("%s", err); !strings.Contains(got, tc.wantErr) {
+					t.Fatalf("expected error to contain %q: %s", tc.wantErr, got)
+				}
+				if tc.wantErr == "" {
+					t.Fatalf("unexpected error: %s", err)
+				}
+				return
+			}
+			if got := zoektquery.Simplify(q).String(); got != tc.want {
+				t.Fatalf("unexpected scoped query:\nwant: %s\ngot:  %s", tc.want, got)
+			}
+		})
+	}
 }
 
 func TestContextWithoutDeadline(t *testing.T) {
