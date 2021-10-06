@@ -1443,6 +1443,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	w.Header().Set("X-Exec-Stderr", stderr)
 }
 
+const (
+	repoMigrationStart = "repo-migration:start"
+)
+
 func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 	repo := r.URL.Query().Get("repo")
 	if repo == "" {
@@ -1470,12 +1474,28 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 	_, repoName := filepath.Split(repoRoot)
 
 	gitBundleAbsPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s.bundle", repoName))
-
 	cmd := exec.CommandContext(ctx, "git", "bundle", "create", gitBundleAbsPath, "--all")
 	// Ensure that the command is executed from /data/repos/github.com/sourcegraph/sourcegraph.
 	cmd.Dir = repoRoot
 
-	// TODO: Acquire a lock over the repo before executing the command.
+	// TODO: Ignoring the lock. We want to store this lock in memory so that the gitserver
+	// requesting the migration can make another HTTP request to intimate this gitserver instance to
+	// release the lock.
+	_, ok := s.locker.TryAcquire(dir, repoMigrationStart)
+	if !ok {
+		status, _ := s.locker.Status(dir)
+
+		// Someone has already initiated a migration.
+		if status == repoMigrationStart {
+			w.WriteHeader(http.StatusExpectationFailed)
+			log15.Error("handleRepoArchive: s.locker.TryAcquire", "error", fmt.Sprintf("repo locked: %q", status))
+			return
+		}
+
+		// Something else is holding the lock. This repo is not ready for a migraiton yet.
+		w.WriteHeader(http.StatusPreconditionFailed)
+		return
+	}
 
 	// TODO: This could be a monorepo pain point.
 	exitCode, err := runCommand(ctx, cmd)
