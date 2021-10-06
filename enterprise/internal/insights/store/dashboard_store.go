@@ -104,7 +104,7 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	results := make([]*types.Dashboard, 0)
+	var results []*types.Dashboard
 	for rows.Next() {
 		var temp types.Dashboard
 		if err := rows.Scan(
