@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
+
 	"github.com/cockroachdb/errors"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
@@ -19,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -60,12 +61,15 @@ var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 var minDuration time.Duration
 var minCode int
 
+func init() {
+	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
+	minCode = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
+}
+
 func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
 	}
-	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
-	minCode = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
 }
 
 // GraphQLRequestName returns the GraphQL request name for a request context. For example,
