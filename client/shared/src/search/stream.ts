@@ -439,7 +439,7 @@ function search({
                     ['q', `${transformedQuery} ${caseSensitive ? 'case:yes' : ''}`],
                     ['v', version],
                     ['t', patternType as string],
-                    ['dl', '15'],
+                    ['dl', '0'],
                     ['dk', (decorationKinds || ['html']).join('|')],
                     ['dc', (decorationContextLines || '1').toString()],
                     ['display', '1500'],
