@@ -1445,11 +1445,22 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	return database.GitserverRepos(s.DB).SetLastError(ctx, name, error, s.Hostname)
 }
 
-func (s *Server) setLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time) error {
+func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	if s.DB == nil {
 		return nil
 	}
-	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, lastFetched, s.Hostname)
+
+	dir := s.dir(name)
+
+	lastFetched, err := repoLastFetched(dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get last fetched for %s", name)
+	}
+
+	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, database.GitserverFetchData{
+		LastFetched: lastFetched,
+		ShardID:     s.Hostname,
+	})
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1691,11 +1702,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return errors.Wrapf(err, "failed to update last changed time")
 	}
 
-	// Update the DB with the last fetched time
-	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-		return errors.Wrap(err, "update last fetched time")
-	}
-
 	// Set gitattributes
 	if err := setGitAttributes(tmp); err != nil {
 		return err
@@ -1714,6 +1720,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	}
 	if err := renameAndSync(tmpPath, dstPath); err != nil {
 		return err
+	}
+
+	// Successfully updated, best-effort updating of db fetch state based on
+	// disk state.
+	if err := s.setLastFetched(ctx, repo); err != nil {
+		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
 	log15.Info("repo cloned", "repo", repo)
@@ -1992,9 +2004,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 	}
 
-	// Update the DB with the last fetched time
-	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-		return errors.Wrap(err, "update last fetched time")
+	// Successfully updated, best-effort updating of db fetch state based on
+	// disk state.
+	if err := s.setLastFetched(ctx, repo); err != nil {
+		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
 	return nil
