@@ -270,26 +270,23 @@ func (r *queryResolver) pageReferences(
 	// no more local results remaining.
 
 	if cursor.Phase == "local" {
-		for len(locations) < limit {
-			localLocations, hasMore, err := r.pageLocalReferences(
-				ctx,
-				ty,
-				adjustedUploads,
-				cursor,
-				limit-len(locations),
-				traceLog,
-			)
-			if err != nil {
-				return nil, err
-			}
-			traceLog(log.Int("pageReferences.numLocalLocations", len(localLocations)))
-			locations = append(locations, localLocations...)
+		localLocations, hasMore, err := r.pageLocalReferences(
+			ctx,
+			ty,
+			adjustedUploads,
+			cursor,
+			limit-len(locations),
+			traceLog,
+		)
+		if err != nil {
+			return nil, err
+		}
+		traceLog(log.Int("pageReferences.numLocalLocations", len(localLocations)))
+		locations = append(locations, localLocations...)
 
-			if !hasMore {
-				// No more local results, move on to phase 2
-				cursor.Phase = "remote"
-				break
-			}
+		if !hasMore {
+			// No more local results, move on to phase 2
+			cursor.Phase = "remote"
 		}
 	}
 
