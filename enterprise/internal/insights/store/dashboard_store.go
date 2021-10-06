@@ -8,10 +8,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 
-	"github.com/inconshreveable/log15"
-
-	"time"
-
 	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"

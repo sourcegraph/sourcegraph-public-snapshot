@@ -197,8 +197,6 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 			continue
 		}
 	}
-
-	log15.Info("dashboards found", "dashboards", dashboards)
 	return nil
 }
 
