@@ -180,3 +180,69 @@ type InsightSeriesStatus {
     """
     backfillQueuedAt: DateTime
 }
+
+extend type Query {
+    """
+    Return dashboards visible to the authenticated user.
+    """
+    insightDashboards(first: Int, after: String): InsightsDashboardConnection!
+}
+
+"""
+A paginated list of dashboards.
+"""
+type InsightsDashboardConnection {
+    """
+    A list of dashboards.
+    """
+    nodes: [InsightDashboard!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A dashboard of insights.
+"""
+type InsightDashboard implements Node {
+    """
+    The Dashboard ID.
+    """
+    id: ID!
+    """
+    The Dashboard Title.
+    """
+    title: String!
+
+    """
+    The list of associated insights to the dashboard.
+    """
+    views: InsightViewConnection
+}
+
+"""
+A dashboard of insight views.
+"""
+type InsightViewConnection {
+    """
+    A list of insights.
+    """
+    nodes: [InsightView!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Stub for insight view
+"""
+type InsightView implements Node {
+    """
+    The View ID.
+    """
+    id: ID!
+}

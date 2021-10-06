@@ -15,6 +15,7 @@ import (
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
+	InsightDashboards(ctx context.Context, args *InsightDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 }
 
 type InsightsArgs struct {
@@ -65,4 +66,29 @@ type InsightDirtyQueryResolver interface {
 	Reason(ctx context.Context) string
 	Time(ctx context.Context) DateTime
 	Count(ctx context.Context) int32
+}
+
+type InsightDashboardsArgs struct {
+	First *int32
+	After *string
+}
+
+type InsightsDashboardConnectionResolver interface {
+	Nodes(ctx context.Context) ([]InsightDashboardResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type InsightDashboardResolver interface {
+	Title() string
+	ID() graphql.ID
+	Views() InsightViewConnectionResolver
+}
+
+type InsightViewConnectionResolver interface {
+	Nodes(ctx context.Context) ([]InsightViewResolver, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type InsightViewResolver interface {
+	ID() graphql.ID
 }
