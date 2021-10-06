@@ -57,6 +57,9 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// the target commit. This data may already be stashed in the cursor decoded above, in
 	// which case we don't need to hit the database.
 
+	// References at the given file:line:character could come from multiple uploads, so we
+	// need to look in all uploads and merge the results.
+
 	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, uploadsByID, &cursor)
 	if err != nil {
 		return nil, "", err
