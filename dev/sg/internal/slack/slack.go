@@ -44,7 +44,7 @@ func retrieveToken(ctx context.Context) (string, error) {
 
 // getTokenFromUser prompts the user for a slack OAuth token.
 func getTokenFromUser() (string, error) {
-	out.WriteLine(output.Linef("", output.StyleWarning, `Please copy the content of "SG Slack Integration" from the "Shared" 1Password vault`))
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StylePending, `Please copy the content of "SG Slack Integration" from the "Shared" 1Password vault`))
 	fmt.Printf("Paste it here: ")
 	var token string
 	if _, err := fmt.Scan(&token); err != nil {
