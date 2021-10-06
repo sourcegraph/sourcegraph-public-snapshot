@@ -36,8 +36,9 @@
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
   - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
-  - [`sg teammate [time,handbook]` - Get current time, or open their handbook page](#sg-rfc---list-or-open-sourcegraph-rfcs)
-  - [`sg ci [preview]` - Preview build steps of the current branch on the CI](#sg-rfc---list-or-open-sourcegraph-rfcs)
+  - [`sg teammate [time,handbook]` - Get current time, or open their handbook page](#sg-rfc---get-current-time-or-open-their-handbook-page)
+  - [`sg ci [preview]` - Preview build steps of the current branch on the CI](#sg-rfc---preview-build-steps-of-the-current-branch-on-the-ci)
+list-or-open-sourcegraph-rfcs)
 - [Configuration](#configuration)
 - [Contributing to sg](#contributing-to-sg)
 
