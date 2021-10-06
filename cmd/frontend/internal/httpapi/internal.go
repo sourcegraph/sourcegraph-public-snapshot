@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -192,6 +193,8 @@ func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) fl
 // This endpoint also supports batch requests to avoid managing concurrency in
 // zoekt. On vertically scaled instances we have observed zoekt requesting
 // this endpoint concurrently leading to socket starvation.
+//
+// A repo can be specified via name ("repo") or id ("repoID").
 func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
@@ -202,6 +205,21 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		}
 		repoNames := r.Form["repo"]
 
+		indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
+		for _, idStr := range r.Form["repoID"] {
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("invalid repo id %s: %s", idStr, err), http.StatusBadRequest)
+				return nil
+			}
+			indexedIDs = append(indexedIDs, api.RepoID(id))
+		}
+
+		if len(repoNames) > 0 && len(indexedIDs) > 0 {
+			http.Error(w, "only allowed to specify one of repoID or repo", http.StatusBadRequest)
+			return nil
+		}
+
 		// Preload repos to support fast lookups by repo name.
 		// This does NOT support fetching by URI (unlike Repos.GetByName). Zoekt
 		// will always ask us actual repo names and not URIs, though. This way,
@@ -209,14 +227,25 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		// repo is not found.
 		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{
 			Names: repoNames,
-			// This mimics the behavior of Repos.GetByName, which has been used
-			// here before. Once we are sure this has no negative impact, we
-			// can remove this option and the IsBlocked check below.
-			IncludeBlocked: true,
+			IDs:   indexedIDs,
 		})
 		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
 		for _, repo := range repos {
 			reposMap[repo.Name] = repo
+		}
+
+		if len(indexedIDs) > 0 {
+			reposIDsMap := make(map[api.RepoID]*types.Repo, len(repos))
+			for _, repo := range repos {
+				reposIDsMap[repo.ID] = repo
+			}
+			for _, id := range indexedIDs {
+				if repo, ok := reposIDsMap[id]; ok {
+					repoNames = append(repoNames, string(repo.Name))
+				} else {
+					repoNames = append(repoNames, fmt.Sprintf("!DOES-NOT-EXIST-REPO-ID-%d", id))
+				}
+			}
 		}
 
 		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
@@ -227,9 +256,6 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			repo, ok := reposMap[api.RepoName(repoName)]
 			if !ok {
 				return nil, &database.RepoNotFoundErr{Name: api.RepoName(repoName)}
-			}
-			if err := repo.IsBlocked(); err != nil {
-				return nil, err
 			}
 
 			getVersion := func(branch string) (string, error) {
@@ -246,6 +272,7 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
 
 			return &searchbackend.RepoIndexOptions{
+				Name:       string(repo.Name),
 				RepoID:     int32(repo.ID),
 				Public:     !repo.Private,
 				Priority:   priority,
@@ -311,6 +338,11 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
+	if len(opt.Indexed) > 0 && len(opt.IndexedIDs) > 0 {
+		http.Error(w, "only allowed to specify one of Indexed or IndexedIDs", http.StatusBadRequest)
+		return nil
+	}
+
 	indexable, err := h.ListIndexable(r.Context())
 	if err != nil {
 		return err
@@ -321,7 +353,6 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
 			IDs:   opt.IndexedIDs,
 			Names: opt.Indexed,
-			UseOr: true,
 		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {

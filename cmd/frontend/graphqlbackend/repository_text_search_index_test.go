@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
@@ -27,6 +28,9 @@ func (r repoListerMock) List(ctx context.Context, q zoektquery.Q, opts *zoekt.Li
 				{Name: "main", Version: "deadbeef"},
 				{Name: "1.0", Version: "deadbeef"},
 			},
+		},
+		IndexMetadata: zoekt.IndexMetadata{
+			IndexTime: time.Now(),
 		},
 	}}
 	return &zoekt.RepoList{Repos: zoektRepo}, nil

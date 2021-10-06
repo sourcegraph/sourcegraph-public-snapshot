@@ -32,12 +32,12 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
+var MockSearchFilesInRepos func() ([]result.Match, *streaming.Stats, error)
 
 // SearchFilesInRepos searches a set of repos for a pattern.
 func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	if MockSearchFilesInRepos != nil {
-		matches, mockStats, err := MockSearchFilesInRepos(args)
+		matches, mockStats, err := MockSearchFilesInRepos()
 		stream.Send(streaming.SearchEvent{
 			Results: matches,
 			Stats:   mockStats.Deref(),

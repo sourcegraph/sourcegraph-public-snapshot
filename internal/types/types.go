@@ -455,8 +455,11 @@ type GitserverRepo struct {
 	// The last external service used to sync or clone this repo
 	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
-	LastError   string
+	LastError string
+	// The last time fetch was called.
 	LastFetched time.Time
+	// The last time a fetch updated the repository.
+	LastChanged time.Time
 	UpdatedAt   time.Time
 }
 

@@ -6,6 +6,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -101,6 +103,7 @@ describe('StreamingSearchResults', () => {
             caseSensitive: true,
             versionContext: 'test',
             trace: undefined,
+            extensionHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
         })
 
         element.unmount()
@@ -132,6 +135,7 @@ describe('StreamingSearchResults', () => {
             caseSensitive: false,
             versionContext: undefined,
             trace: undefined,
+            extensionHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
         })
 
         element.unmount()

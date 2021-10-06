@@ -174,7 +174,7 @@ func TestQueryToZoektQuery(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to parse %q: %v", tt.Query, err)
 			}
-			got, err := QueryToZoektQuery(tt.Pattern, tt.Type == SymbolRequest)
+			got, err := QueryToZoektQuery(tt.Pattern, tt.Type)
 			if err != nil {
 				t.Fatal("queryToZoektQuery failed:", err)
 			}
@@ -437,4 +437,6 @@ func TestToTextPatternInfo(t *testing.T) {
 	autogold.Want("103", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":1000,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix count:1000 before:"march 25 2021"`))
 
 	autogold.Want("104", `{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["deploy"],"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`repo:sourcegraph-typescript$ type:file file:deploy`))
+
+	autogold.Want("105", `{"Pattern":"(foo\\d).*?(bar\\*)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","FilePatternsReposMustInclude":null,"FilePatternsReposMustExclude":null,"PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`).Equal(t, test(`foo\d "bar*" patterntype:regexp`))
 }
