@@ -43,7 +43,7 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 1. [Configure the HTTPS reverse proxy](doc/dev/getting-started/quickstart_5_configure_https_reverse_proxy.md)
 1. [Start the development server](doc/dev/getting-started/quickstart_6_start_server.md)
    ```sh
-   ./dev/start.sh
+   sg start
    ```
 
 Sourcegraph should now be running at https://sourcegraph.test:3443.
