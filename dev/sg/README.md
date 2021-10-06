@@ -38,7 +38,7 @@
   - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
   - [`sg teammate [time,handbook]` - Get current time, or open their handbook page](#sg-rfc---get-current-time-or-open-their-handbook-page)
   - [`sg ci [preview]` - Preview build steps of the current branch on the CI](#sg-rfc---preview-build-steps-of-the-current-branch-on-the-ci)
-list-or-open-sourcegraph-rfcs)
+    list-or-open-sourcegraph-rfcs)
 - [Configuration](#configuration)
 - [Contributing to sg](#contributing-to-sg)
 
@@ -232,7 +232,7 @@ sg teammate handbook asdine
 ### `sg ci` - Preview build steps of the current branch on the CI
 
 ```bash
-# Preview build steps and displays detected changes 
+# Preview build steps and displays detected changes
 # (must be a on branch and accuracy depends on origin/main)
 sg ci preview
 ```
