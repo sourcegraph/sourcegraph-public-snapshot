@@ -95,7 +95,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       Alice Zhao
     </span>
-     authored and
+     authored and commited by
      
     <a
       className="font-weight-bold"
@@ -104,13 +104,12 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       bYang
     </a>
-     commited
      
     <span
       className="timestamp"
-      data-tooltip="1990-01-01"
+      data-tooltip="1991-01-01"
     >
-      about 16 years ago
+      about 15 years ago
     </span>
   </div>
 </div>
@@ -145,7 +144,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       Alice Zhao
     </span>
-     authored and
+     authored and commited by
      
     <a
       className="font-weight-bold"
@@ -154,13 +153,12 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       bYang
     </a>
-     commited
      
     <span
       className="timestamp"
-      data-tooltip="1990-01-01"
+      data-tooltip="1991-01-01"
     >
-      about 16 years ago
+      about 15 years ago
     </span>
   </div>
 </div>
