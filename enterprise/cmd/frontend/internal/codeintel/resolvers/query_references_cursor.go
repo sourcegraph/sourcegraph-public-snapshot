@@ -15,7 +15,7 @@ type referencesCursor struct {
 	DefinitionUploadIDs       []int                          `json:"definitionUploadIDs"`
 	DefinitionUploadIDsCached bool                           `json:"definitionUploadIDsCached"`
 	OrderedMonikers           []precise.QualifiedMonikerData `json:"orderedMonikers"`
-	RemotePhase               bool                           `json:"remotePhase"`
+	Phase                     string                         `json:"phase"`
 	LocalOffset               int                            `json:"localOffset"`
 	LocalBatchOffset          int                            `json:"localBatchOffset"`
 	BatchIDs                  []int                          `json:"batchIDs"`
@@ -34,7 +34,7 @@ type cursorAdjustedUpload struct {
 // a fresh cursor is returned.
 func decodeCursor(rawEncoded string) (referencesCursor, error) {
 	if rawEncoded == "" {
-		return referencesCursor{}, nil
+		return referencesCursor{Phase: "local"}, nil
 	}
 
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)

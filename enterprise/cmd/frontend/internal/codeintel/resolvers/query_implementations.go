@@ -99,7 +99,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	}
 
 	// Query a single page of location results
-	locations, hasMore, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, orderedMonikers, definitionUploadIDs, uploadsByID, &cursor, limit)
+	locations, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, orderedMonikers, definitionUploadIDs, uploadsByID, &cursor, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -117,7 +117,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	nextCursor := ""
-	if hasMore {
+	if cursor.Phase != "done" {
 		nextCursor = encodeCursor(cursor)
 	}
 

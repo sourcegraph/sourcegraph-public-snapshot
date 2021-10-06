@@ -96,7 +96,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	}
 
 	// Query a single page of location results
-	locations, hasMore, err := r.pageReferences(
+	locations, err := r.pageReferences(
 		ctx,
 		"references",
 		"references",
@@ -124,7 +124,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	traceLog(log.Int("numAdjustedLocations", len(adjustedLocations)))
 
 	nextCursor := ""
-	if hasMore {
+	if cursor.Phase != "done" {
 		nextCursor = encodeCursor(cursor)
 	}
 
@@ -259,14 +259,14 @@ func (r *queryResolver) pageReferences(
 	cursor *referencesCursor,
 	limit int,
 	traceLog observation.TraceLogger,
-) ([]lsifstore.Location, bool, error) {
+) ([]lsifstore.Location, error) {
 	var locations []lsifstore.Location
 
 	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
 	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
 	// no more local results remaining.
 
-	if !cursor.RemotePhase {
+	if cursor.Phase == "local" {
 		for len(locations) < limit {
 			localLocations, hasMore, err := r.pageLocalReferences(
 				ctx,
@@ -277,14 +277,14 @@ func (r *queryResolver) pageReferences(
 				traceLog,
 			)
 			if err != nil {
-				return nil, false, err
+				return nil, err
 			}
 			traceLog(log.Int("pageReferences.numLocalLocations", len(localLocations)))
 			locations = append(locations, localLocations...)
 
 			if !hasMore {
 				// No more local results, move on to phase 2
-				cursor.RemotePhase = true
+				cursor.Phase = "remote"
 				break
 			}
 		}
@@ -294,7 +294,7 @@ func (r *queryResolver) pageReferences(
 	// results. We'll continue to request additional locations until we fill an entire page or there are no
 	// more local results remaining, just as we did above.
 
-	if cursor.RemotePhase {
+	if cursor.Phase == "remote" {
 		for len(locations) < limit {
 			remoteLocations, hasMore, err := r.pageRemoteReferences(
 				ctx,
@@ -308,18 +308,19 @@ func (r *queryResolver) pageReferences(
 				traceLog,
 			)
 			if err != nil {
-				return nil, false, err
+				return nil, err
 			}
 			traceLog(log.Int("pageReferences.numRemoteLocations", len(remoteLocations)))
 			locations = append(locations, remoteLocations...)
 
 			if !hasMore {
-				return locations, false, nil
+				cursor.Phase = "done"
+				return locations, nil
 			}
 		}
 	}
 
-	return locations, true, nil
+	return locations, nil
 }
 
 // pageLocalReferences returns a slice of the (local) result set denoted by the given cursor fulfilled by
