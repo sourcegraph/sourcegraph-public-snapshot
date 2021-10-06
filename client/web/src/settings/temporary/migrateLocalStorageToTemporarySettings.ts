@@ -25,6 +25,11 @@ const migrations: Migration[] = [
         temporarySettingsKey: 'survey.toast.hasTemporarilyDismissed',
         type: 'boolean',
     },
+    {
+        localStorageKey: 'has-permanently-dismissed-survey-toast',
+        temporarySettingsKey: 'survey.toast.hasPermanentlyDismissed',
+        type: 'boolean',
+    },
 ]
 
 export async function migrateLocalStorageToTemporarySettings(storage: TemporarySettingsStorage): Promise<void> {

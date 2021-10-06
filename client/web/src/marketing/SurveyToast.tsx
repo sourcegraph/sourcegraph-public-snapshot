@@ -33,8 +33,14 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
     const loadingTemporarySettings =
         temporarilyDismissed === undefined || permanentlyDismissed === undefined || daysActiveCount === undefined
 
+    /**
+     * We show a toast notification if:
+     * 1. User has not recently dismissed the notification
+     * 2. User has not permanently dismissed the notification
+     * 3. User has been active for exactly 3 days OR it has been 30 days since they were last shown the notification
+     */
     const shouldShow =
-        !loadingTemporarySettings && !permanentlyDismissed && !temporarilyDismissed && daysActiveCount % 30 === 3
+        !loadingTemporarySettings && !temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3
 
     const visible = forceVisible || shouldShow
 
