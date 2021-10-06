@@ -1496,7 +1496,10 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 
-		io.Copy(w, f)
+		_, err = io.Copy(w, f)
+		if err != nil {
+			return err
+		}
 
 		return nil
 	}); err != nil {
