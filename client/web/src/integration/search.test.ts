@@ -63,6 +63,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
     }),
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: true,
+    }),
 }
 
 describe('Search', () => {
@@ -98,7 +101,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
-            const origQuery = 'foo'
+            const origQuery = 'context:global foo'
             for (const filter of dynamicFilters) {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
@@ -267,7 +270,7 @@ describe('Search', () => {
             await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
         })
 
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
@@ -280,7 +283,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
             await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
         })
     })
 
@@ -297,7 +300,7 @@ describe('Search', () => {
             await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
@@ -311,7 +314,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
@@ -324,7 +327,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
         })
     })
 
@@ -340,7 +343,7 @@ describe('Search', () => {
             // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
             await driver.page.keyboard.type(' hello', { delay: 50 })
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
+            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })
     })
 
