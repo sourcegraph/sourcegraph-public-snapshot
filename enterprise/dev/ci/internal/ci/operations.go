@@ -485,6 +485,21 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	}
 }
 
+// Ask trivy, a security scanning tool, to scan the candidate image
+// specified by "app" and "tag".
+func trivyScanCandidateImage(app, tag string) operations.Operation {
+	image := images.DevRegistryImage(app, tag)
+
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+			bk.Cmd(fmt.Sprintf("trivy image %s", image)),
+		}
+
+		pipeline.AddStep(fmt.Sprintf(":trivy: 🔎 %s", image), cmds...)
+	}
+}
+
 // Tag and push final Docker image for the service defined by `app`
 // after the e2e tests pass.
 //
