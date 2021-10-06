@@ -2,9 +2,7 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS dashboard
 (
-    id                 SERIAL                  NOT NULL
-        CONSTRAINT dashboard_pk
-            PRIMARY KEY,
+    id                 SERIAL                  NOT NULL CONSTRAINT dashboard_pk PRIMARY KEY,
     title              TEXT,
     created_at         TIMESTAMP DEFAULT NOW() NOT NULL,
     created_by_user_id INT,
@@ -28,16 +26,11 @@ COMMENT ON COLUMN dashboard.deleted_at IS 'Set to the time the dashboard was sof
 
 CREATE TABLE IF NOT EXISTS dashboard_grants
 (
-    id              SERIAL
-        CONSTRAINT dashboard_grants_pk
-            PRIMARY KEY,
-    dashboard_id INTEGER NOT NULL
-        CONSTRAINT dashboard_grants_dashboard_id_fk
-            REFERENCES dashboard
-            ON DELETE CASCADE, -- These grants only have meaning in the context of a parent dashboard.
-    user_id         INTEGER,
-    org_id          INTEGER,
-    global          BOOLEAN
+    id           SERIAL CONSTRAINT dashboard_grants_pk PRIMARY KEY,
+    dashboard_id INTEGER NOT NULL CONSTRAINT dashboard_grants_dashboard_id_fk REFERENCES dashboard ON DELETE CASCADE, -- These grants only have meaning in the context of a parent dashboard.
+    user_id      INTEGER,
+    org_id       INTEGER,
+    global       BOOLEAN
 );
 
 COMMENT ON TABLE dashboard_grants IS 'Permission grants for dashboards. Each row should represent a unique principal (user, org, etc).';
@@ -59,17 +52,9 @@ CREATE INDEX IF NOT EXISTS dashboard_grants_global_idx
 
 CREATE TABLE dashboard_insight_view
 (
-    id              SERIAL NOT NULL
-        CONSTRAINT dashboard_insight_view_pk
-            PRIMARY KEY,
-    dashboard_id    INT    NOT NULL
-        CONSTRAINT dashboard_insight_view_dashboard_id_fk
-            REFERENCES dashboard (id)
-            ON DELETE CASCADE,
-    insight_view_id INT    NOT NULL
-        CONSTRAINT dashboard_insight_view_insight_view_id_fk
-            REFERENCES insight_view (id)
-            ON DELETE CASCADE
+    id              SERIAL NOT NULL CONSTRAINT dashboard_insight_view_pk PRIMARY KEY,
+    dashboard_id    INT    NOT NULL CONSTRAINT dashboard_insight_view_dashboard_id_fk REFERENCES dashboard (id) ON DELETE CASCADE,
+    insight_view_id INT    NOT NULL CONSTRAINT dashboard_insight_view_insight_view_id_fk REFERENCES insight_view (id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS dashboard_insight_view_insight_view_id_fk_idx ON dashboard_insight_view (insight_view_id);
