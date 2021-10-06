@@ -50,7 +50,7 @@ func previewPipeline(w io.Writer, c ci.Config, bk *buildkite.Pipeline) {
 	fmt.Fprintln(w, "Detected changes:")
 	fmt.Fprintf(w, "\tAffects Client: %t\n", c.ChangedFiles.AffectsClient())
 	fmt.Fprintf(w, "\tAffects Go: %t\n", c.ChangedFiles.AffectsGo())
-	fmt.Fprintf(w, "\tAffects DockerFile: %t\n", c.ChangedFiles.AffectsDockerfiles())
+	fmt.Fprintf(w, "\tAffects Dockerfiles: %t\n", c.ChangedFiles.AffectsDockerfiles())
 	fmt.Fprintf(w, "\tAffects GraphQL: %t\n", c.ChangedFiles.AffectsGraphQL())
 	fmt.Fprintf(w, "\tAffects SG: %t\n", c.ChangedFiles.AffectsSg())
 	fmt.Fprintf(w, "Computed Build Steps:\n")
