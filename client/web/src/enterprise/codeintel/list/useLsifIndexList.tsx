@@ -138,9 +138,8 @@ const GRAPH_METADATA = gql`
 export const queryCommitGraphMetadata = (
     repository: string,
     client: ApolloClient<object>
-): Observable<{ stale: boolean; updatedAt: Date | null }> => {
-    console.log('here here here')
-    return from(
+): Observable<{ stale: boolean; updatedAt: Date | null }> =>
+    from(
         client.query<CodeIntelligenceCommitGraphMetadataResult, CodeIntelligenceCommitGraphMetadataVariables>({
             query: getDocumentNode(GRAPH_METADATA),
             variables: { repository },
@@ -166,7 +165,6 @@ export const queryCommitGraphMetadata = (
             }
         })
     )
-}
 
 const QUEUE_AUTO_INDEX_JOBS = gql`
     mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {
