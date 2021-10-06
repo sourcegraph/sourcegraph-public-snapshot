@@ -9,8 +9,9 @@ import (
 )
 
 func newRealDashboardID(arg int64) dashboardID {
-	return newDashboardID("real", arg)
+	return newDashboardID("custom", arg)
 }
+
 func newDashboardID(idType string, arg int64) dashboardID {
 	return dashboardID{
 		IdType: idType,
