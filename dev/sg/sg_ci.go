@@ -31,7 +31,7 @@ func ciExec(ctx context.Context, args []string) error {
 	switch args[0] {
 	case "preview":
 		stdout.Out.WriteLine(output.Linef("", output.StyleSuggestion,
-			"If the current branch were to be pushed, the CI would run as following:"))
+			"If the current branch were to be pushed, the following pipeline would be run:"))
 		cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-preview")
 		cmd.Env = os.Environ()
 		out, err := run.InRoot(cmd)
