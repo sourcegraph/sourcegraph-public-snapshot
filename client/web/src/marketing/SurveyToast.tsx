@@ -9,8 +9,6 @@ import { SurveyRatingRadio } from './SurveyRatingRadio'
 import { Toast } from './Toast'
 import { getDaysActiveCount } from './util'
 
-const hasBeen30DaysSinceLastNotification = (): boolean => getDaysActiveCount() % 30 === 3
-
 /**
  * Show a toast notification if:
  * 1. User has not recently dismissed the notification
@@ -20,7 +18,7 @@ const hasBeen30DaysSinceLastNotification = (): boolean => getDaysActiveCount() %
 const shouldShowToast = (): boolean =>
     localStorage.getItem(HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY) !== 'true' &&
     localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY) !== 'true' &&
-    hasBeen30DaysSinceLastNotification()
+    getDaysActiveCount() % 30 === 3
 
 interface SurveyToastProps {
     /**
