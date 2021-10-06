@@ -49,9 +49,9 @@ var filenamesFromLanguage = func() map[string][]string {
 	return res
 }()
 
-// langToFileRegexp converts a lang: parameter to its corresponding file
+// LangToFileRegexp converts a lang: parameter to its corresponding file
 // patterns for file filters. The lang value must be valid, cf. validate.go
-func langToFileRegexp(lang string) string {
+func LangToFileRegexp(lang string) string {
 	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
 	extensions := enry.GetLanguageExtensions(lang)
 	patterns := make([]string, len(extensions))
@@ -120,8 +120,8 @@ func ToTextPatternInfo(q query.Basic, p Protocol, transform query.BasicPass) *Te
 	filesInclude, filesExclude := IncludeExcludeValues(q, query.FieldFile)
 	// Handle lang: and -lang: filters.
 	langInclude, langExclude := IncludeExcludeValues(q, query.FieldLang)
-	filesInclude = append(filesInclude, mapSlice(langInclude, langToFileRegexp)...)
-	filesExclude = append(filesExclude, mapSlice(langExclude, langToFileRegexp)...)
+	filesInclude = append(filesInclude, mapSlice(langInclude, LangToFileRegexp)...)
+	filesExclude = append(filesExclude, mapSlice(langExclude, LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := IncludeExcludeValues(q, query.FieldRepoHasFile)
 	selector, _ := filter.SelectPathFromString(q.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(q, p)
@@ -228,7 +228,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
+func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
 	var and []zoekt.Q
 
 	var q zoekt.Q
@@ -254,7 +254,7 @@ func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
 		q = &zoekt.Not{Child: q}
 	}
 
-	if forSymbols {
+	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
 			Expr: q,

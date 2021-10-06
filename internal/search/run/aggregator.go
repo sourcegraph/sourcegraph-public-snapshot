@@ -30,19 +30,20 @@ type Aggregator struct {
 	parentStream streaming.Sender
 	db           dbutil.DB
 
-	mu      sync.Mutex
-	results []result.Match
-	stats   streaming.Stats
-	errors  *multierror.Error
+	mu         sync.Mutex
+	results    []result.Match
+	stats      streaming.Stats
+	errors     *multierror.Error
+	matchCount int
 }
 
 // Get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *Aggregator) Get() ([]result.Match, streaming.Stats, *multierror.Error) {
+func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.results, a.stats, a.errors
+	return a.results, a.stats, a.matchCount, a.errors
 }
 
 func (a *Aggregator) Send(event streaming.SearchEvent) {
@@ -58,6 +59,7 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 		a.results = append(a.results, event.Results...)
 	}
 
+	a.matchCount += len(event.Results)
 	a.stats.Update(&event.Stats)
 }
 

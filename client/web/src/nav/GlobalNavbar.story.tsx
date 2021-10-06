@@ -4,6 +4,11 @@ import { SuiteFunction } from 'mocha'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
@@ -11,11 +16,6 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -62,6 +62,7 @@ const defaultProps = (
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
     isExtensionAlertAnimating: false,
+    searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
     enableCodeMonitoring: true,

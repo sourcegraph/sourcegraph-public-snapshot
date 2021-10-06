@@ -52,6 +52,8 @@ export function registerHighlightContributions(): void {
     registerLanguage('perl', require('highlight.js/lib/languages/perl'))
     registerLanguage('scala', require('highlight.js/lib/languages/scala'))
     registerLanguage('graphql', graphQLLanguage)
+    // Apex is not supported by highlight.js, but it's very close to Java.
+    registerLanguage('apex', require('highlight.js/lib/languages/java'))
     /* eslint-enable @typescript-eslint/no-require-imports */
     /* eslint-enable @typescript-eslint/no-var-requires */
 }

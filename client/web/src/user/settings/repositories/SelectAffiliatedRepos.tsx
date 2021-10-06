@@ -346,7 +346,7 @@ export const SelectAffiliatedRepos: FunctionComponent<Props> = ({
             <input
                 className="form-control user-settings-repos__filter-input"
                 type="search"
-                placeholder="Search..."
+                placeholder="Filter..."
                 name="query"
                 autoComplete="off"
                 autoCorrect="off"

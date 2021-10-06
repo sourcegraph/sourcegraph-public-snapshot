@@ -455,8 +455,11 @@ type GitserverRepo struct {
 	// The last external service used to sync or clone this repo
 	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
-	LastError   string
+	LastError string
+	// The last time fetch was called.
 	LastFetched time.Time
+	// The last time a fetch updated the repository.
+	LastChanged time.Time
 	UpdatedAt   time.Time
 }
 
@@ -472,6 +475,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	NamespaceOrgID  int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
 	CloudDefault    bool // Whether this external service is our default public service on Cloud
 }

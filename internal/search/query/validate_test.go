@@ -290,7 +290,7 @@ func TestForAll(t *testing.T) {
 		Parameter{Field: "repo", Value: "foo"},
 		Parameter{Field: "repo", Value: "bar"},
 	}
-	result := forAll(nodes, func(node Node) bool {
+	result := ForAll(nodes, func(node Node) bool {
 		_, ok := node.(Parameter)
 		return ok
 	})

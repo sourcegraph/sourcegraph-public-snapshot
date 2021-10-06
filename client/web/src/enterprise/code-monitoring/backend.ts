@@ -166,6 +166,7 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
         query FetchCodeMonitor($id: ID!) {
             node(id: $id) {
                 ... on Monitor {
+                    __typename
                     id
                     description
                     owner {

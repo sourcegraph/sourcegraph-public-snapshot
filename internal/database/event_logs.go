@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -47,6 +49,28 @@ func (l *EventLogStore) Transact(ctx context.Context) (*EventLogStore, error) {
 	return &EventLogStore{Store: txBase}, err
 }
 
+// SanitizeEventURL makes the given URL is using HTTP/HTTPS scheme and within
+// the current site determined by `conf.ExternalURL()`.
+func SanitizeEventURL(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	// Check if the URL looks like a real URL
+	u, err := url.Parse(raw)
+	if err != nil ||
+		(u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+
+	// Check if the URL belongs to the current site
+	normalized := u.String()
+	if !strings.HasPrefix(normalized, conf.ExternalURL()) {
+		return ""
+	}
+	return normalized
+}
+
 // Event contains information needed for logging an event.
 type Event struct {
 	Name            string
@@ -62,13 +86,17 @@ type Event struct {
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
+	// 🚨 SECURITY: It is important to sanitize event URL before being stored to the
+	// database to help guarantee no malicious data at rest.
+	e.URL = SanitizeEventURL(e.URL)
+
 	argument := e.Argument
 	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
+		argument = json.RawMessage(`{}`)
 	}
 	publicArgument := e.PublicArgument
 	if e.PublicArgument == nil {
-		publicArgument = json.RawMessage([]byte(`{}`))
+		publicArgument = json.RawMessage(`{}`)
 	}
 
 	featureFlags, err := json.Marshal(e.FeatureFlags)

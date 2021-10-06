@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -49,6 +52,9 @@ func TestIndexedSearch(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "foobarHEADSHA"}},
 		},
 	}}
+
+	fooSlashBar := zoektRepos[0].Repository
+	fooSlashFooBar := zoektRepos[1].Repository
 
 	tests := []struct {
 		name               string
@@ -107,10 +113,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
-						Repository: "foo/bar",
-						Branches:   []string{"HEAD"},
-						Version:    "1",
-						FileName:   "baz.go",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
+						Branches:     []string{"HEAD"},
+						Version:      "1",
+						FileName:     "baz.go",
 						LineMatches: []zoekt.LineMatch{
 							{
 								Line: []byte("I'm like 1.5+ hours into writing this test :'("),
@@ -128,10 +135,11 @@ func TestIndexedSearch(t *testing.T) {
 						},
 					},
 					{
-						Repository: "foo/foobar",
-						Branches:   []string{"HEAD"},
-						Version:    "2",
-						FileName:   "baz.go",
+						Repository:   "foo/foobar",
+						RepositoryID: fooSlashFooBar.ID,
+						Branches:     []string{"HEAD"},
+						Version:      "2",
+						FileName:     "baz.go",
 						LineMatches: []zoekt.LineMatch{
 							{
 								Line: []byte("s/rain/pain"),
@@ -165,17 +173,19 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
-						Repository: "foo/bar",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
 						// baz.go is the same in HEAD and dev
 						Branches: []string{"HEAD", "dev"},
 						FileName: "baz.go",
 						Version:  "1",
 					},
 					{
-						Repository: "foo/bar",
-						Branches:   []string{"dev"},
-						FileName:   "bam.go",
-						Version:    "2",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
+						Branches:     []string{"dev"},
+						FileName:     "bam.go",
+						Version:      "2",
 					},
 				},
 				since: func(time.Time) time.Duration { return 0 },
@@ -205,10 +215,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
-						Repository: "foo/bar",
-						Branches:   []string{"HEAD"},
-						FileName:   "baz.go",
-						Version:    "1",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
+						Branches:     []string{"HEAD"},
+						FileName:     "baz.go",
+						Version:      "1",
 					},
 				},
 			},
@@ -256,27 +267,52 @@ func TestIndexedSearch(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			args := &search.TextParameters{
-				Query:           q,
-				PatternInfo:     tt.args.patternInfo,
-				Repos:           tt.args.repos,
-				UseFullDeadline: tt.args.useFullDeadline,
-				Zoekt: &searchbackend.FakeSearcher{
-					Result: &zoekt.SearchResult{Files: tt.args.results},
-					Repos:  zoektRepos,
-				},
+			zoekt := &searchbackend.FakeSearcher{
+				Result: &zoekt.SearchResult{Files: tt.args.results},
+				Repos:  zoektRepos,
 			}
 
-			indexed, err := NewIndexedSubsetSearchRequest(context.Background(), args, search.TextRequest, MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})))
+			zoektQuery, err := search.QueryToZoektQuery(tt.args.patternInfo, search.TextRequest)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if diff := cmp.Diff(tt.wantUnindexed, indexed.Unindexed, cmpopts.EquateEmpty()); diff != "" {
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            search.TextRequest,
+				FileMatchLimit: tt.args.patternInfo.FileMatchLimit,
+				Select:         tt.args.patternInfo.Select,
+				Zoekt:          zoekt,
+			}
+
+			args := &search.TextParameters{
+				Repos: tt.args.repos,
+				PatternInfo: &search.TextPatternInfo{
+					Index:          tt.args.patternInfo.Index,
+					FileMatchLimit: zoektArgs.FileMatchLimit,
+					Select:         zoektArgs.Select,
+				},
+				Query: q,
+				Zoekt: zoektArgs.Zoekt,
+			}
+
+			indexed, err := NewIndexedSearchRequest(
+				context.Background(),
+				args,
+				search.TextRequest,
+				MissingRepoRevStatus(streaming.StreamFunc(func(streaming.SearchEvent) {})),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			indexedSubset := indexed.(*IndexedSubsetSearchRequest)
+
+			if diff := cmp.Diff(tt.wantUnindexed, indexedSubset.Unindexed, cmpopts.EquateEmpty()); diff != "" {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			indexed.since = tt.args.since
+			indexedSubset.since = tt.args.since
 
 			// This is a quick fix which will break once we enable the zoekt client for true streaming.
 			// Once we return more than one event we have to account for the proper order of results
@@ -334,9 +370,9 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/indexed-one@",
 		"foo/indexed-two@",
 		"foo/indexed-three@",
+		"foo/partially-indexed@HEAD:bad-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
-		"foo/multi-rev@a:b",
 	)
 
 	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{}
@@ -351,22 +387,13 @@ func TestZoektIndexedRepos(t *testing.T) {
 			{Name: "HEAD", Version: "deadbeef"},
 			{Name: "foobar", Version: "deadcow"},
 		},
+		{
+			{Name: "HEAD", Version: "deadbeef"},
+		},
 	} {
 		r := repos[i]
 		branches := branches
 		zoektRepos[uint32(r.Repo.ID)] = &zoekt.MinimalRepoListEntry{Branches: branches}
-	}
-
-	makeIndexed := func(repos []*search.RepositoryRevisions) []*search.RepositoryRevisions {
-		var indexed []*search.RepositoryRevisions
-		for _, r := range repos {
-			rev := &search.RepositoryRevisions{
-				Repo: r.Repo,
-				Revs: r.Revs,
-			}
-			indexed = append(indexed, rev)
-		}
-		return indexed
 	}
 
 	cases := []struct {
@@ -375,19 +402,25 @@ func TestZoektIndexedRepos(t *testing.T) {
 		indexed   []*search.RepositoryRevisions
 		unindexed []*search.RepositoryRevisions
 	}{{
-		name:      "all",
-		repos:     repos,
-		indexed:   makeIndexed(repos[:3]),
-		unindexed: repos[3:],
+		name:  "all",
+		repos: repos,
+		indexed: []*search.RepositoryRevisions{
+			repos[0], repos[1], repos[2],
+			{Repo: repos[3].Repo, Revs: repos[3].Revs[:1]},
+		},
+		unindexed: []*search.RepositoryRevisions{
+			{Repo: repos[3].Repo, Revs: repos[3].Revs[1:]},
+			repos[4], repos[5],
+		},
 	}, {
 		name:      "one unindexed",
-		repos:     repos[3:4],
+		repos:     repos[4:5],
 		indexed:   repos[:0],
-		unindexed: repos[3:4],
+		unindexed: repos[4:5],
 	}, {
 		name:      "one indexed",
 		repos:     repos[:1],
-		indexed:   makeIndexed(repos[:1]),
+		indexed:   repos[:1],
 		unindexed: repos[:0],
 	}}
 
@@ -528,7 +561,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	type ret struct {
-		Indexed   map[string]*search.RepositoryRevisions
+		Indexed   map[api.RepoID]*search.RepositoryRevisions
 		Unindexed []*search.RepositoryRevisions
 	}
 
@@ -628,12 +661,76 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}
 }
 
-func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.RepositoryRevisions {
-	m := map[string]*search.RepositoryRevisions{}
+func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[api.RepoID]*search.RepositoryRevisions {
+	m := map[api.RepoID]*search.RepositoryRevisions{}
 	for _, r := range rs {
-		m[string(r.Repo.Name)] = r
+		m[r.Repo.ID] = r
 	}
 	return m
+}
+
+func TestZoektGlobalQueryScope(t *testing.T) {
+	cases := []struct {
+		name    string
+		opts    search.RepoOptions
+		priv    []types.RepoName
+		want    string
+		wantErr string
+	}{{
+		name: "any",
+		opts: search.RepoOptions{
+			Visibility: query.Any,
+		},
+		want: `(and branch="HEAD" rawConfig:RcOnlyPublic)`,
+	}, {
+		name: "normal",
+		opts: search.RepoOptions{
+			Visibility: query.Any,
+			NoArchived: true,
+			NoForks:    true,
+		},
+		priv: []types.RepoName{{ID: 1}, {ID: 2}},
+		want: `(or (and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived) (branchesrepos HEAD:2))`,
+	}, {
+		name: "private",
+		opts: search.RepoOptions{
+			Visibility: query.Private,
+		},
+		priv: []types.RepoName{{ID: 1}, {ID: 2}},
+		want: `(branchesrepos HEAD:2)`,
+	}, {
+		name: "minusrepofilter",
+		opts: search.RepoOptions{
+			Visibility:       query.Public,
+			MinusRepoFilters: []string{"java"},
+		},
+		want: `(and branch="HEAD" rawConfig:RcOnlyPublic (not reporegex:"(?i)java"))`,
+	}, {
+		name: "bad minusrepofilter",
+		opts: search.RepoOptions{
+			Visibility:       query.Any,
+			MinusRepoFilters: []string{"())"},
+		},
+		wantErr: "invalid regex for -repo filter",
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			q, err := zoektGlobalQueryScope(tc.opts, tc.priv)
+			if err != nil || tc.wantErr != "" {
+				if got := fmt.Sprintf("%s", err); !strings.Contains(got, tc.wantErr) {
+					t.Fatalf("expected error to contain %q: %s", tc.wantErr, got)
+				}
+				if tc.wantErr == "" {
+					t.Fatalf("unexpected error: %s", err)
+				}
+				return
+			}
+			if got := zoektquery.Simplify(q).String(); got != tc.want {
+				t.Fatalf("unexpected scoped query:\nwant: %s\ngot:  %s", tc.want, got)
+			}
+		})
+	}
 }
 
 func TestContextWithoutDeadline(t *testing.T) {

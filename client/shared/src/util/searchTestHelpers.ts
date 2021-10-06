@@ -237,6 +237,7 @@ export const extensionsController: Controller = {
         pretendRemote<FlatExtensionHostAPI>({
             getContributions: () => pretendProxySubscribable(NEVER),
             registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
+            haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
         })
     ),
     commandErrors: EMPTY,

@@ -44,13 +44,13 @@ export interface SearchBoxProps
     /** Whether comments are parsed and highlighted */
     interpretComments?: boolean
 
-    isSearchOnboardingTourVisible: boolean
-
     /** Don't show the version contexts dropdown. */
     hideVersionContexts?: boolean
 
     /** Don't show search help button */
     hideHelpButton?: boolean
+
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
@@ -72,7 +72,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                 />
             )}
             <div className={classNames(styles.searchBoxBackgroundContainer, 'flex-shrink-past-contents')}>
-                {props.showSearchContext && (
+                {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
                             {...props}
@@ -84,7 +84,11 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     </>
                 )}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')}>
-                    <LazyMonacoQueryInput {...props} className={styles.searchBoxInput} />
+                    <LazyMonacoQueryInput
+                        {...props}
+                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                        className={styles.searchBoxInput}
+                    />
                     <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>

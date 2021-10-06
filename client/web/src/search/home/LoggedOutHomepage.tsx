@@ -6,9 +6,9 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { repogroupList } from '../../repogroups/HomepageConfig'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
@@ -129,32 +129,35 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     <HeroSection {...props} />
                 </div>
 
-                <div className={styles.repogroupSection}>
+                <div className={styles.communitySearchContextsSection}>
                     <div className="d-block d-md-flex align-items-baseline mb-3">
                         <div className={classNames(styles.title, 'mr-2')}>Search open source communities</div>
                         <div className="font-weight-normal text-muted">
                             Customized search portals for our open source partners
                         </div>
                     </div>
-                    <div className={styles.loggedOutHomepageRepogroupListCards}>
-                        {repogroupList.map(repogroup => (
+                    <div className={styles.loggedOutHomepageCommunitySearchContextListCards}>
+                        {communitySearchContextsList.map(communitySearchContext => (
                             <div
                                 className={classNames(
-                                    styles.loggedOutHomepageRepogroupListCard,
+                                    styles.loggedOutHomepageCommunitySearchContextListCard,
                                     'd-flex align-items-center'
                                 )}
-                                key={repogroup.name}
+                                key={communitySearchContext.spec}
                             >
                                 <img
-                                    className={classNames(styles.loggedOutHomepageRepogroupListIcon, 'mr-2')}
-                                    src={repogroup.homepageIcon}
-                                    alt={`${repogroup.name} icon`}
+                                    className={classNames(
+                                        styles.loggedOutHomepageCommunitySearchContextListIcon,
+                                        'mr-2'
+                                    )}
+                                    src={communitySearchContext.homepageIcon}
+                                    alt={`${communitySearchContext.spec} icon`}
                                 />
                                 <Link
-                                    to={repogroup.url}
-                                    className={classNames(styles.loggedOutHomepageRepogroupListingTitle)}
+                                    to={communitySearchContext.url}
+                                    className={classNames(styles.loggedOutHomepageCommunitySearchContextsListingTitle)}
                                 >
-                                    {repogroup.title}
+                                    {communitySearchContext.title}
                                 </Link>
                             </div>
                         ))}

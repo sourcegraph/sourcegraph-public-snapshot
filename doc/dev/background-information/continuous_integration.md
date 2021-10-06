@@ -5,6 +5,13 @@ We have a variety of tooling on [Buildkite](https://buildkite.com/sourcegraph/so
 - [GitHub Actions](#github-actions)
   - [Third-Party Licenses](#third-party-licenses)
 
+## Buildkite pipelines
+
+[Tests](../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph).
+Pipeline steps are generated using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
+
+<!-- TODO: how-to guide https://github.com/sourcegraph/sourcegraph/issues/25202 -->
+
 ## GitHub Actions
 
 ### Third-Party Licenses

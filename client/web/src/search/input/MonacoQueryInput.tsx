@@ -36,7 +36,7 @@ export interface MonacoQueryInputProps
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
-
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
     // Whether globbing is enabled for filters.
     globbing: boolean
 
@@ -116,6 +116,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isLightTheme,
     className,
     settingsCascade,
+    onHandleFuzzyFinder,
 }) => {
     const acceptSearchSuggestionOnEnter: boolean | undefined =
         !isErrorLike(settingsCascade.final) &&
@@ -280,16 +281,34 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         if (!acceptSearchSuggestionOnEnter) {
             // Unconditionally trigger the search when pressing `Enter`,
             // including when there are visible completion suggestions.
-            const disposable = editor.addAction({
-                id: 'submitOnEnter',
-                label: 'submitOnEnter',
-                keybindings: [Monaco.KeyCode.Enter],
-                run: () => {
-                    onSubmit()
-                    editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-                },
-            })
-            return () => disposable.dispose()
+            const disposables = [
+                editor.addAction({
+                    id: 'submitOnEnter',
+                    label: 'submitOnEnter',
+                    keybindings: [Monaco.KeyCode.Enter],
+                    run: () => {
+                        onSubmit()
+                        editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+                    },
+                }),
+            ]
+
+            if (onHandleFuzzyFinder) {
+                disposables.push(
+                    editor.addAction({
+                        id: 'triggerFuzzyFinder',
+                        label: 'triggerFuzzyFinder',
+                        keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
+                        run: () => onHandleFuzzyFinder(true),
+                    })
+                )
+            }
+
+            return () => {
+                for (const disposable of disposables) {
+                    disposable.dispose()
+                }
+            }
         }
 
         const run = (): void => {
@@ -320,7 +339,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 disposable.dispose()
             }
         }
-    }, [editor, onSubmit, acceptSearchSuggestionOnEnter])
+    }, [editor, onSubmit, onHandleFuzzyFinder, acceptSearchSuggestionOnEnter])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,

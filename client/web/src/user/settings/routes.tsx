@@ -130,6 +130,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
+                telemetryService={props.telemetryService}
             />
         ),
         exact: true,
@@ -152,5 +153,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         exact: true,
         render: lazyComponent(() => import('./research/ProductResearch'), 'ProductResearchPage'),
         condition: () => window.context.productResearchPageEnabled,
+    },
+    {
+        path: '/about-organizations',
+        exact: true,
+        render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
     },
 ]

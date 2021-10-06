@@ -23,6 +23,10 @@ export interface Settings {
         enableFastResultLoading?: boolean
         acceptSearchSuggestionOnEnter?: boolean
         batchChangesExecution?: boolean
+        showSearchContext?: boolean
+        showSearchContextManagement?: boolean
+        fuzzyFinder?: boolean
+        fuzzyFinderCaseInsensitiveFileCountThreshold?: number
     }
     [key: string]: any
 

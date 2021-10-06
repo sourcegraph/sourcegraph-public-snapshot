@@ -192,7 +192,7 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     const recentSearches: RecentSearch[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
             const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 

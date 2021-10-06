@@ -15,9 +15,6 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  # The profiler is a GCP feature and so is not supported locally.
-  SRC_DISABLE_PROFILER: 'true'
-
   GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
@@ -139,6 +136,7 @@ commands:
       ENTERPRISE: 1
       SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
       EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
@@ -223,12 +221,15 @@ commands:
   symbols:
     cmd: .bin/symbols
     install: |
-      ./dev/libsqlite3-pcre/build.sh &&
+      # Remove old pcre libs that might still be lying around.
+      # TODO delete these two lines after 2021-10-24 (1 month after removal of pcre).
+      rm -f libsqlite3-pcre.dylib || true
+      rm -f libsqlite3-pcre.so || true
+
       ./cmd/symbols/build-ctags.sh &&
       go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
-      LIBSQLITE3_PCRE: ./dev/libsqlite3-pcre/build.sh libpath
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
@@ -322,16 +323,19 @@ commands:
         -o .bin/docsite_${DOCSITE_VERSION} && chmod +x .bin/docsite_${DOCSITE_VERSION}
       fi
     env:
-      DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
+      DOCSITE_VERSION: v1.8.2 # make sure to update all DOCSITE_VERSION
 
-  syntect_server:
+  syntax-highlighter:
     ignoreStdout: true
     ignoreStderr: true
     cmd: |
-      docker run --name=syntect_server --rm -p9238:9238 \
+      docker run --name=syntax-highlighter --rm -p9238:9238 \
       -e WORKERS=1 -e ROCKET_ADDRESS=0.0.0.0 \
-      sourcegraph/syntect_server:32d880d@sha256:899661691c3a6f8d587186bed73c3224b065d1e1c3485aff2ea208c261c010f6
-    install: docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      sourcegraph/syntax-highlighter@sha256:92a5c181dbf2d8aead5171c985139bf38c496bef2ac98afbd64c3612967fe5cc
+    install: |
+      # Remove containers by the old name, too.
+      docker inspect syntect_server >/dev/null 2>&1 && docker rm -f syntect_server || true
+      docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
     env:
       # This is not needed actually
       INSECURE_DEV: 1
@@ -431,6 +435,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
@@ -502,14 +507,18 @@ commands:
     #       PGUSER: sourcegraph
     #
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
-    cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
+    cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
+    env:
+      COMPOSE_ARGS: --force-recreate
+      # Set the following to a path on disk to persist data (or unset to not persist data)
+      PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
+      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |
-      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL} >> "${JAEGER_LOGS}"/jaeger.log 2>&1
+      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
     install: |
       mkdir -p "${JAEGER_DISK}"
-      mkdir -p "${JAEGER_LOGS}"
 
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
       target="$PWD/.bin/jaeger-all-in-one-${suffix}"
@@ -525,7 +534,6 @@ commands:
     env:
       JAEGER_VERSION: 1.18.1
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
-      JAEGER_LOGS: $HOME/.sourcegraph-dev/logs/jaeger
       JAEGER_LOG_LEVEL: info
       QUERY_BASE_PATH: /-/debug/jaeger
 
@@ -643,6 +651,11 @@ commands:
       - monitoring
     continueWatchOnExit: true
 
+  # This will execute `env`, a utility to print the process environment. Can
+  # be used to debug which global vars `sg` uses.
+  debug-env:
+    cmd: env
+
 checks:
   docker:
     cmd: docker version
@@ -656,10 +669,11 @@ checks:
     cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
+defaultCommandset: enterprise
 commandsets:
-  # TODO: Should we be able to define "env" vars _per set_?
-
   oss:
+    # open-source version doesn't require the dev-private repository
+    requiresDevPrivate: false
     checks:
       - docker
       - redis
@@ -675,7 +689,7 @@ commandsets:
       - web
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -683,6 +697,7 @@ commandsets:
       - zoekt-webserver-1
 
   enterprise: &enterprise_set
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -698,14 +713,12 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
       - zoekt-webserver-0
       - zoekt-webserver-1
-
-  default: *enterprise_set
 
   dotcom:
     <<: *enterprise_set
@@ -713,6 +726,7 @@ commandsets:
       SOURCEGRAPHDOTCOM_MODE: true
 
   enterprise-codeintel:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -728,7 +742,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -739,6 +753,7 @@ commandsets:
       - codeintel-executor
 
   enterprise-codeinsights:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -754,7 +769,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -766,6 +781,7 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
 
   api-only:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -784,6 +800,7 @@ commandsets:
       - zoekt-webserver-1
 
   batches:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -799,7 +816,7 @@ commandsets:
       - query-runner
       - caddy
       - docsite
-      - syntect_server
+      - syntax-highlighter
       - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
@@ -808,6 +825,7 @@ commandsets:
       - batches-executor
 
   core-app:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -875,4 +893,4 @@ tests:
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
     env:
-      DOCSITE_VERSION: v1.7.0 # make sure to update all DOCSITE_VERSION
+      DOCSITE_VERSION: v1.8.2 # make sure to update all DOCSITE_VERSION

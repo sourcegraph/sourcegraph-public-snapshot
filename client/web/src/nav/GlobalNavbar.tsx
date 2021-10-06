@@ -93,7 +93,7 @@ interface Props
      * 'low-profile' renders the the navbar with no border or background. Used on the search
      * homepage.
      *
-     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on repogroup pages.
+     * 'low-profile-with-logo' renders the low-profile navbar but with the homepage logo. Used on community search context pages.
      */
     variant: 'default' | 'low-profile' | 'low-profile-with-logo'
 
@@ -102,6 +102,7 @@ interface Props
 
     minimalNavLinks?: boolean
     isSearchAutoFocusRequired?: boolean
+    isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
@@ -121,7 +122,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     minimalNavLinks,
     isSourcegraphDotCom,
+    isRepositoryRelatedPage,
     codeInsightsEnabled,
+    searchContextsEnabled,
     ...props
 }) => {
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
@@ -140,14 +143,14 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     const isSearchContextAvailable = useObservable(
         useMemo(
             () =>
-                globalSearchContextSpec
+                globalSearchContextSpec && searchContextsEnabled
                     ? // While we wait for the result of the `isSearchContextSpecAvailable` call, we assume the context is available
                       // to prevent flashing and moving content in the query bar. This optimizes for the most common use case where
                       // user selects a search context from the dropdown.
                       // See https://github.com/sourcegraph/sourcegraph/issues/19918 for more info.
                       isSearchContextSpecAvailable(globalSearchContextSpec.spec).pipe(startWith(true))
                     : of(false),
-            [globalSearchContextSpec]
+            [globalSearchContextSpec, searchContextsEnabled]
         )
     )
 
@@ -196,6 +199,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             patternType={patternType}
             caseSensitive={caseSensitive}
             isSourcegraphDotCom={isSourcegraphDotCom}
+            searchContextsEnabled={searchContextsEnabled}
+            isRepositoryRelatedPage={isRepositoryRelatedPage}
         />
     )
 

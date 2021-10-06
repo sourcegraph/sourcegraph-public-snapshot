@@ -9,7 +9,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
-var zoektHTTPClient, _ = httpcli.NewInternalClientFactory("zoekt_webserver").Client()
+// We don't use the normal factory for internal requests because we disable
+// retries. Currently our retry framework copies the full body on every
+// request, this is prohibitive when zoekt generates a large query.
+//
+// Once our retry framework supports the use of Request.GetBody we can switch
+// back to the normal internal request factory.
+var zoektHTTPClient, _ = httpcli.NewFactory(
+	httpcli.NewMiddleware(
+		httpcli.ContextErrorMiddleware,
+	),
+	httpcli.NewMaxIdleConnsPerHostOpt(500),
+	httpcli.MeteredTransportOpt("zoekt_webserver"),
+	httpcli.TracedTransportOpt,
+).Client()
 
 // ZoektStreamFunc is a convenience function to create a stream receiver from a
 // function.

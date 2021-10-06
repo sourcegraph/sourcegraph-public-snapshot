@@ -37,15 +37,18 @@ export const RevisionsPopoverTab: React.FunctionComponent<RevisionsPopoverTabPro
             autoFocus={true}
             inputPlaceholder="Find..."
             inputClassName="connection-popover__input"
+            compact={true}
         />
-        <SummaryContainer>{query && summary}</SummaryContainer>
-        {error && <ConnectionError errors={[error.message]} />}
-        <ConnectionList className="connection-popover__nodes">{children}</ConnectionList>
-        {loading && <ConnectionLoading />}
+        <SummaryContainer compact={true}>{query && summary}</SummaryContainer>
+        {error && <ConnectionError errors={[error.message]} compact={true} />}
+        <ConnectionList compact={true} className="connection-popover__nodes">
+            {children}
+        </ConnectionList>
+        {loading && <ConnectionLoading compact={true} />}
         {!loading && connection && (
-            <SummaryContainer>
+            <SummaryContainer compact={true}>
                 {!query && summary}
-                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                {hasNextPage && <ShowMoreButton compact={true} onClick={fetchMore} />}
             </SummaryContainer>
         )}
     </ConnectionContainer>

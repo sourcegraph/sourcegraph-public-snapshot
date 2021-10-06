@@ -7,7 +7,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -44,6 +44,7 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
+import { ExternalServicesResult, UserRepositoriesResult } from './graphql-operations'
 import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
@@ -65,6 +66,7 @@ import {
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
+    SearchContextProps,
 } from './search'
 import {
     fetchSavedSearches,
@@ -106,6 +108,7 @@ export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
         CodeInsightsProps,
         Pick<BatchChangesProps, 'batchChangesEnabled'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
         KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -131,7 +134,12 @@ export interface SourcegraphWebAppProps
 interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
-    /** The currently authenticated user (or null if the viewer is anonymous). */
+    /**
+     * The currently authenticated user:
+     * - `undefined` until `CurrentAuthState` query completion.
+     * - `AuthenticatedUser` if the viewer is authenticated.
+     * - `null` if the viewer is anonymous.
+     */
     authenticatedUser?: AuthenticatedUser | null
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
@@ -169,8 +177,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * The previously used version context, as specified in localStorage.
      */
     previousVersionContext: string | null
-
-    showRepogroupHomepage: boolean
 
     showOnboardingTour: boolean
 
@@ -289,7 +295,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -323,7 +328,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             })
 
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
+            combineLatest([
+                from(this.platformContext.settings),
+                // Start with `undefined` while we don't know if the viewer is authenticated or not.
+                authenticatedUser.pipe(startWith(undefined)),
+            ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     this.setState(state => ({
                         settingsCascade,
@@ -359,16 +368,28 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                     switchMap(([, authenticatedUser]) =>
                         authenticatedUser
                             ? combineLatest([
-                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  listUserRepositories({
+                                      id: authenticatedUser.id,
+                                      first: window.context.sourcegraphDotComMode ? undefined : 1,
+                                  }),
                                   queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                                  [authenticatedUser],
                               ])
                             : of(null)
                     ),
+                    tap(result => {
+                        if (!isErrorLike(result) && result !== null && window.context.sourcegraphDotComMode) {
+                            // Set user properties for Cloud analytics.
+                            const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
+                            this.setUserProperties(userRepositoriesResult, externalServicesResult, authenticatedUser)
+                        }
+                    }),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
+
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
@@ -505,8 +526,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     extensionsController={this.extensionsController}
                                                     telemetryService={eventLogger}
                                                     isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                                    showRepogroupHomepage={this.state.showRepogroupHomepage}
                                                     showOnboardingTour={this.state.showOnboardingTour}
+                                                    searchContextsEnabled={this.props.searchContextsEnabled}
                                                     showSearchContext={this.state.showSearchContext}
                                                     hasUserAddedRepositories={this.hasUserAddedRepositories()}
                                                     hasUserAddedExternalServices={
@@ -620,6 +641,10 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
+        if (!this.props.searchContextsEnabled) {
+            return
+        }
+
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
             getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
@@ -635,8 +660,33 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
+    private setUserProperties = (
+        reposResult: NonNullable<UserRepositoriesResult['node'] & { __typename: 'User' }>['repositories'],
+        extensionSvcResult: ExternalServicesResult['externalServices'],
+        authenticatedUser: AuthenticatedUser | null
+    ): void => {
+        const userProps: userProperties = {
+            hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
+            numberOfRepositoriesAdded: reposResult.totalCount ? reposResult.totalCount : 0,
+            numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
+            numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
+            hasActiveCodeHost: extensionSvcResult.totalCount > 0,
+            isSourcegraphTeammate: authenticatedUser?.email.endsWith('@sourcegraph.com') || false,
+        }
+        localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
+    }
+
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
+}
+
+interface userProperties {
+    hasAddedRepositories: boolean
+    numberOfRepositoriesAdded: number
+    numberOfPublicRepos: number
+    numberOfPrivateRepos: number
+    hasActiveCodeHost: boolean
+    isSourcegraphTeammate: boolean
 }

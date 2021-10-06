@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type gitCommitConnectionResolver struct {
@@ -23,12 +24,12 @@ type gitCommitConnectionResolver struct {
 
 	// cache results because it is used by multiple fields
 	once    sync.Once
-	commits []*git.Commit
+	commits []*gitapi.Commit
 	err     error
 }
 
-func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*git.Commit, error) {
-	do := func() ([]*git.Commit, error) {
+func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitapi.Commit, error) {
+	do := func() ([]*gitapi.Commit, error) {
 		var n int32
 		if r.first != nil {
 			n = *r.first
