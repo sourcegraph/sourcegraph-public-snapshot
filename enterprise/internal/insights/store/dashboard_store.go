@@ -128,6 +128,7 @@ FROM dashboard db
                         JOIN dashboard_insight_view div ON iv.id = div.insight_view_id
                GROUP BY div.dashboard_id) t on t.dashboard_id = db.id
 WHERE %S
+ORDER BY db.id;
 %S;
 `
 
