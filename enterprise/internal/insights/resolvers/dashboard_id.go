@@ -21,6 +21,8 @@ func newDashboardID(idType string, arg int64) dashboardID {
 
 const dashboardKind = "dashboard"
 
+// dashboardID represents a GraphQL ID for insight dashboards. Each of these IDs have a sub-type (case-insensitive) to identify
+// subcategories of dashboards. The argument is the ID associated with the sub-category of dashboard, if relevant.
 type dashboardID struct {
 	IdType string
 	Arg    int64
