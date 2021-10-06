@@ -496,7 +496,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Cmd(fmt.Sprintf("trivy image %s", image)),
 		}
 
-		pipeline.AddStep(fmt.Sprintf(":trivy: 🔎 %s", image), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":trivy: 🔎 %s", app), cmds...)
 	}
 }
 
