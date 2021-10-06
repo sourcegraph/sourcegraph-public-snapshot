@@ -2,10 +2,12 @@ import expect from 'expect'
 import { test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
+
+import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
@@ -51,6 +53,13 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     { type: 'done', data: {} },
 ]
 
+const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
+    ...commonWebGraphQlResults,
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: true,
+    }),
+}
+
 describe('Search', () => {
     let driver: Driver
     before(async () => {
@@ -64,6 +73,7 @@ describe('Search', () => {
             currentTest: this.currentTest!,
             directory: __dirname,
         })
+        testContext.overrideGraphQL(commonSearchGraphQLResults)
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -81,7 +91,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
-            const origQuery = 'foo'
+            const origQuery = 'context:global foo'
             for (const filter of dynamicFilters) {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
@@ -196,7 +206,7 @@ describe('Search', () => {
     describe('Search field value', () => {
         test('Is set from the URL query parameter when loading a search-related page', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 RegistryExtensions: () => ({
                     extensionRegistry: {
                         __typename: 'ExtensionRegistry',
@@ -231,7 +241,7 @@ describe('Search', () => {
             await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
         })
 
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
@@ -241,7 +251,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
             await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
         })
     })
 
@@ -255,7 +265,7 @@ describe('Search', () => {
             await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
@@ -266,7 +276,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
@@ -276,7 +286,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
         })
     })
 
@@ -289,7 +299,7 @@ describe('Search', () => {
             // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
             await driver.page.keyboard.type(' hello', { delay: 50 })
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
+            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })
     })
 
@@ -373,7 +383,7 @@ describe('Search', () => {
 
         test('diff search syntax highlighting', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...diffHighlightResult,
             })
             testContext.overrideSearchStreamEvents(diffSearchStreamEvents)
@@ -394,7 +404,7 @@ describe('Search', () => {
 
         test('commit search syntax highlighting', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...commitHighlightResult,
             })
             testContext.overrideSearchStreamEvents(commitSearchStreamEvents)
@@ -415,7 +425,7 @@ describe('Search', () => {
 
         test('code, file and repo results with filter suggestions', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
                 ...highlightFileResult,
             })
             testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
@@ -437,7 +447,7 @@ describe('Search', () => {
 
         test('symbol results', async () => {
             testContext.overrideGraphQL({
-                ...commonWebGraphQlResults,
+                ...commonSearchGraphQLResults,
             })
             testContext.overrideSearchStreamEvents(symbolSearchStreamEvents)
 

@@ -26,6 +26,7 @@ const defaultProps: MonacoQueryInputProps = {
     onChange: () => {},
     onSubmit: () => {},
     settingsCascade: { final: null, subjects: null },
+    onHandleFuzzyFinder: () => {},
 }
 
 add(
