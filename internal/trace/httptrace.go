@@ -58,14 +58,6 @@ var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-var minDuration time.Duration
-var minCode int
-
-func init() {
-	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
-	minCode = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
-}
-
 func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
@@ -138,6 +130,11 @@ func RequestSource(ctx context.Context) SourceType {
 var slowPaths = map[string]time.Duration{
 	"/repo-update": 5 * time.Second,
 }
+
+var (
+	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
+	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
+)
 
 // HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
 //
