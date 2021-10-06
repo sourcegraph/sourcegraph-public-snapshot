@@ -36,6 +36,7 @@
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
   - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
+  - [`sg ci` - Interact with Sourcegraph's continuous integration pipelines](#sg-ci)
 - [Configuration](#configuration)
 - [Contributing to sg](#contributing-to-sg)
 
@@ -211,6 +212,18 @@ sg rfc search "search terms"
 
 # Open a specific RFC
 sg rfc open 420
+```
+
+## `sg ci`
+
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+
+```bash
+# Preview what a CI run for your current changes will look like
+sg ci preview
+
+# Check on the status of your changes in the Buildkite pipeline
+sg ci status
 ```
 
 ## Configuration
