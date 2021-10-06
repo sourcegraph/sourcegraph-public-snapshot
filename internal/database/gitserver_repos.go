@@ -44,13 +44,14 @@ func (s *GitserverRepoStore) Transact(ctx context.Context) (*GitserverRepoStore,
 func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, now())",
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, now())",
 			gr.RepoID,
 			gr.CloneStatus,
 			dbutil.NewNullString(gr.ShardID),
 			dbutil.NewNullInt64(gr.LastExternalService),
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
+			gr.LastChanged,
 		)
 
 		values = append(values, q)
@@ -59,11 +60,11 @@ func (s *GitserverRepoStore) Upsert(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.Upsert
 INSERT INTO
-    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, last_fetched, updated_at)
+    gitserver_repos(repo_id, clone_status, shard_id, last_external_service, last_error, last_fetched, last_changed, updated_at)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
-    SET (clone_status, shard_id, last_external_service, last_error, last_fetched, updated_at) =
-        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, EXCLUDED.last_fetched, now())
+    SET (clone_status, shard_id, last_external_service, last_error, last_fetched, last_changed, updated_at) =
+        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_external_service, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, now())
 `, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "creating GitserverRepo")
@@ -109,6 +110,7 @@ func (s *GitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 			&dbutil.NullInt64{N: &gr.LastExternalService},
 			&dbutil.NullString{S: &gr.LastError},
 			&dbutil.NullTime{Time: &gr.LastFetched},
+			&dbutil.NullTime{Time: &gr.LastChanged},
 			&dbutil.NullTime{Time: &gr.UpdatedAt},
 		); err != nil {
 			return errors.Wrap(err, "scanning row")
@@ -146,6 +148,7 @@ SELECT
 	gr.last_external_service,
 	gr.last_error,
 	gr.last_fetched,
+	gr.last_changed,
 	gr.updated_at
 FROM repo
 LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id
@@ -163,6 +166,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		NULL AS last_external_service,
 		NULL AS last_error,
 		NULL AS last_fetched,
+		NULL AS last_changed,
 		NULL AS updated_at
 	FROM repo
 	WHERE repo.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id)
@@ -175,6 +179,7 @@ const iterateRepoGitserverStatusWithoutShardQuery = `
 		gr.last_external_service,
 		gr.last_error,
 		gr.last_fetched,
+		gr.last_changed,
 		gr.updated_at
 	FROM repo
 	JOIN gitserver_repos gr ON gr.repo_id = repo.id
@@ -192,6 +197,7 @@ SELECT
        last_external_service,
        last_error,
        last_fetched,
+       last_changed,
        updated_at
 FROM gitserver_repos
 WHERE repo_id = %s
@@ -210,6 +216,7 @@ WHERE repo_id = %s
 		&dbutil.NullInt64{N: &gr.LastExternalService},
 		&dbutil.NullString{S: &gr.LastError},
 		&dbutil.NullTime{Time: &gr.LastFetched},
+		&dbutil.NullTime{Time: &gr.LastChanged},
 		&gr.UpdatedAt,
 	)
 	if err != nil {
@@ -265,22 +272,24 @@ WHERE gitserver_repos.last_error IS DISTINCT FROM EXCLUDED.last_error
 type GitserverFetchData struct {
 	// LastFetched was the time the fetch operation completed (gitserver_repos.last_fetched).
 	LastFetched time.Time
+	// LastChanged was the last time a fetch changed the contents of the repo (gitserver_repos.last_changed).
+	LastChanged time.Time
 	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
 	ShardID string
 }
 
-// SetLastFetched will attempt to update ONLY the last fetched time of a GitServerRepo.
+// SetLastFetched will attempt to update ONLY the last fetched data of a GitServerRepo.
 // a matching row does not yet exist a new one will be created.
 func (s *GitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:GitserverRepoStore.SetLastFetched
-INSERT INTO gitserver_repos(repo_id, last_fetched, shard_id, updated_at)
-SELECT id, %s, %s, now()
+INSERT INTO gitserver_repos(repo_id, last_fetched, last_changed, shard_id, updated_at)
+SELECT id, %s, %s, %s, now()
 FROM repo WHERE name = %s
 ON CONFLICT (repo_id) DO UPDATE
-SET (last_fetched, shard_id, updated_at) =
-    (EXCLUDED.last_fetched, EXCLUDED.shard_id, now())
-`, data.LastFetched, data.ShardID, name))
+SET (last_fetched, last_changed, shard_id, updated_at) =
+    (EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.shard_id, now())
+`, data.LastFetched, data.LastChanged, data.ShardID, name))
 
 	return errors.Wrap(err, "setting last fetched")
 }

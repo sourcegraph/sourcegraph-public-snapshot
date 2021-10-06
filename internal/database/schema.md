@@ -785,6 +785,7 @@ Referenced by:
  last_error            | text                     |           |          | 
  updated_at            | timestamp with time zone |           | not null | now()
  last_fetched          | timestamp with time zone |           | not null | now()
+ last_changed          | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text
