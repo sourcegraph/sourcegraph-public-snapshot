@@ -21,6 +21,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- `src batch repos` failed with a template error in src-cli 3.31.1 and 3.32.0. This has been fixed. [#625](https://github.com/sourcegraph/src-cli/pull/625)
+
 ### Removed
 
 ## 3.31.1

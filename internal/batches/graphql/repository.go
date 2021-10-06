@@ -6,6 +6,7 @@ const RepositoryFieldsFragment = `
 fragment repositoryFields on Repository {
     id
     name
+    url
     externalRepository {
         serviceType
     }
@@ -33,6 +34,7 @@ type Branch struct {
 type Repository struct {
 	ID                 string
 	Name               string
+	URL                string
 	ExternalRepository struct{ ServiceType string }
 
 	DefaultBranch *Branch
