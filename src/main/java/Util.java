@@ -127,15 +127,15 @@ public class Util {
             remoteURL = configuredGitRemoteURL(repoRoot);
             branch = Util.setDefaultBranch(project)!=null ? Util.setDefaultBranch(project) : gitBranch(repoRoot);
 
-            // If on a branch that does not exist on the remote or if defaultBranch does not exist on the remote,
+            // If on a branch that does not exist on the remote and no defaultBranch is configured
             // use "master" instead.
-            if (!isRemoteBranch(branch, repoRoot)) {
+            // This allows users to checkout a branch that does not exist in origin remote by setting defaultBranch
+            if (!isRemoteBranch(branch, repoRoot) && Util.setDefaultBranch(project)==null) {
                 branch = "master";
             }
 
             // replace remoteURL if config option is not null
             String r = Util.setRemoteUrlReplacements(project);
-
             if(r!=null) {
                 String[] replacements = r.trim().split("\\s*,\\s*");
                 // Check if the entered values are pairs

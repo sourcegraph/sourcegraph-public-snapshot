@@ -66,12 +66,12 @@ public abstract class FileAction extends AnAction {
                     + "&file=" + URLEncoder.encode(repoInfo.fileRel, "UTF-8")
                     + "&editor=" + URLEncoder.encode("JetBrains", "UTF-8")
                     + "&version=" + URLEncoder.encode(Util.VERSION, "UTF-8")
-                    + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
-                    + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8")
                     + "&start_row=" + URLEncoder.encode(Integer.toString(start.line), "UTF-8")
                     + "&start_col=" + URLEncoder.encode(Integer.toString(start.column), "UTF-8")
                     + "&end_row=" + URLEncoder.encode(Integer.toString(end.line), "UTF-8")
-                    + "&end_col=" + URLEncoder.encode(Integer.toString(end.column), "UTF-8");
+                    + "&end_col=" + URLEncoder.encode(Integer.toString(end.column), "UTF-8")
+                    + "&utm_product_name=" + URLEncoder.encode(productName, "UTF-8")
+                    + "&utm_product_version=" + URLEncoder.encode(productVersion, "UTF-8");
         } catch (UnsupportedEncodingException err) {
             logger.debug("failed to build URL");
             err.printStackTrace();

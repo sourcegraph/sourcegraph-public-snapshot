@@ -15,8 +15,12 @@ public class CommitViewUriBuilder {
     }
 
     // this is pretty hacky but to try to build the repo string we will just try to naively parse the git remote uri. Worst case scenario this 404s
-    URI remote = URI.create(repoInfo.remoteURL);
-    String path = remote.getPath().replace(".git", "");
+    String remoteURL = repoInfo.remoteURL;
+    if(remoteURL.startsWith("git")){
+      remoteURL = repoInfo.remoteURL.replace(".git", "").replaceFirst(":", "/").replace("git@", "https://");;
+    }
+    URI remote = URI.create(remoteURL);
+    String path = remote.getPath();
 
     StringBuilder builder = new StringBuilder();
     try {

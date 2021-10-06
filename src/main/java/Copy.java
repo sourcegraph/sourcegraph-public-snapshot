@@ -9,12 +9,14 @@ public class Copy extends FileAction {
 
     @Override
     void handleFileUri(String uri) {
+        // Remove utm tags for sharing
+        String shortenURI = uri.replaceAll("(&utm_product_name=)(.*)", "");
         // Copy file uri to clipboard
-        CopyPasteManager.getInstance().setContents(new StringSelection(uri));
+        CopyPasteManager.getInstance().setContents(new StringSelection(shortenURI));
 
         // Display bubble
         Notification notification = new Notification("Sourcegraph", "Sourcegraph",
-                "File URL copied to clipboard.", NotificationType.INFORMATION);
+                "File URL copied to clipboard."+shortenURI, NotificationType.INFORMATION);
         Notifications.Bus.notify(notification);
     }
 }
