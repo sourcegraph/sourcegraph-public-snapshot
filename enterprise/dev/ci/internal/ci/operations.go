@@ -490,8 +490,14 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 func trivyScanCandidateImage(app, tag string) operations.Operation {
 	image := images.DevRegistryImage(app, tag)
 	trivyArgs := []string{
+		// fail the step if there is a vulnerability
+		"--exit-code",
+		"1",
+
+		// we can't do anything if there is no upstream solution
 		"--ignore-unfixed",
 
+		// we'll only take action on higher severity CVE's
 		"--severity",
 		"HIGH,CRITICAL",
 	}
