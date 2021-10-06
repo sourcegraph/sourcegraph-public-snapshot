@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1513,7 +1514,20 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, &argsIndexed)
+
+				zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &argsIndexed, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
+				if err != nil {
+					agg.Error(err)
+					return
+				}
+
+				searcherArgs := &search.SearcherParameters{
+					SearcherURLs:    argsIndexed.SearcherURLs,
+					PatternInfo:     argsIndexed.PatternInfo,
+					UseFullDeadline: argsIndexed.UseFullDeadline,
+				}
+
+				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, argsIndexed.Mode != search.SearcherOnly)
 			})
 		}
 
@@ -1597,7 +1611,20 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, args)
+
+				zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
+				if err != nil {
+					agg.Error(err)
+					return
+				}
+
+				searcherArgs := &search.SearcherParameters{
+					SearcherURLs:    args.SearcherURLs,
+					PatternInfo:     args.PatternInfo,
+					UseFullDeadline: args.UseFullDeadline,
+				}
+
+				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 			})
 		}
 	}
