@@ -53,8 +53,6 @@ function cluster_setup() {
   set +e
   set +o pipefail
   pushd base
-  # Remove cAdvisor, it deploys on all Buildkite nodes as a daemonset and is non-critical.
-  rm -rf ./cadvisor
   # See $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
   # replace all docker image tags with previously built candidate images
   while IFS= read -r line; do
@@ -64,6 +62,10 @@ function cluster_setup() {
   popd
   #  ./create-new-cluster.sh
   ./overlay-generate-cluster.sh ci generated-cluster
+  pushd generate-cluster
+  # Remove cAdvisor, it deploys on all Buildkite nodes as a daemonset and is non-critical.
+  rm ./*_cadvisor.yaml
+  popd
   kubectl apply -n "$NAMESPACE" --recursive --validate -f generated-cluster
   popd
 
