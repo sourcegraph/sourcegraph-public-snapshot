@@ -1,14 +1,14 @@
 ---
-sidebar_position: 1
+sidebar_position: 2
 ---
 
-# Tutorial Intro
+# Design Principles
 
 Let's discover **Docusaurus in less than 5 minutes**.
 
 ## Getting Started
 
-Get started by **creating a new site**.
+Get started by **creating a new site**. ok
 
 Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
 
