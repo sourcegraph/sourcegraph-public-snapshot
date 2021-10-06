@@ -178,9 +178,7 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 		commit = "1234567890123456789012345678901234567890"
 	}
 
-	cmd := exec.Command("git", diffCommand...)
-	cmd.Stderr = os.Stderr
-	if output, err := cmd.Output(); err != nil {
+	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
 		return nil, "", err
 	} else {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
