@@ -228,7 +228,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
+func QueryToZoektQuery(p *TextPatternInfo, typ IndexedRequestType) (zoekt.Q, error) {
 	var and []zoekt.Q
 
 	var q zoekt.Q
@@ -254,7 +254,7 @@ func QueryToZoektQuery(p *TextPatternInfo, forSymbols bool) (zoekt.Q, error) {
 		q = &zoekt.Not{Child: q}
 	}
 
-	if forSymbols {
+	if typ == SymbolRequest {
 		// Tell zoekt q must match on symbols
 		q = &zoekt.Symbol{
 			Expr: q,

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"os"
 	"sync"
 	"time"
 
@@ -15,14 +14,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/rs/xid"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
-
-var searchCoreOOMDebug = os.Getenv("SRC_SEARCH_CORE_OOM_DEBUG") != ""
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_zoekt_request_duration_seconds",
@@ -64,26 +60,19 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}
 
-	var evBefore, evAfter *libhoney.Event
-	debugAdd := func(key string, value interface{}) {
-		if evBefore == nil {
-			return
-		}
-		evBefore.AddField(key, value)
-		evAfter.AddField(key, value)
-	}
-	if searchCoreOOMDebug && cat == "SearchAll" {
-		evBefore = honey.Event("search-core-oom-debug")
-		evAfter = honey.Event("search-core-oom-debug")
-		debugAdd("category", cat)
-		debugAdd("query", queryString(q))
-		debugAdd("xid", xid.New().String())
+	qStr := queryString(q)
+
+	var event *libhoney.Event
+	if honey.Enabled() && cat == "SearchAll" {
+		event = honey.Event("search-zoekt")
+		event.AddField("category", cat)
+		event.AddField("query", qStr)
 		for _, t := range tags {
-			debugAdd(t.Key, t.Value)
+			event.AddField(t.Key, t.Value)
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
@@ -100,8 +89,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
 		}
 		tr.LogFields(fields...)
-		for _, f := range fields {
-			debugAdd(f.Key(), f.Value())
+		if event != nil {
+			for _, f := range fields {
+				event.AddField(f.Key(), f.Value())
+			}
 		}
 	}
 
@@ -135,10 +126,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 				writeRequestDone = time.Now()
 			},
 		})
-	}
-
-	if evBefore != nil {
-		evBefore.Send()
 	}
 
 	var (
@@ -204,19 +191,22 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.match_count", statsAgg.MatchCount),
 		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
 		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		log.Int("stats.shards_scanned", statsAgg.ShardsScanned),
 		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
 		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
+		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
 	}
 	tr.LogFields(fields...)
-	if evAfter != nil {
-		evAfter.AddField("duration_ms", time.Since(start).Milliseconds())
+	if event != nil {
+		event.AddField("duration_ms", time.Since(start).Milliseconds())
 		if err != nil {
-			evAfter.AddField("error", err)
+			event.AddField("error", err)
 		}
 		for _, f := range fields {
-			evAfter.AddField(f.Key(), f.Value())
+			event.AddField(f.Key(), f.Value())
 		}
-		evAfter.Send()
+		event.Send()
 	}
 
 	// Record total duration of stream
@@ -245,32 +235,20 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	var evBefore, evAfter *libhoney.Event
-	debugAdd := func(key string, value interface{}) {
-		if evBefore == nil {
-			return
-		}
-		evBefore.AddField(key, value)
-		evAfter.AddField(key, value)
-	}
-	if searchCoreOOMDebug && cat == "ListAll" {
-		evBefore = honey.Event("search-core-oom-debug")
-		evAfter = honey.Event("search-core-oom-debug")
-		debugAdd("category", cat)
-		debugAdd("query", queryString(q))
-		debugAdd("xid", xid.New().String())
-		for _, t := range tags {
-			debugAdd(t.Key, t.Value)
-		}
-	}
+	qStr := queryString(q)
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	tr.LogFields(trace.Stringer("opts", opts))
 
-	debugAdd("opts.minimal", opts != nil && opts.Minimal)
-
-	if evBefore != nil {
-		evBefore.Send()
+	var event *libhoney.Event
+	if honey.Enabled() && cat == "ListAll" {
+		event = honey.Event("search-zoekt")
+		event.AddField("category", cat)
+		event.AddField("query", qStr)
+		event.AddField("opts.minimal", opts != nil && opts.Minimal)
+		for _, t := range tags {
+			event.AddField(t.Key, t.Value)
+		}
 	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
@@ -280,16 +258,16 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		code = "error"
 	}
 
-	if evAfter != nil {
-		evAfter.AddField("duration_ms", time.Since(start).Milliseconds())
+	if event != nil {
+		event.AddField("duration_ms", time.Since(start).Milliseconds())
 		if zsl != nil {
-			evAfter.AddField("repos", len(zsl.Repos))
-			evAfter.AddField("minimal_repos", len(zsl.Minimal))
+			event.AddField("repos", len(zsl.Repos))
+			event.AddField("minimal_repos", len(zsl.Minimal))
 		}
 		if err != nil {
-			evAfter.AddField("error", err)
+			event.AddField("error", err)
 		}
-		evAfter.Send()
+		event.Send()
 	}
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())

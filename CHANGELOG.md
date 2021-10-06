@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search contexts GQL API is now only available in the Sourcegraph enterprise version. [#25281](https://github.com/sourcegraph/sourcegraph/pull/25281)
 - When running a commit or diff query, the accepted values of `before` and `after` have changed from "whatever git accepts" to a [slightly more strict subset](https://docs.sourcegraph.com/code_search/reference/language#before) of that. [#25414](https://github.com/sourcegraph/sourcegraph/pull/25414)
 - Repogroups and version contexts are deprecated in favor of search contexts. Read more about the deprecation and how to migrate to search contexts in the [blog post](https://example.com). [#25676](https://github.com/sourcegraph/sourcegraph/pull/25676)
+- Search contexts are now enabled by default in the Sourcegraph enterprise version. [#25674](https://github.com/sourcegraph/sourcegraph/pull/25674)
 
 ### Fixed
 

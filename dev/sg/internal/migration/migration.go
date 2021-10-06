@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 var once sync.Once
@@ -341,7 +342,7 @@ func makePostgresDSN(database db.Database) string {
 	if user, err := user.Current(); err == nil {
 		username = user.Username
 	}
-	return postgresDSN(database.Name, username, os.Getenv)
+	return postgresdsn.New(database.Name, username, os.Getenv)
 }
 
 // ReadFilenamesNamesInDirectory returns a list of names in the given directory.

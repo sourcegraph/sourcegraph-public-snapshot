@@ -133,7 +133,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 	archivedNotSet := archived == nil
 
 	// Handle repogroup-only scenarios.
-	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
+	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 && len(minusRepoFilters) == 0 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",

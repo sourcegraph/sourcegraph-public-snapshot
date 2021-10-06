@@ -17,15 +17,7 @@ type MatchedCommit struct {
 }
 
 // Merge merges another CommitHighlights into this one, returning the result.
-func (c *MatchedCommit) Merge(other *MatchedCommit) *MatchedCommit {
-	if c == nil {
-		return other
-	}
-
-	if other == nil {
-		return c
-	}
-
+func (c MatchedCommit) Merge(other MatchedCommit) MatchedCommit {
 	c.Message = c.Message.Merge(other.Message)
 
 	if c.Diff == nil {
