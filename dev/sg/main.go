@@ -57,6 +57,7 @@ var (
 			rfcCommand,
 			funkyLogoCommand,
 			teammateCommand,
+			ciCommand,
 		},
 	}
 )
