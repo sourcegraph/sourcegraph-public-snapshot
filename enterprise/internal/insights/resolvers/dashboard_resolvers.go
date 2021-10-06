@@ -6,8 +6,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/cockroachdb/errors"
 
 	"github.com/graph-gophers/graphql-go"
@@ -48,7 +46,6 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 				d.err = errors.Wrap(err, "unmarshalID")
 				return
 			}
-			log15.Debug("DashboardCompute", "afterID", afterID)
 			args.After = int(afterID.Arg)
 		}
 		if d.args.First != nil {

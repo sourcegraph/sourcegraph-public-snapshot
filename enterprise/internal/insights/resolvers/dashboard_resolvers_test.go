@@ -8,30 +8,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 )
 
-func Test(t *testing.T) {
-	tests := []struct {
-		name string
-		id   string
-		arg  int64
-	}{
-		{name: "test1", id: "user:6", arg: 6},
-		{name: "test1", id: "organization:2", arg: 2},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			id := relay.MarshalID("dashboard", test.id)
-
-			result, err := unmarshal(id)
-			if err != nil {
-				t.Error(err)
-			}
-			if result.Arg != test.arg {
-				t.Errorf("mismatched arg (want/got): %v/%v", test.arg, result.Arg)
-			}
-		})
-	}
-}
-
 func TestMarshalUnmarshalID(t *testing.T) {
 	dbid := dashboardID{
 		IdType: "test",
@@ -49,5 +25,45 @@ func TestMarshalUnmarshalID(t *testing.T) {
 
 	if diff := cmp.Diff(dbid, final); diff != "" {
 		t.Errorf("mismatch %v", diff)
+	}
+}
+
+func TestIsReal(t *testing.T) {
+	dbid := dashboardID{
+		IdType: "custom",
+		Arg:    5,
+	}
+	if !dbid.isReal() {
+		t.Fatal()
+	}
+}
+
+func TestIsUserDashboard(t *testing.T) {
+	dbid := dashboardID{
+		IdType: "user",
+		Arg:    5,
+	}
+	if !dbid.isUser() {
+		t.Fatal()
+	}
+}
+
+func TestIsOrgDashboard(t *testing.T) {
+	dbid := dashboardID{
+		IdType: "organization",
+		Arg:    5,
+	}
+	if !dbid.isOrg() {
+		t.Fatal()
+	}
+}
+
+func TestIsVirtualDashboard(t *testing.T) {
+	dbid := dashboardID{
+		IdType: "user",
+		Arg:    5,
+	}
+	if !dbid.isVirtualized() {
+		t.Fatal()
 	}
 }

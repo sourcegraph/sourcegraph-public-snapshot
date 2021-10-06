@@ -10,6 +10,8 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"time"
+
 	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"
@@ -80,7 +82,6 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	}
 
 	q := sqlf.Sprintf(getDashboardSql, sqlf.Join(preds, "\n AND"), limitClause)
-	log15.Info("dbquery", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanDashboard(s.Query(ctx, q))
 }
 
@@ -110,7 +111,7 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	results := make([]*types.Dashboard, 0)
+	var results []*types.Dashboard
 	for rows.Next() {
 		var temp types.Dashboard
 		if err := rows.Scan(
@@ -135,6 +136,7 @@ FROM dashboard db
                         JOIN dashboard_insight_view div ON iv.id = div.insight_view_id
                GROUP BY div.dashboard_id) t on t.dashboard_id = db.id
 WHERE %S
+ORDER BY db.id
 %S;
 `
 
