@@ -12,6 +12,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -115,8 +116,11 @@ func checkCurrentUserCanViewRepository(ctx context.Context, id graphql.ID) error
 		return backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global)
 	}
 
-
 	// TODO: check for visibility into repo
+	if _, err := backend.Repos.Get(ctx, api.RepoID(repoID)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
