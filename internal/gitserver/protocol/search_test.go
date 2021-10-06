@@ -8,34 +8,34 @@ import (
 
 func TestQueryConstruction(t *testing.T) {
 	t.Run("zero-length and is reduced", func(t *testing.T) {
-		require.Equal(t, &Constant{true}, NewAnd())
+		require.Equal(t, &Boolean{true}, NewAnd())
 	})
 
 	t.Run("single-element and is unwrapped", func(t *testing.T) {
-		require.Equal(t, &Constant{true}, NewAnd(&Constant{true}))
+		require.Equal(t, &Boolean{true}, NewAnd(&Boolean{true}))
 	})
 
 	t.Run("zero-length or is reduced", func(t *testing.T) {
-		require.Equal(t, &Constant{false}, NewOr())
+		require.Equal(t, &Boolean{false}, NewOr())
 	})
 
 	t.Run("single-element or is unwrapped", func(t *testing.T) {
-		require.Equal(t, &Constant{true}, NewOr(&Constant{true}))
+		require.Equal(t, &Boolean{true}, NewOr(&Boolean{true}))
 	})
 
 	t.Run("double negation cancels", func(t *testing.T) {
-		require.Equal(t, &Constant{true}, NewNot(NewNot(&Constant{true})))
+		require.Equal(t, &Boolean{true}, NewNot(NewNot(&Boolean{true})))
 	})
 
 	t.Run("nested and operators are flattened", func(t *testing.T) {
 		input := NewAnd(
-			NewAnd(&Constant{true}, &Constant{false}),
+			NewAnd(&Boolean{true}, &Boolean{false}),
 		)
 		expected := &Operator{
 			Kind: And,
 			Operands: []Node{
-				&Constant{true},
-				&Constant{false},
+				&Boolean{true},
+				&Boolean{false},
 			},
 		}
 		require.Equal(t, expected, input)
@@ -43,13 +43,13 @@ func TestQueryConstruction(t *testing.T) {
 
 	t.Run("nested or operators are flattened", func(t *testing.T) {
 		input := NewOr(
-			NewOr(&Constant{false}, &Constant{true}),
+			NewOr(&Boolean{false}, &Boolean{true}),
 		)
 		expected := &Operator{
 			Kind: Or,
 			Operands: []Node{
-				&Constant{false},
-				&Constant{true},
+				&Boolean{false},
+				&Boolean{true},
 			},
 		}
 		require.Equal(t, expected, input)

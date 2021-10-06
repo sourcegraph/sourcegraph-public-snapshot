@@ -35,7 +35,7 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	case *protocol.DiffModifiesFile:
 		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
 		return &DiffModifiesFile{re}, err
-	case *protocol.Constant:
+	case *protocol.Boolean:
 		return &Constant{v.Value}, nil
 	case *protocol.Operator:
 		operands := make([]MatchTree, 0, len(v.Operands))

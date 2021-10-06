@@ -85,12 +85,12 @@ func (d DiffModifiesFile) String() string {
 	return fmt.Sprintf("%T(%s)", d, d.Expr)
 }
 
-// Constant is a predicate that will either always match or never match
-type Constant struct {
+// Boolean is a predicate that will either always match or never match
+type Boolean struct {
 	Value bool
 }
 
-func (c Constant) String() string {
+func (c Boolean) String() string {
 	return fmt.Sprintf("%T(%t)", c, c.Value)
 }
 
@@ -141,7 +141,7 @@ func newOperator(kind OperatorKind, operands ...Node) *Operator {
 func NewAnd(operands ...Node) Node {
 	// An empty And operator will always match a commit
 	if len(operands) == 0 {
-		return &Constant{true}
+		return &Boolean{true}
 	}
 
 	// An And operator with a single operand can be unwrapped
@@ -171,7 +171,7 @@ func NewAnd(operands ...Node) Node {
 func NewOr(operands ...Node) Node {
 	// An empty Or operator will never match a commit
 	if len(operands) == 0 {
-		return &Constant{false}
+		return &Boolean{false}
 	}
 
 	// An Or operator with a single operand can be unwrapped
@@ -217,7 +217,7 @@ func RegisterGob() {
 		gob.Register(&MessageMatches{})
 		gob.Register(&DiffMatches{})
 		gob.Register(&DiffModifiesFile{})
-		gob.Register(&Constant{})
+		gob.Register(&Boolean{})
 		gob.Register(&Operator{})
 	})
 }
