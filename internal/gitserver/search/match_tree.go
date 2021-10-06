@@ -221,7 +221,7 @@ type Constant struct {
 	Value bool
 }
 
-func (c *Constant) Match(_ *LazyCommit) (bool, MatchedCommit, error) {
+func (c *Constant) Match(*LazyCommit) (bool, MatchedCommit, error) {
 	return c.Value, MatchedCommit{}, nil
 }
 
