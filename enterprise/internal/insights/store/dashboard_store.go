@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"
@@ -77,7 +75,6 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	}
 
 	q := sqlf.Sprintf(getDashboardSql, sqlf.Join(preds, "\n AND"), limitClause)
-	log15.Info("dbquery", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanDashboard(s.Query(ctx, q))
 }
 
