@@ -489,12 +489,20 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 // specified by "app" and "tag".
 func trivyScanCandidateImage(app, tag string) operations.Operation {
 	image := images.DevRegistryImage(app, tag)
+	trivyArgs := []string{
+		"--ignore-unfixed",
+
+		"--severity",
+		"HIGH,CRITICAL",
+	}
 
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.DependsOn(candidateImageStepKey(app)),
 
-			bk.Cmd(fmt.Sprintf("./dev/ci/trivy-scan.sh %s", image)),
+			bk.Env("IMAGE", image),
+
+			bk.Cmd(fmt.Sprintf("./dev/ci/trivy-scan.sh %s", strings.Join(trivyArgs, " "))),
 		}
 
 		pipeline.AddStep(fmt.Sprintf(":trivy: 🔎 %s", app), cmds...)

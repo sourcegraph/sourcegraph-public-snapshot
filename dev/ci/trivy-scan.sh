@@ -6,5 +6,5 @@ export GITHUB_TOKEN="${GH_TOKEN}"
 
 set -x
 
-docker pull "$1"
-trivy image "$1"
+docker pull "${IMAGE}"
+trivy image "$@" "${IMAGE}"
