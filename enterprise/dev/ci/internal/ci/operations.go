@@ -492,6 +492,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
+			bk.DependsOn(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 			bk.Cmd(fmt.Sprintf("trivy image %s", image)),
 		}

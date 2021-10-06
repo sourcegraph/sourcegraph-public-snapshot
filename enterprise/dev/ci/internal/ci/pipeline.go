@@ -133,10 +133,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		})
 
 		// Trivy security scans
-		ops.Append(wait)
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
-		ops.Append(wait)
-
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
 		// Publish images
@@ -165,6 +162,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
+
+		// Trivy security scans
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		}
+
 		// TODO: Disabled because it tends to time out when multiple main builds
 		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
 		// for details.
@@ -181,13 +184,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 		}))
-
-		// Trivy security scans
-		ops.Append(wait)
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Append(wait)
 
 		// Trigger e2e late so that it can leverage candidate images
 		ops.Append(triggerE2EandQA(e2eAndQAOptions{
