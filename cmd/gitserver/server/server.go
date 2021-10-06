@@ -2,7 +2,6 @@
 package server
 
 import (
-	"archive/zip"
 	"bufio"
 	"bytes"
 	"container/list"
@@ -13,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"math"
 	"net/http"
 	"os"
@@ -1459,68 +1457,65 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// This will be the absolute path of the root of the repo.
 	repoRoot := dir.Root()
 
-	// Write zip archive directly into the http.ResponseWriter.
-	zw := zip.NewWriter(w)
-
-	if err := os.Chdir(repoRoot); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log15.Error("handleRepoArchive: os.Chdir", "error", err)
-		return
-	}
-
-	if err := filepath.WalkDir(repoRoot, func(path string, d fs.DirEntry, err error) error {
-		log15.Info("handleRepoArchive: filepath.WalkDir", "dir", d.Name())
-		if d.IsDir() {
-			return nil
-		}
-
-		relativePath := strings.TrimPrefix(path, repoRoot+"/")
-		log15.Info("handleRepoArchive: filepath.WalkDir", "path", path, "relativePath", relativePath)
-
-		// relativePath = filepath.Join("./", relativePath)
-
-		f, err := os.Open(relativePath)
-
-		// f, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-
-		log15.Info("handleRepoArchive: filepath.WalkDir", "file path", f.Name())
-
-		w, err := zw.Create(f.Name())
-		if err != nil {
-			return err
-		}
-
-		_, err = io.Copy(w, f)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log15.Error("handleRepoArchive: filepath.WalkDir", "error", err)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/zip")
-
-	// First we remove the leading / in the repoRoot.
+	// Let's generate a zip file name from repoRoot.
+	// First we remove the leading / in repoRoot.
 	zipFileName := strings.TrimPrefix(repoRoot, "/")
-	// Next we replace all the remaining "/" with "-".
+
+	// Next, we replace all the remaining "/" with "-" and add the .zip extension.
 	zipFileName = strings.Replace(zipFileName, "/", "-", -1) + ".zip"
 
+	// We want to create the zip file under /tmp or the OS equivalent of /tmp.
+	zipFileAbsPath := filepath.Join(os.TempDir(), zipFileName)
+
+	// We need the relative path of the repo to pass as an argument to zip.
+	_, repoNameDir := filepath.Split(repoRoot)
+
+	// TODO: Maybe we want the timeout to be configurable with a sane default. Could be useful for
+	// customer instances with monorepos.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
+	defer cancel()
+
+	// For the github.com/sourcegraph/sourcegraph repo, if the repo is stored at the path
+	// "/data/repos/github.com/sourcegraph/sourcegraph" on disk, then the command being executed is:
+	//
+	// zip -r /tmp/data-repos-github.com-sourcegraph-sourcegraph.zip ./sourcegraph
+	cmd := exec.CommandContext(ctx, "zip", "-r", zipFileAbsPath, repoNameDir)
+	// Ensure that the command is executed from /data/repos/github.com/sourcegraph
+	cmd.Dir = filepath.Join(repoRoot, "..")
+
+	log15.Info("handleRepoArchive", "cmd", cmd)
+	log15.Info("handleRepoArchive", "path", cmd.Path)
+	log15.Info("handleRepoArchive", "dir", cmd.Dir)
+
+	// TODO: This could be a monorepo pain point.
+	exitCode, err := runCommand(ctx, cmd)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleRepoArchive: runCommand", "exitCode", exitCode, "error", err)
+		return
+	}
+
+	f, err := os.Open(zipFileAbsPath)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleRepoArchive: os.Open", "error", err)
+		return
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			log15.Error("handleRepoArchive: f.Close", "error", err)
+		}
+	}()
+
+	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", zipFileName))
 
-	if err := zw.Close(); err != nil {
+	if _, err := io.Copy(w, f); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log15.Error("handleRepoArchive: os.CreateTemp", "error", err)
-		return
+		log15.Error("handleRepoArchive: io.Copy", "error", err)
 	}
 }
 
