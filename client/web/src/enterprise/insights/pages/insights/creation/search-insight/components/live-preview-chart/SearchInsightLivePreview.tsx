@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import type { LineChartContent } from 'sourcegraph'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -59,14 +59,13 @@ export const SearchInsightLivePreview: React.FunctionComponent<SearchInsightLive
             .map<SearchBasedInsightSeries>(getSanitizedLine)
     )
 
-    const liveSettings = useMemo(
-        () => ({
-            series: liveSeries,
-            repositories: getSanitizedRepositories(repositories),
-            step: { [step]: stepValue },
-        }),
-        [step, stepValue, liveSeries, repositories]
-    )
+    // Compare live insight settings with deep check to avoid unnecessary
+    // search insight content fetching
+    const liveSettings = useDistinctValue({
+        series: liveSeries,
+        repositories: getSanitizedRepositories(repositories),
+        step: { [step]: stepValue },
+    })
 
     const liveDebouncedSettings = useDebounce(liveSettings, 500)
 
