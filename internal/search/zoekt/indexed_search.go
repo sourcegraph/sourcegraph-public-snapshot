@@ -154,13 +154,35 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 		return repo, []string{file.Version}
 	}
 
+	// We inverse the logic in add to work out the revspec from the zoekt
+	// branches.
+	//
+	// Note: RevSpec is guaranteed to be explicit via zoektIndexedRepos
 	inputRevs = make([]string, 0, len(file.Branches))
-	for _, branch := range file.Branches {
-		for i, b := range rb.repoBranches[file.Repository] {
-			if branch == b {
-				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
+	for _, rev := range repoRev.Revs {
+		// We rely on the Sourcegraph implementation that the HEAD branch is
+		// indexed as "HEAD" rather than resolving the symref.
+		revBranchName := rev.RevSpec
+		if revBranchName == "" {
+			revBranchName = "HEAD" // empty string in Sourcegraph means HEAD
+		}
+
+		found := false
+		for _, branch := range file.Branches {
+			if branch == revBranchName {
+				found = true
+				break
 			}
+		}
+		if found {
+			inputRevs = append(inputRevs, rev.RevSpec)
+			continue
+		}
+
+		// Check if rev is an abbrev commit SHA
+		if len(rev.RevSpec) >= 4 && strings.HasPrefix(file.Version, rev.RevSpec) {
+			inputRevs = append(inputRevs, rev.RevSpec)
+			continue
 		}
 	}
 
