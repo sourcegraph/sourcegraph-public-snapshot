@@ -21,17 +21,17 @@ import {
     queryLsifUploadsList as defaultQueryLsifUploadsList,
 } from '../detail/useLsifUpload'
 
-import { fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata } from './backend'
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
 import styles from './CodeIntelUploadsPage.module.scss'
 import { CommitGraphMetadata } from './CommitGraphMetadata'
 import { EmptyUploads } from './EmptyUploads'
+import { queryCommitGraphMetadata as defaultQueryCommitGraphMetadata } from './useLsifIndexList'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
     queryLsifUploadsByRepository?: typeof defaultQueryLsifUploadsByRepository
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
-    fetchCommitGraphMetadata?: typeof defaultFetchCommitGraphMetadata
+    queryCommitGraphMetadata?: typeof defaultQueryCommitGraphMetadata
     now?: () => Date
 }
 
@@ -97,7 +97,7 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     repo,
     queryLsifUploadsByRepository = defaultQueryLsifUploadsByRepository,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
-    fetchCommitGraphMetadata = defaultFetchCommitGraphMetadata,
+    queryCommitGraphMetadata = defaultQueryCommitGraphMetadata,
     now,
     telemetryService,
     history,
@@ -117,9 +117,10 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
     )
 
     const commitGraphMetadata = useObservable(
-        useMemo(() => (repo ? fetchCommitGraphMetadata({ repository: repo?.id }) : of(undefined)), [
+        useMemo(() => (repo ? queryCommitGraphMetadata(repo?.id, apolloClient) : of(undefined)), [
             repo,
-            fetchCommitGraphMetadata,
+            queryCommitGraphMetadata,
+            apolloClient,
         ])
     )
 
