@@ -525,6 +525,10 @@ type ReposListOptions struct {
 	// through external services. Mutually exclusive with the ExternalServiceIDs option.
 	UserID int32
 
+	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
+	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	OrgID int32
+
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
 	SearchContextID int64
@@ -797,6 +801,7 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, from, where []*sqlf.Query
+	var includeUserAddedRepos = true
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
@@ -947,8 +952,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 	}
 
-	if len(opt.ExternalServiceIDs) != 0 && opt.UserID != 0 {
-		return nil, errors.New("options ExternalServiceIDs and UserID are mutually exclusive")
+	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
+		(opt.UserID != 0 && opt.OrgID != 0) {
+		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
 	} else if opt.UserID != 0 {
@@ -958,6 +964,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+	} else if opt.OrgID != 0 {
+		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id INNER JOIN external_services ON external_services.id = external_service_repos.external_service_id"))
+		where = append(where, sqlf.Sprintf("external_services.namespace_org_id = %d", opt.OrgID))
+		includeUserAddedRepos = false
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
 		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
@@ -972,10 +982,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	baseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
-		baseConds = sqlf.Sprintf("deleted_at IS NULL")
+		baseConds = sqlf.Sprintf("repo.deleted_at IS NULL")
 	}
 	if !opt.IncludeBlocked {
-		baseConds = sqlf.Sprintf("%s AND blocked IS NULL", baseConds)
+		baseConds = sqlf.Sprintf("%s AND repo.blocked IS NULL", baseConds)
 	}
 
 	whereConds := sqlf.Sprintf("TRUE")
@@ -1001,7 +1011,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
+	authzConds, err := AuthQueryCondsWithOptions(ctx, s.Handle().DB(), includeUserAddedRepos)
 	if err != nil {
 		return nil, err
 	}
