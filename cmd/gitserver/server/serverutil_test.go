@@ -322,6 +322,16 @@ func TestFlushingResponseWriter(t *testing.T) {
 	}
 }
 
+func TestGitDir_Root(t *testing.T) {
+	d := GitDir("/data/repos/github.com/sourcegraph/sourcegraph/.git")
+	want := "/data/repos/github.com/sourcegraph/sourcegraph"
+
+	got := d.Root()
+	if got != want {
+		t.Errorf("want %q but got %q", want, got)
+	}
+}
+
 type flushFunc func()
 
 func (f flushFunc) Flush() {
