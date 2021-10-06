@@ -269,12 +269,17 @@ var errNoAccessExternalService = errors.New("the authenticated user does not hav
 // only the owner of the external service is allowed to access it.
 func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32, namespaceOrgID int32) error {
 	// Fast path that doesn't need to hit DB as we can get id from context
-	if a := actor.FromContext(ctx); a.IsAuthenticated() && namespaceUserID == a.UID {
+	a := actor.FromContext(ctx)
+	if namespaceUserID > 0 && a.IsAuthenticated() && namespaceUserID == a.UID {
+		return nil
+	}
+
+	if namespaceOrgID > 0 && backend.CheckOrgAccess(ctx, db, namespaceOrgID) == nil {
 		return nil
 	}
 
 	// Special case when external service has no owner
-	if namespaceUserID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
+	if namespaceUserID == 0 && namespaceOrgID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
 		return nil
 	}
 
