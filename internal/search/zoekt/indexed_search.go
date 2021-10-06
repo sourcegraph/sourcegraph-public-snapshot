@@ -32,7 +32,7 @@ import (
 type IndexedRepoRevs struct {
 	// repoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	repoRevs map[string]*search.RepositoryRevisions
+	repoRevs map[api.RepoID]*search.RepositoryRevisions
 
 	// repoBranches will be used when we query zoekt. The order of branches
 	// must match that in a reporev such that we can map back results. IE this
@@ -71,7 +71,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	}
 
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoRevs[reporev.Repo.ID] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
 		br, ok := rb.branchRepos["HEAD"]
 		if !ok {
@@ -123,7 +123,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	// We found indexed branches! Track them.
 	if len(indexed) > 0 {
 		reporev.Revs = indexed
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
+		rb.repoRevs[reporev.Repo.ID] = reporev
 		rb.repoBranches[string(reporev.Repo.Name)] = branches
 		for _, branch := range branches {
 			br, ok := rb.branchRepos[branch]
@@ -140,7 +140,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
-	repoRev := rb.repoRevs[file.Repository]
+	repoRev := rb.repoRevs[api.RepoID(file.RepositoryID)]
 
 	// We search zoekt by repo ID. It is possible that the name has come out
 	// of sync, so the above lookup will fail. We fallback to linking the rev
@@ -179,7 +179,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 // (2) IndexedSubsetSearchRequest that searches over an indexed subset of repos in the universe of indexed repositories.
 type IndexedSearchRequest interface {
 	Search(context.Context, streaming.Sender) error
-	IndexedRepos() map[string]*search.RepositoryRevisions
+	IndexedRepos() map[api.RepoID]*search.RepositoryRevisions
 	UnindexedRepos() []*search.RepositoryRevisions
 }
 
@@ -247,8 +247,8 @@ func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.S
 
 // IndexedRepos for a request over the indexed universe cannot answer which
 // repositories are searched. This return value is always empty.
-func (s *IndexedUniverseSearchRequest) IndexedRepos() map[string]*search.RepositoryRevisions {
-	return map[string]*search.RepositoryRevisions{}
+func (s *IndexedUniverseSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
+	return map[api.RepoID]*search.RepositoryRevisions{}
 }
 
 // UnindexedRepos over the indexed universe implies that we do not search unindexed repositories.
@@ -309,7 +309,7 @@ type IndexedSubsetSearchRequest struct {
 
 // IndxedRepos is a map of indexed repository revisions will be searched by
 // Zoekt. Do not mutate.
-func (s *IndexedSubsetSearchRequest) IndexedRepos() map[string]*search.RepositoryRevisions {
+func (s *IndexedSubsetSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
 	if s.RepoRevs == nil {
 		return nil
 	}
@@ -777,7 +777,7 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		repoRevs:     make(map[string]*search.RepositoryRevisions, len(revs)),
+		repoRevs:     make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
 		repoBranches: make(map[string][]string, len(revs)),
 		branchRepos:  make(map[string]*zoektquery.BranchRepos, 1),
 	}

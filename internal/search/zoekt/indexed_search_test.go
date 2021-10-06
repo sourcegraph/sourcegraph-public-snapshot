@@ -53,6 +53,9 @@ func TestIndexedSearch(t *testing.T) {
 		},
 	}}
 
+	fooSlashBar := zoektRepos[0].Repository
+	fooSlashFooBar := zoektRepos[1].Repository
+
 	tests := []struct {
 		name               string
 		args               args
@@ -110,10 +113,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
-						Repository: "foo/bar",
-						Branches:   []string{"HEAD"},
-						Version:    "1",
-						FileName:   "baz.go",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
+						Branches:     []string{"HEAD"},
+						Version:      "1",
+						FileName:     "baz.go",
 						LineMatches: []zoekt.LineMatch{
 							{
 								Line: []byte("I'm like 1.5+ hours into writing this test :'("),
@@ -131,10 +135,11 @@ func TestIndexedSearch(t *testing.T) {
 						},
 					},
 					{
-						Repository: "foo/foobar",
-						Branches:   []string{"HEAD"},
-						Version:    "2",
-						FileName:   "baz.go",
+						Repository:   "foo/foobar",
+						RepositoryID: fooSlashFooBar.ID,
+						Branches:     []string{"HEAD"},
+						Version:      "2",
+						FileName:     "baz.go",
 						LineMatches: []zoekt.LineMatch{
 							{
 								Line: []byte("s/rain/pain"),
@@ -168,17 +173,19 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
-						Repository: "foo/bar",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
 						// baz.go is the same in HEAD and dev
 						Branches: []string{"HEAD", "dev"},
 						FileName: "baz.go",
 						Version:  "1",
 					},
 					{
-						Repository: "foo/bar",
-						Branches:   []string{"dev"},
-						FileName:   "bam.go",
-						Version:    "2",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
+						Branches:     []string{"dev"},
+						FileName:     "bam.go",
+						Version:      "2",
 					},
 				},
 				since: func(time.Time) time.Duration { return 0 },
@@ -208,10 +215,11 @@ func TestIndexedSearch(t *testing.T) {
 				useFullDeadline: false,
 				results: []zoekt.FileMatch{
 					{
-						Repository: "foo/bar",
-						Branches:   []string{"HEAD"},
-						FileName:   "baz.go",
-						Version:    "1",
+						Repository:   "foo/bar",
+						RepositoryID: fooSlashBar.ID,
+						Branches:     []string{"HEAD"},
+						FileName:     "baz.go",
+						Version:      "1",
 					},
 				},
 			},
@@ -553,7 +561,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 
 	type ret struct {
-		Indexed   map[string]*search.RepositoryRevisions
+		Indexed   map[api.RepoID]*search.RepositoryRevisions
 		Unindexed []*search.RepositoryRevisions
 	}
 
@@ -653,10 +661,10 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}
 }
 
-func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[string]*search.RepositoryRevisions {
-	m := map[string]*search.RepositoryRevisions{}
+func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[api.RepoID]*search.RepositoryRevisions {
+	m := map[api.RepoID]*search.RepositoryRevisions{}
 	for _, r := range rs {
-		m[string(r.Repo.Name)] = r
+		m[r.Repo.ID] = r
 	}
 	return m
 }
