@@ -2,11 +2,11 @@ import { MockedResponse } from '@apollo/client/testing'
 
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 
-import { SubmitSurveyResult } from '../graphql-operations'
+import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
 
 import { SUBMIT_SURVEY } from './SurveyForm'
 
-export const mockVariables = {
+export const mockVariables: SubmitSurveyVariables['input'] = {
     score: 10,
     reason: 'I like it',
     better: 'Read my mind',

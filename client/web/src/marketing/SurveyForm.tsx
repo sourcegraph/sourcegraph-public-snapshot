@@ -5,6 +5,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useMutation } from '@sourcegraph/shared/src/graphql/apollo'
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { SubmitSurveyResult, SubmitSurveyVariables } from '../graphql-operations'
@@ -136,9 +137,9 @@ export const SurveyForm: React.FunctionComponent<SurveyFormProps> = ({ authentic
                 />
             </div>
             <div className="form-group">
-                <button className="btn btn-primary btn-block" type="submit" disabled={response.loading}>
+                <Button className="btn-block" variant="primary" disabled={response.loading}>
                     Submit
-                </button>
+                </Button>
             </div>
             {response.loading && (
                 <div className={styles.loader}>

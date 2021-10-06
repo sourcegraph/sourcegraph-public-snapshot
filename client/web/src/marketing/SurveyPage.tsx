@@ -14,7 +14,7 @@ import { TweetFeedback } from './TweetFeedback'
 interface SurveyPageProps {
     authenticatedUser: AuthenticatedUser | null
     /**
-     * For testing only
+     * For Storybook only
      */
     forceScore?: string
 }

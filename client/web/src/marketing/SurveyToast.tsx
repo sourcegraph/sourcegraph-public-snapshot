@@ -18,7 +18,7 @@ const shouldShowToast = (): boolean =>
 
 interface SurveyToastProps {
     /**
-     * For testing only
+     * For Storybook only
      */
     forceVisible?: boolean
 }
