@@ -143,10 +143,8 @@ func (c Config) candidateImageTag() string {
 func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
 	var changedFiles []string
 
-	fmt.Println(1)
 	diffCommand := []string{"diff", "--name-only"}
 	if commit != "" {
-		fmt.Println(2)
 		// run a diff against the previous commits:
 		// get the latest builds for the current branch
 		// from buildkite
@@ -158,44 +156,33 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 			},
 		})
 		if err != nil {
-			fmt.Println(21)
 			return nil, "", err
 		}
 
-		fmt.Println(builds)
-
 		// if there are no previous builds diff with main
 		if len(builds) == 0 {
-			fmt.Println(22)
 			diffCommand = append(diffCommand, "origin/main..."+commit)
 		} else {
 			build := builds[0]
-			fmt.Println(23, *build.State)
 			if build.State == nil || *build.State != "passed" {
-				fmt.Println(24)
 				// if any build is not passed, diff with main
 				diffCommand = append(diffCommand, "origin/main..."+commit)
 			} else {
-				fmt.Println(25)
 				// otherwise, diff with the previous build
 				diffCommand = append(diffCommand, *build.Commit+"..."+branch)
 			}
 		}
 	} else {
-		fmt.Println(3)
 		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
 	}
 
-	fmt.Println(diffCommand)
 	cmd := exec.Command("git", diffCommand...)
 	cmd.Stderr = os.Stderr
 	if output, err := cmd.Output(); err != nil {
-		fmt.Println(4)
 		return nil, "", err
 	} else {
-		fmt.Printf("%q\n", string(output))
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
