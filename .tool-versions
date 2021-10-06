@@ -6,3 +6,4 @@ shellcheck 0.7.1
 kubectl 1.17.3
 github-cli 1.8.0
 packer 1.6.6
+trivy 0.20.0
