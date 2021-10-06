@@ -188,6 +188,13 @@ extend type Query {
     insightDashboards(first: Int, after: String): InsightsDashboardConnection!
 }
 
+extend type Mutation {
+    """
+    Delete a dashboard. Any views that would become dangling will be deleted.
+    """
+    deleteInsightsDashboard(id: ID!): EmptyResponse!
+}
+
 """
 A paginated list of dashboards.
 """
