@@ -301,6 +301,27 @@ func (s *AccessTokenStore) DeleteByID(ctx context.Context, id int64) error {
 	return s.delete(ctx, sqlf.Sprintf("id=%d", id))
 }
 
+// HardDeleteByID hard-deletes an access token given its ID.
+//
+// 🚨 SECURITY: The caller must ensure that the actor is permitted to delete the token.
+func (s *AccessTokenStore) HardDeleteByID(ctx context.Context, id int64) error {
+	if Mocks.AccessTokens.HardDeleteByID != nil {
+		return Mocks.AccessTokens.HardDeleteByID(id)
+	}
+	res, err := s.ExecResult(ctx, sqlf.Sprintf("DELETE FROM access_tokens WHERE id = %s", id))
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return ErrAccessTokenNotFound
+	}
+	return nil
+}
+
 // DeleteByToken deletes an access token given the secret token value itself (i.e., the same value
 // that an API client would use to authenticate).
 func (s *AccessTokenStore) DeleteByToken(ctx context.Context, tokenHexEncoded string) error {
@@ -339,6 +360,7 @@ type MockAccessTokens struct {
 	Create         func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
 	CreateInternal func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
 	DeleteByID     func(id int64) error
+	HardDeleteByID func(id int64) error
 	Lookup         func(tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
 	GetByID        func(id int64) (*AccessToken, error)
 }
