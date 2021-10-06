@@ -438,6 +438,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
       SRC_PROF_HTTP: ":6093"
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
@@ -509,14 +510,18 @@ commands:
     #       PGUSER: sourcegraph
     #
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
-    cmd: docker-compose -f dev/redis-postgres.yml up --force-recreate
+    cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
+    env:
+      COMPOSE_ARGS: --force-recreate
+      # Set the following to a path on disk to persist data (or unset to not persist data)
+      PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
+      REDIS_DATA_DIR: ""
 
   jaeger:
     cmd: |
-      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL} >> "${JAEGER_LOGS}"/jaeger.log 2>&1
+      .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
     install: |
       mkdir -p "${JAEGER_DISK}"
-      mkdir -p "${JAEGER_LOGS}"
 
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
       target="$PWD/.bin/jaeger-all-in-one-${suffix}"
@@ -532,7 +537,6 @@ commands:
     env:
       JAEGER_VERSION: 1.18.1
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
-      JAEGER_LOGS: $HOME/.sourcegraph-dev/logs/jaeger
       JAEGER_LOG_LEVEL: info
       QUERY_BASE_PATH: /-/debug/jaeger
 
@@ -650,6 +654,11 @@ commands:
       - monitoring
     continueWatchOnExit: true
 
+  # This will execute `env`, a utility to print the process environment. Can
+  # be used to debug which global vars `sg` uses.
+  debug-env:
+    cmd: env
+
 checks:
   docker:
     cmd: docker version
@@ -663,10 +672,11 @@ checks:
     cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
     failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
 
+defaultCommandset: enterprise
 commandsets:
-  # TODO: Should we be able to define "env" vars _per set_?
-
   oss:
+    # open-source version doesn't require the dev-private repository
+    requiresDevPrivate: false
     checks:
       - docker
       - redis
@@ -690,6 +700,7 @@ commandsets:
       - zoekt-webserver-1
 
   enterprise: &enterprise_set
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -712,14 +723,13 @@ commandsets:
       - zoekt-webserver-0
       - zoekt-webserver-1
 
-  default: *enterprise_set
-
   dotcom:
     <<: *enterprise_set
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
   enterprise-codeintel:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -746,6 +756,7 @@ commandsets:
       - codeintel-executor
 
   enterprise-codeinsights:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -773,6 +784,7 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
 
   api-only:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -791,6 +803,7 @@ commandsets:
       - zoekt-webserver-1
 
   batches:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis
@@ -815,6 +828,7 @@ commandsets:
       - batches-executor
 
   core-app:
+    requiresDevPrivate: true
     checks:
       - docker
       - redis

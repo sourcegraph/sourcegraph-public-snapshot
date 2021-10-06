@@ -125,7 +125,7 @@ function processRecentFiles(eventLogResult?: EventLogResult): RecentFile[] | nul
     const recentFiles: RecentFile[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
             let repoName = parsedArguments?.repoName as string
             let filePath = parsedArguments?.filePath as string

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 // ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
@@ -34,6 +35,8 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	case *protocol.DiffModifiesFile:
 		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
 		return &DiffModifiesFile{re}, err
+	case *protocol.Boolean:
+		return &Constant{v.Value}, nil
 	case *protocol.Operator:
 		operands := make([]MatchTree, 0, len(v.Operands))
 		for _, operand := range v.Operands {
@@ -53,7 +56,7 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 type MatchTree interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (matched bool, highlights *MatchedCommit, err error)
+	Match(*LazyCommit) (matched bool, highlights MatchedCommit, err error)
 }
 
 // AuthorMatches is a predicate that matches if the author's name or email address
@@ -62,8 +65,8 @@ type AuthorMatches struct {
 	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
-	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), nil, nil
+func (a *AuthorMatches) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
+	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), MatchedCommit{}, nil
 }
 
 // CommitterMatches is a predicate that matches if the author's name or email address
@@ -72,8 +75,8 @@ type CommitterMatches struct {
 	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
-	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), nil, nil
+func (c *CommitterMatches) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
+	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), MatchedCommit{}, nil
 }
 
 // CommitBefore is a predicate that matches if the commit is before the given date
@@ -81,12 +84,12 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (c *CommitBefore) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
-		return false, nil, err
+		return false, MatchedCommit{}, err
 	}
-	return authorDate.Before(c.Time), nil, nil
+	return authorDate.Before(c.Time), MatchedCommit{}, nil
 }
 
 // CommitAfter is a predicate that matches if the commit is after the given date
@@ -94,12 +97,12 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (c *CommitAfter) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
-		return false, nil, err
+		return false, MatchedCommit{}, err
 	}
-	return authorDate.After(c.Time), nil, nil
+	return authorDate.After(c.Time), MatchedCommit{}, nil
 }
 
 // MessageMatches is a predicate that matches if the commit message matches
@@ -108,13 +111,13 @@ type MessageMatches struct {
 	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (m *MessageMatches) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
 	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
 	if results == nil {
-		return false, nil, nil
+		return false, MatchedCommit{}, nil
 	}
 
-	return true, &MatchedCommit{
+	return true, MatchedCommit{
 		Message: matchesToRanges(lc.Message, results),
 	}, nil
 }
@@ -125,10 +128,10 @@ type DiffMatches struct {
 	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (dm *DiffMatches) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
-		return false, nil, err
+		return false, MatchedCommit{}, err
 	}
 
 	foundMatch := false
@@ -137,7 +140,7 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 	for fileIdx, fileDiff := range diff {
 		var hunkHighlights map[int]MatchedHunk
 		for hunkIdx, hunk := range fileDiff.Hunks {
-			var lineHighlights map[int]protocol.Ranges
+			var lineHighlights map[int]result.Ranges
 			for lineIdx, line := range bytes.Split(hunk.Body, []byte("\n")) {
 				if len(line) == 0 {
 					continue
@@ -154,7 +157,7 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 				if matches != nil {
 					foundMatch = true
 					if lineHighlights == nil {
-						lineHighlights = make(map[int]protocol.Ranges, 1)
+						lineHighlights = make(map[int]result.Ranges, 1)
 					}
 					lineHighlights[lineIdx] = matchesToRanges(lineWithoutPrefix, matches)
 				}
@@ -175,7 +178,7 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
 		}
 	}
 
-	return foundMatch, &MatchedCommit{
+	return foundMatch, MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
 }
@@ -186,10 +189,10 @@ type DiffModifiesFile struct {
 	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *MatchedCommit, error) {
+func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
-		return false, nil, err
+		return false, MatchedCommit{}, err
 	}
 
 	foundMatch := false
@@ -209,9 +212,17 @@ func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, *MatchedCommit, error)
 		}
 	}
 
-	return foundMatch, &MatchedCommit{
+	return foundMatch, MatchedCommit{
 		Diff: fileDiffHighlights,
 	}, nil
+}
+
+type Constant struct {
+	Value bool
+}
+
+func (c *Constant) Match(*LazyCommit) (bool, MatchedCommit, error) {
+	return c.Value, MatchedCommit{}, nil
 }
 
 type Operator struct {
@@ -219,45 +230,51 @@ type Operator struct {
 	Operands []MatchTree
 }
 
-func (o *Operator) Match(commit *LazyCommit) (bool, *MatchedCommit, error) {
-	var resultMatches *MatchedCommit
-	hasMatch := false
-	for _, operand := range o.Operands {
-		matched, matches, err := operand.Match(commit)
+func (o *Operator) Match(commit *LazyCommit) (bool, MatchedCommit, error) {
+	switch o.Kind {
+	case protocol.Not:
+		matched, _, err := o.Operands[0].Match(commit)
 		if err != nil {
-			return false, nil, err
+			return false, MatchedCommit{}, err
 		}
-
-		switch o.Kind {
-		case protocol.Not:
-			if matched {
-				return false, nil, nil
+		return !matched, MatchedCommit{}, nil
+	case protocol.And:
+		resultMatches := MatchedCommit{}
+		for _, operand := range o.Operands {
+			matched, matches, err := operand.Match(commit)
+			if err != nil {
+				return false, MatchedCommit{}, err
 			}
-			return true, nil, nil
-		case protocol.And:
 			if !matched {
-				return false, nil, nil
+				return false, MatchedCommit{}, err
 			}
-			hasMatch = true
 			resultMatches = resultMatches.Merge(matches)
-		case protocol.Or:
+		}
+		return true, resultMatches, nil
+	case protocol.Or:
+		resultMatches := MatchedCommit{}
+		hasMatch := false
+		for _, operand := range o.Operands {
+			matched, matches, err := operand.Match(commit)
+			if err != nil {
+				return false, MatchedCommit{}, err
+			}
 			if matched {
 				hasMatch = true
 				resultMatches = resultMatches.Merge(matches)
 			}
-		default:
-			panic("unreachable")
 		}
+		return hasMatch, resultMatches, nil
+	default:
+		panic("invalid operator kind")
 	}
-
-	return hasMatch, resultMatches, nil
 }
 
 // matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()
 // and converts it to Ranges.
 // INVARIANT: matches must be ordered and non-overlapping,
 // which is guaranteed by regexp.FindAllIndex()
-func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
+func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 	var (
 		unscannedOffset          = 0
 		scannedNewlines          = 0
@@ -278,13 +295,13 @@ func matchesToRanges(content []byte, matches [][]int) protocol.Ranges {
 		return scannedNewlines, column, scannedRunes
 	}
 
-	res := make(protocol.Ranges, 0, len(matches))
+	res := make(result.Ranges, 0, len(matches))
 	for _, match := range matches {
 		startLine, startColumn, startOffset := lineColumnOffset(match[0])
 		endLine, endColumn, endOffset := lineColumnOffset(match[1])
-		res = append(res, protocol.Range{
-			Start: protocol.Location{Line: startLine, Column: startColumn, Offset: startOffset},
-			End:   protocol.Location{Line: endLine, Column: endColumn, Offset: endOffset},
+		res = append(res, result.Range{
+			Start: result.Location{Line: startLine, Column: startColumn, Offset: startOffset},
+			End:   result.Location{Line: endLine, Column: endColumn, Offset: endOffset},
 		})
 	}
 	return res

@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestCommitIndexer_indexAll(t *testing.T) {
@@ -34,7 +34,7 @@ func TestCommitIndexer_indexAll(t *testing.T) {
 	// "repo-one" has commits but has disabled indexing
 	// "really-big-repo" has commits and has enabled indexing, it should update
 	// "no-commits" has no commits but is enabled, and will not update the index but will update the metadata
-	commits := map[string][]*git.Commit{
+	commits := map[string][]*gitapi.Commit{
 		"repo-one": {
 			commit("ref1", "2020-05-01T00:00:00+00:00"),
 			commit("ref2", "2020-05-10T00:00:00+00:00"),
@@ -187,17 +187,17 @@ func mockIterator(repos []string) func(ctx context.Context, each func(repoName s
 }
 
 // commit build a fake commit for test scenarios
-func commit(ref string, commitTime string) *git.Commit {
+func commit(ref string, commitTime string) *gitapi.Commit {
 	t, _ := time.Parse(time.RFC3339, commitTime)
 
-	return &git.Commit{
+	return &gitapi.Commit{
 		ID:        api.CommitID(ref),
-		Committer: &git.Signature{Date: t},
+		Committer: &gitapi.Signature{Date: t},
 	}
 }
 
-func mockCommits(commits map[string][]*git.Commit) func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*git.Commit, error) {
-	return func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*git.Commit, error) {
+func mockCommits(commits map[string][]*gitapi.Commit) func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitapi.Commit, error) {
+	return func(ctx context.Context, name api.RepoName, after time.Time, operation *observation.Operation) ([]*gitapi.Commit, error) {
 		return commits[(string(name))], nil
 	}
 }

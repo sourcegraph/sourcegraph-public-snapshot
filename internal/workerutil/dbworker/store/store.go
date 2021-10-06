@@ -74,6 +74,10 @@ var ErrExecutionLogEntryNotUpdated = errors.New("execution log entry not updated
 type Store interface {
 	basestore.ShareableStore
 
+	// With creates a new instance of Store using the underlying database
+	// handle of the other ShareableStore.
+	With(other basestore.ShareableStore) Store
+
 	// QueuedCount returns the number of queued records matching the given conditions.
 	QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (int, error)
 
@@ -315,6 +319,18 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		columnReplacer:                  strings.NewReplacer(replacements...),
 		modifiedColumnExpressionMatches: modifiedColumnExpressionMatches,
 		operations:                      newOperations(options.Name, observationContext),
+	}
+}
+
+// With creates a new Store with the given basestore.Shareable store as the
+// underlying basestore.Store.
+func (s *store) With(other basestore.ShareableStore) Store {
+	return &store{
+		Store:                           s.Store.With(other),
+		options:                         s.options,
+		columnReplacer:                  s.columnReplacer,
+		modifiedColumnExpressionMatches: s.modifiedColumnExpressionMatches,
+		operations:                      s.operations,
 	}
 }
 

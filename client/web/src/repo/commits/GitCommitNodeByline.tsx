@@ -56,9 +56,9 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                     {!compact ? (
                         <>
                             {messageElement}
-                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
-                            <PersonLink person={committer.person} className="font-weight-bold" /> commited{' '}
-                            <Timestamp date={author.date} />
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and commited by{' '}
+                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                            <Timestamp date={committer.date} />
                             {commitMessageBody}
                         </>
                     ) : (

@@ -59,6 +59,7 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
+import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { useTheme } from './theme'
@@ -139,6 +140,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
+    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
@@ -206,6 +208,13 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         searchContextSpec,
     ])
 
+    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    useEffect(() => {
+        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
+            setHasUsedNonGlobalContext(true)
+        }
+    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
+
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
 
@@ -258,7 +267,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 keyboardShortcuts={props.keyboardShortcuts}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && <SurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -282,6 +291,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

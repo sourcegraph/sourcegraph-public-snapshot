@@ -17,13 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestSearchCommitsInRepo(t *testing.T) {
@@ -31,7 +31,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	var calledVCSRawLogDiffSearch bool
-	gitSignatureWithDate := git.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
+	gitSignatureWithDate := gitapi.Signature{Date: time.Now().UTC().AddDate(0, 0, -1)}
 	git.Mocks.RawLogDiffSearch = func(opt git.RawLogDiffSearchOptions) ([]*git.LogCommitSearchResult, bool, error) {
 		calledVCSRawLogDiffSearch = true
 		if want := "p"; opt.Query.Pattern != want {
@@ -48,7 +48,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 		}
 		return []*git.LogCommitSearchResult{
 			{
-				Commit: git.Commit{ID: "c1", Author: gitSignatureWithDate},
+				Commit: gitapi.Commit{ID: "c1", Author: gitSignatureWithDate},
 				Diff:   &git.RawDiff{Raw: "x"},
 			},
 		}, true, nil
@@ -74,7 +74,7 @@ func TestSearchCommitsInRepo(t *testing.T) {
 	}
 
 	want := []*result.CommitMatch{{
-		Commit:      git.Commit{ID: "c1", Author: gitSignatureWithDate},
+		Commit:      gitapi.Commit{ID: "c1", Author: gitSignatureWithDate},
 		Repo:        types.RepoName{ID: 1, Name: "repo"},
 		DiffPreview: &result.HighlightedString{Value: "x", Highlights: []result.HighlightedRange{}},
 		Body:        result.HighlightedString{Value: "```diff\nx```", Highlights: []result.HighlightedRange{}},
@@ -368,16 +368,16 @@ func TestOrderedFuzzyRegexp(t *testing.T) {
 func Test_searchRangeToHighlights(t *testing.T) {
 	type testCase struct {
 		input      string
-		inputRange gitprotocol.Range
+		inputRange result.Range
 		output     []result.HighlightedRange
 	}
 
 	cases := []testCase{
 		{
 			input: "abc",
-			inputRange: gitprotocol.Range{
-				Start: gitprotocol.Location{Offset: 1, Line: 0, Column: 1},
-				End:   gitprotocol.Location{Offset: 2, Line: 0, Column: 2},
+			inputRange: result.Range{
+				Start: result.Location{Offset: 1, Line: 0, Column: 1},
+				End:   result.Location{Offset: 2, Line: 0, Column: 2},
 			},
 			output: []result.HighlightedRange{{
 				Line:      0,
@@ -387,9 +387,9 @@ func Test_searchRangeToHighlights(t *testing.T) {
 		},
 		{
 			input: "abc\ndef\n",
-			inputRange: gitprotocol.Range{
-				Start: gitprotocol.Location{Offset: 2, Line: 0, Column: 2},
-				End:   gitprotocol.Location{Offset: 5, Line: 1, Column: 1},
+			inputRange: result.Range{
+				Start: result.Location{Offset: 2, Line: 0, Column: 2},
+				End:   result.Location{Offset: 5, Line: 1, Column: 1},
 			},
 			output: []result.HighlightedRange{{
 				Line:      0,
@@ -403,9 +403,9 @@ func Test_searchRangeToHighlights(t *testing.T) {
 		},
 		{
 			input: "abc\ndef\nghi\n",
-			inputRange: gitprotocol.Range{
-				Start: gitprotocol.Location{Offset: 0, Line: 0, Column: 0},
-				End:   gitprotocol.Location{Offset: 11, Line: 2, Column: 3},
+			inputRange: result.Range{
+				Start: result.Location{Offset: 0, Line: 0, Column: 0},
+				End:   result.Location{Offset: 11, Line: 2, Column: 3},
 			},
 			output: []result.HighlightedRange{{
 				Line:      0,

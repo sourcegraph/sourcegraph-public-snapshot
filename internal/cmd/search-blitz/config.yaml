@@ -82,6 +82,12 @@ groups:
                 repo:^github\.com/sgtest/element$
                 repeat-click
 
+          - name: literal_repo_excluded_scope # ~30 results
+            query: >
+                patterntype:literal
+                -repo:^github\.com/sourcegraph/sourcegraph$
+                --exclude-task=test
+
           - name: literal_file_scope # ~10 results
             query: >
                 patterntype:literal
@@ -97,15 +103,15 @@ groups:
           # Diff search
           - name: diff_small # ~42 results
             query: >
-                type:diff 
-                repo:^github\.com/sourcegraph/sourcegraph$ 
-                author:camden 
+                type:diff
+                repo:^github\.com/sourcegraph/sourcegraph$
+                author:camden
                 before:"february 1 2021"
 
           # Commit search
           - name: commit_small # ~42 results
             query: >
                 type:commit
-                repo:^github\.com/sourcegraph/sourcegraph$ 
-                author:camden 
+                repo:^github\.com/sourcegraph/sourcegraph$
+                author:camden
                 before:"february 1 2021"

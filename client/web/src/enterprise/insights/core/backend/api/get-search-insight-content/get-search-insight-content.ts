@@ -189,13 +189,14 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
             throw new Error(`Expected field ${name} to be at index ${index_} of object keys`)
         }
 
-        if (search.results.results.length === 0) {
+        const firstCommit = search.results.results[0]
+        if (search.results.results.length === 0 || firstCommit?.__typename !== 'CommitSearchResult') {
             console.warn(`No result for ${commitQueries[index_]}`)
 
             return { commit: null, date }
         }
 
-        const commit = (search?.results.results[0]).commit
+        const commit = firstCommit.commit
 
         // Sanity check
         const commitDate = commit.committer && new Date(commit.committer.date)

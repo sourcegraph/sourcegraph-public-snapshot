@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) error {
@@ -37,7 +37,7 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 		args := &protocol.SearchRequest{
 			Repo:        rr.Repo.Name,
 			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
+			Query:       gitprotocol.NewAnd(queryNodesToPredicates(query, query.IsCaseSensitive(), diff)...),
 			IncludeDiff: diff,
 			Limit:       limit,
 		}
@@ -100,9 +100,9 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
 	switch op.Kind {
 	case query.And:
-		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return gitprotocol.NewAnd(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
 	case query.Or:
-		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return gitprotocol.NewOr(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
 	default:
 		// I don't think we should have concats at this point, but ignore it if we do
 		return nil
@@ -123,7 +123,7 @@ func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gi
 	}
 
 	if pattern.Negated {
-		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
+		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
 }
@@ -157,7 +157,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	}
 
 	if parameter.Negated {
-		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
+		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
 }
@@ -171,30 +171,30 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 
 	if diff {
 		matchBody = "```diff\n" + in.Diff.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(gitprotocol.Location{Line: 1, Offset: len("```diff\n")}))
+		matchHighlights = searchRangesToHighlights(matchBody, in.Diff.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```diff\n")}))
 		diffPreview = &result.HighlightedString{
 			Value:      in.Diff.Content,
 			Highlights: searchRangesToHighlights(in.Diff.Content, in.Diff.MatchedRanges),
 		}
 	} else {
 		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
-		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(gitprotocol.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
+		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
 	}
 
 	return &result.CommitMatch{
-		Commit: git.Commit{
+		Commit: gitapi.Commit{
 			ID: in.Oid,
-			Author: git.Signature{
+			Author: gitapi.Signature{
 				Name:  in.Author.Name,
 				Email: in.Author.Email,
 				Date:  in.Author.Date,
 			},
-			Committer: &git.Signature{
+			Committer: &gitapi.Signature{
 				Name:  in.Committer.Name,
 				Email: in.Committer.Email,
 				Date:  in.Committer.Date,
 			},
-			Message: git.Message(in.Message.Content),
+			Message: gitapi.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
 		Repo: repo,
@@ -210,7 +210,7 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 	}
 }
 
-func searchRangesToHighlights(s string, ranges []gitprotocol.Range) []result.HighlightedRange {
+func searchRangesToHighlights(s string, ranges []result.Range) []result.HighlightedRange {
 	res := make([]result.HighlightedRange, 0, len(ranges))
 	for _, r := range ranges {
 		res = append(res, searchRangeToHighlights(s, r)...)
@@ -223,7 +223,7 @@ func searchRangesToHighlights(s string, ranges []gitprotocol.Range) []result.Hig
 // correctly, we need the string that is being highlighted in order to identify
 // line-end boundaries within multi-line ranges.
 // TODO(camdencheek): push the Range format up the stack so we can be smarter about multi-line highlights.
-func searchRangeToHighlights(s string, r gitprotocol.Range) []result.HighlightedRange {
+func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange {
 	var res []result.HighlightedRange
 
 	// Use a scanner to handle \r?\n

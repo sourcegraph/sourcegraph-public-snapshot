@@ -242,7 +242,7 @@ RETURNING
 `
 
 var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
-var errIllegalConfigurationPolicyUpdate = errors.New("protected configuration policies must keep the same names, types, patterns, and retention enabled values")
+var errIllegalConfigurationPolicyUpdate = errors.New("protected configuration policies must keep the same names, types, patterns, and retention values (except duration)")
 var errIllegalConfigurationPolicyDelete = errors.New("protected configuration policies cannot be deleted")
 
 // UpdateConfigurationPolicy updates the fields of the configuration policy record with the given identifier.
@@ -282,7 +282,7 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 		return errUnknownConfigurationPolicy
 	}
 	if currentPolicy.Protected {
-		if policy.Name != currentPolicy.Name || policy.Type != currentPolicy.Type || policy.Pattern != currentPolicy.Pattern || policy.RetentionEnabled != currentPolicy.RetentionEnabled {
+		if policy.Name != currentPolicy.Name || policy.Type != currentPolicy.Type || policy.Pattern != currentPolicy.Pattern || policy.RetentionEnabled != currentPolicy.RetentionEnabled || policy.RetainIntermediateCommits != currentPolicy.RetainIntermediateCommits {
 			return errIllegalConfigurationPolicyUpdate
 		}
 	}

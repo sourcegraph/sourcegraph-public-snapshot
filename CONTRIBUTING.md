@@ -11,4 +11,4 @@ Unless you feel confident your change will be accepted (trivial bug fixes, code 
 ## Code of Conduct
 
 All interactions with the Sourcegraph open source project are governed by the
-[Sourcegraph Code of Conduct](https://about.sourcegraph.com/community/code_of_conduct).
+[Sourcegraph Code of Conduct](https://handbook.sourcegraph.com/community/code_of_conduct).

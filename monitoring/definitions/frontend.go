@@ -293,6 +293,7 @@ func Frontend() *monitoring.Container {
 			shared.CodeIntelligence.NewUploadStoreGroup(containerName),
 
 			shared.Batches.NewDBStoreGroup(containerName),
+			shared.Batches.NewServiceGroup(containerName),
 
 			// src_oobmigration_total
 			// src_oobmigration_duration_seconds_bucket

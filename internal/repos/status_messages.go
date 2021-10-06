@@ -81,17 +81,17 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 
 	// Look for any repository that we could not sync
 	opts = database.ReposListOptions{
-		ExternalServiceIDs: extsvcIDs,
 		FailedFetch:        true,
+		ExternalServiceIDs: extsvcIDs,
 		LimitOffset: &database.LimitOffset{
 			Limit: 1,
 		},
 	}
-	failedSync, err := database.Repos(db).Count(ctx, opts)
+	failedSync, err := database.Repos(db).ListRepoNames(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "counting repo sync failures")
 	}
-	if failedSync > 0 {
+	if len(failedSync) > 0 {
 		messages = append(messages, StatusMessage{
 			SyncError: &SyncError{
 				Message: "Some repositories could not be synced",

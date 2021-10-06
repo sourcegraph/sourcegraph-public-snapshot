@@ -5,10 +5,54 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import {
+    BatchSpecByID2Result,
+    BatchSpecByID2Variables,
     BatchSpecWorkspacesFields,
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,
+    Scalars,
 } from '../../../../graphql-operations'
+
+const fragment = gql`
+    fragment BatchSpecWorkspacesFields on BatchSpec {
+        id
+        originalInput
+        workspaceResolution {
+            workspaces {
+                nodes {
+                    ...BatchSpecWorkspaceFields
+                }
+            }
+            state
+            allowIgnored
+            allowUnsupported
+        }
+    }
+
+    fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
+        repository {
+            id
+            name
+            url
+        }
+        ignored
+        branch {
+            id
+            abbrevName
+            displayName
+            target {
+                oid
+            }
+        }
+        path
+        onlyFetchWorkspace
+        steps {
+            run
+            container
+        }
+        searchResultPaths
+    }
+`
 
 export function createBatchSpecFromRaw(spec: string): Observable<BatchSpecWorkspacesFields> {
     return requestGraphQL<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(
@@ -19,53 +63,38 @@ export function createBatchSpecFromRaw(spec: string): Observable<BatchSpecWorksp
                 }
             }
 
-            fragment BatchSpecWorkspacesFields on BatchSpec {
-                originalInput
-                workspaceResolution {
-                    workspaces {
-                        nodes {
-                            ...BatchSpecWorkspaceFields
-                        }
-                    }
-                    allowIgnored
-                    allowUnsupported
-                    unsupported {
-                        nodes {
-                            id
-                            url
-                            name
-                        }
-                    }
-                }
-            }
-
-            fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
-                repository {
-                    id
-                    name
-                    url
-                }
-                ignored
-                branch {
-                    id
-                    abbrevName
-                    displayName
-                    target {
-                        oid
-                    }
-                }
-                path
-                onlyFetchWorkspace
-                steps {
-                    run
-                    container
-                }
-                searchResultPaths
-            }
+            ${fragment}
         `,
         { spec }
     ).pipe(
         map(dataOrThrowErrors),
         map(result => result.createBatchSpecFromRaw)
+    )
+}
+
+export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWorkspacesFields> {
+    return requestGraphQL<BatchSpecByID2Result, BatchSpecByID2Variables>(
+        gql`
+            query BatchSpecByID2($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ...BatchSpecWorkspacesFields
+                }
+            }
+
+            ${fragment}
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(data => {
+            if (!data.node) {
+                throw new Error('Not found')
+            }
+            if (data.node.__typename !== 'BatchSpec') {
+                throw new Error(`Node is a ${data.node.__typename}, not a BatchSpec`)
+            }
+            return data.node
+        })
     )
 }

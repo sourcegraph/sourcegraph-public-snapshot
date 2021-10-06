@@ -11,7 +11,7 @@ func Executor() *monitoring.Container {
 	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches)"
 
 	// frontend is sometimes called sourcegraph-frontend in various contexts
-	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend)"
+	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker)"
 
 	return &monitoring.Container{
 		Name:        "executor",

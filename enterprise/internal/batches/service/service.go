@@ -3,10 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hashicorp/go-multierror"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -15,12 +19,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // New returns a Service.
@@ -31,23 +38,101 @@ func New(store *store.Store) *Service {
 // NewWithClock returns a Service the given clock used
 // to generate timestamps.
 func NewWithClock(store *store.Store, clock func() time.Time) *Service {
-	svc := &Service{store: store, sourcer: sources.NewSourcer(httpcli.ExternalClientFactory), clock: clock}
+	svc := &Service{
+		store:      store,
+		sourcer:    sources.NewSourcer(httpcli.ExternalClientFactory),
+		clock:      clock,
+		operations: newOperations(store.ObservationContext()),
+	}
 
 	return svc
 }
 
 type Service struct {
-	store *store.Store
+	store      *store.Store
+	sourcer    sources.Sourcer
+	operations *operations
+	clock      func() time.Time
+}
 
-	sourcer sources.Sourcer
+type operations struct {
+	createBatchSpec                      *observation.Operation
+	createBatchSpecFromRaw               *observation.Operation
+	enqueueBatchSpecResolution           *observation.Operation
+	executeBatchSpec                     *observation.Operation
+	replaceBatchSpecInput                *observation.Operation
+	createChangesetSpec                  *observation.Operation
+	getBatchChangeMatchingBatchSpec      *observation.Operation
+	getNewestBatchSpec                   *observation.Operation
+	moveBatchChange                      *observation.Operation
+	closeBatchChange                     *observation.Operation
+	deleteBatchChange                    *observation.Operation
+	enqueueChangesetSync                 *observation.Operation
+	reenqueueChangeset                   *observation.Operation
+	checkNamespaceAccess                 *observation.Operation
+	fetchUsernameForBitbucketServerToken *observation.Operation
+	validateAuthenticator                *observation.Operation
+	createChangesetJobs                  *observation.Operation
+	applyBatchChange                     *observation.Operation
+	reconcileBatchChange                 *observation.Operation
+	validateChangesetSpecs               *observation.Operation
+}
 
-	clock func() time.Time
+var (
+	singletonOperations *operations
+	operationsOnce      sync.Once
+)
+
+// newOperations generates a singleton of the operations struct.
+// TODO: We should create one per observationContext.
+func newOperations(observationContext *observation.Context) *operations {
+	operationsOnce.Do(func() {
+		m := metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"batches_service",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+
+		op := func(name string) *observation.Operation {
+			return observationContext.Operation(observation.Op{
+				Name:              fmt.Sprintf("batches.service.%s", name),
+				MetricLabelValues: []string{name},
+				Metrics:           m,
+			})
+		}
+
+		singletonOperations = &operations{
+			createBatchSpec:                      op("CreateBatchSpec"),
+			createBatchSpecFromRaw:               op("CreateBatchSpecFromRaw"),
+			enqueueBatchSpecResolution:           op("EnqueueBatchSpecResolution"),
+			executeBatchSpec:                     op("ExecuteBatchSpec"),
+			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
+			createChangesetSpec:                  op("CreateChangesetSpec"),
+			getBatchChangeMatchingBatchSpec:      op("GetBatchChangeMatchingBatchSpec"),
+			getNewestBatchSpec:                   op("GetNewestBatchSpec"),
+			moveBatchChange:                      op("MoveBatchChange"),
+			closeBatchChange:                     op("CloseBatchChange"),
+			deleteBatchChange:                    op("DeleteBatchChange"),
+			enqueueChangesetSync:                 op("EnqueueChangesetSync"),
+			reenqueueChangeset:                   op("ReenqueueChangeset"),
+			checkNamespaceAccess:                 op("CheckNamespaceAccess"),
+			fetchUsernameForBitbucketServerToken: op("FetchUsernameForBitbucketServerToken"),
+			validateAuthenticator:                op("ValidateAuthenticator"),
+			createChangesetJobs:                  op("CreateChangesetJobs"),
+			applyBatchChange:                     op("ApplyBatchChange"),
+			reconcileBatchChange:                 op("ReconcileBatchChange"),
+			validateChangesetSpecs:               op("ValidateChangesetSpecs"),
+		}
+	})
+
+	return singletonOperations
 }
 
 // WithStore returns a copy of the Service with its store attribute set to the
 // given Store.
 func (s *Service) WithStore(store *store.Store) *Service {
-	return &Service{store: store, sourcer: s.sourcer, clock: s.clock}
+	return &Service{store: store, sourcer: s.sourcer, clock: s.clock, operations: s.operations}
 }
 
 type CreateBatchSpecOpts struct {
@@ -61,12 +146,10 @@ type CreateBatchSpecOpts struct {
 
 // CreateBatchSpec creates the BatchSpec.
 func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.CreateBatchSpec", fmt.Sprintf("Actor %d", actor.UID))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("changesetSpecs", len(opts.ChangesetSpecRandIDs)),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
@@ -80,6 +163,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}
 	spec.NamespaceOrgID = opts.NamespaceOrgID
 	spec.NamespaceUserID = opts.NamespaceUserID
+	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
 
 	if len(opts.ChangesetSpecRandIDs) == 0 {
@@ -137,6 +221,128 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	return spec, nil
 }
 
+type CreateBatchSpecFromRawOpts struct {
+	RawSpec string
+
+	NamespaceUserID int32
+	NamespaceOrgID  int32
+
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+// CreateBatchSpecFromRaw creates the BatchSpec.
+func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSpecFromRawOpts) (spec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.createBatchSpecFromRaw.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Bool("allowIgnored", opts.AllowIgnored),
+		log.Bool("allowUnsupported", opts.AllowUnsupported),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, opts.NamespaceUserID, opts.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+	spec.NamespaceOrgID = opts.NamespaceOrgID
+	spec.NamespaceUserID = opts.NamespaceUserID
+	actor := actor.FromContext(ctx)
+	spec.UserID = actor.UID
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+		spec:             spec,
+		allowIgnored:     opts.AllowIgnored,
+		allowUnsupported: opts.AllowUnsupported,
+	})
+}
+
+type createBatchSpecForExecutionOpts struct {
+	spec             *btypes.BatchSpec
+	allowIgnored     bool
+	allowUnsupported bool
+}
+
+// createBatchSpecForExecution persists the given BatchSpec in the given
+// transaction, possibly creating ChangesetSpecs if the spec contains
+// importChangesets statements, and finally creating a BatchSpecResolutionJob.
+func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
+	reposStore := tx.Repos()
+
+	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
+		return err
+	}
+
+	if len(opts.spec.Spec.ImportChangesets) != 0 {
+		var repoNames []string
+		for _, ic := range opts.spec.Spec.ImportChangesets {
+			repoNames = append(repoNames, ic.Repository)
+		}
+
+		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
+		// whether the user has access to the repository or not.
+		//
+		// Further down, when iterating over
+		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
+		if err != nil {
+			return err
+		}
+
+		repoNameIDs := make(map[api.RepoName]api.RepoID, len(repos))
+		for _, r := range repos {
+			repoNameIDs[r.Name] = r.ID
+		}
+
+		// If there are "importChangesets" statements in the spec we evaluate
+		// them now and create ChangesetSpecs for them.
+		for _, ic := range opts.spec.Spec.ImportChangesets {
+			for _, id := range ic.ExternalIDs {
+				repoID, ok := repoNameIDs[api.RepoName(ic.Repository)]
+				if !ok {
+					return errors.Newf("repository %s not found", ic.Repository)
+				}
+
+				extID, err := batcheslib.ParseChangesetSpecExternalID(id)
+				if err != nil {
+					return err
+				}
+
+				changesetSpec := &btypes.ChangesetSpec{
+					UserID: opts.spec.UserID,
+					RepoID: repoID,
+					Spec: &batcheslib.ChangesetSpec{
+						BaseRepository: string(graphqlbackend.MarshalRepositoryID(repoID)),
+						ExternalID:     extID,
+					},
+					BatchSpecID: opts.spec.ID,
+				}
+
+				if err = tx.CreateChangesetSpec(ctx, changesetSpec); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	// Return spec and enqueue resolution
+	return tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		State:            btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID:      opts.spec.ID,
+		AllowIgnored:     opts.allowIgnored,
+		AllowUnsupported: opts.allowUnsupported,
+	})
+}
+
 type EnqueueBatchSpecResolutionOpts struct {
 	BatchSpecID int64
 
@@ -146,27 +352,149 @@ type EnqueueBatchSpecResolutionOpts struct {
 
 // EnqueueBatchSpecResolution creates a pending BatchSpec that will be picked up by a worker in the background.
 func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBatchSpecResolutionOpts) (err error) {
-	actor := actor.FromContext(ctx)
-	tr, ctx := trace.New(ctx, "Service.EnqueueBatchSpecResolution", fmt.Sprintf("Actor %d", actor.UID))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.enqueueBatchSpecResolution.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
+		State:            btypes.BatchSpecResolutionJobStateQueued,
 		BatchSpecID:      opts.BatchSpecID,
 		AllowIgnored:     opts.AllowIgnored,
 		AllowUnsupported: opts.AllowUnsupported,
 	})
 }
 
+type ErrBatchSpecResolutionErrored struct {
+	failureMessage *string
+}
+
+func (e ErrBatchSpecResolutionErrored) Error() string {
+	if e.failureMessage != nil && *e.failureMessage != "" {
+		return fmt.Sprintf("cannot execute batch spec, workspace resolution failed: %s", *e.failureMessage)
+	}
+	return "cannot execute batch spec, workspace resolution failed"
+}
+
+var ErrBatchSpecResolutionIncomplete = errors.New("cannot execute batch spec, workspaces still being resolved")
+
+type ExecuteBatchSpecOpts struct {
+	BatchSpecRandID string
+}
+
+// ExecuteBatchSpec creates BatchSpecWorkspaceExecutionJobs for every created
+// BatchSpecWorkspace.
+//
+// It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
+// successfully.
+func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: In the future we want to block here until the resolution is done
+	// and only then check whether it failed or not.
+	//
+	// TODO: We also want to check that whether there was already an
+	// execution.
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	resolutionJob, err := tx.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+
+	switch resolutionJob.State {
+	case btypes.BatchSpecResolutionJobStateErrored, btypes.BatchSpecResolutionJobStateFailed:
+		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
+
+	case btypes.BatchSpecResolutionJobStateCompleted:
+		return batchSpec, tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+
+	default:
+		return nil, ErrBatchSpecResolutionIncomplete
+	}
+}
+
+type ReplaceBatchSpecInputOpts struct {
+	BatchSpecRandID  string
+	RawSpec          string
+	AllowIgnored     bool
+	AllowUnsupported bool
+}
+
+// ReplaceBatchSpecInput creates BatchSpecWorkspaceExecutionJobs for every created
+// BatchSpecWorkspace.
+//
+// It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
+// successfully.
+func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSpecInputOpts) (batchSpec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.replaceBatchSpecInput.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	// Before we hit the database, validate the new spec.
+	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure the user has access.
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Start transaction.
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Delete the previous batch spec, which should delete
+	// - batch_spec_resolution_jobs
+	// - batch_spec_workspaces
+	// associated with it
+	if err := tx.DeleteBatchSpec(ctx, batchSpec.ID); err != nil {
+		return nil, err
+	}
+
+	// We keep the RandID so the user-visible GraphQL ID is stable
+	newSpec.RandID = batchSpec.RandID
+
+	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
+	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
+	newSpec.UserID = batchSpec.UserID
+
+	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
+		spec:             newSpec,
+		allowIgnored:     opts.AllowIgnored,
+		allowUnsupported: opts.AllowUnsupported,
+	})
+}
+
 // CreateChangesetSpec validates the given raw spec input and creates the ChangesetSpec.
 func (s *Service) CreateChangesetSpec(ctx context.Context, rawSpec string, userID int32) (spec *btypes.ChangesetSpec, err error) {
-	tr, ctx := trace.New(ctx, "Service.CreateChangesetSpec", fmt.Sprintf("User %d", userID))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	spec, err = btypes.NewChangesetSpecFromRaw(rawSpec)
 	if err != nil {
@@ -207,7 +535,10 @@ func (e *changesetSpecNotFoundErr) NotFound() bool { return true }
 // applies to, if that BatchChange already exists.
 // If it doesn't exist yet, both return values are nil.
 // It accepts a *store.Store so that it can be used inside a transaction.
-func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (*btypes.BatchChange, error) {
+func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *btypes.BatchSpec) (_ *btypes.BatchChange, err error) {
+	ctx, endObservation := s.operations.getBatchChangeMatchingBatchSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	opts := store.GetBatchChangeOpts{
 		Name:            spec.Spec.Name,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -226,7 +557,10 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 
 // GetNewestBatchSpec returns the newest batch spec that matches the given
 // spec's namespace and name and is owned by the given user, or nil if none is found.
-func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (*btypes.BatchSpec, error) {
+func (s *Service) GetNewestBatchSpec(ctx context.Context, tx *store.Store, spec *btypes.BatchSpec, userID int32) (_ *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.getNewestBatchSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	opts := store.GetNewestBatchSpecOpts{
 		UserID:          userID,
 		NamespaceUserID: spec.NamespaceUserID,
@@ -267,11 +601,8 @@ func (o MoveBatchChangeOpts) String() string {
 // MoveBatchChange moves the batch change from one namespace to another and/or renames
 // the batch change.
 func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
-	tr, ctx := trace.New(ctx, "Service.MoveBatchChange", opts.String())
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.moveBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -313,12 +644,8 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 
 // CloseBatchChange closes the BatchChange with the given ID if it has not been closed yet.
 func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangesets bool) (batchChange *btypes.BatchChange, err error) {
-	traceTitle := fmt.Sprintf("batchChange: %d, closeChangesets: %t", id, closeChangesets)
-	tr, ctx := trace.New(ctx, "service.CloseBatchChange", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.closeBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	batchChange, err = s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil {
@@ -363,12 +690,8 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 // DeleteBatchChange deletes the BatchChange with the given ID if it hasn't been
 // deleted yet.
 func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
-	traceTitle := fmt.Sprintf("BatchChange: %d", id)
-	tr, ctx := trace.New(ctx, "service.BatchChange", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
 	if err != nil {
@@ -386,12 +709,8 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 // whether the actor in the context has permission to enqueue a sync and then
 // enqueues a sync by calling the repoupdater client.
 func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error) {
-	traceTitle := fmt.Sprintf("changeset: %d", id)
-	tr, ctx := trace.New(ctx, "service.EnqueueChangesetSync", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.enqueueChangesetSync.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	// Check for existence of changeset so we don't swallow that error.
 	changeset, err := s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
@@ -441,12 +760,8 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 // whether the actor in the context has permission to enqueue a reconciler run and then
 // enqueues it by calling ResetReconcilerState.
 func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *btypes.Changeset, repo *types.Repo, err error) {
-	traceTitle := fmt.Sprintf("changeset: %d", id)
-	tr, ctx := trace.New(ctx, "service.RenqueueChangeset", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.reenqueueChangeset.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	changeset, err = s.store.GetChangeset(ctx, store.GetChangesetOpts{ID: id})
 	if err != nil {
@@ -500,7 +815,10 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // Otherwise it checks whether the current user _is_ the namespace user or has
 // access to the namespace org.
 // If both values are zero, an error is returned.
-func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) error {
+func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
+	ctx, endObservation := s.operations.checkNamespaceAccess.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if namespaceOrgID != 0 {
 		return backend.CheckOrgAccessOrSiteAdmin(ctx, s.store.DB(), namespaceOrgID)
 	} else if namespaceUserID != 0 {
@@ -525,7 +843,10 @@ var ErrNoNamespace = errors.New("no namespace given")
 //
 // Since Bitbucket sends the username as a header in REST responses, we can
 // take it from there and complete the UserCredential.
-func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (string, error) {
+func (s *Service) FetchUsernameForBitbucketServerToken(ctx context.Context, externalServiceID, externalServiceType, token string) (_ string, err error) {
+	ctx, endObservation := s.operations.fetchUsernameForBitbucketServerToken.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	css, err := s.sourcer.ForExternalService(ctx, s.store, store.GetExternalServiceIDsOpts{
 		ExternalServiceType: externalServiceType,
 		ExternalServiceID:   externalServiceID,
@@ -560,7 +881,10 @@ var _ usernameSource = &sources.BitbucketServerSource{}
 
 // ValidateAuthenticator creates a ChangesetSource, configures it with the given
 // authenticator and validates it can correctly access the remote server.
-func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+func (s *Service) ValidateAuthenticator(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) (err error) {
+	ctx, endObservation := s.operations.validateAuthenticator.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if Mocks.ValidateAuthenticator != nil {
 		return Mocks.ValidateAuthenticator(ctx, externalServiceID, externalServiceType, a)
 	}
@@ -593,12 +917,8 @@ var ErrChangesetsForJobNotFound = errors.New("some changesets could not be found
 // given BatchChange, checking whether the actor in the context has permission to
 // trigger a job, and enqueues it.
 func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, ids []int64, jobType btypes.ChangesetJobType, payload interface{}, listOpts store.ListChangesetsOpts) (bulkGroupID string, err error) {
-	traceTitle := fmt.Sprintf("batchChangeID: %d, len(changesets): %d", batchChangeID, len(ids))
-	tr, ctx := trace.New(ctx, "service.CreateChangesetJobs", traceTitle)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	ctx, endObservation := s.operations.createChangesetJobs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	// Load the BatchChange to check for write permissions.
 	batchChange, err := s.store.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: batchChangeID})
@@ -657,4 +977,78 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	return bulkGroupID, nil
+}
+
+// ValidateChangesetSpecs checks whether the given BachSpec has ChangesetSpecs
+// that would publish to the same branch in the same repository.
+// If the return value is nil, then the BatchSpec is valid.
+func (s *Service) ValidateChangesetSpecs(ctx context.Context, batchSpecID int64) error {
+	// We don't use `err` here to distinguish between errors we want to trace
+	// as such and the validation errors that we want to return without logging
+	// them as errors.
+	var nonValidationErr error
+	ctx, endObservation := s.operations.validateChangesetSpecs.With(ctx, &nonValidationErr, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	conflicts, nonValidationErr := s.store.ListChangesetSpecsWithConflictingHeadRef(ctx, batchSpecID)
+	if nonValidationErr != nil {
+		return nonValidationErr
+	}
+
+	if len(conflicts) == 0 {
+		return nil
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(conflicts))
+	for _, c := range conflicts {
+		repoIDs = append(repoIDs, c.RepoID)
+	}
+
+	// 🚨 SECURITY: database.Repos.GetRepoIDsSet uses the authzFilter under the hood and
+	// filters out repositories that the user doesn't have access to.
+	accessibleReposByID, nonValidationErr := s.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if nonValidationErr != nil {
+		return nonValidationErr
+	}
+
+	errs := &multierror.Error{ErrorFormat: formatChangesetSpecHeadRefConflicts}
+	for _, c := range conflicts {
+		conflictErr := &changesetSpecHeadRefConflict{count: c.Count, headRef: c.HeadRef}
+
+		// If the user has access to the repository, we can show the name
+		if repo, ok := accessibleReposByID[c.RepoID]; ok {
+			conflictErr.repo = repo
+		}
+		errs = multierror.Append(errs, conflictErr)
+	}
+
+	return errs.ErrorOrNil()
+}
+
+type changesetSpecHeadRefConflict struct {
+	repo    *types.Repo
+	count   int
+	headRef string
+}
+
+func (c changesetSpecHeadRefConflict) Error() string {
+	if c.repo != nil {
+		return fmt.Sprintf("%d changeset specs in %s use the same branch: %s", c.count, c.repo.Name, c.headRef)
+	}
+	return fmt.Sprintf("%d changeset specs in the same repository use the same branch: %s", c.count, c.headRef)
+}
+
+func formatChangesetSpecHeadRefConflicts(es []error) string {
+	if len(es) == 1 {
+		return fmt.Sprintf("Validating changeset specs resulted in an error:\n* %s\n", es[0])
+	}
+
+	points := make([]string, len(es))
+	for i, err := range es {
+		points[i] = fmt.Sprintf("* %s", err)
+	}
+
+	return fmt.Sprintf(
+		"%d errors when validating changeset specs:\n%s\n",
+		len(es), strings.Join(points, "\n"))
 }

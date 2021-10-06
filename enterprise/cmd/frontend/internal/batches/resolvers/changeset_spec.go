@@ -13,6 +13,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -211,10 +212,10 @@ func (r *gitCommitDescriptionResolver) Author() *graphqlbackend.PersonResolver {
 }
 func (r *gitCommitDescriptionResolver) Message() string { return r.message }
 func (r *gitCommitDescriptionResolver) Subject() string {
-	return git.Message(r.message).Subject()
+	return gitapi.Message(r.message).Subject()
 }
 func (r *gitCommitDescriptionResolver) Body() *string {
-	body := git.Message(r.message).Body()
+	body := gitapi.Message(r.message).Body()
 	if body == "" {
 		return nil
 	}

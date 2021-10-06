@@ -33,13 +33,13 @@ LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
 # hadolint ignore=DL3018
-RUN apk update && apk add --no-cache \
+RUN apk update && apk add --no-cache --verbose \
     # NOTE that the Postgres version we run is different
     # from our *Minimum Supported Version* which alone dictates
     # the features we can depend on. See this link for more information:
     # https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/postgresql.md#version-requirements
     'bash=5.0.17-r0' \
-    'redis=5.0.13-r0' \
+    'redis=~5.0' \
     # Gitserver requires Git protocol v2 https://github.com/sourcegraph/sourcegraph/issues/13168
     'git>=2.18' \
     git-p4 \
@@ -49,7 +49,7 @@ RUN apk update && apk add --no-cache \
     postgresql-contrib
 
 # This is installed separately due to the upstream edge repo requirement
-RUN apk update && apk add --no-cache \
+RUN apk update && apk add --no-cache --verbose \
     'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm

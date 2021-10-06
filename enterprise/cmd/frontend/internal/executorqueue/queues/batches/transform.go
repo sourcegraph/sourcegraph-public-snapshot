@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -23,12 +24,15 @@ const (
 	accessTokenScope = "user:all"
 )
 
-func createAccessToken(ctx context.Context, db dbutil.DB, userID int32) (string, error) {
-	_, token, err := database.AccessTokens(db).Create(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
+func createAndAttachInternalAccessToken(ctx context.Context, s batchesStore, jobID int64, userID int32) (string, error) {
+	tokenID, token, err := database.AccessTokens(s.DB()).CreateInternal(ctx, userID, []string{accessTokenScope}, accessTokenNote, userID)
 	if err != nil {
 		return "", err
 	}
-	return token, err
+	if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobID, tokenID); err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func makeURL(base, username, password string) (string, error) {
@@ -44,6 +48,7 @@ func makeURL(base, username, password string) (string, error) {
 type batchesStore interface {
 	GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error)
 	GetBatchSpec(context.Context, store.GetBatchSpecOpts) (*btypes.BatchSpec, error)
+	SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error)
 
 	DB() dbutil.DB
 }
@@ -72,6 +77,13 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 		return apiclient.Job{}, errors.Wrap(err, "fetching repo")
 	}
 
+	// Create an internal access token that will get cleaned up when the job
+	// finishes.
+	token, err := createAndAttachInternalAccessToken(ctx, s, job.ID, batchSpec.UserID)
+	if err != nil {
+		return apiclient.Job{}, errors.Wrap(err, "creating internal access token")
+	}
+
 	executionInput := batcheslib.WorkspacesExecutionInput{
 		RawSpec: batchSpec.RawSpec,
 		Workspaces: []*batcheslib.Workspace{
@@ -90,26 +102,6 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 				SearchResultPaths:  workspace.FileMatches,
 			},
 		},
-	}
-
-	// TODO: createAccessToken is a bit of technical debt until we figure out a
-	// better solution. The problem is that src-cli needs to make requests to
-	// the Sourcegraph instance *on behalf of the user*.
-	//
-	// Ideally we'd have something like one-time tokens that
-	// * we could hand to src-cli
-	// * are not visible to the user in the Sourcegraph web UI
-	// * valid only for the duration of the batch spec execution
-	// * and cleaned up after batch spec is executed
-	//
-	// Until then we create a fresh access token every time.
-	//
-	// GetOrCreate doesn't work because once an access token has been created
-	// in the database Sourcegraph can't access the plain-text token anymore.
-	// Only a hash for verification is kept in the database.
-	token, err := createAccessToken(ctx, s.DB(), batchSpec.UserID)
-	if err != nil {
-		return apiclient.Job{}, err
 	}
 
 	frontendURL := conf.Get().ExternalURL

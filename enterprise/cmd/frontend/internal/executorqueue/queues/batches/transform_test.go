@@ -24,10 +24,11 @@ import (
 
 func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 	accessToken := "thisissecret-dont-tell-anyone"
-	database.Mocks.AccessTokens.Create = func(subjectUserID int32, scopes []string, note string, creatorID int32) (int64, string, error) {
-		return 1234, accessToken, nil
+	var accessTokenID int64 = 1234
+	database.Mocks.AccessTokens.CreateInternal = func(subjectUserID int32, scopes []string, note string, creatorID int32) (int64, string, error) {
+		return accessTokenID, accessToken, nil
 	}
-	t.Cleanup(func() { database.Mocks.AccessTokens.Create = nil })
+	t.Cleanup(func() { database.Mocks.AccessTokens.CreateInternal = nil })
 
 	database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, Name: "github.com/sourcegraph/sourcegraph"}, nil
@@ -123,12 +124,18 @@ func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 	if diff := cmp.Diff(expected, job); diff != "" {
 		t.Errorf("unexpected job (-want +got):\n%s", diff)
 	}
+
+	if store.accessTokenID != accessTokenID {
+		t.Errorf("wrong access token ID set on execution job: %d", store.accessTokenID)
+	}
 }
 
 type dummyBatchesStore struct {
 	dbHandle           dbutil.DB
 	batchSpec          *btypes.BatchSpec
 	batchSpecWorkspace *btypes.BatchSpecWorkspace
+
+	accessTokenID int64
 }
 
 func (db *dummyBatchesStore) GetBatchSpecWorkspace(context.Context, store.GetBatchSpecWorkspaceOpts) (*btypes.BatchSpecWorkspace, error) {
@@ -138,3 +145,7 @@ func (db *dummyBatchesStore) GetBatchSpec(context.Context, store.GetBatchSpecOpt
 	return db.batchSpec, nil
 }
 func (db *dummyBatchesStore) DB() dbutil.DB { return db.dbHandle }
+func (db *dummyBatchesStore) SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
+	db.accessTokenID = tokenID
+	return nil
+}

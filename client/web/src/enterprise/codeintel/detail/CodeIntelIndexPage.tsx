@@ -42,6 +42,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     deleteLsifIndex = defaultDeleteLsifIndex,
     telemetryService,
     now,
+    history,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndex'), [telemetryService])
 
@@ -68,7 +69,8 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
             return
         }
 
-        if (!window.confirm(`Delete auto-index record for commit ${indexOrError.inputCommit.slice(0, 7)}?`)) {
+        const autoIndexCommit = indexOrError.inputCommit.slice(0, 7)
+        if (!window.confirm(`Delete auto-index record for commit ${autoIndexCommit}?`)) {
             return
         }
 
@@ -77,10 +79,22 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
         try {
             await deleteLsifIndex({ id }).toPromise()
             setDeletionOrError('deleted')
+            history.push({
+                state: {
+                    modal: 'SUCCESS',
+                    message: `Auto-index record for commit ${autoIndexCommit} has been deleted.`,
+                },
+            })
         } catch (error) {
             setDeletionOrError(error)
+            history.push({
+                state: {
+                    modal: 'ERROR',
+                    message: `There was an error while saving auto-index record for commit: ${autoIndexCommit}.`,
+                },
+            })
         }
-    }, [id, indexOrError, deleteLsifIndex])
+    }, [id, indexOrError, deleteLsifIndex, history])
 
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />

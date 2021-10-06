@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -218,6 +219,17 @@ func TestMarkCompleteUnknownJob(t *testing.T) {
 	}
 }
 
+func TestMarkCompleteStoreError(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	internalErr := errors.New("something went wrong")
+	store.MarkCompleteFunc.SetDefaultReturn(false, internalErr)
+	handler := newHandler(QueueOptions{Store: store})
+
+	if err := handler.markComplete(context.Background(), "deadbeef", 42); err != internalErr {
+		t.Fatalf("unexpected error. want=%q have=%q", internalErr, err)
+	}
+}
+
 func TestMarkErrored(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
@@ -262,6 +274,17 @@ func TestMarkErroredUnknownJob(t *testing.T) {
 	}
 }
 
+func TestMarkErroredStoreError(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	storeErr := errors.New("something went wrong")
+	store.MarkErroredFunc.SetDefaultReturn(false, storeErr)
+	handler := newHandler(QueueOptions{Store: store})
+
+	if err := handler.markErrored(context.Background(), "deadbeef", 42, "OH NO"); err != storeErr {
+		t.Fatalf("unexpected error. want=%q have=%q", storeErr, err)
+	}
+}
+
 func TestMarkFailed(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueFunc.SetDefaultReturn(testRecord{ID: 42}, true, nil)
@@ -303,6 +326,17 @@ func TestMarkFailedUnknownJob(t *testing.T) {
 
 	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
+	}
+}
+
+func TestMarkFailedStoreError(t *testing.T) {
+	store := workerstoremocks.NewMockStore()
+	storeErr := errors.New("something went wrong")
+	store.MarkFailedFunc.SetDefaultReturn(false, storeErr)
+	handler := newHandler(QueueOptions{Store: store})
+
+	if err := handler.markFailed(context.Background(), "deadbeef", 42, "OH NO"); err != storeErr {
+		t.Fatalf("unexpected error. want=%q have=%q", storeErr, err)
 	}
 }
 
