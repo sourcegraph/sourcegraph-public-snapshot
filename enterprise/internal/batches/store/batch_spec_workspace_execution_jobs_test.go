@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 )
@@ -202,5 +203,21 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				t.Fatal(err)
 			}
 		})
+	})
+
+	t.Run("SetBatchSpecWorkspaceExecutionJobAccessToken", func(t *testing.T) {
+		err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, jobs[0].ID, 12345)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		reloadedJob, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: jobs[0].ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if reloadedJob.AccessTokenID != 12345 {
+			t.Fatalf("wrong access token ID: %d", reloadedJob.AccessTokenID)
+		}
 	})
 }

@@ -48,7 +48,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<Props> = ({
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div className="modal-body">
+                <div className="modal-body modal-body--full">
                     <ul className="list-group list-group-flush">
                         {[...keyboardShortcuts, ...LEGACY_KEYBOARD_SHORTCUTS]
                             .filter(({ hideInHelp }) => !hideInHelp)

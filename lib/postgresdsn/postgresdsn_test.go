@@ -1,8 +1,8 @@
-package dbutil
+package postgresdsn
 
 import "testing"
 
-func TestPostgresDSN(t *testing.T) {
+func TestNew(t *testing.T) {
 	cases := []struct {
 		name string
 		env  map[string]string
@@ -58,7 +58,7 @@ func TestPostgresDSN(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			have := PostgresDSN("", "testuser", func(e string) string {
+			have := New("", "testuser", func(e string) string {
 				return tc.env[e]
 			})
 			if have != tc.dsn {

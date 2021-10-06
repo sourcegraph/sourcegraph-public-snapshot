@@ -46,7 +46,7 @@ func computeRunType(tag, branch string) RunType {
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		return ImagePatch
 	case strings.HasPrefix(branch, "docker-images-patch-notest/"):
-		return ImagePatch
+		return ImagePatchNoTest
 	case branch == "docker-images-candidates-notest":
 		return CandidatesNoTest
 
@@ -77,4 +77,32 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 		}
 	}
 	return false
+}
+
+func (t RunType) String() string {
+	switch t {
+	case PullRequest:
+		return "PullRequest"
+	case MainBranch:
+		return "MainBranch"
+	case TaggedRelease:
+		return "TaggedRelease"
+	case ReleaseBranch:
+		return "ReleaseBranch"
+	case BextReleaseBranch:
+		return "Browser Extension Release Build"
+	case BextNightly:
+		return "Browser Extension Release Build"
+	case ImagePatch:
+		return "Patched Image"
+	case ImagePatchNoTest:
+		return "Patched Image without testing"
+	case CandidatesNoTest:
+		return "Build All candidates without testing"
+	case MainDryRun:
+		return "Main dry run"
+	case BackendDryRun:
+		return "Backend dry run"
+	}
+	panic("Run type does not have a full name defined")
 }

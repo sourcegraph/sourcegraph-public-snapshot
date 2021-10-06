@@ -77,8 +77,8 @@ export function experimentalFeaturesFromSettings(
     const {
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
-        showSearchContext = false,
-        showSearchContextManagement = false,
+        showSearchContext = true, // Default to true if not set
+        showSearchContextManagement = true, // Default to true if not set
         showMultilineSearchConsole = false,
         showSearchNotebook = false,
         showQueryBuilder = false,

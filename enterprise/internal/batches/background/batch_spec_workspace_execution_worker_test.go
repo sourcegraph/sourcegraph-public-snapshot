@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/keegancsmith/sqlf"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -44,12 +46,6 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 
 	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
 	if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
-		t.Fatal(err)
-	}
-
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-	job.WorkerHostname = "worker-1"
-	if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -84,39 +80,107 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	}
 
 	executionStore := &batchSpecWorkspaceExecutionWorkerStore{Store: workStore, observationContext: &observation.TestContext}
-	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: job.WorkerHostname}
-	ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
-	if !ok || err != nil {
-		t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
-	}
+	opts := dbworkerstore.MarkFinalOptions{WorkerHostname: "worker-1"}
 
-	// Now reload the involved entities and make sure they've been updated correctly
-	reloadedJob, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: job.ID})
-	if err != nil {
-		t.Fatalf("failed to reload job: %s", err)
-	}
-
-	if reloadedJob.State != btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
-		t.Fatalf("wrong state: %s", reloadedJob.State)
-	}
-
-	reloadedWorkspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: workspace.ID})
-	if err != nil {
-		t.Fatalf("failed to reload workspace: %s", err)
-	}
-	if diff := cmp.Diff(changesetSpecIDs, reloadedWorkspace.ChangesetSpecIDs); diff != "" {
-		t.Fatalf("reloaded workspace has wrong changeset spec IDs: %s", diff)
-	}
-
-	reloadedSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{LimitOpts: store.LimitOpts{Limit: 0}, IDs: changesetSpecIDs})
-	if err != nil {
-		t.Fatalf("failed to reload changeset specs: %s", err)
-	}
-	for _, reloadedSpec := range reloadedSpecs {
-		if reloadedSpec.BatchSpecID != batchSpec.ID {
-			t.Fatalf("reloaded changeset spec does not have correct batch spec id: %d", reloadedSpec.BatchSpecID)
+	setProcessing := func(t *testing.T) {
+		t.Helper()
+		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+		job.WorkerHostname = opts.WorkerHostname
+		if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
+			t.Fatal(err)
 		}
 	}
+
+	attachAccessToken := func(t *testing.T) int64 {
+		t.Helper()
+		tokenID, _, err := database.AccessTokens(db).CreateInternal(ctx, user.ID, []string{"user:all"}, "testing", user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.SetBatchSpecWorkspaceExecutionJobAccessToken(ctx, job.ID, tokenID); err != nil {
+			t.Fatal(err)
+		}
+		return tokenID
+	}
+
+	assertJobState := func(t *testing.T, want btypes.BatchSpecWorkspaceExecutionJobState) {
+		t.Helper()
+		reloadedJob, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{ID: job.ID})
+		if err != nil {
+			t.Fatalf("failed to reload job: %s", err)
+		}
+
+		if have := reloadedJob.State; have != want {
+			t.Fatalf("wrong job state: want=%s, have=%s", want, have)
+		}
+	}
+
+	t.Run("success", func(t *testing.T) {
+		setProcessing(t)
+		tokenID := attachAccessToken(t)
+
+		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
+		if !ok || err != nil {
+			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
+		}
+
+		// Now reload the involved entities and make sure they've been updated correctly
+		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+
+		reloadedWorkspace, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: workspace.ID})
+		if err != nil {
+			t.Fatalf("failed to reload workspace: %s", err)
+		}
+		if diff := cmp.Diff(changesetSpecIDs, reloadedWorkspace.ChangesetSpecIDs); diff != "" {
+			t.Fatalf("reloaded workspace has wrong changeset spec IDs: %s", diff)
+		}
+
+		reloadedSpecs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{LimitOpts: store.LimitOpts{Limit: 0}, IDs: changesetSpecIDs})
+		if err != nil {
+			t.Fatalf("failed to reload changeset specs: %s", err)
+		}
+		for _, reloadedSpec := range reloadedSpecs {
+			if reloadedSpec.BatchSpecID != batchSpec.ID {
+				t.Fatalf("reloaded changeset spec does not have correct batch spec id: %d", reloadedSpec.BatchSpecID)
+			}
+		}
+
+		_, err = database.AccessTokens(db).GetByID(ctx, tokenID)
+		if err != database.ErrAccessTokenNotFound {
+			t.Fatalf("access token was not deleted")
+		}
+	})
+
+	t.Run("no token set", func(t *testing.T) {
+		setProcessing(t)
+
+		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
+		if !ok || err != nil {
+			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
+		}
+
+		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	})
+
+	t.Run("token set but deletion fails", func(t *testing.T) {
+		setProcessing(t)
+		tokenID := attachAccessToken(t)
+
+		database.Mocks.AccessTokens.HardDeleteByID = func(id int64) error {
+			if id != tokenID {
+				t.Fatalf("wrong token deleted")
+			}
+			return errors.New("internal database error")
+		}
+		defer func() { database.Mocks.AccessTokens.HardDeleteByID = nil }()
+
+		ok, err := executionStore.MarkComplete(context.Background(), int(job.ID), opts)
+		if !ok || err != nil {
+			t.Fatalf("MarkComplete failed. ok=%t, err=%s", ok, err)
+		}
+
+		assertJobState(t, btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	})
 }
 
 func TestExtractChangesetSpecIDs(t *testing.T) {
