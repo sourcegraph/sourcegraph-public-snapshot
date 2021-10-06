@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
@@ -248,8 +248,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     this.setState({ messagesOrError })
 
                     if (first) {
-                        const payload = this.getOpenedNotificationsPayload(messagesOrError)
-                        eventLogger.log('UserNotificationsLoaded', payload, payload)
+                        this.trackUserNotificationsEvent('loaded')
                         first = false
                     }
                 })
@@ -458,12 +457,18 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         return { status: messageTypes.length === 0 ? ['success'] : messageTypes }
     }
 
+    private trackUserNotificationsEvent(eventName: string): void {
+        if (window.context.sourcegraphDotComMode && this.state.messagesOrError) {
+            const payload = this.getOpenedNotificationsPayload(this.state.messagesOrError)
+            eventLogger.log(`UserNotifications${upperFirst(eventName)}`, payload, payload)
+        }
+    }
+
     public render(): JSX.Element | null {
-        const { messagesOrError, isOpen } = this.state
+        const { isOpen } = this.state
 
         if (isOpen) {
-            const payload = this.getOpenedNotificationsPayload(messagesOrError)
-            eventLogger.log('UserNotificationsOpened', payload, payload)
+            this.trackUserNotificationsEvent('opened')
         }
 
         return (
