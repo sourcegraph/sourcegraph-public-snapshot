@@ -10,7 +10,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
-import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
+import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -122,21 +122,23 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             {
                 code_search: {
                     query_data: {
-                        // 🚨 PRIVACY: never provide any private query data in the public argument
-                        // of the event logs, which is also potentially exported in pings data.
-                        // Only collect the full query string for unauthenticated users
-                        // on Sourcegraph.com.
-
+                        // 🚨 PRIVACY: never provide any private query data in the
+                        // { code_search: query_data: query } property,
+                        // which is also potentially exported in pings data.
                         query: metrics,
-                        combined: authenticatedUser && isSourcegraphDotCom ? undefined : query,
+
+                        // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
+                        // on Sourcegraph.com, and only after sanitizing to remove certain filters.
+                        combined:
+                            !authenticatedUser && isSourcegraphDotCom ? sanitizeQueryForTelemetry(query) : undefined,
                         empty: !query,
                     },
                 },
             }
         )
-        // Only log when the URL changes
+        // Only log when the query changes
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location.search])
+    }, [query])
 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
 
