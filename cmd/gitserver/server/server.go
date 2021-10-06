@@ -1460,35 +1460,22 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 	// This will be the absolute path of the root of the repo.
 	repoRoot := dir.Root()
 
-	// Let's generate a zip file name from repoRoot.
-	// First we remove the leading / in repoRoot.
-	zipFileName := strings.TrimPrefix(repoRoot, "/")
-
-	// Next, we replace all the remaining "/" with "-" and add the .zip extension.
-	zipFileName = strings.Replace(zipFileName, "/", "-", -1) + ".zip"
-
-	// We want to create the zip file under /tmp or the OS equivalent of /tmp.
-	zipFileAbsPath := filepath.Join(os.TempDir(), zipFileName)
-
-	// We need the relative path of the repo to pass as an argument to zip.
-	_, repoNameDir := filepath.Split(repoRoot)
-
 	// TODO: Maybe we want the timeout to be configurable with a sane default. Could be useful for
 	// customer instances with monorepos.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*10)
 	defer cancel()
 
-	// For the github.com/sourcegraph/sourcegraph repo, if the repo is stored at the path
-	// "/data/repos/github.com/sourcegraph/sourcegraph" on disk, then the command being executed is:
-	//
-	// zip -r /tmp/data-repos-github.com-sourcegraph-sourcegraph.zip ./sourcegraph
-	cmd := exec.CommandContext(ctx, "zip", "-r", zipFileAbsPath, repoNameDir)
-	// Ensure that the command is executed from /data/repos/github.com/sourcegraph
-	cmd.Dir = filepath.Join(repoRoot, "..")
+	// If repoRoot is /data/repos/github.com/sourcegraph/sourcegraph/, then this returns
+	// "/data/repos/github.com/sourcegraph" and "sourcegraph".
+	_, repoName := filepath.Split(repoRoot)
 
-	log15.Info("handleRepoArchive", "cmd", cmd)
-	log15.Info("handleRepoArchive", "path", cmd.Path)
-	log15.Info("handleRepoArchive", "dir", cmd.Dir)
+	gitBundleAbsPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s.bundle", repoName))
+
+	cmd := exec.CommandContext(ctx, "git", "bundle", "create", gitBundleAbsPath, "--all")
+	// Ensure that the command is executed from /data/repos/github.com/sourcegraph/sourcegraph.
+	cmd.Dir = repoRoot
+
+	// TODO: Acquire a lock over the repo before executing the command.
 
 	// TODO: This could be a monorepo pain point.
 	exitCode, err := runCommand(ctx, cmd)
@@ -1498,7 +1485,7 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	f, err := os.Open(zipFileAbsPath)
+	f, err := os.Open(gitBundleAbsPath)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log15.Error("handleRepoArchive: os.Open", "error", err)
@@ -1510,8 +1497,10 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	w.Header().Set("Content-Type", "application/zip")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", zipFileName))
+	// application/bundle isn't a legit MIME type but I'm not sure what MIME type should be used for
+	// a git-bundle either.
+	w.Header().Set("Content-Type", "application/bundle")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.bundle", repoName))
 
 	if _, err := io.Copy(w, f); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
