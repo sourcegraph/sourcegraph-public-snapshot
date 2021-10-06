@@ -3383,16 +3383,16 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^7.2.2":
-  version "7.2.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.2.2.tgz#6035801a6928d9f61d69fd0dcc12d2ad37284b3b"
-  integrity sha512-L88Bdid3gjADRgRSutO+tZkRgEbHPH/tOWoqNC+NTh6onCGpsBSBWpy7mauvDI3GTyhuGsgFBFsXpksp8oHbZA==
+"@sourcegraph/codeintellify@^7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.3.0.tgz#bfe3018f9a7db6741120724495ca47e971f51603"
+  integrity sha512-Y8b66rxNiUr7SbT9agyjGgGFVivlwF5KMScnDYrRyuvkXmjxEankMdlRczjGXAxHdiH5+SFPOq86ILe9i+qnVA==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.4"
     "@sourcegraph/extension-api-types" "^2.1.0"
     lodash "^4.17.10"
     rxjs "^6.5.5"
-    sourcegraph "^24.0.0 || ^25.0.0"
+    sourcegraph "^24.0.0 || ^25.0.0 || ^25.0.0"
     ts-key-enum "^2.0.0"
 
 "@sourcegraph/eslint-config@^0.25.1":
