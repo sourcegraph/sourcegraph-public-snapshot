@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -164,6 +165,7 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (err erro
 		Body:      e.spec.Spec.Body,
 		BaseRef:   e.spec.Spec.BaseRef,
 		HeadRef:   e.spec.Spec.HeadRef,
+		Fork:      conf.Get().BatchChangesEnforceForks,
 		Repo:      e.repo,
 		Changeset: e.ch,
 	}

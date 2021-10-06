@@ -100,6 +100,10 @@ func (s GithubSource) ValidateAuthenticator(ctx context.Context) error {
 
 // CreateChangeset creates the given changeset on the code host.
 func (s GithubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	if c.Fork {
+		return false, errors.New("forks are not supported on GitHub")
+	}
+
 	input := buildCreatePullRequestInput(c)
 	return s.createChangeset(ctx, c, input)
 }

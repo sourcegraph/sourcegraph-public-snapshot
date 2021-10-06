@@ -7,6 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -63,7 +64,16 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 }
 
 func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+	config, err := gitserverPushConfig(ctx, store, repo, s.au)
+	if err != nil {
+		return nil, err
+	}
+
+	if conf.Get().BatchChangesEnforceForks {
+
+	}
+
+	return config, nil
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -112,7 +122,17 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 
 	pr.FromRef.Repository.Slug = repo.Slug
 	pr.FromRef.Repository.ID = repo.ID
-	pr.FromRef.Repository.Project.Key = repo.Project.Key
+	if c.Fork {
+		key, err := s.ensureUserFork(ctx, repo)
+		if err != nil {
+			return false, errors.Wrap(err, "ensuring fork")
+		}
+		pr.FromRef.Repository.Project.Key = "~" + key
+		log15.Info("creating changeset against fork")
+	} else {
+		log15.Info("no fork required")
+		pr.FromRef.Repository.Project.Key = repo.Project.Key
+	}
 	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
@@ -270,4 +290,51 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 	}
 
 	return c.Changeset.SetMetadata(pr)
+}
+
+func (s BitbucketServerSource) ensureUserFork(ctx context.Context, parent *bitbucketserver.Repo) (string, error) {
+	// Ascertain the user name for the token we're using.
+	user, err := s.AuthenticatedUsername(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "getting authenticated username")
+	}
+
+	log15.Info("going to create a fork for", "user", user)
+
+	// See if we already have a fork.
+	fork, err := s.getUserFork(ctx, parent, user)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting user fork for %q", user)
+	}
+
+	// If not, then we need to create a fork.
+	if fork == nil {
+		fork, err = s.client.CreateFork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
+		if err != nil {
+			return "", errors.Wrapf(err, "creating user fork for %q", user)
+		}
+	}
+
+	return fork.Project.Key, nil
+}
+
+func (s BitbucketServerSource) getUserFork(ctx context.Context, parent *bitbucketserver.Repo, user string) (*bitbucketserver.Repo, error) {
+	var pageToken *bitbucketserver.PageToken
+	for pageToken.HasMore() {
+		var forks []*bitbucketserver.Repo
+		var err error
+
+		forks, pageToken, err = s.client.Forks(ctx, parent.Project.Key, parent.Slug, pageToken)
+		if err != nil {
+			return nil, errors.Wrap(err, "retrieving forks")
+		}
+
+		for _, fork := range forks {
+			if fork.Owner != nil && fork.Owner.Name == user {
+				return fork, nil
+			}
+		}
+	}
+
+	return nil, nil
 }

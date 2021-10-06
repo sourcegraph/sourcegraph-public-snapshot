@@ -96,6 +96,7 @@ type Changeset struct {
 	Body    string
 	HeadRef string
 	BaseRef string
+	Fork    bool
 
 	*btypes.Changeset
 	*types.Repo

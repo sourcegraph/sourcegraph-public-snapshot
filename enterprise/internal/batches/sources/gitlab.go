@@ -105,6 +105,10 @@ func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
 // CreateChangeset creates a GitLab merge request. If it already exists,
 // *Changeset will be populated and the return value will be true.
 func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
+	if c.Fork {
+		return false, errors.New("forks are not supported on GitLab")
+	}
+
 	project := c.Repo.Metadata.(*gitlab.Project)
 	exists := false
 	source := git.AbbreviateRef(c.HeadRef)
