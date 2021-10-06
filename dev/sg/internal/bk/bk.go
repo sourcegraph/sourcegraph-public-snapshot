@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+// https://buildkite.com/sourcegraph
 const buildkiteOrg = "sourcegraph"
 
 type buildkiteSecrets struct {
@@ -42,11 +43,12 @@ func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
 func getTokenFromUser(out *output.Output) (string, error) {
 	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StylePending, `Please create and copy a new token from https://buildkite.com/user/api-access-tokens with the following scopes:
 
+- Organization access to %q
 - read_artifacts
 - read_builds
 - read_build_logs
 - read_pipelines
-`))
+`, buildkiteOrg))
 	fmt.Printf("Paste it here: ")
 	var token string
 	if _, err := fmt.Scan(&token); err != nil {
