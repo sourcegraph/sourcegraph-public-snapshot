@@ -179,19 +179,14 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to delete internal access token: %s", err), options)
 	}
 
-	ok, err := markBatchSpecWorkspaceExecutionJobComplete(ctx, tx, job, changesetSpecIDs, options.WorkerHostname)
+	err = setChangesetSpecIDs(ctx, tx, job.BatchSpecWorkspaceID, changesetSpecIDs)
+	if err != nil {
+		return false, tx.Done(err)
+	}
+
+	ok, err := s.Store.With(tx).MarkComplete(ctx, id, options)
 	return ok, tx.Done(err)
 }
-
-// markBatchSpecWorkspaceExecutionJobCompleteQuery is taken from internal/workerutil/dbworker/store/store.go
-//
-// If that one changes we need to update this one here too.
-const markBatchSpecWorkspaceExecutionJobCompleteQuery = `
-UPDATE batch_spec_workspace_execution_jobs
-SET state = 'completed', finished_at = clock_timestamp()
-WHERE id = %s AND state = 'processing' AND worker_hostname = %s
-RETURNING id
-`
 
 const setChangesetSpecIDsOnBatchSpecWorkspace = `
 UPDATE batch_spec_workspaces SET changeset_spec_ids = %s WHERE id = %s
@@ -203,11 +198,11 @@ SET batch_spec_id = (SELECT batch_spec_id FROM batch_spec_workspaces WHERE id = 
 WHERE id = ANY (%s)
 `
 
-func markBatchSpecWorkspaceExecutionJobComplete(ctx context.Context, tx *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, changesetSpecIDs []int64, workerHostname string) (bool, error) {
+func setChangesetSpecIDs(ctx context.Context, tx *store.Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
 	// Set the batch_spec_id on the changeset_specs that were created
-	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, job.BatchSpecWorkspaceID, pq.Array(changesetSpecIDs)))
+	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, batchSpecWorkspaceID, pq.Array(changesetSpecIDs)))
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	m := make(map[int64]struct{}, len(changesetSpecIDs))
@@ -216,18 +211,11 @@ func markBatchSpecWorkspaceExecutionJobComplete(ctx context.Context, tx *store.S
 	}
 	marshaledIDs, err := json.Marshal(m)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	// Set changeset_spec_ids on the batch_spec_workspace
-	err = tx.Exec(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspace, marshaledIDs, job.BatchSpecWorkspaceID))
-	if err != nil {
-		return false, err
-	}
-
-	// Finally mark batch_spec_workspace_execution_jobs as completed
-	_, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(markBatchSpecWorkspaceExecutionJobCompleteQuery, job.ID, workerHostname)))
-	return ok, err
+	return tx.Exec(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspace, marshaledIDs, batchSpecWorkspaceID))
 }
 
 func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int64) (*btypes.BatchSpecWorkspaceExecutionJob, []int64, error) {
