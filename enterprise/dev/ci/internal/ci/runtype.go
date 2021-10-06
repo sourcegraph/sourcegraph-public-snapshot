@@ -104,5 +104,5 @@ func (t RunType) String() string {
 	case BackendDryRun:
 		return "Backend dry run"
 	}
-	return ""
+	panic("Run type does not have a full name defined")
 }
