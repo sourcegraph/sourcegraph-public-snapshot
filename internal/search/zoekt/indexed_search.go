@@ -34,21 +34,10 @@ type IndexedRepoRevs struct {
 	// repository and revisions to search.
 	repoRevs map[api.RepoID]*search.RepositoryRevisions
 
-	// repoBranches will be used when we query zoekt. The order of branches
-	// must match that in a reporev such that we can map back results. IE this
-	// invariant is maintained:
-	//
-	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
-	repoBranches map[string][]string
-
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
 }
-
-// headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
-// common-case allocations within indexedRepoRevs.Add.
-var headBranch = []string{"HEAD"}
 
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
@@ -57,7 +46,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
-	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
+	if _, ok := rb.repoRevs[reporev.Repo.ID]; ok {
 		return reporev.Revs
 	}
 
@@ -72,7 +61,6 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
 		rb.repoRevs[reporev.Repo.ID] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
 		br, ok := rb.branchRepos["HEAD"]
 		if !ok {
 			br = &zoektquery.BranchRepos{Branch: "HEAD", Repos: roaring.New()}
@@ -124,7 +112,6 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	if len(indexed) > 0 {
 		reporev.Revs = indexed
 		rb.repoRevs[reporev.Repo.ID] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = branches
 		for _, branch := range branches {
 			br, ok := rb.branchRepos[branch]
 			if !ok {
@@ -566,7 +553,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
-	k := ResultCountFactor(len(repos.repoBranches), fileMatchLimit, false)
+	k := ResultCountFactor(len(repos.repoRevs), fileMatchLimit, false)
 	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	// Start event stream.
@@ -799,9 +786,8 @@ func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs [
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		repoRevs:     make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
-		repoBranches: make(map[string][]string, len(revs)),
-		branchRepos:  make(map[string]*zoektquery.BranchRepos, 1),
+		repoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
+		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
