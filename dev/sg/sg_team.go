@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -26,7 +25,7 @@ var (
 
 func teammateExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return errors.New("no teammate command given")
+		return flag.ErrHelp
 	}
 	switch args[0] {
 	case "time":
@@ -50,6 +49,6 @@ func teammateExec(ctx context.Context, args []string) error {
 		open.URL(str)
 		return nil
 	default:
-		return fmt.Errorf("unknown teammate command: %s", args[0])
+		return flag.ErrHelp
 	}
 }
