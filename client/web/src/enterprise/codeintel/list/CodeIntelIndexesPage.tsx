@@ -16,7 +16,6 @@ import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import { FlashMessage } from '../configuration/FlashMessage'
 
-import { enqueueIndexJob as defaultEnqueueIndexJob } from './backend'
 import styles from './CodeIntelIndexesPage.module.scss'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 import { EmptyAutoIndex } from './EmptyAutoIndex'
@@ -28,7 +27,6 @@ import {
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
-    enqueueIndexJob?: typeof defaultEnqueueIndexJob
     queryLsifIndexListByRepository?: typeof defaultQueryLsifIndexListByRepository
     queryLsifIndexList?: typeof defaultQueryLsifIndexList
     now?: () => Date
@@ -76,7 +74,6 @@ const filters: FilteredConnectionFilter[] = [
 
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
-    enqueueIndexJob = defaultEnqueueIndexJob,
     queryLsifIndexListByRepository = defaultQueryLsifIndexListByRepository,
     queryLsifIndexList = defaultQueryLsifIndexList,
     now,
@@ -85,7 +82,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
-    console.log('here here here', repo?.id)
+
     const apolloClient = useApolloClient()
     const queryIndexes = useCallback(
         (args: FilteredConnectionQueryArguments) => {
@@ -112,7 +109,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
             {repo && (
                 <Container className="mb-2">
-                    <EnqueueForm repoId={repo.id} querySubject={querySubject} enqueueIndexJob={enqueueIndexJob} />
+                    <EnqueueForm repoId={repo.id} querySubject={querySubject} />
                 </Container>
             )}
 

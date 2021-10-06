@@ -1,4 +1,5 @@
-import { ApolloError, MutationFunctionOptions, FetchResult, ApolloClient, useMutation } from '@apollo/client'
+import { MutationFunctionOptions, FetchResult, ApolloClient, useMutation } from '@apollo/client'
+import { parseISO } from 'date-fns'
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -15,6 +16,8 @@ import {
     CodeIntelligenceCommitGraphMetadataVariables,
     QueueAutoIndexJobsForRepoResult,
     QueueAutoIndexJobsForRepoVariables,
+    Exact,
+    Maybe,
 } from '../../../graphql-operations'
 import { lsifIndexFieldsFragment } from '../shared/backend'
 
@@ -116,4 +119,82 @@ export const queryLsifIndexList = (
         map(({ data }) => data),
         map(({ lsifIndexes }) => lsifIndexes)
     )
+}
+
+const GRAPH_METADATA = gql`
+    query CodeIntelligenceCommitGraphMetadata($repository: ID!) {
+        node(id: $repository) {
+            __typename
+            ... on Repository {
+                codeIntelligenceCommitGraph {
+                    stale
+                    updatedAt
+                }
+            }
+        }
+    }
+`
+
+export const queryCommitGraphMetadata = (
+    repository: string,
+    client: ApolloClient<object>
+): Observable<{ stale: boolean; updatedAt: Date | null }> => {
+    console.log('here here here')
+    return from(
+        client.query<CodeIntelligenceCommitGraphMetadataResult, CodeIntelligenceCommitGraphMetadataVariables>({
+            query: getDocumentNode(GRAPH_METADATA),
+            variables: { repository },
+        })
+    ).pipe(
+        map(({ data }) => data),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error('Invalid repository')
+            }
+            if (node.__typename !== 'Repository') {
+                throw new Error(`The given ID is ${node.__typename}, not Repository`)
+            }
+            if (!node.codeIntelligenceCommitGraph) {
+                throw new Error('Missing code intelligence commit graph value')
+            }
+
+            return {
+                stale: node.codeIntelligenceCommitGraph.stale,
+                updatedAt: node.codeIntelligenceCommitGraph.updatedAt
+                    ? parseISO(node.codeIntelligenceCommitGraph.updatedAt)
+                    : null,
+            }
+        })
+    )
+}
+
+const QUEUE_AUTO_INDEX_JOBS = gql`
+    mutation QueueAutoIndexJobsForRepo($id: ID!, $rev: String) {
+        queueAutoIndexJobsForRepo(repository: $id, rev: $rev) {
+            ...LsifIndexFields
+        }
+    }
+
+    ${lsifIndexFieldsFragment}
+`
+
+type EnqueueIndexJobResults = Promise<
+    FetchResult<QueueAutoIndexJobsForRepoResult, Record<string, any>, Record<string, any>>
+>
+interface UseEnqueueIndexJobResult {
+    handleEnqueueIndexJob: (
+        options?:
+            | MutationFunctionOptions<QueueAutoIndexJobsForRepoResult, Exact<{ id: string; rev: Maybe<string> }>>
+            | undefined
+    ) => EnqueueIndexJobResults
+}
+
+export const useEnqueueIndexJob = (): UseEnqueueIndexJobResult => {
+    const [handleEnqueueIndexJob] = useMutation<QueueAutoIndexJobsForRepoResult, QueueAutoIndexJobsForRepoVariables>(
+        getDocumentNode(QUEUE_AUTO_INDEX_JOBS)
+    )
+
+    return {
+        handleEnqueueIndexJob,
+    }
 }

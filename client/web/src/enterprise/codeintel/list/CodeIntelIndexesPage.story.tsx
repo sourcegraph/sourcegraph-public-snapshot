@@ -139,14 +139,12 @@ export const EmptyRepositoryPage = Template.bind({})
 EmptyRepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
-    enqueueIndexJob: () => of([]),
 }
 
 export const RepositoryPage = Template.bind({})
 RepositoryPage.args = {
     ...defaults,
     repo: { id: 'sourcegraph' },
-    enqueueIndexJob: () => of([]),
     queryLsifIndexListByRepository: () => of(makeResponse(testIndexes)),
     queryLsifIndexList: () => of(makeResponse(testIndexes)),
 }
