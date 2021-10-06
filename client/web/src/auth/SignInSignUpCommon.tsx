@@ -83,7 +83,15 @@ export function maybeAddPostSignUpRedirect(url?: string): string {
     const shouldAddRedirect = isDotCom && enablePostSignupFlow
 
     if (url) {
-        return shouldAddRedirect ? `${url}&redirect=/welcome` : url
+        if (shouldAddRedirect) {
+            // second param to protect against relative urls
+            const urlObject = new URL(url, window.location.href)
+
+            urlObject.searchParams.append('redirect', '/welcome')
+            return urlObject.toString()
+        }
+
+        return url
     }
 
     return shouldAddRedirect ? '/welcome' : ''
