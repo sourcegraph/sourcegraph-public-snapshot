@@ -214,6 +214,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        let first = true
         this.subscriptions.add(
             queryExternalServices({
                 namespace: this.props.user.id,
@@ -245,6 +246,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 )
                 .subscribe(messagesOrError => {
                     this.setState({ messagesOrError })
+
+                    if (first) {
+                        const payload = this.getOpenedNotificationsPayload(messagesOrError)
+                        eventLogger.log('UserNotificationsLoaded', payload, payload)
+                        first = false
+                    }
                 })
         )
     }
@@ -440,21 +447,22 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         )
     }
 
+    private getOpenedNotificationsPayload(messagesOrError: MessageOrError): { status: string[] } {
+        const messageTypes =
+            typeof messagesOrError === 'string'
+                ? [messagesOrError]
+                : isErrorLike(messagesOrError)
+                ? ['error']
+                : messagesOrError.map(message => message.type)
+
+        return { status: messageTypes.length === 0 ? ['success'] : messageTypes }
+    }
+
     public render(): JSX.Element | null {
         const { messagesOrError, isOpen } = this.state
 
         if (isOpen) {
-            const messageTypes =
-                typeof messagesOrError === 'string'
-                    ? [messagesOrError]
-                    : isErrorLike(messagesOrError)
-                    ? ['error']
-                    : messagesOrError.map(message => message.type)
-
-            const payload = {
-                status: messageTypes.length === 0 ? ['success'] : messageTypes,
-            }
-
+            const payload = this.getOpenedNotificationsPayload(messagesOrError)
             eventLogger.log('UserNotificationsOpened', payload, payload)
         }
 
