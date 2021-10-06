@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/buildkite/go-buildkite/buildkite"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
@@ -44,7 +45,7 @@ type Config struct {
 
 // NewConfig computes configuration for the pipeline generator based on Buildkite environment
 // variables.
-func NewConfig(now time.Time) Config {
+func NewConfig(bkClient *buildkite.Client, now time.Time) (Config, error) {
 	var (
 		commit = os.Getenv("BUILDKITE_COMMIT")
 		branch = os.Getenv("BUILDKITE_BRANCH")
@@ -62,19 +63,9 @@ func NewConfig(now time.Time) Config {
 	}
 
 	// detect changed files
-	var changedFiles []string
-	diffCommand := []string{"diff", "--name-only"}
-	if commit != "" {
-		diffCommand = append(diffCommand, "origin/main..."+commit)
-	} else {
-		diffCommand = append(diffCommand, "origin/main...")
-		// for testing
-		commit = "1234567890123456789012345678901234567890"
-	}
-	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
-		panic(err)
-	} else {
-		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
+	changedFiles, commit, err := getChangedFiles(bkClient, branch, commit)
+	if err != nil {
+		return Config{}, err
 	}
 
 	// evaluates what type of pipeline run this is
@@ -105,8 +96,7 @@ func NewConfig(now time.Time) Config {
 		BuildNumber:       buildNumber,
 
 		ProfilingEnabled: strings.Contains(branch, "buildkite-enable-profiling"),
-	}
-
+	}, nil
 }
 
 func (c Config) shortCommit() string {
@@ -148,4 +138,66 @@ func (c Config) ensureCommit() error {
 // as determined in `addDockerImages()`.
 func (c Config) candidateImageTag() string {
 	return images.CandidateImageTag(c.Commit, strconv.Itoa(c.BuildNumber))
+}
+
+func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
+	var changedFiles []string
+
+	fmt.Println(1)
+	diffCommand := []string{"diff", "--name-only"}
+	if commit != "" {
+		fmt.Println(2)
+		// run a diff against the previous commits:
+		// get the latest builds for the current branch
+		// from buildkite
+		builds, _, err := bkClient.Builds.List(&buildkite.BuildsListOptions{
+			Branch: branch,
+			State:  []string{"passed"},
+			ListOptions: buildkite.ListOptions{
+				PerPage: 1,
+			},
+		})
+		if err != nil {
+			fmt.Println(21)
+			return nil, "", err
+		}
+
+		fmt.Println(builds)
+
+		// if there are no previous builds diff with main
+		if len(builds) == 0 {
+			fmt.Println(22)
+			diffCommand = append(diffCommand, "origin/main..."+commit)
+		} else {
+			build := builds[0]
+			fmt.Println(23, *build.State)
+			if build.State == nil || *build.State != "passed" {
+				fmt.Println(24)
+				// if any build is not passed, diff with main
+				diffCommand = append(diffCommand, "origin/main..."+commit)
+			} else {
+				fmt.Println(25)
+				// otherwise, diff with the previous build
+				diffCommand = append(diffCommand, *build.Commit+"..."+branch)
+			}
+		}
+	} else {
+		fmt.Println(3)
+		diffCommand = append(diffCommand, "origin/main...")
+		// for testing
+		commit = "1234567890123456789012345678901234567890"
+	}
+
+	fmt.Println(diffCommand)
+	cmd := exec.Command("git", diffCommand...)
+	cmd.Stderr = os.Stderr
+	if output, err := cmd.Output(); err != nil {
+		fmt.Println(4)
+		return nil, "", err
+	} else {
+		fmt.Printf("%q\n", string(output))
+		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
+	}
+
+	return changedFiles, commit, nil
 }
