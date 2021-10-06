@@ -33,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -1602,23 +1603,43 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	if args.ResultTypes.Has(result.TypeDiff) {
-		wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoDiffSearch(ctx, args)
-		})
-	}
+	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
+		if args.ResultTypes.Has(result.TypeCommit) {
+			j, err := commit.NewSearchJob(args.Query, args.Repos, false, int(args.PatternInfo.FileMatchLimit))
+			if err != nil {
+				agg.Error(err)
+			} else {
+				jobs = append(jobs, j)
+			}
+		}
 
-	if args.ResultTypes.Has(result.TypeCommit) {
-		wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoCommitSearch(ctx, args)
-		})
+		if args.ResultTypes.Has(result.TypeDiff) {
+			j, err := commit.NewSearchJob(args.Query, args.Repos, true, int(args.PatternInfo.FileMatchLimit))
+			if err != nil {
+				agg.Error(err)
+			} else {
+				jobs = append(jobs, j)
+			}
+		}
+	} else {
+		if args.ResultTypes.Has(result.TypeDiff) {
+			wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoDiffSearch(ctx, args)
+			})
+		}
 
+		if args.ResultTypes.Has(result.TypeCommit) {
+			wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoCommitSearch(ctx, args)
+			})
+
+		}
 	}
 
 	// Start all specific search jobs, if any.
