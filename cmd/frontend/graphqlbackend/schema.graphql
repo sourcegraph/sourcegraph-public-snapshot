@@ -4217,6 +4217,10 @@ type Hunk {
     The commit that contains the hunk.
     """
     commit: GitCommit!
+    """
+    The filename at the commit.
+    """
+    filename: String!
 }
 
 """
