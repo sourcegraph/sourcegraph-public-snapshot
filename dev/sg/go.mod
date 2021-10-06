@@ -13,6 +13,7 @@ require (
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/peterbourgon/ff/v3 v3.0.0
 	github.com/rjeczalik/notify v0.9.3-0.20210809113154-3472d85e95cd
+	github.com/slack-go/slack v0.9.5
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20210906140940-dd601b549e29
 	golang.org/x/mod v0.4.2
 	golang.org/x/oauth2 v0.0.0-20210628180205-a41e5a781914
@@ -48,7 +49,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
-	github.com/slack-go/slack v0.9.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
