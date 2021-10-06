@@ -137,7 +137,30 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const server = new WebpackDevServer(options, createWebpackCompiler(webpackConfig))
+  const compiler = createWebpackCompiler(webpackConfig)
+  compiler.hooks.done.tap('Print external URL', (stats) => {
+    stats = stats.toJson();
+    if (stats.errors && stats.errors.length > 0) {
+      // show errors
+      return;
+    }
+
+    const bgYellow = "\x1b[43m"
+    const fgBlack = "\x1b[30m"
+    const reset = "\x1b[0m"
+    const color = `${bgYellow}${fgBlack}%s${reset}`
+
+    const url = `https://${sockHost}:${sockPort}`
+    console.log(color, `===============================================`)
+    console.log(color, `                                               `)
+    console.log(color, `      ✱ Sourcegraph is really ready now!       `)
+    console.log(color, `                                               `)
+    console.log(color, `      Click here: ${url} `)
+    console.log(color, `                                               `)
+    console.log(color, `===============================================`)
+  });
+
+  const server = new WebpackDevServer(options, compiler)
   signale.await('Waiting for Webpack to compile assets')
   await server.start()
 }
