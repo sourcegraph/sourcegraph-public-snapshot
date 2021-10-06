@@ -62,6 +62,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     queryLsifUploadsList = defaultQueryLsifUploadsList,
     telemetryService,
     now,
+    history,
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUpload'), [telemetryService])
@@ -115,10 +116,22 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                 update: cache => cache.modify({ fields: { node: () => {} } }),
             })
             setDeletionOrError('deleted')
+            history.push({
+                state: {
+                    modal: 'SUCCESS',
+                    message: `Upload for commit ${description} is deleting.`,
+                },
+            })
         } catch (error) {
             setDeletionOrError(error)
+            history.push({
+                state: {
+                    modal: 'ERROR',
+                    message: `There was an error while deleting upload for commit ${description}.`,
+                },
+            })
         }
-    }, [id, uploadOrError, handleDeleteLsifUpload])
+    }, [id, uploadOrError, handleDeleteLsifUpload, history])
 
     const queryDependencies = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<LsifUploadConnectionFields> => {
@@ -245,7 +258,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                     pluralNoun="dependencies"
                                     nodeComponent={DependencyOrDependentNode}
                                     queryConnection={queryDependencies}
-                                    history={props.history}
+                                    history={history}
                                     location={props.location}
                                     cursorPaging={true}
                                     emptyElement={<EmptyDependencies />}
@@ -258,7 +271,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                     pluralNoun="dependents"
                                     nodeComponent={DependencyOrDependentNode}
                                     queryConnection={queryDependents}
-                                    history={props.history}
+                                    history={history}
                                     location={props.location}
                                     cursorPaging={true}
                                     emptyElement={<EmptyDependents />}

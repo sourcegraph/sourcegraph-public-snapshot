@@ -1,3 +1,4 @@
+import { ApolloError } from '@apollo/client'
 import * as H from 'history'
 import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -52,7 +53,22 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
         }
 
         const variables = repo?.id ? { ...policy, repositoryId: repo.id ?? null } : { ...policy }
-        return savePolicyConfiguration({ variables }).then(() => history.push('./'))
+        return savePolicyConfiguration({ variables })
+            .then(() =>
+                history.push({
+                    pathname: './',
+                    state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
+                })
+            )
+            .catch((error: ApolloError) =>
+                history.push({
+                    pathname: './',
+                    state: {
+                        modal: 'ERROR',
+                        message: `There was an error while saving policy: ${policy.name}. See error: ${error.message}`,
+                    },
+                })
+            )
     }, [policy, repo, savePolicyConfiguration, history])
 
     if (policyConfigError || policy === undefined) {
@@ -93,12 +109,11 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             setPolicy={setPolicy}
                             disabled={policy.protected}
                         />
-                    </Container>
 
-                    <RetentionSettings policy={policy} setPolicy={setPolicy} />
-                    {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+                        <RetentionSettings policy={policy} setPolicy={setPolicy} />
 
-                    <Container className="mt-2">
+                        {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+
                         <Button
                             type="submit"
                             variant="primary"
