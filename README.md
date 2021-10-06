@@ -30,7 +30,7 @@ The plugin works with all JetBrains IDEs including:
 
 ## Configuring for use with a private Sourcegraph instance
 
-The plugin is configurable _globally_ by creating a `sourcegraph-jetbrains.properties` in your home directory. For example, modify the following URL to match your on-premises Sourcegraph instance URL:
+The plugin is configurable _globally_ by creating a `.sourcegraph-jetbrains.properties` in your home directory. For example, modify the following URL to match your on-premises Sourcegraph instance URL:
 
 ```
 url = https://sourcegraph.example.com

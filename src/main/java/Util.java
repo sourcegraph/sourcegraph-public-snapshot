@@ -2,6 +2,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class Util {
@@ -78,26 +80,33 @@ public class Util {
         return replacements;
     }
 
-    // readProps tries to read the $HOME/sourcegraph-jetbrains.properties file.
+    // readProps returns the first properties file it's able to parse from the following paths:
+    //   $HOME/.sourcegraph-jetbrains.properties
+    //   $HOME/sourcegraph-jetbrains.properties
     private static Properties readProps() {
-        Properties props = new Properties();
-        InputStream input = null;
+        Path[] candidatePaths = {
+                Paths.get(System.getProperty("user.home"), ".sourcegraph-jetbrains.properties"),
+                Paths.get(System.getProperty("user.home"), "sourcegraph-jetbrains.properties"),
+        };
 
-        String path = System.getProperty("user.home") + File.separator + "sourcegraph-jetbrains.properties";
-        try{
-            input = new FileInputStream(path);
-            props.load(input);
-        } catch (IOException e) {
-            // no-op
-        } finally {
-            if (input != null) {
-                try{
-                    input.close();
-                } catch (IOException e) {
-                    // no-op
-                }
+        for (Path path : candidatePaths) {
+            try {
+                return readPropsFile(path.toFile());
+            } catch (IOException e) {
+                // no-op
             }
         }
+        // No files found/readable
+        return new Properties();
+    }
+
+    private static Properties readPropsFile(File file) throws IOException {
+        Properties props = new Properties();
+
+        try (InputStream input = new FileInputStream(file)) {
+            props.load(input);
+        }
+
         return props;
     }
 
