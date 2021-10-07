@@ -23,7 +23,6 @@ import (
 // modified when inserting or updating a changeset spec.
 var changesetSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("rand_id"),
-	sqlf.Sprintf("raw_spec"),
 	sqlf.Sprintf("spec"),
 	sqlf.Sprintf("batch_spec_id"),
 	sqlf.Sprintf("repo_id"),
@@ -47,7 +46,6 @@ var changesetSpecInsertColumns = []*sqlf.Query{
 var changesetSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("changeset_specs.id"),
 	sqlf.Sprintf("changeset_specs.rand_id"),
-	sqlf.Sprintf("changeset_specs.raw_spec"),
 	sqlf.Sprintf("changeset_specs.spec"),
 	sqlf.Sprintf("changeset_specs.batch_spec_id"),
 	sqlf.Sprintf("changeset_specs.repo_id"),
@@ -75,7 +73,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec
 var createChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changeset_specs.go:CreateChangesetSpec
 INSERT INTO changeset_specs (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s`
 
 func (s *Store) createChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, error) {
@@ -115,7 +113,6 @@ func (s *Store) createChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, 
 		createChangesetSpecQueryFmtstr,
 		sqlf.Join(changesetSpecInsertColumns, ", "),
 		c.RandID,
-		c.RawSpec,
 		spec,
 		nullInt64Column(c.BatchSpecID),
 		c.RepoID,
@@ -152,7 +149,7 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec
 var updateChangesetSpecQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changeset_specs.go:UpdateChangesetSpec
 UPDATE changeset_specs
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING %s`
 
@@ -181,7 +178,6 @@ func (s *Store) updateChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, 
 		updateChangesetSpecQueryFmtstr,
 		sqlf.Join(changesetSpecInsertColumns, ", "),
 		c.RandID,
-		c.RawSpec,
 		spec,
 		nullInt64Column(c.BatchSpecID),
 		c.RepoID,
@@ -533,7 +529,6 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 	err := s.Scan(
 		&c.ID,
 		&c.RandID,
-		&c.RawSpec,
 		&spec,
 		&dbutil.NullInt64{N: &c.BatchSpecID},
 		&c.RepoID,

@@ -47,7 +47,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &btypes.ChangesetSpec{
-			RawSpec: `{"externalID":"12345"}`,
 			Spec: &batcheslib.ChangesetSpec{
 				ExternalID: "123456",
 			},
@@ -73,7 +72,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		UserID:      int32(424242),
 		Spec:        &batcheslib.ChangesetSpec{},
 		BatchSpecID: int64(424242),
-		RawSpec:     `{}`,
 		RepoID:      deletedRepo.ID,
 	}
 
