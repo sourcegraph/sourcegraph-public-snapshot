@@ -16,6 +16,7 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     body: 'body',
     checkState: ChangesetCheckState.PASSED,
     diffStat: {
+        __typename: 'DiffStat',
         added: 10,
         changed: 9,
         deleted: 1,
@@ -54,6 +55,7 @@ const FAILED_EXTERNAL_CHANGESET: ChangesetFields = {
     body: 'body',
     checkState: null,
     diffStat: {
+        __typename: 'DiffStat',
         added: 10,
         changed: 9,
         deleted: 1,

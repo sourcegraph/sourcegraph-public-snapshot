@@ -3,9 +3,8 @@ package graphqlbackend
 import (
 	"context"
 	"sync"
+	"time"
 
-	"github.com/RoaringBitmap/roaring"
-	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 
@@ -39,20 +38,20 @@ type repoLister interface {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		q := &zoektquery.BranchesRepos{List: []zoektquery.BranchRepos{
-			{Branch: "HEAD", Repos: roaring.BitmapOf(uint32(r.repo.IDInt32()))},
-		}}
+		q := zoektquery.NewSingleBranchesRepos("HEAD", uint32(r.repo.IDInt32()))
 		repoList, err := r.client.List(ctx, q, nil)
 		if err != nil {
 			r.err = err
 			return
 		}
-		if len(repoList.Repos) > 1 {
-			r.err = errors.Errorf("more than 1 indexed repo found for %q", r.repo.Name())
-			return
-		}
-		if len(repoList.Repos) == 1 {
-			r.entry = repoList.Repos[0]
+		// During rebalancing we have a repo on more than one shard. Pick the
+		// newest one since that will be the winner.
+		var latest time.Time
+		for _, entry := range repoList.Repos {
+			if t := entry.IndexMetadata.IndexTime; t.After(latest) {
+				r.entry = entry
+				latest = t
+			}
 		}
 	})
 	return r.entry, r.err

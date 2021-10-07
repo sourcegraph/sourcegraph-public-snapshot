@@ -258,3 +258,13 @@ func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool)
 	n, ok := r.Node.(BatchSpecWorkspaceResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToInsightDashboard() (InsightDashboardResolver, bool) {
+	n, ok := r.Node.(InsightDashboardResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToInsightView() (InsightViewResolver, bool) {
+	n, ok := r.Node.(InsightViewResolver)
+	return n, ok
+}

@@ -38,6 +38,11 @@ export interface CodeView {
     /** The DOMFunctions for the code view. */
     dom: DOMFunctions
     /**
+     * Whether this code view needs to be tokenized.
+     * Used in favor of the `codeViewsRequireTokenization` value for the code host.
+     */
+    overrideTokenize?: boolean
+    /**
      * Finds or creates a DOM element where we should inject the
      * `CodeViewToolbar`. This function is responsible for ensuring duplicate
      * mounts aren't created.

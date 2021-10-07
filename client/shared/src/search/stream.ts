@@ -1,4 +1,5 @@
 /* eslint-disable id-length */
+import { Remote } from 'comlink'
 import { noop } from 'lodash'
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
@@ -6,6 +7,8 @@ import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { transformSearchQuery } from '../api/client/search'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../graphql/schema'
@@ -423,6 +426,7 @@ export interface StreamSearchOptions {
     trace: string | undefined
     decorationKinds?: string[]
     decorationContextLines?: number
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 }
 
 /**
@@ -441,37 +445,54 @@ function search(
         trace,
         decorationKinds,
         decorationContextLines,
+        extensionHostAPI,
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
+    console.log('search', query)
     return new Observable<SearchEvent>(observer => {
-        const parameters = [
-            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
-            ['v', version],
-            ['t', patternType as string],
-            ['dl', '0'],
-            ['dk', (decorationKinds || ['html']).join('|')],
-            ['dc', (decorationContextLines || '1').toString()],
-            ['display', '1500'],
-        ]
-        if (versionContext) {
-            parameters.push(['vc', versionContext])
-        }
-        if (trace) {
-            parameters.push(['trace', trace])
-        }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
-
-        const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
-        for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
-            subscriptions.add(
-                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
-            )
-        }
+
+        // Call extension-contributed search query transformers
+        transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI })
+            .catch(error => {
+                // Fallback: use original query
+                console.error('Extension query transformer error:', error)
+                return query
+            })
+            .then(transformedQuery => {
+                const parameters = [
+                    ['q', `${transformedQuery} ${caseSensitive ? 'case:yes' : ''}`],
+                    ['v', version],
+                    ['t', patternType as string],
+                    ['dl', '0'],
+                    ['dk', (decorationKinds || ['html']).join('|')],
+                    ['dc', (decorationContextLines || '1').toString()],
+                    ['display', '1500'],
+                ]
+                if (versionContext) {
+                    parameters.push(['vc', versionContext])
+                }
+                if (trace) {
+                    parameters.push(['trace', trace])
+                }
+                const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+
+                const eventSource = new EventSource('/search/stream?' + parameterEncoded)
+                subscriptions.add(() => eventSource.close())
+
+                for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
+                    subscriptions.add(
+                        (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+                    )
+                }
+            })
+            .catch(error => {
+                observer.error(error)
+            })
+
         return () => {
             subscriptions.unsubscribe()
-            eventSource.close()
         }
     })
 }

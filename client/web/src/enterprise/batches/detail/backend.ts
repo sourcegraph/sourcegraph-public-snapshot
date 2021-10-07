@@ -51,6 +51,7 @@ import {
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
+        __typename
         total
         closed
         deleted
@@ -64,6 +65,7 @@ const changesetsStatsFragment = gql`
 
 const bulkOperationFragment = gql`
     fragment BulkOperationFields on BulkOperation {
+        __typename
         id
         type
         state
@@ -131,6 +133,7 @@ const batchChangeFragment = gql`
         }
 
         bulkOperations(first: 0) {
+            __typename
             totalCount
         }
 
@@ -148,6 +151,7 @@ const batchChangeFragment = gql`
     }
 
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
+        __typename
         totalCount
         nodes {
             ...ActiveBulkOperationFields
@@ -159,6 +163,7 @@ const batchChangeFragment = gql`
     ${diffStatFields}
 
     fragment ActiveBulkOperationFields on BulkOperation {
+        __typename
         id
         state
     }
@@ -196,6 +201,15 @@ export const fetchBatchChangeByNamespace = (
             return batchChange
         })
     )
+
+export const BATCH_CHANGE_BY_NAMESPACE = gql`
+    query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!, $createdAfter: DateTime!) {
+        batchChange(namespace: $namespaceID, name: $batchChange) {
+            ...BatchChangeFields
+        }
+    }
+    ${batchChangeFragment}
+`
 
 export const hiddenExternalChangesetFieldsFragment = gql`
     fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
