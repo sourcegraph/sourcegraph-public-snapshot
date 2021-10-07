@@ -4,6 +4,7 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { NEVER, Observable, of } from 'rxjs'
 
+import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
 import {
@@ -11,7 +12,7 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
 import { subtypeOf } from '@sourcegraph/shared/src/util/types'
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
@@ -30,6 +31,10 @@ const { add } = storiesOf('web/CommunitySearchContextPage', module).addParameter
     },
     chromatic: { viewports: [769, 1200] },
 })
+
+const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
+    executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
+}
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
@@ -101,7 +106,7 @@ const commonProps = () =>
         patternType: SearchPatternType.literal,
         setPatternType: action('setPatternType'),
         caseSensitive: false,
-        extensionsController,
+        extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
         keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),

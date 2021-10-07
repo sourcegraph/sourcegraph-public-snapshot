@@ -4,7 +4,6 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -36,8 +35,7 @@ interface Props
         SearchContextInputProps,
         VersionContextProps,
         OnboardingTourProps,
-        TelemetryProps,
-        ExtensionsControllerProps<'extHostAPI'> {
+        TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

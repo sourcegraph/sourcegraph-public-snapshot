@@ -8,7 +8,6 @@ import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
-import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
@@ -21,7 +20,6 @@ const { add } = storiesOf('web/search/input/SearchBox', module)
 
 const history = createMemoryHistory()
 const defaultProps: SearchBoxProps = {
-    extensionsController,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     location: history.location,
     history,
