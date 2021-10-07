@@ -183,7 +183,7 @@ export const usePolicyConfigurationByID = (id: string): UsePolicyConfigResult =>
 }
 
 // Mutations
-export type DeletePolicyResult = Promise<
+type DeletePolicyResult = Promise<
     | FetchResult<DeleteCodeIntelligenceConfigurationPolicyResult, Record<string, string>, Record<string, string>>
     | undefined
 >

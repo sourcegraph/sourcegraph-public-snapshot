@@ -6,6 +6,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -65,6 +67,7 @@ describe('StreamingSearchResults', () => {
         enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
+        isSourcegraphDotCom: false,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -93,14 +96,18 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
-            version: 'V2',
-            patternType: SearchPatternType.regexp,
-            caseSensitive: true,
-            versionContext: 'test',
-            trace: undefined,
-        })
+        sinon.assert.calledWith(
+            searchSpy,
+            {
+                query: 'r:golang/oauth2 test f:travis',
+                version: 'V2',
+                patternType: SearchPatternType.regexp,
+                caseSensitive: true,
+                versionContext: 'test',
+                trace: undefined,
+            },
+            Promise.resolve(pretendRemote<FlatExtensionHostAPI>({}))
+        )
 
         element.unmount()
     })
@@ -124,14 +131,18 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
-            version: 'V2',
-            patternType: SearchPatternType.regexp,
-            caseSensitive: false,
-            versionContext: undefined,
-            trace: undefined,
-        })
+        sinon.assert.calledWith(
+            searchSpy,
+            {
+                query: 'r:golang/oauth2 test f:travis',
+                version: 'V2',
+                patternType: SearchPatternType.regexp,
+                caseSensitive: false,
+                versionContext: undefined,
+                trace: undefined,
+            },
+            Promise.resolve(pretendRemote<FlatExtensionHostAPI>({}))
+        )
 
         element.unmount()
     })

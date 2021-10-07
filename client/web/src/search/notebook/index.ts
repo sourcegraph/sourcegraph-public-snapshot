@@ -1,10 +1,12 @@
+import { Remote } from 'comlink'
 import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    aggregateStreamingSearch,
+    aggregateStreamingSearchWithExtensionTransformedQuery,
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
@@ -48,11 +50,15 @@ export interface BlockProps {
     onDuplicateBlock(id: string): void
 }
 
+export interface BlockDependencies {
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
+}
+
 export class Notebook {
     private blocks: Map<string, Block>
     private blockOrder: string[]
 
-    constructor(initializerBlocks: BlockInitializer[]) {
+    constructor(initializerBlocks: BlockInitializer[], private dependencies: BlockDependencies) {
         const blocks = initializerBlocks.map(block => ({ ...block, id: uuid.v4(), output: null }))
 
         this.blocks = new Map(blocks.map(block => [block.id, block]))
@@ -100,15 +106,18 @@ export class Notebook {
             case 'query':
                 this.blocks.set(block.id, {
                     ...block,
-                    output: aggregateStreamingSearch({
-                        // Removes comments
-                        query: block.input.replace(/\/\/.*/g, ''),
-                        version: LATEST_VERSION,
-                        patternType: SearchPatternType.literal,
-                        caseSensitive: false,
-                        versionContext: undefined,
-                        trace: undefined,
-                    }).pipe(startWith(emptyAggregateResults)),
+                    output: aggregateStreamingSearchWithExtensionTransformedQuery(
+                        {
+                            // Removes comments
+                            query: block.input.replace(/\/\/.*/g, ''),
+                            version: LATEST_VERSION,
+                            patternType: SearchPatternType.literal,
+                            caseSensitive: false,
+                            versionContext: undefined,
+                            trace: undefined,
+                        },
+                        this.dependencies.extensionHostAPI
+                    ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
         }

@@ -52,7 +52,11 @@ const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const { globbing, streamSearch } = props
+    const {
+        globbing,
+        streamSearch,
+        extensionsController: { extHostAPI: extensionHostAPI },
+    } = props
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -71,15 +75,18 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
     const results = useObservable(
         useMemo(() => {
             const query = parseSearchURLQuery(props.location.search)
-            return streamSearch({
-                query: query?.replace(/\/\/.*/g, '') || '',
-                version: LATEST_VERSION,
-                patternType: patternType ?? SearchPatternType.literal,
-                caseSensitive: false,
-                versionContext: undefined,
-                trace: undefined,
-            }).pipe(debounceTime(500))
-        }, [patternType, props.location.search, streamSearch])
+            return streamSearch(
+                {
+                    query: query?.replace(/\/\/.*/g, '') || '',
+                    version: LATEST_VERSION,
+                    patternType: patternType ?? SearchPatternType.literal,
+                    caseSensitive: false,
+                    versionContext: undefined,
+                    trace: undefined,
+                },
+                extensionHostAPI
+            ).pipe(debounceTime(500))
+        }, [patternType, props.location.search, streamSearch, extensionHostAPI])
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {

@@ -342,7 +342,13 @@ func makePostgresDSN(database db.Database) string {
 	if user, err := user.Current(); err == nil {
 		username = user.Username
 	}
-	return postgresdsn.New(database.Name, username, os.Getenv)
+
+	prefix := ""
+	if database.Name != db.DefaultDatabase.Name {
+		prefix = strings.ToUpper(database.Name) + "_"
+	}
+
+	return postgresdsn.New(prefix, username, os.Getenv)
 }
 
 // ReadFilenamesNamesInDirectory returns a list of names in the given directory.

@@ -1,9 +1,11 @@
+import { Remote } from 'comlink'
 import { isEqual } from 'lodash'
 import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { throttleTime } from 'rxjs/operators'
 
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -31,6 +33,7 @@ const SearchResultsCacheContext = createContext<[CachedResults | null, Dispatch<
 export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
     options: StreamSearchOptions,
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
     telemetryService: TelemetryService
 ): AggregateStreamingSearchResults | undefined {
     const [cachedResults, setCachedResults] = useContext(SearchResultsCacheContext)
@@ -44,8 +47,10 @@ export function useCachedSearchResults(
                 return of(cachedResults?.results)
             }
 
-            return streamSearch(options).pipe(throttleTime(500, undefined, { leading: true, trailing: true }))
-        }, [cachedResults?.options, cachedResults?.results, options, streamSearch])
+            return streamSearch(options, extensionHostAPI).pipe(
+                throttleTime(500, undefined, { leading: true, trailing: true })
+            )
+        }, [cachedResults?.options, cachedResults?.results, extensionHostAPI, options, streamSearch])
     )
 
     useEffect(() => {
