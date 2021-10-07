@@ -1,7 +1,6 @@
-package run
+package commit
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCheckDiffCommitSearchLimits(t *testing.T) {
+func TestCheckSearchLimits(t *testing.T) {
 	cases := []struct {
 		name        string
 		resultType  string
@@ -68,13 +67,11 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			}
 		}
 
-		haveErr := checkDiffCommitSearchLimits(
-			context.Background(),
-			&search.TextParameters{
-				Repos: repoRevs,
-				Query: test.fields,
-			},
-			test.resultType)
+		haveErr := CheckSearchLimits(
+			test.fields,
+			len(repoRevs),
+			test.resultType,
+		)
 
 		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
 			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)

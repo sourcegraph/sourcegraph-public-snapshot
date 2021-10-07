@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -137,7 +136,7 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		tr.Finish()
 	}()
 
-	if err := checkDiffCommitSearchLimits(ctx, tp, "diff"); err != nil {
+	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "diff"); err != nil {
 		return err
 	}
 
@@ -158,7 +157,7 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		tr.Finish()
 	}()
 
-	if err := checkDiffCommitSearchLimits(ctx, tp, "commit"); err != nil {
+	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "commit"); err != nil {
 		return err
 	}
 
@@ -169,39 +168,4 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 	}
 
 	return commit.SearchCommitLogInRepos(ctx, a.db, args, a)
-}
-
-func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	hasTimeFilter := false
-	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
-		hasTimeFilter = true
-	}
-	if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
-		hasTimeFilter = true
-	}
-
-	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
-		return &RepoLimitError{ResultType: resultType, Max: max}
-	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
-		return &TimeLimitError{ResultType: resultType, Max: max}
-	}
-	return nil
-}
-
-type DiffCommitError struct {
-	ResultType string
-	Max        int
-}
-
-type RepoLimitError DiffCommitError
-type TimeLimitError DiffCommitError
-
-func (*RepoLimitError) Error() string {
-	return "repo limit error"
-}
-
-func (*TimeLimitError) Error() string {
-	return "time limit error"
 }
