@@ -32,11 +32,6 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         condition: () => authExp,
     },
     {
-        path: '/campaigns',
-        exact: true,
-        render: ({ match }) => <Redirect to={match.path.replace('/campaigns', '/batch-changes')} />,
-    },
-    {
         path: '/batch-changes',
         exact: true,
         render: lazyComponent(

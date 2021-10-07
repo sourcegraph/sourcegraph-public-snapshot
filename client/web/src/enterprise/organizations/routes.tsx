@@ -16,10 +16,6 @@ export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     ...orgAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
     {
-        path: '/campaigns',
-        render: ({ location }) => <Redirect to={location.pathname.replace('/campaigns', '/batch-changes')} />,
-    },
-    {
         path: '/batch-changes',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.org.id} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
