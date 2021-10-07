@@ -136,7 +136,7 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		tr.Finish()
 	}()
 
-	if err := commit.CheckSearchLimits(ctx, tp, "diff"); err != nil {
+	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "diff"); err != nil {
 		return err
 	}
 
@@ -157,7 +157,7 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		tr.Finish()
 	}()
 
-	if err := commit.CheckSearchLimits(ctx, tp, "commit"); err != nil {
+	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "commit"); err != nil {
 		return err
 	}
 

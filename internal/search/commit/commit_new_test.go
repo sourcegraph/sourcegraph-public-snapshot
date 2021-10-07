@@ -1,7 +1,6 @@
 package commit
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -69,12 +68,10 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 		}
 
 		haveErr := CheckSearchLimits(
-			context.Background(),
-			&search.TextParameters{
-				Repos: repoRevs,
-				Query: test.fields,
-			},
-			test.resultType)
+			test.fields,
+			len(repoRevs),
+			test.resultType,
+		)
 
 		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
 			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)

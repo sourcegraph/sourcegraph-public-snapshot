@@ -257,20 +257,22 @@ func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange
 	return res
 }
 
-func CheckSearchLimits(args *search.TextParameters, resultType string) error {
+// CheckSearchLimits will return an error if commit/diff limits are exceeded for the
+// given query and number of repos that will be searched.
+func CheckSearchLimits(q query.Q, repoCount int, resultType string) error {
 	hasTimeFilter := false
-	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+	if _, afterPresent := q.Fields()["after"]; afterPresent {
 		hasTimeFilter = true
 	}
-	if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+	if _, beforePresent := q.Fields()["before"]; beforePresent {
 		hasTimeFilter = true
 	}
 
 	limits := search.SearchLimits(conf.Get())
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && repoCount > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && repoCount > max {
 		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil
