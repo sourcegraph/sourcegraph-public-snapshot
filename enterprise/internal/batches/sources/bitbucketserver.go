@@ -286,7 +286,6 @@ func (s BitbucketServerSource) GetChangesetForkRepo(ctx context.Context, targetR
 
 	// See if we already have a fork.
 	fork, err := s.getUserFork(ctx, parent, user)
-	log15.Info("getUserFork", "fork", fork, "err", err)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting user fork for %q", user)
 	}
@@ -325,14 +324,12 @@ func (s BitbucketServerSource) getUserFork(ctx context.Context, parent *bitbucke
 			if err != nil {
 				panic(err)
 			}
-			log15.Info("comparing fork", "fork", string(js), "fork.Owner", fork.Owner, "user", user)
 			// This looks insane, because the underlying API is insane: there's
 			// an Owner field that is _sometimes_ populated on the fork, but not
 			// always, and without it the only reference to the username is the
 			// self link back to the user profile on the project.
 			if fork.Project.Type == "PERSONAL" {
 				for _, link := range fork.Project.Links.Self {
-					log15.Info("comparing self link", "href", link.Href, "user", user)
 					if strings.HasSuffix(link.Href, "/"+user) {
 						return fork, nil
 					}
