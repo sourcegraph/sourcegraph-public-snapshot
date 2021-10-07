@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestCheckDiffCommitSearchLimits(t *testing.T) {
+func TestCheckSearchLimits(t *testing.T) {
 	cases := []struct {
 		name        string
 		resultType  string
