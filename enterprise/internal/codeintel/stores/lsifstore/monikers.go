@@ -70,9 +70,9 @@ WHERE
 LIMIT 1
 `
 
-// BulkMonikerResults returns the locations within one of the given bundles that define or reference
-// one of the given monikers. This method also returns the size of the complete result set to aid in
-// pagination.
+// BulkMonikerResults returns the locations (within one of the given uploads) with an attached moniker
+// whose scheme+identifier matches one of the given monikers. This method also returns the size of the
+// complete result set to aid in pagination.
 func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []Location, _ int, err error) {
 	ctx, traceLog, endObservation := s.operations.bulkMonikerResults.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("tableName", tableName),

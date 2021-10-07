@@ -499,11 +499,12 @@ func rangeContainsPosition(r lsifstore.Range, pos lsifstore.Position) bool {
 	return true
 }
 
-// uploadIDsWithReferences returns a slice of uploads that contain a reference to any of the given
-// identifiers. This method will not return uploads for commits which are unknown to gitserver, nor
-// will it return uploads which are listed in the given ignored identifier slice. This method also
-// returns the number of records scanned (but possibly filtered out from the return slice) from the
-// database (the offset for the subsequent request) and the total number of records in the database.
+// uploadIDsWithReferences returns uploads (ignoring the given uploads) that probably contain an import
+// or implementation moniker whose identifier matches any of the given monikers' identifiers. This method
+// will not return uploads for commits which are unknown to gitserver, nor will it return uploads which
+// are listed in the given ignored identifier slice. This method also returns the number of records
+// scanned (but possibly filtered out from the return slice) from the database (the offset for the
+// subsequent request) and the total number of records in the database.
 func (r *queryResolver) uploadIDsWithReferences(
 	ctx context.Context,
 	orderedMonikers []precise.QualifiedMonikerData,
@@ -551,15 +552,16 @@ func (r *queryResolver) uploadIDsWithReferences(
 			continue
 		}
 
-		// Each upload has an associated bloom filter encoding the set of identifiers it imports. We test
-		// this bloom filter to greatly reduce the number of remote indexes over which we need to search.
+		// Each upload has an associated bloom filter encoding the set of identifiers it imports or
+		// implements. We test this bloom filter to greatly reduce the number of remote indexes over
+		// which we need to search.
 
 		ok, err := testFilter(packageReference.Filter, orderedMonikers)
 		if err != nil {
 			return nil, 0, 0, err
 		}
 		if ok {
-			// Imports at least one target identifier
+			// Probably imports or implements at least one of the monikers' identifiers
 			filtered[packageReference.DumpID] = struct{}{}
 		}
 	}
@@ -578,7 +580,8 @@ func (r *queryResolver) uploadIDsWithReferences(
 	return flattened, recordsScanned, totalCount, nil
 }
 
-// testFilter returns true if the given  encoded bloom filter includes any of the given monikers.
+// testFilter returns true if the set underlying the given encoded bloom filter probably includes any of
+// the given monikers.
 func testFilter(filter []byte, orderedMonikers []precise.QualifiedMonikerData) (bool, error) {
 	includesIdentifier, err := bloomfilter.Decode(filter)
 	if err != nil {

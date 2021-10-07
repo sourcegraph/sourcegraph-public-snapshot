@@ -129,8 +129,8 @@ func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []a
 	return monikerSet.monikers, nil
 }
 
-// monikerLocations returns the set of locations defined by any of the given uploads tagged with any of
-// the given monikers.
+// monikerLocations returns the set of locations (within the given uploads) with an attached moniker
+// whose scheme+identifier matches any of the given monikers.
 func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.Dump, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]lsifstore.Location, int, error) {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
