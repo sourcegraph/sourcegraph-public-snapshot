@@ -7,7 +7,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -76,21 +75,17 @@ func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload 
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	uploadsByID := map[int]store.Dump{
-		upload.Upload.ID: upload.Upload,
-	}
-
-	adjustedDefinitions, err := r.adjustLocations(ctx, uploadsByID, rn.Definitions)
+	adjustedDefinitions, err := r.adjustLocations(ctx, rn.Definitions)
 	if err != nil {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	adjustedReferences, err := r.adjustLocations(ctx, uploadsByID, rn.References)
+	adjustedReferences, err := r.adjustLocations(ctx, rn.References)
 	if err != nil {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}
 
-	adjustedImplementations, err := r.adjustLocations(ctx, uploadsByID, rn.Implementations)
+	adjustedImplementations, err := r.adjustLocations(ctx, rn.Implementations)
 	if err != nil {
 		return AdjustedCodeIntelligenceRange{}, false, err
 	}

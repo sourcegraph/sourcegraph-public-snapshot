@@ -71,6 +71,10 @@ func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers [
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
 
+	for i := range uploads {
+		r.uploadCache[uploads[i].ID] = uploads[i]
+	}
+
 	return filterUploadsWithCommits(ctx, r.cachedCommitChecker, uploads)
 }
 
@@ -152,10 +156,10 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.
 
 // adjustLocations translates a set of locations into an equivalent set of locations in the requested
 // commit.
-func (r *queryResolver) adjustLocations(ctx context.Context, uploadsByID map[int]dbstore.Dump, locations []lsifstore.Location) ([]AdjustedLocation, error) {
+func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
 	for _, location := range locations {
-		adjustedLocation, err := r.adjustLocation(ctx, uploadsByID[location.DumpID], location)
+		adjustedLocation, err := r.adjustLocation(ctx, r.uploadCache[location.DumpID], location)
 		if err != nil {
 			return nil, err
 		}

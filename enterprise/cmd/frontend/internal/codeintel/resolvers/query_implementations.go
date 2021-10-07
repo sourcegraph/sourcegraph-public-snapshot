@@ -8,7 +8,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -32,15 +31,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	})
 	defer endObservation()
 
-	// Maintain a map from identifers to hydrated upload records from the database. We use
-	// this map as a quick lookup when constructing the resulting location set. Any additional
-	// upload records pulled back from the database while processing this page will be added
-	// to this map.
-	uploadsByID := make(map[int]dbstore.Dump, len(r.uploads))
-	for i := range r.uploads {
-		uploadsByID[r.uploads[i].ID] = r.uploads[i]
-	}
-
 	// Decode cursor given from previous response or create a new one with default values.
 	// We use the cursor state track offsets with the result set and cache initial data that
 	// is used to resolve each page. This cursor will be modified in-place to become the
@@ -54,7 +44,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// the target commit. This data may already be stashed in the cursor decoded above, in
 	// which case we don't need to hit the database.
 
-	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, uploadsByID, &cursor)
+	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, &cursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -82,7 +72,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// in which case we don't need to hit the database.
 
 	// Set of dumps that cover the monikers' packages
-	definitionUploadIDs, definitionUploads, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, orderedMonikers, &cursor)
+	definitionUploadIDs, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, orderedMonikers, &cursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -94,12 +84,8 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// If we pulled additional records back from the database, add them to the upload map. This
 	// slice will be empty if the definition ids were cached on the cursor.
 
-	for i := range definitionUploads {
-		uploadsByID[definitionUploads[i].ID] = definitionUploads[i]
-	}
-
 	// Query a single page of location results
-	locations, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, orderedMonikers, definitionUploadIDs, uploadsByID, &cursor, limit)
+	locations, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, orderedMonikers, definitionUploadIDs, &cursor, limit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -110,7 +96,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// locations within the repository the user is browsing so that it appears all references
 	// are occurring at the same commit they are looking at.
 
-	adjustedLocations, err := r.adjustLocations(ctx, uploadsByID, locations)
+	adjustedLocations, err := r.adjustLocations(ctx, locations)
 	if err != nil {
 		return nil, "", err
 	}
