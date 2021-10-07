@@ -541,7 +541,7 @@ func (r *queryResolver) uploadIDsWithReferences(
 		recordsScanned++
 
 		if _, ok := filtered[packageReference.DumpID]; ok {
-			// This index includes a definition so we can skips testing the filters here. The index
+			// This index includes a definition so we can skip testing the filters here. The index
 			// will be included in the moniker search regardless if it contains additional references.
 			continue
 		}
