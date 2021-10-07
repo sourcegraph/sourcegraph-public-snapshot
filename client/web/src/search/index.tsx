@@ -1,7 +1,9 @@
+import { Remote } from 'comlink'
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
 import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -236,7 +238,10 @@ export interface HomePanelsProps {
 }
 
 export interface SearchStreamingProps {
-    streamSearch: (options: StreamSearchOptions) => Observable<AggregateStreamingSearchResults>
+    streamSearch: (
+        options: StreamSearchOptions,
+        extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
+    ) => Observable<AggregateStreamingSearchResults>
 }
 
 /**

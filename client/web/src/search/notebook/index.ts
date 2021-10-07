@@ -6,7 +6,7 @@ import * as uuid from 'uuid'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    aggregateStreamingSearch,
+    aggregateStreamingSearchWithExtensionTransformedQuery,
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
@@ -106,16 +106,18 @@ export class Notebook {
             case 'query':
                 this.blocks.set(block.id, {
                     ...block,
-                    output: aggregateStreamingSearch({
-                        // Removes comments
-                        query: block.input.replace(/\/\/.*/g, ''),
-                        version: LATEST_VERSION,
-                        patternType: SearchPatternType.literal,
-                        caseSensitive: false,
-                        versionContext: undefined,
-                        trace: undefined,
-                        extensionHostAPI: this.dependencies.extensionHostAPI,
-                    }).pipe(startWith(emptyAggregateResults)),
+                    output: aggregateStreamingSearchWithExtensionTransformedQuery(
+                        {
+                            // Removes comments
+                            query: block.input.replace(/\/\/.*/g, ''),
+                            version: LATEST_VERSION,
+                            patternType: SearchPatternType.literal,
+                            caseSensitive: false,
+                            versionContext: undefined,
+                            trace: undefined,
+                        },
+                        this.dependencies.extensionHostAPI
+                    ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
         }

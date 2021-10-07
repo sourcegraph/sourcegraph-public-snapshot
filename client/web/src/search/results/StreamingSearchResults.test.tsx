@@ -96,15 +96,18 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
-            version: 'V2',
-            patternType: SearchPatternType.regexp,
-            caseSensitive: true,
-            versionContext: 'test',
-            trace: undefined,
-            extensionHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
-        })
+        sinon.assert.calledWith(
+            searchSpy,
+            {
+                query: 'r:golang/oauth2 test f:travis',
+                version: 'V2',
+                patternType: SearchPatternType.regexp,
+                caseSensitive: true,
+                versionContext: 'test',
+                trace: undefined,
+            },
+            Promise.resolve(pretendRemote<FlatExtensionHostAPI>({}))
+        )
 
         element.unmount()
     })
@@ -128,15 +131,18 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
-            version: 'V2',
-            patternType: SearchPatternType.regexp,
-            caseSensitive: false,
-            versionContext: undefined,
-            trace: undefined,
-            extensionHostAPI: Promise.resolve(pretendRemote<FlatExtensionHostAPI>({})),
-        })
+        sinon.assert.calledWith(
+            searchSpy,
+            {
+                query: 'r:golang/oauth2 test f:travis',
+                version: 'V2',
+                patternType: SearchPatternType.regexp,
+                caseSensitive: false,
+                versionContext: undefined,
+                trace: undefined,
+            },
+            Promise.resolve(pretendRemote<FlatExtensionHostAPI>({}))
+        )
 
         element.unmount()
     })

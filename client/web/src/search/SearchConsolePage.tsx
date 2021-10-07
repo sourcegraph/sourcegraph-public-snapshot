@@ -75,15 +75,17 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
     const results = useObservable(
         useMemo(() => {
             const query = parseSearchURLQuery(props.location.search)
-            return streamSearch({
-                query: query?.replace(/\/\/.*/g, '') || '',
-                version: LATEST_VERSION,
-                patternType: patternType ?? SearchPatternType.literal,
-                caseSensitive: false,
-                versionContext: undefined,
-                trace: undefined,
-                extensionHostAPI,
-            }).pipe(debounceTime(500))
+            return streamSearch(
+                {
+                    query: query?.replace(/\/\/.*/g, '') || '',
+                    version: LATEST_VERSION,
+                    patternType: patternType ?? SearchPatternType.literal,
+                    caseSensitive: false,
+                    versionContext: undefined,
+                    trace: undefined,
+                },
+                extensionHostAPI
+            ).pipe(debounceTime(500))
         }, [patternType, props.location.search, streamSearch, extensionHostAPI])
     )
 
