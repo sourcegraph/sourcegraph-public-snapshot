@@ -123,6 +123,24 @@ func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Contex
 	return graphqlutil.HasNextPage(false), nil
 }
 
+func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
+	emptyResponse := &graphqlbackend.EmptyResponse{}
+
+	dashboardID, err := unmarshal(args.Id)
+	if err != nil {
+		return emptyResponse, err
+	}
+	if dashboardID.isVirtualized() {
+		return emptyResponse, nil
+	}
+
+	err = r.dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
+	if err != nil {
+		return emptyResponse, err
+	}
+	return emptyResponse, nil
+}
+
 type stubInsightViewResolver struct {
 	id string
 }

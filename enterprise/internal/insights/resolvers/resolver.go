@@ -23,6 +23,7 @@ type Resolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
 	insightMetadataStore store.InsightMetadataStore
+	dashboardStore       *store.DBDashboardStore
 	insightsDatabase     dbutil.DB
 	postgresDatabase     dbutil.DB
 }
@@ -39,6 +40,7 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 		insightsStore:        store.NewWithClock(timescale, store.NewInsightPermissionStore(postgres), clock),
 		workerBaseStore:      basestore.NewWithDB(postgres, sql.TxOptions{}),
 		insightMetadataStore: store.NewInsightStore(timescale),
+		dashboardStore:       store.NewDashboardStore(timescale),
 		insightsDatabase:     timescale,
 		postgresDatabase:     postgres,
 	}
@@ -67,28 +69,6 @@ func (r *Resolver) InsightDashboards(ctx context.Context, args *graphqlbackend.I
 		dashboardStore:   store.NewDashboardStore(r.insightsDatabase),
 		args:             args,
 	}, nil
-}
-
-func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
-	emptyResponse := &graphqlbackend.EmptyResponse{}
-	dashboardStore := store.NewDashboardStore(r.insightsDatabase)
-
-	dashboardID, err := unmarshal(args.Id)
-	if err != nil {
-		return emptyResponse, err
-	}
-
-	// TODO: Would it be conventional to ignore this request, or send an error, or some other kind of response?
-	if dashboardID.isVirtualized() {
-		return emptyResponse, nil
-	}
-
-	err = dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
-	if err != nil {
-		return emptyResponse, err
-	}
-
-	return emptyResponse, nil
 }
 
 type disabledResolver struct {
