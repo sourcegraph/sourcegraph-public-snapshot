@@ -3,6 +3,7 @@ import { isPlainObject, noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -26,6 +27,7 @@ export interface MonacoQueryInputProps
         Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
+        ExtensionsControllerProps<'extHostAPI'>,
         VersionContextProps {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
@@ -117,6 +119,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     className,
     settingsCascade,
     onHandleFuzzyFinder,
+    extensionsController,
 }) => {
     const acceptSearchSuggestionOnEnter: boolean | undefined =
         !isErrorLike(settingsCascade.final) &&
@@ -139,8 +142,11 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
 
     const fetchSuggestionsWithContext = useCallback(
         (query: string) =>
-            fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
-        [selectedSearchContextSpec, versionContext]
+            fetchStreamSuggestions(
+                appendContextFilter(query, selectedSearchContextSpec, versionContext),
+                extensionsController.extHostAPI
+            ),
+        [extensionsController, selectedSearchContextSpec, versionContext]
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestionsWithContext, {

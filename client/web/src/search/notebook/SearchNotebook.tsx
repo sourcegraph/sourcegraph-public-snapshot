@@ -203,11 +203,14 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         }
     }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-        patternType: SearchPatternType.literal,
-        globbing: props.globbing,
-        interpretComments: true,
-    })
+    const sourcegraphSearchLanguageId = useQueryIntelligence(
+        query => fetchStreamSuggestions(query, extensionsController.extHostAPI),
+        {
+            patternType: SearchPatternType.literal,
+            globbing: props.globbing,
+            interpretComments: true,
+        }
+    )
 
     // Register dummy onCompletionSelected handler to prevent console errors
     useEffect(() => {

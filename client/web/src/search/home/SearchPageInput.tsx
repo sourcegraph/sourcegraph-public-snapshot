@@ -4,6 +4,7 @@ import { Form } from 'reactstrap'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
@@ -42,7 +43,8 @@ interface Props
         Pick<SubmitSearchParameters, 'source'>,
         VersionContextProps,
         SearchContextInputProps,
-        OnboardingTourProps {
+        OnboardingTourProps,
+        ExtensionsControllerProps<'extHostAPI'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History

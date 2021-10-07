@@ -53,7 +53,7 @@ export interface CommunitySearchContextPageProps
         PatternTypeProps,
         CaseSensitivityProps,
         KeyboardShortcutsProps,
-        ExtensionsControllerProps<'executeCommand'>,
+        ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         VersionContextProps,
         SearchContextInputProps,

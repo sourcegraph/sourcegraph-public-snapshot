@@ -1,6 +1,8 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
 import { WebStory } from '../../components/WebStory'
 import { SearchPatternType } from '../../graphql-operations'
 
@@ -15,6 +17,7 @@ const { add } = storiesOf('web/search/input/MonacoQueryInput', module)
     ))
 
 const defaultProps: MonacoQueryInputProps = {
+    extensionsController,
     isLightTheme: false,
     globbing: false,
     queryState: { query: 'hello repo:test' },

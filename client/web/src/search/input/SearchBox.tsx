@@ -1,6 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -23,6 +24,7 @@ export interface SearchBoxProps
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
+        ExtensionsControllerProps<'extHostAPI'>,
         SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions

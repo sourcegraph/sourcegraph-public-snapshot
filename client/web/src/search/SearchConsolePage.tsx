@@ -87,7 +87,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         }, [patternType, props.location.search, streamSearch, extensionHostAPI])
     )
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(query => fetchStreamSuggestions(query, extensionHostAPI), {
         patternType,
         globbing,
         interpretComments: true,
