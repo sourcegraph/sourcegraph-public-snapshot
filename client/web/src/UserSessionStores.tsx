@@ -7,12 +7,12 @@ export const UserSessionStores: React.FunctionComponent = () => {
     const [daysActiveCount, setDaysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
     const [lastDayActive, setLastDayActive] = useTemporarySetting('user.lastDayActive', null)
 
-    const loading = daysActiveCount === undefined || lastDayActive === undefined
+    const loading = daysActiveCount.loading || lastDayActive.loading
 
     useEffect(() => {
-        if (!loading && lastDayActive !== today) {
+        if (!loading && lastDayActive.value !== today) {
             setLastDayActive(today)
-            setDaysActiveCount(daysActiveCount + 1)
+            setDaysActiveCount(daysActiveCount.value + 1)
         }
     }, [daysActiveCount, lastDayActive, loading, setDaysActiveCount, setLastDayActive, today])
 

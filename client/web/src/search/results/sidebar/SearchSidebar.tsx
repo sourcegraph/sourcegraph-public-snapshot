@@ -57,7 +57,7 @@ const selectFromQueryState = ({
 
 export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props => {
     const history = useHistory()
-    const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
+    const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', undefined)
     const { query, setQueryState, submitSearch } = useNavbarQueryState(selectFromQueryState, shallow)
 
     // Unlike onFilterClicked, this function will always append or update a filter
@@ -123,13 +123,15 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
     // being rendered open and immediately closing them, we render them only after
     // we got the settings.
     if (collapsedSections) {
+        const loadingSections = collapsedSections.loading
+
         body = (
             <StickyBox className={styles.searchSidebarStickyBox}>
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}
                     className={styles.searchSidebarItem}
                     header="Search Types"
-                    startCollapsed={collapsedSections?.[SectionID.SEARCH_TYPES]}
+                    startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.SEARCH_TYPES]}
                     onToggle={persistToggleState}
                 >
                     {getSearchTypeLinks({
@@ -145,7 +147,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     sectionId={SectionID.DYNAMIC_FILTERS}
                     className={styles.searchSidebarItem}
                     header="Dynamic filters"
-                    startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
+                    startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.DYNAMIC_FILTERS]}
                     onToggle={persistToggleState}
                 >
                     {dynamicFilterLinks}
@@ -155,7 +157,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         sectionId={SectionID.REPOSITORIES}
                         className={styles.searchSidebarItem}
                         header="Repositories"
-                        startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
+                        startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.REPOSITORIES]}
                         onToggle={persistToggleState}
                         showSearch={true}
                         noResultText={
@@ -173,7 +175,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         sectionId={SectionID.REVISIONS}
                         className={styles.searchSidebarItem}
                         header="Revisions"
-                        startCollapsed={collapsedSections?.[SectionID.REVISIONS]}
+                        startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.REVISIONS]}
                         onToggle={persistToggleState}
                         showSearch={true}
                         clearSearchOnChange={repoName}
@@ -186,7 +188,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     className={styles.searchSidebarItem}
                     header="Search reference"
                     showSearch={true}
-                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
+                    startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.SEARCH_REFERENCE]}
                     onToggle={onSearchReferenceToggle}
                     // search reference should always preserve the filter
                     // (false is just an arbitrary but static value)
@@ -201,7 +203,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     sectionId={SectionID.SEARCH_SNIPPETS}
                     className={styles.searchSidebarItem}
                     header="Search snippets"
-                    startCollapsed={collapsedSections?.[SectionID.SEARCH_SNIPPETS]}
+                    startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.SEARCH_SNIPPETS]}
                     onToggle={persistToggleState}
                 >
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
@@ -210,7 +212,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                     sectionId={SectionID.QUICK_LINKS}
                     className={styles.searchSidebarItem}
                     header="Quicklinks"
-                    startCollapsed={collapsedSections?.[SectionID.QUICK_LINKS]}
+                    startCollapsed={!loadingSections && collapsedSections.value?.[SectionID.QUICK_LINKS]}
                     onToggle={persistToggleState}
                 >
                     {getQuickLinks(props.settingsCascade)}
