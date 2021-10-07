@@ -6,6 +6,7 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
+const chalk = require('chalk')
 const compression = require('compression')
 const log = require('fancy-log')
 const gulp = require('gulp')
@@ -138,27 +139,36 @@ async function webpackDevelopmentServer() {
   }
 
   const compiler = createWebpackCompiler(webpackConfig)
-  compiler.hooks.done.tap('Print external URL', (stats) => {
-    stats = stats.toJson();
-    if (stats.errors && stats.errors.length > 0) {
+  compiler.hooks.done.tap('Print external URL', stats => {
+    stats = stats.toJson()
+    if (stats.errors !== undefined && stats.errors.length > 0) {
       // show errors
-      return;
+      return
     }
 
-    const bgYellow = "\x1b[43m"
-    const fgBlack = "\x1b[30m"
-    const reset = "\x1b[0m"
-    const color = `${bgYellow}${fgBlack}%s${reset}`
-
     const url = `https://${sockHost}:${sockPort}`
-    console.log(color, `===============================================`)
-    console.log(color, `                                               `)
-    console.log(color, `      ✱ Sourcegraph is really ready now!       `)
-    console.log(color, `                                               `)
-    console.log(color, `      Click here: ${url} `)
-    console.log(color, `                                               `)
-    console.log(color, `===============================================`)
-  });
+    const banner = '==============================================='
+    const emptyLine = ' '.repeat(banner.length)
+    const lineLength = banner.length
+    const paddedLine = content => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      const spaceRequired = lineLength - content.length
+      const half = spaceRequired / 2
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      let line = `${' '.repeat(half)}${content}${' '.repeat(half)}`
+      if (line.length < lineLength) {
+        line += ' '
+      }
+      return line
+    }
+    console.log(chalk.bgYellowBright.black(banner))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(paddedLine('✱ Sourcegraph is really ready now!')))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(paddedLine(`Click here: ${url}`)))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(banner))
+  })
 
   const server = new WebpackDevServer(options, compiler)
   signale.await('Waiting for Webpack to compile assets')
