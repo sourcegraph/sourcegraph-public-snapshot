@@ -1,0 +1,78 @@
+.multicombobox-container {
+    display: flex;
+    flex-wrap: wrap;
+
+    border: 1px solid var(--input-border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--input-bg);
+}
+
+.badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+}
+
+.badge {
+    display: flex;
+    align-items: center;
+}
+
+.badge-button {
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
+}
+
+.multicombobox {
+    display: flex;
+    flex-grow: 1;
+}
+
+.input {
+    min-width: 10rem;
+    flex-grow: 1;
+    flex-shrink: 1;
+    border: none;
+    padding: 0.5rem;
+    background-color: var(--input-bg);
+}
+
+.popover {
+    border: solid 1px var(--border-color);
+    box-shadow: var(--box-shadow);
+    background-color: var(--input-bg);
+
+    /**
+        By default reach-ui/combobox sets `font-size` to 85% for the content
+        in the popover block. In order to reset `font-size` we set it to `inherit`
+        explicitly.
+     */
+    font-size: inherit;
+}
+
+.suggestions-list {
+    &__item {
+        display: block;
+        padding: 0.5rem;
+    }
+
+    [data-reach-combobox-option]:hover {
+        background-color: var(--body-bg);
+    }
+
+    /**
+        Reach ui by default highlights suggested value and skips the user value.
+        This is a bit weird and inconsistent with our highlight visual logic
+        in search bar. In order to support consistent logic we override font-weight
+        for suggested and user parts of value.
+     */
+    [data-suggested-value] {
+        font-weight: normal;
+    }
+
+    [data-user-value] {
+        font-weight: bold;
+    }
+}
