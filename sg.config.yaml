@@ -89,6 +89,7 @@ env:
 
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
+  # Must match the secret defined in the site config.
   EXECUTOR_FRONTEND_PASSWORD: hunter2
 
   # Disable firecracker inside executor in dev
