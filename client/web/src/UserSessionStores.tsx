@@ -11,8 +11,8 @@ export const UserSessionStores: React.FunctionComponent = () => {
 
     useEffect(() => {
         if (!loading && lastDayActive !== today) {
-            setDaysActiveCount(daysActiveCount + 1)
             setLastDayActive(today)
+            setDaysActiveCount(daysActiveCount + 1)
         }
     }, [daysActiveCount, lastDayActive, loading, setDaysActiveCount, setLastDayActive, today])
 
