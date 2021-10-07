@@ -967,17 +967,6 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantErr: "changeset check state not valid",
 		},
-		// Setting OnlyPublishedByThisCampaign true.
-		{
-			args: &graphqlbackend.ListChangesetsArgs{
-				OnlyPublishedByThisCampaign: truePtr,
-			},
-			wantSafe: true,
-			wantParsed: store.ListChangesetsOpts{
-				PublicationState:     &wantPublicationStates[0],
-				OwnedByBatchChangeID: batchChangeID,
-			},
-		},
 		// Setting OnlyPublishedByThisBatchChange true.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{

@@ -59,13 +59,6 @@ type batchSpecResolver struct {
 	stateOnce sync.Once
 	state     btypes.BatchSpecState
 	stateErr  error
-
-	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-	shouldActAsCampaignSpec bool
-}
-
-func (r *batchSpecResolver) ActAsCampaignSpec() bool {
-	return r.shouldActAsCampaignSpec
 }
 
 func (r *batchSpecResolver) ID() graphql.ID {
@@ -245,11 +238,6 @@ func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return totalStat, nil
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
-	return r.AppliesToBatchChange(ctx)
-}
-
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
 	batchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, r.batchSpec)
@@ -264,11 +252,6 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 		store:       r.store,
 		batchChange: batchChange,
 	}, nil
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *batchSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	return r.SupersedingBatchSpec(ctx)
 }
 
 func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
