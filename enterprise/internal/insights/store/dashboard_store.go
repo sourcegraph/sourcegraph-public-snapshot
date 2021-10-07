@@ -215,7 +215,8 @@ const insertDashboardInsightViewConnectionsByViewIds = `
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
-    WHERE unique_id = ANY(%s));`
+    WHERE unique_id = ANY(%s)
+);`
 
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)

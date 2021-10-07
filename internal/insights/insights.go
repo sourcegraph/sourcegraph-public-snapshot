@@ -329,7 +329,7 @@ func DiscoverDashboardsInSettings(ctx context.Context, db dbutil.DB) ([]SettingD
 
 // Dashboards returns an array of contained dashboards.
 func (i IntegratedDashboards) Dashboards(perms permissionAssociations) []SettingDashboard {
-	results := make([]SettingDashboard, 0)
+	results := make([]SettingDashboard, 0, len(i))
 	for key, dashboard := range i {
 		dashboard.ID = key // the insight ID is the value of the dict key
 
