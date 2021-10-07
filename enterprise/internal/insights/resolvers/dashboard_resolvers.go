@@ -130,3 +130,7 @@ type stubInsightViewResolver struct {
 func (s *stubInsightViewResolver) ID() graphql.ID {
 	return relay.MarshalID("insight_view", s.id)
 }
+
+func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
+	return true
+}
