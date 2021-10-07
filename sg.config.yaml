@@ -863,6 +863,10 @@ commandsets:
       - enterprise-web
       - caddy
 
+  docsite:
+    commands:
+      - docsite
+
 tests:
   # These can be run with `sg test [name]`
   backend:
