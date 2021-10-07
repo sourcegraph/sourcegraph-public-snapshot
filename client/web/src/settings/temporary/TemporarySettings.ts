@@ -9,7 +9,7 @@ export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
     'search.sidebar.revisions.tab': number
     'search.onboarding.tourCancelled': boolean
-    'search.usedNonGlobalContext': boolean
+    'search.contexts.ctaPermanentlyDismissed': boolean
     'insights.freeBetaAccepted': boolean
 }
 

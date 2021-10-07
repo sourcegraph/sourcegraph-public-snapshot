@@ -46,6 +46,7 @@ add(
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     authenticatedUser={null}
                     hasUserAddedExternalServices={false}
+                    onDismiss={() => {}}
                 />
             )}
         </WebStory>
@@ -62,6 +63,7 @@ add(
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     authenticatedUser={authUser}
                     hasUserAddedExternalServices={false}
+                    onDismiss={() => {}}
                 />
             )}
         </WebStory>
@@ -78,6 +80,7 @@ add(
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     authenticatedUser={authUser}
                     hasUserAddedExternalServices={true}
+                    onDismiss={() => {}}
                 />
             )}
         </WebStory>
@@ -94,6 +97,7 @@ add(
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                     authenticatedUser={{ ...authUser, tags: ['AllowUserExternalServicePrivate'] }}
                     hasUserAddedExternalServices={false}
+                    onDismiss={() => {}}
                 />
             )}
         </WebStory>

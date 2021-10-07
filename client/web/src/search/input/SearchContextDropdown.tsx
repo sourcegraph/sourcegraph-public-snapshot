@@ -52,7 +52,16 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         telemetryService,
     } = props
 
-    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    const [contextsCtaPermanentlyDismissed, setContextsCtaPermanentlyDismissed] = useTemporarySetting(
+        'search.contexts.ctaPermanentlyDismissed'
+    )
+    const [contextCtaDismissed, setContextCtaDismissed] = useState(false)
+
+    useEffect(() => {
+        if (contextsCtaPermanentlyDismissed) {
+            setContextCtaDismissed(true)
+        }
+    }, [contextsCtaPermanentlyDismissed])
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -109,6 +118,13 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
+    const onCtaDismissed = (permanent: boolean): void => {
+        setContextCtaDismissed(true)
+        if (permanent) {
+            setContextsCtaPermanentlyDismissed(true)
+        }
+    }
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -142,11 +158,12 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
+                {isSourcegraphDotCom && !hasUserAddedRepositories && !contextCtaDismissed ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
                         hasUserAddedExternalServices={hasUserAddedExternalServices}
+                        onDismiss={onCtaDismissed}
                     />
                 ) : (
                     <SearchContextMenu

@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -12,13 +12,17 @@ import styles from './SearchContextCtaPrompt.module.scss'
 export interface SearchContextCtaPromptProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     hasUserAddedExternalServices: boolean
+    onDismiss: (permanent: boolean) => void
 }
 
 export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPromptProps> = ({
     authenticatedUser,
     hasUserAddedExternalServices,
     telemetryService,
+    onDismiss,
 }) => {
+    const [ctaPermanentlyDismissed, setCtaPermanentlyDismissed] = useState(false)
+
     const repositoriesVisibility =
         window.context.externalServicesUserMode === 'all' ||
         authenticatedUser?.tags.includes('AllowUserExternalServicePrivate')
@@ -46,6 +50,15 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
         telemetryService.log(`SearchContextCtaPrompt${actionKind}Click`)
     }
 
+    const onDismissClick = (): void => {
+        telemetryService.log(
+            'SearchContextCtaPromptDismissClick',
+            { permanent: ctaPermanentlyDismissed },
+            { permanent: ctaPermanentlyDismissed }
+        )
+        onDismiss(ctaPermanentlyDismissed)
+    }
+
     return (
         <div className={styles.searchContextCtaPrompt}>
             <div className={styles.searchContextCtaPromptTitle}>
@@ -53,6 +66,17 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
                 <span>Search the code you care about</span>
             </div>
             <div className="text-muted">{copyText}</div>
+
+            <label className="d-flex align-items-center mt-2">
+                <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={ctaPermanentlyDismissed}
+                    onChange={event => setCtaPermanentlyDismissed(event.target.checked)}
+                />
+                Don't show this again
+            </label>
+
             <Link
                 className={classNames('btn btn-primary', styles.searchContextCtaPromptButton)}
                 to={linkTo}
@@ -60,6 +84,13 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             >
                 {buttonText}
             </Link>
+            <button
+                type="button"
+                className={classNames('btn btn-secondary ml-2', styles.searchContextCtaPromptButton)}
+                onClick={onDismissClick}
+            >
+                Maybe later
+            </button>
         </div>
     )
 }
