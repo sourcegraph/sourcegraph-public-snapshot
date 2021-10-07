@@ -29,6 +29,7 @@ type SearchInputs struct {
 // architecture.
 type Job interface {
 	Run(context.Context, streaming.Sender) error
+	Name() string
 }
 
 // MaxResults computes the limit for the query.
