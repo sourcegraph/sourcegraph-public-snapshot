@@ -6,6 +6,7 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
+const compression = require('compression')
 const log = require('fancy-log')
 const gulp = require('gulp')
 const { createProxyMiddleware } = require('http-proxy-middleware')
@@ -29,7 +30,7 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
 const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
 const webpackConfig = require('./webpack.config')
 
@@ -106,9 +107,12 @@ async function webpackDevelopmentServer() {
     hot: !process.env.NO_HOT,
     host: DEV_SERVER_LISTEN_ADDR.host,
     port: DEV_SERVER_LISTEN_ADDR.port,
-    // Disable compression on the dev server because gzip buffers the full
-    // response before sending it, which makes streaming search not stream.
+    // Disable default DevServer compression. We need more fine grained compression to support streaming search.
     compress: false,
+    onBeforeSetupMiddleware: developmentServer => {
+      // Re-enable gzip compression using our own `compression` filter.
+      developmentServer.app.use(compression({ filter: shouldCompressResponse }))
+    },
     client: {
       overlay: false,
       webSocketTransport: 'ws',

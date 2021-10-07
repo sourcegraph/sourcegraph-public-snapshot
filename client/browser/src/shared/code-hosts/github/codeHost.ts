@@ -68,15 +68,10 @@ export function createFileActionsToolbarMount(codeView: HTMLElement): HTMLElemen
     return mountElement
 }
 
-const toolbarButtonProps = {
-    className: 'btn btn-sm tooltipped tooltipped-s',
-}
-
 const diffCodeView: Omit<CodeView, 'element'> = {
     dom: diffDomFunctions,
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
-    toolbarButtonProps,
     getScrollBoundaries: codeView => {
         const fileHeader = codeView.querySelector<HTMLElement>('.file-header')
         if (!fileHeader) {
@@ -95,7 +90,6 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     getToolbarMount: createFileActionsToolbarMount,
     resolveFileInfo,
-    toolbarButtonProps,
     getSelections: getSelectionsFromHash,
     observeSelections: observeSelectionsFromHash,
 }
@@ -138,7 +132,6 @@ const searchResultCodeViewResolver = toCodeViewResolver('.code-list-item', {
     dom: searchCodeSnippetDOMFunctions,
     getPositionAdjuster: getSnippetPositionAdjuster,
     resolveFileInfo: resolveSnippetFileInfo,
-    toolbarButtonProps,
 })
 
 const snippetCodeView: Omit<CodeView, 'element'> = {

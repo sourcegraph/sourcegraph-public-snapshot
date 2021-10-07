@@ -192,14 +192,15 @@ type operations struct {
 	createChangesetJob *observation.Operation
 	getChangesetJob    *observation.Operation
 
-	createChangesetSpec         *observation.Operation
-	updateChangesetSpec         *observation.Operation
-	deleteChangesetSpec         *observation.Operation
-	countChangesetSpecs         *observation.Operation
-	getChangesetSpec            *observation.Operation
-	listChangesetSpecs          *observation.Operation
-	deleteExpiredChangesetSpecs *observation.Operation
-	getRewirerMappings          *observation.Operation
+	createChangesetSpec                      *observation.Operation
+	updateChangesetSpec                      *observation.Operation
+	deleteChangesetSpec                      *observation.Operation
+	countChangesetSpecs                      *observation.Operation
+	getChangesetSpec                         *observation.Operation
+	listChangesetSpecs                       *observation.Operation
+	deleteExpiredChangesetSpecs              *observation.Operation
+	getRewirerMappings                       *observation.Operation
+	listChangesetSpecsWithConflictingHeadRef *observation.Operation
 
 	createChangeset                   *observation.Operation
 	deleteChangeset                   *observation.Operation
@@ -242,6 +243,9 @@ type operations struct {
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
+
+	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
+	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
 }
 
 var (
@@ -311,14 +315,15 @@ func newOperations(observationContext *observation.Context) *operations {
 			createChangesetJob: op("CreateChangesetJob"),
 			getChangesetJob:    op("GetChangesetJob"),
 
-			createChangesetSpec:         op("CreateChangesetSpec"),
-			updateChangesetSpec:         op("UpdateChangesetSpec"),
-			deleteChangesetSpec:         op("DeleteChangesetSpec"),
-			countChangesetSpecs:         op("CountChangesetSpecs"),
-			getChangesetSpec:            op("GetChangesetSpec"),
-			listChangesetSpecs:          op("ListChangesetSpecs"),
-			deleteExpiredChangesetSpecs: op("DeleteExpiredChangesetSpecs"),
-			getRewirerMappings:          op("GetRewirerMappings"),
+			createChangesetSpec:                      op("CreateChangesetSpec"),
+			updateChangesetSpec:                      op("UpdateChangesetSpec"),
+			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
+			countChangesetSpecs:                      op("CountChangesetSpecs"),
+			getChangesetSpec:                         op("GetChangesetSpec"),
+			listChangesetSpecs:                       op("ListChangesetSpecs"),
+			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			getRewirerMappings:                       op("GetRewirerMappings"),
+			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
 
 			createChangeset:                   op("CreateChangeset"),
 			deleteChangeset:                   op("DeleteChangeset"),
@@ -361,6 +366,9 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+
+			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
+			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 		}
 	})
 

@@ -3,12 +3,16 @@ package search
 import (
 	"bytes"
 	"context"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
+	"testing/quick"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
@@ -65,128 +69,123 @@ func TestSearch(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "commit2"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
-		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
-			return true
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
+		require.Len(t, matches, 1)
 	})
 
 	t.Run("match both, in order", func(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "c"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
-		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
-			return true
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 2)
-		require.Len(t, highlights, 2)
-		require.Equal(t, commits[0].AuthorName, []byte("camden2"))
-		require.Equal(t, commits[1].AuthorName, []byte("camden1"))
+		require.Len(t, matches, 2)
+		require.Equal(t, matches[0].Author.Name, "camden2")
+		require.Equal(t, matches[1].Author.Name, "camden1")
+	})
+
+	t.Run("and with no operands matches all", func(t *testing.T) {
+		query := protocol.NewAnd()
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
+		})
+		require.NoError(t, err)
+		require.Len(t, matches, 2)
 	})
 
 	t.Run("match diff content", func(t *testing.T) {
 		query := &protocol.DiffMatches{Expr: "ipsum"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
-		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
-			return true
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden1")
 	})
 
 	t.Run("author matches", func(t *testing.T) {
 		query := &protocol.AuthorMatches{Expr: "2"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
-		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
-			return true
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden2"))
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden2")
 	})
 
 	t.Run("file matches", func(t *testing.T) {
 		query := &protocol.DiffModifiesFile{Expr: "file1"}
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
-		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
-			return true
+		searcher := &CommitSearcher{
+			RepoDir: dir,
+			Query:   tree,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden1")
 	})
 
 	t.Run("and match", func(t *testing.T) {
-		query := &protocol.Operator{
-			Kind: protocol.And,
-			Operands: []protocol.Node{
-				&protocol.DiffMatches{Expr: "lorem"},
-				&protocol.DiffMatches{Expr: "ipsum"},
-			},
-		}
+		query := protocol.NewAnd(
+			&protocol.DiffMatches{Expr: "lorem"},
+			&protocol.DiffMatches{Expr: "ipsum"},
+		)
 		tree, err := ToMatchTree(query)
 		require.NoError(t, err)
-		var commits []*LazyCommit
-		var highlights []*MatchedCommit
-		err = Search(context.Background(), dir, nil, tree, func(lc *LazyCommit, hl *MatchedCommit) bool {
-			commits = append(commits, lc)
-			highlights = append(highlights, hl)
-			return true
+		searcher := &CommitSearcher{
+			RepoDir:     dir,
+			Query:       tree,
+			IncludeDiff: true,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
 		})
 		require.NoError(t, err)
-		require.Len(t, commits, 1)
-		require.Len(t, highlights, 1)
-		require.Equal(t, commits[0].AuthorName, []byte("camden1"))
-		expectedHighlights := &MatchedCommit{
-			Diff: map[int]MatchedFileDiff{
-				0: {
-					MatchedHunks: map[int]MatchedHunk{
-						0: {
-							MatchedLines: map[int]result.Ranges{
-								0: {{
-									Start: result.Location{},
-									End:   result.Location{Offset: 5, Column: 5},
-								}, {
-									Start: result.Location{Offset: 6, Column: 6},
-									End:   result.Location{Offset: 11, Column: 11},
-								}},
-							},
-						},
-					},
-				},
-			},
-		}
-		require.Equal(t, expectedHighlights, highlights[0])
+		require.Len(t, matches, 1)
+		require.Equal(t, matches[0].Author.Name, "camden1")
+		require.Len(t, strings.Split(matches[0].Diff.Content, "\n"), 4)
 	})
 }
 
@@ -299,20 +298,14 @@ index 0000000000..7e54670557
 		diff: parsedDiff,
 	}
 
-	mt, err := ToMatchTree(&protocol.Operator{
-		Kind: protocol.And,
-		Operands: []protocol.Node{
-			&protocol.AuthorMatches{Expr: "Camden"},
-			&protocol.DiffModifiesFile{Expr: "test"},
-			&protocol.Operator{
-				Kind: protocol.And,
-				Operands: []protocol.Node{
-					&protocol.DiffMatches{Expr: "result"},
-					&protocol.DiffMatches{Expr: "test"},
-				},
-			},
-		},
-	})
+	mt, err := ToMatchTree(protocol.NewAnd(
+		&protocol.AuthorMatches{Expr: "Camden"},
+		&protocol.DiffModifiesFile{Expr: "test"},
+		protocol.NewAnd(
+			&protocol.DiffMatches{Expr: "result"},
+			&protocol.DiffMatches{Expr: "test"},
+		),
+	))
 	require.NoError(t, err)
 
 	matches, highlights, err := mt.Match(lc)
@@ -360,4 +353,149 @@ index 0000000000..7e54670557
 
 	require.Equal(t, expectedRanges, ranges)
 
+}
+
+func TestFuzzQueryCNF(t *testing.T) {
+	matchTreeMatches := func(mt MatchTree, a authorNameGenerator) bool {
+		lc := &LazyCommit{
+			RawCommit: &RawCommit{
+				AuthorName: []byte(a),
+			},
+		}
+		matches, _, err := mt.Match(lc)
+		require.NoError(t, err)
+		return matches
+	}
+
+	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		mt, err := ToMatchTree(q.RawQuery)
+		require.NoError(t, err)
+		return matchTreeMatches(mt, a)
+	}
+
+	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		mt, err := ToMatchTree(q.ConstructedQuery())
+		require.NoError(t, err)
+		return matchTreeMatches(mt, a)
+	}
+
+	err := quick.CheckEqual(rawQueryMatches, reducedQueryMatches, nil)
+	var e *quick.CheckEqualError
+	if err != nil && errors.As(err, &e) {
+		t.Fatalf("Different outputs for same inputs\n  RawQuery: %s\n  ReducedQuery: %s\n  AuthorName: %s\n",
+			e.In[0].(queryGenerator).RawQuery.String(),
+			e.In[0].(queryGenerator).ConstructedQuery().String(),
+			string(e.In[1].([]uint8)),
+		)
+	} else if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// queryGenerator is a type that satisfies the tesing/quick Generator interface,
+// generating random, unreduced queries in its RawQuery field. Additionally,
+// it exposes a ConstructedQuery() convienence method that allows the caller to get the
+// query as if it had been created with the protocol.New* functions.
+type queryGenerator struct {
+	RawQuery protocol.Node
+}
+
+func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
+	// Set max depth to avoid massive trees
+	if size > 10 {
+		size = 10
+	}
+	return reflect.ValueOf(queryGenerator{generateQuery(rand, size)})
+}
+
+// ConstructedQuery returns the query as if constructted with the protocol.New* functions
+func (q queryGenerator) ConstructedQuery() protocol.Node {
+	return constructedQuery(q.RawQuery)
+}
+
+// constructedQuery takes any query and recursively reduces it with the
+// protocol.New* functions. This is not meant to be used outside of fuzz testing
+// because any caller should be using the protocol.New* functions directly, which
+// reduce the query on construction.
+func constructedQuery(q protocol.Node) protocol.Node {
+	switch v := q.(type) {
+	case *protocol.Operator:
+		newOperands := make([]protocol.Node, 0, len(v.Operands))
+		for _, operand := range v.Operands {
+			newOperands = append(newOperands, constructedQuery(operand))
+		}
+		switch v.Kind {
+		case protocol.And:
+			return protocol.NewAnd(newOperands...)
+		case protocol.Or:
+			return protocol.NewOr(newOperands...)
+		case protocol.Not:
+			return protocol.NewNot(newOperands[0])
+		default:
+			panic("unreachable")
+		}
+	default:
+		return v
+	}
+}
+
+const randomChars = `abcdefghijkl`
+
+// generateAtom generates a random AuthorMatches atom.
+// The AuthorMatches node will match a single, random character from `randomChars`.
+// 50% of the generated nodes will also be negated. We negate in the atom step
+// rather than in the generateQuery step because we only want to generate negated
+// nodes if they are wrapping leaf nodes. Negating non-leaf nodes works correctly,
+// but can lead to multiple-exponential behavior.
+func generateAtom(rand *rand.Rand) protocol.Node {
+	a := &protocol.AuthorMatches{
+		Expr: string(randomChars[rand.Int()%len(randomChars)]),
+	}
+	if rand.Int()%2 == 0 {
+		return a
+	}
+	return &protocol.Operator{Kind: protocol.Not, Operands: []protocol.Node{a}}
+}
+
+// generateQuery generates a random query with configurable depth. Atom,
+// And, and Or nodes will occur with a 1:1:1 ratio on average.
+func generateQuery(rand *rand.Rand, depth int) protocol.Node {
+	if depth == 0 {
+		return generateAtom(rand)
+	}
+
+	switch rand.Int() % 3 {
+	case 0:
+		var operands []protocol.Node
+		for i := 0; i < rand.Int()%4; i++ {
+			operands = append(operands, generateQuery(rand, depth-1))
+		}
+		return &protocol.Operator{Kind: protocol.And, Operands: operands}
+	case 1:
+		var operands []protocol.Node
+		for i := 0; i < rand.Int()%4; i++ {
+			operands = append(operands, generateQuery(rand, depth-1))
+		}
+		return &protocol.Operator{Kind: protocol.Or, Operands: operands}
+	case 2:
+		return generateAtom(rand)
+	default:
+		panic("unreachable")
+	}
+}
+
+// authorNameGenerator is a type that implements the testing/quick Generator interface
+// so it can be randomly generated using the same characters that the AuthorMatches
+// nodes are generated with using generateAtom.
+type authorNameGenerator []byte
+
+func (authorNameGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
+	if size > 10 {
+		size = 10
+	}
+	buf := make([]byte, size)
+	for i := 0; i < len(buf); i++ {
+		buf[i] = randomChars[rand.Int()%len(randomChars)]
+	}
+	return reflect.ValueOf(buf)
 }

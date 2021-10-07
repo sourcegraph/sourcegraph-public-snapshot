@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -32,7 +31,7 @@ const containerName = "schemadoc"
 
 var logger = log.New(os.Stderr, "", log.LstdFlags)
 
-var versionRe = lazyregexp.New(fmt.Sprintf(`\b%s\b`, regexp.QuoteMeta(`12\.\d+`)))
+var versionRe = lazyregexp.New(`\b12\.\d+\b`)
 
 var databases = map[*dbconn.Database]string{
 	dbconn.Frontend:  "schema.md",

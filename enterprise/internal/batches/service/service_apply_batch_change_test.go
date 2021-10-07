@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -1114,6 +1115,37 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.ArchiveIn = 0
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
+		})
+
+		t.Run("invalid changeset specs", func(t *testing.T) {
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange-invalid-specs", admin.ID)
+
+			// Both specs here have the same HeadRef in the same repository
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:      admin.ID,
+				Repo:      repos[0].ID,
+				BatchSpec: batchSpec.ID,
+				HeadRef:   "refs/heads/my-branch",
+			})
+
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:      admin.ID,
+				Repo:      repos[0].ID,
+				BatchSpec: batchSpec.ID,
+				HeadRef:   "refs/heads/my-branch",
+			})
+
+			_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				BatchSpecRandID: batchSpec.RandID,
+			})
+			if err == nil {
+				t.Fatal("expected error, but got none")
+			}
+
+			if !strings.Contains(err.Error(), "Validating changeset specs resulted in an error") {
+				t.Fatalf("wrong error: %s", err)
+			}
 		})
 	})
 

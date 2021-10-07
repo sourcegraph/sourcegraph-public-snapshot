@@ -549,8 +549,10 @@ func withMode(args search.TextParameters, st query.SearchType, versionContext *s
 			switch n.Field {
 			case query.FieldContext:
 				return searchcontexts.IsGlobalSearchContextSpec(n.Value)
+			case query.FieldRepo:
+				// We allow -repo: in global search.
+				return n.Negated
 			case
-				query.FieldRepo,
 				query.FieldRepoGroup,
 				query.FieldRepoHasFile:
 				return false

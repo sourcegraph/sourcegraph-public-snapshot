@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -18,7 +19,7 @@ type repoData interface {
 	IsIndexed() bool
 }
 
-type IndexedMap map[string]*search.RepositoryRevisions
+type IndexedMap map[api.RepoID]*search.RepositoryRevisions
 
 func (m IndexedMap) AsList() []*search.RepositoryRevisions {
 	reposList := make([]*search.RepositoryRevisions, 0, len(m))

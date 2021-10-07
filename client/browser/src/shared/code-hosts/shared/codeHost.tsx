@@ -1000,6 +1000,7 @@ export function handleCodeHost({
                     getPositionAdjuster,
                     getToolbarMount,
                     toolbarButtonProps,
+                    overrideTokenize,
                 } = codeViewEvent
 
                 const initializeModelAndViewerForFileInfo = async (
@@ -1211,7 +1212,9 @@ export function handleCodeHost({
                                 positionEvents: of(element).pipe(
                                     findPositionsFromEvents({
                                         domFunctions,
-                                        tokenize: codeHost.codeViewsRequireTokenization !== false,
+                                        tokenize: !!(typeof overrideTokenize === 'boolean'
+                                            ? overrideTokenize
+                                            : codeHost.codeViewsRequireTokenization),
                                     })
                                 ),
                                 resolveContext,
@@ -1219,6 +1222,7 @@ export function handleCodeHost({
                                 scrollBoundaries: codeViewEvent.getScrollBoundaries
                                     ? codeViewEvent.getScrollBoundaries(codeViewEvent.element)
                                     : [],
+                                overrideTokenize,
                             })
                         }
                     })
@@ -1232,6 +1236,10 @@ export function handleCodeHost({
                     render(
                         <CodeViewToolbar
                             {...codeHost.codeViewToolbarClassProps}
+                            actionItemClass={
+                                codeViewEvent.toolbarButtonProps?.actionItemClass ??
+                                codeHost.codeViewToolbarClassProps?.actionItemClass
+                            }
                             hideActions={hideActions}
                             fileInfoOrError={diffOrBlobInfo}
                             sourcegraphURL={sourcegraphURL}

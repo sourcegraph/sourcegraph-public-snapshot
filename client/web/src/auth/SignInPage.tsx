@@ -14,7 +14,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { SourcegraphIcon } from './icons'
 import { OrDivider } from './OrDivider'
-import { getReturnTo } from './SignInSignUpCommon'
+import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
@@ -72,9 +72,7 @@ export const SignInPage: React.FunctionComponent<SignInPageProps> = props => {
                         /* eslint-disable react/no-array-index-key */
                         <div className="mb-2" key={index}>
                             <a
-                                href={`${provider.authenticationURL || ''}${
-                                    props.context.sourcegraphDotComMode ? '&redirect=/welcome' : ''
-                                }`}
+                                href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
                                 className="btn btn-secondary btn-block"
                             >
                                 {provider.displayName === 'GitHub' && (
