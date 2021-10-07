@@ -7,12 +7,11 @@ import (
 	"testing"
 )
 
-func init() {
-	sharedConfig.FrontendPassword = "hunter2"
-}
-
 func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
+	accessToken := "hunter2"
+
 	ts := httptest.NewServer(basicAuthMiddleware(
+		func() string { return accessToken },
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)
 		}),
@@ -37,7 +36,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// wrong password
-	req.SetBasicAuth("anything", strings.ToUpper(sharedConfig.FrontendPassword))
+	req.SetBasicAuth("anything", strings.ToUpper(accessToken))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -47,7 +46,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// correct token
-	req.SetBasicAuth("anything", sharedConfig.FrontendPassword)
+	req.SetBasicAuth("anything", accessToken)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)

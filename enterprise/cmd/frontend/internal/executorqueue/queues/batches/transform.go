@@ -53,8 +53,8 @@ type batchesStore interface {
 	DB() dbutil.DB
 }
 
-// transformBatchSpecWorkspaceExecutionJobRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
-func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, config *Config) (apiclient.Job, error) {
+// transformRecord transforms a *btypes.BatchSpecWorkspaceExecutionJob into an apiclient.Job.
+func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecWorkspaceExecutionJob, accessToken string) (apiclient.Job, error) {
 	// MAYBE: We could create a view in which batch_spec and repo are joined
 	// against the batch_spec_workspace_job so we don't have to load them
 	// separately.
@@ -106,7 +106,7 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 
 	frontendURL := conf.Get().ExternalURL
 
-	srcEndpoint, err := makeURL(frontendURL, config.Shared.FrontendPassword)
+	srcEndpoint, err := makeURL(frontendURL, accessToken)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -151,7 +151,7 @@ func transformBatchSpecWorkspaceExecutionJobRecord(ctx context.Context, s batche
 			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
 			// ship the values to a third party, but not to trust to ensure the values are absent
 			// from the command's stdout or stderr streams.
-			config.Shared.FrontendPassword: "PASSWORD_REMOVED",
+			accessToken: "PASSWORD_REMOVED",
 
 			// 🚨 SECURITY: Redact the access token used for src-cli to talk to
 			// Sourcegraph instance.
