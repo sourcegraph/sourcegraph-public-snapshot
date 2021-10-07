@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"strings"
 
@@ -320,10 +319,6 @@ func (s BitbucketServerSource) getUserFork(ctx context.Context, parent *bitbucke
 		}
 
 		for _, fork := range forks {
-			js, err := json.Marshal(fork)
-			if err != nil {
-				panic(err)
-			}
 			// This looks insane, because the underlying API is insane: there's
 			// an Owner field that is _sometimes_ populated on the fork, but not
 			// always, and without it the only reference to the username is the
