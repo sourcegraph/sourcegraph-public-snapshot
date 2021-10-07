@@ -8,7 +8,6 @@ import (
 )
 
 func init() {
-	sharedConfig.FrontendUsername = "test"
 	sharedConfig.FrontendPassword = "hunter2"
 }
 
@@ -37,18 +36,8 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 		t.Errorf("unexpected www-authenticate header. want=%q have=%q", `Basic realm="Sourcegraph"`, value)
 	}
 
-	// wrong username
-	req.SetBasicAuth(strings.ToUpper(sharedConfig.FrontendUsername), sharedConfig.FrontendPassword)
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
-	}
-
 	// wrong password
-	req.SetBasicAuth(sharedConfig.FrontendUsername, strings.ToUpper(sharedConfig.FrontendPassword))
+	req.SetBasicAuth("anything", strings.ToUpper(sharedConfig.FrontendPassword))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -58,7 +47,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// correct token
-	req.SetBasicAuth(sharedConfig.FrontendUsername, sharedConfig.FrontendPassword)
+	req.SetBasicAuth("anything", sharedConfig.FrontendPassword)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
