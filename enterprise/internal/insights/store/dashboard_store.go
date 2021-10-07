@@ -238,4 +238,3 @@ type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
 	DeleteDashboard(ctx context.Context, id int64) error
 }
-
