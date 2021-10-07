@@ -1,0 +1,25 @@
+.root {
+    grid-column: 2;
+    grid-row: 2;
+    padding-right: 1rem;
+    padding-bottom: 0.25rem;
+
+    @media (--md-breakpoint-down) {
+        grid-column: 1;
+        grid-row: 2;
+        padding-left: 1rem;
+    }
+}
+
+.container {
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    background-color: var(--color-bg-2);
+    list-style: none;
+    margin: 0;
+}
+
+.suggestion {
+    padding: 0.25rem 0.5rem;
+    background-color: var(--input-bg);
+}
