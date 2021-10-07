@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"
@@ -93,10 +95,20 @@ type DashboardGrant struct {
 	Global *bool
 }
 
-func (i DashboardGrant) toQuery(dashboardID int) *sqlf.Query {
+func (i DashboardGrant) IsValid() bool {
+	if i.OrgID != nil || i.UserID != nil || i.Global != nil {
+		return true
+	}
+	return false
+}
+
+func (i DashboardGrant) toQuery(dashboardID int) (*sqlf.Query, error) {
+	if !i.IsValid() {
+		return nil, errors.New("invalid dashboard grant, no principal assigned")
+	}
 	// dashboard_id, org_id, user_id, global
 	valuesFmt := "(%s, %s, %s, %s)"
-	return sqlf.Sprintf(valuesFmt, dashboardID, i.OrgID, i.UserID, i.Global)
+	return sqlf.Sprintf(valuesFmt, dashboardID, i.OrgID, i.UserID, i.Global), nil
 }
 
 func UserDashboardGrant(userID int) DashboardGrant {

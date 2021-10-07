@@ -189,7 +189,11 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboard typ
 
 	values := make([]*sqlf.Query, 0, len(grants))
 	for _, grant := range grants {
-		values = append(values, grant.toQuery(dashboard.ID))
+		grantQuery, err := grant.toQuery(dashboard.ID)
+		if err != nil {
+			return err
+		}
+		values = append(values, grantQuery)
 	}
 	q := sqlf.Sprintf(addDashboardGrantsSql, sqlf.Join(values, ",\n"))
 	err := s.Exec(ctx, q)
