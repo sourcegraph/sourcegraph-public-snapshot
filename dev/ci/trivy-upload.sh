@@ -49,7 +49,7 @@ ARGS=(
   "accept:application/vnd.github.v3+json"
 
   "--raw-field"
-  "tool_name=trivy@${IMAGE}"
+  "tool_name=trivy@${APP}"
 
   "--field"
   "commit_sha=${COMMIT:-${BUILDKITE_COMMIT}}"
@@ -58,6 +58,9 @@ ARGS=(
   # but I'm doing the simple case for now
   "--field"
   "ref=refs/heads/${BUILDKITE_BRANCH}"
+
+  "--field"
+  "checkout_uri=${APP}"
 
   "--field"
   "started_at=${DATE}"

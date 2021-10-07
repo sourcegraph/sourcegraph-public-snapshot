@@ -509,6 +509,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.DependsOn(candidateImageStepKey(app)),
 
 			bk.Env("IMAGE", image),
+			bk.Env("APP", app),
 
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 			bk.Cmd("./dev/ci/trivy-upload.sh"),
