@@ -9,5 +9,4 @@ export GITHUB_TOKEN="${GH_TOKEN}"
 # inside of CI's logs
 set -x
 
-docker pull "${IMAGE}"
-trivy image "$@" "${IMAGE}"
+trivy image "$@"

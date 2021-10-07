@@ -500,6 +500,8 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 		// we'll only take action on higher severity CVE's
 		"--severity",
 		"HIGH,CRITICAL",
+
+		image,
 	}
 
 	return func(pipeline *bk.Pipeline) {
@@ -508,10 +510,12 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 			bk.Env("IMAGE", image),
 
+			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+			bk.Cmd("./dev/ci/trivy-upload.sh"),
 			bk.Cmd(fmt.Sprintf("./dev/ci/trivy-scan.sh %s", strings.Join(trivyArgs, " "))),
 		}
 
-		pipeline.AddStep(fmt.Sprintf(":trivy: 🔎 %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
 	}
 }
 
