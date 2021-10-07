@@ -36,9 +36,8 @@
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
   - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
+  - [`sg ci` - Interact with Sourcegraph's continuous integration pipelines](#sg-ci)
   - [`sg teammate [time,handbook]` - Get current time, or open their handbook page](#sg-rfc---get-current-time-or-open-their-handbook-page)
-  - [`sg ci [preview]` - Preview build steps of the current branch on the CI](#sg-rfc---preview-build-steps-of-the-current-branch-on-the-ci)
-    list-or-open-sourcegraph-rfcs)
 - [Configuration](#configuration)
 - [Contributing to sg](#contributing-to-sg)
 
@@ -216,6 +215,18 @@ sg rfc search "search terms"
 sg rfc open 420
 ```
 
+### `sg ci`
+
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+
+```bash
+# Preview what a CI run for your current changes will look like
+sg ci preview
+
+# Check on the status of your changes in the Buildkite pipeline
+sg ci status
+```
+
 ### `sg teammate` - Get current time or open their handbook page
 
 ```bash
@@ -227,14 +238,6 @@ sg teammate time thorsten ball
 
 # Open their handbook bio
 sg teammate handbook asdine
-```
-
-### `sg ci` - Preview build steps of the current branch on the CI
-
-```bash
-# Preview build steps and displays detected changes
-# (must be a on branch and accuracy depends on origin/main)
-sg ci preview
 ```
 
 ## Configuration
