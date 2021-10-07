@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -143,41 +144,12 @@ func (c Config) candidateImageTag() string {
 func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
 	var changedFiles []string
 
-	diffCommand := []string{"diff", "--name-only"}
-	if commit != "" {
-		// run a diff against the previous commits:
-		// get the latest builds for the current branch
-		// from buildkite
-		builds, _, err := bkClient.Builds.ListByPipeline("sourcegraph", "sourcegraph", &buildkite.BuildsListOptions{
-			Branch: branch,
-			State:  []string{"passed"},
-			ListOptions: buildkite.ListOptions{
-				PerPage: 1,
-			},
-		})
-		if err != nil {
-			return nil, "", err
-		}
-
-		// if there are no previous builds diff with main
-		if len(builds) == 0 {
-			diffCommand = append(diffCommand, "origin/main..."+commit)
-		} else {
-			build := builds[0]
-			if build.State == nil || *build.State != "passed" {
-				// if any build is not passed, diff with main
-				diffCommand = append(diffCommand, "origin/main..."+commit)
-			} else {
-				// otherwise, diff with the previous build
-				diffCommand = append(diffCommand, *build.Commit+"..."+branch)
-			}
-		}
-	} else {
-		diffCommand = append(diffCommand, "origin/main...")
-		// for testing
-		commit = "1234567890123456789012345678901234567890"
+	diffCommand, commit, err := buildDiffCommand(bkClient, branch, commit)
+	if err != nil {
+		return nil, commit, err
 	}
 
+	fmt.Fprintf(os.Stderr, "Running git %s\n", strings.Join(diffCommand, " "))
 	cmd := exec.Command("git", diffCommand...)
 	cmd.Stderr = os.Stderr
 	if output, err := cmd.Output(); err != nil {
@@ -187,4 +159,63 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 	}
 
 	return changedFiles, commit, nil
+}
+
+func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
+	diffCommand := []string{"diff", "--name-only"}
+	if commit == "" {
+		diffCommand = append(diffCommand, "origin/main...")
+		// for testing
+		commit = "1234567890123456789012345678901234567890"
+		return diffCommand, commit, nil
+	}
+
+	// run a diff against the previous commits:
+	// get the latest builds for the current branch
+	// from buildkite
+	builds, _, err := bkClient.Builds.ListByPipeline("sourcegraph", "sourcegraph", &buildkite.BuildsListOptions{
+		Branch: branch,
+		State:  []string{"passed"},
+		ListOptions: buildkite.ListOptions{
+			PerPage: 1,
+		},
+	})
+	if err != nil {
+		return nil, "", err
+	}
+
+	// if there are no previous builds diff with main
+	if len(builds) == 0 {
+		return append(diffCommand, "origin/main..."+commit), commit, nil
+	}
+
+	build := builds[0]
+	if build.State == nil || *build.State != "passed" {
+		// if any build is not passed, diff with main
+		return append(diffCommand, "origin/main..."+commit), commit, nil
+	}
+
+	// diff with the previous build commit
+	// after making sure the commit is in that branch
+	var buf bytes.Buffer
+	cmd := exec.Command("git", "branch", "--contains", *build.Commit)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = &buf
+	if err := cmd.Run(); err != nil {
+		return nil, "", err
+	}
+	var found bool
+	for _, b := range strings.Split(buf.String(), "\n") {
+		if strings.TrimSpace(strings.TrimLeft(b, "*")) == branch {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return append(diffCommand, "origin/main..."+commit), commit, nil
+	}
+
+	diffCommand = append(diffCommand, *build.Commit+"..."+branch)
+
+	return diffCommand, commit, nil
 }
