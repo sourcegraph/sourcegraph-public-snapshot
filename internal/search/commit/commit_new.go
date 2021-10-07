@@ -21,14 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
-type SearchJob struct {
+type CommitSearch struct {
 	Query gitprotocol.Node
 	Repos []*search.RepositoryRevisions
 	Diff  bool
 	Limit int
 }
 
-func (j SearchJob) Run(ctx context.Context, stream streaming.Sender) error {
+func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, repoRev := range j.Repos {
 		// Skip the repo if no revisions were resolved for it
@@ -67,14 +67,14 @@ func (j SearchJob) Run(ctx context.Context, stream streaming.Sender) error {
 	return g.Wait()
 }
 
-func (j SearchJob) Name() string {
+func (j CommitSearch) Name() string {
 	if j.Diff {
 		return "Diff"
 	}
 	return "Commit"
 }
 
-func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*SearchJob, error) {
+func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*CommitSearch, error) {
 	resultType := "commit"
 	if diff {
 		resultType = "diff"
@@ -83,7 +83,7 @@ func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, lim
 		return nil, err
 	}
 
-	return &SearchJob{
+	return &CommitSearch{
 		Query: gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...),
 		Repos: repos,
 		Diff:  diff,
