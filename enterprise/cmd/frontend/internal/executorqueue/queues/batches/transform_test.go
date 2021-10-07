@@ -41,7 +41,6 @@ func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 	})
 	config := &Config{
 		Shared: &config.SharedConfig{
-			FrontendUsername: "test*",
 			FrontendPassword: "hunter2",
 		},
 	}
@@ -109,16 +108,15 @@ func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 				},
 				Dir: ".",
 				Env: []string{
-					"SRC_ENDPOINT=https://test%2A:hunter2@test.io",
+					"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
 					"SRC_ACCESS_TOKEN=" + accessToken,
 				},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
-			"test*":                           "USERNAME_REMOVED",
-			"hunter2":                         "PASSWORD_REMOVED",
-			accessToken:                       "SRC_ACCESS_TOKEN_REMOVED",
+			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
+			"hunter2":                             "PASSWORD_REMOVED",
+			accessToken:                           "SRC_ACCESS_TOKEN_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

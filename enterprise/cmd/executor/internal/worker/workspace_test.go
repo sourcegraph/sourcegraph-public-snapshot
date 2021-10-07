@@ -17,7 +17,6 @@ func TestPrepareWorkspace(t *testing.T) {
 		ClientOptions: apiclient.Options{
 			EndpointOptions: apiclient.EndpointOptions{
 				URL:      "https://test.io",
-				Username: "test",
 				Password: "hunter2",
 			},
 		},
@@ -46,7 +45,7 @@ func TestPrepareWorkspace(t *testing.T) {
 
 	expectedCommands := [][]string{
 		{"git", "-C", dir, "init"},
-		{"git", "-C", dir, "-c", "protocol.version=2", "fetch", "https://test:hunter2@test.io/internal/git/torvalds/linux", "-t", "deadbeef"},
+		{"git", "-C", dir, "-c", "protocol.version=2", "fetch", "https://sourcegraph:hunter2@test.io/internal/git/torvalds/linux", "-t", "deadbeef"},
 		{"git", "-C", dir, "remote", "add", "origin", "torvalds/linux"},
 		{"git", "-C", dir, "checkout", "deadbeef"},
 	}

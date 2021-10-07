@@ -35,7 +35,6 @@ func TestTransformRecord(t *testing.T) {
 	})
 	config := &Config{
 		Shared: &config.SharedConfig{
-			FrontendUsername: "test*",
 			FrontendPassword: "hunter2",
 		},
 	}
@@ -75,13 +74,12 @@ func TestTransformRecord(t *testing.T) {
 					"-associated-index-id", "42",
 				},
 				Dir: "web",
-				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io"},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
-			"test*":                           "USERNAME_REMOVED",
-			"hunter2":                         "PASSWORD_REMOVED",
+			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
+			"hunter2":                             "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
@@ -117,7 +115,6 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	})
 	config := &Config{
 		Shared: &config.SharedConfig{
-			FrontendUsername: "test*",
 			FrontendPassword: "hunter2",
 		},
 	}
@@ -157,13 +154,12 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					"-associated-index-id", "42",
 				},
 				Dir: "",
-				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io"},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
-			"test*":                           "USERNAME_REMOVED",
-			"hunter2":                         "PASSWORD_REMOVED",
+			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
+			"hunter2":                             "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

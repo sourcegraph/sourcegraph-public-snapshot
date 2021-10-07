@@ -50,7 +50,8 @@ func newExecutorQueueHandler(queueOptions map[string]handler.QueueOptions, uploa
 // in which a shared key exchange can be done so safely.
 func basicAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username, password, ok := r.BasicAuth()
+		// We don't care about the username. Only the password matters here.
+		_, password, ok := r.BasicAuth()
 		if !ok {
 			// This header is required to be present with 401 responses in order to prompt the client
 			// to retry the request with basic auth credentials. If we do not send this header, the
@@ -59,17 +60,12 @@ func basicAuthMiddleware(next http.Handler) http.Handler {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		if sharedConfig.FrontendUsername == "" {
-			w.WriteHeader(http.StatusInternalServerError)
-			log15.Error("invalid value for EXECUTOR_FRONTEND_USERNAME: no value supplied")
-			return
-		}
 		if sharedConfig.FrontendPassword == "" {
 			w.WriteHeader(http.StatusInternalServerError)
 			log15.Error("invalid value for EXECUTOR_FRONTEND_PASSWORD: no value supplied")
 			return
 		}
-		if username != sharedConfig.FrontendUsername || password != sharedConfig.FrontendPassword {
+		if password != sharedConfig.FrontendPassword {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		}

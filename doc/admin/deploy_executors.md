@@ -17,13 +17,11 @@ In order for the executors to dequeue and perform work, they must be able to rea
 
 The `frontend` service must define the following environment variables:
 
-- `EXECUTOR_FRONTEND_USERNAME`
 - `EXECUTOR_FRONTEND_PASSWORD`
 
 The `executor` service must define the following environment variables:
 
 - `EXECUTOR_FRONTEND_URL`
-- `EXECUTOR_FRONTEND_USERNAME`
 - `EXECUTOR_FRONTEND_PASSWORD`
 
 When using a Sourcegraph Terraform module to provision executors, the required executor environment variables can be set via:
