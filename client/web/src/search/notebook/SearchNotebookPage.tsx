@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
@@ -21,7 +22,8 @@ interface SearchNotebookPageProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'allExpanded'> {
+        Omit<StreamingSearchResultsListProps, 'allExpanded'>,
+        ExtensionsControllerProps<'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
 }

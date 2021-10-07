@@ -8,7 +8,7 @@ root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
 root_dir=$(pwd)
 
-export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
+export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER-$BUILDKITE_JOB_ID"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {

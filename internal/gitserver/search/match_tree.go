@@ -35,6 +35,8 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	case *protocol.DiffModifiesFile:
 		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
 		return &DiffModifiesFile{re}, err
+	case *protocol.Boolean:
+		return &Constant{v.Value}, nil
 	case *protocol.Operator:
 		operands := make([]MatchTree, 0, len(v.Operands))
 		for _, operand := range v.Operands {
@@ -215,6 +217,14 @@ func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (bool, MatchedCommit, error) 
 	}, nil
 }
 
+type Constant struct {
+	Value bool
+}
+
+func (c *Constant) Match(*LazyCommit) (bool, MatchedCommit, error) {
+	return c.Value, MatchedCommit{}, nil
+}
+
 type Operator struct {
 	Kind     protocol.OperatorKind
 	Operands []MatchTree
@@ -227,7 +237,7 @@ func (o *Operator) Match(commit *LazyCommit) (bool, MatchedCommit, error) {
 		if err != nil {
 			return false, MatchedCommit{}, err
 		}
-		return matched, MatchedCommit{}, nil
+		return !matched, MatchedCommit{}, nil
 	case protocol.And:
 		resultMatches := MatchedCommit{}
 		for _, operand := range o.Operands {

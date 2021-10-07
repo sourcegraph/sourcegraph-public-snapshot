@@ -4,6 +4,7 @@ import { NEVER } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -34,6 +35,7 @@ add('default', () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+                extensionsController={extensionsController}
             />
         )}
     </WebStory>
@@ -53,6 +55,7 @@ add('default read-only', () => (
                 onSerializeBlocks={() => {}}
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
+                extensionsController={extensionsController}
             />
         )}
     </WebStory>

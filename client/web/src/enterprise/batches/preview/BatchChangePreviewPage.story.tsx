@@ -43,6 +43,7 @@ const batchSpec = (): BatchSpecFields => ({
         description: 'This is the description',
     },
     diffStat: {
+        __typename: 'DiffStat',
         added: 10,
         changed: 8,
         deleted: 10,
