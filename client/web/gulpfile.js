@@ -150,11 +150,12 @@ async function webpackDevelopmentServer() {
     const banner = '==============================================='
     const emptyLine = ' '.repeat(banner.length)
     const lineLength = banner.length
+    /**
+     * @param {string} content
+     */
     const paddedLine = content => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const spaceRequired = lineLength - content.length
       const half = spaceRequired / 2
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       let line = `${' '.repeat(half)}${content}${' '.repeat(half)}`
       if (line.length < lineLength) {
         line += ' '
