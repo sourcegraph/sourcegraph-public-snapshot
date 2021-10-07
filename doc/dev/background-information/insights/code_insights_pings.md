@@ -8,9 +8,11 @@ We keep this docs page up to date because pings are a vital component of our pro
 
 ### Additions count, edits count, and removals count 
 
+**Intended purpose:** To track how many times customers have created, edited, and removed insights, by week. 
+
 **Functional implementation:** This ping works by diffing settings files, because insight configs are currently stored in settings files. 
 
-**Other considerations:** This is an "imperfect" ping because not all additions + removals directly translate to a new insight or a deleted insight, due to the complications with using settings files as a source of truth. We'll be fixing this when we migrate to a backend database in 3.33. 
+**Other considerations:** This is an "imperfect" ping because not all additions + removals directly translate to a new insight or a deleted insight, due to the complications with using settings files as a source of truth. We'll be fixing this when we migrate to a backend database in 3.33. Note also we're using this as a "total insights" metric for the same imperfect reason (additions - removals = total created) and when we migrate to the backend database we should build an additional separate ping that is just "total insights existing on the instance" per week. 
 
 - Aggregation: By week 
 - Event Code: [InsightAddition](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightAddition%27&patternType=literal), [InsightEdit](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightEdit%27&patternType=literal), [InsightRemoval](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27InsightRemoval%27&patternType=literal)
@@ -20,6 +22,8 @@ We keep this docs page up to date because pings are a vital component of our pro
 
 
 ### Hovers count
+
+**Intended purpose:** To track how many times users hover over a datapoint to see the tooltip on the graph, or "dig in" to the information. 
 
 **Functional implementation:** This ping works by firing an event on the client when a user hovers over a datapoint on a code insight. 
 
@@ -33,6 +37,7 @@ We keep this docs page up to date because pings are a vital component of our pro
 
 ### UI customizations count
 
+**Intended purpose:** To track how many times users resize the insight graphs. 
 
 **Functional implementation:** This ping works by firing an event on the client when a user resizes a Code Insights graph on the page. 
 
@@ -45,6 +50,8 @@ We keep this docs page up to date because pings are a vital component of our pro
 <!-- - **Known versions broken:** N/A -->
 
 ### Data point clicks count
+
+**Intended purpose:** To track how many times users click a datapoint to get to a diff search. 
 
 **Functional implementation:** This ping works by firing an event on the client when a user clicks an individual data point of an insight graph, which takes them to a diff search. 
 
@@ -59,6 +66,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Page views count
 
+**Intended purpose:** To track how many times users view insights pages. 
+
 **Functional implementation:** This ping works by firing an event on the client when a user views _any_ /insights page, whether it's creating or viewing insights.  
 
 **Other considerations:** As we add new insights pages it's important to make sure we're adding pages to this counter. 
@@ -70,6 +79,8 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 - **Version(s) broken:** 3.25-3.26 (not weekly)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/20070/files)), 3.30 (broken when switching to dashboard pages, didn't track dashboard views)([fix PR](https://github.com/sourcegraph/sourcegraph/pull/24129/files))
 
 ### Unique page views count (weekly)
+
+**Intended purpose:** To track how many unique users are viewing insights pages each week. 
 
 **Functional implementation:** This ping works by firing an event on the client when a unique user views _any_ /insights page for the first time that week, whether it's creating or viewing insights.  
 
