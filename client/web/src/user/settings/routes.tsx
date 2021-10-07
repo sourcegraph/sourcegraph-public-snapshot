@@ -11,9 +11,9 @@ import { UserSettingsAreaRoute, UserSettingsAreaRouteContext } from './UserSetti
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
-const UserSettingsRepositoriesPage = lazyComponent(
-    () => import('./repositories/UserSettingsRepositoriesPage'),
-    'UserSettingsRepositoriesPage'
+const SettingsRepositoriesPage = lazyComponent(
+    () => import('./repositories/SettingsRepositoriesPage'),
+    'SettingsRepositoriesPage'
 )
 const UserSettingsManageRepositoriesPage = lazyComponent(
     () => import('./repositories/UserSettingsManageRepositoriesPage'),
@@ -97,9 +97,10 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: '/repositories',
         render: props => (
-            <UserSettingsRepositoriesPage
+            <SettingsRepositoriesPage
                 {...props}
-                userID={props.user.id}
+                ownerID={props.user.id}
+                ownerType="user"
                 routingPrefix={props.user.url + '/settings'}
             />
         ),

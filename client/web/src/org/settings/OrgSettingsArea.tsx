@@ -10,14 +10,14 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { UserAddCodeHostsPageContainer } from '../../user/settings/UserAddCodeHostsPageContainer'
+import { SettingsRepositoriesPage } from '../../user/settings/repositories/SettingsRepositoriesPage'
+// import { UserAddCodeHostsPageContainer } from '../../user/settings/UserAddCodeHostsPageContainer'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
+import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
 import { OrgSettingsMembersPage } from './members/OrgSettingsMembersPage'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
-import { UserSettingsRepositoriesPage } from '../../user/settings/repositories/UserSettingsRepositoriesPage'
-import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -39,6 +39,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
     if (!props.authenticatedUser) {
         return null
     }
+
     return (
         <div className="d-flex">
             <OrgSettingsSidebar {...props} className="flex-0 mr-3" />
@@ -108,10 +109,11 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 exact={true}
                                 render={routeComponentProps => (
-                                    <UserSettingsRepositoriesPage
+                                    <SettingsRepositoriesPage
                                         {...routeComponentProps}
                                         {...props}
-                                        userID={props.authenticatedUser.id}
+                                        ownerID={props.org.id}
+                                        ownerType="org"
                                         routingPrefix={`${props.org.url}/settings`}
                                         onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                     />

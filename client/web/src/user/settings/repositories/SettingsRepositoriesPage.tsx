@@ -1,114 +1,62 @@
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { RouteComponentProps } from 'react-router'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Badge } from '@sourcegraph/web/src/components/Badge'
+import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
+import {
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArguments,
+    Connection,
+} from '@sourcegraph/web/src/components/FilteredConnection'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
-import { queryExternalServices } from '../../../components/externalServices/backend'
-import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-    Connection,
-} from '../../../components/FilteredConnection'
-import { PageTitle } from '../../../components/PageTitle'
 import {
     SiteAdminRepositoryFields,
-    UserRepositoriesResult,
-    UserRepositoriesVariables,
     ExternalServicesResult,
     CodeHostSyncDueResult,
     CodeHostSyncDueVariables,
+    RepositoriesResult,
 } from '../../../graphql-operations'
-import { listUserRepositories } from '../../../site-admin/backend'
+import {
+    listUserRepositories,
+    listOrgRepositories,
+    fetchUserRepositoriesCount,
+    fetchOrgRepositoriesCount,
+} from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 
-import { RepositoryNode } from './RepositoryNode'
+import { defaultFilters, RepositoriesList } from './RepositoriesList'
 
 interface Props
-    extends RouteComponentProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
-    userID: string
+    ownerID: string
+    ownerType: 'user' | 'org'
     routingPrefix: string
 }
-
-interface RowProps {
-    node: SiteAdminRepositoryFields
-}
-
-const DEFAULT_FILTERS: FilteredConnectionFilter[] = [
-    {
-        label: 'Status',
-        type: 'select',
-        id: 'status',
-        tooltip: 'Repository status',
-        values: [
-            {
-                value: 'all',
-                label: 'All',
-                args: {},
-            },
-            {
-                value: 'cloned',
-                label: 'Cloned',
-                args: { cloned: true, notCloned: false },
-            },
-            {
-                value: 'not-cloned',
-                label: 'Not Cloned',
-                args: { cloned: false, notCloned: true },
-            },
-        ],
-    },
-    {
-        label: 'Code host',
-        type: 'select',
-        id: 'code-host',
-        tooltip: 'Code host',
-        values: [
-            {
-                value: 'all',
-                label: 'All',
-                args: {},
-            },
-        ],
-    },
-]
-
-const Row: React.FunctionComponent<RowProps> = props => (
-    <RepositoryNode
-        name={props.node.name}
-        url={props.node.url}
-        serviceType={props.node.externalRepository.serviceType.toUpperCase()}
-        mirrorInfo={props.node.mirrorInfo}
-        isPrivate={props.node.isPrivate}
-    />
-)
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
 
 /**
  * A page displaying the repositories for this user.
  */
-export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
-    history,
-    location,
-    userID,
+export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
+    ownerID,
+    ownerType,
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
@@ -118,6 +66,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
+
+    const fetchRepositories = ownerType === 'user' ? listUserRepositories : listOrgRepositories
+    const fetchRepositoriesCount = ownerType === 'user' ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
 
     const NoAddedReposBanner = (
         <Container className="text-center">
@@ -138,66 +89,17 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         </Container>
     )
 
-    const fetchUserReposCount = useCallback(
-        async (): Promise<UserRepositoriesResult> =>
-            dataOrThrowErrors(
-                await requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
-                    gql`
-                        query UserRepositoriesTotalCount(
-                            $id: ID!
-                            $first: Int
-                            $query: String
-                            $cloned: Boolean
-                            $notCloned: Boolean
-                            $indexed: Boolean
-                            $notIndexed: Boolean
-                            $externalServiceID: ID
-                        ) {
-                            node(id: $id) {
-                                ... on User {
-                                    __typename
-                                    repositories(
-                                        first: $first
-                                        query: $query
-                                        cloned: $cloned
-                                        notCloned: $notCloned
-                                        indexed: $indexed
-                                        notIndexed: $notIndexed
-                                        externalServiceID: $externalServiceID
-                                    ) {
-                                        totalCount(precise: true)
-                                    }
-                                }
-                            }
-                        }
-                    `,
-                    {
-                        id: userID,
-                        cloned: true,
-                        notCloned: true,
-                        indexed: true,
-                        notIndexed: true,
-                        first: null,
-                        query: null,
-                        externalServiceID: null,
-                    }
-                ).toPromise()
-            ),
-
-        [userID]
-    )
-
     const fetchExternalServices = useCallback(
         async (): Promise<ExternalServicesResult['externalServices']['nodes']> =>
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: userID,
+                namespace: ownerID,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [userID]
+        [ownerID]
     )
 
     const fetchCodeHostSyncDueStatus = useCallback(
@@ -219,15 +121,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         setExternalServices(services)
 
         // check if user has any manually added or affiliated repositories
-        const result = await fetchUserReposCount()
-        const userRepoCount =
-            result?.node?.__typename === 'User' && result.node.repositories.totalCount
-                ? result.node.repositories.totalCount
-                : 0
-        if (userRepoCount) {
+        const result = await fetchRepositoriesCount({
+            id: ownerID,
+        }) // fetchUserReposCount()
+        const repoCount = result.node.repositories.totalCount || 0
+
+        if (repoCount) {
             setHasRepos(true)
         }
-        onUserExternalServicesOrRepositoriesUpdate(services.length, userRepoCount)
+        onUserExternalServicesOrRepositoriesUpdate(services.length, repoCount)
 
         // configure filters
         const specificCodeHostFilters = services.map(service => ({
@@ -237,7 +139,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             args: { externalServiceID: service.id },
         }))
 
-        const [statusFilter, codeHostFilter] = DEFAULT_FILTERS
+        const [statusFilter, codeHostFilter] = defaultFilters
 
         // update default code host filter by adding GitLab and/or GitHub filters
         const updatedCodeHostFilter = {
@@ -246,7 +148,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchUserReposCount, onUserExternalServicesOrRepositoriesUpdate])
+    }, [fetchExternalServices, fetchRepositoriesCount, onUserExternalServicesOrRepositoriesUpdate, ownerID])
 
     const TWO_SECONDS = 2
 
@@ -305,11 +207,9 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         init().catch(error => setStatus(asError(error)))
     }, [init, status])
 
-    const queryRepositories = useCallback(
-        (
-            args: FilteredConnectionQueryArguments
-        ): Observable<(NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']> =>
-            listUserRepositories({ ...args, id: userID }).pipe(
+    const queryRepos = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<NonNullable<RepositoriesResult>['repositories']> =>
+            fetchRepositories({ ...args, id: ownerID }).pipe(
                 tap(() => {
                     if (status === 'schedule-complete') {
                         setUpdateReposList(!updateReposList)
@@ -317,7 +217,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     }
                 })
             ),
-        [userID, status, updateReposList]
+        [ownerID, status, updateReposList, fetchRepositories]
     )
 
     const onRepoQueryUpdate = useCallback(
@@ -337,36 +237,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             }
         },
         []
-    )
-
-    const NoMatchedRepos = (
-        <div className="border rounded p-3">
-            <small>No repositories matched.</small>
-        </div>
-    )
-
-    const RepoFilteredConnection = (
-        <Container>
-            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-                className="table mb-0"
-                defaultFirst={15}
-                compact={false}
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                updateOnChange={String(updateReposList)}
-                nodeComponent={Row}
-                listComponent="table"
-                listClassName="w-100"
-                onUpdate={onRepoQueryUpdate}
-                filters={repoFilters}
-                history={history}
-                location={location}
-                emptyElement={NoMatchedRepos}
-                totalCountSummaryComponent={TotalCountSummary}
-                inputClassName="user-settings-repos__filter-input"
-            />
-        </Container>
     )
 
     const logManageRepositoriesClick = useCallback(() => {
@@ -445,18 +315,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline" />
                 </div>
             ) : hasRepos ? (
-                RepoFilteredConnection
+                <RepositoriesList
+                    queryRepos={queryRepos}
+                    updateReposList={updateReposList}
+                    onRepoQueryUpdate={onRepoQueryUpdate}
+                    repoFilters={repoFilters}
+                />
             ) : (
                 NoAddedReposBanner
             )}
         </div>
     )
 }
-
-const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-    <div className="d-inline-block mt-4 mr-2">
-        <small>
-            {totalCount} {totalCount === 1 ? 'repository' : 'repositories'} total
-        </small>
-    </div>
-)
