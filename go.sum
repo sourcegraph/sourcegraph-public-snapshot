@@ -228,8 +228,6 @@ github.com/boj/redistore v0.0.0-20180917114910-cd5dcc76aeff/go.mod h1:+RTT1BOk5P
 github.com/bombsimon/wsl/v2 v2.0.0/go.mod h1:mf25kr/SqFEPhhcxW1+7pxzGlW+hIl/hYTKY95VwV8U=
 github.com/bombsimon/wsl/v2 v2.2.0/go.mod h1:Azh8c3XGEJl9LyX0/sFC+CKMc7Ssgua0g+6abzXN4Pg=
 github.com/bradfitz/gomemcache v0.0.0-20170208213004-1952afaa557d/go.mod h1:PmM6Mmwb0LSuEubjR8N7PtNe1KxZLtOUHtbeikc5h60=
-github.com/buildkite/go-buildkite v2.2.0+incompatible h1:yEjSu1axFC88x4dbufhgMDsEnJztPWlLiZzEvzJggXc=
-github.com/buildkite/go-buildkite v2.2.0+incompatible/go.mod h1:WTV0aX5KnQ9ofsKMg2CLUBLJNsQ0RwOEKPhrXXZWPcE=
 github.com/buildkite/go-buildkite/v3 v3.0.0 h1:IKIdPAlNWA+sb4sJFmccuEZmATJIOhyFyUd6SG031dY=
 github.com/buildkite/go-buildkite/v3 v3.0.0/go.mod h1:6pweknacVv7He5Lvbf54urp2P0W6/b4Nrcxn718PQrE=
 github.com/casbin/casbin/v2 v2.1.2/go.mod h1:YcPU1XXisHhLzuxH9coDNf2FbKpjGlbCg3n9yuLkIJQ=

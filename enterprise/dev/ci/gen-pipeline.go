@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	bk "github.com/buildkite/go-buildkite/buildkite"
+	bk "github.com/buildkite/go-buildkite/v3/buildkite"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buildkite/go-buildkite/buildkite"
+	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
@@ -178,7 +178,9 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 		commit = "1234567890123456789012345678901234567890"
 	}
 
-	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
+	cmd := exec.Command("git", diffCommand...)
+	cmd.Stderr = os.Stderr
+	if output, err := cmd.Output(); err != nil {
 		return nil, "", err
 	} else {
 		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
