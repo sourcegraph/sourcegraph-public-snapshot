@@ -60,7 +60,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// may already be stashed in the cursor decoded above, in which case we don't need to hit
 	// the database.
 
-	orderedMonikers, err := r.orderedMonikersFromCursor(ctx, adjustedUploads, &cursor, "import")
+	orderedMonikers, err := r.orderedMonikersFromCursor(ctx, adjustedUploads, &cursor, "export")
 	if err != nil {
 		return nil, "", err
 	}
