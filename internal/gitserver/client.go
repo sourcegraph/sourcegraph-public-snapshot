@@ -18,8 +18,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
-
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -34,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -44,6 +43,16 @@ var defaultDoer, _ = clientFactory.Doer()
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = NewClient(defaultDoer)
+
+var ClientMocks, emptyClientMocks struct {
+	GetObject func(objectName string) (*domain.GitObject, error)
+}
+
+// ResetClientMocks clears the mock functions set on Mocks (so that subsequent
+// tests don't inadvertently use them).
+func ResetClientMocks() {
+	ClientMocks = emptyClientMocks
+}
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.

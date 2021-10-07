@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -48,12 +49,17 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		}
 		return wantCommitID, nil
 	}
-	git.Mocks.GetObject = func(objectName string) (domain.OID, domain.ObjectType, error) {
+	defer git.ResetMocks()
+
+	gitserver.ClientMocks.GetObject = func(objectName string) (*domain.GitObject, error) {
 		oid := domain.OID{} // empty is OK for this test
 		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
-		return oid, domain.ObjectTypeTree, nil
+		return &domain.GitObject{
+			ID:   oid,
+			Type: domain.ObjectTypeTree,
+		}, nil
 	}
-	defer git.ResetMocks()
+	defer gitserver.ResetClientMocks()
 
 	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
 		rn := types.RepoName{
