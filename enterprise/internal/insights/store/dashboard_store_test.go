@@ -8,6 +8,7 @@ import (
 	"github.com/hexops/autogold"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 )
 
 func TestGetDashboard(t *testing.T) {
@@ -112,16 +113,31 @@ func TestDeleteDashboard(t *testing.T) {
 	}
 
 	t.Run("test delete dashboard", func(t *testing.T) {
-		err := store.DeleteDashboard(ctx, 1)
-		if err != nil {
-			t.Fatal(err)
-		}
-
 		got, err := store.GetDashboards(ctx, DashboardQueryArgs{})
 		if err != nil {
 			t.Fatal(err)
 		}
+		autogold.Want("BeforeDelete", []*types.Dashboard{
+			{
+				ID:    1,
+				Title: "test dashboard 1",
+			},
+			{
+				ID:    2,
+				Title: "test dashboard 2",
+			}}).Equal(t, got)
 
-		autogold.Equal(t, got, autogold.ExportedOnly())
+		err = store.DeleteDashboard(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterDelete", []*types.Dashboard{{
+			ID:    2,
+			Title: "test dashboard 2",
+		}}).Equal(t, got)
 	})
 }

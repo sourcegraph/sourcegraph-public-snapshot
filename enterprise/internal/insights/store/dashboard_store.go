@@ -87,7 +87,6 @@ func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int64) error 
 	return nil
 }
 
-
 func dashboardPermissionsQuery(args DashboardQueryArgs) *sqlf.Query {
 	permsPreds := make([]*sqlf.Query, 0, 2)
 	if len(args.OrgID) > 0 {
