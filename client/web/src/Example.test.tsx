@@ -25,7 +25,6 @@ const OtherComponent: React.FunctionComponent<ExampleComponentProps> = props => 
  * Used to test prop handling and data access
  */
 const ExampleComponent: React.FunctionComponent<ExampleComponentProps> = props => (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
     <button onClick={props.exampleFunction} disabled={props.exampleBool} aria-label={props.exampleString}>
         <OtherComponent {...props} />
     </button>
@@ -59,7 +58,7 @@ describe('Comparing React testing libraries', () => {
                   onClick={[MockFunction]}
                 >
                   <span>
-                    Example Key:
+                    Example Key: 
                     Hello world
                   </span>
                 </button>
@@ -95,7 +94,7 @@ describe('Comparing React testing libraries', () => {
                       exampleString="Label for button"
                     >
                       <span>
-                        Example Key:
+                        Example Key: 
                         Hello world
                       </span>
                     </OtherComponent>
@@ -126,16 +125,18 @@ describe('Comparing React testing libraries', () => {
 
         test('React testing library', () => {
             const { container } = render(<ExampleComponent {...mockProps} />)
-            expect(container.firstChild).toMatchInlineSnapshot(`
-                <button
-                  aria-label="Label for button"
-                  disabled=""
-                >
-                  <span>
-                    Example Key:
-                    Hello world
-                  </span>
-                </button>
+            expect(container).toMatchInlineSnapshot(`
+                <div>
+                  <button
+                    aria-label="Label for button"
+                    disabled=""
+                  >
+                    <span>
+                      Example Key: 
+                      Hello world
+                    </span>
+                  </button>
+                </div>
             `)
         })
     })
