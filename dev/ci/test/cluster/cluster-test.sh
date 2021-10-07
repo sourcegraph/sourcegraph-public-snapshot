@@ -62,7 +62,7 @@ function cluster_setup() {
   popd
   #  ./create-new-cluster.sh
   ./overlay-generate-cluster.sh ci generated-cluster
-  pushd generate-cluster
+  pushd generated-cluster
   # Remove cAdvisor, it deploys on all Buildkite nodes as a daemonset and is non-critical.
   rm ./*_cadvisor.yaml
   popd
