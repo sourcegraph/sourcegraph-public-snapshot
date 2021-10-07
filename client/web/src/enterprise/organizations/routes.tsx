@@ -1,5 +1,4 @@
 import React from 'react'
-import { Redirect } from 'react-router'
 
 import { OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'

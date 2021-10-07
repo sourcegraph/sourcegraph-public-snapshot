@@ -1,6 +1,3 @@
-import * as React from 'react'
-import { Redirect } from 'react-router'
-
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { lazyComponent } from '../../../util/lazyComponent'
