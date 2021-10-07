@@ -164,6 +164,7 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
 	diffCommand := []string{"diff", "--name-only"}
 	if commit == "" {
+		fmt.Fprintln(os.Stderr, "No commit. Comparing with main")
 		diffCommand = append(diffCommand, "origin/main...")
 		// for testing
 		commit = "1234567890123456789012345678901234567890"
@@ -185,15 +186,12 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 	}
 
 	// if there are no previous builds diff with main
-	if len(builds) == 0 {
+	if len(builds) == 0 || builds[0].State == nil || *(builds[0].State) != "passed" {
+		fmt.Fprintln(os.Stderr, "No previous passing build. Comparing with main")
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 
 	build := builds[0]
-	if build.State == nil || *build.State != "passed" {
-		// if any build is not passed, diff with main
-		return append(diffCommand, "origin/main..."+commit), commit, nil
-	}
 
 	// diff with the previous build commit
 	// after making sure the commit is in that branch
@@ -212,9 +210,11 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 		}
 	}
 	if !found {
+		fmt.Fprintln(os.Stderr, "Commit of previous not found in current branch. Comparing with main")
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 
+	fmt.Fprintln(os.Stderr, "Comparing with "+*build.Commit)
 	diffCommand = append(diffCommand, *build.Commit+"..."+branch)
 
 	return diffCommand, commit, nil
