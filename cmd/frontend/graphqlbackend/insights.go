@@ -91,4 +91,8 @@ type InsightViewConnectionResolver interface {
 
 type InsightViewResolver interface {
 	ID() graphql.ID
+	// Until this interface becomes uniquely identifyable in the node resolvers
+	// ToXX type guard methods, we need _something_ that makes this interface
+	// not match any other Node implementing type.
+	VeryUniqueResolver() bool
 }
