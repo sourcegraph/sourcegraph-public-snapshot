@@ -215,7 +215,7 @@ sg rfc search "search terms"
 sg rfc open 420
 ```
 
-## `sg ci`
+### `sg ci`
 
 Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
 
@@ -225,6 +225,7 @@ sg ci preview
 
 # Check on the status of your changes in the Buildkite pipeline
 sg ci status
+```
 
 ### `sg teammate` - Get current time or open their handbook page
 
