@@ -4,7 +4,7 @@ import (
 	"sort"
 )
 
-var defaultReducers = []reducer{
+var defaultReducers = []pass{
 	propagateBoolean,
 	rewriteConjunctive,
 	flatten,
@@ -19,7 +19,7 @@ func Reduce(n Node) Node {
 
 // ReduceWith simplifies and optimizes a query using the provided reducers.
 // It visits nodes in a depth-first manner.
-func ReduceWith(n Node, reducers ...reducer) Node {
+func ReduceWith(n Node, reducers ...pass) Node {
 	switch v := n.(type) {
 	case *Operator:
 		for i, operand := range v.Operands {
@@ -33,7 +33,7 @@ func ReduceWith(n Node, reducers ...reducer) Node {
 	return n
 }
 
-type reducer func(Node) Node
+type pass func(Node) Node
 
 // propagateBoolean simplifies any nodes containing constant nodes
 func propagateBoolean(n Node) Node {
@@ -116,7 +116,8 @@ func rewriteConjunctive(n Node) Node {
 	return newOperator(And, newAndOperands...)
 }
 
-// distribute will append every combination of
+// distribute will expand prefixes into every choice of one node
+// from each prefix, then append that set to each of the nodes.
 func distribute(prefixes [][]Node, nodes []Node) [][]Node {
 	if len(prefixes) == 0 {
 		return [][]Node{nodes}
@@ -220,6 +221,7 @@ func mergeOrRegexp(n Node) Node {
 		}
 	}
 
+	// Re-combine the merged operands into our unmerged operands
 	res := unmergeable
 	for _, m := range mergeable {
 		res = append(res, m)

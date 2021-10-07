@@ -103,7 +103,7 @@ type reducerTestCase struct {
 	output Node
 }
 
-func (tc *reducerTestCase) RunWithReducers(t *testing.T, reducers ...reducer) {
+func (tc *reducerTestCase) RunWithReducers(t *testing.T, reducers ...pass) {
 	t.Run(tc.name, func(t *testing.T) {
 		require.Equal(t, tc.output, ReduceWith(tc.input, reducers...))
 	})
