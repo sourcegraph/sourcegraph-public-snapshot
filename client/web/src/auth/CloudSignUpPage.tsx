@@ -11,6 +11,7 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { SourcegraphContext } from '../jscontext'
 
 import styles from './CloudSignUpPage.module.scss'
+import { maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface Props extends ThemeProps, TelemetryProps {
@@ -68,9 +69,6 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
         provider.authenticationURL?.startsWith('/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F')
     )
 
-    const maybeRedirectToWelcome = (url?: string): string =>
-        url ? `${url}${context.experimentalFeatures.enablePostSignupFlow ? '&redirect=/welcome' : ''}` : ''
-
     const sourceIsValid = source && Object.keys(SourceToTitleMap).includes(source)
     const title = sourceIsValid ? SourceToTitleMap[source as CloudSignUpSource] : SourceToTitleMap.Context // Use Context as default
 
@@ -127,7 +125,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                         <>
                             {githubProvider && (
                                 <a
-                                    href={maybeRedirectToWelcome(githubProvider.authenticationURL)}
+                                    href={maybeAddPostSignUpRedirect(githubProvider.authenticationURL)}
                                     className={classNames(styles.signUpButton, styles.githubButton)}
                                     onClick={logEvent}
                                 >
@@ -136,7 +134,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
                             )}
                             {gitlabProvider && (
                                 <a
-                                    href={maybeRedirectToWelcome(gitlabProvider.authenticationURL)}
+                                    href={maybeAddPostSignUpRedirect(gitlabProvider.authenticationURL)}
                                     className={classNames(styles.signUpButton, styles.gitlabButton)}
                                     onClick={logEvent}
                                 >

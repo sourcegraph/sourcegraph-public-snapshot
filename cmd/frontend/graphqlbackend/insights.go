@@ -14,8 +14,12 @@ import (
 
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {
+	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightDashboards(ctx context.Context, args *InsightDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+
+	// Mutations
+	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
 }
 
 type InsightsArgs struct {
@@ -84,6 +88,10 @@ type InsightDashboardResolver interface {
 	Views() InsightViewConnectionResolver
 }
 
+type DeleteInsightsDashboardArgs struct {
+	Id graphql.ID
+}
+
 type InsightViewConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightViewResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
@@ -91,4 +99,8 @@ type InsightViewConnectionResolver interface {
 
 type InsightViewResolver interface {
 	ID() graphql.ID
+	// Until this interface becomes uniquely identifyable in the node resolvers
+	// ToXX type guard methods, we need _something_ that makes this interface
+	// not match any other Node implementing type.
+	VeryUniqueResolver() bool
 }

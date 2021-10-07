@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -33,14 +32,8 @@ func TestTransformRecord(t *testing.T) {
 	t.Cleanup(func() {
 		conf.Mock(nil)
 	})
-	config := &Config{
-		Shared: &config.SharedConfig{
-			FrontendUsername: "test*",
-			FrontendPassword: "hunter2",
-		},
-	}
 
-	job, err := transformRecord(index, config)
+	job, err := transformRecord(index, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -75,13 +68,12 @@ func TestTransformRecord(t *testing.T) {
 					"-associated-index-id", "42",
 				},
 				Dir: "web",
-				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io"},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
-			"test*":                           "USERNAME_REMOVED",
-			"hunter2":                         "PASSWORD_REMOVED",
+			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
+			"hunter2":                             "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {
@@ -115,14 +107,8 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	t.Cleanup(func() {
 		conf.Mock(nil)
 	})
-	config := &Config{
-		Shared: &config.SharedConfig{
-			FrontendUsername: "test*",
-			FrontendPassword: "hunter2",
-		},
-	}
 
-	job, err := transformRecord(index, config)
+	job, err := transformRecord(index, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -157,13 +143,12 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 					"-associated-index-id", "42",
 				},
 				Dir: "",
-				Env: []string{"SRC_ENDPOINT=https://test%2A:hunter2@test.io"},
+				Env: []string{"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io"},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
-			"test*":                           "USERNAME_REMOVED",
-			"hunter2":                         "PASSWORD_REMOVED",
+			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
+			"hunter2":                             "PASSWORD_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

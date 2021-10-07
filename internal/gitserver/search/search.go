@@ -33,9 +33,9 @@ const (
 )
 
 var (
-	partsPerCommit = len(formatWithRefs)
+	partsPerCommit = len(commitFields)
 
-	formatWithRefs = []string{
+	commitFields = []string{
 		hash,
 		refNames,
 		sourceRefs,
@@ -49,31 +49,15 @@ var (
 		parentHashes,
 	}
 
-	formatWithoutRefs = []string{
-		hash,
-		"",
-		sourceRefs,
-		authorName,
-		authorEmail,
-		authorDate,
-		committerName,
-		committerEmail,
-		committerDate,
-		rawBody,
-		parentHashes,
-	}
-
-	baseLogArgs = []string{
+	logArgs = []string{
 		"log",
 		"--decorate=full",
 		"-z",
 		"--no-merges",
+		"--format=format:" + strings.Join(commitFields, "%x00") + "%x00",
 	}
 
-	// TODO(@camdencheek) support adding refs (issue #25356)
-	// logArgsWithRefs    = append(baseLogArgs, "--format=format:"+strings.Join(formatWithRefs, "%x00")+"%x00")
-	logArgsWithoutRefs = append(baseLogArgs, "--format=format:"+strings.Join(formatWithoutRefs, "%x00")+"%x00")
-	sep                = []byte{0x0}
+	sep = []byte{0x0}
 )
 
 type job struct {
@@ -139,7 +123,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 
 func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) error {
 	revArgs := revsToGitArgs(cs.Revisions)
-	cmd := exec.CommandContext(ctx, "git", append(logArgsWithoutRefs, revArgs...)...)
+	cmd := exec.CommandContext(ctx, "git", append(logArgs, revArgs...)...)
 	cmd.Dir = cs.RepoDir
 	stdoutReader, err := cmd.StdoutPipe()
 	if err != nil {

@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import { LivePreviewContainer } from '../../../../../../components/live-preview-container/LivePreviewContainer'
+import { useDistinctValue } from '../../../../../../hooks/use-distinct-value'
 
 import { useLangStatsPreviewContent } from './hooks/use-lang-stats-preview-content'
 import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
@@ -8,15 +9,18 @@ import { DEFAULT_PREVIEW_MOCK } from './live-preview-mock-data'
 export interface LangStatsInsightLivePreviewProps {
     /** Custom className for the root element of live preview. */
     className?: string
+
     /** List of repositories for insights. */
     repository: string
+
     /** Step value for cut off other small values. */
     threshold: number
+
     /**
      * Disable prop to disable live preview.
      * Used in a consumer of this component when some required fields
      * for live preview are invalid.
-     * */
+     */
     disabled?: boolean
 }
 
@@ -27,13 +31,10 @@ export interface LangStatsInsightLivePreviewProps {
 export const LangStatsInsightLivePreview: React.FunctionComponent<LangStatsInsightLivePreviewProps> = props => {
     const { repository = '', threshold, disabled = false, className } = props
 
-    const previewSetting = useMemo(
-        () => ({
-            repository: repository.trim(),
-            otherThreshold: threshold / 100,
-        }),
-        [repository, threshold]
-    )
+    const previewSetting = useDistinctValue({
+        repository: repository.trim(),
+        otherThreshold: threshold / 100,
+    })
 
     const { loading, dataOrError, update } = useLangStatsPreviewContent({ disabled, previewSetting })
 

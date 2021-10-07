@@ -67,6 +67,7 @@ describe('StreamingSearchResults', () => {
         enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
+        isSourcegraphDotCom: false,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')

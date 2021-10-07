@@ -125,8 +125,9 @@ export class EventLogger implements TelemetryService {
 
     // Insert ID is used to deduplicate events in Amplitude.
     // https://developers.amplitude.com/docs/http-api-v2#optional-keys
-    public getInsertID(): string {
-        const insertID = this.getDeviceID() + Date.now().toString()
+    public getInsertID(eventName: string): string {
+        const insertID = [this.getDeviceID(), Date.now().toString(), eventName].join('-')
+
         return insertID
     }
 

@@ -1512,6 +1512,8 @@ type SiteConfiguration struct {
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
+	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
+	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.

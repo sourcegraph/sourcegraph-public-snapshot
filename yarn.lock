@@ -3383,16 +3383,16 @@
   dependencies:
     prop-types "^15.6.2"
 
-"@sourcegraph/codeintellify@^7.2.2":
-  version "7.2.2"
-  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.2.2.tgz#6035801a6928d9f61d69fd0dcc12d2ad37284b3b"
-  integrity sha512-L88Bdid3gjADRgRSutO+tZkRgEbHPH/tOWoqNC+NTh6onCGpsBSBWpy7mauvDI3GTyhuGsgFBFsXpksp8oHbZA==
+"@sourcegraph/codeintellify@^7.3.0":
+  version "7.3.0"
+  resolved "https://registry.npmjs.org/@sourcegraph/codeintellify/-/codeintellify-7.3.0.tgz#bfe3018f9a7db6741120724495ca47e971f51603"
+  integrity sha512-Y8b66rxNiUr7SbT9agyjGgGFVivlwF5KMScnDYrRyuvkXmjxEankMdlRczjGXAxHdiH5+SFPOq86ILe9i+qnVA==
   dependencies:
     "@sourcegraph/event-positions" "^1.0.4"
     "@sourcegraph/extension-api-types" "^2.1.0"
     lodash "^4.17.10"
     rxjs "^6.5.5"
-    sourcegraph "^24.0.0 || ^25.0.0"
+    sourcegraph "^24.0.0 || ^25.0.0 || ^25.0.0"
     ts-key-enum "^2.0.0"
 
 "@sourcegraph/eslint-config@^0.25.1":
@@ -9866,6 +9866,11 @@ delay@^4.4.1:
   resolved "https://registry.npmjs.org/delay/-/delay-4.4.1.tgz#6e02d02946a1b6ab98b39262ced965acba2ac4d1"
   integrity sha512-aL3AhqtfhOlT/3ai6sWXeqwnw63ATNpnUiN4HL7x9q+My5QtHlO3OIkasmug9LKzpheLdmUKGRKnYXYAS7FQkQ==
 
+delay@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.npmjs.org/delay/-/delay-5.0.0.tgz#137045ef1b96e5071060dd5be60bf9334436bd1d"
+  integrity sha512-ReEBKkIfe4ya47wlPYf/gu5ib6yUG0/Aez0JQZQz94kiWtRQvZIQbTiehsnwHvLSWJnQdhVeqYue7Id1dKr0qw==
+
 delayed-stream@~1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
@@ -11583,7 +11588,7 @@ fast-json-patch@^2.0.6:
   dependencies:
     deep-equal "^1.0.1"
 
-fast-json-stable-stringify@^2.0.0:
+fast-json-stable-stringify@^2.0.0, fast-json-stable-stringify@^2.1.0:
   version "2.1.0"
   resolved "https://registry.npmjs.org/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz#874bf69c6f404c2b5d99c481341399fd55892633"
   integrity sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==
@@ -23851,6 +23856,14 @@ widest-line@^3.1.0:
   integrity sha512-NsmoXalsWVDMGupxZ5R08ka9flZjjiLvHVAWYOKtiKM8ujtZWr9cRffak+uSE48+Ob8ObalXpwyeUiyDD6QFgg==
   dependencies:
     string-width "^4.0.0"
+
+wildcard-mock-link@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.npmjs.org/wildcard-mock-link/-/wildcard-mock-link-2.0.1.tgz#3e7e59acb6061fad0800f83117a82dd36d7942f2"
+  integrity sha512-pEYG7q9cHLc6lQVvYtj6CeoI9nIjZN59jiJ+jbwT+Oki8RyV+2BCNoRNRIamkh6r43ByseKIKcNJMbudt0e4aQ==
+  dependencies:
+    delay "^5.0.0"
+    fast-json-stable-stringify "^2.1.0"
 
 wildcard@^2.0.0:
   version "2.0.0"
