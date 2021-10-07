@@ -25,10 +25,16 @@ Keep this process running in a terminal window to keep the databases running. Fo
 
 ## Start the server
 
-Start the local development server with the following command:
+Start the local development server for Sourcegraph Enterprise with the following command:
 
 ```
 sg start
+```
+
+If you want to start Sourcegraph OSS, do this:
+
+```
+sg start oss
 ```
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
