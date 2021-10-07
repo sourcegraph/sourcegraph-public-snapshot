@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -33,13 +32,8 @@ func TestTransformRecord(t *testing.T) {
 	t.Cleanup(func() {
 		conf.Mock(nil)
 	})
-	config := &Config{
-		Shared: &config.SharedConfig{
-			FrontendPassword: "hunter2",
-		},
-	}
 
-	job, err := transformRecord(index, config)
+	job, err := transformRecord(index, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -113,13 +107,8 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 	t.Cleanup(func() {
 		conf.Mock(nil)
 	})
-	config := &Config{
-		Shared: &config.SharedConfig{
-			FrontendPassword: "hunter2",
-		},
-	}
 
-	job, err := transformRecord(index, config)
+	job, err := transformRecord(index, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}

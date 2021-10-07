@@ -13,21 +13,16 @@ We supply Terraform modules to provision executors on multiple clouds:
 
 ## Configuring executors and instance communication
 
-In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. Set the following variables with a unique username and password value.
+In order for the executors to dequeue and perform work, they must be able to reach the target Sourcegraph instance. Therefor, a shared secret value is used. Generate any arbitrary secret string with at least 20 characters.
 
-The `frontend` service must define the following environment variables:
-
-- `EXECUTOR_FRONTEND_PASSWORD`
-
-The `executor` service must define the following environment variables:
-
-- `EXECUTOR_FRONTEND_URL`
-- `EXECUTOR_FRONTEND_PASSWORD`
+- In Sourcegraph, set `executors.accessToken` in your site-config.
+- For the `executor`,
+  - define the environment variable `EXECUTOR_FRONTEND_PASSWORD` with the secret value configured in Sourcegraph,
+  - and the environment variable `EXECUTOR_FRONTEND_URL` set to the external URL of your Sourcegraph instance.
 
 When using a Sourcegraph Terraform module to provision executors, the required executor environment variables can be set via:
 
 - `sourcegraph_external_url`: [Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal)
-- `sourcegraph_executor_proxy_username`: [Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_executor_proxy_username%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_executor_proxy_username%22&patternType=literal)
 - `sourcegraph_executor_proxy_password`: [Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal)
 
 ## Configuring auto scaling
