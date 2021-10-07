@@ -1,4 +1,4 @@
-package run
+package commit
 
 import (
 	"context"
@@ -68,7 +68,7 @@ func TestCheckDiffCommitSearchLimits(t *testing.T) {
 			}
 		}
 
-		haveErr := checkDiffCommitSearchLimits(
+		haveErr := CheckSearchLimits(
 			context.Background(),
 			&search.TextParameters{
 				Repos: repoRevs,

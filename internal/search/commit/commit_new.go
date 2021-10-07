@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -254,4 +255,39 @@ func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange
 	}
 
 	return res
+}
+
+func CheckSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
+	hasTimeFilter := false
+	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
+		hasTimeFilter = true
+	}
+	if _, beforePresent := args.Query.Fields()["before"]; beforePresent {
+		hasTimeFilter = true
+	}
+
+	limits := search.SearchLimits(conf.Get())
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
+		return &RepoLimitError{ResultType: resultType, Max: max}
+	}
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
+		return &TimeLimitError{ResultType: resultType, Max: max}
+	}
+	return nil
+}
+
+type DiffCommitError struct {
+	ResultType string
+	Max        int
+}
+
+type RepoLimitError DiffCommitError
+type TimeLimitError DiffCommitError
+
+func (*RepoLimitError) Error() string {
+	return "repo limit error"
+}
+
+func (*TimeLimitError) Error() string {
+	return "time limit error"
 }
