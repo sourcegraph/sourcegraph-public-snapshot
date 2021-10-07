@@ -89,3 +89,11 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	return &builds[0], nil
 }
+
+func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
+	build, _, err := c.bk.Builds.Create(buildkiteOrg, pipeline, &buildkite.CreateBuild{
+		Commit: commit,
+		Branch: branch,
+	})
+	return build, err
+}
