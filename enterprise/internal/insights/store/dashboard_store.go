@@ -151,7 +151,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 	var id int
 	err = row.Scan(&id)
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "InsertDashboard")
+		return types.Dashboard{}, errors.Wrap(err, "CreateDashboard")
 	}
 	dashboard.ID = id
 	err = tx.AssociateViewsByViewIds(ctx, dashboard, dashboard.InsightIDs)
