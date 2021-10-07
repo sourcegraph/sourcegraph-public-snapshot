@@ -3,7 +3,10 @@ import React, { useEffect } from 'react'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
 import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
-import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import {
+    useConnection,
+    UseConnectionResult,
+} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionError,
@@ -30,10 +33,49 @@ export interface BulkOperationsTabProps {
     batchChangeID: Scalars['ID']
 }
 
+export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({ batchChangeID }) => {
+    const { connection, error, loading, fetchMore, hasNextPage } = useBulkOperationsListConnection(batchChangeID)
+
+    return (
+        <Container>
+            <ConnectionContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                <ConnectionList className="list-group list-group-flush">
+                    {connection?.nodes?.map(node => (
+                        <BulkOperationNode key={node.id} node={node} />
+                    ))}
+                </ConnectionList>
+                {loading && <ConnectionLoading />}
+                {connection && (
+                    <SummaryContainer centered={true}>
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            first={BATCH_COUNT}
+                            connection={connection}
+                            noun="bulk operation"
+                            pluralNoun="bulk operations"
+                            hasNextPage={hasNextPage}
+                            emptyElement={<EmptyBulkOperationsListElement />}
+                        />
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
+        </Container>
+    )
+}
+
+const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
+    <div className="text-muted text-center mb-3 w-100">
+        <MapSearchIcon className="icon" />
+        <div className="pt-2">No bulk operations have been run on this batch change.</div>
+    </div>
+)
+
 const BATCH_COUNT = 15
 
-export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({ batchChangeID }) => {
-    const { connection, error, loading, fetchMore, hasNextPage, startPolling, stopPolling } = useConnection<
+const useBulkOperationsListConnection = (batchChangeID: Scalars['ID']): UseConnectionResult<BulkOperationFields> => {
+    const { connection, startPolling, stopPolling, ...rest } = useConnection<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,
         BulkOperationFields
@@ -80,38 +122,5 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
         }
     }, [connection, startPolling, stopPolling])
 
-    return (
-        <Container>
-            <ConnectionContainer>
-                {error && <ConnectionError errors={[error.message]} />}
-                <ConnectionList className="list-group list-group-flush">
-                    {connection?.nodes?.map(node => (
-                        <BulkOperationNode key={node.id} node={node} />
-                    ))}
-                </ConnectionList>
-                {loading && <ConnectionLoading />}
-                {connection && (
-                    <SummaryContainer centered={true}>
-                        <ConnectionSummary
-                            noSummaryIfAllNodesVisible={true}
-                            first={BATCH_COUNT}
-                            connection={connection}
-                            noun="bulk operation"
-                            pluralNoun="bulk operations"
-                            hasNextPage={hasNextPage}
-                            emptyElement={<EmptyBulkOperationsListElement />}
-                        />
-                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
-                    </SummaryContainer>
-                )}
-            </ConnectionContainer>
-        </Container>
-    )
+    return { connection, startPolling, stopPolling, ...rest }
 }
-
-const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
-    <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
-        <div className="pt-2">No bulk operations have been run on this batch change.</div>
-    </div>
-)
