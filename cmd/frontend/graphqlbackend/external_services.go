@@ -72,8 +72,11 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, err
 		}
 
-		if namespaceUserID != actor.FromContext(ctx).UID {
-			return nil, errors.New("the namespace is not same as the authenticated user")
+		if namespaceUserID > 0 && namespaceUserID != actor.FromContext(ctx).UID {
+			return nil, errors.New("the namespace is not the same as the authenticated user")
+		}
+		if namespaceOrgID > 0 && backend.CheckOrgAccess(ctx, r.db, namespaceOrgID) != nil {
+			return nil, errors.New("the authenticated user does not belong to the organization requested")
 		}
 
 	} else if !isSiteAdmin {
@@ -129,14 +132,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Site admins can only update site level external services.
-	// Otherwise, the current user can only update their own external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if es.NamespaceUserID == 0 || es.NamespaceOrgID == 0 {
-			return nil, err
-		} else if es.NamespaceUserID > 0 && actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errNoAccessExternalService
-		}
+	// 🚨 SECURITY: check access to external service
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
 	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
@@ -227,14 +225,9 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins may delete all or a user's external services.
-	// Otherwise, the authenticated user can only delete external services under the same namespace.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if es.NamespaceUserID == 0 {
-			return nil, err
-		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errNoAccessExternalService
-		}
+	// 🚨 SECURITY: check external service access
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
 	}
 
 	if err := database.ExternalServices(r.db).Delete(ctx, id); err != nil {
@@ -260,32 +253,6 @@ type ExternalServicesArgs struct {
 	After *string
 }
 
-var errNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
-
-// checkExternalServiceAccess checks whether the current user is allowed to
-// access the supplied external service.
-//
-// 🚨 SECURITY: Site admins can view external services with no owner, otherwise
-// only the owner of the external service is allowed to access it.
-func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32, namespaceOrgID int32) error {
-	// Fast path that doesn't need to hit DB as we can get id from context
-	a := actor.FromContext(ctx)
-	if namespaceUserID > 0 && a.IsAuthenticated() && namespaceUserID == a.UID {
-		return nil
-	}
-
-	if namespaceOrgID > 0 && backend.CheckOrgAccess(ctx, db, namespaceOrgID) == nil {
-		return nil
-	}
-
-	// Special case when external service has no owner
-	if namespaceUserID == 0 && namespaceOrgID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
-		return nil
-	}
-
-	return errNoAccessExternalService
-}
-
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
 	var namespaceUserID int32
 	var namespaceOrgID int32
@@ -307,7 +274,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	// return nil, errors.Errorf("This is the namespace %q %q %q", namespaceUserID, namespaceOrgID, anotherVar)
 
-	if err := checkExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err
 	}
 
