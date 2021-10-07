@@ -15,9 +15,6 @@ interface SurveyToastProps {
     forceVisible?: boolean
 }
 
-/**
- * TODO: Flash of content
- */
 export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
     const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
     const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
@@ -51,8 +48,8 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
     }, [visible])
 
     useEffect(() => {
-        // Reset 3 days before something
         if (!loadingTemporarySettings && daysActiveCount % 30 === 0) {
+            // Reset toast dismissal 3 days before it will be shown
             setTemporarilyDismissed(false)
         }
     }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])

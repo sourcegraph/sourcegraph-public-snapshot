@@ -335,12 +335,12 @@ export const useSearchOnboardingTour = ({
     // True when the user has manually cancelled the tour
     const [hasCancelledTour, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
     const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
-    const loadingDaysActive = daysActiveCount === undefined
 
-    const shouldShowTour = useMemo(
-        () => showOnboardingTour && !loadingDaysActive && daysActiveCount === 1 && !hasCancelledTour,
-        [showOnboardingTour, loadingDaysActive, daysActiveCount, hasCancelledTour]
-    )
+    const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
+        showOnboardingTour,
+        daysActiveCount,
+        hasCancelledTour,
+    ])
 
     // Start the Tour when the query input is focused on the search homepage.
     const onFocus = useCallback(() => {

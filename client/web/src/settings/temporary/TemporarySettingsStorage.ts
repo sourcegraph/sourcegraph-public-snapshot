@@ -182,6 +182,7 @@ class ServersideSettingsBackend implements SettingsBackend {
                 this.apolloClient.mutate({
                     mutation: this.EditTemporarySettingsMutation,
                     variables: { contents: settingsString },
+                    refetchQueries: [{ query: this.GetTemporarySettingsQuery }],
                 })
             ).pipe(
                 map(() => {}) // Ignore return value, always empty
