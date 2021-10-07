@@ -2,12 +2,13 @@ package sources
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -64,16 +65,7 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 }
 
 func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	config, err := gitserverPushConfig(ctx, store, repo, s.au)
-	if err != nil {
-		return nil, err
-	}
-
-	if conf.Get().BatchChangesEnforceForks {
-
-	}
-
-	return config, nil
+	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -111,28 +103,19 @@ func (s BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error 
 func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
 	var exists bool
 
-	repo := c.Repo.Metadata.(*bitbucketserver.Repo)
+	remoteRepo := c.RemoteRepo.Metadata.(*bitbucketserver.Repo)
+	targetRepo := c.TargetRepo.Metadata.(*bitbucketserver.Repo)
 
 	pr := &bitbucketserver.PullRequest{Title: c.Title, Description: c.Body}
 
-	pr.ToRef.Repository.Slug = repo.Slug
-	pr.ToRef.Repository.ID = repo.ID
-	pr.ToRef.Repository.Project.Key = repo.Project.Key
+	pr.ToRef.Repository.Slug = targetRepo.Slug
+	pr.ToRef.Repository.ID = targetRepo.ID
+	pr.ToRef.Repository.Project.Key = targetRepo.Project.Key
 	pr.ToRef.ID = git.EnsureRefPrefix(c.BaseRef)
 
-	pr.FromRef.Repository.Slug = repo.Slug
-	pr.FromRef.Repository.ID = repo.ID
-	if c.Fork {
-		key, err := s.ensureUserFork(ctx, repo)
-		if err != nil {
-			return false, errors.Wrap(err, "ensuring fork")
-		}
-		pr.FromRef.Repository.Project.Key = "~" + key
-		log15.Info("creating changeset against fork")
-	} else {
-		log15.Info("no fork required")
-		pr.FromRef.Repository.Project.Key = repo.Project.Key
-	}
+	pr.FromRef.Repository.Slug = remoteRepo.Slug
+	pr.FromRef.Repository.ID = remoteRepo.ID
+	pr.FromRef.Repository.Project.Key = remoteRepo.Project.Key
 	pr.FromRef.ID = git.EnsureRefPrefix(c.HeadRef)
 
 	err := s.client.CreatePullRequest(ctx, pr)
@@ -178,7 +161,7 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 
 // LoadChangeset loads the latest state of the given Changeset from the codehost.
 func (s BitbucketServerSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.Repo.Metadata.(*bitbucketserver.Repo)
+	repo := cs.TargetRepo.Metadata.(*bitbucketserver.Repo)
 	number, err := strconv.Atoi(cs.ExternalID)
 	if err != nil {
 		return err
@@ -292,30 +275,38 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 	return c.Changeset.SetMetadata(pr)
 }
 
-func (s BitbucketServerSource) ensureUserFork(ctx context.Context, parent *bitbucketserver.Repo) (string, error) {
+func (s BitbucketServerSource) GetChangesetForkRepo(ctx context.Context, targetRepo *types.Repo) (*types.Repo, error) {
+	parent := targetRepo.Metadata.(*bitbucketserver.Repo)
+
 	// Ascertain the user name for the token we're using.
 	user, err := s.AuthenticatedUsername(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "getting authenticated username")
+		return nil, errors.Wrap(err, "getting username")
 	}
-
-	log15.Info("going to create a fork for", "user", user)
 
 	// See if we already have a fork.
 	fork, err := s.getUserFork(ctx, parent, user)
+	log15.Info("getUserFork", "fork", fork, "err", err)
 	if err != nil {
-		return "", errors.Wrapf(err, "getting user fork for %q", user)
+		return nil, errors.Wrapf(err, "getting user fork for %q", user)
 	}
 
 	// If not, then we need to create a fork.
 	if fork == nil {
 		fork, err = s.client.CreateFork(ctx, parent.Project.Key, parent.Slug, bitbucketserver.CreateForkInput{})
 		if err != nil {
-			return "", errors.Wrapf(err, "creating user fork for %q", user)
+			return nil, errors.Wrapf(err, "creating user fork for %q", user)
 		}
 	}
 
-	return fork.Project.Key, nil
+	// We have a fork! Now we have to make a *types.Repo look legitimate.
+	// bitbucketServerCloneURL() ultimately only looks at the
+	// bitbucketserver.Repo in the Metadata field, so we'll replace that with
+	// the fork's metadata.
+	remoteRepo := *targetRepo
+	remoteRepo.Metadata = fork
+
+	return &remoteRepo, nil
 }
 
 func (s BitbucketServerSource) getUserFork(ctx context.Context, parent *bitbucketserver.Repo, user string) (*bitbucketserver.Repo, error) {
@@ -330,8 +321,22 @@ func (s BitbucketServerSource) getUserFork(ctx context.Context, parent *bitbucke
 		}
 
 		for _, fork := range forks {
-			if fork.Owner != nil && fork.Owner.Name == user {
-				return fork, nil
+			js, err := json.Marshal(fork)
+			if err != nil {
+				panic(err)
+			}
+			log15.Info("comparing fork", "fork", string(js), "fork.Owner", fork.Owner, "user", user)
+			// This looks insane, because the underlying API is insane: there's
+			// an Owner field that is _sometimes_ populated on the fork, but not
+			// always, and without it the only reference to the username is the
+			// self link back to the user profile on the project.
+			if fork.Project.Type == "PERSONAL" {
+				for _, link := range fork.Project.Links.Self {
+					log15.Info("comparing self link", "href", link.Href, "user", user)
+					if strings.HasSuffix(link.Href, "/"+user) {
+						return fork, nil
+					}
+				}
 			}
 		}
 	}

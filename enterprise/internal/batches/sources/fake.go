@@ -105,7 +105,7 @@ func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *Chang
 		return s.ChangesetExists, s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return false, NoReposErr
 	}
 
@@ -132,7 +132,7 @@ func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *Changeset
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -148,7 +148,7 @@ func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *Changeset)
 		return s.ChangesetExists, s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return false, NoReposErr
 	}
 
@@ -174,7 +174,7 @@ func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *Changeset)
 	if s.Err != nil {
 		return s.Err
 	}
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -206,7 +206,7 @@ func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *Changeset) e
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -227,7 +227,7 @@ func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *Changeset) 
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 
@@ -243,7 +243,7 @@ func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *Changeset)
 		return s.Err
 	}
 
-	if c.Repo == nil {
+	if c.TargetRepo == nil {
 		return NoReposErr
 	}
 

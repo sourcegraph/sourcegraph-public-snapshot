@@ -454,7 +454,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 // SyncChangeset refreshes the metadata of the given changeset and
 // updates them in the database.
 func SyncChangeset(ctx context.Context, syncStore SyncStore, source sources.ChangesetSource, repo *types.Repo, c *btypes.Changeset) (err error) {
-	repoChangeset := &sources.Changeset{Repo: repo, Changeset: c}
+	repoChangeset := &sources.Changeset{TargetRepo: repo, Changeset: c}
 	if err := source.LoadChangeset(ctx, repoChangeset); err != nil {
 		if !errors.HasType(err, sources.ChangesetNotFoundError{}) {
 			// Store the error as the syncer error.

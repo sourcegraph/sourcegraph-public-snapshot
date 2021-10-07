@@ -895,7 +895,7 @@ type CreateForkInput struct {
 }
 
 func (c *Client) CreateFork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
-	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s/forks", projectKey, repoSlug)
+	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 
 	var resp Repo
 	_, err := c.send(ctx, "POST", u, nil, input, &resp)
