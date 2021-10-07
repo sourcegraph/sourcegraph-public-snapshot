@@ -2,6 +2,7 @@ package executorqueue
 
 import (
 	"context"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -18,7 +19,11 @@ import (
 // Init initializes the executor endpoints required for use with the executor service.
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	accessToken := func() string {
-		return conf.Get().ExecutorsAccessToken
+		if accessToken := conf.Get().ExecutorsAccessToken; accessToken != "" {
+			return accessToken
+		}
+		// Fallback to old environment variable, for a smooth rollout.
+		return os.Getenv("EXECUTOR_FRONTEND_PASSWORD")
 	}
 
 	// Register queues. If this set changes, be sure to also update the list of valid
