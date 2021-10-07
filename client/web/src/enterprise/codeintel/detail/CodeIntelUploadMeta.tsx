@@ -13,7 +13,7 @@ export interface CodeIntelUploadMetaProps {
 }
 
 export const CodeIntelUploadMeta: FunctionComponent<CodeIntelUploadMetaProps> = ({ node, now }) => (
-    <div className="card mb-3">
+    <div className="card">
         <div className="card-body">
             <div className="card border-0">
                 <div className="card-body">

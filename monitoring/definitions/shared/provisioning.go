@@ -77,3 +77,41 @@ var (
 		}
 	}
 )
+
+type ContainerProvisioningIndicatorsGroupOptions struct {
+	// LongTermCPUUsage transforms the default observable used to construct the long-term CPU usage panel.
+	LongTermCPUUsage ObservableOption
+
+	// LongTermMemoryUsage transforms the default observable used to construct the long-term memory usage panel.
+	LongTermMemoryUsage ObservableOption
+
+	// ShortTermCPUUsage transforms the default observable used to construct the short-term CPU usage panel.
+	ShortTermCPUUsage ObservableOption
+
+	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
+	ShortTermMemoryUsage ObservableOption
+}
+
+// NewProvisioningIndicatorsGroup creates a group containing panels displaying
+// provisioning indication metrics - long and short term usage for both CPU and
+// memory usage - for the given container.
+func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.ObservableOwner, options *ContainerProvisioningIndicatorsGroupOptions) monitoring.Group {
+	if options == nil {
+		options = &ContainerProvisioningIndicatorsGroupOptions{}
+	}
+
+	return monitoring.Group{
+		Title:  TitleProvisioningIndicators,
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				options.LongTermCPUUsage.safeApply(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermMemoryUsage.safeApply(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
+			},
+			{
+				options.ShortTermCPUUsage.safeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
+				options.ShortTermMemoryUsage.safeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
+			},
+		},
+	}
+}

@@ -130,10 +130,10 @@ Lastly, for the request data that you *do* choose to cache, it's best to make de
 Apollo lets us easily mock queries in our tests without having to actually mock out our own logic. The tests will fail if an un-mocked query fires through Apollo, so it is important to accurately build mock requests. In order to test how the UI displays a response, you can provide a mocked result. See this example:
 
 ```ts
-import { MockedProvider } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { MyComponent, USER_DISPLAY_NAME } from './MyComponent'
 
@@ -158,9 +158,9 @@ const mocks = [
 describe('My Test', () => {
     it('works', () => {
         const { getByText } = render(
-            <MockedProvider mocks={mocks}>
+            <MockedTestProvider mocks={mocks}>
                 <MyComponent />
-            </MockedProvider>
+            </MockedTestProvider>
         )
         expect(getByText('Your display name is: Mock DisplayName')).toBeVisible();
     })

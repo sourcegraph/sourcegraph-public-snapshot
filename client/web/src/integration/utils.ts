@@ -87,8 +87,7 @@ export interface PercySnapshotConfig {
 }
 
 /**
- * Takes a Percy snapshot in 4 variants:
- * dark/dark-redesign/light/light-redesign
+ * Takes a Percy snapshot in 2 variants: dark/light
  */
 export const percySnapshotWithVariants = async (
     page: Page,
@@ -103,7 +102,7 @@ export const percySnapshotWithVariants = async (
 
     try {
         // Wait for Monaco editor to finish rendering before taking screenshots
-        await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true })
+        await page.waitForSelector('#monaco-query-input .monaco-editor', { visible: true, timeout: 1000 })
     } catch {
         // noop, page doesn't use monaco editor
     }

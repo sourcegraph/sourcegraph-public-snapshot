@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/errors"
 	gh "github.com/google/go-github/v28/github"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -19,21 +21,23 @@ import (
 
 // handleGithubRepoAuthzEvent handles any github event containing a repository field, and enqueues the contained
 // repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
-	if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
-		return nil
-	}
-	if globals.PermissionsUserMapping().Enabled {
-		return nil
-	}
+func handleGitHubRepoAuthzEvent(opts authz.FetchPermsOptions) func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+	return func(ctx context.Context, extSvc *types.ExternalService, payload interface{}) error {
+		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
+			return nil
+		}
+		if globals.PermissionsUserMapping().Enabled {
+			return nil
+		}
 
-	log15.Debug("handleGitHubRepoAuthzEvent: Got github event", "type", fmt.Sprintf("%T", payload))
+		log15.Debug("handleGitHubRepoAuthzEvent: Got github event", "type", fmt.Sprintf("%T", payload))
 
-	e, ok := payload.(repoGetter)
-	if !ok {
-		return fmt.Errorf("incorrect event type sent to github event handler: %T", payload)
+		e, ok := payload.(repoGetter)
+		if !ok {
+			return errors.Errorf("incorrect event type sent to github event handler: %T", payload)
+		}
+		return scheduleRepoUpdate(ctx, e.GetRepo(), opts)
 	}
-	return scheduleRepoUpdate(ctx, e.GetRepo())
 }
 
 type repoGetter interface {
@@ -43,7 +47,7 @@ type repoGetter interface {
 // scheduleRepoUpdate finds an internal repo from a github repo, and posts it to repo-updater to
 // schedule a permissions update
 // 🚨 SECURITY: we want to be able to find any private repo here, so the DB call uses internal actor
-func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository) error {
+func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository, opts authz.FetchPermsOptions) error {
 	if repo == nil {
 		return nil
 	}
@@ -60,5 +64,6 @@ func scheduleRepoUpdate(ctx context.Context, repo *gh.Repository) error {
 	c := repoupdater.DefaultClient
 	return c.SchedulePermsSync(ctx, protocol.PermsSyncRequest{
 		RepoIDs: []api.RepoID{r.ID},
+		Options: opts,
 	})
 }

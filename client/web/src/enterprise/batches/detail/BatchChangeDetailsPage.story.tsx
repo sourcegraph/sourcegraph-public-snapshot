@@ -22,6 +22,7 @@ import {
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     queryBulkOperations as _queryBulkOperations,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
 
@@ -209,6 +210,8 @@ const queryChangesets: typeof _queryChangesets = () =>
             },
         ],
     })
+
+const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(['somev1', 'somev2'])
 
 const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWithFileDiffs = () =>
     of({
@@ -419,6 +422,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                         queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                         deleteBatchChange={deleteBatchChange}
                         queryBulkOperations={queryBulkOperations}
+                        queryAllChangesetIDs={queryAllChangesetIDs}
                         extensionsController={{} as any}
                         platformContext={{} as any}
                     />

@@ -127,7 +127,7 @@ export function logUserEvent(event: UserEvent): void {
  * When invoked on a non-Sourcegraph.com instance, this data is stored in the
  * instance's database, and not sent to Sourcegraph.com.
  */
-export function logEvent(event: string, eventProperties?: unknown): void {
+export function logEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): void {
     requestGraphQL<LogEventResult, LogEventVariables>(
         gql`
             mutation LogEvent(
@@ -135,18 +135,30 @@ export function logEvent(event: string, eventProperties?: unknown): void {
                 $userCookieID: String!
                 $cohortID: String
                 $firstSourceURL: String!
+                $referrer: String
                 $url: String!
                 $source: EventSource!
                 $argument: String
+                $publicArgument: String
+                $userProperties: String
+                $deviceID: String
+                $eventID: Int
+                $insertID: String
             ) {
                 logEvent(
                     event: $event
                     userCookieID: $userCookieID
                     cohortID: $cohortID
                     firstSourceURL: $firstSourceURL
+                    referrer: $referrer
                     url: $url
                     source: $source
                     argument: $argument
+                    publicArgument: $publicArgument
+                    userProperties: $userProperties
+                    deviceID: $deviceID
+                    eventID: $eventID
+                    insertID: $insertID
                 ) {
                     alwaysNil
                 }
@@ -157,9 +169,15 @@ export function logEvent(event: string, eventProperties?: unknown): void {
             userCookieID: eventLogger.getAnonymousUserID(),
             cohortID: eventLogger.getCohortID() || null,
             firstSourceURL: eventLogger.getFirstSourceURL(),
+            referrer: eventLogger.getReferrer(),
             url: window.location.href,
             source: EventSource.WEB,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
+            publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+            userProperties: window.context.sourcegraphDotComMode ? eventLogger.getUserProperties() : null,
+            deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
+            eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
+            insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
         }
     )
         .pipe(map(dataOrThrowErrors))

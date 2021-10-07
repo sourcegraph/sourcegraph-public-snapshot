@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	zoektweb "github.com/google/zoekt/web"
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 )
 
@@ -42,6 +44,7 @@ func addNoK8sClientHandler(r *mux.Router, db dbutil.DB) {
 func addDebugHandlers(r *mux.Router, db dbutil.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
+	addZoekt(r, db)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -153,6 +156,25 @@ func addJaeger(r *mux.Router, db dbutil.DB) {
 	}
 }
 
+func addZoekt(r *mux.Router, db dbutil.DB) {
+	z := search.Indexed()
+	if z == nil {
+		return
+	}
+
+	h, err := zoektweb.NewMux(&zoektweb.Server{
+		Searcher: search.Indexed(),
+		Top:      zoektweb.Top,
+		Print:    true,
+		HTML:     true,
+	})
+	if err != nil {
+		log.Printf("debugserver: failed to create zoekt web: %v", err)
+		return
+	}
+	r.PathPrefix("/zoekt/").Handler(adminOnly(http.StripPrefix("/-/debug/zoekt", h), db))
+}
+
 // adminOnly is a HTTP middleware which only allows requests by admins.
 func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -173,7 +195,7 @@ func adminOnly(next http.Handler, db dbutil.DB) http.Handler {
 func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
 	return func(c conf.Unified) conf.Problems {
 		// surface new prometheus client error if it was unexpected
-		prometheusUnavailable := promErr != nil && errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
+		prometheusUnavailable := errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
 		if promErr != nil && !prometheusUnavailable {
 			return conf.NewSiteProblems(fmt.Sprintf("Prometheus (`PROMETHEUS_URL`) might be misconfigured: %v", promErr))
 		}

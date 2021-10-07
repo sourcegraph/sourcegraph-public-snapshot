@@ -9,22 +9,24 @@ import (
 )
 
 func RepoUpdater() *monitoring.Container {
-	// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
-	const syncDurationThreshold = 9 * time.Hour
+	const (
+		containerName = "repo-updater"
+
+		// This is set a bit longer than maxSyncInterval in internal/repos/syncer.go
+		syncDurationThreshold = 9 * time.Hour
+	)
+
+	containerMonitoringOptions := &shared.ContainerMonitoringGroupOptions{
+		MemoryUsage: func(observable shared.Observable) shared.Observable {
+			return observable.WithWarning(nil).WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute))
+		},
+	}
 
 	return &monitoring.Container{
 		Name:        "repo-updater",
 		Title:       "Repo Updater",
 		Description: "Manages interaction with code hosts, instructs Gitserver to update repositories.",
 		Groups: []monitoring.Group{
-			{
-				Title: "General",
-				Rows: []monitoring.Row{
-					{
-						shared.FrontendInternalAPIErrorResponses("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
 			{
 				Title: "Repositories",
 				Rows: []monitoring.Row{
@@ -62,8 +64,9 @@ func RepoUpdater() *monitoring.Container {
 							Name:        "src_repoupdater_syncer_sync_errors_total",
 							Description: "site level external service sync error rate",
 							Query:       `max by (family) (rate(src_repoupdater_syncer_sync_errors_total{owner!="user"}[5m]))`,
-							Critical:    monitoring.Alert().Greater(0, nil).For(10 * time.Minute),
-							Panel:       monitoring.Panel().Unit(monitoring.Number),
+							Warning:     monitoring.Alert().Greater(0.5, nil).For(10 * time.Minute),
+							Critical:    monitoring.Alert().Greater(1, nil).For(10 * time.Minute),
+							Panel:       monitoring.Panel().Unit(monitoring.Number).With(monitoring.PanelOptions.ZeroIfNoData()),
 							Owner:       monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: `
 								An alert here indicates errors syncing site level repo metadata with code hosts. This indicates that there could be a configuration issue
@@ -426,60 +429,18 @@ func RepoUpdater() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleDatabaseConnectionsMonitoring,
-				Hidden: true,
-				Rows:   shared.DatabaseConnectionsMonitoring("repo-updater"),
-			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("repo-updater", monitoring.ObservableOwnerCoreApplication).
-							WithWarning(nil).
-							WithCritical(monitoring.Alert().GreaterOrEqual(90, nil).For(10 * time.Minute)).
-							Observable(),
-					},
-					{
-						shared.ContainerMissing("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("repo-updater", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+
+			shared.Batches.NewDBStoreGroup(containerName),
+			shared.Batches.NewServiceGroup(containerName),
+
+			shared.CodeIntelligence.NewCoursierGroup(containerName),
+
+			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, containerMonitoringOptions),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

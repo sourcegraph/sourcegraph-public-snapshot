@@ -15,11 +15,11 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/commitgraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type printableRank struct{ value *int }
@@ -206,12 +206,27 @@ func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 	}
 }
 
-// insertPackageReferences populates the lsif_references table with the given package references.
-func insertPackageReferences(t testing.TB, store *Store, packageReferences []lsifstore.PackageReference) {
-	for _, packageReference := range packageReferences {
-		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []semantic.PackageReference{
+// insertPackages populates the lsif_packages table with the given packages.
+func insertPackages(t testing.TB, store *Store, packages []shared.Package) {
+	for _, pkg := range packages {
+		if err := store.UpdatePackages(context.Background(), pkg.DumpID, []precise.Package{
 			{
-				Package: semantic.Package{
+				Scheme:  pkg.Scheme,
+				Name:    pkg.Name,
+				Version: pkg.Version,
+			},
+		}); err != nil {
+			t.Fatalf("unexpected error updating packages: %s", err)
+		}
+	}
+}
+
+// insertPackageReferences populates the lsif_references table with the given package references.
+func insertPackageReferences(t testing.TB, store *Store, packageReferences []shared.PackageReference) {
+	for _, packageReference := range packageReferences {
+		if err := store.UpdatePackageReferences(context.Background(), packageReference.DumpID, []precise.PackageReference{
+			{
+				Package: precise.Package{
 					Scheme:  packageReference.Scheme,
 					Name:    packageReference.Name,
 					Version: packageReference.Version,

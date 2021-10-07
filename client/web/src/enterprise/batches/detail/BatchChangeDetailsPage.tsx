@@ -22,6 +22,7 @@ import {
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
     queryBulkOperations as _queryBulkOperations,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
@@ -42,6 +43,8 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
+    /** For testing only. */
+    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
 /**

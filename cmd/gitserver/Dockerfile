@@ -4,20 +4,22 @@
 # ignores.
 
 # Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
-FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304 AS p4cli
+FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS p4cli
 
 # hadolint ignore=DL3003
 RUN wget http://cdist2.perforce.com/perforce/r20.1/bin.linux26x86_64/p4 && \
     mv p4 /usr/local/bin/p4 && \
     chmod +x /usr/local/bin/p4
 
-FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304 AS coursier
+FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d AS coursier
 
-RUN wget -O coursier https://github.com/coursier/coursier/releases/download/v2.0.16/cs-x86_64-pc-linux && \
-    mv coursier /usr/local/bin/coursier && \
+# TODO(code-intel): replace with official streams when musl builds are upstreamed
+RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
+    unzip coursier.zip && \
+    mv cs-musl /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.12:99421_2021-06-16_8e20ec8@sha256:838b96d93f073aa773718e22be54362b721569e360b445675f4cab904abc9304
+FROM sourcegraph/alpine-3.12:107969_2021-09-10_80f5edc@sha256:ce1ba2f16ec56e5e8007da53e0e6449bc0fa1fe1f972bffbc33dea1ae410b86d
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -35,6 +37,10 @@ RUN apk add --no-cache \
     openssh-client \
     git-p4 \
     python2
+
+# This is installed separately due to the upstream edge repo requirement
+RUN apk update && apk add --no-cache \
+    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 
 COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
 

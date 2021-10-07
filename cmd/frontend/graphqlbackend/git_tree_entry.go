@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
@@ -121,7 +122,11 @@ func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commi
 func (r *GitTreeEntryResolver) IsRecursive() bool { return r.isRecursive }
 
 func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL")
+	defer span.Finish()
+
 	if submodule := r.Submodule(); submodule != nil {
+		span.SetTag("Submodule", "true")
 		url := submodule.URL()
 		if strings.HasPrefix(url, "../") {
 			url = path.Join(r.Repository().Name(), url)
@@ -183,6 +188,9 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, db dbutil.DB, cloneURL string) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName")
+	defer span.Finish()
+
 	repoName, err := cloneurls.ReposourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {
 		return "", err

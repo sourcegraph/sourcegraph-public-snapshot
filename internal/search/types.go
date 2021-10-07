@@ -2,15 +2,20 @@ package search
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type TypeParameters interface {
@@ -89,13 +94,15 @@ type SymbolsParameters struct {
 type GlobalSearchMode int
 
 const (
+	DefaultMode GlobalSearchMode = iota
+
 	// ZoektGlobalSearch designates a performance optimised code path for indexed
 	// searches. For a global search we don't need to resolve repos before searching
 	// shards on Zoekt, instead we can resolve repos and call Zoekt concurrently.
 	//
 	// Note: Even for a global search we have to resolve repos to filter search results
 	// returned by Zoekt.
-	ZoektGlobalSearch GlobalSearchMode = iota + 1
+	ZoektGlobalSearch
 
 	// SearcherOnly designated a code path on which we skip indexed search, even if
 	// the user specified index:yes. SearcherOnly is used in conjunction with
@@ -103,15 +110,16 @@ const (
 	// optimised code path.
 	SearcherOnly
 
-	// Disables file/path search. Used only in conjunction with ZoektGlobalSearch on
-	// Sourcegraph.com.
-	NoFilePath
+	// SkipUnindexed disables content, path, and symbol search. Used:
+	// (1) in conjunction with ZoektGlobalSearch on Sourcegraph.com.
+	// (2) when a query does not specify any patterns, include patterns, or exclude pattern.
+	SkipUnindexed
 )
 
 var globalSearchModeStrings = map[GlobalSearchMode]string{
 	ZoektGlobalSearch: "ZoektGlobalSearch",
 	SearcherOnly:      "SearcherOnly",
-	NoFilePath:        "NoFilePath",
+	SkipUnindexed:     "SkipUnindexed",
 }
 
 func (m GlobalSearchMode) String() string {
@@ -121,17 +129,54 @@ func (m GlobalSearchMode) String() string {
 	return "None"
 }
 
+type IndexedRequestType string
+
+const (
+	TextRequest   IndexedRequestType = "text"
+	SymbolRequest IndexedRequestType = "symbol"
+)
+
+// ZoektParameters contains all the inputs to run a Zoekt indexed search.
+type ZoektParameters struct {
+	Query          zoektquery.Q
+	Typ            IndexedRequestType
+	FileMatchLimit int32
+	Select         filter.SelectPath
+
+	Zoekt zoekt.Streamer
+}
+
+// SearcherParameters the inputs for a search fulfilled by the Searcher service
+// (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
+// and (2) structural search requests.
+type SearcherParameters struct {
+	SearcherURLs *endpoint.Map
+	PatternInfo  *TextPatternInfo
+
+	// UseFullDeadline indicates that the search should try do as much work as
+	// it can within context.Deadline. If false the search should try and be
+	// as fast as possible, even if a "slow" deadline is set.
+	//
+	// For example searcher will wait to full its archive cache for a
+	// repository if this field is true. Another example is we set this field
+	// to true if the user requests a specific timeout or maximum result size.
+	UseFullDeadline bool
+}
+
 // TextParameters are the parameters passed to a search backend. It contains the Pattern
 // to search for, as well as the hydrated list of repository revisions to
 // search. It defines behavior for text search on repository names, file names, and file content.
 type TextParameters struct {
 	PatternInfo *TextPatternInfo
+	RepoOptions RepoOptions
 	ResultTypes result.Types
+	Timeout     time.Duration
 
-	// Performance optimization: For global queries, resolving repositories and
-	// querying zoekt happens concurrently.
-	RepoPromise *RepoPromise
-	Mode        GlobalSearchMode
+	Repos []*RepositoryRevisions
+
+	// perf: For global queries, we only resolve private repos.
+	UserPrivateRepos []types.RepoName
+	Mode             GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern
 	// instead, but Query is useful for checking extra fields that are set and
@@ -147,7 +192,7 @@ type TextParameters struct {
 	// to true if the user requests a specific timeout or maximum result size.
 	UseFullDeadline bool
 
-	Zoekt        *searchbackend.Zoekt
+	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 }
 
@@ -241,4 +286,67 @@ func (p *TextPatternInfo) String() string {
 	}
 
 	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
+}
+
+type RepoOptions struct {
+	RepoFilters        []string
+	MinusRepoFilters   []string
+	RepoGroupFilters   []string
+	SearchContextSpec  string
+	VersionContextName string
+	UserSettings       *schema.Settings
+	NoForks            bool
+	OnlyForks          bool
+	NoArchived         bool
+	OnlyArchived       bool
+	CommitAfter        string
+	Visibility         query.RepoVisibility
+	Ranked             bool // Return results ordered by rank
+	Limit              int
+	CacheLookup        bool
+	Query              query.Q
+}
+
+func (op *RepoOptions) String() string {
+	var b strings.Builder
+	if len(op.RepoFilters) == 0 {
+		b.WriteString("r=[]")
+	}
+	for i, r := range op.RepoFilters {
+		if i != 0 {
+			b.WriteByte(' ')
+		}
+		b.WriteString(strconv.Quote(r))
+	}
+
+	if len(op.MinusRepoFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
+	}
+	if len(op.RepoGroupFilters) > 0 {
+		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
+	}
+	if op.VersionContextName != "" {
+		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.VersionContextName)
+	}
+	if op.CommitAfter != "" {
+		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
+	}
+
+	if op.NoForks {
+		b.WriteString(" NoForks")
+	}
+	if op.OnlyForks {
+		b.WriteString(" OnlyForks")
+	}
+	if op.NoArchived {
+		b.WriteString(" NoArchived")
+	}
+	if op.OnlyArchived {
+		b.WriteString(" OnlyArchived")
+	}
+	if op.Visibility != query.Any {
+		b.WriteString(" Visibility" + string(op.Visibility))
+	}
+
+	return b.String()
 }

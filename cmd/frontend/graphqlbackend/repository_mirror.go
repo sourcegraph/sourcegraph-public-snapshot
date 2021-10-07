@@ -92,15 +92,13 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 	}
 
 	{
-		// Look up the remote URL in repo-updater.
-		result, err := repoupdater.DefaultClient.RepoLookup(ctx, repoupdaterprotocol.RepoLookupArgs{
-			Repo: r.repository.RepoName(),
-		})
+		repo, err := r.repository.repo(ctx)
 		if err != nil {
 			return "", err
 		}
-		if result.Repo != nil {
-			return removeUserinfo(result.Repo.VCS.URL), nil
+
+		if cloneURLs := repo.CloneURLs(); len(cloneURLs) > 0 {
+			return removeUserinfo(cloneURLs[0]), nil
 		}
 	}
 

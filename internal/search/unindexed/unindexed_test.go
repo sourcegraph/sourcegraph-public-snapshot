@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -33,47 +34,53 @@ import (
 )
 
 func TestSearchFilesInRepos(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return false, nil
 		case "foo/two":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return false, nil
 		case "foo/empty":
-			return nil, false, nil
+			return false, nil
 		case "foo/cloning":
-			return nil, false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
+			return false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
 		case "foo/missing":
-			return nil, false, &vcs.RepoNotExistError{Repo: repoName}
+			return false, &vcs.RepoNotExistError{Repo: repoName}
 		case "foo/missing-database":
-			return nil, false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
+			return false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
 		case "foo/timedout":
-			return nil, false, context.DeadlineExceeded
+			return false, context.DeadlineExceeded
 		case "foo/no-rev":
 			// TODO we do not specify a rev when searching "foo/no-rev", so it
 			// is treated as an empty repository. We need to test the fatal
 			// case of trying to search a revision which doesn't exist.
-			return nil, false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
+			return false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
-			return nil, false, errors.New("Unexpected repo")
+			return false, errors.New("Unexpected repo")
 		}
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
+	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -85,7 +92,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.RepoPromise{}).Resolve(repoRevs),
+		Repos:        repoRevs,
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -115,53 +122,62 @@ func TestSearchFilesInRepos(t *testing.T) {
 			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo/no-rev@dev")),
+		Repos:        makeRepositoryRevisions("foo/no-rev@dev"),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
 
 	_, _, err = SearchFilesInReposBatch(context.Background(), args)
-	if !gitserver.IsRevisionNotFound(errors.Cause(err)) {
+	if !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }
 
 func TestSearchFilesInReposStream(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo/one":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return false, nil
 		case "foo/two":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return false, nil
 		case "foo/three":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					InputRev: &rev,
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						InputRev: &rev,
+						Path:     "main.go",
+					},
+				}},
+			})
+			return false, nil
 		default:
-			return nil, false, errors.New("Unexpected repo")
+			return false, errors.New("Unexpected repo")
 		}
 	}
 	defer func() { mockSearchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
+	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -172,7 +188,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo/one", "foo/two", "foo/three")),
+		Repos:        makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
@@ -204,17 +220,20 @@ func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search
 }
 
 func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error) {
+	mockSearchFilesInRepo = func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
 		repoName := repo.Name
 		switch repoName {
 		case "foo":
-			return []result.Match{&result.FileMatch{
-				File: result.File{
-					Repo:     repo,
-					CommitID: api.CommitID(rev),
-					Path:     "main.go",
-				},
-			}}, false, nil
+			stream.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{
+						Repo:     repo,
+						CommitID: api.CommitID(rev),
+						Path:     "main.go",
+					},
+				}},
+			})
+			return false, nil
 		default:
 			panic("unexpected repo")
 		}
@@ -227,7 +246,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}})
 	defer conf.Mock(nil)
 
-	zoekt := &searchbackend.Zoekt{Client: &searchbackend.FakeSearcher{}}
+	zoekt := &searchbackend.FakeSearcher{}
 
 	q, err := query.ParseLiteral("foo")
 	if err != nil {
@@ -238,13 +257,12 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 			FileMatchLimit: search.DefaultMaxSearchResults,
 			Pattern:        "foo",
 		},
-		RepoPromise:  (&search.RepoPromise{}).Resolve(makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")),
+		Repos:        makeRepositoryRevisions("foo@master:mybranch:*refs/heads/"),
 		Query:        q,
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	repos, _ := args.RepoPromise.Get(context.Background())
-	repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
+	args.Repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
 	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
@@ -270,15 +288,17 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 }
 
 func TestRepoShouldBeSearched(t *testing.T) {
-	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error) {
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
 		repoName := repo
 		switch repoName {
 		case "foo/one":
-			return []*protocol.FileMatch{{Path: "main.go"}}, false, nil
+			onMatches([]*protocol.FileMatch{{Path: "main.go"}})
+			return false, nil
 		case "foo/no-filematch":
-			return []*protocol.FileMatch{}, false, nil
+			onMatches([]*protocol.FileMatch{})
+			return false, nil
 		default:
-			return nil, false, errors.New("Unexpected repo")
+			return false, errors.New("Unexpected repo")
 		}
 	}
 	defer func() { searcher.MockSearch = nil }()
@@ -288,7 +308,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		FilePatternsReposMustInclude: []string{"main"},
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, "foo/one", "1a2b3c", time.Minute)
+	shouldBeSearched, err := repoShouldBeSearched(context.Background(), nil, info, types.RepoName{Name: "foo/one", ID: 1}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +316,7 @@ func TestRepoShouldBeSearched(t *testing.T) {
 		t.Errorf("expected repo to be searched, got shouldn't be searched")
 	}
 
-	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, "foo/no-filematch", "1a2b3c", time.Minute)
+	shouldBeSearched, err = repoShouldBeSearched(context.Background(), nil, info, types.RepoName{Name: "foo/no-filematch", ID: 2}, "1a2b3c", time.Minute)
 	if err != nil {
 		t.Fatal(err)
 	}

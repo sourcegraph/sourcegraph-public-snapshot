@@ -77,7 +77,7 @@ func handleRegistryExtensionBundle(w http.ResponseWriter, r *http.Request) {
 	// want stale data from pre-reset. So, assume that the presence of a query string means that it
 	// includes some identifier that changes when the database is reset.
 	if r.URL.RawQuery != "" {
-		w.Header().Set("Cache-Control", "max-age=604800, private, immutable")
+		w.Header().Set("Cache-Control", "max-age=31536000, private, immutable")
 	}
 	var data []byte
 	if wantSourceMap {

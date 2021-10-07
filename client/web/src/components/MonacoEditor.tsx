@@ -11,6 +11,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 const SOURCEGRAPH_LIGHT = 'sourcegraph-light'
 const SOURCEGRAPH_DARK = 'sourcegraph-dark'
 
+const MAX_AUTO_HEIGHT = 1024
+
 // 🚨 WARNING!!!
 // Monaco does not support CSS variables/custom properties, all colors must be in hex codes.
 // See https://github.com/microsoft/monaco-editor/issues/2427
@@ -99,14 +101,14 @@ const lightRules: monaco.editor.ITokenThemeRule[] = [
     // Sourcegraph base language tokens
     { token: 'identifier', foreground: '#14171f' }, // --search-query-text-color
     { token: 'field', foreground: '#0b70db' }, // --search-filter-keyword-color
-    { token: 'keyword', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'openingParen', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'closingParen', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'keyword', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'openingParen', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'closingParen', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'comment', foreground: '#d9480f' }, // --oc-orange-9
     // Sourcegraph decorated language tokens
     { token: 'metaRepoRevisionSeparator', foreground: '#0b70db' }, // --search-filter-keyword-color
-    { token: 'metaContextPrefix', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'metaPredicateNameAccess', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'metaContextPrefix', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'metaPredicateNameAccess', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaPredicateDot', foreground: '#14171f' }, // --search-query-text-color
     { token: 'metaPredicateParenthesis', foreground: '#d9480f' }, // --oc-orange-9
     // Regexp pattern highlighting
@@ -114,11 +116,11 @@ const lightRules: monaco.editor.ITokenThemeRule[] = [
     { token: 'metaRegexpAssertion', foreground: '#c92a2a' }, // --oc-red-9
     { token: 'metaRegexpLazyQuantifier', foreground: '#c92a2a' }, // --oc-red-9
     { token: 'metaRegexpEscapedCharacter', foreground: '#d9480f' }, // --oc-orange-9
-    { token: 'metaRegexpCharacterSet', foreground: '#a305e1' }, // --search-keyword-color
-    { token: 'metaRegexpCharacterClass', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'metaRegexpCharacterSet', foreground: '#a112ff' }, // --search-keyword-color
+    { token: 'metaRegexpCharacterClass', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaRegexpCharacterClassMember', foreground: '#14171f' }, // --search-query-text-color
     { token: 'metaRegexpCharacterClassRange', foreground: '#14171f' }, // --search-query-text-color
-    { token: 'metaRegexpCharacterClassRangeHyphen', foreground: '#a305e1' }, // --search-keyword-color
+    { token: 'metaRegexpCharacterClassRangeHyphen', foreground: '#a112ff' }, // --search-keyword-color
     { token: 'metaRegexpRangeQuantifier', foreground: '#1098ad' }, // --oc-cyan-7
     { token: 'metaRegexpAlternative', foreground: '#1098ad' }, // --oc-cyan-7
     // Structural pattern highlighting
@@ -162,8 +164,8 @@ interface Props extends ThemeProps {
     /** The DOM element ID to use when rendering the component. Use for a11y, not DOM manipulation. */
     id?: string
 
-    /** The height (in px) of the Monaco editor. */
-    height: number
+    /** The height (in px) of the Monaco editor or 'auto' for automatic resizing to fit the content height. */
+    height: number | 'auto'
 
     /** Called when the editor has mounted. */
     editorWillMount: (editor: typeof monaco) => void
@@ -184,7 +186,9 @@ interface Props extends ThemeProps {
     keyboardShortcutForFocus?: KeyboardShortcut
 }
 
-interface State {}
+interface State {
+    computedHeight: number
+}
 
 export class MonacoEditor extends React.PureComponent<Props, State> {
     private subscriptions = new Subscription()
@@ -193,21 +197,37 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
 
     private editor: monaco.editor.ICodeEditor | undefined
 
+    constructor(props: Props) {
+        super(props)
+        this.state = { computedHeight: props.height !== 'auto' ? props.height : 0 }
+    }
+
     private setRef = (element: HTMLElement | null): void => {
         if (!element) {
             return
         }
         this.props.editorWillMount(monaco)
+        const autoHeightOptions =
+            this.props.height === 'auto' ? { automaticLayout: true, scrollBeyondLastLine: false } : {}
         const editor = monaco.editor.create(element, {
             value: this.props.value,
             language: this.props.language,
             theme: this.getTheme(this.props.isLightTheme),
+            ...autoHeightOptions,
             ...this.props.options,
         })
         if (this.props.onEditorCreated) {
             this.props.onEditorCreated(editor)
         }
         this.editor = editor
+
+        if (this.props.height === 'auto') {
+            this.setState({ computedHeight: Math.min(MAX_AUTO_HEIGHT, editor.getContentHeight()) })
+            const disposable = editor.onDidContentSizeChange(({ contentHeight }) => {
+                this.setState({ computedHeight: Math.min(MAX_AUTO_HEIGHT, contentHeight) })
+            })
+            this.subscriptions.add({ unsubscribe: () => disposable.dispose() })
+        }
     }
 
     public componentDidUpdate(previousProps: Props): void {
@@ -246,10 +266,13 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
             <>
                 <div
                     // eslint-disable-next-line react/forbid-dom-props
-                    style={{ height: `${this.props.height}px`, position: 'relative' }}
+                    style={{
+                        height: `${this.state.computedHeight}px`,
+                        position: 'relative',
+                    }}
                     ref={this.setRef}
                     id={this.props.id}
-                    className={classNames(this.props.className, this.props.border !== false && 'border')}
+                    className={classNames(this.props.className, this.props.border !== false && 'border rounded')}
                 />
                 {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
                     <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />

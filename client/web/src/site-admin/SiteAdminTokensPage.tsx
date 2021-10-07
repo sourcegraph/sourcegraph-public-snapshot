@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -46,7 +47,7 @@ export const SiteAdminTokensPage: React.FunctionComponent<Props> = ({
                 <h2 className="mb-0">Access tokens</h2>
                 <LinkOrSpan
                     title={accessTokensEnabled ? '' : 'Access token creation is disabled in site configuration'}
-                    className={`btn btn-primary ml-2 ${accessTokensEnabled ? '' : 'disabled'}`}
+                    className={classNames('btn btn-primary ml-2', !accessTokensEnabled && 'disabled')}
                     to={accessTokensEnabled ? `${authenticatedUser.settingsURL!}/tokens/new` : null}
                 >
                     <AddIcon className="icon-inline" /> Generate access token

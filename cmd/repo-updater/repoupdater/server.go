@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -14,12 +13,10 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -32,13 +29,7 @@ type Server struct {
 	*repos.Store
 	*repos.Syncer
 	SourcegraphDotComMode bool
-	GithubDotComSource    interface {
-		GetRepo(ctx context.Context, nameWithOwner string) (*types.Repo, error)
-	}
-	GitLabDotComSource interface {
-		GetRepo(ctx context.Context, projectWithNamespace string) (*types.Repo, error)
-	}
-	Scheduler interface {
+	Scheduler             interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
@@ -48,9 +39,6 @@ type Server struct {
 	ChangesetSyncRegistry interface {
 		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
 		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
-		// HandleExternalServiceSync should be called when an external service changes so that
-		// the registry can start or stop the syncer associated with the service
-		HandleExternalServiceSync(es api.ExternalService)
 	}
 	RateLimitSyncer interface {
 		// SyncRateLimiters should be called when an external service changes so that
@@ -59,7 +47,7 @@ type Server struct {
 	}
 	PermsSyncer interface {
 		// ScheduleUsers schedules new permissions syncing requests for given users.
-		ScheduleUsers(ctx context.Context, userIDs ...int32)
+		ScheduleUsers(ctx context.Context, opts authz.FetchPermsOptions, userIDs ...int32)
 		// ScheduleRepos schedules new permissions syncing requests for given repositories.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
@@ -202,12 +190,14 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	src, err := repos.NewSource(&types.ExternalService{
+	sourcer := repos.NewSourcer(httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
+
+	src, err := sourcer(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
 		DisplayName: req.ExternalService.DisplayName,
 		Config:      req.ExternalService.Config,
-	}, httpcli.NewExternalHTTPClientFactory())
+	})
 	if err != nil {
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
 		return
@@ -241,9 +231,6 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 			log15.Warn("Handling rate limiter sync", "err", err)
 		}
 	}
-	if s.ChangesetSyncRegistry != nil {
-		s.ChangesetSyncRegistry.HandleExternalServiceSync(req.ExternalService)
-	}
 
 	log15.Info("server.external-service-sync", "synced", req.ExternalService.Kind)
 	respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
@@ -257,35 +244,33 @@ func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSy
 		return nil
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	results := make(chan repos.SourceResult)
-
 	if v, ok := src.(repos.UserSource); ok {
-		if err := v.ValidateAuthenticator(ctx); err != nil {
-			return err
-		}
-	} else {
-		go func() {
-			src.ListRepos(ctx, results)
-			close(results)
-		}()
-
-		for res := range results {
-			if res.Err != nil {
-				// Send error to user before waiting for all results, but drain
-				// the rest of the results to not leak a blocked goroutine
-				go func() {
-					for range results {
-					}
-				}()
-				return res.Err
-			}
-		}
+		return v.ValidateAuthenticator(ctx)
 	}
 
-	return nil
+	ctx, cancel := context.WithCancel(ctx)
+	results := make(chan repos.SourceResult)
+
+	defer func() {
+		cancel()
+
+		// We need to drain the rest of the results to not leak a blocked goroutine.
+		for range results {
+		}
+	}()
+
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	select {
+	case res := <-results:
+		// As soon as we get the first result back, we've got what we need to validate the external service.
+		return res.Err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
@@ -315,145 +300,31 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 		return mockRepoLookup(args)
 	}
 
-	list, err := s.Store.RepoStore.List(ctx, database.ReposListOptions{
-		Names: []string{string(args.Repo)},
-	})
-	if err != nil {
-		return nil, err
-	}
 	var repo *types.Repo
-	if len(list) > 0 {
-		repo = list[0]
+	if s.SourcegraphDotComMode {
+		repo, err = s.Syncer.SyncRepo(ctx, args.Repo)
+	} else {
+		// TODO: Remove all call sites that RPC into repo-updater to just look-up
+		// a repo. They can simply ask the database instead.
+		repo, err = s.Store.RepoStore.GetByName(ctx, args.Repo)
 	}
 
-	// If we are sourcegraph.com we don't sync our "cloud_default" code hosts in the background
-	// since there are too many repos. Instead we use an incremental approach where we check for
-	// changes everytime a user browses a repo. RepoLookup is the signal we rely on to check
-	// metadata.
-
-	codehost := extsvc.CodeHostOf(args.Repo, extsvc.PublicCodeHosts...)
-	if s.SourcegraphDotComMode && codehost != nil {
-		if repo == nil {
-			// Try and find this repo on the remote host. Block on the remote
-			// request.
-			return s.remoteRepoSync(ctx, codehost, string(args.Repo))
-		}
-
-		// TODO a queue with single flighting to speak to remote for args.Repo?
-
-		// We have (potentially stale) data we can return to the user right now. Do that
-		// rather than blocking. This should only happen for public repos, private repos
-		// are ignored since if they do exist in our DB they would have been added by a
-		// user owned code host connection in which case they'll be kept up to date by
-		// our background syncer.
-		if !repo.Private {
-			go func() {
-				ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-				defer cancel()
-				repoResult, err := s.remoteRepoSync(ctx, codehost, string(args.Repo))
-				if err != nil {
-					log15.Error("async remoteRepoSync failed", "repo", args.Repo, "error", err)
-					return
-				}
-
-				// Since we are only dealing with public repos here we can safely assume that
-				// when a repository stored in the database is not accessible anymore, no other
-				// external service should have access to it, we can then remove it.
-				if repoResult.ErrorNotFound || repoResult.ErrorUnauthorized {
-					err = s.Store.UpsertRepos(ctx, repo.With(func(r *types.Repo) {
-						r.DeletedAt = s.Now()
-					}))
-					if err != nil {
-						log15.Error("failed to delete inaccessible repo", "repo", args.Repo, "error", err)
-					}
-				}
-			}()
-		}
-	}
-
-	if repo == nil {
-		return &protocol.RepoLookupResult{
-			ErrorNotFound: true,
-		}, nil
-	}
-
-	repoInfo, err := newRepoInfo(repo)
-	if err != nil {
+	switch {
+	case err == nil:
+		break
+	case errcode.IsNotFound(err):
+		return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
+	case errcode.IsUnauthorized(err) || errcode.IsForbidden(err):
+		return &protocol.RepoLookupResult{ErrorUnauthorized: true}, nil
+	case errcode.IsTemporary(err):
+		return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
+	default:
 		return nil, err
 	}
 
-	return &protocol.RepoLookupResult{
-		Repo: repoInfo,
-	}, nil
-}
+	repoInfo := protocol.NewRepoInfo(repo)
 
-// remoteRepoSync is used by Sourcegraph.com to incrementally sync metadata
-// for remoteName on codehost.
-func (s *Server) remoteRepoSync(ctx context.Context, codehost *extsvc.CodeHost, remoteName string) (*protocol.RepoLookupResult, error) {
-	var repo *types.Repo
-	var err error
-	switch codehost {
-	case extsvc.GitHubDotCom:
-		nameWithOwner := strings.TrimPrefix(remoteName, "github.com/")
-		repo, err = s.GithubDotComSource.GetRepo(ctx, nameWithOwner)
-		if err != nil {
-			if github.IsNotFound(err) {
-				return &protocol.RepoLookupResult{
-					ErrorNotFound: true,
-				}, nil
-			}
-			// This check needs to come before isUnauthorized since GitHub returns 403 when
-			// rate limit has been exceeded.
-			if isTemporarilyUnavailable(err) {
-				return &protocol.RepoLookupResult{
-					ErrorTemporarilyUnavailable: true,
-				}, nil
-			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
-			return nil, err
-		}
-
-	case extsvc.GitLabDotCom:
-		projectWithNamespace := strings.TrimPrefix(remoteName, "gitlab.com/")
-		repo, err = s.GitLabDotComSource.GetRepo(ctx, projectWithNamespace)
-		if err != nil {
-			if gitlab.IsNotFound(err) {
-				return &protocol.RepoLookupResult{
-					ErrorNotFound: true,
-				}, nil
-			}
-			if isUnauthorized(err) {
-				return &protocol.RepoLookupResult{
-					ErrorUnauthorized: true,
-				}, nil
-			}
-			return nil, err
-		}
-	}
-
-	if repo.Private {
-		return &protocol.RepoLookupResult{
-			ErrorNotFound: true,
-		}, nil
-	}
-
-	err = s.Syncer.SyncRepo(ctx, s.Store, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	repoInfo, err := newRepoInfo(repo)
-	if err != nil {
-		return nil, err
-	}
-
-	return &protocol.RepoLookupResult{
-		Repo: repoInfo,
-	}, nil
+	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
 }
 
 func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
@@ -497,95 +368,8 @@ func (s *Server) handleSchedulePermsSync(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	s.PermsSyncer.ScheduleUsers(r.Context(), req.UserIDs...)
+	s.PermsSyncer.ScheduleUsers(r.Context(), req.Options, req.UserIDs...)
 	s.PermsSyncer.ScheduleRepos(r.Context(), req.RepoIDs...)
 
 	respond(w, http.StatusOK, nil)
-}
-
-func newRepoInfo(r *types.Repo) (*protocol.RepoInfo, error) {
-	urls := r.CloneURLs()
-	if len(urls) == 0 {
-		return nil, fmt.Errorf("no clone urls for repo id=%q name=%q", r.ID, r.Name)
-	}
-
-	info := protocol.RepoInfo{
-		Name:         r.Name,
-		Description:  r.Description,
-		Fork:         r.Fork,
-		Archived:     r.Archived,
-		Private:      r.Private,
-		VCS:          protocol.VCSInfo{URL: urls[0]},
-		ExternalRepo: r.ExternalRepo,
-	}
-
-	typ, _ := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
-	switch typ {
-	case extsvc.TypeGitHub:
-		ghrepo := r.Metadata.(*github.Repository)
-		info.Links = &protocol.RepoLinks{
-			Root:   ghrepo.URL,
-			Tree:   pathAppend(ghrepo.URL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(ghrepo.URL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(ghrepo.URL, "/commit/{commit}"),
-		}
-	case extsvc.TypeGitLab:
-		proj := r.Metadata.(*gitlab.Project)
-		info.Links = &protocol.RepoLinks{
-			Root:   proj.WebURL,
-			Tree:   pathAppend(proj.WebURL, "/tree/{rev}/{path}"),
-			Blob:   pathAppend(proj.WebURL, "/blob/{rev}/{path}"),
-			Commit: pathAppend(proj.WebURL, "/commit/{commit}"),
-		}
-	case extsvc.TypeBitbucketServer:
-		repo := r.Metadata.(*bitbucketserver.Repo)
-		if len(repo.Links.Self) == 0 {
-			break
-		}
-
-		href := repo.Links.Self[0].Href
-		root := strings.TrimSuffix(href, "/browse")
-		info.Links = &protocol.RepoLinks{
-			Root:   href,
-			Tree:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Blob:   pathAppend(root, "/browse/{path}?at={rev}"),
-			Commit: pathAppend(root, "/commits/{commit}"),
-		}
-	case extsvc.TypeAWSCodeCommit:
-		repo := r.Metadata.(*awscodecommit.Repository)
-		if repo.ARN == "" {
-			break
-		}
-
-		splittedARN := strings.Split(strings.TrimPrefix(repo.ARN, "arn:aws:codecommit:"), ":")
-		if len(splittedARN) == 0 {
-			break
-		}
-		region := splittedARN[0]
-		webURL := fmt.Sprintf("https://%s.console.aws.amazon.com/codesuite/codecommit/repositories/%s", region, repo.Name)
-		info.Links = &protocol.RepoLinks{
-			Root:   webURL + "/browse",
-			Tree:   webURL + "/browse/{rev}/--/{path}",
-			Blob:   webURL + "/browse/{rev}/--/{path}",
-			Commit: webURL + "/commit/{commit}",
-		}
-	}
-
-	return &info, nil
-}
-
-func pathAppend(base, p string) string {
-	return strings.TrimRight(base, "/") + p
-}
-
-func isUnauthorized(err error) bool {
-	code := github.HTTPErrorCode(err)
-	if code == 0 {
-		code = gitlab.HTTPErrorCode(err)
-	}
-	return code == http.StatusUnauthorized || code == http.StatusForbidden
-}
-
-func isTemporarilyUnavailable(err error) bool {
-	return github.IsRateLimitExceeded(err)
 }

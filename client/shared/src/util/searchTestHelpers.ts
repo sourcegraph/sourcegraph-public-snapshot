@@ -5,11 +5,11 @@ import sinon from 'sinon'
 import { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
 import { Controller } from '../extensions/controller'
-import { AggregateStreamingSearchResults, FileLineMatch, RepositoryMatch } from '../search/stream'
+import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
 
-export const RESULT: FileLineMatch = {
-    type: 'file',
-    name: '.travis.yml',
+export const RESULT: ContentMatch = {
+    type: 'content',
+    path: '.travis.yml',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -25,9 +25,33 @@ export const REPO_MATCH_RESULT: RepositoryMatch = {
     repository: 'github.com/golang/oauth2',
 }
 
-export const MULTIPLE_MATCH_RESULT: FileLineMatch = {
-    type: 'file',
-    name: 'clientcredentials/clientcredentials_test.go',
+export const REPO_MATCH_RESULTS_WITH_METADATA: RepositoryMatch[] = [
+    {
+        type: 'repo',
+        repository: 'github.com/golang/oauth2',
+        description: 'The Go package for OAuth2.',
+    },
+    {
+        type: 'repo',
+        repository: 'github.com/sourcegraph/sourcegraph',
+        description: 'Universtal code search',
+        repoStars: 123,
+        repoLastFetched: '2017-01-01T00:00:00Z',
+        private: true,
+    },
+    {
+        type: 'repo',
+        repository: 'github.com/sourcegraph/go-langserver',
+        description: 'Go language server',
+        repoStars: 9000,
+        fork: true,
+        archived: true,
+    },
+]
+
+export const MULTIPLE_MATCH_RESULT: ContentMatch = {
+    type: 'content',
+    path: 'clientcredentials/clientcredentials_test.go',
     repository: 'github.com/golang/oauth2',
     lineMatches: [
         {
@@ -119,9 +143,9 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
         RESULT,
         MULTIPLE_MATCH_RESULT,
         {
-            type: 'file',
-            name: 'example_test.go',
-            version: 'some-branch',
+            type: 'content',
+            path: 'example_test.go',
+            commit: 'abcd1234',
             repository: 'github.com/golang/oauth2',
             lineMatches: [
                 {
@@ -130,6 +154,8 @@ export const MULTIPLE_SEARCH_RESULT: AggregateStreamingSearchResults = {
                     offsetAndLengths: [[15, 4]],
                 },
             ],
+            repoStars: 42,
+            repoLastFetched: '2017-01-01T00:00:00Z',
         },
     ],
 }
@@ -211,6 +237,7 @@ export const extensionsController: Controller = {
         pretendRemote<FlatExtensionHostAPI>({
             getContributions: () => pretendProxySubscribable(NEVER),
             registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
+            haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
         })
     ),
     commandErrors: EMPTY,

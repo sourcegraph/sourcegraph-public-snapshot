@@ -5,9 +5,19 @@ import { asError, ErrorLike, isErrorLike } from '../util/errors'
 import { ExtensionManifest, parseExtensionManifestOrError } from './extensionManifest'
 
 /**
- * Describes a configured extension.
+ * The default fields in the {@link ConfiguredExtension} manifest (i.e., the default value of the
+ * `K` type parameter).
  */
-export interface ConfiguredExtension {
+export const CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS = ['contributes', 'activationEvents', 'url'] as const
+export type ConfiguredExtensionManifestDefaultFields = typeof CONFIGURED_EXTENSION_DEFAULT_MANIFEST_FIELDS[number]
+
+/**
+ * Describes a configured extension.
+ *
+ * @template K To reduce API surface, by default the manifest only contains the small subset of
+ * extension manifest fields that are needed to execute the extension.
+ */
+export interface ConfiguredExtension<K extends keyof ExtensionManifest = ConfiguredExtensionManifestDefaultFields> {
     /**
      * The extension's extension ID.
      *
@@ -16,10 +26,7 @@ export interface ConfiguredExtension {
     readonly id: string
 
     /** The parsed extension manifest, null if there is none, or a parse error. */
-    readonly manifest: ExtensionManifest | null | ErrorLike
-
-    /** The raw extension manifest (JSON), or null if there is none. */
-    readonly rawManifest: string | null
+    readonly manifest: Pick<ExtensionManifest, K> | null | ErrorLike
 }
 
 /**
@@ -33,9 +40,12 @@ export interface ConfiguredRegistryExtension<
         GQL.IRegistryExtension,
         'id' | 'url' | 'viewerCanAdminister'
     >
-> extends ConfiguredExtension {
+> extends ConfiguredExtension<keyof ExtensionManifest> {
     /** The extension's metadata on the registry, if this is a registry extension. */
     readonly registryExtension?: X
+
+    /** The raw extension manifest (JSON), or null if there is none. */
+    readonly rawManifest: string | null
 }
 
 type MinimalRegistryExtension = Pick<GQL.IRegistryExtension, 'extensionID' | 'id' | 'url' | 'viewerCanAdminister'> & {
@@ -84,6 +94,12 @@ export function getScriptURLFromExtensionManifest(extension: ConfiguredExtension
 }
 
 /**
+ * List of insight-like extension ids. These insights worked via extensions before,
+ * but at the moment they work via insight built-in data-fetchers.
+ */
+const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+
+/**
  * @throws An error if the final settings has an error.
  * @returns An array of extension IDs configured in the settings.
  */
@@ -94,7 +110,12 @@ export function extensionIDsFromSettings(settings: SettingsCascadeOrError): stri
     if (!settings.final?.extensions) {
         return []
     }
-    return Object.keys(settings.final.extensions)
+
+    return (
+        Object.keys(settings.final.extensions)
+            // Filter out deprecated extensions
+            .filter(extensionId => !DEPRECATED_EXTENSION_IDS.has(extensionId))
+    )
 }
 
 /**

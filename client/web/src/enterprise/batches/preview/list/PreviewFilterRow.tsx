@@ -1,10 +1,10 @@
 import * as H from 'history'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useRef } from 'react'
 import { Form } from 'reactstrap'
 
 import { ChangesetSpecOperation, ChangesetState } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
-import { isValidChangesetSpecOperation, isValidChangesetState } from '../../utils'
+import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 
 export interface PreviewFilters {
     search: string | null
@@ -15,30 +15,38 @@ export interface PreviewFilters {
 export interface PreviewFilterRowProps {
     history: H.History
     location: H.Location
-    onFiltersChange: (newFilters: PreviewFilters) => void
 }
 
-export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = ({
-    history,
-    location,
-    onFiltersChange,
-}) => {
-    const urlParameters = new URLSearchParams(location.search)
-
+export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = ({ history, location }) => {
     const searchElement = useRef<HTMLInputElement | null>(null)
 
-    const [action, setAction] = useState<ChangesetSpecOperation | undefined>(() => {
-        const value = urlParameters.get('action')
-        return value && isValidChangesetSpecOperation(value) ? value : undefined
-    })
-    const [currentState, setCurrentState] = useState<ChangesetState | undefined>(() => {
-        const value = urlParameters.get('current_state')
-        return value && isValidChangesetState(value) ? value : undefined
-    })
-    const [search, setSearch] = useState<string | undefined>(() => urlParameters.get('search') ?? undefined)
+    const { filters, setFilters } = useContext(BatchChangePreviewContext)
+
+    const onSubmit = useCallback(
+        (event: React.FormEvent<HTMLFormElement>): void => {
+            event.preventDefault()
+            setFilters({ ...filters, search: searchElement.current?.value || null })
+        },
+        [setFilters, filters]
+    )
+
+    const setAction = useCallback(
+        (action: ChangesetSpecOperation | undefined) => {
+            setFilters({ ...filters, action: action || null })
+        },
+        [filters, setFilters]
+    )
+
+    const setCurrentState = useCallback(
+        (currentState: ChangesetState | undefined) => {
+            setFilters({ ...filters, currentState: currentState || null })
+        },
+        [filters, setFilters]
+    )
 
     useEffect(() => {
         const urlParameters = new URLSearchParams(location.search)
+        const { search, action, currentState } = filters
 
         if (search) {
             urlParameters.set('search', search)
@@ -62,20 +70,9 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
             history.replace({ ...location, search: urlParameters.toString() })
         }
 
-        // Update the filters in the parent component.
-        onFiltersChange({ search: search || null, action: action || null, currentState: currentState || null })
-
         // We cannot depend on the history, since it's modified by this hook and that would cause an infinite render loop.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, action, currentState])
-
-    const onSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>): void => {
-            event.preventDefault()
-            setSearch(searchElement.current?.value)
-        },
-        [setSearch, searchElement]
-    )
+    }, [filters])
 
     return (
         <div className="row no-gutters">
@@ -85,7 +82,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
                         className="form-control flex-grow-1"
                         type="search"
                         ref={searchElement}
-                        defaultValue={search}
+                        defaultValue={filters.search ?? undefined}
                         placeholder="Search title and repository name"
                     />
                 </Form>
@@ -97,7 +94,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
                         <ChangesetFilter<ChangesetState>
                             values={Object.values(ChangesetState)}
                             label="Current state"
-                            selected={currentState}
+                            selected={filters.currentState ?? undefined}
                             onChange={setCurrentState}
                             className="w-100"
                         />
@@ -106,7 +103,7 @@ export const PreviewFilterRow: React.FunctionComponent<PreviewFilterRowProps> = 
                         <ChangesetFilter<ChangesetSpecOperation>
                             values={Object.values(ChangesetSpecOperation)}
                             label="Actions"
-                            selected={action}
+                            selected={filters.action ?? undefined}
                             onChange={setAction}
                             className="w-100"
                         />

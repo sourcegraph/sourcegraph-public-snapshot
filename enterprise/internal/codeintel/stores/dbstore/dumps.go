@@ -138,6 +138,10 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (%s)
 // of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
 // by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
 // we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
+//
+// It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
+// splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
+// prevent returning data from stale dumps.
 func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []Dump, err error) {
 	ctx, traceLog, endObservation := s.operations.findClosestDumps.WithAndLogger(ctx, &err, observation.Args{
 		LogFields: []log.Field{
@@ -164,7 +168,8 @@ func (s *Store) FindClosestDumps(ctx context.Context, repositoryID int, commit, 
 
 const findClosestDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumps
-WITH visible_uploads AS (%s)
+WITH
+visible_uploads AS (%s)
 SELECT
 	u.id,
 	u.commit,
@@ -185,6 +190,7 @@ SELECT
 FROM visible_uploads vu
 JOIN lsif_dumps_with_repository_name u ON u.id = vu.upload_id
 WHERE %s
+ORDER BY u.finished_at DESC
 `
 
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
@@ -245,7 +251,8 @@ func (s *Store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:FindClosestDumpsFromGraphFragment
-WITH visible_uploads AS (%s)
+WITH
+visible_uploads AS (%s)
 SELECT
 	vu.upload_id,
 	encode(vu.commit_bytea, 'hex'),
@@ -379,26 +386,25 @@ func (s *Store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, co
 
 const deleteOverlappingDumpsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/dumps.go:DeleteOverlappingDumps
-WITH overlapping_dumps AS (
-	SELECT id
-	FROM lsif_uploads
+WITH
+candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
 	WHERE
-		state = 'completed' AND
-		repository_id = %s AND
-		commit = %s AND
-		root = %s AND
-		indexer = %s
+		u.state = 'completed' AND
+		u.repository_id = %s AND
+		u.commit = %s AND
+		u.root = %s AND
+		u.indexer = %s
 
-	-- Lock these rows in a deterministic order before the update
-	-- below. If we don't do this then we run into a pretty high
-	-- deadlock rate during upload processing as multiple workers
-	-- issue commands for the same set of records, but upload locks
-	-- records nondeterministically.
-	ORDER BY id FOR UPDATE
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
 ),
 updated AS (
-	UPDATE lsif_uploads SET state = 'deleted'
-	WHERE id IN (SELECT id FROM overlapping_dumps)
+	UPDATE lsif_uploads
+	SET state = 'deleting'
+	WHERE id IN (SELECT id FROM candidates)
 	RETURNING 1
 )
 SELECT COUNT(*) FROM updated

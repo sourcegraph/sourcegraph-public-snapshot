@@ -69,7 +69,7 @@ func getStateConfig() gologin.CookieConfig {
 	cfg := gologin.CookieConfig{
 		Name:     "gitlab-state-cookie",
 		Path:     "/",
-		MaxAge:   120, // 120 seconds
+		MaxAge:   900, // 15 minutes
 		HTTPOnly: true,
 		Secure:   conf.IsExternalURLSecure(),
 	}

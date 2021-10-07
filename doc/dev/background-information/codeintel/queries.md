@@ -63,7 +63,7 @@ A hover request returns the hover text associated with the symbol at a particula
 
 First, the repository, commit, and path inputs are used to determine the set of LSIF uploads that can answer queries for that data. Such an upload may have been indexed on another commit. In this case, the output of `git diff` between the two commits is used to adjust the input path and line number. 
 
-The adjusted path and position is used to query the hover text at that position using the selected upload data.
+The adjusted path and position is used to query the hover text at that position using the selected upload data. If there is no hover text associated with a reference (which may be the case for indexers that do not provide third-party hover text), we attempt to resolve the location of the definition in another dump. This moniker search is almost identical to the flow within the definitions resolver. Once a definition location is known, its hover text can be queried directly by position.
 
 If the resulting locations were provided by an upload that was indexed on a commit distinct from the input commit, `git diff` is used to again re-adjust the results to the target commit.
 

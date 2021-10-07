@@ -1,6 +1,8 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import styles from './CtaBanner.module.scss'
+
 interface Props {
     className?: string
     bodyTextClassName?: string
@@ -11,6 +13,7 @@ interface Props {
     href: string
     linkText: string
     googleAnalytics?: boolean
+    onClick?: () => void
 }
 
 export const CtaBanner: React.FunctionComponent<Props> = ({
@@ -23,8 +26,9 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
     href,
     linkText,
     googleAnalytics,
+    onClick,
 }) => (
-    <div className={classNames('cta-banner shadow d-flex flex-row card py-4 pr-4 pl-3', className)}>
+    <div className={classNames('shadow d-flex flex-row card py-4 pr-4 pl-3', styles.ctaBanner, className)}>
         <div className="mr-4 d-flex flex-column align-items-center">{icon}</div>
         <div>
             <HeadingX>{title}</HeadingX>
@@ -34,6 +38,7 @@ export const CtaBanner: React.FunctionComponent<Props> = ({
                 // eslint-disable-next-line react/jsx-no-target-blank
                 target="_blank"
                 rel="noreferrer"
+                onClick={onClick}
                 className={classNames('btn btn-primary', { 'ga-cta-install-now': googleAnalytics })}
             >
                 {linkText}

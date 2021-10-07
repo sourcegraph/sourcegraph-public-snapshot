@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import * as React from 'react'
@@ -16,7 +17,7 @@ export const RegistryExtensionSourceBadge: React.FunctionComponent<{
         to={extension.remoteURL}
         target="_blank"
         rel="noopener noreferrer"
-        className={`text-muted text-nowrap d-inline-flex align-items-center ${className}`}
+        className={classNames('text-muted text-nowrap d-inline-flex align-items-center', className)}
         data-tooltip={
             extension.isLocal
                 ? 'Published on this site'

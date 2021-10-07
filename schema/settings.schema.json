@@ -20,8 +20,9 @@
             "pointer": true
           }
         },
-        "codeInsightsDashboards": {
-          "description": "Enables code insights dashboards separation for the code insight page.",
+        "codeInsightsAllRepos": {
+          "deprecated": true,
+          "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -124,6 +125,14 @@
             "pointer": true
           }
         },
+        "showSearchNotebook": {
+          "description": "Enables the search notebook at search/notebook",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "showQueryBuilder": {
           "description": "Enables the search query builder page at search/query-builder",
           "type": "boolean",
@@ -142,14 +151,6 @@
         },
         "enableFastResultLoading": {
           "description": "Enables optimized search result loading (syntax highlighting / file contents fetching)",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "designRefreshToggleEnabled": {
-          "description": "Enables access to the design refresh toggle in the user menu.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -258,6 +259,19 @@
           ]
         }
       }
+    },
+    "codeIntelligence.autoIndexRepositoryGroups": {
+      "description": "A list of search.repositoryGroups that have auto-indexing enabled.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "codeIntelligence.autoIndexPopularRepoLimit": {
+      "description": "Up to this number of repos are auto indexed automatically. Ordered by star count.",
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
     },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
@@ -426,6 +440,17 @@
         "$ref": "#/definitions/Insight"
       }
     },
+    "insights.allrepos": {
+      "type": "object",
+      "description": "EXPERIMENTAL: Backend-based Code Insights",
+      "propertyNames": {
+        "type": "string",
+        "description": "A valid insight ID."
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/BackendInsight"
+      }
+    },
     "insights.dashboards": {
       "description": "EXPERIMENTAL: Code Insights Dashboards",
       "type": "object",
@@ -439,6 +464,84 @@
     }
   },
   "definitions": {
+    "BackendInsight": {
+      "type": "object",
+      "required": ["title", "series"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "The short title of this insight"
+        },
+        "description": {
+          "type": "string",
+          "description": "The description of this insight"
+        },
+        "series": {
+          "type": "array",
+          "description": "Each query will be represented by one line on the chart.",
+          "items": {
+            "$ref": "#/definitions/BackendInsightSeries"
+          }
+        },
+        "filters": {
+          "$ref": "#/definitions/InsightFilters"
+        }
+      }
+    },
+    "BackendInsightSeries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "query"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name to use for the series in the graph."
+        },
+        "query": {
+          "type": "string",
+          "description": "Performs a search query and shows the number of results returned."
+        },
+        "stroke": {
+          "type": "string",
+          "description": "The color of the line for the series."
+        }
+      }
+    },
+    "InsightFilters": {
+      "type": "object",
+      "description": "Performs a filter",
+      "required": ["includeRepoRegexp", "excludeRepoRegexp"],
+      "properties": {
+        "includeRepoRegexp": { "type": "string" },
+        "excludeRepoRegexp": { "type": "string" },
+        "repositories": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "InsightDashboard": {
+      "type": "object",
+      "required": ["id", "title"],
+      "properties": {
+        "title": {
+          "description": "Title of the dashboard.",
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "insightIds": {
+          "description": "Insights ids that will be included in the dashboard.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "Insight": {
       "type": "object",
       "additionalProperties": false,
@@ -485,26 +588,6 @@
         "webhook": {
           "type": "string",
           "description": "(not yet supported) Fetch data from a webhook URL."
-        }
-      }
-    },
-    "InsightDashboard": {
-      "type": "object",
-      "required": ["id", "title"],
-      "properties": {
-        "title": {
-          "description": "Title of the dashboard.",
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "insightIds": {
-          "description": "Insights ids that will be included in the dashboard.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     },

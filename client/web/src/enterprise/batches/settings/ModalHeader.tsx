@@ -15,7 +15,7 @@ export const ModalHeader: React.FunctionComponent<ModalHeaderProps> = ({
     externalServiceURL,
 }) => (
     <>
-        <h3 id={id}>Batch changes credentials: {defaultExternalServices[externalServiceKind].defaultDisplayName}</h3>
+        <h3 id={id}>Batch Changes credentials: {defaultExternalServices[externalServiceKind].defaultDisplayName}</h3>
         <p className="mb-4">{externalServiceURL}</p>
     </>
 )

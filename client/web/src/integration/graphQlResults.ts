@@ -30,6 +30,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     ViewerSettings: () => ({
         viewerSettings: {
+            __typename: 'SettingsCascade',
             subjects: [
                 {
                     __typename: 'DefaultSettings',
@@ -93,6 +94,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         },
         repositories: { totalCount: 9 },
         viewerSettings: {
+            __typename: 'SettingsCascade',
+            subjects: [],
             final: JSON.stringify({}),
         },
         users: { totalCount: 2 },
@@ -109,6 +112,8 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
         // externalServices: { totalCount: 3 },
         // repositories: { totalCount: 9 },
         // viewerSettings: {
+        //     __typename: 'SettingsCascade',
+        //     subjects: [],
         //     final: JSON.stringify({}),
         // },
         // users: { totalCount: 2 },
@@ -122,6 +127,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     EventLogsData: () => ({
         node: {
+            __typename: 'User',
             eventLogs: {
                 nodes: [],
                 totalCount: 0,
@@ -191,6 +197,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     UserRepositories: () => ({
         node: {
+            __typename: 'User',
             repositories: {
                 totalCount: 0,
                 nodes: [],
@@ -212,5 +219,15 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     FetchFeatureFlags: () => ({
         viewerFeatureFlags: [],
+    }),
+    GetTemporarySettings: () => ({
+        temporarySettings: {
+            contents: '{}',
+        },
+    }),
+    EditTemporarySettings: () => ({
+        editTemporarySettings: {
+            alwaysNil: null,
+        },
     }),
 }

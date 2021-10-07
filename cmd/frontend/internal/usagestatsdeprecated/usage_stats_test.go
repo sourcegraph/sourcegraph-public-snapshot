@@ -3,13 +3,16 @@ package usagestatsdeprecated
 
 import (
 	"context"
-	"fmt"
+	"flag"
+	"log"
+	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gomodule/redigo/redis"
+	"github.com/stvp/tempredis"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -368,7 +371,12 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 }
 
 func setupForTest(t *testing.T) {
-	if testing.Short() {
+	t.Helper()
+
+	if testRedisErr != nil {
+		t.Fatal("failed to setup temporary redis", testRedisErr)
+	}
+	if testRedis == nil {
 		t.Skip()
 	}
 
@@ -377,7 +385,7 @@ func setupForTest(t *testing.T) {
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", "localhost:6379")
+			c, err := redis.Dial("unix", testRedis.Socket())
 			if err != nil {
 				return nil, err
 			}
@@ -415,7 +423,7 @@ func siteActivityCompare(a, b *types.SiteUsageStatistics) error {
 		return nil
 	}
 	if len(a.DAUs) != len(b.DAUs) || len(a.WAUs) != len(b.WAUs) || len(a.MAUs) != len(b.MAUs) {
-		return fmt.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(a.DAUs), len(b.DAUs), len(a.WAUs), len(b.WAUs), len(a.MAUs), len(b.MAUs))
+		return errors.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(a.DAUs), len(b.DAUs), len(a.WAUs), len(b.WAUs), len(a.MAUs), len(b.MAUs))
 	}
 	if err := siteActivityPeriodSliceCompare("DAUs", a.DAUs, b.DAUs); err != nil {
 		return err
@@ -431,7 +439,7 @@ func siteActivityCompare(a, b *types.SiteUsageStatistics) error {
 
 func siteActivityPeriodSliceCompare(label string, a, b []*types.SiteActivityPeriod) error {
 	if a == nil || b == nil {
-		return fmt.Errorf("%v slices can not be nil", label)
+		return errors.Errorf("%v slices can not be nil", label)
 	}
 	for i, v := range a {
 		if err := siteActivityPeriodCompare(label, v, b[i]); err != nil {
@@ -449,7 +457,31 @@ func siteActivityPeriodCompare(label string, a, b *types.SiteActivityPeriod) err
 		return nil
 	}
 	if a.StartTime != b.StartTime || a.UserCount != b.UserCount || a.RegisteredUserCount != b.RegisteredUserCount || a.AnonymousUserCount != b.AnonymousUserCount || a.IntegrationUserCount != b.IntegrationUserCount {
-		return fmt.Errorf("[%v] got %+v want %+v", label, a, b)
+		return errors.Errorf("[%v] got %+v want %+v", label, a, b)
 	}
 	return nil
+}
+
+var (
+	testRedis    *tempredis.Server
+	testRedisErr error
+)
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+
+	if !testing.Short() {
+		testRedis, testRedisErr = tempredis.Start(nil)
+	}
+
+	code := m.Run()
+
+	if testRedis != nil {
+		err := testRedis.Kill()
+		if err != nil {
+			log.Fatal("failed to kill test redis: ", err)
+		}
+	}
+
+	os.Exit(code)
 }

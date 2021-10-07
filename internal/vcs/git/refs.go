@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // HumanReadableBranchName returns a human readable branch name from the
@@ -65,7 +66,7 @@ type Branch struct {
 	Head api.CommitID `json:"Head,omitempty"`
 	// Commit optionally contains commit information for this branch's head commit.
 	// It is populated if IncludeCommit option is set.
-	Commit *Commit `json:"Commit,omitempty"`
+	Commit *gitapi.Commit `json:"Commit,omitempty"`
 	// Counts optionally contains the commit counts relative to specified branch.
 	Counts *BehindAhead `json:"Counts,omitempty"`
 }
@@ -203,7 +204,7 @@ func branches(ctx context.Context, repo api.RepoName, args ...string) ([]string,
 	cmd.Repo = repo
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
+		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args, cmd.Repo, err, out)
 	}
 	lines := strings.Split(string(out), "\n")
 	lines = lines[:len(lines)-1]
@@ -276,7 +277,7 @@ func parseTags(in []byte) ([]*Tag, error) {
 	for i, line := range lines {
 		parts := bytes.SplitN(line, []byte("\x00"), 3)
 		if len(parts) != 3 {
-			return nil, fmt.Errorf("invalid git tag list output line: %q", line)
+			return nil, errors.Errorf("invalid git tag list output line: %q", line)
 		}
 
 		tag := &Tag{

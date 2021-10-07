@@ -27,3 +27,27 @@ var (
 		}
 	}
 )
+
+type KubernetesMonitoringOptions struct {
+	// PodsAvailable transforms the default observable used to construct the pods available panel.
+	PodsAvailable ObservableOption
+}
+
+// NewProvisioningIndicatorsGroup creates a group containing panels displaying
+// provisioning indication metrics - long and short term usage for both CPU and
+// memory usage - for the given container.
+func NewKubernetesMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *KubernetesMonitoringOptions) monitoring.Group {
+	if options == nil {
+		options = &KubernetesMonitoringOptions{}
+	}
+
+	return monitoring.Group{
+		Title:  TitleKubernetesMonitoring,
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				options.PodsAvailable.safeApply(KubernetesPodsAvailable(containerName, owner)).Observable(),
+			},
+		},
+	}
+}

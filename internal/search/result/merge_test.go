@@ -2,20 +2,19 @@ package result
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"testing"
 
 	"github.com/hexops/autogold"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func commitResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		Repo: types.RepoName{Name: api.RepoName(repo)},
-		Commit: git.Commit{
+		Commit: gitapi.Commit{
 			ID: api.CommitID(commit),
 		},
 	}
@@ -25,7 +24,7 @@ func diffResult(repo, commit string) *CommitMatch {
 	return &CommitMatch{
 		DiffPreview: &HighlightedString{},
 		Repo:        types.RepoName{Name: api.RepoName(repo)},
-		Commit: git.Commit{
+		Commit: gitapi.Commit{
 			ID: api.CommitID(commit),
 		},
 	}
@@ -92,7 +91,7 @@ func TestUnionMerge(t *testing.T) {
 				fileResult("a", nil, nil),
 			},
 			right: []Match{},
-			want:  autogold.Want("LeftOnly", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a"),
+			want:  autogold.Want("LeftOnly", "Diff:/a/-/commit/a, Commit:/a/-/commit/a, Repo:/a, File{url:a/,symbols:[],lineMatches:[]}"),
 		},
 		{
 			left: []Match{
@@ -101,7 +100,7 @@ func TestUnionMerge(t *testing.T) {
 				repoResult("a"),
 				fileResult("a", nil, nil),
 			},
-			want: autogold.Want("RightOnly", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a"),
+			want: autogold.Want("RightOnly", "Diff:/a/-/commit/a, Commit:/a/-/commit/a, Repo:/a, File{url:a/,symbols:[],lineMatches:[]}"),
 		},
 		{
 			left: []Match{
@@ -116,7 +115,7 @@ func TestUnionMerge(t *testing.T) {
 				repoResult("b"),
 				fileResult("b", nil, nil),
 			},
-			want: autogold.Want("MergeAllDifferent", "File{url:a/,symbols:[],lineMatches:[]}, Repo:/a, Commit:/a/-/commit/a, Diff:/a/-/commit/a, File{url:b/,symbols:[],lineMatches:[]}, Repo:/b, Commit:/b/-/commit/b, Diff:/b/-/commit/b"),
+			want: autogold.Want("MergeAllDifferent", "Diff:/a/-/commit/a, Commit:/a/-/commit/a, Repo:/a, File{url:a/,symbols:[],lineMatches:[]}, Diff:/b/-/commit/b, Commit:/b/-/commit/b, Repo:/b, File{url:b/,symbols:[],lineMatches:[]}"),
 		},
 		{
 			left: []Match{
@@ -168,7 +167,6 @@ func TestUnionMerge(t *testing.T) {
 	for _, tc := range cases {
 		t.Run("", func(t *testing.T) {
 			got := Union(tc.left, tc.right)
-			sort.Sort(Matches(got))
 			tc.want.Equal(t, resultsToString(got))
 		})
 	}

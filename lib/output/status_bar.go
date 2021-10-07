@@ -40,6 +40,7 @@ func (sb *StatusBar) Resetf(label, format string, args ...interface{}) {
 	sb.format = format
 	sb.args = args
 	sb.startedAt = time.Now()
+	sb.finishedAt = time.Time{}
 }
 
 // Updatef updates the StatusBar's text.

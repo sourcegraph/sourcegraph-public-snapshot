@@ -1,23 +1,50 @@
 # Updating a Kubernetes Sourcegraph instance
 
 This document describes the exact changes needed to update a Kubernetes Sourcegraph instance. Follow
-the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster.
-
-A new version of Sourcegraph is released every month on the **20th** (with patch releases in between, released as
-needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about
-updates. We actively maintain the two most recent monthly releases of Sourcegraph.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
-> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
-
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade,
+the [recommended method](../install/kubernetes/update.md) of upgrading a Kubernetes cluster. **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade,
 and any manual migration steps you must perform.
 
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+2. Find the relevant entry for your update in the update notes on this page.
+3. After checking the relevant update notes, refer to the [Sourcegraph with Kubernetes upgrade guide](../install/kubernetes/update.md) to upgrade your instance.
+
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## 3.31 -> 3.32
+
+No manual migration is required - follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
+
+## 3.30.3 -> 3.31
+
+The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+
+If you have already upgraded to 3.30.3, which uses the new alpine-based Docker images, all users that use our bundled (built-in) database instances should have already performed [the necessary re-indexing](../migration/3_31.md).
+
+> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.30).*
+
+## 3.30.x -> 3.31
+
+The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+
+All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
+
+> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+
+## 3.29 -> 3.30.3
+
+> WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
+
+This upgrade removes the `non-root` overlay, in favor of using only the `non-privileged` overlay for deploying Sourcegraph in secure environments. If you were
+previously deploying using the `non-root` overlay, you should now generate overlays using the `non-privileged` overlay.
+
+No other manual migration is required, follow the [standard upgrade method](../install/kubernetes/update.md) to upgrade your
+deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.29).*
 
 ## 3.28 -> 3.29
 

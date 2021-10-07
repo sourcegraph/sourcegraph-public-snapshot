@@ -17,6 +17,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -124,6 +126,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
 	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
 	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
+	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
 	extsvc.KindPerforce:        {CodeHost: true, JSONSchema: schema.PerforceSchemaJSON},
 	extsvc.KindPhabricator:     {CodeHost: true, JSONSchema: schema.PhabricatorSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},
@@ -209,7 +212,7 @@ type ValidateExternalServiceConfigOptions struct {
 func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateExternalServiceConfigOptions) (normalized []byte, err error) {
 	ext, ok := ExternalServiceKinds[opt.Kind]
 	if !ok {
-		return nil, fmt.Errorf("invalid external service kind: %s", opt.Kind)
+		return nil, errors.Errorf("invalid external service kind: %s", opt.Kind)
 	}
 
 	// All configs must be valid JSON.
@@ -227,12 +230,14 @@ func (e *ExternalServiceStore) ValidateConfig(ctx context.Context, opt ValidateE
 		return nil, errors.Wrapf(err, "unable to normalize JSON")
 	}
 
-	// Check for any redacted secrets, in graphqlbackend/external_service.go:externalServiceByID() we call
-	// svc.RedactConfigSecrets() replacing any secret fields in the JSON with types.RedactedSecret, this is to
-	// prevent us leaking tokens that users add. Here we check that the config we've been passed doesn't
-	// contain any redacted secrets in order to avoid breaking configs by writing the redacted version to
-	// the database. we should have called svc.UnredactConfig(oldSvc) before this point, eg in the Update
-	// method of the ExternalServiceStore. talk to @arussellsaw or the cloud team if you have any questions
+	// Check for any redacted secrets, in
+	// graphqlbackend/external_service.go:externalServiceByID() we call
+	// svc.RedactConfigSecrets() replacing any secret fields in the JSON with
+	// types.RedactedSecret, this is to prevent us leaking tokens that users add.
+	// Here we check that the config we've been passed doesn't contain any redacted
+	// secrets in order to avoid breaking configs by writing the redacted version to
+	// the database. we should have called svc.UnredactConfig(oldSvc) before this
+	// point, e.g. in the Update method of the ExternalServiceStore.
 	if bytes.Contains(normalized, []byte(types.RedactedSecret)) {
 		return nil, errors.Errorf(
 			"unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
@@ -344,14 +349,14 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 	for i, repo := range c.Repos {
 		cloneURL, err := parseRepo(repo)
 		if err != nil {
-			return fmt.Errorf(`repos.%d: %s`, i, err)
+			return errors.Errorf(`repos.%d: %s`, i, err)
 		}
 
 		switch cloneURL.Scheme {
 		case "git", "http", "https", "ssh":
 			continue
 		default:
-			return fmt.Errorf("repos.%d: scheme %q not one of git, http, https or ssh", i, cloneURL.Scheme)
+			return errors.Errorf("repos.%d: scheme %q not one of git, http, https or ssh", i, cloneURL.Scheme)
 		}
 	}
 
@@ -455,7 +460,7 @@ func (e *ExternalServiceStore) validateDuplicateRateLimits(ctx context.Context, 
 				return errors.Wrap(err, "extracting rate limit config")
 			}
 			if rlc.BaseURL == baseURL && svc.ID != id && !rlc.IsDefault {
-				return fmt.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
+				return errors.Errorf("existing external service, %q, already has a rate limit set", rlc.DisplayName)
 			}
 		}
 
@@ -488,7 +493,7 @@ func (e *ExternalServiceStore) validateSingleKindPerUser(ctx context.Context, id
 		// Fail if a service already exists that is not the current service
 		for _, svc := range svcs {
 			if svc.ID != id {
-				return fmt.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
+				return errors.Errorf("existing external service, %q, of same kind already added", svc.DisplayName)
 			}
 		}
 		if len(svcs) < opt.Limit {
@@ -587,12 +592,10 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 // maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
 func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
 	// encrypt the config before writing if we have a key configured
-	var (
-		keyVersion string
-		key        = keyring.Default().ExternalServiceKey
-	)
-	if e.key != nil {
-		key = e.key
+	var keyVersion string
+	key := e.key
+	if key == nil {
+		key = keyring.Default().ExternalServiceKey
 	}
 	if key != nil {
 		encrypted, err := key.Encrypt(ctx, []byte(config))
@@ -610,18 +613,23 @@ func (e *ExternalServiceStore) maybeEncryptConfig(ctx context.Context, config st
 }
 
 func (e *ExternalServiceStore) maybeDecryptConfig(ctx context.Context, config string, keyID string) (string, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "ExternalServiceStore.maybeDecryptConfig")
+	defer span.Finish()
+
 	if keyID == "" {
 		// config is not encrypted, return plaintext
 		return config, nil
 	}
-	var key = keyring.Default().ExternalServiceKey
-	if e.key != nil {
-		key = e.key
+	key := e.key
+	if key == nil {
+		key = keyring.Default().ExternalServiceKey
 	}
 	if key == nil {
-		return config, fmt.Errorf("couldn't decrypt encrypted config, key is nil")
+		return config, errors.Errorf("couldn't decrypt encrypted config, key is nil")
 	}
+	decryptSpan, ctx := ot.StartSpanFromContext(ctx, "key.Decrypt")
 	decrypted, err := key.Decrypt(ctx, []byte(config))
+	decryptSpan.Finish()
 	if err != nil {
 		return config, err
 	}
@@ -693,7 +701,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	i := 0
 	for rows.Next() {
-		var keyID string
+		var encryptionKeyID string
 		err = rows.Scan(
 			&svcs[i].ID,
 			&svcs[i].Kind,
@@ -707,13 +715,14 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&dbutil.NullInt32{N: &svcs[i].NamespaceUserID},
 			&svcs[i].Unrestricted,
 			&svcs[i].CloudDefault,
-			&keyID,
+			&encryptionKeyID,
+			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
 		)
 		if err != nil {
 			return err
 		}
 
-		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, keyID)
+		svcs[i].Config, err = tx.maybeDecryptConfig(ctx, svcs[i].Config, encryptionKeyID)
 		if err != nil {
 			return err
 		}
@@ -791,7 +800,21 @@ SET
   namespace_user_id  = excluded.namespace_user_id,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default
-RETURNING *
+RETURNING
+	id,
+	kind,
+	display_name,
+	config,
+	created_at,
+	updated_at,
+	deleted_at,
+	last_sync_at,
+	next_sync_at,
+	namespace_user_id,
+	unrestricted,
+	cloud_default,
+	encryption_key_id,
+	namespace_org_id
 `
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -1109,6 +1132,7 @@ ORDER BY es.id, essj.finished_at DESC
 	if err != nil {
 		return nil, err
 	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	messages := make(map[int64]string)
 
@@ -1119,9 +1143,6 @@ ORDER BY es.id, essj.finished_at DESC
 			return nil, err
 		}
 		messages[svcID] = message.String
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 
 	return messages, nil
@@ -1165,6 +1186,9 @@ WHERE deleted_at IS NULL
 }
 
 func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
+	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list")
+	defer span.Finish()
+
 	if opt.OrderByDirection != "ASC" {
 		opt.OrderByDirection = "DESC"
 	}
@@ -1184,6 +1208,8 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		return nil, err
 	}
 	defer rows.Close()
+
+	keyIDs := make(map[int64]string)
 
 	var results []*types.ExternalService
 	for rows.Next() {
@@ -1212,13 +1238,32 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			h.NamespaceUserID = namespaceUserID.Int32
 		}
 
-		h.Config, err = e.maybeDecryptConfig(ctx, h.Config, keyID)
-		if err != nil {
-			return nil, err
-		}
+		keyIDs[h.ID] = keyID
+
 		results = append(results, &h)
 	}
 	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Now we may need to decrypt config. Since each decrypt operation could make an
+	// API call we should run them in parallel
+	group, ctx := errgroup.WithContext(ctx)
+	for i := range results {
+		s := results[i]
+		var groupErr error
+		group.Go(func() error {
+			keyID := keyIDs[s.ID]
+			s.Config, groupErr = e.maybeDecryptConfig(ctx, s.Config, keyID)
+			if groupErr != nil {
+				return groupErr
+			}
+			return nil
+		})
+	}
+
+	err = group.Wait()
+	if err != nil {
 		return nil, err
 	}
 

@@ -12,19 +12,26 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
+// canceledJobsPollInterval denotes the time in between calls to the API to get a
+// list of canceled jobs.
+const canceledJobsPollInterval = 1 * time.Second
+
 type Options struct {
+	// VMPrefix is a unique string used to namespace virtual machines controlled by
+	// this executor instance. Different values for executors running on the same host
+	// (as in dev) will allow the janitors not to see each other's jobs as orphans.
+	VMPrefix string
+
 	// QueueName is the name of the queue to process work from. Having this configurable
 	// allows us to have multiple worker pools with different resource requirements and
 	// horizontal scaling factors while still uniformly processing events.
 	QueueName string
-
-	// HeartbeatInterval denotes the time between heartbeat requests to the queue API.
-	HeartbeatInterval time.Duration
 
 	// GitServicePath is the path to the internal git service API proxy in the frontend.
 	// This path should contain the endpoints info/refs and git-upload-pack.
@@ -58,8 +65,7 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(options Options, observationContext *observation.Context) goroutine.BackgroundRoutine {
-	idSet := newIDSet()
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine, canceler goroutine.BackgroundRoutine) {
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
@@ -68,30 +74,34 @@ func NewWorker(options Options, observationContext *observation.Context) gorouti
 	}
 
 	handler := &handler{
-		idSet:         idSet,
+		nameSet:       nameSet,
+		store:         store,
 		options:       options,
 		operations:    command.NewOperations(observationContext),
 		runnerFactory: command.NewRunner,
 	}
 
-	indexer := workerutil.NewWorker(context.Background(), store, handler, options.WorkerOptions)
-	heartbeat := goroutine.NewHandlerWithErrorMessage("heartbeat", func(ctx context.Context) error {
-		unknownIDs, err := queueStore.Heartbeat(ctx, idSet.Slice())
-		if err != nil {
-			return err
-		}
+	ctx := context.Background()
 
-		for _, id := range unknownIDs {
-			idSet.Remove(id)
-		}
+	w := workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
+	canceler = goroutine.NewPeriodicGoroutine(
+		ctx,
+		canceledJobsPollInterval,
+		goroutine.NewHandlerWithErrorMessage("executor.worker.pollCanceled", func(ctx context.Context) error {
+			canceled, err := queueStore.Canceled(ctx, options.QueueName)
+			if err != nil {
+				return err
+			}
 
-		return nil
-	})
+			for _, id := range canceled {
+				w.Cancel(id)
+			}
 
-	return goroutine.CombinedRoutine{
-		indexer,
-		goroutine.NewPeriodicGoroutine(context.Background(), options.HeartbeatInterval, heartbeat),
-	}
+			return nil
+		}),
+	)
+
+	return w, canceler
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.
@@ -110,18 +120,18 @@ func connectToFrontend(queueStore *apiclient.Client, options Options) bool {
 	defer signal.Stop(signals)
 
 	for {
-		err := queueStore.Ping(context.Background(), nil)
+		err := queueStore.Ping(context.Background(), options.QueueName, nil)
 		if err == nil {
 			log15.Info("Connected to Sourcegraph instance")
 			return true
 		}
 
 		var e *os.SyscallError
-		if !errors.As(err, &e) || e.Syscall != "connect" || time.Since(start) >= time.Minute {
-			// Hide initial connection logs due to services starting up in an
-			// nondeterminstic order. If one service doesn't come up within a
-			// minute, we'll log all errors. Unexpected error types are also
-			// unfiltered and logged immediately.
+		if errors.As(err, &e) && e.Syscall == "connect" && time.Since(start) < time.Minute {
+			// Hide initial connection logs due to services starting up in an nondeterminstic order.
+			// Logs occurring one minute after startup or later are not filtered, nor are non-expected
+			// connection errors during app startup.
+		} else {
 			log15.Error("Failed to connect to Sourcegraph instance", "error", err)
 		}
 

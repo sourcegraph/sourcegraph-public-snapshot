@@ -17,6 +17,7 @@ export interface Config {
     previousRelease: string
     upcomingRelease: string
 
+    oneWorkingDayBeforeRelease: string
     releaseDate: string
     oneWorkingDayAfterRelease: string
 
@@ -26,6 +27,7 @@ export interface Config {
         tags?: boolean
         changesets?: boolean
         trackingIssues?: boolean
+        slack?: boolean
         calendar?: boolean
     }
 }

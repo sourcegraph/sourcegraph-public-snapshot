@@ -32,7 +32,7 @@ func NewHandler(db dbutil.DB, serviceType, authPrefix string, isAPIHandler bool,
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Delegate to the auth flow handler
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
-			r = withOAuthExternalHTTPClient(r)
+			r = withOAuthExternalClient(r)
 			oauthFlowHandler.ServeHTTP(w, r)
 			return
 		}
@@ -126,11 +126,11 @@ func getExtraScopes(ctx context.Context, db dbutil.DB, serviceType string) ([]st
 	return scopes, nil
 }
 
-// withOAuthExternalHTTPClient updates client such that the
+// withOAuthExternalClient updates client such that the
 // golang.org/x/oauth2 package will use our http client which is configured
 // with proxy and TLS settings/etc.
-func withOAuthExternalHTTPClient(r *http.Request) *http.Request {
-	client := httpcli.ExternalHTTPClient()
+func withOAuthExternalClient(r *http.Request) *http.Request {
+	client := httpcli.ExternalClient
 	if traceLogEnabled {
 		loggingClient := *client
 		loggingClient.Transport = &loggingRoundTripper{underlying: client.Transport}

@@ -18,7 +18,7 @@ const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: nul
 
 add('Overview', () => {
     const nodes = [
-        ...Object.values(visibleChangesetApplyPreviewNodeStories),
+        ...Object.values(visibleChangesetApplyPreviewNodeStories(false)),
         ...Object.values(hiddenChangesetApplyPreviewStories),
     ]
     return (

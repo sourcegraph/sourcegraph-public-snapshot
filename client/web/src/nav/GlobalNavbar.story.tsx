@@ -4,6 +4,11 @@ import { SuiteFunction } from 'mocha'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    mockFetchAutoDefinedSearchContexts,
+    mockFetchSearchContexts,
+    mockGetUserSearchContextNamespaces,
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
@@ -11,16 +16,13 @@ import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 import { SourcegraphContext } from '../jscontext'
-import {
-    mockFetchAutoDefinedSearchContexts,
-    mockFetchSearchContexts,
-    mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
 
-window.context = { assetsRoot: 'https://sourcegraph.com/.assets' } as SourcegraphContext & SuiteFunction
+if (!window.context) {
+    window.context = {} as SourcegraphContext & SuiteFunction
+}
 
 const history = createMemoryHistory()
 
@@ -59,10 +61,10 @@ const defaultProps = (
     defaultSearchContextSpec: '',
     showOnboardingTour: false,
     isLightTheme: props.isLightTheme,
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
     isExtensionAlertAnimating: false,
-    showBatchChanges: true,
+    searchContextsEnabled: true,
+    batchChangesEnabled: true,
+    batchChangesExecutionEnabled: true,
     enableCodeMonitoring: true,
     activation: undefined,
     hideNavLinks: false,
@@ -72,7 +74,7 @@ const defaultProps = (
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
+    extensionViews: () => null,
 })
 
 const { add } = storiesOf('web/nav/GlobalNav', module)

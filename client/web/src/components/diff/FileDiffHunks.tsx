@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { combineLatest, from, NEVER, Observable, of, ReplaySubject, Subscription } from 'rxjs'
-import { filter, first, map, switchMap, tap } from 'rxjs/operators'
+import { distinctUntilKeyChanged, filter, first, map, switchMap, tap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
 import { findPositionsFromEvents } from '@sourcegraph/codeintellify'
@@ -16,11 +16,13 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { FileDiffFields } from '../../graphql-operations'
+import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
 
 import { DiffHunk } from './DiffHunk'
 import { DiffSplitHunk } from './DiffSplitHunk'
 import { ExtensionInfo } from './FileDiffConnection'
+import styles from './FileDiffHunks.module.scss'
 
 export interface FileHunksProps extends ThemeProps {
     /** The anchor (URL hash link) of the file diff. The component creates sub-anchors with this prefix. */
@@ -53,7 +55,7 @@ export interface FileHunksProps extends ThemeProps {
     history: H.History
     /** Reflect selected line in url */
     persistLines?: boolean
-    diffMode: string
+    diffMode: DiffMode
 }
 
 /** Displays hunks in a unified file diff. */
@@ -124,43 +126,36 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                         headViewerIds,
                         from(extensionInfo.extensionsController.extHostAPI),
                     ])
-                })
+                }),
+                map(([baseViewerId, headViewerId, extensionHostAPI]) => ({
+                    baseViewerId,
+                    headViewerId,
+                    extensionHostAPI,
+                }))
             ),
         [extensionInfoChanges]
     )
 
-    // Listen for and merge status bar items from extensions for <StatusBar>
-    const getStatusBarItems = useCallback(
+    const getHeadStatusBarItems = useCallback(
         () =>
             baseAndHeadViewerIds.pipe(
-                switchMap(([baseViewerId, headViewerId, extensionHostAPI]) =>
-                    combineLatest([
-                        baseViewerId
-                            ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(baseViewerId))
-                            : of(null),
-                        headViewerId
-                            ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(headViewerId))
-                            : of(null),
-                    ])
+                distinctUntilKeyChanged('headViewerId'),
+                switchMap(({ headViewerId, extensionHostAPI }) =>
+                    headViewerId ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(headViewerId)) : of(null)
                 ),
-                map(([baseStatusBarItems, headStatusBarItems]) => {
-                    if (baseStatusBarItems && headStatusBarItems) {
-                        return [
-                            ...baseStatusBarItems.map(({ text, key, ...rest }) => ({
-                                text: `base: ${text}`,
-                                key: `base-${key}`,
-                                ...rest,
-                            })),
-                            ...headStatusBarItems.map(({ text, key, ...rest }) => ({
-                                text: `head: ${text}`,
-                                key: `head-${key}`,
-                                ...rest,
-                            })),
-                        ]
-                    }
+                map(statusBarItems => statusBarItems || [])
+            ),
+        [baseAndHeadViewerIds]
+    )
 
-                    return headStatusBarItems || baseStatusBarItems || []
-                })
+    const getBaseStatusBarItems = useCallback(
+        () =>
+            baseAndHeadViewerIds.pipe(
+                distinctUntilKeyChanged('baseViewerId'),
+                switchMap(({ baseViewerId, extensionHostAPI }) =>
+                    baseViewerId ? wrapRemoteObservable(extensionHostAPI.getStatusBarItems(baseViewerId)) : of(null)
+                ),
+                map(statusBarItems => statusBarItems || [])
             ),
         [baseAndHeadViewerIds]
     )
@@ -170,7 +165,7 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
         useMemo(
             () =>
                 baseAndHeadViewerIds.pipe(
-                    switchMap(([baseViewerId, headViewerId, extensionHostAPI]) =>
+                    switchMap(({ baseViewerId, headViewerId, extensionHostAPI }) =>
                         combineLatest([
                             baseViewerId
                                 ? wrapRemoteObservable(extensionHostAPI.getTextDecorations(baseViewerId))
@@ -225,29 +220,54 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
         return () => subscription.unsubscribe()
     }, [codeElements, extensionInfoChanges])
 
+    const isSplitMode = diffMode === 'split'
+
     return (
-        <div className="file-diff-node__body">
+        <div className={styles.body}>
             {extensionInfo && (
-                <StatusBar
-                    getStatusBarItems={getStatusBarItems}
-                    className="file-diff-node__status-bar border-bottom border-top-0"
-                    extensionsController={extensionInfo.extensionsController}
-                    location={location}
-                />
+                <div className={classNames('w-100', isSplitMode && 'd-flex ')}>
+                    {/* Always render base status bar even though it isn't displayed in unified mode
+                    in order to prevent overloading the extension host with messages (`api.getStatusBarItems`) on
+                    mode switch, which noticeably decreases status bar performance. */}
+                    <StatusBar
+                        getStatusBarItems={getBaseStatusBarItems}
+                        className={classNames(
+                            isSplitMode && 'flex-1 w-50',
+                            'border-bottom border-top-0',
+                            styles.statusBar
+                        )}
+                        statusBarItemClassName="mx-0"
+                        extensionsController={extensionInfo.extensionsController}
+                        location={location}
+                        badgeText="BASE"
+                    />
+                    <StatusBar
+                        getStatusBarItems={getHeadStatusBarItems}
+                        className={classNames(
+                            isSplitMode && 'w-50',
+                            'flex-1 border-bottom border-top-0',
+                            styles.statusBar
+                        )}
+                        statusBarItemClassName="mx-0"
+                        extensionsController={extensionInfo.extensionsController}
+                        location={location}
+                        badgeText="HEAD"
+                    />
+                </div>
             )}
-            <div className={`file-diff-hunks ${className}`} ref={nextBlobElement}>
+            <div className={classNames(styles.fileDiffHunks, className)} ref={nextBlobElement}>
                 {hunks.length === 0 ? (
                     <div className="text-muted m-2">No changes</div>
                 ) : (
-                    <div className="file-diff-hunks__container" ref={nextCodeElement}>
+                    <div className={styles.container} ref={nextCodeElement}>
                         <table
-                            className={classNames('file-diff-hunks__table file-diff-hunks__table', {
-                                'diff-hunk--split': diffMode === 'split',
+                            className={classNames(styles.table, {
+                                [styles.tableSplit]: isSplitMode,
                             })}
                         >
                             {lineNumbers && (
                                 <colgroup>
-                                    {diffMode === 'split' ? (
+                                    {isSplitMode ? (
                                         <>
                                             <col width="40" />
                                             <col />
@@ -264,8 +284,8 @@ export const FileDiffHunks: React.FunctionComponent<FileHunksProps> = ({
                                 </colgroup>
                             )}
                             <tbody>
-                                {hunks.map((hunk, index) =>
-                                    diffMode === 'split' ? (
+                                {hunks.map(hunk =>
+                                    isSplitMode ? (
                                         <DiffSplitHunk
                                             fileDiffAnchor={fileDiffAnchor}
                                             isLightTheme={isLightTheme}

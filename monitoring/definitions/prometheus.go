@@ -8,13 +8,18 @@ import (
 )
 
 func Prometheus() *monitoring.Container {
-	// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
-	const ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
+	const (
+		containerName = "prometheus"
+
+		// ruleGroupInterpretation provides interpretation documentation for observables that are per prometheus rule_group.
+		ruleGroupInterpretation = `Rules that Sourcegraph ships with are grouped under '/sg_config_prometheus'. [Custom rules are grouped under '/sg_prometheus_addons'](https://docs.sourcegraph.com/admin/observability/metrics#prometheus-configuration).`
+	)
 
 	return &monitoring.Container{
-		Name:        "prometheus",
-		Title:       "Prometheus",
-		Description: "Sourcegraph's all-in-one Prometheus and Alertmanager service.",
+		Name:                     "prometheus",
+		Title:                    "Prometheus",
+		Description:              "Sourcegraph's all-in-one Prometheus and Alertmanager service.",
+		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
 				Title: "Metrics",
@@ -148,45 +153,10 @@ func Prometheus() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ContainerMemoryUsage("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-					{
-						shared.ContainerMissing("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("prometheus", monitoring.ObservableOwnerDistribution).Observable(),
-					},
-				},
-			},
-		},
 
-		// This is third-party service
-		NoSourcegraphDebugServer: true,
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDistribution, nil),
+		},
 	}
 }

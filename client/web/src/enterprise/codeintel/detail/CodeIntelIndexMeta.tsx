@@ -13,7 +13,7 @@ export interface CodeIntelIndexMetaProps {
 }
 
 export const CodeIntelIndexMeta: FunctionComponent<CodeIntelIndexMetaProps> = ({ node, now }) => (
-    <div className="card mb-3">
+    <div className="card">
         <div className="card-body">
             <div className="card border-0">
                 <div className="card-body">

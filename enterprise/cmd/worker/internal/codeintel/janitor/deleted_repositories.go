@@ -17,6 +17,7 @@ type deletedRepositoryJanitor struct {
 }
 
 var _ goroutine.Handler = &deletedRepositoryJanitor{}
+var _ goroutine.ErrorHandler = &deletedRepositoryJanitor{}
 
 // NewDeletedRepositoryJanitor returns a background routine that periodically
 // deletes upload and index records for repositories that have been soft-deleted.
@@ -36,12 +37,12 @@ func (j *deletedRepositoryJanitor) Handle(ctx context.Context) (err error) {
 
 	uploadsCounts, err := tx.DeleteUploadsWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "DeleteUploadsWithoutRepository")
+		return errors.Wrap(err, "dbstore.DeleteUploadsWithoutRepository")
 	}
 
 	indexesCounts, err := tx.DeleteIndexesWithoutRepository(ctx, time.Now())
 	if err != nil {
-		return errors.Wrap(err, "DeleteIndexesWithoutRepository")
+		return errors.Wrap(err, "dbstore.DeleteIndexesWithoutRepository")
 	}
 
 	for _, counts := range gatherCounts(uploadsCounts, indexesCounts) {

@@ -1,10 +1,13 @@
 /* eslint-disable id-length */
+import { Remote } from 'comlink'
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
+import { transformSearchQuery } from '../api/client/search'
+import { FlatExtensionHostAPI } from '../api/contract'
 import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../graphql/schema'
@@ -17,16 +20,51 @@ export type SearchEvent =
     | { type: 'error'; data: ErrorLike }
     | { type: 'done'; data: {} }
 
-export type SearchMatch = FileLineMatch | RepositoryMatch | CommitMatch | FileSymbolMatch
+export type SearchMatch = ContentMatch | RepositoryMatch | CommitMatch | SymbolMatch | PathMatch
 
-export interface FileLineMatch {
-    type: 'file'
-    name: string
+export interface PathMatch {
+    type: 'path'
+    path: string
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     branches?: string[]
-    version?: string
+    commit?: string
+}
+
+export interface ContentMatch {
+    type: 'content'
+    path: string
+    repository: string
+    repoStars?: number
+    repoLastFetched?: string
+    branches?: string[]
+    commit?: string
     lineMatches: LineMatch[]
+    hunks?: DecoratedHunk[]
+}
+
+export interface DecoratedHunk {
+    content: DecoratedContent
+    lineStart: number
+    lineCount: number
+    matches: Range[]
+}
+
+export interface DecoratedContent {
+    plaintext?: string
+    html?: string
+}
+
+export interface Range {
+    start: Location
+    end: Location
+}
+
+export interface Location {
+    offset: number
+    line: number
+    column: number
 }
 
 interface LineMatch {
@@ -36,17 +74,18 @@ interface LineMatch {
     aggregableBadges?: AggregableBadge[]
 }
 
-export interface FileSymbolMatch {
+export interface SymbolMatch {
     type: 'symbol'
-    name: string
+    path: string
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     branches?: string[]
-    version?: string
-    symbols: SymbolMatch[]
+    commit?: string
+    symbols: MatchedSymbol[]
 }
 
-interface SymbolMatch {
+interface MatchedSymbol {
     url: string
     name: string
     containerName: string
@@ -68,6 +107,7 @@ export interface CommitMatch {
     detail: MarkdownText
     repository: string
     repoStars?: number
+    repoLastFetched?: string
 
     content: MarkdownText
     ranges: number[][]
@@ -77,9 +117,11 @@ export interface RepositoryMatch {
     type: 'repo'
     repository: string
     repoStars?: number
+    repoLastFetched?: string
     description?: string
     fork?: boolean
     archived?: boolean
+    private?: boolean
     branches?: string[]
 }
 
@@ -198,7 +240,7 @@ interface ErrorAggregateResults extends BaseAggregateResults {
 
 export type AggregateStreamingSearchResults = SuccessfulAggregateResults | ErrorAggregateResults
 
-const emptyAggregateResults: AggregateStreamingSearchResults = {
+export const emptyAggregateResults: AggregateStreamingSearchResults = {
     state: 'loading',
     results: [],
     filters: [],
@@ -360,6 +402,9 @@ export interface StreamSearchOptions {
     caseSensitive: boolean
     versionContext: string | undefined
     trace: string | undefined
+    decorationKinds?: string[]
+    decorationContextLines?: number
+    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 }
 
 /**
@@ -375,32 +420,53 @@ function search({
     caseSensitive,
     versionContext,
     trace,
+    decorationKinds,
+    decorationContextLines,
+    extensionHostAPI,
 }: StreamSearchOptions): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
-        const parameters = [
-            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
-            ['v', version],
-            ['t', patternType as string],
-            ['display', '500'],
-        ]
-        if (versionContext) {
-            parameters.push(['vc', versionContext])
-        }
-        if (trace) {
-            parameters.push(['trace', trace])
-        }
-        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
-
-        const eventSource = new EventSource('/search/stream?' + parameterEncoded)
         const subscriptions = new Subscription()
-        for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
-            subscriptions.add(
-                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
-            )
-        }
+
+        // Call extension-contributed search query transformers
+        transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI })
+            .catch(error => {
+                // Fallback: use original query
+                console.error('Extension query transformer error:', error)
+                return query
+            })
+            .then(transformedQuery => {
+                const parameters = [
+                    ['q', `${transformedQuery} ${caseSensitive ? 'case:yes' : ''}`],
+                    ['v', version],
+                    ['t', patternType as string],
+                    ['dl', '0'],
+                    ['dk', (decorationKinds || ['html']).join('|')],
+                    ['dc', (decorationContextLines || '1').toString()],
+                    ['display', '1500'],
+                ]
+                if (versionContext) {
+                    parameters.push(['vc', versionContext])
+                }
+                if (trace) {
+                    parameters.push(['trace', trace])
+                }
+                const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+
+                const eventSource = new EventSource('/search/stream?' + parameterEncoded)
+                subscriptions.add(() => eventSource.close())
+
+                for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
+                    subscriptions.add(
+                        (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+                    )
+                }
+            })
+            .catch(error => {
+                observer.error(error)
+            })
+
         return () => {
             subscriptions.unsubscribe()
-            eventSource.close()
         }
     })
 }
@@ -431,9 +497,9 @@ export function getRevision(branches?: string[], version?: string): string {
     return revision
 }
 
-export function getFileMatchUrl(fileMatch: FileLineMatch | FileSymbolMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.version)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.name}`
+export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
+    const revision = getRevision(fileMatch.branches, fileMatch.commit)
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
@@ -449,7 +515,8 @@ export function getRepoMatchUrl(repoMatch: RepositoryMatch): string {
 
 export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
-        case 'file':
+        case 'path':
+        case 'content':
         case 'symbol':
             return getFileMatchUrl(match)
         case 'commit':

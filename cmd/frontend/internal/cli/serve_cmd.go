@@ -43,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -95,7 +96,7 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 func InitDB() (*sql.DB, error) {
 	opts := dbconn.Opts{DSN: "", DBName: "frontend", AppName: "frontend"}
 	if err := dbconn.SetupGlobalConnection(opts); err != nil {
-		return nil, fmt.Errorf("failed to connect to frontend database: %s", err)
+		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
 	ctx := context.Background()
@@ -142,13 +143,12 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("ERROR: %v", err)
 	}
 
-	ui.InitRouter(db)
-
 	// override site config first
 	if err := overrideSiteConfig(ctx); err != nil {
 		log.Fatalf("failed to apply site config overrides: %v", err)
 	}
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{})
+	conf.Init()
 	conf.MustValidateDefaults()
 
 	// now we can init the keyring, as it depends on site config
@@ -170,7 +170,8 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
@@ -192,6 +193,8 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
+
+	ui.InitRouter(db, enterprise.CodeIntelResolver)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -257,7 +260,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver)
+	schema, err := graphqlbackend.NewSchema(db, enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver, enterprise.SearchContextsResolver)
 	if err != nil {
 		return err
 	}

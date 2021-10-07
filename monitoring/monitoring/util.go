@@ -20,6 +20,13 @@ func withPeriod(s string) string {
 	return s
 }
 
+func pluralize(noun string, count int) string {
+	if count != 1 {
+		noun += "s"
+	}
+	return fmt.Sprintf("%d %s", count, noun)
+}
+
 // StringPtr converts a string value to a pointer, useful for setting fields in some APIs.
 func StringPtr(s string) *string { return &s }
 
@@ -51,7 +58,7 @@ func toMarkdown(m string, forceList bool) (string, error) {
 		for i, l := range lines[:len(lines)-1] {
 			trimmedLine := strings.TrimPrefix(l, removeIndention)
 			if l != "" && l == trimmedLine {
-				return "", fmt.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
+				return "", errors.Errorf("inconsistent indention (line %d %q expected to start with %q)", i, l, removeIndention)
 			}
 			lines[i] = trimmedLine
 		}

@@ -3,12 +3,12 @@ package repos
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -164,7 +163,7 @@ func TestRevisionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
-			op := Options{RepoFilters: tt.repoFilters}
+			op := search.RepoOptions{RepoFilters: tt.repoFilters}
 			repositoryResolver := &Resolver{}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
@@ -256,7 +255,7 @@ func TestSearchRevspecs(t *testing.T) {
 			descr:    "invalid regexp",
 			specs:    []string{"*o@a:b"},
 			repo:     "foo",
-			err:      fmt.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
+			err:      errors.Errorf("%s", "bad request: error parsing regexp: missing argument to repetition operator: `*`"),
 			matched:  nil,
 			clashing: nil,
 		},
@@ -319,24 +318,18 @@ func TestSearchableRepositories(t *testing.T) {
 			want:                nil,
 		},
 		{
-			name:                "two in database, one indexed => indexed repo returned",
-			defaultsInDb:        []string{"unindexedrepo", "indexedrepo"},
-			searchableRepoNames: map[string]bool{"indexedrepo": true},
-			want:                []string{"indexedrepo"},
-		},
-		{
 			name:                "should not return excluded repo",
 			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "indexedrepo3"},
 			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "indexedrepo3": true},
 			excludePatterns:     []string{"indexedrepo3"},
-			want:                []string{"indexedrepo1", "indexedrepo2"},
+			want:                []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2"},
 		},
 		{
 			name:                "should not return excluded repo (case insensitive)",
 			defaultsInDb:        []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2", "Indexedrepo3"},
 			searchableRepoNames: map[string]bool{"indexedrepo1": true, "indexedrepo2": true, "Indexedrepo3": true},
 			excludePatterns:     []string{"indexedrepo3"},
-			want:                []string{"indexedrepo1", "indexedrepo2"},
+			want:                []string{"unindexedrepo1", "indexedrepo1", "indexedrepo2"},
 		},
 		{
 			name:                "should not return excluded repos ending in `test`",
@@ -360,17 +353,8 @@ func TestSearchableRepositories(t *testing.T) {
 				return drs, nil
 			}
 
-			var indexed []*zoekt.RepoListEntry
-			for name := range tc.searchableRepoNames {
-				indexed = append(indexed, &zoekt.RepoListEntry{Repository: zoekt.Repository{Name: name}})
-			}
-			z := &searchbackend.Zoekt{
-				Client:       &searchbackend.FakeSearcher{Repos: indexed},
-				DisableCache: true,
-			}
-
 			ctx := context.Background()
-			drs, err := searchableRepositories(ctx, getRawSearchableRepos, z, tc.excludePatterns)
+			drs, err := searchableRepositories(ctx, getRawSearchableRepos, tc.excludePatterns)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -379,7 +363,7 @@ func TestSearchableRepositories(t *testing.T) {
 				drNames = append(drNames, string(dr.Name))
 			}
 			if !reflect.DeepEqual(drNames, tc.want) {
-				t.Errorf("names of default repos = %v, want %v", drNames, tc.want)
+				t.Errorf("names of indexable repos = %v, want %v", drNames, tc.want)
 			}
 		})
 	}
@@ -416,26 +400,21 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 		}
 	}
 
-	mockZoekt := &searchbackend.Zoekt{
-		Client:       &searchbackend.FakeSearcher{Repos: zoektRepoListEntries},
-		DisableCache: true,
-	}
-
 	tests := []struct {
 		name              string
 		searchContextSpec string
 	}{
-		{name: "use default repos if missing search context", searchContextSpec: ""},
-		{name: "use default repos with global search context", searchContextSpec: "global"},
+		{name: "use indexable repos if missing search context", searchContextSpec: ""},
+		{name: "use indexable repos with global search context", searchContextSpec: "global"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			op := Options{
+			op := search.RepoOptions{
 				SearchContextSpec: tt.searchContextSpec,
 				Query:             queryInfo,
 			}
-			repositoryResolver := &Resolver{Zoekt: mockZoekt, SearchableReposFunc: mockSearchableReposFunc}
+			repositoryResolver := &Resolver{SearchableReposFunc: mockSearchableReposFunc}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 			if err != nil {
 				t.Fatal(err)
@@ -445,7 +424,7 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 				repoNames = append(repoNames, string(repoRev.Repo.Name))
 			}
 			if !reflect.DeepEqual(repoNames, wantIndexableRepos) {
-				t.Errorf("names of default repos = %v, want %v", repoNames, wantIndexableRepos)
+				t.Errorf("names of indexable repos = %v, want %v", repoNames, wantIndexableRepos)
 			}
 		})
 	}
@@ -507,7 +486,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		database.Mocks.Namespaces.GetByName = nil
 	}()
 
-	op := Options{
+	op := search.RepoOptions{
 		Query:             queryInfo,
 		SearchContextSpec: "@" + wantName,
 	}
@@ -588,7 +567,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	op := Options{
+	op := search.RepoOptions{
 		Query:             queryInfo,
 		SearchContextSpec: "searchcontext",
 	}

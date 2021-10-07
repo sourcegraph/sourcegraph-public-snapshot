@@ -423,9 +423,39 @@ type Mutation {
         """
         cohortID: String
         """
+        An optional referrer parameter for the user's current session.
+        Only captured and stored on Sourcegraph Cloud.
+        """
+        referrer: String
+        """
         The additional argument information.
         """
         argument: String
+        """
+        Public argument information. PRIVACY: Do NOT include any potentially private information in this field.
+        These properties get sent to our analytics tools for Cloud, so must not include private information,
+        such as search queries or repository names.
+        """
+        publicArgument: String
+        """
+        User properties for Amplitude analytics. Used on Sourcegraph Cloud only. Avoid including any PII.
+        """
+        userProperties: String
+        """
+        Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+        """
+        deviceID: String
+        """
+        Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+        See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+        """
+        eventID: Int
+        """
+        Insert ID used to deduplicate events that re-occur in the event of retries or
+        backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+        Used on Sourcegraph Cloud only.
+        """
+        insertID: String
     ): EmptyResponse
     """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
@@ -578,48 +608,6 @@ type Mutation {
     SetUserPublicRepos(userID: ID!, repoURIs: [String!]!): EmptyResponse!
 
     """
-    Converts a version context to an equivalent instance-level search context. Only available to site admins.
-    """
-    convertVersionContextToSearchContext(name: String!): SearchContext!
-
-    """
-    Create search context.
-    """
-    createSearchContext(
-        """
-        Search context input.
-        """
-        searchContext: SearchContextInput!
-        """
-        List of search context repository revisions.
-        """
-        repositories: [SearchContextRepositoryRevisionsInput!]!
-    ): SearchContext!
-
-    """
-    Delete search context.
-    """
-    deleteSearchContext(id: ID!): EmptyResponse!
-
-    """
-    Update search context.
-    """
-    updateSearchContext(
-        """
-        Search context ID.
-        """
-        id: ID!
-        """
-        Search context input.
-        """
-        searchContext: SearchContextEditInput!
-        """
-        List of search context repository revisions.
-        """
-        repositories: [SearchContextRepositoryRevisionsInput!]!
-    ): SearchContext!
-
-    """
     (experimental) Create a new feature flag
     """
     createFeatureFlag(
@@ -718,6 +706,30 @@ type Mutation {
         """
         value: Boolean!
     ): FeatureFlagOverride!
+
+    """
+    Overwrites and saves the temporary settings for the current user.
+    If temporary settings for the user do not exist, they are created.
+    """
+    overwriteTemporarySettings(
+        """
+        The new temporary settings for the current user, as a JSON string.
+        """
+        contents: String!
+    ): EmptyResponse!
+
+    """
+    Merges the given settings edit with the current temporary settings for the current user.
+    Keys in the given edit take priority over key in the temporary settings. The merge is
+    not recursive.
+    If temporary settings for the user do not exist, they are created.
+    """
+    editTemporarySettings(
+        """
+        The settings to merge with the current temporary settings for the current user, as a JSON string.
+        """
+        settingsToEdit: String!
+    ): EmptyResponse!
 }
 
 """
@@ -1190,7 +1202,13 @@ type Query {
     """
     EXPERIMENTAL: Syntax highlights a code string.
     """
-    highlightCode(code: String!, fuzzyLanguage: String!, disableTimeout: Boolean!, isLightTheme: Boolean!): String!
+    highlightCode(
+        code: String!
+        fuzzyLanguage: String!
+        disableTimeout: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
+    ): String!
     """
     Looks up an instance of a type that implements SettingsSubject (i.e., something that has settings). This can
     be a site (which has global settings), an organization, or a user.
@@ -1250,48 +1268,6 @@ type Query {
     (experimental) All version contexts.
     """
     versionContexts: [VersionContext!]!
-    """
-    Auto-defined search contexts available to the current user.
-    """
-    autoDefinedSearchContexts: [SearchContext!]!
-    """
-    All available user-defined search contexts. Excludes auto-defined contexts.
-    """
-    searchContexts(
-        """
-        Returns the first n search contexts from the list.
-        """
-        first: Int = 50
-        """
-        Opaque pagination cursor.
-        """
-        after: String
-        """
-        Query to filter the search contexts by spec.
-        """
-        query: String
-        """
-        Include search contexts matching the provided namespaces. A union of all matching search contexts is returned.
-        ID can either be a user ID, org ID, or nil to match instance-level contexts. Empty namespaces list
-        defaults to returning all available search contexts.
-        Example: `namespaces: [user1, org1, org2, nil]` will return search contexts created by user1 + contexts
-        created by org1 + contexts created by org2 + all instance-level contexts.
-        """
-        namespaces: [ID] = []
-        """
-        Sort field.
-        """
-        orderBy: SearchContextsOrderBy = SEARCH_CONTEXT_SPEC
-        """
-        Sort direction.
-        """
-        descending: Boolean = false
-    ): SearchContextConnection!
-    """
-    Determines whether the search context is within the set of search contexts available to the current user.
-    The set consists of contexts created by the user, contexts created by the users' organizations, and instance-level contexts.
-    """
-    isSearchContextAvailable(spec: String!): Boolean!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -1371,6 +1347,11 @@ type Query {
     Retrieve the values of all feature flags for the current user
     """
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
+
+    """
+    Retrieves the temporary settings for the current user.
+    """
+    temporarySettings: TemporarySettings!
 }
 
 """
@@ -1849,7 +1830,7 @@ type Language {
 """
 A search suggestion.
 """
-union SearchSuggestion = Repository | File | Symbol | Language | SearchContext
+union SearchSuggestion = Repository | File | Symbol | Language
 
 """
 A search-related alert message.
@@ -2050,6 +2031,7 @@ enum ExternalServiceKind {
     GITHUB
     GITLAB
     GITOLITE
+    JVMPACKAGES
     PERFORCE
     PHABRICATOR
     OTHER
@@ -2563,169 +2545,6 @@ type VersionContext {
 }
 
 """
-A search context. Specifies a set of repositories to be searched.
-"""
-type SearchContext implements Node {
-    """
-    The unique id of the search context.
-    """
-    id: ID!
-    """
-    The name of the search context.
-    """
-    name: String!
-    """
-    The owner (user or org) of the search context. If nil, search context is considered instance-level.
-    """
-    namespace: Namespace
-    """
-    The description of the search context.
-    """
-    description: String!
-    """
-    Fully-qualified search context spec for use when querying.
-    Examples: global, @username, @username/ctx, and @org/ctx.
-    """
-    spec: String!
-    """
-    Whether the search context is autodefined by Sourcegraph. Current examples include:
-    global search context ("global"), default user search context ("@user"), and
-    default organization search context ("@org").
-    """
-    autoDefined: Boolean!
-    """
-    Repositories and their revisions that will be searched when querying.
-    """
-    repositories: [SearchContextRepositoryRevisions!]!
-    """
-    Public property controls the visibility of the search context. Public search context is available to
-    any user on the instance. If a public search context contains private repositories, those are filtered out
-    for unauthorized users. Private search contexts are only available to their owners. Private user search context
-    is available only to the user, private org search context is available only to the members of the org, and private
-    instance-level search contexts are available only to site-admins.
-    """
-    public: Boolean!
-    """
-    Date and time the search context was last updated.
-    """
-    updatedAt: DateTime!
-    """
-    If current viewer can manage (edit, delete) the search context.
-    """
-    viewerCanManage: Boolean!
-}
-
-"""
-Specifies a set of revisions to be searched within a repository.
-"""
-type SearchContextRepositoryRevisions {
-    """
-    The repository to be searched.
-    """
-    repository: Repository!
-    """
-    The set of revisions to be searched.
-    """
-    revisions: [String!]!
-}
-
-"""
-SearchContextsOrderBy enumerates the ways a search contexts list can be ordered.
-"""
-enum SearchContextsOrderBy {
-    SEARCH_CONTEXT_SPEC
-    SEARCH_CONTEXT_UPDATED_AT
-}
-
-"""
-A list of search contexts
-"""
-type SearchContextConnection {
-    """
-    A list of search contexts.
-    """
-    nodes: [SearchContext!]!
-
-    """
-    The total number of search contexts in the connection.
-    """
-    totalCount: Int!
-
-    """
-    Pagination information.
-    """
-    pageInfo: PageInfo!
-}
-
-"""
-Input for a new search context.
-"""
-input SearchContextInput {
-    """
-    Search context name. Not the same as the search context spec. Search context namespace and search context name
-    are used to construct the fully-qualified search context spec.
-    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
-    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
-    """
-    name: String!
-    """
-    Search context description.
-    """
-    description: String!
-    """
-    Public property controls the visibility of the search context. Public search context is available to
-    any user on the instance. If a public search context contains private repositories, those are filtered out
-    for unauthorized users. Private search contexts are only available to their owners. Private user search context
-    is available only to the user, private org search context is available only to the members of the org, and private
-    instance-level search contexts are available only to site-admins.
-    """
-    public: Boolean!
-    """
-    Namespace of the search context (user or org). If not set, search context is considered instance-level.
-    """
-    namespace: ID
-}
-
-"""
-Input for editing an existing search context.
-"""
-input SearchContextEditInput {
-    """
-    Search context name. Not the same as the search context spec. Search context namespace and search context name
-    are used to construct the fully-qualified search context spec.
-    Example mappings from search context spec to search context name: global -> global, @user -> user, @org -> org,
-    @user/ctx1 -> ctx1, @org/ctxs/ctx -> ctxs/ctx.
-    """
-    name: String!
-    """
-    Search context description.
-    """
-    description: String!
-    """
-    Public property controls the visibility of the search context. Public search context is available to
-    any user on the instance. If a public search context contains private repositories, those are filtered out
-    for unauthorized users. Private search contexts are only available to their owners. Private user search context
-    is available only to the user, private org search context is available only to the members of the org, and private
-    instance-level search contexts are available only to site-admins.
-    """
-    public: Boolean!
-}
-
-"""
-Input for a set of revisions to be searched within a repository.
-"""
-input SearchContextRepositoryRevisionsInput {
-    """
-    ID of the repository to be searched.
-    """
-    repositoryID: ID!
-    """
-    Revisions in the repository to be searched.
-    """
-    revisions: [String!]!
-}
-
-"""
 Information about a repository's text search index.
 """
 type RepositoryTextSearchIndex {
@@ -3063,7 +2882,8 @@ type FileDiffHunk {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4062,7 +3882,8 @@ interface File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4124,7 +3945,8 @@ type VirtualFile implements File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -4224,7 +4046,8 @@ type GitBlob implements TreeEntry & File2 {
     """
     highlight(
         disableTimeout: Boolean!
-        isLightTheme: Boolean!
+        isLightTheme: Boolean
+            @deprecated(reason: "Not required anymore, highlighting is based on dynamic CSS variables now.")
         """
         If highlightLongLines is true, lines which are longer than 2000 bytes are highlighted.
         2000 bytes is enabled. This may produce a significant amount of HTML
@@ -5782,9 +5605,11 @@ type ExtensionRegistry {
         """
         remote: Boolean = true
         """
+        Returns only extensions with the given IDs.
+        """
+        extensionIDs: [String!]
+        """
         Sorts the list of extension results such that the extensions with these IDs are first in the result set.
-        Typically, the client passes the list of added and enabled extension IDs in this parameter so that the
-        results include those extensions first (which is typically what the user prefers).
         """
         prioritizeExtensionIDs: [String!]
     ): RegistryExtensionConnection!
@@ -6023,9 +5848,19 @@ A description of the extension, how to run or access it, and when to activate it
 """
 type ExtensionManifest {
     """
-    The raw JSON contents of the manifest.
+    The raw JSON (or JSONC) contents of the manifest. This value may be large (because many
+    manifests contain README and icon data), and it is JSONC (not strict JSON), which means
+    it must be parsed with a JSON parser that supports trailing commas and comments. Consider
+    using jsonFields instead.
     """
     raw: String!
+    """
+    The manifest as JSON (not JSONC, even if the raw manifest is JSONC) with only the
+    specified fields. This is useful for callers that only need certain fields and want
+    to avoid fetching a large amount of data (because many manifests contain README
+    and icon data).
+    """
+    jsonFields(fields: [String!]!): JSONValue!
     """
     The description specified in the manifest, if any.
     """
@@ -6115,6 +5950,22 @@ type CodeIntelligenceRange {
     The hover result of the symbol occurring within the range.
     """
     hover: Hover
+
+    """
+    The documentation result of the symbol occurring within the range, if any.
+    """
+    documentation: Documentation
+}
+
+"""
+Documentation at some position in a file.
+"""
+type Documentation {
+    """
+    The path ID of the documentation, which can be used to build a link to the documentation or
+    (after trimming the URL hash) passed to documentationPage or documentationPathInfo.
+    """
+    pathID: String!
 }
 
 """
@@ -6319,4 +6170,49 @@ type CodeHostRepository {
     Is the repo private
     """
     private: Boolean!
+}
+
+"""
+A description of a command run inside the executor to during processing of the parent record.
+"""
+type ExecutionLogEntry {
+    """
+    An internal tag used to correlate this log entry with other records.
+    """
+    key: String!
+
+    """
+    The arguments of the command run inside the executor.
+    """
+    command: [String!]!
+
+    """
+    The date when this command started.
+    """
+    startTime: DateTime!
+
+    """
+    The exit code of the command. Null, if the command has not finished yet.
+    """
+    exitCode: Int
+
+    """
+    The combined stdout and stderr logs of the command.
+    """
+    out: String!
+
+    """
+    The duration in milliseconds of the command. Null, if the command has not finished yet.
+    """
+    durationMilliseconds: Int
+}
+
+"""
+Temporary settings for a user.
+"""
+type TemporarySettings {
+    """
+    A JSON string representing the temporary settings.
+    """
+    contents: String!
 }

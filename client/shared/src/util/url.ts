@@ -469,7 +469,10 @@ function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPo
     return key ? parseLineOrPositionOrRange(key) : undefined
 }
 
-function findLineKeyInSearchParameters(searchParameters: URLSearchParams): string | undefined {
+/**
+ * Finds an existing line range search parameter like "L1-2:3"
+ */
+export function findLineKeyInSearchParameters(searchParameters: URLSearchParams): string | undefined {
     for (const key of searchParameters.keys()) {
         if (key.startsWith('L')) {
             return key
@@ -508,7 +511,14 @@ export function encodeRepoRevision({ repoName, revision }: RepoSpec & Partial<Re
 }
 
 export function toPrettyBlobURL(
-    target: RepoFile & Partial<UIPositionSpec> & Partial<ViewStateSpec> & Partial<UIRangeSpec> & Partial<RenderModeSpec>
+    target: RepoSpec &
+        Partial<RevisionSpec> &
+        Partial<ResolvedRevisionSpec> &
+        FileSpec &
+        Partial<UIPositionSpec> &
+        Partial<ViewStateSpec> &
+        Partial<UIRangeSpec> &
+        Partial<RenderModeSpec>
 ): string {
     const searchParameters = addLineRangeQueryParameter(
         addRenderModeQueryParameter(new URLSearchParams(), target),

@@ -19,7 +19,12 @@ class ServerAdminWrapper {
         })
     }
 
-    public trackPageView(eventAction: string, logAsActiveUser: boolean = true, eventProperties?: any): void {
+    public trackPageView(
+        eventAction: string,
+        logAsActiveUser: boolean = true,
+        eventProperties?: any,
+        publicArgument?: any
+    ): void {
         if (logAsActiveUser) {
             logUserEvent(UserEvent.PAGEVIEW)
         }
@@ -28,10 +33,10 @@ class ServerAdminWrapper {
                 logUserEvent(UserEvent.STAGECODE)
             }
         }
-        logEvent(eventAction, eventProperties)
+        logEvent(eventAction, eventProperties, publicArgument)
     }
 
-    public trackAction(eventAction: string, eventProperties?: any): void {
+    public trackAction(eventAction: string, eventProperties?: any, publicArgument?: any): void {
         if (this.isAuthenicated) {
             if (eventAction === 'SearchResultsQueried') {
                 logUserEvent(UserEvent.SEARCHQUERY)
@@ -48,7 +53,7 @@ class ServerAdminWrapper {
                 logUserEvent(UserEvent.STAGEMONITOR)
             }
         }
-        logEvent(eventAction, eventProperties)
+        logEvent(eventAction, eventProperties, publicArgument)
     }
 }
 

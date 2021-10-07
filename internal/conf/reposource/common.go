@@ -1,7 +1,6 @@
 package reposource
 
 import (
-	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
@@ -16,7 +15,7 @@ import (
 // RepoSource is a wrapper around a repository source (typically a code host config) that provides a
 // method to map clone URLs to repo names using only the configuration (i.e., no network requests).
 type RepoSource interface {
-	// cloneURLToRepoName maps a Git clone URL (format documented here:
+	// CloneURLToRepoName maps a Git clone URL (format documented here:
 	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo name for the
 	// repository on the code host.  It does not actually check if the repository exists in the code
 	// host. It merely does the mapping based on the rules set in the code host config.
@@ -57,14 +56,14 @@ func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL
 	if baseURL != "" {
 		parsedBaseURL, err = url.Parse(baseURL)
 		if err != nil {
-			return nil, nil, false, fmt.Errorf("Error parsing baseURL: %s", err)
+			return nil, nil, false, errors.Errorf("Error parsing baseURL: %s", err)
 		}
 		parsedBaseURL = extsvc.NormalizeBaseURL(parsedBaseURL)
 	}
 
 	parsedCloneURL, err = parseCloneURL(cloneURL)
 	if err != nil {
-		return nil, nil, false, fmt.Errorf("Error parsing cloneURL: %s", err)
+		return nil, nil, false, errors.Errorf("Error parsing cloneURL: %s", err)
 	}
 	hostsMatch := parsedBaseURL != nil && hostname(parsedBaseURL) == hostname(parsedCloneURL)
 	return parsedCloneURL, parsedBaseURL, hostsMatch, nil

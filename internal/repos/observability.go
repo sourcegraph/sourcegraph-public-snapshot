@@ -4,8 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -34,6 +38,7 @@ type observedSource struct {
 // SourceMetrics encapsulates the Prometheus metrics of a Source.
 type SourceMetrics struct {
 	ListRepos *metrics.OperationMetrics
+	GetRepo   *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in SourceMetrics in the given
@@ -42,6 +47,9 @@ func (sm SourceMetrics) MustRegister(r prometheus.Registerer) {
 	r.MustRegister(sm.ListRepos.Count)
 	r.MustRegister(sm.ListRepos.Duration)
 	r.MustRegister(sm.ListRepos.Errors)
+	r.MustRegister(sm.GetRepo.Count)
+	r.MustRegister(sm.GetRepo.Duration)
+	r.MustRegister(sm.GetRepo.Errors)
 }
 
 // NewSourceMetrics returns SourceMetrics that need to be registered
@@ -60,6 +68,20 @@ func NewSourceMetrics() SourceMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_source_errors_total",
 				Help: "Total number of sourcing errors",
+			}, []string{}),
+		},
+		GetRepo: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_source_get_repo_duration_seconds",
+				Help: "Time spent calling GetRepo",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_source_get_repo_total",
+				Help: "Total number of GetRepo calls",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_source_get_repo_errors_total",
+				Help: "Total number of GetRepo errors",
 			}, []string{}),
 		},
 	}
@@ -97,18 +119,41 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 	}
 }
 
+// GetRepo calls into the inner Source and registers the observed results.
+func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *types.Repo, err error) {
+	rg, ok := o.Source.(RepoGetter)
+	if !ok {
+		return nil, errors.New("RepoGetter not implemented")
+	}
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		o.metrics.GetRepo.Observe(secs, 1, &err)
+		log15.Info("source.get-repo", "name", path)
+		logging.Log(o.log, "source.get-repo", &err)
+	}(time.Now())
+
+	return rg.GetRepo(ctx, path)
+}
+
 // StoreMetrics encapsulates the Prometheus metrics of a Store.
 type StoreMetrics struct {
-	Transact              *metrics.OperationMetrics
-	Done                  *metrics.OperationMetrics
-	UpsertRepos           *metrics.OperationMetrics
-	UpsertSources         *metrics.OperationMetrics
-	ListExternalRepoSpecs *metrics.OperationMetrics
-	GetExternalService    *metrics.OperationMetrics
-	SetClonedRepos        *metrics.OperationMetrics
-	CountNotClonedRepos   *metrics.OperationMetrics
-	CountUserAddedRepos   *metrics.OperationMetrics
-	EnqueueSyncJobs       *metrics.OperationMetrics
+	Transact                           *metrics.OperationMetrics
+	Done                               *metrics.OperationMetrics
+	CreateExternalServiceRepo          *metrics.OperationMetrics
+	UpdateExternalServiceRepo          *metrics.OperationMetrics
+	DeleteExternalServiceRepo          *metrics.OperationMetrics
+	DeleteExternalServiceReposNotIn    *metrics.OperationMetrics
+	UpsertRepos                        *metrics.OperationMetrics
+	UpsertSources                      *metrics.OperationMetrics
+	ListExternalRepoSpecs              *metrics.OperationMetrics
+	ListExternalServiceUserIDsByRepoID *metrics.OperationMetrics
+	ListExternalServiceRepoIDsByUserID *metrics.OperationMetrics
+	GetExternalService                 *metrics.OperationMetrics
+	SetClonedRepos                     *metrics.OperationMetrics
+	CountNotClonedRepos                *metrics.OperationMetrics
+	CountUserAddedRepos                *metrics.OperationMetrics
+	EnqueueSyncJobs                    *metrics.OperationMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
@@ -118,6 +163,12 @@ func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
 		sm.Transact,
 		sm.Done,
 		sm.ListExternalRepoSpecs,
+		sm.ListExternalServiceUserIDsByRepoID,
+		sm.ListExternalServiceRepoIDsByUserID,
+		sm.CreateExternalServiceRepo,
+		sm.UpdateExternalServiceRepo,
+		sm.DeleteExternalServiceRepo,
+		sm.DeleteExternalServiceReposNotIn,
 		sm.UpsertRepos,
 		sm.UpsertSources,
 		sm.GetExternalService,
@@ -161,6 +212,62 @@ func NewStoreMetrics() StoreMetrics {
 				Help: "Total number of errors when closing a transaction",
 			}, []string{}),
 		},
+		CreateExternalServiceRepo: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repocreater_store_create_external_service_repo_duration_seconds",
+				Help: "Time spent creating external service repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repocreater_store_create_external_service_repo_total",
+				Help: "Total number of created external service repos",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repocreater_store_create_external_service_repo_errors_total",
+				Help: "Total number of errors when creating external service repos",
+			}, []string{}),
+		},
+		UpdateExternalServiceRepo: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_update_external_service_repo_duration_seconds",
+				Help: "Time spent updating external service repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_update_external_service_repo_total",
+				Help: "Total number of updated external service repos",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_update_external_service_repo_errors_total",
+				Help: "Total number of errors when updating external service repos",
+			}, []string{}),
+		},
+		DeleteExternalServiceRepo: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_delete_external_service_repo_duration_seconds",
+				Help: "Time spent deleting external service repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_delete_external_service_repo_total",
+				Help: "Total number of external service repo deletions",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_delete_external_service_repo_errors_total",
+				Help: "Total number of errors when deleting external service repos",
+			}, []string{}),
+		},
+		DeleteExternalServiceReposNotIn: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_delete_exernal_service_repos_not_in_duration_seconds",
+				Help: "Time spent calling DeleteExternalServiceReposNotIn",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_delete_exernal_service_repos_not_in_total",
+				Help: "Total number of calls to DeleteExternalServiceReposNotIn",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_delete_exernal_service_repos_not_in_errors_total",
+				Help: "Total number of errors when calling DeleteExternalServiceReposNotIn",
+			}, []string{}),
+		},
 		UpsertRepos: &metrics.OperationMetrics{
 			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 				Name: "src_repoupdater_store_upsert_repos_duration_seconds",
@@ -201,6 +308,34 @@ func NewStoreMetrics() StoreMetrics {
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
 				Name: "src_repoupdater_store_list_external_repo_specs_errors_total",
 				Help: "Total number of errors when listing external repo specs",
+			}, []string{}),
+		},
+		ListExternalServiceUserIDsByRepoID: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_list_external_service_user_ids_by_repo_id",
+				Help: "Time spent listing external service users",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_list_external_service_user_ids_by_repo_id_total",
+				Help: "Total number of listed external service users",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_list_external_service_user_ids_by_repo_id_errors_total",
+				Help: "Total number of errors when listing external service users",
+			}, []string{}),
+		},
+		ListExternalServiceRepoIDsByUserID: &metrics.OperationMetrics{
+			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
+				Name: "src_repoupdater_store_list_external_service_repo_ids_by_user_id",
+				Help: "Time spent listing external service repos",
+			}, []string{}),
+			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_list_external_service_repo_ids_by_user_id_total",
+				Help: "Total number of listed external service repos",
+			}, []string{}),
+			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
+				Name: "src_repoupdater_store_list_external_service_repo_ids_by_user_id_errors_total",
+				Help: "Total number of errors when listing external service repos",
 			}, []string{}),
 		},
 		GetExternalService: &metrics.OperationMetrics{

@@ -7,6 +7,7 @@ import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 
 import { PanelViewWithComponent } from '../Panel'
@@ -15,7 +16,7 @@ import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 import styles from './PanelView.module.scss'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps, TelemetryProps {
     panelView: PanelViewWithComponent
     repoName?: string
     location: H.Location
@@ -44,6 +45,7 @@ export const PanelView = React.memo<Props>(props => (
                 extensionsController={props.extensionsController}
                 settingsCascade={props.settingsCascade}
                 versionContext={props.versionContext}
+                telemetryService={props.telemetryService}
             />
         )}
         {!props.panelView.content && !props.panelView.reactElement && !props.panelView.locationProvider && (

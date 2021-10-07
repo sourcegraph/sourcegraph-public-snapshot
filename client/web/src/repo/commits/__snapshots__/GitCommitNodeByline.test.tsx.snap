@@ -17,7 +17,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -50,7 +50,7 @@ exports[`GitCommitNodeByline author 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -90,27 +90,26 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
   </div>
   <div>
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     authored and
+     authored and commited by
      
     <a
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="Bob Yang <bob@example.com>"
       href="https://example.com/bobyang"
     >
       bYang
     </a>
-     commited
      
     <span
       className="timestamp"
-      data-tooltip="1990-01-01"
+      data-tooltip="1991-01-01"
     >
-      about 16 years ago
+      about 15 years ago
     </span>
   </div>
 </div>
@@ -140,27 +139,26 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
   </div>
   <div>
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     authored and
+     authored and commited by
      
     <a
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="Bob Yang <bob@example.com>"
       href="https://example.com/bobyang"
     >
       bYang
     </a>
-     commited
      
     <span
       className="timestamp"
-      data-tooltip="1990-01-01"
+      data-tooltip="1991-01-01"
     >
-      about 16 years ago
+      about 15 years ago
     </span>
   </div>
 </div>
@@ -183,7 +181,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
@@ -216,7 +214,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
   <div>
     committed by 
     <span
-      className="font-weight-bold "
+      className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao

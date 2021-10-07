@@ -3,13 +3,14 @@ import * as uuid from 'uuid'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { browserExtensionMessageReceived, handleQueryEvents, pageViewQueryParameters } from './analyticsUtils'
+import { browserExtensionMessageReceived } from './analyticsUtils'
 import { serverAdmin } from './services/serverAdminWrapper'
-import { getPreviousMonday, redactSensitiveInfoFromURL } from './util'
+import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } from './util'
 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
@@ -17,6 +18,8 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private deviceID = ''
+    private eventID = 0
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -34,7 +37,7 @@ export class EventLogger implements TelemetryService {
         // EventLogger is never teared down
         // eslint-disable-next-line rxjs/no-ignored-subscription
         browserExtensionMessageReceived.subscribe(({ platform }) => {
-            this.log('BrowserExtensionConnectedToServer', { platform })
+            this.log('BrowserExtensionConnectedToServer', { platform }, { platform })
 
             if (localStorage && localStorage.getItem('eventLogDebug') === 'true') {
                 console.debug('%cBrowser extension detected, sync completed', 'color: #aaa')
@@ -69,12 +72,13 @@ export class EventLogger implements TelemetryService {
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
      */
-    public log(eventLabel: string, eventProperties?: any): void {
+    public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (window.context?.userAgentIsBot || !eventLabel) {
             return
         }
-        serverAdmin.trackAction(eventLabel, eventProperties)
+        serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
+        this.eventID++
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -103,7 +107,7 @@ export class EventLogger implements TelemetryService {
     public getFirstSourceURL(): string {
         const firstSourceURL = this.firstSourceURL || cookies.get(FIRST_SOURCE_URL_KEY) || location.href
 
-        const redactedURL = redactSensitiveInfoFromURL(firstSourceURL)
+        const redactedURL = redactSensitiveInfoFromAppURL(firstSourceURL)
 
         // Use cookies instead of localStorage so that the ID can be shared with subdomains (about.sourcegraph.com).
         // Always set to renew expiry and migrate from localStorage
@@ -113,6 +117,50 @@ export class EventLogger implements TelemetryService {
         return firstSourceURL
     }
 
+    // Device ID is a require field for Amplitude events.
+    // https://developers.amplitude.com/docs/http-api-v2
+    public getDeviceID(): string {
+        return this.deviceID
+    }
+
+    // Insert ID is used to deduplicate events in Amplitude.
+    // https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getInsertID(): string {
+        const insertID = this.getDeviceID() + Date.now().toString()
+        return insertID
+    }
+
+    // Event ID is used to deduplicate events in Amplitude.
+    // This is used in the case that multiple events with the same userID and timestamp
+    // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getEventID(): number {
+        return this.eventID
+    }
+
+    public getReferrer(): string {
+        const referrer = document.referrer
+        try {
+            // 🚨 SECURITY: If the referrer is a valid Sourcegraph.com URL,
+            // only send the hostname instead of the whole URL to avoid
+            // leaking private repository names and files into our data.
+            const url = new URL(referrer)
+            if (url.hostname === 'sourcegraph.com') {
+                return 'sourcegraph.com'
+            }
+            return referrer
+        } catch {
+            return ''
+        }
+    }
+
+    public getUserProperties(): string {
+        const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
+        if (userProps) {
+            return userProps
+        }
+
+        return JSON.stringify({})
+    }
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with
@@ -126,7 +174,6 @@ export class EventLogger implements TelemetryService {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
-
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
@@ -140,9 +187,59 @@ export class EventLogger implements TelemetryService {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
+        let deviceID = cookies.get(DEVICE_ID_KEY)
+        if (!deviceID) {
+            deviceID = uuid.v4()
+            cookies.set(DEVICE_ID_KEY, deviceID)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
+        this.deviceID = deviceID
     }
 }
 
 export const eventLogger = new EventLogger()
+
+/**
+ * Log events associated with URL query string parameters, and remove those parameters as necessary
+ * Note that this is a destructive operation (it changes the page URL and replaces browser state) by
+ * calling stripURLParameters
+ */
+function handleQueryEvents(url: string): void {
+    const parsedUrl = new URL(url)
+    const isBadgeRedirect = !!parsedUrl.searchParams.get('badge')
+    if (isBadgeRedirect) {
+        eventLogger.log('RepoBadgeRedirected')
+    }
+
+    stripURLParameters(url, ['utm_campaign', 'utm_source', 'utm_medium', 'badge'])
+}
+
+interface EventQueryParameters {
+    utm_campaign?: string
+    utm_source?: string
+    utm_medium?: string
+}
+
+/**
+ * Get pageview-specific event properties from URL query string parameters
+ */
+function pageViewQueryParameters(url: string): EventQueryParameters {
+    const parsedUrl = new URL(url)
+
+    const utmSource = parsedUrl.searchParams.get('utm_source')
+    if (utmSource === 'saved-search-email') {
+        eventLogger.log('SavedSearchEmailClicked')
+    } else if (utmSource === 'saved-search-slack') {
+        eventLogger.log('SavedSearchSlackClicked')
+    } else if (utmSource === 'code-monitoring-email') {
+        eventLogger.log('CodeMonitorEmailLinkClicked')
+    }
+
+    return {
+        utm_campaign: parsedUrl.searchParams.get('utm_campaign') || undefined,
+        utm_source: parsedUrl.searchParams.get('utm_source') || undefined,
+        utm_medium: parsedUrl.searchParams.get('utm_medium') || undefined,
+    }
+}

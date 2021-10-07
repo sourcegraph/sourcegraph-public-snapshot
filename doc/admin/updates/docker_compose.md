@@ -2,19 +2,45 @@
 
 This document describes the exact changes needed to update a [Docker Compose Sourcegraph instance](../install/docker-compose.md).
 Each section comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+**Always refer to this page before upgrading Sourcegraph**, as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Upgrade one version at a time, e.g. v3.26 --> v3.27 --> v3.28.
-> <br>Patches, e.g. vX.X.4 vs. vX.X.5, do not have to be adopted when moving between vX.X versions.
-
-> ⚠️ **Regardless of your deployment type:** ⚠️
-> <br>Check your <a href="../migrations">out of band migration status</a> prior to upgrade to avoid a necessary rollback while the migration finishes.
-
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
+2. Find the relevant entry for your update in the update notes on this page.
+3. After checking the relevant update notes, refer to the [Sourcegraph with Docker Compose upgrade guide](../install/docker-compose/operations.md#upgrade) to upgrade your instance.
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
+
+## 3.31 -> 3.32
+
+No manual migration is required - follow the [standard upgrade procedure](../install/docker-compose/operations.md#upgrade) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
+
+## 3.30.3 -> 3.31
+
+The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+
+If you have already upgraded to 3.30.3, which uses the new alpine-based Docker images, all users that use our bundled (built-in) database instances should have already performed [the necessary re-indexing](../migration/3_31.md).
+
+> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.30).*
+
+## 3.30.x -> 3.31.2
+
+The **built-in** main Postgres (`pgsql`) and codeintel (`codeintel-db`) databases have switched to an alpine-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database.
+
+All users that use our bundled (built-in) database instances **must** read through the [3.31 upgrade guide](../migration/3_31.md) _before_ upgrading.
+
+> NOTE: The above does not apply to users that use external databases (e.x: Amazon RDS, Google Cloud SQL, etc.).
+
+## 3.29 -> 3.30.3
+
+> WARNING: **Users on 3.29.x are advised to upgrade directly to 3.30.3**. If you have already upgraded to 3.30.0, 3.30.1, or 3.30.2 please follow [this migration guide](../migration/3_30.md).
+
+No manual migration required.
+
+Please upgrade to the [`v3.30.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.30.2/docker-compose) by following the [standard upgrade procedure](#standard-upgrade-procedure).
 
 ## 3.28 -> 3.29
 
@@ -24,13 +50,10 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 
 ## 3.27 -> 3.28
 
-TODO
+- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.27).*
 
-## Unreleased
-
-- The memory requirements for `redis-cache` and `redis-store` have been increased by 1GB. See https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/373 for more context.
 ## 3.26 -> 3.27
 
 > Warning: ⚠️ Sourcegraph 3.27 now requires **Postgres 12+**.
@@ -202,20 +225,4 @@ docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'chown -R 999
 
 ### Standard upgrade procedure
 
-In your fork of [the deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker) repository, merge the new version into the `release` branch if you maintain any changes (see: [storing customizations in a fork](../install/docker-compose.md#optional-recommended-store-customizations-in-a-fork)):
-
-```sh
-cd docker-compose/
-git fetch upstream
-git merge upstream $NEW_VERSION
-# Address any merge conflicts you may have.
-```
-
-Then on your server:
-
-```sh
-cd deploy-sourcegraph-docker/docker-compose/
-docker-compose down --remove-orphans
-git pull
-docker-compose up -d
-```
+Refer to the [upgrade guide](../install/docker-compose/operations.md#upgrade).

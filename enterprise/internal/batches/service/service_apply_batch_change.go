@@ -11,7 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // ErrApplyClosedBatchChange is returned by ApplyBatchChange when the batch change
@@ -47,12 +48,12 @@ func (o ApplyBatchChangeOpts) String() string {
 }
 
 // ApplyBatchChange creates the BatchChange.
-func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpts) (batchChange *btypes.BatchChange, err error) {
-	tr, ctx := trace.New(ctx, "Service.ApplyBatchChange", opts.String())
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+func (s *Service) ApplyBatchChange(
+	ctx context.Context,
+	opts ApplyBatchChangeOpts,
+) (batchChange *btypes.BatchChange, err error) {
+	ctx, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
 
 	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
 		RandID: opts.BatchSpecRandID,
@@ -63,6 +64,12 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
 	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchSpec.UserID); err != nil {
+		return nil, err
+	}
+
+	// Validate ChangesetSpecs and return error if they're invalid and the
+	// BatchSpec can't be applied safely.
+	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
 		return nil, err
 	}
 
@@ -94,15 +101,24 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	// codehost while we're applying a new batch spec.
 	// This is blocking, because the changeset rows currently being processed by the
 	// reconciler are locked.
-	if err := s.store.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
-		return batchChange, nil
-	}
-
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	l := locker.NewWithDB(nil, "batches_apply").With(tx)
+	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
+	if err != nil {
+		return nil, err
+	}
+	if !locked {
+		return nil, errors.New("batch change locked by other user applying batch spec")
+	}
+
+	if err := tx.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
+		return batchChange, nil
+	}
 
 	if batchChange.ID == 0 {
 		if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
@@ -153,7 +169,13 @@ func (s *Service) ApplyBatchChange(ctx context.Context, opts ApplyBatchChangeOpt
 	return batchChange, nil
 }
 
-func (s *Service) ReconcileBatchChange(ctx context.Context, batchSpec *btypes.BatchSpec) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
+func (s *Service) ReconcileBatchChange(
+	ctx context.Context,
+	batchSpec *btypes.BatchSpec,
+) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
+	ctx, endObservation := s.operations.reconcileBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 	if err != nil {
 		return nil, 0, err

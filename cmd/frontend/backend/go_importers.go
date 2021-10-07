@@ -13,10 +13,10 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -24,9 +24,8 @@ import (
 var MockCountGoImporters func(ctx context.Context, repo api.RepoName) (int, error)
 
 var (
-	goImportersCountCache = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
-
-	countGoImportersHTTPClient *http.Client // mockable in tests
+	countGoImportersHTTPClient = httpcli.ExternalDoer
+	goImportersCountCache      = rcache.NewWithTTL("go-importers-count", 14400) // 4 hours
 )
 
 // CountGoImporters returns the number of Go importers for the repository's Go subpackages. This is
@@ -82,7 +81,12 @@ func CountGoImporters(ctx context.Context, repo api.RepoName) (count int, err er
 	// addressed in the future. See https://github.com/sourcegraph/sourcegraph/issues/2663.
 	for _, pkg := range goPackages {
 		// Assumes the import path is the same as the repo name - not always true!
-		response, err := ctxhttp.Get(ctx, countGoImportersHTTPClient, "https://api.godoc.org/importers/"+pkg)
+		req, err := http.NewRequest("GET", "https://api.godoc.org/importers/"+pkg, nil)
+		if err != nil {
+			return 0, err
+		}
+
+		response, err := countGoImportersHTTPClient.Do(req.WithContext(ctx))
 		if err != nil {
 			return 0, err
 		}
@@ -115,7 +119,9 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 	if !envvar.SourcegraphDotComMode() {
 		// 🚨 SECURITY: Avoid leaking information about private repositories that the viewer is not
 		// allowed to access.
-		return nil, errors.New("listGoPackagesInRepoImprecise is only supported on Sourcegraph.com for public repositories")
+		return nil, errors.New(
+			"listGoPackagesInRepoImprecise is only supported on Sourcegraph.com for public repositories",
+		)
 	}
 
 	repo, err := Repos.GetByName(ctx, repoName)
@@ -153,7 +159,8 @@ func listGoPackagesInRepoImprecise(ctx context.Context, repoName api.RepoName) (
 func isPossibleExternallyImportableGoPackageDir(dirPath string) bool {
 	components := strings.Split(dirPath, "/")
 	for _, c := range components {
-		if (strings.HasPrefix(c, ".") && len(c) > 1) || strings.HasPrefix(c, "_") || c == "vendor" || c == "internal" || c == "testdata" {
+		if (strings.HasPrefix(c, ".") && len(c) > 1) || strings.HasPrefix(c, "_") || c == "vendor" || c == "internal" ||
+			c == "testdata" {
 			return false
 		}
 	}

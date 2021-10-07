@@ -104,7 +104,7 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
 	var commitDateString string
 	if commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit); err != nil {
-		if !vcs.IsRepoNotExist(err) && !gitserver.IsRevisionNotFound(err) {
+		if !vcs.IsRepoNotExist(err) && !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return errors.Wrap(err, "gitserver.CommitDate")
 		}
 
@@ -130,8 +130,8 @@ const committedAtProcesshandleCommitQuery = `
 UPDATE lsif_uploads SET committed_at = %s WHERE state = 'completed' AND repository_id = %s AND commit = %s AND committed_at IS NULL
 `
 
-// Down runs a batch of the migration in reverse. This method simply sets the committed_at column
-// to null for a number of records matching the configured batch size.
+// Down runs a batch of the migration in reverse. This method simply sets the committed_at
+// column to null for a number of records matching the configured batch size.
 func (m *committedAtMigrator) Down(ctx context.Context) error {
 	return m.store.Exec(ctx, sqlf.Sprintf(committedAtDownQuery, m.batchSize))
 }

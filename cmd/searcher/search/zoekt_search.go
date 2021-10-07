@@ -12,7 +12,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	zoektrpc "github.com/google/zoekt/rpc"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -25,20 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
-var zoektOnce sync.Once
-var endpointMap atomicEndpoints
-var zoektClient zoekt.Streamer
+var (
+	zoektOnce   sync.Once
+	endpointMap atomicEndpoints
+	zoektClient zoekt.Streamer
+)
 
 func getZoektClient(indexerEndpoints []string) zoekt.Streamer {
 	zoektOnce.Do(func() {
-		dial := func(endpoint string) zoekt.Streamer {
-			return backend.NewMeteredSearcher(endpoint, &backend.StreamSearchAdapter{zoektrpc.Client(endpoint)})
-		}
 		zoektClient = backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
 			&backend.HorizontalSearcher{
 				Map:  &endpointMap,
-				Dial: dial,
+				Dial: backend.ZoektDial,
 			},
 		)
 	})
@@ -90,7 +88,7 @@ func HandleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error)
 	return zoektquery.NewAnd(and...), nil
 }
 
-func buildQuery(args *search.TextPatternInfo, repoBranches map[string][]string, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
 	regexString := comby.StructuralPatToRegexpQuery(args.Pattern, shortcircuit)
 	if len(regexString) == 0 {
 		return &zoektquery.Const{Value: true}, nil
@@ -100,7 +98,7 @@ func buildQuery(args *search.TextPatternInfo, repoBranches map[string][]string, 
 		return nil, err
 	}
 	return zoektquery.NewAnd(
-		&zoektquery.RepoBranches{Set: repoBranches},
+		&zoektquery.BranchesRepos{List: branchRepos},
 		filePathPatterns,
 		&zoektquery.Regexp{
 			Regexp:        re,
@@ -125,7 +123,7 @@ const defaultMaxSearchResults = 30
 // Timeouts are reported through the context, and as a special case errNoResultsInTimeout
 // is returned if no results are found in the given timeout (instead of the more common
 // case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches map[string][]string, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
+func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, endpoints []string, useFullDeadline bool, c chan<- zoektSearchStreamEvent) (fm []zoekt.FileMatch, limitHit bool, partial map[api.RepoID]struct{}, err error) {
 	defer func() {
 		if c != nil {
 			c <- zoektSearchStreamEvent{
@@ -136,13 +134,18 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 			}
 		}
 	}()
-	if len(repoBranches) == 0 {
+	if len(branchRepos) == 0 {
 		return nil, false, nil, nil
 	}
 
+	numRepos := 0
+	for _, br := range branchRepos {
+		numRepos += int(br.Repos.GetCardinality())
+	}
+
 	// Choose sensible values for k when we generalize this.
-	k := zoektutil.ResultCountFactor(len(repoBranches), args.FileMatchLimit, false)
-	searchOpts := zoektutil.SearchOpts(ctx, k, args)
+	k := zoektutil.ResultCountFactor(numRepos, args.FileMatchLimit, false)
+	searchOpts := zoektutil.SearchOpts(ctx, k, args.FileMatchLimit)
 	searchOpts.Whole = true
 
 	// TODO(@camdencheek) TODO(@rvantonder) handle "timeout:..." values in this context.
@@ -168,7 +171,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(args, repoBranches, filePathPatterns, true)
+	q, err := buildQuery(args, branchRepos, filePathPatterns, true)
 	if err != nil {
 		return nil, false, nil, err
 	}
@@ -187,7 +190,7 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, repoBranches
 	// If the previous indexed search did not return a substantial number of matching file candidates or count was
 	// manually specified, run a more complete and expensive search.
 	if resp.FileCount < 10 || args.FileMatchLimit != defaultMaxSearchResults {
-		q, err = buildQuery(args, repoBranches, filePathPatterns, false)
+		q, err = buildQuery(args, branchRepos, filePathPatterns, false)
 		if err != nil {
 			return nil, false, nil, err
 		}
@@ -276,24 +279,19 @@ type atomicEndpoints struct {
 	endpoints atomic.Value
 }
 
-func (a *atomicEndpoints) Endpoints() (map[string]struct{}, error) {
+func (a *atomicEndpoints) Endpoints() ([]string, error) {
 	eps := a.endpoints.Load()
 	if eps == nil {
 		return nil, errors.New("endpoints have not been set")
 	}
-	return eps.(map[string]struct{}), nil
+	return eps.([]string), nil
 }
 
 func (a *atomicEndpoints) Set(endpoints []string) {
 	if !a.needsUpdate(endpoints) {
 		return
 	}
-
-	eps := make(map[string]struct{}, len(endpoints))
-	for _, addr := range endpoints {
-		eps[addr] = struct{}{}
-	}
-	a.endpoints.Store(eps)
+	a.endpoints.Store(endpoints)
 }
 
 func (a *atomicEndpoints) needsUpdate(endpoints []string) bool {
@@ -305,8 +303,8 @@ func (a *atomicEndpoints) needsUpdate(endpoints []string) bool {
 		return true
 	}
 
-	for _, addr := range endpoints {
-		if _, ok := old[addr]; !ok {
+	for i := range endpoints {
+		if old[i] != endpoints[i] {
 			return true
 		}
 	}

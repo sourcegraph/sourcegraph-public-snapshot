@@ -10,7 +10,6 @@ import { Button, Collapse, Form, FormGroup, Input, Label } from 'reactstrap'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { Skipped } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 
@@ -48,9 +47,6 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
         }
     }, [])
 
-    const [isRedesignEnabled] = useRedesignToggle()
-    const buttonColorRedesign = skipped.severity !== 'info' ? 'outline-danger' : 'outline-primary'
-
     return (
         <div
             className={classNames('streaming-skipped-item pt-2 w-100', {
@@ -58,17 +54,17 @@ const SkippedMessage: React.FunctionComponent<{ skipped: Skipped; startOpen: boo
             })}
         >
             <Button
-                className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+                className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
                 onClick={toggleIsOpen}
                 onKeyDown={onKeyDown}
                 disabled={!skipped.message}
-                color={isRedesignEnabled ? buttonColorRedesign : 'secondary'}
+                color={skipped.severity !== 'info' ? 'outline-danger' : 'outline-primary'}
             >
                 <h4 className="d-flex align-items-center mb-0 w-100">
                     {skipped.severity === 'info' ? (
-                        <InformationOutlineIcon className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0" />
+                        <InformationOutlineIcon className="icon-inline streaming-skipped-item__icon flex-shrink-0" />
                     ) : (
-                        <AlertCircleIcon className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0" />
+                        <AlertCircleIcon className="icon-inline streaming-skipped-item__icon flex-shrink-0" />
                     )}
                     <span className="flex-grow-1 text-left">{skipped.title}</span>
 

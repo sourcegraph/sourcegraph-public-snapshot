@@ -16,12 +16,21 @@ import (
 //
 // We only specify a subset of the fields.
 type zoektIndexOptions struct {
+	// Name is the Repository Name.
+	Name string
+
 	// RepoID is the Sourcegraph Repository ID.
 	RepoID int32
 
 	// Public is true if the repository is public and does not require auth
 	// filtering.
 	Public bool
+
+	// Fork is true if the repository is a fork.
+	Fork bool
+
+	// Archived is true if the repository is archived.
+	Archived bool
 
 	// LargeFiles is a slice of glob patterns where matching file paths should
 	// be indexed regardless of their size. The pattern syntax can be found
@@ -44,6 +53,9 @@ type zoektIndexOptions struct {
 // RepoIndexOptions are the options used by GetIndexOptions for a specific
 // repository.
 type RepoIndexOptions struct {
+	// Name is the Repository Name.
+	Name string
+
 	// RepoID is the Sourcegraph Repository ID.
 	RepoID int32
 
@@ -53,6 +65,12 @@ type RepoIndexOptions struct {
 
 	// Priority indicates ranking in results, higher first.
 	Priority float64
+
+	// Fork is true if the repository is a fork.
+	Fork bool
+
+	// Archived is true if the repository is archived.
+	Archived bool
 
 	// GetVersion is used to resolve revisions for a repo. If it fails, the
 	// error is encoded in the body. If the revision is missing, an empty
@@ -102,9 +120,12 @@ func getIndexOptions(
 	}
 
 	o := &zoektIndexOptions{
+		Name:       opts.Name,
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
 		Priority:   opts.Priority,
+		Fork:       opts.Fork,
+		Archived:   opts.Archived,
 		LargeFiles: c.SearchLargeFiles,
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 	}

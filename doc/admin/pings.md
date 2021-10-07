@@ -22,6 +22,9 @@ Critical telemetry includes only the high-level data below required for billing,
 
 By default, Sourcegraph also aggregates usage and performance metrics for some product features. No personal or specific information is ever included.
 
+This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
+[site configuration](config/site_config.md#disableNonCriticalTelemetry).
+
 - Whether the instance is deployed on localhost (true/false)
 - Which category of authentication provider is in use (built-in, OpenID Connect, an HTTP proxy, SAML, GitHub, GitLab)
 - Which code hosts are in use (GitHub, Bitbucket Server, GitLab, Phabricator, Gitolite, AWS CodeCommit, Other)

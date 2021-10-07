@@ -1,0 +1,81 @@
+{
+  "Repos": [
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkyODQ1NzgyMw==",
+    "DatabaseID": 28457823,
+    "NameWithOwner": "freeCodeCamp/freeCodeCamp",
+    "Description": "freeCodeCamp.org's open-source codebase and curriculum. Learn to code for free.",
+    "URL": "https://github.com/freeCodeCamp/freeCodeCamp",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "StargazerCount": 326274,
+    "ForkCount": 26133
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNzc3MzY1MzM=",
+    "DatabaseID": 177736533,
+    "NameWithOwner": "996icu/996.ICU",
+    "Description": "Repo for counting stars and contributing. Press F to pay respect to glorious developers.",
+    "URL": "https://github.com/996icu/996.ICU",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "StargazerCount": 257953,
+    "ForkCount": 21341
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMzQ5MTg5NQ==",
+    "DatabaseID": 13491895,
+    "NameWithOwner": "EbookFoundation/free-programming-books",
+    "Description": ":books: Freely available programming books",
+    "URL": "https://github.com/EbookFoundation/free-programming-books",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "StargazerCount": 196925,
+    "ForkCount": 43345
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==",
+    "DatabaseID": 11730342,
+    "NameWithOwner": "vuejs/vue",
+    "Description": "🖖 Vue.js is a progressive, incrementally-adoptable JavaScript framework for building UI on the web.",
+    "URL": "https://github.com/vuejs/vue",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "StargazerCount": 185828,
+    "ForkCount": 29655
+   },
+   {
+    "ID": "MDEwOlJlcG9zaXRvcnk2MDQ5MzEwMQ==",
+    "DatabaseID": 60493101,
+    "NameWithOwner": "jwasham/coding-interview-university",
+    "Description": "A complete computer science study plan to become a software engineer.",
+    "URL": "https://github.com/jwasham/coding-interview-university",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "ViewerPermission": "READ",
+    "StargazerCount": 184411,
+    "ForkCount": 50216
+   }
+  ],
+  "TotalCount": 2284861,
+  "EndCursor": "Y3Vyc29yOjU="
+ }

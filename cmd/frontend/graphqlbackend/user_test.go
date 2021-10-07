@@ -184,7 +184,7 @@ func TestUpdateUser(t *testing.T) {
 		})
 
 		result, err := (&schemaResolver{db: db}).UpdateUser(context.Background(), &updateUserArgs{User: "VXNlcjox"})
-		wantErr := "must be authenticated as 1 or as an admin (must be site admin)"
+		wantErr := "must be authenticated as the authorized user or as an admin (must be site admin)"
 		gotErr := fmt.Sprintf("%v", err)
 		if wantErr != gotErr {
 			t.Fatalf("err: want %q but got %q", wantErr, gotErr)

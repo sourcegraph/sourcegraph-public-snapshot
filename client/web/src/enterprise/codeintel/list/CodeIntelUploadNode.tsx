@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
 
@@ -11,6 +12,8 @@ import { CodeIntelUploadOrIndexIndexer } from '../shared/CodeIntelUploadOrIndexI
 import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
 import { CodeIntelUploadOrIndexRoot } from '../shared/CodeIntelUploadOrIndexRoot'
 
+import styles from './CodeIntelUploadNode.module.scss'
+
 export interface CodeIntelUploadNodeProps {
     node: LsifUploadFields
     now?: () => Date
@@ -18,9 +21,9 @@ export interface CodeIntelUploadNodeProps {
 
 export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = ({ node, now }) => (
     <>
-        <span className="codeintel-upload-node__separator" />
+        <span className={styles.separator} />
 
-        <div className="d-flex flex-column codeintel-upload-node__information">
+        <div className={classNames(styles.information, 'd-flex flex-column')}>
             <div className="m-0">
                 <h3 className="m-0 d-block d-md-inline">
                     <CodeIntelUploadOrIndexRepository node={node} />
@@ -39,7 +42,7 @@ export const CodeIntelUploadNode: FunctionComponent<CodeIntelUploadNodeProps> = 
             </div>
         </div>
 
-        <span className="d-none d-md-inline codeintel-upload-node__state">
+        <span className={classNames(styles.state, 'd-none d-md-inline')}>
             <CodeIntelState node={node} className="d-flex flex-column align-items-center" />
         </span>
         <span>

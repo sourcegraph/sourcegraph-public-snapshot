@@ -11,8 +11,11 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -321,11 +324,23 @@ func TestGetUploads(t *testing.T) {
 	)
 	insertVisibleAtTip(t, db, 50, 2, 5, 7, 8)
 
+	// upload 10 depends on uploads 7 and 8
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 7, Scheme: "npm", Name: "foo", Version: "0.1.0"},
+		{DumpID: 8, Scheme: "npm", Name: "bar", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "foo", Version: "0.1.0"}},
+		{Package: shared.Package{DumpID: 10, Scheme: "npm", Name: "bar", Version: "1.2.3"}},
+	})
+
 	testCases := []struct {
 		repositoryID   int
 		state          string
 		term           string
 		visibleAtTip   bool
+		dependencyOf   int
+		dependentOf    int
 		uploadedBefore *time.Time
 		uploadedAfter  *time.Time
 		oldestFirst    bool
@@ -342,6 +357,8 @@ func TestGetUploads(t *testing.T) {
 		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},     // searches text status
 		{term: "bAr", expectedIDs: []int{4, 6}},              // search repo names
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
+		{dependencyOf: 10, expectedIDs: []int{7, 8}},
+		{dependentOf: 7, expectedIDs: []int{10}},
 		{uploadedBefore: &t5, expectedIDs: []int{6, 7, 8, 9, 10}},
 		{uploadedAfter: &t4, expectedIDs: []int{1, 2, 3}},
 	}
@@ -354,11 +371,13 @@ func TestGetUploads(t *testing.T) {
 			}
 
 			name := fmt.Sprintf(
-				"repositoryID=%d state=%s term=%s visibleAtTip=%v offset=%d",
+				"repositoryID=%d state=%s term=%s visibleAtTip=%v dependencyOf=%d dependentOf=%d offset=%d",
 				testCase.repositoryID,
 				testCase.state,
 				testCase.term,
 				testCase.visibleAtTip,
+				testCase.dependencyOf,
+				testCase.dependentOf,
 				lo,
 			)
 
@@ -368,6 +387,8 @@ func TestGetUploads(t *testing.T) {
 					State:          testCase.state,
 					Term:           testCase.term,
 					VisibleAtTip:   testCase.visibleAtTip,
+					DependencyOf:   testCase.dependencyOf,
+					DependentOf:    testCase.dependentOf,
 					UploadedBefore: testCase.uploadedBefore,
 					UploadedAfter:  testCase.uploadedAfter,
 					OldestFirst:    testCase.oldestFirst,
@@ -687,6 +708,46 @@ func TestDeleteUploadByID(t *testing.T) {
 	// Ensure record was deleted
 	if states, err := getUploadStates(db, 1); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
+	} else if diff := cmp.Diff(map[int]string{1: "deleting"}, states); diff != "" {
+		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	}
+
+	repositoryIDs, err := store.DirtyRepositories(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+	}
+
+	var keys []int
+	for repositoryID := range repositoryIDs {
+		keys = append(keys, repositoryID)
+	}
+	sort.Ints(keys)
+
+	if len(keys) != 1 || keys[0] != 50 {
+		t.Errorf("expected repository to be marked dirty")
+	}
+}
+
+func TestDeleteUploadByIDNotCompleted(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 1, RepositoryID: 50, State: "uploading"},
+	)
+
+	if found, err := store.DeleteUploadByID(context.Background(), 1); err != nil {
+		t.Fatalf("unexpected error deleting upload: %s", err)
+	} else if !found {
+		t.Fatalf("expected record to exist")
+	}
+
+	// Ensure record was deleted
+	if states, err := getUploadStates(db, 1); err != nil {
+		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(map[int]string{1: "deleted"}, states); diff != "" {
 		t.Errorf("unexpected dump (-want +got):\n%s", diff)
 	}
@@ -801,68 +862,335 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
 
-	insertUploads(t, db, Upload{ID: 1, State: "deleted"})
+	insertUploads(t, db,
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"},
+		Upload{ID: 54, State: "completed"},
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 53, Scheme: "test", Name: "p2", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+	})
 
-	if err := store.HardDeleteUploadByID(context.Background(), 1); err != nil {
+	if err := store.UpdateNumReferences(context.Background(), []int{51, 52, 53, 54}); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	if err := store.HardDeleteUploadByID(context.Background(), 51); err != nil {
 		t.Fatalf("unexpected error deleting upload: %s", err)
 	}
 
-	// Ensure records were deleted
-	if states, err := getUploadStates(db, 1); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if len(states) != 0 {
-		t.Fatalf("unexpected record")
+	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying num_references: %s", err)
+	}
+
+	expectedNumReferencesByID := map[int]int{
+		// 51 was deleted
+		52: 1,
+		53: 1,
+		54: 0,
+	}
+	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
 	}
 }
 
-func TestSoftDeleteOldUploads(t *testing.T) {
+func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
 
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t1.Add(time.Minute * 4)
-	t4 := t1.Add(time.Minute * 6)
+	insertUploads(t, db,
+		Upload{ID: 1, RepositoryID: 50, State: "completed"},
+		Upload{ID: 2, RepositoryID: 51, State: "completed"},
+		Upload{ID: 3, RepositoryID: 52, State: "completed"},
+		Upload{ID: 4, RepositoryID: 53, State: "completed"},
+		Upload{ID: 5, RepositoryID: 54, State: "errored"},
+		Upload{ID: 6, RepositoryID: 54, State: "deleted"},
+	)
+
+	now := timeutil.Now()
+
+	for _, repositoryID := range []int{50, 51, 52, 53, 54} {
+		// Only call this to insert a record into the lsif_dirty_repositories table
+		if err := store.MarkRepositoryAsDirty(context.Background(), repositoryID); err != nil {
+			t.Fatalf("unexpected error marking repository as dirty`: %s", err)
+		}
+
+		// Only call this to update the updated_at field in the lsif_dirty_repositories table
+		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitserver.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
+			t.Fatalf("unexpected error updating commit graph: %s", err)
+		}
+	}
+
+	// Can return nulls
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 2, now); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 20 minutes later, first two repositories are still on cooldown
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 30 minutes later, all repositories are still on cooldown
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 90 minutes later, all repositories are visible
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Make repository 5 newly visible
+	if _, err := db.Exec(`UPDATE lsif_uploads SET state = 'completed' WHERE id = 5`); err != nil {
+		t.Fatalf("unexpected error updating upload: %s", err)
+	}
+
+	// 95 minutes later, only new repository is visible
+	if repositoryIDs, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
+	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateUploadRetention(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
 
 	insertUploads(t, db,
-		Upload{ID: 1, State: "completed", FinishedAt: &t1},
-		Upload{ID: 2, State: "completed", FinishedAt: &t2}, // visible
-		Upload{ID: 3, State: "errored", FinishedAt: &t2},
-		Upload{ID: 4, State: "completed", FinishedAt: &t3}, // visible
-		Upload{ID: 5, State: "completed", FinishedAt: &t3},
-		Upload{ID: 6, State: "completed", FinishedAt: &t4}, // too new
-		Upload{ID: 7, State: "errored", FinishedAt: &t4},   // too new
-		Upload{ID: 8, State: "uploaded", UploadedAt: t3},
-		Upload{ID: 9, State: "uploaded", UploadedAt: t4},    // too new
-		Upload{ID: 10, State: "completed", FinishedAt: &t2}, // protected on non-default branch
+		Upload{ID: 1, State: "completed"},
+		Upload{ID: 2, State: "completed"},
+		Upload{ID: 3, State: "completed"},
+		Upload{ID: 4, State: "completed"},
+		Upload{ID: 5, State: "completed"},
 	)
-	insertVisibleAtTip(t, db, 50, 2, 4)
-	insertVisibleAtTipNonDefaultBranch(t, db, 50, 10)
 
-	if count, err := store.SoftDeleteOldUploads(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
-		t.Fatalf("unexpected error pruning uploads: %s", err)
-	} else if count != 4 {
-		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 4, count)
+	now := timeutil.Now()
+
+	if err := store.updateUploadRetention(context.Background(), []int{}, []int{2, 3, 4}, now); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
 	}
 
+	count, _, err := basestore.ScanFirstInt(db.Query(`SELECT COUNT(*) FROM lsif_uploads WHERE expired`))
+	if err != nil {
+		t.Fatalf("unexpected error counting uploads: %s", err)
+	}
+
+	if count != 3 {
+		t.Fatalf("unexpected count. want=%d have=%d", 3, count)
+	}
+}
+
+func TestUpdateNumReferences(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 50, State: "completed"},
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"},
+		Upload{ID: 54, State: "completed"},
+		Upload{ID: 55, State: "completed"},
+		Upload{ID: 56, State: "completed"},
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
+		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+	})
+
+	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying num_references: %s", err)
+	}
+
+	expectedNumReferencesByID := map[int]int{
+		50: 0,
+		51: 0,
+		52: 0,
+		53: 5, // referenced by 51, 52, 54, 55, 56
+		54: 1, // referenced by 52
+		55: 1, // referenced by 51
+		56: 2, // referenced by 52, 53
+	}
+	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
+	}
+}
+
+func TestUpdateDependencyNumReferences(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 50, State: "completed"}, // removed
+		Upload{ID: 51, State: "completed"}, // removed
+		Upload{ID: 52, State: "completed"}, // removed
+		Upload{ID: 53, State: "completed"},
+		Upload{ID: 54, State: "completed"},
+		Upload{ID: 55, State: "completed"},
+		Upload{ID: 56, State: "completed"},
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
+		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		// References removed
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+
+		// Remaining references
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+	})
+
+	// Set correct initial counts
+	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	// Remove ref counts from uploads 50, 51, and 52
+	if err := store.UpdateDependencyNumReferences(context.Background(), []int{50, 51, 52}, true); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	numReferencesByID, err := scanIntPairs(store.Query(context.Background(), sqlf.Sprintf(`SELECT id, num_references FROM lsif_uploads`)))
+	if err != nil {
+		t.Fatalf("unexpected error querying num_references: %s", err)
+	}
+
+	expectedNumReferencesByID := map[int]int{
+		50: 0,
+		51: 0,
+		52: 0,
+		53: 3, // referenced by 54, 55, 56 (reference from 51, 52 removed)
+		54: 0, // referenced by nothing    (reference from 52 removed)
+		55: 0, // referenced by nothing    (reference from 51 removed)
+		56: 1, // referenced by 53         (reference from 52 removed)
+	}
+	if diff := cmp.Diff(expectedNumReferencesByID, numReferencesByID); diff != "" {
+		t.Errorf("unexpected reference count (-want +got):\n%s", diff)
+	}
+}
+
+func TestSoftDeleteExpiredUploads(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	insertUploads(t, db,
+		Upload{ID: 50, State: "completed"},
+		Upload{ID: 51, State: "completed"},
+		Upload{ID: 52, State: "completed"},
+		Upload{ID: 53, State: "completed"}, // referenced by 51, 52, 54, 55, 56
+		Upload{ID: 54, State: "completed"}, // referenced by 52
+		Upload{ID: 55, State: "completed"}, // referenced by 51
+		Upload{ID: 56, State: "completed"}, // referenced by 52, 53
+	)
+	insertPackages(t, store, []shared.Package{
+		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
+		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
+	})
+	insertPackageReferences(t, store, []shared.PackageReference{
+		// References removed
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+
+		// Remaining references
+		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+	})
+
+	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
+		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	}
+
+	if err := store.UpdateNumReferences(context.Background(), []int{50, 51, 52, 53, 54, 55, 56}); err != nil {
+		t.Fatalf("unexpected error updating num references: %s", err)
+	}
+
+	if count, err := store.SoftDeleteExpiredUploads(context.Background()); err != nil {
+		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	} else if count != 2 {
+		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
+	}
+
+	// Ensure records were deleted
 	expectedStates := map[int]string{
-		1:  "deleted",
-		2:  "completed",
-		3:  "deleted",
-		4:  "completed",
-		5:  "deleted",
-		6:  "completed",
-		7:  "errored",
-		8:  "deleted",
-		9:  "uploaded",
-		10: "completed",
+		50: "completed",
+		51: "deleting",
+		52: "deleting",
+		53: "completed",
+		54: "completed",
+		55: "completed",
+		56: "completed",
 	}
-
-	// Ensure record was deleted
-	if states, err := getUploadStates(db, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10); err != nil {
+	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
 		t.Fatalf("unexpected error getting states: %s", err)
 	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
 		t.Errorf("unexpected upload states (-want +got):\n%s", diff)

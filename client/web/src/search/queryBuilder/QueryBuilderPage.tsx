@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -42,7 +43,7 @@ export const QueryBuilderPage: React.FunctionComponent<Props> = ({
                     data-tooltip={query === '' ? '' : `Read-only field. ${helpText}.`}
                 />
                 <Link
-                    className={`btn btn-primary ${query === '' ? 'disabled' : ''}`}
+                    className={classNames('btn btn-primary', query === '' && 'disabled')}
                     to={`/search?${buildSearchURLQuery(
                         query,
                         patternType,

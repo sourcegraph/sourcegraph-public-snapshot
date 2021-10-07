@@ -4,7 +4,7 @@ Batch changes are created by writing a [batch spec](../references/batch_spec_yam
 
 ## Requirements
 
-- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quickstart)" guide on how to setup a Sourcegraph instance.
+- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
 - Installed and configured [Sourcegraph CLI](https://github.com/sourcegraph/src-cli) (see "[Install the Sourcegraph CLI](../quickstart.md#install-the-sourcegraph-cli)" in the Batch Changes quickstart for detailed instructions).
 - Configured credentials for the code host(s) that you'll be creating changesets on. See "[Configuring user credentials](configuring_credentials.md)" for a guide on how to add and manage credentials.
 
@@ -35,6 +35,8 @@ changesetTemplate:
   published: false # Do not publish any changes to the code hosts yet
 ```
 
+The commits created from your spec will use the git config values for `user.name` and `user.email` from your local environment, or "batch-changes@sourcegraph.com" if no user is set. Alternatively, you can also [specify an `author`](../references/batch_spec_yaml_reference.md#changesettemplate-commit-author) in this spec.
+
 See the ["batch spec YAML reference"](../references/batch_spec_yaml_reference.md) and the [tutorials](../tutorials/index.md) for more details on how to write batch specs.
 
 ## Creating a batch change after previewing
@@ -54,7 +56,7 @@ After writing a batch spec you use the [Sourcegraph CLI (`src`)](https://github.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/src_batch_preview_link.png" class="screenshot">
 1. Examine the preview. This is the result of executing the batch spec. Confirm that the changes are what you intended. If not, edit the batch spec and then rerun the command above.
     <img src="https://sourcegraphstatic.com/docs/images/batch_changes/browser_batch_preview.png" class="screenshot">
-1. Click the **Apply spec** button to create the batch change.
+1. Click the **Apply** button to create the batch change.
 
 After you've applied a batch spec, you can [publish changesets](publishing_changesets.md) to the code host when you're ready. This will turn the patches into commits, branches, and changesets (such as GitHub pull requests) for others to review and merge.
 

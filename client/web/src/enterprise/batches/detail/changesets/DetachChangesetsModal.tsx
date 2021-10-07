@@ -13,7 +13,7 @@ export interface DetachChangesetsModalProps extends TelemetryProps {
     onCancel: () => void
     afterCreate: () => void
     batchChangeID: Scalars['ID']
-    changesetIDs: () => Promise<Scalars['ID'][]>
+    changesetIDs: Scalars['ID'][]
 
     /** For testing only. */
     detachChangesets?: typeof _detachChangesets
@@ -32,8 +32,7 @@ export const DetachChangesetsModal: React.FunctionComponent<DetachChangesetsModa
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
         setIsLoading(true)
         try {
-            const ids = await changesetIDs()
-            await detachChangesets(batchChangeID, ids)
+            await detachChangesets(batchChangeID, changesetIDs)
             telemetryService.logViewEvent('BatchChangeDetailsPageDetachArchivedChangesets')
             afterCreate()
         } catch (error) {

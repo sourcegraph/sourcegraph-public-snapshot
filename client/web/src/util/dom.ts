@@ -8,13 +8,66 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 /**
  * An Observable wrapper around ResizeObserver
  */
-export const observeResize = (target: HTMLElement): Observable<ResizeObserverEntry | undefined> =>
-    new Observable(observer => {
+export const observeResize = (target: HTMLElement): Observable<ResizeObserverEntry | undefined> => {
+    let animationFrameID: number
+
+    return new Observable(function subscribe(observer) {
         const resizeObserver = new ResizeObserver(entries => {
-            observer.next(head(entries))
+            // Move `ResizeObserver` measurements into a RAF to avoid the "ResizeObserver loop limit exceeded" error.
+            // See the thread for background info: https://github.com/WICG/resize-observer/issues/38
+            animationFrameID = window.requestAnimationFrame(() => {
+                observer.next(head(entries))
+            })
         })
         resizeObserver.observe(target)
-        return () => resizeObserver.disconnect()
+
+        return function unsubscribe() {
+            window.cancelAnimationFrame(animationFrameID)
+            resizeObserver.disconnect()
+        }
+    })
+}
+
+interface ObserveQuerySelectorInit {
+    selector: string
+    timeoutMs: number
+    target?: HTMLElement
+}
+
+class ElementNotFoundError extends Error {
+    public readonly name = 'ElementNotFoundError'
+    constructor({ selector, timeoutMs }: ObserveQuerySelectorInit) {
+        super(`Could not find element with selector ${selector} within ${timeoutMs}ms.`)
+    }
+}
+
+/**
+ * Returns an observable that emits when an element that matches `selector` is found.
+ * Errors out if the selector doesn't yield an element by `timeoutMs`
+ */
+export const observeQuerySelector = ({ selector, timeoutMs, target }: ObserveQuerySelectorInit): Observable<Element> =>
+    new Observable(function subscribe(observer) {
+        const targetElement = target ?? document
+        const intervalId = setInterval(
+            () => {
+                const element = targetElement.querySelector(selector)
+                if (element) {
+                    observer.next(element)
+                    observer.complete()
+                }
+            },
+            timeoutMs > 100 ? 100 : timeoutMs
+        )
+        const timeoutId = setTimeout(() => {
+            clearInterval(intervalId)
+            // If the element still hasn't appeared, call error handler.
+            observer.error(ElementNotFoundError)
+        }, timeoutMs)
+
+        return function unsubscribe() {
+            clearTimeout(timeoutId)
+            clearInterval(intervalId)
+        }
     })
 
 /** Media breakpoints */

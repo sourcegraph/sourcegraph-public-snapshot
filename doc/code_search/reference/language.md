@@ -207,7 +207,7 @@ ComplexDiagram(
         Terminal("r:")),
     Choice(0,
         Terminal("regex", {href: "#regular-expression"}),
-        Terminal("built-in", {href: "#built-in-predicate"})),
+        Terminal("built-in", {href: "#built-in-repo-predicate"})),
     Choice(0,
         Skip(),
         Sequence(
@@ -610,7 +610,7 @@ or a structural search pattern. This parameter is available as a command-line an
 accessibility option, and synonymous with the visual [search pattern](#search-pattern) toggles.
 in [search pattern](#search-pattern).
 
-## Built-in predicate
+## Built-in repo predicate
 
 <script>
 ComplexDiagram(
@@ -682,6 +682,30 @@ commits past the specified time frame. This parameter is experimental.
 
 **Example:** [`repo:contains.commit.after(1 month ago)` ↗](https://sourcegraph.com/search?q=repo:.*sourcegraph.*+repo:contains.commit.after%281+month+ago%29&patternType=literal)
 
+## Built-in file predicate
+
+<script>
+ComplexDiagram(
+    Choice(0,
+        Terminal("contains.content(...)", {href: "#file-contains-content"}),
+        Terminal("contains(...)", {href: "#file-contains-content"}))).addTo();
+</script>
+
+### File contains content
+
+<script>
+ComplexDiagram(
+    Terminal("contains"),
+	Optional(Terminal(".content")),
+    Terminal("("),
+    Terminal("regexp", {href: "#regexp"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside files that contain content matching the provided regexp pattern.
+
+**Example:** [`file:contains(github\.com/sourcegraph/sourcegraph)` ↗](https://sourcegraph.com/search?q=repo:github%5C.com/sourcegraph/.*+repo:contains.file%28README%29&patternType=literal)
+
 ## Regular expression
 
 <script>
@@ -749,6 +773,24 @@ ComplexDiagram(
 </script>
 
 Include results which have a commit date before the specified time frame.
+Many forms are accepted for the argument, such as:
+- `november 1 2019`
+- `1 november 2019`
+- `2019.11.1`
+- `11/1/2019`
+- `01.11.2019`
+- `Thu, 07 Apr 2005 22:13:13 +0200`
+- `2005-04-07`
+- `2005-04-07T22:13:13`
+- `2005-04-07T22:13:13+07:00`
+- `yesterday`
+- `5 days ago`
+- `20 minutes ago`
+- `2 weeks ago`
+- `3:00`
+- `3pm`
+- `1632782809`
+- `1632782809 -0600`
 
 **Example:** [`before:"last thursday"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph%24+type:diff+author:nick+before:%22last+thursday%22&patternType=regexp) [`before:"november 1 2019"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+before:%22november+1+2019%22)
 
@@ -762,7 +804,25 @@ ComplexDiagram(
     Terminal("quoted string", {href: "#quoted-string"})).addTo();
 </script>
 
-Include results which have a commit date before the specified time frame.
+Include results which have a commit date after the specified time frame.
+Many forms are accepted for the argument, such as:
+- `november 1 2019`
+- `1 november 2019`
+- `2019.11.1`
+- `11/1/2019`
+- `01.11.2019`
+- `Thu, 07 Apr 2005 22:13:13 +0200`
+- `2005-04-07`
+- `2005-04-07T22:13:13`
+- `2005-04-07T22:13:13+07:00`
+- `yesterday`
+- `5 days ago`
+- `20 minutes ago`
+- `2 weeks ago`
+- `3:00`
+- `3pm`
+- `1632782809`
+- `1632782809 -0600`
 
 **Example:** [`after:"6 weeks ago"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%226+weeks+ago%22) [`after:"november 1 2019"` ↗](https://sourcegraph.com/search?q=repo:sourcegraph/sourcegraph$+type:diff+author:nick+after:%22november+1+2019%22)
 

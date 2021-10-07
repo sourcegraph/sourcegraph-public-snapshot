@@ -119,10 +119,10 @@ func (r *GitRefResolver) Target() interface {
 	//lint:ignore U1000 is used by graphql via reflection
 	Commit(context.Context) (*GitCommitResolver, error)
 	//lint:ignore U1000 is used by graphql via reflection
-	Type(context.Context) (gitObjectType, error)
+	Type(context.Context) (GitObjectType, error)
 } {
 	if r.target != "" {
-		return &gitObject{repo: r.repo, oid: r.target, typ: gitObjectTypeCommit}
+		return &gitObject{repo: r.repo, oid: r.target, typ: GitObjectTypeCommit}
 	}
 	r.gitObjectResolverOnce.Do(func() {
 		r.gitObjectResolver = &gitObjectResolver{repo: r.repo, revspec: r.name}

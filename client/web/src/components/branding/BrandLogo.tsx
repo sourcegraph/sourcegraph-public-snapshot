@@ -3,6 +3,8 @@ import React from 'react'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import styles from './BrandLogo.module.scss'
+
 interface Props extends ThemeProps, Exclude<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> {
     /**
      * The site configuration `branding` property. If not set, the global value from
@@ -35,16 +37,20 @@ export const BrandLogo: React.FunctionComponent<Props> = ({
     branding = branding ?? window.context?.branding
     assetsRoot = assetsRoot ?? (window.context?.assetsRoot || '')
 
+    const themeProperty = isLightTheme ? 'light' : 'dark'
+
     const sourcegraphLogoUrl =
         variant === 'symbol'
-            ? `${assetsRoot}/img/sourcegraph-mark.svg`
-            : `${assetsRoot}/img/sourcegraph${isLightTheme ? '-light' : ''}-head-logo.svg?v2`
-    const customBrandingLogoUrl = branding?.[isLightTheme ? 'light' : 'dark']?.[variant]
+            ? `${assetsRoot}/img/sourcegraph-mark.svg?v2` // Add query parameter for cache busting.
+            : `${assetsRoot}/img/sourcegraph-logo-${themeProperty}.svg`
+
+    const customBrandingLogoUrl = branding?.[themeProperty]?.[variant]
+
     return (
         <img
             {...props}
-            className={classNames('brand-logo', className, {
-                'brand-logo--spin': variant === 'symbol' && !branding?.disableSymbolSpin,
+            className={classNames(className, {
+                [styles.brandLogoSpin]: variant === 'symbol' && !branding?.disableSymbolSpin,
             })}
             src={customBrandingLogoUrl || sourcegraphLogoUrl}
             alt={customBrandingLogoUrl ? 'Logo' : 'Sourcegraph logo'}

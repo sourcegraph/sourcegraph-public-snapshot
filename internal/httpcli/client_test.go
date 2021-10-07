@@ -10,13 +10,18 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"testing/quick"
 	"time"
 
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 )
@@ -273,6 +278,167 @@ func TestNewTimeoutOpt(t *testing.T) {
 
 	if have, want := cli.Timeout, timeout; have != want {
 		t.Errorf("have Timeout %s, want %s", have, want)
+	}
+}
+
+func TestErrorResilience(t *testing.T) {
+	failures := int64(5)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		status := 0
+		switch n := atomic.AddInt64(&failures, -1); n {
+		case 4:
+			status = 429
+		case 3:
+			status = 500
+		case 2:
+			status = 900
+		case 1:
+			status = 302
+			w.Header().Set("Location", "/")
+		case 0:
+			status = 404
+		}
+		w.WriteHeader(status)
+	}))
+
+	t.Cleanup(srv.Close)
+
+	req, err := http.NewRequest("GET", srv.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("many", func(t *testing.T) {
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(20),
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 404 {
+			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		}
+	})
+
+	t.Run("max", func(t *testing.T) {
+		atomic.StoreInt64(&failures, 5)
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			NewErrorResilientTransportOpt(
+				NewRetryPolicy(0), // zero retries
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		res, err := cli.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != 429 {
+			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		}
+	})
+
+	t.Run("no such host", func(t *testing.T) {
+		// spy on policy so we see what decisions it makes
+		retries := 0
+		policy := NewRetryPolicy(5) // smaller retries for faster failures
+		wrapped := func(a rehttp.Attempt) bool {
+			if policy(a) {
+				retries++
+				return true
+			}
+			return false
+		}
+
+		cli, _ := NewFactory(
+			NewMiddleware(
+				ContextErrorMiddleware,
+			),
+			func(cli *http.Client) error {
+				// Some DNS servers do not respect RFC 6761 section 6.4, so we
+				// hardcode what go returns for DNS not found to avoid
+				// flakiness across machines. However, CI correctly respects
+				// this so we continue to run against a real DNS server on CI.
+				if os.Getenv("CI") == "" {
+					cli.Transport = notFoundTransport{}
+				}
+				return nil
+			},
+			NewErrorResilientTransportOpt(
+				wrapped,
+				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			),
+		).Doer()
+
+		// requests to .invalid will fail DNS lookup. (RFC 6761 section 6.4)
+		req, err := http.NewRequest("GET", "http://test.invalid", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = cli.Do(req)
+
+		var dnsErr *net.DNSError
+		if !errors.As(err, &dnsErr) || !dnsErr.IsNotFound {
+			t.Fatalf("expected err to be net.DNSError with IsNotFound true: %v", err)
+		}
+
+		// policy is on DNS failure to retry 3 times
+		if want := 3; retries != want {
+			t.Fatalf("expected %d retries, got %d", want, retries)
+		}
+	})
+}
+
+type notFoundTransport struct{}
+
+func (notFoundTransport) RoundTrip(*http.Request) (*http.Response, error) {
+	return nil, &net.DNSError{IsNotFound: true}
+}
+
+func TestExpJitterDelay(t *testing.T) {
+	prop := func(b, m uint32, a uint16) bool {
+		base := time.Duration(b)
+		max := time.Duration(m)
+		for max < base {
+			max *= 2
+		}
+		attempt := int(a)
+
+		delay := ExpJitterDelay(base, max)(rehttp.Attempt{
+			Index: attempt,
+		})
+
+		t.Logf("base: %v, max: %v, attempt: %v", base, max, attempt)
+
+		switch {
+		case delay > max:
+			t.Logf("delay %v > max %v", delay, max)
+			return false
+		case delay < base:
+			t.Logf("delay %v < base %v", delay, base)
+			return false
+		}
+
+		return true
+	}
+
+	err := quick.Check(prop, nil)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 

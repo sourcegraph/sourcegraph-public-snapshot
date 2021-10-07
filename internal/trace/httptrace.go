@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
+
 	"github.com/cockroachdb/errors"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
@@ -42,25 +44,23 @@ const (
 // The tracked value can be changed with the METRICS_TRACK_ORIGIN environmental variable.
 var trackOrigin = "https://gitlab.com"
 
-var metricLabels = []string{"route", "method", "code", "repo", "origin"}
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_http_request_duration_seconds",
-	Help:    "The HTTP request latencies in seconds.",
-	Buckets: UserLatencyBuckets,
-}, metricLabels)
+var (
+	metricLabels    = []string{"route", "method", "code", "repo", "origin"}
+	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_http_request_duration_seconds",
+		Help:    "The HTTP request latencies in seconds.",
+		Buckets: UserLatencyBuckets,
+	}, metricLabels)
+)
 
 var requestHeartbeat = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Name: "src_http_requests_last_timestamp_unixtime",
 	Help: "Last time a request finished for a http endpoint.",
 }, metricLabels)
 
-func Init(shouldInitSentry bool) {
+func Init() {
 	if origin := os.Getenv("METRICS_TRACK_ORIGIN"); origin != "" {
 		trackOrigin = origin
-	}
-
-	if shouldInitSentry {
-		sentry.Init()
 	}
 }
 
@@ -102,6 +102,10 @@ const (
 	// SourceBrowser indicates the request likely came from a web browser.
 	SourceBrowser SourceType = "browser"
 
+	// SourceQueryRunner indicates the request likely came from the
+	// query-runner service (saved searches).
+	SourceQueryRunner SourceType = "query-runner"
+
 	// SourceOther indicates the request likely came from a non-browser HTTP client.
 	SourceOther SourceType = "other"
 )
@@ -119,6 +123,18 @@ func RequestSource(ctx context.Context) SourceType {
 	}
 	return v.(SourceType)
 }
+
+// slowPaths is a list of endpoints that are slower than the average and for
+// which we only want to log a message if the duration is slower than the
+// threshold here.
+var slowPaths = map[string]time.Duration{
+	"/repo-update": 5 * time.Second,
+}
+
+var (
+	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
+	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
+)
 
 // HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
 //
@@ -141,7 +157,11 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 		ext.HTTPMethod.Set(span, r.Method)
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
-		rw.Header().Set("X-Trace", SpanURL(span))
+
+		traceID := IDFromSpan(span)
+		traceURL := URL(traceID)
+
+		rw.Header().Set("X-Trace", traceURL)
 		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		routeName := "unknown"
@@ -194,19 +214,43 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		log15.Debug("TRACE HTTP",
-			"method", r.Method,
-			"url", r.URL.String(),
-			"route_name", routeName,
-			"trace", SpanURL(span),
-			"user_agent", r.UserAgent(),
-			"user", userID,
-			"x_forwarded_for", r.Header.Get("X-Forwarded-For"),
-			"written", m.Written,
-			"code", m.Code,
-			"duration", m.Duration,
-			"graphql_error", strconv.FormatBool(gqlErr),
-		)
+		if customDuration, ok := slowPaths[r.URL.Path]; ok {
+			minDuration = customDuration
+		}
+
+		if m.Duration >= minDuration || m.Code >= minCode {
+			kvs := make([]interface{}, 0, 20)
+			kvs = append(kvs,
+				"method", r.Method,
+				"url", r.URL.String(),
+				"code", m.Code,
+				"duration", m.Duration,
+			)
+
+			if traceID != "" {
+				kvs = append(kvs, "traceID", traceID)
+			}
+
+			if v := r.Header.Get("X-Forwarded-For"); v != "" {
+				kvs = append(kvs, "x_forwarded_for", v)
+			}
+
+			if userID != 0 {
+				kvs = append(kvs, "user", userID)
+			}
+
+			if gqlErr {
+				kvs = append(kvs, "graphql_error", gqlErr)
+			}
+			var parts []string
+			if m.Duration >= minDuration {
+				parts = append(parts, "slow http request")
+			}
+			if m.Code >= minCode {
+				parts = append(parts, "unexpected status code")
+			}
+			log15.Warn(strings.Join(parts, ", "), kvs...)
+		}
 
 		// Notify sentry if the status code indicates our system had an error (e.g. 5xx).
 		if m.Code >= 500 {
@@ -225,6 +269,7 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 				"written":         strconv.FormatInt(m.Written, 10),
 				"duration":        m.Duration.String(),
 				"graphql_error":   strconv.FormatBool(gqlErr),
+				"trace":           traceURL,
 			})
 		}
 	}))

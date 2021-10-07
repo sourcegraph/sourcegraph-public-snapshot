@@ -1,24 +1,18 @@
 .saved-search-list-page {
-    padding: 0 0.75rem;
-    .theme-redesign & {
-        padding: 0;
-    }
+    padding: 0;
 
     &__row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 0.75rem;
+        padding: 0;
         font-weight: bold;
 
-        .theme-redesign & {
-            padding: 0;
-            &:not(:last-child) {
-                padding-bottom: 1rem;
-            }
-            + .saved-search-list-page__row {
-                padding-top: 1rem;
-            }
+        &:not(:last-child) {
+            padding-bottom: 1rem;
+        }
+        + .saved-search-list-page__row {
+            padding-top: 1rem;
         }
 
         &--icon {

@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic/diff"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff"
 )
 
 func main() {
@@ -48,8 +48,8 @@ func main() {
 	}
 
 	fmt.Print(diff.Diff(
-		semantic.GroupedBundleDataChansToMaps(bundle1),
-		semantic.GroupedBundleDataChansToMaps(bundle2),
+		precise.GroupedBundleDataChansToMaps(bundle1),
+		precise.GroupedBundleDataChansToMaps(bundle2),
 	))
 }
 

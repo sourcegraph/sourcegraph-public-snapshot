@@ -16,7 +16,7 @@ Search-based code intelligence also filters results by file extension and by imp
 
 ## What languages are supported?
 
-Search-based code intelligence supports all of [the most popular programming languages](https://sourcegraph.com/extensions?query=category%3A%22Programming+languages%22).
+Search-based code intelligence supports all of [the most popular programming languages](https://sourcegraph.com/extensions?category=Programming+languages).
 
 Are you using a language we don't support? [File a GitHub issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) or [submit a PR](https://github.com/sourcegraph/sourcegraph-basic-code-intel#adding-a-new-sourcegraphsourcegraph-lang-extension).
 

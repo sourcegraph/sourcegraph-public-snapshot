@@ -2,19 +2,18 @@ package zoekt
 
 import (
 	"context"
-	"fmt"
+	"regexp"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/cockroachdb/errors"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"go.uber.org/atomic"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,40 +27,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type IndexedRequestType string
-
-const (
-	TextRequest   IndexedRequestType = "text"
-	SymbolRequest IndexedRequestType = "symbol"
-)
-
 // indexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
 // list of repository and refs to search.
 type IndexedRepoRevs struct {
 	// repoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	repoRevs map[string]*search.RepositoryRevisions
+	repoRevs map[api.RepoID]*search.RepositoryRevisions
 
-	// repoBranches will be used when we query zoekt. The order of branches
-	// must match that in a reporev such that we can map back results. IE this
-	// invariant is maintained:
-	//
-	//  repoBranches[reporev.Repo.Name][i] <-> reporev.Revs[i]
-	repoBranches map[string][]string
+	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
+	// marshal and send to zoekt
+	branchRepos map[string]*zoektquery.BranchRepos
 }
-
-// headBranch is used as a singleton of the indexedRepoRevs.repoBranches to save
-// common-case allocations within indexedRepoRevs.Add.
-var headBranch = []string{"HEAD"}
 
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.Repository) []search.RevisionSpecifier {
+func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []search.RevisionSpecifier {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
-	if _, ok := rb.repoBranches[string(reporev.Repo.Name)]; ok {
+	if _, ok := rb.repoRevs[reporev.Repo.ID]; ok {
 		return reporev.Revs
 	}
 
@@ -75,17 +60,24 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	}
 
 	if len(reporev.Revs) == 1 && repo.Branches[0].Name == "HEAD" && (reporev.Revs[0].RevSpec == "" || reporev.Revs[0].RevSpec == "HEAD") {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = headBranch
+		rb.repoRevs[reporev.Repo.ID] = reporev
+		br, ok := rb.branchRepos["HEAD"]
+		if !ok {
+			br = &zoektquery.BranchRepos{Branch: "HEAD", Repos: roaring.New()}
+			rb.branchRepos["HEAD"] = br
+		}
+		br.Repos.Add(uint32(reporev.Repo.ID))
 		return nil
 	}
 
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []search.RevisionSpecifier
-	indexed := make([]search.RevisionSpecifier, 0, len(reporev.Revs))
 
 	branches := make([]string, 0, len(reporev.Revs))
+	reporev = reporev.Copy()
+	indexed := reporev.Revs[:0]
+
 	for _, rev := range reporev.Revs {
 		if rev.RevSpec == "" || rev.RevSpec == "HEAD" {
 			// Zoekt convention that first branch is HEAD
@@ -118,8 +110,16 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 	// We found indexed branches! Track them.
 	if len(indexed) > 0 {
-		rb.repoRevs[string(reporev.Repo.Name)] = reporev
-		rb.repoBranches[string(reporev.Repo.Name)] = branches
+		reporev.Revs = indexed
+		rb.repoRevs[reporev.Repo.ID] = reporev
+		for _, branch := range branches {
+			br, ok := rb.branchRepos[branch]
+			if !ok {
+				br = &zoektquery.BranchRepos{Branch: branch, Repos: roaring.New()}
+				rb.branchRepos[branch] = br
+			}
+			br.Repos.Add(uint32(reporev.Repo.ID))
+		}
 	}
 
 	return unindexed
@@ -127,15 +127,49 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
-	repoRev := rb.repoRevs[file.Repository]
+	repoRev := rb.repoRevs[api.RepoID(file.RepositoryID)]
 
+	// We search zoekt by repo ID. It is possible that the name has come out
+	// of sync, so the above lookup will fail. We fallback to linking the rev
+	// hash in that case. We intend to restucture this code to avoid this, but
+	// this is the fix to avoid potential nil panics.
+	if repoRev == nil {
+		repo := types.RepoName{
+			ID:   api.RepoID(file.RepositoryID),
+			Name: api.RepoName(file.Repository),
+		}
+		return repo, []string{file.Version}
+	}
+
+	// We inverse the logic in add to work out the revspec from the zoekt
+	// branches.
+	//
+	// Note: RevSpec is guaranteed to be explicit via zoektIndexedRepos
 	inputRevs = make([]string, 0, len(file.Branches))
-	for _, branch := range file.Branches {
-		for i, b := range rb.repoBranches[file.Repository] {
-			if branch == b {
-				// RevSpec is guaranteed to be explicit via zoektIndexedRepos
-				inputRevs = append(inputRevs, repoRev.Revs[i].RevSpec)
+	for _, rev := range repoRev.Revs {
+		// We rely on the Sourcegraph implementation that the HEAD branch is
+		// indexed as "HEAD" rather than resolving the symref.
+		revBranchName := rev.RevSpec
+		if revBranchName == "" {
+			revBranchName = "HEAD" // empty string in Sourcegraph means HEAD
+		}
+
+		found := false
+		for _, branch := range file.Branches {
+			if branch == revBranchName {
+				found = true
+				break
 			}
+		}
+		if found {
+			inputRevs = append(inputRevs, rev.RevSpec)
+			continue
+		}
+
+		// Check if rev is an abbrev commit SHA
+		if len(rev.RevSpec) >= 4 && strings.HasPrefix(file.Version, rev.RevSpec) {
+			inputRevs = append(inputRevs, rev.RevSpec)
+			continue
 		}
 	}
 
@@ -148,10 +182,113 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 	return repoRev.Repo, inputRevs
 }
 
-// IndexedSearchRequest is responsible for translating a Sourcegraph search
-// query into a Zoekt query and mapping the results from zoekt back to
-// Sourcegraph result types.
-type IndexedSearchRequest struct {
+// IndexedSearchRequest exposes a method Search(...) to search over indexed
+// repositories. Two kinds of indexed searches implement it:
+// (1) IndexedUniverseSearchRequest that searches over the universe of indexed repositories.
+// (2) IndexedSubsetSearchRequest that searches over an indexed subset of repos in the universe of indexed repositories.
+type IndexedSearchRequest interface {
+	Search(context.Context, streaming.Sender) error
+	IndexedRepos() map[api.RepoID]*search.RepositoryRevisions
+	UnindexedRepos() []*search.RepositoryRevisions
+}
+
+func fallbackIndexUnavailable(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
+	return &IndexedSubsetSearchRequest{
+		Unindexed:        limitUnindexedRepos(repos, limit, onMissing),
+		IndexUnavailable: true,
+	}
+}
+
+func fallbackUnindexed(repos []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) *IndexedSubsetSearchRequest {
+	return &IndexedSubsetSearchRequest{
+		Unindexed: limitUnindexedRepos(repos, limit, onMissing),
+	}
+}
+
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+	// If Zoekt is disabled just fallback to Unindexed.
+	if args.Zoekt == nil {
+		if args.PatternInfo.Index == query.Only {
+			return nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
+		}
+		return fallbackIndexUnavailable(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	}
+	// Fallback to Unindexed if the query contains valid ref-globs.
+	if query.ContainsRefGlobs(args.Query) {
+		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	}
+	// Fallback to Unindexed if index:no
+	if args.PatternInfo.Index == query.No {
+		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	}
+
+	q, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+	if err != nil {
+		return nil, err
+	}
+	zoektArgs := &search.ZoektParameters{
+		Query:          q,
+		Typ:            typ,
+		FileMatchLimit: args.PatternInfo.FileMatchLimit,
+		Select:         args.PatternInfo.Select,
+		Zoekt:          args.Zoekt,
+	}
+
+	if args.Mode == search.ZoektGlobalSearch {
+		// performance: optimize global searches where Zoekt searches
+		// all shards anyway.
+		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
+	}
+	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
+}
+
+// IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
+type IndexedUniverseSearchRequest struct {
+	Args *search.ZoektParameters
+}
+
+func (s *IndexedUniverseSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
+	if s.Args == nil {
+		return nil
+	}
+	return doZoektSearchGlobal(ctx, s.Args, c)
+}
+
+// IndexedRepos for a request over the indexed universe cannot answer which
+// repositories are searched. This return value is always empty.
+func (s *IndexedUniverseSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
+	return map[api.RepoID]*search.RepositoryRevisions{}
+}
+
+// UnindexedRepos over the indexed universe implies that we do not search unindexed repositories.
+func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevisions {
+	return nil
+}
+
+// newIndexedUniverseSearchRequest creates a search request for indexed search
+// on all indexed repositories. Strongly avoid calling this constructor
+// directly, and use NewIndexedSearchRequest instead, which will validate your
+// inputs and figure out the kind of indexed search to run.
+func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.ZoektParameters, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
+	tr, _ := trace.New(ctx, "newIndexedUniverseSearchRequest", "text")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	zoektArgs.Query, err = zoektGlobalQuery(zoektArgs.Query, repoOptions, userPrivateRepos)
+	if err != nil {
+		return nil, err
+	}
+	return &IndexedUniverseSearchRequest{Args: zoektArgs}, nil
+}
+
+// IndexedSubsetSearchRequest is responsible for:
+// (1) partitioning repos into indexed and unindexed sets of repos to search.
+//     These sets are a subset of the universe of repos.
+// (2) providing a method Search(...) that runs Zoekt over the indexed set of
+//     repositories.
+type IndexedSubsetSearchRequest struct {
 	// Unindexed is a slice of repository revisions that can't be searched by
 	// Zoekt. The repository revisions should be searched by the searcher
 	// service.
@@ -168,9 +305,8 @@ type IndexedSearchRequest struct {
 	// search should be used.
 	DisableUnindexedSearch bool
 
-	// inputs
-	Args *search.TextParameters
-	Typ  IndexedRequestType
+	// Inputs
+	Args *search.ZoektParameters
 
 	// RepoRevs is the repository revisions that are indexed and will be
 	// searched.
@@ -180,21 +316,27 @@ type IndexedSearchRequest struct {
 	since func(time.Time) time.Duration
 }
 
-// Repos is a map of repository revisions that are indexed and will be
-// searched by Zoekt. Do not mutate.
-func (s *IndexedSearchRequest) Repos() map[string]*search.RepositoryRevisions {
+// IndxedRepos is a map of indexed repository revisions will be searched by
+// Zoekt. Do not mutate.
+func (s *IndexedSubsetSearchRequest) IndexedRepos() map[api.RepoID]*search.RepositoryRevisions {
 	if s.RepoRevs == nil {
 		return nil
 	}
 	return s.RepoRevs.repoRevs
 }
 
+// UnindexedRepos is a slice of unindexed repositories to search.
+func (s *IndexedSubsetSearchRequest) UnindexedRepos() []*search.RepositoryRevisions {
+	return s.Unindexed
+}
+
 // Search streams 0 or more events to c.
-func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
+func (s *IndexedSubsetSearchRequest) Search(ctx context.Context, c streaming.Sender) error {
 	if s.Args == nil {
 		return nil
 	}
-	if len(s.Repos()) == 0 && s.Args.Mode != search.ZoektGlobalSearch {
+
+	if len(s.IndexedRepos()) == 0 {
 		return nil
 	}
 
@@ -203,84 +345,62 @@ func (s *IndexedSearchRequest) Search(ctx context.Context, c streaming.Sender) e
 		since = s.since
 	}
 
-	return zoektSearch(ctx, s.Args, s.RepoRevs, s.Typ, since, c)
+	return zoektSearch(ctx, s.RepoRevs, s.Args.Query, s.Args.Typ, s.Args.Zoekt, s.Args.FileMatchLimit, s.Args.Select, since, c)
 }
 
 const maxUnindexedRepoRevSearchesPerQuery = 200
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ IndexedRequestType, stream streaming.Sender) (_ *IndexedSearchRequest, err error) {
-	tr, ctx := trace.New(ctx, "newIndexedSearchRequest", string(typ))
-	tr.LogFields(trace.Stringer("global_search_mode", args.Mode))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return nil, err
-	}
+type OnMissingRepoRevs func([]*search.RepositoryRevisions)
 
-	// If Zoekt is disabled just fallback to Unindexed.
-	if !args.Zoekt.Enabled() {
-		if args.PatternInfo.Index == query.Only {
-			return nil, fmt.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
+func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
+	return func(repoRevs []*search.RepositoryRevisions) {
+		var status search.RepoStatusMap
+		for _, r := range repoRevs {
+			status.Update(r.Repo.ID, search.RepoStatusMissing)
 		}
-
-		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
-			IndexUnavailable: true,
-		}, nil
+		stream.Send(streaming.SearchEvent{
+			Stats: streaming.Stats{
+				Status: status,
+			},
+		})
 	}
+}
 
-	// Fallback to Unindexed if the query contains ref-globs
-	if query.ContainsRefGlobs(args.Query) {
-		if args.PatternInfo.Index == query.Only {
-			return nil, fmt.Errorf("invalid index:%q (revsions with glob pattern cannot be resolved for indexed searches)", args.PatternInfo.Index)
-		}
-		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
-		}, nil
-	}
-
-	// Fallback to Unindexed if index:no
-	if args.PatternInfo.Index == query.No {
-		return &IndexedSearchRequest{
-			Unindexed: limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
-		}, nil
-	}
-
+// newIndexedSubsetSearchRequest creates a search request for indexed search on
+// a subset of repos. Strongly avoid calling this constructor directly, and use
+// NewIndexedSearchRequest instead, which will validate your inputs and figure
+// out the kind of indexed search to run.
+func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(zoektArgs.Typ))
 	// Only include indexes with symbol information if a symbol request.
-	var filter func(repo *zoekt.Repository) bool
-	if typ == SymbolRequest {
-		filter = func(repo *zoekt.Repository) bool {
+	var filter func(repo *zoekt.MinimalRepoListEntry) bool
+	if zoektArgs.Typ == search.SymbolRequest {
+		filter = func(repo *zoekt.MinimalRepoListEntry) bool {
 			return repo.HasSymbols
 		}
 	}
 
 	// Consult Zoekt to find out which repository revisions can be searched.
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	indexedSet, err := args.Zoekt.ListAll(ctx)
+	list, err := zoektArgs.Zoekt.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 	if err != nil {
 		if ctx.Err() == nil {
 			// Only hard fail if the user specified index:only
-			if args.PatternInfo.Index == query.Only {
+			if index == query.Only {
 				return nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
 			log15.Warn("zoektIndexedRepos failed", "error", err)
 		}
 
-		return &IndexedSearchRequest{
-			Unindexed:        limitUnindexedRepos(repos, maxUnindexedRepoRevSearchesPerQuery, stream),
-			IndexUnavailable: true,
-		}, ctx.Err()
+		return fallbackIndexUnavailable(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), ctx.Err()
 	}
 
-	tr.LogFields(log.Int("all_indexed_set.size", len(indexedSet)))
+	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, searcherRepos := zoektIndexedRepos(indexedSet, repos, filter)
+	indexed, searcherRepos := zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
 		log.Int("indexed.size", len(indexed.repoRevs)),
@@ -288,199 +408,192 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 	)
 
 	// Disable unindexed search
-	if args.PatternInfo.Index == query.Only {
-		searcherRepos = limitUnindexedRepos(searcherRepos, 0, stream)
+	if index == query.Only {
+		searcherRepos = limitUnindexedRepos(searcherRepos, 0, onMissing)
 	}
 
-	return &IndexedSearchRequest{
-		Args: args,
-		Typ:  typ,
-
-		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, stream),
+	return &IndexedSubsetSearchRequest{
+		Args:      zoektArgs,
+		Unindexed: limitUnindexedRepos(searcherRepos, maxUnindexedRepoRevSearchesPerQuery, onMissing),
 		RepoRevs:  indexed,
 
-		DisableUnindexedSearch: args.PatternInfo.Index == query.Only,
+		DisableUnindexedSearch: index == query.Only,
 	}, nil
 }
 
-// zoektSearch searches repositories using zoekt.
+// zoektGlobalQuery constructs a query that searches the entire universe of indexed repositories.
 //
-// Timeouts are reported through the context, and as a special case errNoResultsInTimeout
-// is returned if no results are found in the given timeout (instead of the more common
-// case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, args *search.TextParameters, repos *IndexedRepoRevs, typ IndexedRequestType, since func(t time.Time) time.Duration, c streaming.Sender) error {
-	if args == nil {
+// We construct 2 Zoekt queries. One query for public repos and one query for
+// private repos.
+//
+// We only have to search "HEAD", because global queries, per definition, don't
+// have a repo: filter and consequently no rev: filter. This makes the code a bit
+// simpler because we don't have to resolve revisions before sending off (global)
+// requests to Zoekt.
+func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
+	scopeQ, err := zoektGlobalQueryScope(repoOptions, userPrivateRepos)
+	if err != nil {
+		return nil, err
+	}
+	return zoektquery.Simplify(zoektquery.NewAnd(q, scopeQ)), nil
+}
+
+func zoektGlobalQueryScope(repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
+	var qs []zoektquery.Q
+
+	// Public or Any
+	if repoOptions.Visibility == query.Public || repoOptions.Visibility == query.Any {
+		rc := zoektquery.RcOnlyPublic
+		apply := func(f zoektquery.RawConfig, b bool) {
+			if !b {
+				return
+			}
+			rc |= f
+		}
+		apply(zoektquery.RcOnlyArchived, repoOptions.OnlyArchived)
+		apply(zoektquery.RcNoArchived, repoOptions.NoArchived)
+		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
+		apply(zoektquery.RcNoForks, repoOptions.NoForks)
+
+		children := []zoektquery.Q{&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc}
+		for _, pat := range repoOptions.MinusRepoFilters {
+			re, err := regexp.Compile(`(?i)` + pat)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid regex for -repo filter %q", pat)
+			}
+			children = append(children, &zoektquery.Not{Child: &zoektquery.RepoRegexp{Regexp: re}})
+		}
+
+		qs = append(qs, zoektquery.NewAnd(children...))
+	}
+
+	// Private or Any
+	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
+		ids := make([]uint32, 0, len(userPrivateRepos))
+		for _, r := range userPrivateRepos {
+			ids = append(ids, uint32(r.ID))
+		}
+		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
+	}
+
+	return zoektquery.NewOr(qs...), nil
+}
+
+func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	k := ResultCountFactor(0, args.FileMatchLimit, true)
+	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit)
+
+	if deadline, ok := ctx.Deadline(); ok {
+		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
+		searchOpts.MaxWallTime = time.Until(deadline)
+		if searchOpts.MaxWallTime < 0 {
+			return ctx.Err()
+		}
+		// We don't want our context's deadline to cut off zoekt so that we can get the results
+		// found before the deadline.
+		//
+		// We'll create a new context that gets cancelled if the other context is cancelled for any
+		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
+		// will be `deadline + time for zoekt to cancel + network latency`.
+		var cancel context.CancelFunc
+		ctx, cancel = contextWithoutDeadline(ctx)
+		defer cancel()
+	}
+
+	// PERF: if we are going to be selecting to repo results only anyways, we can
+	// just ask zoekt for only results of type repo.
+	if args.Select.Root() == filter.Repository {
+		repoList, err := args.Zoekt.List(ctx, args.Query, nil)
+		if err != nil {
+			return err
+		}
+
+		matches := make([]result.Match, 0, len(repoList.Repos))
+		for _, repo := range repoList.Repos {
+			matches = append(matches, &result.RepoMatch{
+				Name: api.RepoName(repo.Repository.Name),
+				ID:   api.RepoID(repo.Repository.ID),
+			})
+		}
+
+		c.Send(streaming.SearchEvent{
+			Results: matches,
+			Stats:   streaming.Stats{}, // TODO
+		})
 		return nil
 	}
-	if len(repos.repoRevs) == 0 && args.Mode != search.ZoektGlobalSearch {
+
+	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
+			repo := types.RepoName{
+				ID:   api.RepoID(file.RepositoryID),
+				Name: api.RepoName(file.Repository),
+			}
+			return repo, []string{""}
+		}, args.Typ, c)
+	}))
+}
+
+// zoektSearch searches repositories using zoekt.
+func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, since func(t time.Time) time.Duration, c streaming.Sender) error {
+	if len(repos.repoRevs) == 0 {
 		return nil
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	queryExceptRepos, err := queryToZoektQuery(args.PatternInfo, typ)
-	if err != nil {
-		return err
-	}
-	// Performance optimization: For queries without repo: filters, it is not
-	// necessary to send the list of all repoBranches to zoekt. Zoekt can simply
-	// search all its shards and we filter the results later against the list of
-	// repos we resolve concurrently.
-	var finalQuery zoektquery.Q
-	if args.Mode == search.ZoektGlobalSearch {
-		finalQuery = zoektquery.NewAnd(&zoektquery.Branch{Pattern: "HEAD", Exact: true}, queryExceptRepos)
-	} else {
-		finalQuery = zoektquery.NewAnd(&zoektquery.RepoBranches{Set: repos.repoBranches}, queryExceptRepos)
+	brs := make([]zoektquery.BranchRepos, 0, len(repos.branchRepos))
+	for _, br := range repos.branchRepos {
+		brs = append(brs, *br)
 	}
 
-	k := ResultCountFactor(len(repos.repoBranches), args.PatternInfo.FileMatchLimit, args.Mode == search.ZoektGlobalSearch)
-	searchOpts := SearchOpts(ctx, k, args.PatternInfo)
+	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
+
+	k := ResultCountFactor(len(repos.repoRevs), fileMatchLimit, false)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit)
 
 	// Start event stream.
 	t0 := time.Now()
 
-	// We use reposResolved to synchronize repo resolution and event processing.
-	reposResolved := make(chan struct{})
-
-	mu := sync.Mutex{}
-	var getRepoInputRev repoRevFunc
-	var repoRevMap map[string]*search.RepositoryRevisions
-
-	g, ctx := errgroup.WithContext(ctx)
-
-	// Resolve repositories.
-	g.Go(func() error {
-		defer close(reposResolved)
-		if args.Mode == search.ZoektGlobalSearch || args.PatternInfo.Select.Root() == filter.Repository {
-			repos, err := args.RepoPromise.Get(ctx)
-			if err != nil {
-				return err
-			}
-			repoRevMap = make(map[string]*search.RepositoryRevisions, len(repos))
-			for _, r := range repos {
-				repoRevMap[string(r.Repo.Name)] = r
-			}
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool) {
-				if repoRev, ok := repoRevMap[file.Repository]; ok {
-					return repoRev.Repo, repoRev.RevSpecs(), true
-				}
-				return types.RepoName{}, nil, false
-			}
-		} else {
-			getRepoInputRev = func(file *zoekt.FileMatch) (repo types.RepoName, revs []string, ok bool) {
-				repo, inputRevs := repos.getRepoInputRev(file)
-				return repo, inputRevs, true
-			}
+	if deadline, ok := ctx.Deadline(); ok {
+		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
+		searchOpts.MaxWallTime = time.Until(deadline)
+		if searchOpts.MaxWallTime < 0 {
+			return ctx.Err()
 		}
-		return nil
-	})
+		// We don't want our context's deadline to cut off zoekt so that we can get the results
+		// found before the deadline.
+		//
+		// We'll create a new context that gets cancelled if the other context is cancelled for any
+		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
+		// will be `deadline + time for zoekt to cancel + network latency`.
+		var cancel context.CancelFunc
+		ctx, cancel = contextWithoutDeadline(ctx)
+		defer cancel()
+	}
+
+	// PERF: if we are going to be selecting to repo results only anyways, we can just ask
+	// zoekt for only results of type repo.
+	if selector.Root() == filter.Repository {
+		return zoektSearchReposOnly(ctx, client, finalQuery, c, func() map[api.RepoID]*search.RepositoryRevisions {
+			repoRevMap := make(map[api.RepoID]*search.RepositoryRevisions, len(repos.repoRevs))
+			for _, r := range repos.repoRevs {
+				repoRevMap[r.Repo.ID] = r
+			}
+			return repoRevMap
+		})
+	}
 
 	foundResults := atomic.Bool{}
-	g.Go(func() error {
-		ctx := ctx
-		if deadline, ok := ctx.Deadline(); ok {
-			// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-			searchOpts.MaxWallTime = time.Until(deadline)
-			if searchOpts.MaxWallTime < 0 {
-				return ctx.Err()
-			}
-			// We don't want our context's deadline to cut off zoekt so that we can get the results
-			// found before the deadline.
-			//
-			// We'll create a new context that gets cancelled if the other context is cancelled for any
-			// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-			// will be `deadline + time for zoekt to cancel + network latency`.
-			var cancel context.CancelFunc
-			ctx, cancel = contextWithoutDeadline(ctx)
-			defer cancel()
-		}
-
-		// PERF: if we are going to be selecting to repo results only anyways, we can just ask
-		// zoekt for only results of type repo.
-		if args.PatternInfo.Select.Root() == filter.Repository {
-			return zoektSearchReposOnly(ctx, args.Zoekt.Client, finalQuery, c, func() map[string]*search.RepositoryRevisions {
-				<-reposResolved
-				// getRepoInputRev is nil only if we encountered an error during repo resolution.
-				if getRepoInputRev == nil {
-					return nil
-				}
-				return repoRevMap
-			})
-		}
-
-		// The buffered backend.ZoektStreamFunc allows us to consume events from Zoekt
-		// while we wait for repo resolution.
-		bufSender, cleanup := bufferedSender(240, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-
-			foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
-
-			files := event.Files
-			limitHit := event.FilesSkipped+event.ShardsSkipped > 0
-
-			if len(files) == 0 {
-				c.Send(streaming.SearchEvent{
-					Stats: streaming.Stats{IsLimitHit: limitHit},
-				})
-				return
-			}
-
-			<-reposResolved
-			// getRepoInputRev is nil only if we encountered an error during repo resolution.
-			if getRepoInputRev == nil {
-				return
-			}
-
-			matches := make([]result.Match, 0, len(files))
-			for _, file := range files {
-				fileLimitHit := false
-				mu.Lock()
-				repo, inputRevs, ok := getRepoInputRev(&file)
-				mu.Unlock()
-				if !ok {
-					continue
-				}
-
-				var lines []*result.LineMatch
-				if typ != SymbolRequest {
-					lines = zoektFileMatchToLineMatches(&file)
-				}
-
-				for _, inputRev := range inputRevs {
-					inputRev := inputRev // copy so we can take the pointer
-
-					var symbols []*result.SymbolMatch
-					if typ == SymbolRequest {
-						symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
-					}
-					fm := result.FileMatch{
-						LineMatches: lines,
-						LimitHit:    fileLimitHit,
-						Symbols:     symbols,
-						File: result.File{
-							InputRev: &inputRev,
-							CommitID: api.CommitID(file.Version),
-							Repo:     repo,
-							Path:     file.FileName,
-						},
-					}
-					matches = append(matches, &fm)
-				}
-			}
-
-			c.Send(streaming.SearchEvent{
-				Results: matches,
-				Stats: streaming.Stats{
-					IsLimitHit: limitHit,
-				},
-			})
-		}))
-		defer cleanup()
-
-		return args.Zoekt.Client.StreamSearch(ctx, finalQuery, &searchOpts, bufSender)
-	})
-
-	if err := g.Wait(); err != nil {
+	err := client.StreamSearch(ctx, finalQuery, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		foundResults.CAS(false, event.FileCount != 0 || event.MatchCount != 0)
+		sendMatches(event, repos.getRepoInputRev, typ, c)
+	}))
+	if err != nil {
 		return err
 	}
 
@@ -494,40 +607,64 @@ func zoektSearch(ctx context.Context, args *search.TextParameters, repos *Indexe
 
 	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
 		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
-		return nil
 	}
 	return nil
 }
 
-// bufferedSender returns a buffered Sender with capacity cap, and a cleanup
-// function which blocks until the buffer is drained. The cleanup function may
-// only be called once. For cap=0, bufferedSender returns the input sender.
-func bufferedSender(cap int, sender zoekt.Sender) (zoekt.Sender, func()) {
-	if cap == 0 {
-		return sender, func() {}
+func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, c streaming.Sender) {
+	files := event.Files
+	limitHit := event.FilesSkipped+event.ShardsSkipped > 0
+
+	if len(files) == 0 {
+		c.Send(streaming.SearchEvent{
+			Stats: streaming.Stats{IsLimitHit: limitHit},
+		})
+		return
 	}
-	buf := make(chan *zoekt.SearchResult, cap-1)
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		for e := range buf {
-			sender.Send(e)
+
+	matches := make([]result.Match, 0, len(files))
+	for _, file := range files {
+		repo, inputRevs := getRepoInputRev(&file)
+
+		var lines []*result.LineMatch
+		if typ != search.SymbolRequest {
+			lines = zoektFileMatchToLineMatches(&file)
 		}
-	}()
-	cleanup := func() {
-		close(buf)
-		<-done
+
+		for _, inputRev := range inputRevs {
+			inputRev := inputRev // copy so we can take the pointer
+
+			var symbols []*result.SymbolMatch
+			if typ == search.SymbolRequest {
+				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
+			}
+			fm := result.FileMatch{
+				LineMatches: lines,
+				Symbols:     symbols,
+				File: result.File{
+					InputRev: &inputRev,
+					CommitID: api.CommitID(file.Version),
+					Repo:     repo,
+					Path:     file.FileName,
+				},
+			}
+			matches = append(matches, &fm)
+		}
 	}
-	return backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		buf <- event
-	}), cleanup
+
+	c.Send(streaming.SearchEvent{
+		Results: matches,
+		Stats: streaming.Stats{
+			IsLimitHit: limitHit,
+		},
+	})
 }
 
 // zoektSearchReposOnly is used when select:repo is set, in which case we can ask zoekt
 // only for the repos that contain matches for the query. This is a performance optimization,
 // and not required for proper function of select:repo.
-func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[string]*search.RepositoryRevisions) error {
-	repoList, err := client.List(ctx, query, nil)
+func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoektquery.Q, c streaming.Sender, getRepoRevMap func() map[api.RepoID]*search.RepositoryRevisions) error {
+	repoList, err := client.List(ctx, query, &zoekt.ListOptions{Minimal: true})
 	if err != nil {
 		return err
 	}
@@ -537,9 +674,9 @@ func zoektSearchReposOnly(ctx context.Context, client zoekt.Streamer, query zoek
 		return nil
 	}
 
-	matches := make([]result.Match, 0, len(repoList.Repos))
-	for _, repo := range repoList.Repos {
-		rev, ok := repoRevMap[repo.Repository.Name]
+	matches := make([]result.Match, 0, len(repoList.Minimal))
+	for id := range repoList.Minimal {
+		rev, ok := repoRevMap[api.RepoID(id)]
 		if !ok {
 			continue
 		}
@@ -581,38 +718,6 @@ func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
 	return lines
 }
 
-func escape(s string) string {
-	isSpecial := func(c rune) bool {
-		switch c {
-		case '\\', '/':
-			return true
-		default:
-			return false
-		}
-	}
-
-	// Avoid extra work by counting additions. regexp.QuoteMeta does the same,
-	// but is more efficient since it does it via bytes.
-	count := 0
-	for _, c := range s {
-		if isSpecial(c) {
-			count++
-		}
-	}
-	if count == 0 {
-		return s
-	}
-
-	escaped := make([]rune, 0, len(s)+count)
-	for _, c := range s {
-		if isSpecial(c) {
-			escaped = append(escaped, '\\')
-		}
-		escaped = append(escaped, c)
-	}
-	return string(escaped)
-}
-
 func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
 		Path:     file.FileName,
@@ -632,23 +737,17 @@ func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, fil
 				continue
 			}
 
-			symbols = append(symbols, &result.SymbolMatch{
-				Symbol: result.Symbol{
-					Name:       m.SymbolInfo.Sym,
-					Kind:       m.SymbolInfo.Kind,
-					Parent:     m.SymbolInfo.Parent,
-					ParentKind: m.SymbolInfo.ParentKind,
-					Path:       file.FileName,
-					Line:       l.LineNumber,
-					// symbolRange requires a Pattern /^...$/ containing the line of the symbol to compute the symbol's offsets.
-					// This Pattern is directly accessible on the unindexed code path. But on the indexed code path, we need to
-					// populate it, or we will always compute a 0 offset, which messes up API use (e.g., highlighting).
-					// It must escape `/` or `\` in the line.
-					Pattern:  fmt.Sprintf("/^%s$/", escape(string(l.Line))),
-					Language: file.Language,
-				},
-				File: newFile,
-			})
+			symbols = append(symbols, result.NewSymbolMatch(
+				newFile,
+				l.LineNumber,
+				m.SymbolInfo.Sym,
+				m.SymbolInfo.Kind,
+				m.SymbolInfo.Parent,
+				m.SymbolInfo.ParentKind,
+				file.Language,
+				string(l.Line),
+				false,
+			))
 		}
 	}
 
@@ -680,97 +779,20 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 	return cNew, cancel
 }
 
-func queryToZoektQuery(query *search.TextPatternInfo, typ IndexedRequestType) (zoektquery.Q, error) {
-	var and []zoektquery.Q
-
-	var q zoektquery.Q
-	var err error
-	if query.IsRegExp {
-		fileNameOnly := query.PatternMatchesPath && !query.PatternMatchesContent
-		contentOnly := !query.PatternMatchesPath && query.PatternMatchesContent
-		q, err = parseRe(query.Pattern, fileNameOnly, contentOnly, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		q = &zoektquery.Substring{
-			Pattern:       query.Pattern,
-			CaseSensitive: query.IsCaseSensitive,
-
-			FileName: true,
-			Content:  true,
-		}
-	}
-
-	if query.IsNegated {
-		q = &zoektquery.Not{Child: q}
-	}
-
-	if typ == SymbolRequest {
-		// Tell zoekt q must match on symbols
-		q = &zoektquery.Symbol{
-			Expr: q,
-		}
-	}
-
-	and = append(and, q)
-
-	// zoekt also uses regular expressions for file paths
-	// TODO PathPatternsAreCaseSensitive
-	// TODO whitespace in file path patterns?
-	for _, p := range query.IncludePatterns {
-		q, err := FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, q)
-	}
-	if query.ExcludePattern != "" {
-		q, err := FileRe(query.ExcludePattern, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: q})
-	}
-
-	// For conditionals that happen on a repo we can use type:repo queries. eg
-	// (type:repo file:foo) (type:repo file:bar) will match all repos which
-	// contain a filename matching "foo" and a filename matchinb "bar".
-	//
-	// Note: (type:repo file:foo file:bar) will only find repos with a
-	// filename containing both "foo" and "bar".
-	for _, p := range query.FilePatternsReposMustInclude {
-		q, err := FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q})
-	}
-	for _, p := range query.FilePatternsReposMustExclude {
-		q, err := FileRe(p, query.IsCaseSensitive)
-		if err != nil {
-			return nil, err
-		}
-		and = append(and, &zoektquery.Not{Child: &zoektquery.Type{Type: zoektquery.TypeRepo, Child: q}})
-	}
-
-	return zoektquery.Simplify(zoektquery.NewAnd(and...)), nil
-}
-
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.RepositoryRevisions, filter func(*zoekt.Repository) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		repoRevs:     make(map[string]*search.RepositoryRevisions, len(revs)),
-		repoBranches: make(map[string][]string, len(revs)),
+		repoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
+		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, reporev := range revs {
-		repo, ok := indexedSet[string(reporev.Repo.Name)]
+		repo, ok := indexedSet[uint32(reporev.Repo.ID)]
 		if !ok || (filter != nil && !filter(repo)) {
 			unindexed = append(unindexed, reporev)
 			continue
@@ -797,7 +819,7 @@ func zoektIndexedRepos(indexedSet map[string]*zoekt.Repository, revs []*search.R
 // excluded.
 //
 // A slice to the input list is returned, it is not copied.
-func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, stream streaming.Sender) []*search.RepositoryRevisions {
+func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, onMissing OnMissingRepoRevs) []*search.RepositoryRevisions {
 	var missing []*search.RepositoryRevisions
 
 	for i, repoRevs := range unindexed {
@@ -810,15 +832,7 @@ func limitUnindexedRepos(unindexed []*search.RepositoryRevisions, limit int, str
 	}
 
 	if len(missing) > 0 {
-		var status search.RepoStatusMap
-		for _, r := range missing {
-			status.Update(r.Repo.ID, search.RepoStatusMissing)
-		}
-		stream.Send(streaming.SearchEvent{
-			Stats: streaming.Stats{
-				Status: status,
-			},
-		})
+		onMissing(missing)
 	}
 
 	return unindexed

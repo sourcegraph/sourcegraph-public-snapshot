@@ -1,7 +1,6 @@
 package graphqlbackend
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"sync"
@@ -22,8 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -141,12 +140,32 @@ func (r *RepositoryResolver) CloneInProgress(ctx context.Context) (bool, error) 
 	return r.MirrorInfo().CloneInProgress(ctx)
 }
 
+func (r *RepositoryResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+	id := r.ID()
+	args.Repo = &id
+	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
+}
+
+func (r *RepositoryResolver) ChangesetsStats(ctx context.Context) (RepoChangesetsStatsResolver, error) {
+	id := r.ID()
+	return EnterpriseResolvers.batchChangesResolver.RepoChangesetsStats(ctx, &id)
+}
+
+func (r *RepositoryResolver) BatchChangesDiffStat(ctx context.Context) (*DiffStat, error) {
+	id := r.ID()
+	return EnterpriseResolvers.batchChangesResolver.RepoDiffStat(ctx, &id)
+}
+
 type RepositoryCommitArgs struct {
 	Rev          string
 	InputRevspec *string
 }
 
 func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit")
+	defer span.Finish()
+	span.SetTag("commit", args.Rev)
+
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
@@ -154,7 +173,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -175,7 +194,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, err := getDefaultBranchForRepo(ctx, r.RepoName())
+		refName, _, err := git.GetDefaultBranch(ctx, r.RepoName())
 		if err != nil {
 			return nil, err
 		}
@@ -188,26 +207,6 @@ func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver
 		r.defaultBranch, r.defaultBranchErr = do()
 	})
 	return r.defaultBranch, r.defaultBranchErr
-}
-
-func getDefaultBranchForRepo(ctx context.Context, repoName api.RepoName) (string, error) {
-	refBytes, _, exitCode, err := git.ExecSafe(ctx, repoName, []string{"symbolic-ref", "HEAD"})
-	refName := string(bytes.TrimSpace(refBytes))
-
-	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
-		_, err = git.ResolveRevision(ctx, repoName, "HEAD", git.ResolveRevisionOptions{NoEnsureRevision: true})
-	}
-
-	// If we fail to get the default branch due to cloning or being empty, we return nothing.
-	if err != nil {
-		if vcs.IsCloneInProgress(err) || gitserver.IsRevisionNotFound(err) {
-			return "", nil
-		}
-		return "", err
-	}
-
-	return refName, nil
 }
 
 func (r *RepositoryResolver) Language(ctx context.Context) (string, error) {
@@ -421,7 +420,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !gitserver.IsRevisionNotFound(err)) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitserver.RevisionNotFoundError{})) {
 		return commit, err
 	}
 

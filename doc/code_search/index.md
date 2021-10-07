@@ -11,7 +11,6 @@
 
 Sourcegraph code search helps developers perform these tasks more quickly and effectively by providing fast, advanced code search across multiple repositories.
 
-
 <div class="cta-group">
 <a class="btn btn-primary" href="reference/queries">★ Search query language</a>
 <a class="btn" href="explanations/features">Search features</a>
@@ -53,7 +52,7 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
   - Set up notifications for code changes that match a query.
   - View [language statistics](explanations/features.md#statistics) for search results.
 - [Search details](explanations/search_details.md)
-- [Sourcegraph Cloud](explanations/sourcegraph_cloud.md)
+- [Sourcegraph cloud](explanations/sourcegraph_cloud.md)
 - [Search tips](explanations/tips.md)
 
 ## [How-tos](how-to/index.md)

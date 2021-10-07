@@ -2,13 +2,16 @@
     --gradient: linear-gradient(to right, var(--color-bg-2) 4%, var(--color-bg-1) 25%, var(--color-bg-2) 36%);
     --animation: shimmer 2s infinite linear;
     margin-bottom: 5rem;
+    position: relative;
 
     &__gitlab {
         fill: #ff5900 !important;
     }
+
     &__github {
         fill: var(--body-color) !important;
     }
+
     &__check {
         fill: var(--color-bg-3) !important;
     }
@@ -39,16 +42,16 @@
 
     &__container {
         border-color: var(--border-color-2) !important;
-        .theme-redesign & {
-            border: 0;
-            padding: 0;
-            &:not(:last-child) {
-                margin-bottom: 1.5rem;
-            }
-            + .user-settings-repos__container {
-                border-top: 1px solid var(--border-color);
-                padding-top: 1.5rem;
-            }
+        border: 0;
+        padding: 0;
+
+        &:not(:last-child) {
+            margin-bottom: 1.5rem;
+        }
+
+        + .user-settings-repos__container {
+            border-top: 1px solid var(--border-color);
+            padding-top: 1.5rem;
         }
     }
 
@@ -60,8 +63,18 @@
         max-width: 30% !important;
     }
 
+    &__text-light {
+        font-weight: 400;
+    }
+
     &__text-disabled {
-        color: var(--color-text-3);
+        color: var(--text-disabled);
+    }
+
+    &__self-hosted-cta {
+        position: absolute;
+        top: -5rem;
+        right: 0;
     }
 }
 
@@ -69,6 +82,7 @@
     0% {
         background-position: -1000px 0;
     }
+
     100% {
         background-position: 1000px 0;
     }

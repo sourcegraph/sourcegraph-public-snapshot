@@ -75,7 +75,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       className="streaming-skipped-item pt-2 w-100 streaming-skipped-item--warn"
     >
       <Button
-        className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
         color="outline-danger"
         disabled={false}
         onClick={[Function]}
@@ -84,7 +84,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-danger"
+          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -94,7 +94,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(AlertCircleIcon)
-              className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -187,7 +187,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       className="streaming-skipped-item pt-2 w-100 streaming-skipped-item--warn"
     >
       <Button
-        className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
         color="outline-danger"
         disabled={false}
         onClick={[Function]}
@@ -196,7 +196,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-danger"
+          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-danger"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -206,7 +206,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(AlertCircleIcon)
-              className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -299,7 +299,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       className="streaming-skipped-item pt-2 w-100"
     >
       <Button
-        className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
         color="outline-primary"
         disabled={false}
         onClick={[Function]}
@@ -308,7 +308,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -318,7 +318,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(InformationOutlineIcon)
-              className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -411,7 +411,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       className="streaming-skipped-item pt-2 w-100"
     >
       <Button
-        className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
         color="outline-primary"
         disabled={false}
         onClick={[Function]}
@@ -420,7 +420,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -430,7 +430,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(InformationOutlineIcon)
-              className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"
@@ -523,7 +523,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       className="streaming-skipped-item pt-2 w-100"
     >
       <Button
-        className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0"
+        className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0"
         color="outline-primary"
         disabled={false}
         onClick={[Function]}
@@ -532,7 +532,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <button
           aria-label={null}
-          className="streaming-skipped-item__button py-2 w-100 bg-transparent border-0 btn btn-outline-primary"
+          className="streaming-skipped-item__button p-2 w-100 bg-transparent border-0 btn btn-outline-primary"
           disabled={false}
           onClick={[Function]}
           onKeyDown={[Function]}
@@ -542,7 +542,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             className="d-flex align-items-center mb-0 w-100"
           >
             <Memo(InformationOutlineIcon)
-              className="icon-inline mr-2 streaming-skipped-item__icon flex-shrink-0"
+              className="icon-inline streaming-skipped-item__icon flex-shrink-0"
             />
             <span
               className="flex-grow-1 text-left"

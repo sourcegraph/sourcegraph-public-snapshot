@@ -115,11 +115,10 @@ func Send(ctx context.Context, message Message) error {
 	case "CRAM-MD5":
 		smtpAuth = smtp.CRAMMD5Auth(conf.EmailSmtp.Username, conf.EmailSmtp.Password)
 	default:
-		return fmt.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
+		return errors.Errorf("invalid SMTP authentication type %q", conf.EmailSmtp.Authentication)
 	}
 
-	// TODO: 2020/11/12 @arussellsaw, after next release delete DisableTLS option
-	if conf.EmailSmtp.DisableTLS || conf.EmailSmtp.NoVerifyTLS {
+	if conf.EmailSmtp.NoVerifyTLS {
 		return m.SendWithStartTLS(
 			net.JoinHostPort(conf.EmailSmtp.Host, strconv.Itoa(conf.EmailSmtp.Port)),
 			smtpAuth,

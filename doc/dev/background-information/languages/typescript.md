@@ -56,7 +56,7 @@ class MyComponent extends React.Component {
 }
 ```
 
-The Subscription bag pattern is usually not needed when using React function components with our [`useObservable()` family of hooks](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/shared/src/util/useObservable.ts#L26:17), as they will handle the subscription under the hood.
+The Subscription bag pattern is usually not needed when using React function components with our [`useObservable()` family of hooks](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/client/shared/src/util/useObservable.ts#L26:17), as they will handle the subscription under the hood.
 
 ## Making invalid states impossible through union types
 

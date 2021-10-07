@@ -1,11 +1,9 @@
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useEffect, useCallback, useState, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, ReplaySubject } from 'rxjs'
 import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
@@ -28,8 +26,9 @@ import {
 } from './backend'
 import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode, BatchChangeNodeProps } from './BatchChangeNode'
-import { BatchChangesListEmpty } from './BatchChangesListEmpty'
 import { BatchChangesListIntro } from './BatchChangesListIntro'
+import { GettingStarted } from './GettingStarted'
+import { NewBatchChangeButton } from './NewBatchChangeButton'
 
 export interface BatchChangeListPageProps extends TelemetryProps, Pick<RouteComponentProps, 'location'> {
     headingElement: 'h1' | 'h2'
@@ -127,13 +126,13 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
-                actions={<NewBatchChangeButton location={location} />}
+                actions={<NewBatchChangeButton to={`${location.pathname}/create`} />}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
             />
             <BatchChangesListIntro licensed={licensed} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-            {selectedTab === 'gettingStarted' && <BatchChangesListEmpty />}
+            {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
             {selectedTab === 'batchChanges' && (
                 <Container className="mb-4">
                     <FilteredConnection<ListBatchChange, Omit<BatchChangeNodeProps, 'node'>>
@@ -149,7 +148,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                         pluralNoun="batch changes"
                         listComponent="div"
                         listClassName={styles.batchChangeListPageGrid}
-                        className="filtered-connection__centered-summary"
+                        withCenteredSummary={true}
                         cursorPaging={true}
                         noSummaryIfAllNodesVisible={true}
                         emptyElement={<BatchChangeListEmptyElement location={location} />}
@@ -193,16 +192,8 @@ const BatchChangeListEmptyElement: React.FunctionComponent<BatchChangeListEmptyE
         <p>
             <strong>No batch changes have been created</strong>
         </p>
-        <NewBatchChangeButton location={location} />
+        <NewBatchChangeButton to={`${location.pathname}/create`} />
     </div>
-)
-
-interface NewBatchChangeButtonProps extends Pick<RouteComponentProps, 'location'> {}
-
-const NewBatchChangeButton: React.FunctionComponent<NewBatchChangeButtonProps> = ({ location }) => (
-    <Link to={`${location.pathname}/create`} className="btn btn-primary">
-        <PlusIcon className="icon-inline" /> Create
-    </Link>
 )
 
 const BatchChangeListTabHeader: React.FunctionComponent<{
@@ -256,3 +247,20 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
         </div>
     )
 }
+
+const GettingStartedFooter: React.FunctionComponent<{}> = () => (
+    <div className="row pb-4">
+        <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
+            <div className="card">
+                <div className="card-body text-center">
+                    <p>Create your first batch change</p>
+                    <h2 className="mb-0">
+                        <a href="https://docs.sourcegraph.com/batch_changes/quickstart" target="_blank" rel="noopener">
+                            Batch Changes quickstart
+                        </a>
+                    </h2>
+                </div>
+            </div>
+        </div>
+    </div>
+)

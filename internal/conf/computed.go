@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 	"os"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -204,19 +204,12 @@ func UpdateChannel() string {
 }
 
 // SearchIndexEnabled returns true if sourcegraph should index all
-// repositories for text search. If the configuration is unset, it returns
-// false for the docker server image (due to resource usage) but true
-// elsewhere. Additionally it also checks for the outdated environment
-// variable INDEXED_SEARCH.
+// repositories for text search.
 func SearchIndexEnabled() bool {
 	if v := Get().SearchIndexEnabled; v != nil {
 		return *v
 	}
-	if v := os.Getenv("INDEXED_SEARCH"); v != "" {
-		enabled, _ := strconv.ParseBool(v)
-		return enabled
-	}
-	return DeployType() != DeploySingleDocker
+	return true // always on by default in all deployment types, see confdefaults.go
 }
 
 func BatchChangesEnabled() bool {
@@ -305,6 +298,14 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
+func APIDocsSearchIndexingEnabled() bool {
+	val := ExperimentalFeatures().ApidocsSearchIndexing
+	if val == "" {
+		return true
+	}
+	return val == "enabled"
+}
+
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {
@@ -387,6 +388,22 @@ func ExternalServiceUserMode() ExternalServiceMode {
 	}
 }
 
+const defaultGitLongCommandTimeout = time.Hour
+
+// GitLongCommandTimeout returns the maximum amount of time in seconds that a
+// long Git command (e.g. clone or remote update) is allowed to execute. If not
+// set, it returns the default value.
+//
+// In general, Git commands that are expected to take a long time should be
+// executed in the background in a non-blocking fashion.
+func GitLongCommandTimeout() time.Duration {
+	val := Get().GitLongCommandTimeout
+	if val < 1 {
+		return defaultGitLongCommandTimeout
+	}
+	return time.Duration(val) * time.Second
+}
+
 // GitMaxCodehostRequestsPerSecond returns maximum number of remote code host
 // git operations to be run per second per gitserver. If not set, it returns the
 // default value -1.
@@ -396,6 +413,14 @@ func GitMaxCodehostRequestsPerSecond() int {
 		return -1
 	}
 	return *val
+}
+
+func GitMaxConcurrentClones() int {
+	v := Get().GitMaxConcurrentClones
+	if v <= 0 {
+		return 5
+	}
+	return v
 }
 
 func UserReposMaxPerUser() int {

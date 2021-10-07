@@ -14,30 +14,28 @@ func Union(left, right []Match) []Match {
 	return dedup.Results()
 }
 
-// Intersect performs a merge of file match results, merging line matches
-// for files contained in both result sets.
+// Intersect performs a merge of match results, merging line matches for files
+// contained in both result sets.
 func Intersect(left, right []Match) []Match {
-	rightFileMatches := make(map[Key]*FileMatch)
-	for _, m := range right {
-		if fileMatch, ok := m.(*FileMatch); ok {
-			rightFileMatches[fileMatch.Key()] = fileMatch
-		}
+	rightMap := make(map[Key]Match, len(right))
+	for _, r := range right {
+		rightMap[r.Key()] = r
 	}
 
-	var merged []Match
-	for _, m := range left {
-		leftFileMatch, ok := m.(*FileMatch)
-		if !ok {
+	merged := left[:0]
+	for _, l := range left {
+		r := rightMap[l.Key()]
+		if r == nil {
 			continue
 		}
-
-		rightFileMatch := rightFileMatches[leftFileMatch.Key()]
-		if rightFileMatch == nil {
-			continue
+		switch leftMatch := l.(type) {
+		// key matches, so we know to convert to respective type
+		case *FileMatch:
+			leftMatch.AppendMatches(r.(*FileMatch))
+		case *CommitMatch:
+			leftMatch.AppendMatches(r.(*CommitMatch))
 		}
-
-		leftFileMatch.AppendMatches(rightFileMatch)
-		merged = append(merged, m)
+		merged = append(merged, l)
 	}
 	return merged
 }

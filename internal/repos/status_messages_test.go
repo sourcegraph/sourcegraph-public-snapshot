@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -75,7 +76,6 @@ func TestStatusMessages(t *testing.T) {
 		gitserverCloned  []string
 		gitserverFailure map[string]bool
 		sourcerErr       error
-		listRepoErr      error
 		res              []StatusMessage
 		user             *types.User
 		// maps repoName to external service
@@ -100,7 +100,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -117,7 +117,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -132,7 +132,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "1 repository cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -156,7 +156,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					Cloning: &CloningProgress{
-						Message: "2 repositories cloning...",
+						Message: "Some repositories cloning...",
 					},
 				},
 			},
@@ -174,7 +174,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "1 repository could not be synced",
+						Message: "Some repositories could not be synced",
 					},
 				},
 			},
@@ -192,7 +192,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					SyncError: &SyncError{
-						Message: "2 repositories could not be synced",
+						Message: "Some repositories could not be synced",
 					},
 				},
 			},
@@ -218,20 +218,7 @@ func TestStatusMessages(t *testing.T) {
 			res: []StatusMessage{
 				{
 					ExternalServiceSyncError: &ExternalServiceSyncError{
-						Message:           "fetching from code host github.com - site: 1 error occurred:\n\t* github is down\n\n",
-						ExternalServiceId: siteLevelService.ID,
-					},
-				},
-			},
-		},
-		{
-			name:        "one syncer err",
-			user:        admin,
-			listRepoErr: errors.New("could not connect to database"),
-			res: []StatusMessage{
-				{
-					ExternalServiceSyncError: &ExternalServiceSyncError{
-						Message:           "syncer.sync.store.list-repos: could not connect to database",
+						Message:           "github is down",
 						ExternalServiceId: siteLevelService.ID,
 					},
 				},
@@ -295,7 +282,7 @@ func TestStatusMessages(t *testing.T) {
 				}
 			}
 			t.Cleanup(func() {
-				_, err = db.ExecContext(ctx, `DELETE FROM gitserver_repos`)
+				err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM gitserver_repos`))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -308,15 +295,15 @@ func TestStatusMessages(t *testing.T) {
 					if !ok {
 						continue
 					}
-					_, err = db.ExecContext(ctx, `
+					err = store.Exec(ctx, sqlf.Sprintf(`
 						INSERT INTO external_service_repos(external_service_id, repo_id, user_id, clone_url)
-						VALUES ($1, $2, NULLIF($3, 0), 'example.com')
-					`, svc.ID, repo.ID, svc.NamespaceUserID)
+						VALUES (%s, %s, NULLIF(%s, 0), 'example.com')
+					`, svc.ID, repo.ID, svc.NamespaceUserID))
 					if err != nil {
 						t.Fatal(err)
 					}
 					t.Cleanup(func() {
-						_, err = db.ExecContext(ctx, `DELETE FROM external_service_repos WHERE external_service_id = $1`, svc.ID)
+						err = store.Exec(ctx, sqlf.Sprintf(`DELETE FROM external_service_repos WHERE external_service_id = %s`, svc.ID))
 						if err != nil {
 							t.Fatal(err)
 						}
@@ -330,17 +317,11 @@ func TestStatusMessages(t *testing.T) {
 				Now:   clock.Now,
 			}
 
-			if tc.sourcerErr != nil || tc.listRepoErr != nil {
-				database.Mocks.Repos.List = func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
-					return nil, tc.listRepoErr
-				}
-				defer func() {
-					database.Mocks.Repos.List = nil
-				}()
+			if tc.sourcerErr != nil {
 				sourcer := NewFakeSourcer(tc.sourcerErr, NewFakeSource(siteLevelService, nil))
 				syncer.Sourcer = sourcer
 
-				err = syncer.SyncExternalService(ctx, store, siteLevelService.ID, time.Millisecond)
+				err = syncer.SyncExternalService(ctx, siteLevelService.ID, time.Millisecond)
 				// In prod, SyncExternalService is kicked off by a worker queue. Any error
 				// returned will be stored in the external_service_sync_jobs table so we fake
 				// that here.

@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"hash/fnv"
 	"strings"
 
@@ -14,15 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-// pick deterministically chooses between a and b a repo to keep and
-// discard. It is used when resolving conflicts on sourced repositories.
-func pick(a *types.Repo, b *types.Repo) (keep, discard *types.Repo) {
-	if a.Less(b) {
-		return a, b
-	}
-	return b, a
-}
 
 type externalServiceLister interface {
 	List(context.Context, database.ExternalServicesListOptions) ([]*types.ExternalService, error)
@@ -58,6 +48,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 
 	for {
 		services, err := r.serviceLister.List(ctx, database.ExternalServicesListOptions{
+			NoNamespace: true,
 			LimitOffset: &cursor,
 		})
 		if err != nil {
@@ -73,7 +64,7 @@ func (r *RateLimitSyncer) SyncRateLimiters(ctx context.Context) error {
 		for _, svc := range services {
 			rlc, err := extsvc.ExtractRateLimitConfig(svc.Config, svc.Kind, svc.DisplayName)
 			if err != nil {
-				if _, ok := err.(extsvc.ErrRateLimitUnsupported); ok {
+				if errors.HasType(err, extsvc.ErrRateLimitUnsupported{}) {
 					continue
 				}
 				return errors.Wrap(err, "getting rate limit configuration")
@@ -143,7 +134,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
-		scopes, err := src.v3Client.GetAuthenticatedUserOAuthScopes(ctx)
+		scopes, err := src.v3Client.GetAuthenticatedOAuthScopes(ctx)
 		if err != nil {
 			return nil, errors.Wrap(err, "getting scopes")
 		}
@@ -179,7 +170,7 @@ func GrantedScopes(ctx context.Context, cache ScopeCache, svc *types.ExternalSer
 		cache.Set(key, []byte(strings.Join(scopes, ",")))
 		return scopes, nil
 	default:
-		return nil, fmt.Errorf("unsupported config type: %T", v)
+		return nil, errors.Errorf("unsupported config type: %T", v)
 	}
 }
 

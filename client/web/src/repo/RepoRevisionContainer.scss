@@ -2,9 +2,8 @@
 @import './blob/BlobPage';
 @import './tree/TreePage';
 @import './GitReference';
-@import '../marketing/Toast';
 @import './RepoRevisionSidebar';
-@import './RevisionsPopover';
+@import './RevisionsPopover/RevisionsPopover';
 @import './docs/RepositoryDocumentationPage';
 @import './commits/RepositoryCommitsPage';
 
@@ -56,6 +55,7 @@
             border: 1px solid var(--border-color);
             border-top-left-radius: 0.1875rem;
             border-top-right-radius: 0.1875rem;
+            border-bottom: none;
         }
     }
 

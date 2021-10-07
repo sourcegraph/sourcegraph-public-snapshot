@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useState, FunctionComponent, useCallback } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -10,7 +11,7 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { SetUserEmailPrimaryResult, SetUserEmailPrimaryVariables, UserEmailsResult } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 
 interface Props {
     user: string
@@ -70,7 +71,7 @@ export const SetUserPrimaryEmailForm: FunctionComponent<Props> = ({ user, emails
     )
 
     return (
-        <div className={`add-user-email-form ${className || ''}`}>
+        <div className={classNames('add-user-email-form', className)}>
             <label htmlFor="setUserPrimaryEmailForm-email">Primary email address</label>
             <Form className="form-inline" onSubmit={onSubmit}>
                 <select

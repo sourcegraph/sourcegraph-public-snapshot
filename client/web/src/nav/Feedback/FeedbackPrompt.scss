@@ -41,7 +41,7 @@
 
         &--tick {
             background-color: $success;
-            color: $white;
+            color: var(--white);
             border-radius: 50%;
             width: (30/16) + rem;
             height: auto;

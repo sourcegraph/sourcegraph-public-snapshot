@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 
+	"github.com/cockroachdb/errors"
 	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // BaseClient is an abstract HTTP API-backed data access layer. Instances of this
@@ -45,16 +47,12 @@ type BaseClient struct {
 type BaseClientOptions struct {
 	// UserAgent specifies the user agent string to supply on requests.
 	UserAgent string
-
-	// Transport is a configurable round tripper, which can include things like
-	// tracing, metrics, and request/response decoration.
-	Transport http.RoundTripper
 }
 
 // NewBaseClient creates a new BaseClient with the given transport.
 func NewBaseClient(options BaseClientOptions) *BaseClient {
 	return &BaseClient{
-		httpClient: makeHTTPClient(options.Transport),
+		httpClient: httpcli.InternalClient,
 		options:    options,
 	}
 }
@@ -78,7 +76,7 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 			return false, nil, nil
 		}
 
-		return false, nil, fmt.Errorf("unexpected status code %d", resp.StatusCode)
+		return false, nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	return true, resp.Body, nil
@@ -122,12 +120,4 @@ func MakeJSONRequest(method string, url *url.URL, payload interface{}) (*http.Re
 
 	req.Header.Set("Content-Type", "application/json")
 	return req, nil
-}
-
-// makeHTTPClient creates an HTTP client with the given round tripper.
-func makeHTTPClient(transport http.RoundTripper) *http.Client {
-	if transport == nil {
-		return http.DefaultClient
-	}
-	return &http.Client{Transport: transport}
 }

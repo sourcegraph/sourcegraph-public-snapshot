@@ -2,7 +2,6 @@ package jsonc
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -28,7 +27,7 @@ func Unmarshal(text string, v interface{}) error {
 func Parse(text string) ([]byte, error) {
 	data, errs := jsonx.Parse(text, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
 	if len(errs) > 0 {
-		return data, fmt.Errorf("failed to parse JSON: %v", errs)
+		return data, errors.Errorf("failed to parse JSON: %v", errs)
 	}
 	return data, nil
 }
@@ -75,9 +74,9 @@ func Edit(input string, v interface{}, path ...string) (string, error) {
 
 // ReadProperty attempts to read the value of the specified path, ignoring parse errors. it will only error if the path
 // doesn't exist
-func ReadProperty(input, path string) (interface{}, error) {
+func ReadProperty(input string, path ...string) (interface{}, error) {
 	root, _ := jsonx.ParseTree(input, jsonx.ParseOptions{Comments: true, TrailingCommas: true})
-	node := jsonx.FindNodeAtLocation(root, jsonx.PropertyPath(path))
+	node := jsonx.FindNodeAtLocation(root, jsonx.PropertyPath(path...))
 	if node == nil {
 		return nil, errors.Errorf("couldn't find node: %s", path)
 	}

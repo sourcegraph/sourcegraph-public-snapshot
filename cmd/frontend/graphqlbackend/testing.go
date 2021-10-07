@@ -27,7 +27,7 @@ func mustParseGraphQLSchema(t *testing.T) *graphql.Schema {
 	t.Helper()
 
 	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = NewSchema(nil, nil, nil, nil, nil, nil, nil, nil)
+		parsedSchema, parseSchemaErr = NewSchema(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	})
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
@@ -124,11 +124,11 @@ func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
 	}
 }
 
-func sortErrors(errors []*gqlerrors.QueryError) {
-	if len(errors) <= 1 {
+func sortErrors(errs []*gqlerrors.QueryError) {
+	if len(errs) <= 1 {
 		return
 	}
-	sort.Slice(errors, func(i, j int) bool {
-		return fmt.Sprintf("%s", errors[i].Path) < fmt.Sprintf("%s", errors[j].Path)
+	sort.Slice(errs, func(i, j int) bool {
+		return fmt.Sprintf("%s", errs[i].Path) < fmt.Sprintf("%s", errs[j].Path)
 	})
 }

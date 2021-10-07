@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
 // A SourceInfo represents a source a Repo belongs to (such as an external service).
@@ -68,6 +67,28 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 }
 
+// SearchedRepo is a collection of metadata about repos that is used to decorate search results
+type SearchedRepo struct {
+	// ID is the unique numeric ID for this repository.
+	ID api.RepoID
+	// Name is the name for this repository (e.g., "github.com/user/repo"). It
+	// is the same as URI, unless the user configures a non-default
+	// repositoryPathPattern.
+	Name api.RepoName
+	// Description is a brief description of the repository.
+	Description string
+	// Fork is whether this repository is a fork of another repository.
+	Fork bool
+	// Archived is whether the repository has been archived.
+	Archived bool
+	// Private is whether the repository is private.
+	Private bool
+	// Stars is the star count the repository has in the code host.
+	Stars int
+	// LastFetched is the time of the last fetch of new commits from the code host.
+	LastFetched *time.Time
+}
+
 // RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
 type RepoBlock struct {
 	At     int64 // Unix timestamp
@@ -122,7 +143,7 @@ func (r *Repo) IsBlocked() error {
 // Update updates Repo r with the fields from the given newer Repo n,
 // returning true if modified.
 func (r *Repo) Update(n *Repo) (modified bool) {
-	if r.Name != n.Name {
+	if !r.Name.Equal(n.Name) {
 		r.Name, modified = n.Name, true
 	}
 
@@ -155,26 +176,15 @@ func (r *Repo) Update(n *Repo) (modified bool) {
 		r.Stars, modified = n.Stars, true
 	}
 
-	if !reflect.DeepEqual(r.Sources, n.Sources) {
-		r.Sources, modified = n.Sources, true
-	}
-
-	// As a special case, we clear out the value of ViewerPermission for GitHub repos as
-	// the value is dependent on the token used to fetch it. We don't want to store this in the DB as it will
-	// flip flop as we fetch the same repo from different external services.
-	switch x := n.Metadata.(type) {
-	case *github.Repository:
-		cp := *x
-		cp.ViewerPermission = ""
-		n = n.With(func(clone *Repo) {
-			// Repo.Clone does not currently clone metadata for any types as they could contain hard to clone
-			// items such as maps. However, we know that copying github.Repository is safe as it only contains values.
-			clone.Metadata = &cp
-		})
-	}
-
 	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
 		r.Metadata, modified = n.Metadata, true
+	}
+
+	for urn, info := range n.Sources {
+		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
+			r.Sources[urn] = info
+			modified = true
+		}
 	}
 
 	return modified
@@ -446,7 +456,11 @@ type GitserverRepo struct {
 	LastExternalService int64
 	// The last error that occurred or empty if the last action was successful
 	LastError string
-	UpdatedAt time.Time
+	// The last time fetch was called.
+	LastFetched time.Time
+	// The last time a fetch updated the repository.
+	LastChanged time.Time
+	UpdatedAt   time.Time
 }
 
 // ExternalService is a connection to an external service.
@@ -461,6 +475,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	NamespaceOrgID  int32
 	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
 	CloudDefault    bool // Whether this external service is our default public service on Cloud
 }
@@ -720,11 +735,11 @@ type BatchChangesUsageStatistics struct {
 	ViewBatchChangeApplyPageCount int32
 	// ViewBatchChangeDetailsPageAfterCreateCount is the number of page views on
 	// the batch changes details page *after creating* the batch change on the apply
-	// page by clicking "Apply spec".
+	// page by clicking "Apply".
 	ViewBatchChangeDetailsPageAfterCreateCount int32
 	// ViewBatchChangeDetailsPageAfterUpdateCount is the number of page views on
 	// the batch changes details page *after updating* a batch change on the apply page
-	// by clicking "Apply spec".
+	// by clicking "Apply".
 	ViewBatchChangeDetailsPageAfterUpdateCount int32
 
 	// BatchChangesCount is the number of batch changes on the instance. This can go
@@ -1117,7 +1132,7 @@ type InsightUsageStatistics struct {
 
 type PingName string
 
-//AggregatedPingStats is a generic representation of an aggregated ping statistic
+// AggregatedPingStats is a generic representation of an aggregated ping statistic
 type AggregatedPingStats struct {
 	Name        PingName
 	TotalCount  int

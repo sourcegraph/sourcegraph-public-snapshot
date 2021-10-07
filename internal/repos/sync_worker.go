@@ -30,7 +30,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, db dbutil.DB, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -74,10 +74,11 @@ func NewSyncWorker(ctx context.Context, db dbutil.DB, handler dbworker.Handler, 
 	})
 
 	worker := dbworker.NewWorker(ctx, store, handler, workerutil.WorkerOptions{
-		Name:        "repo_sync_worker",
-		NumHandlers: opts.NumHandlers,
-		Interval:    opts.WorkerInterval,
-		Metrics:     newWorkerMetrics(opts.PrometheusRegisterer),
+		Name:              "repo_sync_worker",
+		NumHandlers:       opts.NumHandlers,
+		Interval:          opts.WorkerInterval,
+		HeartbeatInterval: 15 * time.Second,
+		Metrics:           newWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
 	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
@@ -156,17 +157,11 @@ func scanSingleJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	}
 
 	jobs, err := scanJobs(rows)
-	if err != nil {
+	if err != nil || len(jobs) == 0 {
 		return nil, false, err
 	}
 
-	var job SyncJob
-
-	if len(jobs) > 0 {
-		job = jobs[0]
-	}
-
-	return &job, true, nil
+	return &jobs[0], true, nil
 }
 
 // SyncJob represents an external service that needs to be synced

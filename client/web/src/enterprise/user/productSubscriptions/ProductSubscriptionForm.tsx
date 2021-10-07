@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
@@ -250,9 +251,11 @@ const _ProductSubscriptionForm: React.FunctionComponent<Props & ReactStripeEleme
                             <button
                                 type="submit"
                                 disabled={disableForm || !accountID}
-                                className={`btn btn-lg btn-${
-                                    disableForm || !accountID ? 'secondary' : 'success'
-                                } w-100 d-flex align-items-center justify-content-center`}
+                                className={classNames(
+                                    'btn btn-lg',
+                                    disableForm || !accountID ? 'btn-secondary' : 'btn-success',
+                                    'w-100 d-flex align-items-center justify-content-center'
+                                )}
                             >
                                 {paymentToken === LOADING || submissionState === LOADING ? (
                                     <>

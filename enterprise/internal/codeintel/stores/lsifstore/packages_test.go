@@ -8,7 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDatabasePackageInformation(t *testing.T) {
@@ -24,7 +24,7 @@ func TestDatabasePackageInformation(t *testing.T) {
 	} else if !exists {
 		t.Errorf("no package information")
 	} else {
-		expected := semantic.PackageInformationData{
+		expected := precise.PackageInformationData{
 			Name:    "github.com/sourcegraph/lsif-go",
 			Version: "v0.0.0-ad3507cbeb18",
 		}

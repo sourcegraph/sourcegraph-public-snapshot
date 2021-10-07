@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -47,6 +49,28 @@ func (l *EventLogStore) Transact(ctx context.Context) (*EventLogStore, error) {
 	return &EventLogStore{Store: txBase}, err
 }
 
+// SanitizeEventURL makes the given URL is using HTTP/HTTPS scheme and within
+// the current site determined by `conf.ExternalURL()`.
+func SanitizeEventURL(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	// Check if the URL looks like a real URL
+	u, err := url.Parse(raw)
+	if err != nil ||
+		(u.Scheme != "http" && u.Scheme != "https") {
+		return ""
+	}
+
+	// Check if the URL belongs to the current site
+	normalized := u.String()
+	if !strings.HasPrefix(normalized, conf.ExternalURL()) {
+		return ""
+	}
+	return normalized
+}
+
 // Event contains information needed for logging an event.
 type Event struct {
 	Name            string
@@ -54,6 +78,7 @@ type Event struct {
 	UserID          uint32
 	AnonymousUserID string
 	Argument        json.RawMessage
+	PublicArgument  json.RawMessage
 	Source          string
 	Timestamp       time.Time
 	FeatureFlags    featureflag.FlagSet
@@ -61,9 +86,17 @@ type Event struct {
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
+	// 🚨 SECURITY: It is important to sanitize event URL before being stored to the
+	// database to help guarantee no malicious data at rest.
+	e.URL = SanitizeEventURL(e.URL)
+
 	argument := e.Argument
 	if argument == nil {
-		argument = json.RawMessage([]byte(`{}`))
+		argument = json.RawMessage(`{}`)
+	}
+	publicArgument := e.PublicArgument
+	if e.PublicArgument == nil {
+		publicArgument = json.RawMessage(`{}`)
 	}
 
 	featureFlags, err := json.Marshal(e.FeatureFlags)
@@ -73,13 +106,14 @@ func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
 
 	_, err = l.Handle().DB().ExecContext(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, public_argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
 		e.Name,
 		e.URL,
 		e.UserID,
 		e.AnonymousUserID,
 		e.Source,
 		argument,
+		publicArgument,
 		version.Version(),
 		e.Timestamp.UTC(),
 		featureFlags,
@@ -320,12 +354,12 @@ type PercentileValue struct {
 func (l *EventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
 	endDate, ok := calcEndDate(startDate, periodType, periods)
 	if !ok {
-		return nil, fmt.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
+		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
 	}
 
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
@@ -718,45 +752,180 @@ WHERE
   AND name IN (%s);
 `
 
-// CodeIntelligenceRepositoryCounts returns the number of repositories with and without an associated
-// and up-to-date code intelligence upload.
-func (l *EventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (withUploads int, withoutUploads int, err error) {
-	var totalRepositories int
+type CodeIntelligenceRepositoryCounts struct {
+	NumRepositories                                  int
+	NumRepositoriesWithUploadRecords                 int
+	NumRepositoriesWithFreshUploadRecords            int
+	NumRepositoriesWithIndexRecords                  int
+	NumRepositoriesWithFreshIndexRecords             int
+	NumRepositoriesWithAutoIndexConfigurationRecords int
+}
 
+// CodeIntelligenceRepositoryCounts returns the counts of repositories with code intelligence
+// properties (number of repositories with intel, with automatic/manual index configuration, etc).
+func (l *EventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error) {
 	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsQuery))
 	if err != nil {
-		return 0, 0, err
+		return CodeIntelligenceRepositoryCounts{}, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		if err := rows.Scan(&totalRepositories, &withUploads); err != nil {
-			return 0, 0, err
+		if err := rows.Scan(
+			&counts.NumRepositories,
+			&counts.NumRepositoriesWithUploadRecords,
+			&counts.NumRepositoriesWithFreshUploadRecords,
+			&counts.NumRepositoriesWithIndexRecords,
+			&counts.NumRepositoriesWithFreshIndexRecords,
+			&counts.NumRepositoriesWithAutoIndexConfigurationRecords,
+		); err != nil {
+			return CodeIntelligenceRepositoryCounts{}, err
 		}
 	}
-
 	if err := rows.Err(); err != nil {
-		return 0, 0, err
+		return CodeIntelligenceRepositoryCounts{}, err
 	}
 
-	return withUploads, totalRepositories - withUploads, nil
+	return counts, nil
 }
 
 var codeIntelligenceRepositoryCountsQuery = `
 -- source: internal/database/event_logs.go:CodeIntelligenceRepositoryCounts
-WITH active_repositories AS (
-	SELECT count(*) AS count FROM repo WHERE deleted_at IS NULL
-),
-active_repositories_with_upload AS (
-	SELECT count(DISTINCT repository_id) AS count
-	FROM lsif_dumps u
-	JOIN repo r ON r.id = u.repository_id
-	WHERE r.deleted_at IS NULL
-)
 SELECT
-	(SELECT count FROM active_repositories) AS total_repositories,
-	(SELECT count FROM active_repositories_with_upload) AS repositories_with_uploads
+	(SELECT COUNT(*) FROM repo r WHERE r.deleted_at IS NULL)
+		AS num_repositories,
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_dumps_with_repository_name u)
+		AS num_repositories_with_upload_records,
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_dumps_with_repository_name u WHERE u.uploaded_at >= NOW() - '168 hours'::interval)
+		AS num_repositories_with_fresh_upload_records,
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_indexes_with_repository_name u WHERE u.state = 'completed')
+		AS num_repositories_with_index_records,
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_indexes_with_repository_name u WHERE u.state = 'completed' AND u.queued_at >= NOW() - '168 hours'::interval)
+		AS num_repositories_with_fresh_index_records,
+	(SELECT COUNT(DISTINCT uc.repository_id) FROM lsif_index_configuration uc WHERE uc.autoindex_enabled IS TRUE AND data IS NOT NULL)
+		AS num_repositories_with_index_configuration_records
 `
+
+type CodeIntelligenceRepositoryCountsForLanguage struct {
+	NumRepositoriesWithUploadRecords      int
+	NumRepositoriesWithFreshUploadRecords int
+	NumRepositoriesWithIndexRecords       int
+	NumRepositoriesWithFreshIndexRecords  int
+}
+
+// CodeIntelligenceRepositoryCountsByLanguage returns the counts of repositories with code intelligence
+// properties (number of repositories with intel, with automatic/manual index configuration, etc), grouped
+// by language.
+func (l *EventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error) {
+	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsByLanguageQuery))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var (
+		language string
+		numRepositoriesWithUploadRecords,
+		numRepositoriesWithFreshUploadRecords,
+		numRepositoriesWithIndexRecords,
+		numRepositoriesWithFreshIndexRecords *int
+	)
+
+	byLanguage := map[string]CodeIntelligenceRepositoryCountsForLanguage{}
+	for rows.Next() {
+		if err := rows.Scan(
+			&language,
+			&numRepositoriesWithUploadRecords,
+			&numRepositoriesWithFreshUploadRecords,
+			&numRepositoriesWithIndexRecords,
+			&numRepositoriesWithFreshIndexRecords,
+		); err != nil {
+			return nil, err
+		}
+
+		byLanguage[language] = CodeIntelligenceRepositoryCountsForLanguage{
+			NumRepositoriesWithUploadRecords:      safeDerefIntPtr(numRepositoriesWithUploadRecords),
+			NumRepositoriesWithFreshUploadRecords: safeDerefIntPtr(numRepositoriesWithFreshUploadRecords),
+			NumRepositoriesWithIndexRecords:       safeDerefIntPtr(numRepositoriesWithIndexRecords),
+			NumRepositoriesWithFreshIndexRecords:  safeDerefIntPtr(numRepositoriesWithFreshIndexRecords),
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return byLanguage, nil
+}
+
+func safeDerefIntPtr(v *int) int {
+	if v != nil {
+		return *v
+	}
+
+	return 0
+}
+
+var codeIntelligenceRepositoryCountsByLanguageQuery = `
+-- source: internal/database/event_logs.go:CodeIntelligenceRepositoryCountsByLanguage
+SELECT
+	-- Clean up indexer by removing sourcegraph/ docker image prefix for auto-index
+	-- records, as well as any trailing git tag. This should make all of the in-house
+	-- indexer names the same on both lsif_uploads and lsif_indexes records.
+	REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegraph/', ''), ':\w+$', '') AS indexer,
+	max(num_repositories_with_upload_records) AS num_repositories_with_upload_records,
+	max(num_repositories_with_fresh_upload_records) AS num_repositories_with_fresh_upload_records,
+	max(num_repositories_with_index_records) AS num_repositories_with_index_records,
+	max(num_repositories_with_fresh_index_records) AS num_repositories_with_fresh_index_records
+FROM (
+	(SELECT u.indexer, COUNT(DISTINCT u.repository_id), NULL::integer, NULL::integer, NULL::integer
+		FROM lsif_dumps_with_repository_name u GROUP BY u.indexer)
+UNION
+	(SELECT u.indexer, NULL::integer, COUNT(DISTINCT u.repository_id), NULL::integer, NULL::integer
+		FROM lsif_dumps_with_repository_name u WHERE u.uploaded_at >= NOW() - '168 hours'::interval GROUP BY u.indexer)
+UNION
+	(SELECT u.indexer, NULL::integer, NULL::integer, COUNT(DISTINCT u.repository_id), NULL::integer
+		FROM lsif_indexes_with_repository_name u WHERE state = 'completed' GROUP BY u.indexer)
+UNION
+	(SELECT u.indexer, NULL::integer, NULL::integer, NULL::integer, COUNT(DISTINCT u.repository_id)
+		FROM lsif_indexes_with_repository_name u WHERE state = 'completed' AND u.queued_at >= NOW() - '168 hours'::interval GROUP BY u.indexer)
+) s(
+	indexer,
+	num_repositories_with_upload_records,
+	num_repositories_with_fresh_upload_records,
+	num_repositories_with_index_records,
+	num_repositories_with_fresh_index_records
+)
+GROUP BY REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegraph/', ''), ':\w+$', '')
+`
+
+// CodeIntelligenceSettingsPageViewCount returns the number of view of pages related code intelligence
+// administration (upload, index records, index configuration, etc) in the past week.
+func (l *EventLogStore) CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error) {
+	return l.codeIntelligenceSettingsPageViewCount(ctx, time.Now().UTC())
+}
+
+func (l *EventLogStore) codeIntelligenceSettingsPageViewCount(ctx context.Context, now time.Time) (int, error) {
+	pageNames := []string{
+		"CodeIntelUploadsPage",
+		"CodeIntelUploadPage",
+		"CodeIntelIndexesPage",
+		"CodeIntelIndexPage",
+		"CodeIntelConfigurationPage",
+		"CodeIntelConfigurationPolicyPage",
+	}
+
+	names := make([]*sqlf.Query, 0, len(pageNames))
+	for _, pageName := range pageNames {
+		names = append(names, sqlf.Sprintf("%s", fmt.Sprintf("View%s", pageName)))
+	}
+
+	count, _, err := basestore.ScanFirstInt(l.Query(ctx, sqlf.Sprintf(codeIntelligenceSettingsPageViewCountQuery, sqlf.Join(names, ","), now)))
+	return count, err
+}
+
+var codeIntelligenceSettingsPageViewCountQuery = `
+-- source: internal/database/event_logs.go:CodeIntelligenceSettingsPageViewCount
+SELECT COUNT(*) FROM event_logs WHERE name IN (%s) AND timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp")
 
 // AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
 func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import React, { useMemo } from 'react'
 
@@ -16,6 +17,7 @@ import { ExtensionCard } from './ExtensionCard'
 import { ExtensionCategoryOrAll, ExtensionListData, ExtensionsEnablement } from './ExtensionRegistry'
 import { applyEnablementFilter, applyWIPFilter } from './extensions'
 import { ExtensionsAreaRouteContext } from './ExtensionsArea'
+import styles from './ExtensionsList.module.scss'
 
 interface Props
     extends SettingsCascadeProps,
@@ -96,6 +98,13 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         return undefined
     }, [settingsCascade])
 
+    // We want to filter extensions based on the settings when the filter was last changed.
+    // If we used the latest settings, which are updated after extensions are enabled/disabled,
+    // extensions would confusingly disappear when a filter is used (example: user wants to see disabled extensions.
+    // user enables an extension, then the extension disappears since it is now enabled in settings).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const settingsFromLastFilterChange = useMemo(() => settingsCascade.final, [enablementFilter])
+
     if (!data || data === LOADING) {
         return <LoadingSpinner className="icon-inline mt-2" />
     }
@@ -107,14 +116,14 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
     const { error, extensions, extensionIDsByCategory, featuredExtensions } = data
 
     const featuredExtensionsSection = featuredExtensions && featuredExtensions.length > 0 && (
-        <div key="Featured" className="extensions-list__featured-section">
+        <div key="Featured" className={styles.featuredSection}>
             <h3
-                className="extensions-list__category mb-3 font-weight-normal"
+                className={classNames('mb-3 font-weight-normal', styles.category)}
                 data-test-extension-category-header="Featured"
             >
                 Featured
             </h3>
-            <div className="extensions-list__cards extensions-list__cards--featured mt-1">
+            <div className={classNames('mt-1', styles.cards, styles.cardsFeatured)}>
                 {featuredExtensions.map(featuredExtension => (
                     <ExtensionCard
                         key={featuredExtension.id}
@@ -160,28 +169,32 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
             const enablementFilteredExtensionIDs = applyEnablementFilter(
                 extensionIDsByCategory[category].primaryExtensionIDs,
                 enablementFilter,
-                settingsCascade.final
+                settingsFromLastFilterChange
             )
             return applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
         })
 
-        categorySections = ORDERED_EXTENSION_CATEGORIES.filter(
-            category =>
-                filteredExtensionIDsByCategory[category].length > 0 &&
-                // Only show Programming Languages when it is the selected category
-                category !== 'Programming languages'
-        ).map(category => {
+        categorySections = ORDERED_EXTENSION_CATEGORIES.filter(category => {
+            // Hide category if there are no results
+            if (filteredExtensionIDsByCategory[category].length === 0) {
+                return false
+            }
+            // Only show Programming Languages when it is the selected category
+            // AND there is no search query. We shouldn't hide language extensions
+            // if users are looking for them.
+            return category !== 'Programming languages' || !!query.trim()
+        }).map(category => {
             const extensionIDsForCategory = filteredExtensionIDsByCategory[category]
 
             return (
                 <div key={category} className="mt-1">
                     <h3
-                        className="extensions-list__category mb-3 font-weight-normal"
+                        className={classNames('mb-3 font-weight-normal', styles.category)}
                         data-test-extension-category-header={category}
                     >
                         {category}
                     </h3>
-                    <div className="extensions-list__cards mt-1">
+                    <div className={classNames('mt-1', styles.cards)}>
                         {extensionIDsForCategory.slice(0, 6).map(extensionId => (
                             <ExtensionCard
                                 key={extensionId}
@@ -223,19 +236,19 @@ export const ExtensionsList: React.FunctionComponent<Props> = ({
         const enablementFilteredExtensionIDs = applyEnablementFilter(
             allExtensionIDs,
             enablementFilter,
-            settingsCascade.final
+            settingsFromLastFilterChange
         )
         const extensionIDs = applyWIPFilter(enablementFilteredExtensionIDs, showExperimentalExtensions, extensions)
 
         categorySections = [
             <div key={selectedCategory} className="mt-1">
                 <h3
-                    className="extensions-list__category mb-3 font-weight-normal"
+                    className={classNames('mb-3 font-weight-normal', styles.category)}
                     data-test-extension-category-header={selectedCategory}
                 >
                     {selectedCategory}
                 </h3>
-                <div className="extensions-list__cards mt-1">
+                <div className={classNames('mt-1', styles.cards)}>
                     {extensionIDs.map(extensionId => (
                         <ExtensionCard
                             key={extensionId}

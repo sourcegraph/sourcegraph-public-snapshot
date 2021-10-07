@@ -63,7 +63,11 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (processedResults && itemsToLoad === pageSize) {
-            telemetryService.log('RecentSearchesPanelLoaded', { empty: processedResults.length === 0 })
+            telemetryService.log(
+                'RecentSearchesPanelLoaded',
+                { empty: processedResults.length === 0 },
+                { empty: processedResults.length === 0 }
+            )
         }
     }, [processedResults, telemetryService, itemsToLoad])
 
@@ -188,20 +192,22 @@ function processRecentSearches(eventLogResult?: EventLogResult): RecentSearch[] 
     const recentSearches: RecentSearch[] = []
 
     for (const node of eventLogResult.nodes) {
-        if (node.argument) {
+        if (node.argument && node.url) {
             const parsedArguments = JSON.parse(node.argument)
-            const searchText: string = parsedArguments?.code_search?.query_data?.combined
+            const searchText: string | undefined = parsedArguments?.code_search?.query_data?.combined
 
-            if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
-                recentSearches[recentSearches.length - 1].count += 1
-            } else {
-                const parsedUrl = new URL(node.url)
-                recentSearches.push({
-                    count: 1,
-                    url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
-                    searchText,
-                    timestamp: node.timestamp,
-                })
+            if (searchText) {
+                if (recentSearches.length > 0 && recentSearches[recentSearches.length - 1].searchText === searchText) {
+                    recentSearches[recentSearches.length - 1].count += 1
+                } else {
+                    const parsedUrl = new URL(node.url)
+                    recentSearches.push({
+                        count: 1,
+                        url: parsedUrl.pathname + parsedUrl.search, // Strip domain from URL so clicking on it doesn't reload page
+                        searchText,
+                        timestamp: node.timestamp,
+                    })
+                }
             }
         }
     }

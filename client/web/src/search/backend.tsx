@@ -36,6 +36,8 @@ import {
     DeleteSearchContextVariables,
     DeleteSearchContextResult,
     Maybe,
+    FetchSearchContextBySpecResult,
+    FetchSearchContextBySpecVariables,
 } from '../graphql-operations'
 
 /**
@@ -105,21 +107,21 @@ export function convertVersionContextToSearchContext(
     )
 }
 
-export const fetchAutoDefinedSearchContexts = defer(() =>
-    requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
+export function fetchAutoDefinedSearchContexts(): Observable<
+    AutoDefinedSearchContextsResult['autoDefinedSearchContexts']
+> {
+    return requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
         query AutoDefinedSearchContexts {
             autoDefinedSearchContexts {
                 ...SearchContextFields
             }
         }
         ${searchContextFragment}
-    `)
-).pipe(
-    map(dataOrThrowErrors),
-    map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[]),
-    publishReplay(1),
-    refCount()
-)
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[])
+    )
+}
 
 export function getUserSearchContextNamespaces(authenticatedUser: AuthenticatedUser | null): Maybe<Scalars['ID']>[] {
     return authenticatedUser
@@ -206,6 +208,24 @@ export const fetchSearchContext = (id: Scalars['ID']): Observable<GQL.ISearchCon
     )
 }
 
+export const fetchSearchContextBySpec = (spec: string): Observable<GQL.ISearchContext> => {
+    const query = gql`
+        query FetchSearchContextBySpec($spec: String!) {
+            searchContextBySpec(spec: $spec) {
+                ...SearchContextFields
+            }
+        }
+        ${searchContextFragment}
+    `
+
+    return requestGraphQL<FetchSearchContextBySpecResult, FetchSearchContextBySpecVariables>(query, {
+        spec,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.searchContextBySpec as GQL.ISearchContext)
+    )
+}
+
 export function createSearchContext(variables: CreateSearchContextVariables): Observable<GQL.ISearchContext> {
     return requestGraphQL<CreateSearchContextResult, CreateSearchContextVariables>(
         gql`
@@ -276,7 +296,6 @@ export function isSearchContextAvailable(
 export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
     return combineLatest([
         repogroupSuggestions,
-        fetchAutoDefinedSearchContexts,
         queryGraphQL(
             gql`
                 query SearchSuggestions($query: String!) {
@@ -326,13 +345,7 @@ export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> 
                 return data.search.suggestions
             })
         ),
-    ]).pipe(
-        map(([repogroups, autoDefinedSearchContexts, dynamicSuggestions]) => [
-            ...repogroups,
-            ...autoDefinedSearchContexts,
-            ...dynamicSuggestions,
-        ])
-    )
+    ]).pipe(map(([repogroups, dynamicSuggestions]) => [...repogroups, ...dynamicSuggestions]))
 }
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -531,26 +544,11 @@ export function deleteSavedSearch(id: Scalars['ID']): Observable<void> {
 }
 
 export const highlightCode = memoizeObservable(
-    (context: {
-        code: string
-        fuzzyLanguage: string
-        disableTimeout: boolean
-        isLightTheme: boolean
-    }): Observable<string> =>
+    (context: { code: string; fuzzyLanguage: string; disableTimeout: boolean }): Observable<string> =>
         queryGraphQL(
             gql`
-                query highlightCode(
-                    $code: String!
-                    $fuzzyLanguage: String!
-                    $disableTimeout: Boolean!
-                    $isLightTheme: Boolean!
-                ) {
-                    highlightCode(
-                        code: $code
-                        fuzzyLanguage: $fuzzyLanguage
-                        disableTimeout: $disableTimeout
-                        isLightTheme: $isLightTheme
-                    )
+                query highlightCode($code: String!, $fuzzyLanguage: String!, $disableTimeout: Boolean!) {
+                    highlightCode(code: $code, fuzzyLanguage: $fuzzyLanguage, disableTimeout: $disableTimeout)
                 }
             `,
             context
@@ -562,8 +560,7 @@ export const highlightCode = memoizeObservable(
                 return data.highlightCode
             })
         ),
-    context =>
-        `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}:${String(context.isLightTheme)}`
+    context => `${context.code}:${context.fuzzyLanguage}:${String(context.disableTimeout)}`
 )
 
 export interface EventLogResult {
@@ -582,6 +579,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
             query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
                 node(id: $userId) {
                     ... on User {
+                        __typename
                         eventLogs(first: $first, eventName: $eventName) {
                             nodes {
                                 argument
@@ -604,7 +602,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
         map(dataOrThrowErrors),
         map(
             (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node) {
+                if (!data.node || data.node.__typename !== 'User') {
                     throw new Error('User not found')
                 }
                 return data.node.eventLogs

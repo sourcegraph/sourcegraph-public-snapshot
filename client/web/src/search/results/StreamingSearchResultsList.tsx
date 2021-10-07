@@ -13,8 +13,9 @@ import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import {
     AggregateStreamingSearchResults,
-    FileLineMatch,
-    FileSymbolMatch,
+    ContentMatch,
+    SymbolMatch,
+    PathMatch,
     SearchMatch,
     getMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
@@ -23,7 +24,6 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchResult } from '../../components/SearchResult'
-import { eventLogger } from '../../tracking/eventLogger'
 
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
@@ -43,7 +43,6 @@ export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCas
 export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearchResultsListProps> = ({
     results,
     location,
-    isLightTheme,
     allExpanded,
     fetchHighlightedFileLineRanges,
     settingsCascade,
@@ -61,7 +60,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     }, [location.search])
 
     const itemKey = useCallback((item: SearchMatch): string => {
-        if (item.type === 'file' || item.type === 'symbol') {
+        if (item.type === 'content' || item.type === 'symbol') {
             return `file:${getMatchUrl(item)}`
         }
         return getMatchUrl(item)
@@ -72,18 +71,18 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     const renderResult = useCallback(
         (result: SearchMatch): JSX.Element => {
             switch (result.type) {
-                case 'file':
+                case 'content':
+                case 'path':
                 case 'symbol':
                     return (
                         <FileMatch
                             location={location}
-                            eventLogger={eventLogger}
+                            telemetryService={telemetryService}
                             icon={getFileMatchIcon(result)}
                             result={result}
                             onSelect={logSearchResultClicked}
                             expanded={false}
                             showAllMatches={false}
-                            isLightTheme={isLightTheme}
                             allExpanded={allExpanded}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
@@ -91,26 +90,19 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                         />
                     )
                 case 'commit':
-                    return (
-                        <SearchResult
-                            icon={SourceCommitIcon}
-                            result={result}
-                            repoName={result.repository}
-                            isLightTheme={isLightTheme}
-                        />
-                    )
+                    return <SearchResult icon={SourceCommitIcon} result={result} repoName={result.repository} />
                 case 'repo':
-                    return (
-                        <SearchResult
-                            icon={SourceRepositoryIcon}
-                            result={result}
-                            repoName={result.repository}
-                            isLightTheme={isLightTheme}
-                        />
-                    )
+                    return <SearchResult icon={SourceRepositoryIcon} result={result} repoName={result.repository} />
             }
         },
-        [isLightTheme, location, logSearchResultClicked, allExpanded, fetchHighlightedFileLineRanges, settingsCascade]
+        [
+            location,
+            telemetryService,
+            logSearchResultClicked,
+            allExpanded,
+            fetchHighlightedFileLineRanges,
+            settingsCascade,
+        ]
     )
 
     return (
@@ -130,12 +122,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     )
 }
 
-function getFileMatchIcon(result: FileLineMatch | FileSymbolMatch): React.ComponentType<{ className?: string }> {
-    if (result.type === 'file' && result.lineMatches && result.lineMatches.length > 0) {
-        return FileDocumentIcon
+function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
+    switch (result.type) {
+        case 'content':
+            return FileDocumentIcon
+        case 'symbol':
+            return AlphaSBoxIcon
+        case 'path':
+            return FileIcon
     }
-    if (result.type === 'symbol' && result.symbols && result.symbols.length > 0) {
-        return AlphaSBoxIcon
-    }
-    return FileIcon
 }

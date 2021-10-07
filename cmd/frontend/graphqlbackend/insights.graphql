@@ -70,13 +70,22 @@ type InsightsSeries {
     If no 'from' time range is specified, the last 90 days of data is assumed.
 
     If no 'to' time range is specified, the current point in time is assumed.
+
+    includeRepoRegex will include in the aggregation any repository names that match the provided regex
+
+    excludeRepoRegex will exclude in the aggregation any repository names that match the provided regex
     """
-    points(from: DateTime, to: DateTime): [InsightDataPoint!]!
+    points(from: DateTime, to: DateTime, includeRepoRegex: String, excludeRepoRegex: String): [InsightDataPoint!]!
 
     """
     The status of this series of data, e.g. progress collecting it.
     """
     status: InsightSeriesStatus!
+
+    """
+    Metadata for any data points that are flagged as dirty due to partially or wholly unsuccessfully queries.
+    """
+    dirtyMetadata: [InsightDirtyQueryMetadata!]!
 }
 
 """
@@ -92,6 +101,26 @@ type InsightDataPoint {
     The value of the insight at this point in time.
     """
     value: Float!
+}
+
+"""
+An insight query that has been marked dirty (some form of partially or wholly unsuccessful state).
+"""
+type InsightDirtyQueryMetadata {
+    """
+    The number of dirty queries for this data point and reason combination.
+    """
+    count: Int!
+
+    """
+    The reason the query was marked dirty.
+    """
+    reason: String!
+
+    """
+    The time in the data series that is marked dirty.
+    """
+    time: DateTime!
 }
 
 """
@@ -144,4 +173,10 @@ type InsightSeriesStatus {
     Why its useful: signals if there are problems, and how severe they are.
     """
     failedJobs: Int!
+
+    """
+    The time that the insight series completed a full iteration and queued up records for processing. This can
+    effectively be used as a status that the insight is still processing if returned null.
+    """
+    backfillQueuedAt: DateTime
 }

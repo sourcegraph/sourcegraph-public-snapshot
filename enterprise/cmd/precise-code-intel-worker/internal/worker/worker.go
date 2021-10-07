@@ -11,6 +11,9 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
+// UploadHeartbeatInterval is the duration between heartbeat updates to the upload job records.
+const UploadHeartbeatInterval = time.Second
+
 func NewWorker(
 	dbStore DBStore,
 	workerStore dbworkerstore.Store,
@@ -26,6 +29,7 @@ func NewWorker(
 
 	handler := &handler{
 		dbStore:         dbStore,
+		workerStore:     workerStore,
 		lsifStore:       lsifStore,
 		uploadStore:     uploadStore,
 		gitserverClient: gitserverClient,
@@ -34,9 +38,10 @@ func NewWorker(
 	}
 
 	return dbworker.NewWorker(rootContext, workerStore, handler, workerutil.WorkerOptions{
-		Name:        "precise_code_intel_upload_worker",
-		NumHandlers: numProcessorRoutines,
-		Interval:    pollInterval,
-		Metrics:     workerMetrics,
+		Name:              "precise_code_intel_upload_worker",
+		NumHandlers:       numProcessorRoutines,
+		Interval:          pollInterval,
+		HeartbeatInterval: UploadHeartbeatInterval,
+		Metrics:           workerMetrics,
 	})
 }

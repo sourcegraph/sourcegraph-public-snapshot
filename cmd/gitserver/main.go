@@ -2,8 +2,8 @@
 package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
 
 import (
+	"container/list"
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -15,10 +15,14 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	codeinteldbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -30,8 +34,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -57,9 +63,11 @@ func main() {
 		log.Fatalf("failed to start profiler: %v", err)
 	}
 
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	if reposDir == "" {
 		log.Fatal("git-server: SRC_REPOS_DIR is required")
@@ -77,7 +85,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize database stores: %v", err)
 	}
+
 	repoStore := database.Repos(db)
+	codeintelDB := codeinteldbstore.NewWithDB(db, &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}, nil)
 	externalServiceStore := database.ExternalServices(db)
 
 	err = keyring.Init(ctx)
@@ -104,10 +118,13 @@ func main() {
 
 				return repos.CloneURL(svc.Kind, svc.Config, r)
 			}
-			return "", fmt.Errorf("no sources for %q", repo)
+			return "", errors.Errorf("no sources for %q", repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			r, err := repoStore.GetByName(ctx, repo)
+			// We need an internal actor in case we are trying to access a private repo. We
+			// only need access in order to find out the type of code host we're using, so
+			// it's safe.
+			r, err := repoStore.GetByName(actor.WithInternalActor(ctx), repo)
 			if err != nil {
 				return nil, errors.Wrap(err, "get repository")
 			}
@@ -135,25 +152,49 @@ func main() {
 
 				return &server.PerforceDepotSyncer{
 					MaxChanges: int(c.MaxChanges),
+					Client:     c.P4Client,
 				}, nil
+			case extsvc.TypeJVMPackages:
+				var c schema.JVMPackagesConnection
+				for _, info := range r.Sources {
+					es, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+					if err != nil {
+						return nil, errors.Wrap(err, "get external service")
+					}
+
+					normalized, err := jsonc.Parse(es.Config)
+					if err != nil {
+						return nil, errors.Wrap(err, "normalize JSON")
+					}
+
+					if err = jsoniter.Unmarshal(normalized, &c); err != nil {
+						return nil, errors.Wrap(err, "unmarshal JSON")
+					}
+					break
+				}
+
+				return &server.JVMPackagesSyncer{Config: &c, DBStore: codeintelDB}, nil
 			}
 			return &server.GitRepoSyncer{}, nil
 		},
-		Hostname: hostname.Get(),
-		DB:       db,
+		Hostname:   hostname.Get(),
+		DB:         db,
+		CloneQueue: server.NewCloneQueue(list.New()),
 	}
 	gitserver.RegisterMetrics()
 
 	if tmpDir, err := gitserver.SetupAndClearTmp(); err != nil {
 		log.Fatalf("failed to setup temporary directory: %s", err)
 	} else if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-		// Additionally set TMP_DIR so other temporary files we may accidentally
+		// Additionally, set TMP_DIR so other temporary files we may accidentally
 		// create are on the faster RepoDir mount.
 		log.Fatalf("Setting TMP_DIR: %s", err)
 	}
 
 	// Create Handler now since it also initializes state
-	handler := ot.Middleware(gitserver.Handler())
+
+	// TODO: Why do we set server state as a side effect of creating our handler?
+	handler := ot.Middleware(trace.HTTPTraceMiddleware(gitserver.Handler()))
 
 	// Ready immediately
 	ready := make(chan struct{})
@@ -161,6 +202,10 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 	go gitserver.Janitor(janitorInterval)
 	go gitserver.SyncRepoState(syncRepoStateInterval, syncRepoStateBatchSize, syncRepoStateUpsertPerSecond)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	gitserver.StartClonePipeline(ctx)
 
 	port := "3178"
 	host := ""
@@ -203,10 +248,10 @@ func main() {
 
 func getPercent(p int) (int, error) {
 	if p < 0 {
-		return 0, fmt.Errorf("negative value given for percentage: %d", p)
+		return 0, errors.Errorf("negative value given for percentage: %d", p)
 	}
 	if p > 100 {
-		return 0, fmt.Errorf("excessively high value given for percentage: %d", p)
+		return 0, errors.Errorf("excessively high value given for percentage: %d", p)
 	}
 	return p, nil
 }
@@ -214,11 +259,14 @@ func getPercent(p int) (int, error) {
 // getStores initializes a connection to the database and returns RepoStore and
 // ExternalServiceStore.
 func getDB() (dbutil.DB, error) {
+
 	//
 	// START FLAILING
 
-	// Gitserver is an internal actor. We rely on the frontend to do authz
-	// checks for user requests.
+	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
+	// user requests.
+	//
+	// This call to SetProviders is here so that calls to GetProviders don't block.
 	authz.SetProviders(true, []authz.Provider{})
 
 	// END FLAILING

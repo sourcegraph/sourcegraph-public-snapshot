@@ -94,7 +94,7 @@
     }
 
     // Add margin between buttons. Important is required to override the rule above.
-    .theme-redesign & + & {
+    & + & {
         margin-left: 0.25rem !important;
     }
 }

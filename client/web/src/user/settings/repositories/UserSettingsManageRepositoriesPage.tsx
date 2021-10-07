@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { Badge } from '@sourcegraph/web/src/components/Badge'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../../components/AwayPrompt'
@@ -155,15 +155,12 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
 
-    // if 'sync all' radio button is enabled and users can sync all repos from code hosts
-    const ALLOW_SYNC_ALL = authenticatedUser.tags.includes('AllowUserExternalServiceSyncAll')
-
     // set up state hooks
-    const [isRedesignEnabled] = useRedesignToggle()
     const [repoState, setRepoState] = useState(initialRepoState)
     const [publicRepoState, setPublicRepoState] = useState(initialPublicRepoState)
     const [codeHosts, setCodeHosts] = useState(initialCodeHostState)
     const [onloadSelectedRepos, setOnloadSelectedRepos] = useState<string[]>([])
+    const [onloadRadioValue, setOnloadRadioValue] = useState('')
     const [selectionState, setSelectionState] = useState(initialSelectionState)
     const [currentPage, setPage] = useState(1)
     const [query, setQuery] = useState('')
@@ -211,7 +208,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const fetchSelectedRepositories = useCallback(
-        async (): Promise<NonNullable<UserRepositoriesResult['node']>['repositories']['nodes']> =>
+        async (): Promise<
+            (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']['nodes']
+        > =>
             listUserRepositories({ id: authenticatedUser.id, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
@@ -352,14 +351,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
          */
 
         const radioSelectOption =
-            ALLOW_SYNC_ALL &&
-            ((externalServices.length === codeHostsHaveSyncAllQuery.length &&
-                codeHostsHaveSyncAllQuery.every(Boolean)) ||
-                affiliatedReposWithMirrorInfo.length === selectedAffiliatedRepos.size)
+            externalServices.length === codeHostsHaveSyncAllQuery.length && codeHostsHaveSyncAllQuery.every(Boolean)
                 ? 'all'
                 : selectedAffiliatedRepos.size > 0
                 ? 'selected'
                 : ''
+
+        setOnloadRadioValue(radioSelectOption)
 
         // set sorted repos and mark as loaded
         setRepoState(previousRepoState => ({
@@ -373,7 +371,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             radio: radioSelectOption,
             loaded: true,
         })
-    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories, ALLOW_SYNC_ALL])
+    }, [fetchExternalServices, fetchAffiliatedRepos, fetchSelectedRepositories])
 
     useEffect(() => {
         fetchServicesAndAffiliatedRepos().catch(error => {
@@ -439,19 +437,37 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
 
-        return !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
-    }, [onloadSelectedRepos, publicRepoState.enabled, publicRepoState.repos, selectionState.repos])
+        return (
+            selectionState.radio !== onloadRadioValue ||
+            !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
+        )
+    }, [
+        onloadSelectedRepos,
+        publicRepoState.enabled,
+        publicRepoState.repos,
+        selectionState.repos,
+        selectionState.radio,
+        onloadRadioValue,
+    ])
 
     // save changes and update code hosts
     const submit = useCallback(
         async (event: FormEvent<HTMLFormElement>): Promise<void> => {
             event.preventDefault()
-            eventLogger.log('UserManageRepositoriesSave')
 
-            let publicRepos = publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
-            if (!publicRepoState.enabled) {
-                publicRepos = []
+            const publicRepos = publicRepoState.enabled
+                ? publicRepoState.repos.split('\n').filter((row): boolean => row !== '')
+                : []
+
+            const loggerPayload = {
+                userReposSelection: selectionState.radio
+                    ? selectionState.radio === 'selected'
+                        ? 'specific'
+                        : 'all'
+                    : null,
+                didAddReposByURL: !!publicRepos.length,
             }
+            eventLogger.log('UserSettingsManageRepositoriesSaved', loggerPayload, loggerPayload)
 
             setFetchingRepos('loading')
             onSyncedPublicRepositoriesUpdate(publicRepos.length)
@@ -540,25 +556,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 <input
                     type="radio"
                     value="all"
-                    disabled={!ALLOW_SYNC_ALL || noCodeHostsOrErrors}
+                    disabled={noCodeHostsOrErrors}
                     checked={selectionState.radio === 'all'}
                     onChange={handleRadioSelect}
                 />
                 <div className="d-flex flex-column ml-2">
-                    <p
-                        className={classNames('mb-0', {
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
-                        })}
-                    >
-                        Sync all repositories {!ALLOW_SYNC_ALL && '(coming soon)'}
-                    </p>
-                    <p
-                        className={classNames({
-                            'user-settings-repos__text': ALLOW_SYNC_ALL,
-                            'user-settings-repos__text-disabled': !ALLOW_SYNC_ALL,
-                        })}
-                    >
+                    <p className="mb-0">Sync all repositories</p>
+                    <p className="user-settings-repos__text-light text-muted">
                         Will sync all current and future public and private repositories
                     </p>
                 </div>
@@ -578,7 +582,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             'mb-0': true,
                         })}
                     >
-                        Sync selected {!ALLOW_PRIVATE_CODE && 'public'} repositories
+                        Sync selected repositories
                     </p>
                 </div>
             </label>
@@ -606,7 +610,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <input
                 className="form-control user-settings-repos__filter-input"
                 type="search"
-                placeholder="Search repositories..."
+                placeholder="Filter repositories..."
                 name="query"
                 autoComplete="off"
                 autoCorrect="off"
@@ -637,17 +641,32 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [selectionState, setSelectionState]
     )
 
+    const getSelectedReposByCodeHost = (codeHostId: string = ''): Repo[] => {
+        const selectedRepos = [...selectionState.repos.values()]
+        // if no specific code host selected, return all selected repos
+        return codeHostId ? selectedRepos.filter(({ codeHost }) => codeHost?.id === codeHostId) : selectedRepos
+    }
+
+    const areAllReposSelected = (): boolean => {
+        if (selectionState.repos.size === 0) {
+            return false
+        }
+
+        const selectedRepos = getSelectedReposByCodeHost(codeHostFilter)
+        return selectedRepos.length === filteredRepos.length
+    }
+
     const selectAll = (): void => {
-        const newMap = new Map<string, Repo>()
+        const newSelectAll = new Map<string, Repo>()
         // if not all repos are selected, we should select all, otherwise empty the selection
 
         if (selectionState.repos.size !== filteredRepos.length) {
             for (const repo of filteredRepos) {
-                newMap.set(getRepoServiceAndName(repo), repo)
+                newSelectAll.set(getRepoServiceAndName(repo), repo)
             }
         }
         setSelectionState({
-            repos: newMap,
+            repos: newSelectAll,
             loaded: selectionState.loaded,
             radio: selectionState.radio,
         })
@@ -661,7 +680,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                         id="select-all-repos"
                         className="mr-3"
                         type="checkbox"
-                        checked={selectionState.repos.size !== 0 && selectionState.repos.size === filteredRepos.length}
+                        checked={areAllReposSelected()}
                         onChange={selectAll}
                     />
                     <label
@@ -724,14 +743,24 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     return (
         <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
-            <h2 className="mb-2">Manage Repositories</h2>
+            <h2 className="d-flex mb-2">
+                Manage Repositories <Badge status="beta" className="ml-2" />
+            </h2>
             <p className="text-muted">
-                Choose repositories to sync with Sourcegraph to search code you care about all in one place
+                Choose which repositories to sync with Sourcegraph to search all your code in one place.
+                <Link
+                    to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    {' '}
+                    Learn more
+                </Link>
             </p>
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
-                        <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                        <div>
                             <h3>Your repositories</h3>
                             <p className="text-muted">
                                 Repositories you own or collaborate on from your{' '}
@@ -789,7 +818,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     </li>
                     {window.context.sourcegraphDotComMode && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
-                            <div className={classNames(!isRedesignEnabled && 'p-4')}>
+                            <div>
                                 <h3>Other public repositories</h3>
                                 <p className="text-muted">Public repositories on GitHub and GitLab</p>
                                 <input

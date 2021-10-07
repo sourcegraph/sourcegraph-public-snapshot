@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/cockroachdb/errors"
 )
 
 type Platform string
@@ -30,11 +32,7 @@ type Resources []Resource
 
 func (r Resources) Less(i, j int) bool { return r[i].Created.After(r[j].Created) }
 func (r Resources) Len() int           { return len(r) }
-func (r Resources) Swap(i, j int) {
-	tmp := r[i]
-	r[i] = r[j]
-	r[j] = tmp
-}
+func (r Resources) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
 
 // NonAllowed returns only resources that are not allowed
 func (r Resources) NonAllowed() (filtered Resources, allowed int) {
@@ -81,7 +79,7 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 			PruneOlderThan:  *opts.sheetPruneOlderThan,
 			Verbose:         *opts.verbose,
 		}); err != nil {
-			return fmt.Errorf("sheets: %w", err)
+			return errors.Errorf("sheets: %w", err)
 		}
 	}
 
@@ -112,7 +110,7 @@ func generateReport(ctx context.Context, opts options, resources Resources) erro
 			},
 		}
 		if err := sendSlackBlocks(ctx, *opts.slackWebhook, blocks); err != nil {
-			return fmt.Errorf("slack: %w", err)
+			return errors.Errorf("slack: %w", err)
 		}
 	}
 

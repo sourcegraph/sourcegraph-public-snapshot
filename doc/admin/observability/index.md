@@ -33,6 +33,7 @@ Sourcegraph is designed, and ships with, a number of observability tools and cap
 * [Logs](./logs.md)
 * [Health checks](./health_checks.md)
 * [Troubleshooting guide](troubleshooting.md)
+* [Monitoring guide](../how-to/monitoring-guide.md)
 
 ## Reference
 

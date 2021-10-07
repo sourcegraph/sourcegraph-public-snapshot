@@ -12,7 +12,7 @@ export interface ReenqueueChangesetsModalProps {
     onCancel: () => void
     afterCreate: () => void
     batchChangeID: Scalars['ID']
-    changesetIDs: () => Promise<Scalars['ID'][]>
+    changesetIDs: Scalars['ID'][]
 
     /** For testing only. */
     reenqueueChangesets?: typeof _reenqueueChangesets
@@ -30,8 +30,7 @@ export const ReenqueueChangesetsModal: React.FunctionComponent<ReenqueueChangese
     const onSubmit = useCallback<React.FormEventHandler>(async () => {
         setIsLoading(true)
         try {
-            const ids = await changesetIDs()
-            await reenqueueChangesets(batchChangeID, ids)
+            await reenqueueChangesets(batchChangeID, changesetIDs)
             afterCreate()
         } catch (error) {
             setIsLoading(asError(error))

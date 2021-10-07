@@ -2,19 +2,22 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"net/url"
+	"os"
 	"sync"
+
+	"github.com/cockroachdb/errors"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func (r *schemaResolver) gitCommitByID(ctx context.Context, id graphql.ID) (*GitCommitResolver, error) {
@@ -47,14 +50,14 @@ type GitCommitResolver struct {
 
 	// commit should not be accessed directly since it might not be initialized.
 	// Use the resolver methods instead.
-	commit     *git.Commit
+	commit     *gitapi.Commit
 	commitOnce sync.Once
 	commitErr  error
 }
 
 // When set to nil, commit will be loaded lazily as needed by the resolver. Pass in a commit when you have batch loaded
 // a bunch of them and already have them at hand.
-func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID, commit *git.Commit) *GitCommitResolver {
+func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID, commit *gitapi.Commit) *GitCommitResolver {
 	return &GitCommitResolver{
 		db:              db,
 		repoResolver:    repo,
@@ -65,7 +68,7 @@ func toGitCommitResolver(repo *RepositoryResolver, db dbutil.DB, id api.CommitID
 	}
 }
 
-func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*git.Commit, error) {
+func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitapi.Commit, error) {
 	r.commitOnce.Do(func() {
 		if r.commit != nil {
 			return
@@ -194,12 +197,16 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Path      string
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "commit.tree")
+	defer span.Finish()
+	span.SetTag("path", args.Path)
+
 	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
 		return nil, err
 	}
 	if !stat.Mode().IsDir() {
-		return nil, fmt.Errorf("not a directory: %q", args.Path)
+		return nil, errors.Errorf("not a directory: %q", args.Path)
 	}
 	return &GitTreeEntryResolver{
 		db:          r.db,
@@ -214,10 +221,13 @@ func (r *GitCommitResolver) Blob(ctx context.Context, args *struct {
 }) (*GitTreeEntryResolver, error) {
 	stat, err := git.Stat(ctx, r.gitRepo, api.CommitID(r.oid), args.Path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	if !stat.Mode().IsRegular() {
-		return nil, fmt.Errorf("not a blob: %q", args.Path)
+		return nil, errors.Errorf("not a blob: %q", args.Path)
 	}
 	return &GitTreeEntryResolver{
 		db:     r.db,

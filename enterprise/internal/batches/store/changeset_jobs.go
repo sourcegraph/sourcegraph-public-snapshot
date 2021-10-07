@@ -4,13 +4,15 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // changesetJobInsertColumns is the list of changeset_jobs columns that are
@@ -55,7 +57,12 @@ var ChangesetJobColumns = SQLColumns{
 }
 
 // CreateChangesetJob creates the given changeset jobs.
-func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) error {
+func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) (err error) {
+	ctx, endObservation := s.operations.createChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("count", len(cs)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	inserter := func(inserter *batch.Inserter) error {
 		for _, c := range cs {
 			payload, err := jsonbColumn(c.Payload)
@@ -116,10 +123,15 @@ type GetChangesetJobOpts struct {
 }
 
 // GetChangesetJob gets a ChangesetJob matching the given options.
-func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (*btypes.ChangesetJob, error) {
+func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (job *btypes.ChangesetJob, err error) {
+	ctx, endObservation := s.operations.getChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getChangesetJobQuery(&opts)
 	var c btypes.ChangesetJob
-	err := s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc scanner) (err error) {
 		return scanChangesetJob(&c, sc)
 	})
 	if err != nil {
@@ -188,8 +200,10 @@ func scanChangesetJob(c *btypes.ChangesetJob, s scanner) error {
 		c.Payload = new(btypes.ChangesetJobMergePayload)
 	case btypes.ChangesetJobTypeClose:
 		c.Payload = new(btypes.ChangesetJobClosePayload)
+	case btypes.ChangesetJobTypePublish:
+		c.Payload = new(btypes.ChangesetJobPublishPayload)
 	default:
-		return fmt.Errorf("unknown job type %q", c.JobType)
+		return errors.Errorf("unknown job type %q", c.JobType)
 	}
 	return json.Unmarshal(raw, &c.Payload)
 }

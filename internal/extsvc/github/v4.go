@@ -62,7 +62,7 @@ func NewV4Client(apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Cli
 		cli = disabledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer()
+		cli = httpcli.ExternalDoer
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
@@ -285,7 +285,8 @@ func (e graphqlErrors) Error() string {
 // json.UnmarshalTypeError
 func unmarshal(data []byte, v interface{}) error {
 	err := json.Unmarshal(data, v)
-	if e, ok := err.(*json.UnmarshalTypeError); ok && e.Offset >= 0 {
+	var e *json.UnmarshalTypeError
+	if errors.As(err, &e) && e.Offset >= 0 {
 		a := e.Offset - 100
 		b := e.Offset + 100
 		if a < 0 {
@@ -336,7 +337,7 @@ func (c *V4Client) fetchGitHubVersion(ctx context.Context) *semver.Version {
 		return allMatchingSemver
 	}
 	if _, err = doRequest(ctx, c.apiURL, c.auth, c.rateLimitMonitor, c.httpClient, req, &resp); err != nil {
-		log15.Warn("Failed to fetch GitHub enterprise version", "doRequest", "apiURL", c.apiURL, "err", err)
+		log15.Warn("Failed to fetch GitHub enterprise version: doRequest", "apiURL", c.apiURL, "err", err)
 		return allMatchingSemver
 	}
 	version, err := semver.NewVersion(resp.InstalledVersion)
@@ -364,6 +365,93 @@ func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
 	return &result.Viewer, nil
 }
 
+// A Cursor is a pagination cursor returned by the API in fields like endCursor.
+type Cursor string
+
+// SearchReposParams are the inputs to the SearchRepos method.
+type SearchReposParams struct {
+	// Query is the GitHub search query. See https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-for-repositories
+	Query string
+	// After is the cursor to paginate from.
+	After Cursor
+	// First is the page size. Default to 100 if left zero.
+	First int
+}
+
+// SearchReposResults is the result type of SearchRepos.
+type SearchReposResults struct {
+	// The repos that matched the Query in SearchReposParams.
+	Repos []Repository
+	// The total result count of the Query in SearchReposParams.
+	// Since GitHub's search API limits result sets to 1000, we can
+	// use this to determine if we need to refine the search query to
+	// not miss results.
+	TotalCount int
+	// The cursor pointing to the next page of results.
+	EndCursor Cursor
+}
+
+// SearchRepos searches for repositories matching the given search query (https://github.com/search/advanced), using
+// the given pagination parameters provided by the caller.
+func (c *V4Client) SearchRepos(ctx context.Context, p SearchReposParams) (SearchReposResults, error) {
+	if p.First == 0 {
+		p.First = 100
+	}
+
+	vars := map[string]interface{}{
+		"query": p.Query,
+		"type":  "REPOSITORY",
+		"first": p.First,
+	}
+
+	if p.After != "" {
+		vars["after"] = p.After
+	}
+
+	query := c.buildSearchReposQuery(ctx)
+
+	var resp struct {
+		Search struct {
+			RepositoryCount int
+			PageInfo        struct {
+				HasNextPage bool
+				EndCursor   Cursor
+			}
+			Nodes []Repository
+		}
+	}
+
+	err := c.requestGraphQL(ctx, query, vars, &resp)
+	if err != nil {
+		return SearchReposResults{}, err
+	}
+
+	results := SearchReposResults{
+		Repos:      resp.Search.Nodes,
+		TotalCount: resp.Search.RepositoryCount,
+	}
+
+	if resp.Search.PageInfo.HasNextPage {
+		results.EndCursor = resp.Search.PageInfo.EndCursor
+	}
+
+	return results, nil
+}
+
+func (c *V4Client) buildSearchReposQuery(ctx context.Context) string {
+	var b strings.Builder
+	b.WriteString(c.repositoryFieldsGraphQLFragment(ctx))
+	b.WriteString(`
+query($query: String!, $type: SearchType!, $after: String, $first: Int!) {
+	search(query: $query, type: $type, after: $after, first: $first) {
+		repositoryCount
+		pageInfo { hasNextPage,  endCursor }
+		nodes { ... on Repository { ...RepositoryFields } }
+	}
+}`)
+	return b.String()
+}
+
 // GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
 // from the GitHub GraphQL API and returns a slice of repositories.
 // If a repository is not found, it will return an error.
@@ -388,8 +476,9 @@ func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners 
 	var result map[string]*Repository
 	err = c.requestGraphQL(ctx, query, map[string]interface{}{}, &result)
 	if err != nil {
-		if gqlErrs, ok := err.(graphqlErrors); ok {
-			for _, err2 := range gqlErrs {
+		var e graphqlErrors
+		if errors.As(err, &e) {
+			for _, err2 := range e {
 				if err2.Type == graphqlErrTypeNotFound {
 					log15.Warn("GitHub repository not found", "error", err2)
 					continue

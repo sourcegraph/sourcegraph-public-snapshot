@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/pathmatch"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 // TextSearchOptions contains common options for text search commands.
@@ -82,9 +83,9 @@ type RawLogDiffSearchOptions struct {
 
 // LogCommitSearchResult describes a matching diff from (Repository).RawLogDiffSearch.
 type LogCommitSearchResult struct {
-	Commit         Commit      // the commit whose diff was matched
-	Diff           *RawDiff    // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
-	DiffHighlights []Highlight // highlighted query matches in the diff
+	Commit         gitapi.Commit // the commit whose diff was matched
+	Diff           *RawDiff      // the diff, with non-matching/irrelevant portions deleted (respecting diff syntax)
+	DiffHighlights []Highlight   // highlighted query matches in the diff
 
 	// Refs is the list of ref names of this commit (from `git log --decorate`).
 	Refs []string
@@ -189,7 +190,7 @@ func doLogDiffSearchStream(ctx context.Context, repo api.RepoName, opt RawLogDif
 	defer func() {
 		// We do best-effort in case of timeout. So we clear out the error and
 		// indicate the results are incomplete.
-		if err != nil && errors.Is(err, context.DeadlineExceeded) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			c <- LogCommitSearchEvent{Complete: false}
 			complete = false
 			err = nil
@@ -226,17 +227,17 @@ func doLogDiffSearchStream(ctx context.Context, repo api.RepoName, opt RawLogDif
 		}
 	}
 	if opt.FormatArgs != nil && !isValidRawLogDiffSearchFormatArgs(opt.FormatArgs) {
-		return false, fmt.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
+		return false, errors.Errorf("invalid FormatArgs: %q", opt.FormatArgs)
 	}
 	for _, arg := range opt.Args {
 		if arg == "--" {
-			return false, fmt.Errorf("invalid Args (must not contain \"--\" element): %q", opt.Args)
+			return false, errors.Errorf("invalid Args (must not contain \"--\" element): %q", opt.Args)
 		}
 	}
 
 	if opt.Query.IsCaseSensitive != opt.Paths.IsCaseSensitive {
 		// These options can't be set separately in `git log`, so fail.
-		return false, fmt.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
+		return false, errors.Errorf("invalid options: Query.IsCaseSensitive != Paths.IsCaseSensitive")
 	}
 
 	// We do a search with git log returning just the commits (and source sha).
@@ -294,7 +295,7 @@ func rawLogSearchCmd(ctx context.Context, repo api.RepoName, opt RawLogDiffSearc
 	args := []string{"log"}
 	args = append(args, opt.Args...)
 	if !isAllowedGitCmd(args) {
-		return nil, fmt.Errorf("command failed: %q is not a allowed git command", args)
+		return nil, errors.Errorf("command failed: %q is not a allowed git command", args)
 	}
 
 	// TODO(keegan 2021-02-04) Now that git log directly supports a format
@@ -373,7 +374,7 @@ func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchO
 		showArgs = append(showArgs, "--patch")
 	}
 	if !isAllowedGitCmd(showArgs) {
-		return nil, false, fmt.Errorf("command failed: %q is not a allowed git command", showArgs)
+		return nil, false, errors.Errorf("command failed: %q is not a allowed git command", showArgs)
 	}
 	showCmd := gitserver.DefaultClient.Command("git", showArgs...)
 	showCmd.Repo = repo
@@ -382,7 +383,7 @@ func rawShowSearch(ctx context.Context, repo api.RepoName, opt RawLogDiffSearchO
 		return nil, complete, err
 	}
 	for len(data) > 0 {
-		var commit *Commit
+		var commit *gitapi.Commit
 		var refs []string
 		var err error
 		commit, refs, data, err = parseCommitFromLog(data)
@@ -471,6 +472,9 @@ func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
 	if opt.Query.Pattern != "" && opt.Diff {
 		var queryArg string
 		if opt.MatchChangedOccurrenceCount {
+			if opt.Query.IsRegExp {
+				args = append(args, "--pickaxe-regex")
+			}
 			queryArg = "-S"
 		} else {
 			queryArg = "-G"
@@ -478,9 +482,6 @@ func logDiffCommonArgs(opt RawLogDiffSearchOptions) []string {
 		args = append(args, queryArg+opt.Query.Pattern)
 		if !opt.Query.IsCaseSensitive {
 			args = append(args, "--regexp-ignore-case")
-		}
-		if opt.Query.IsRegExp {
-			args = append(args, "--pickaxe-regex")
 		}
 	}
 	if opt.Paths.IsRegExp {

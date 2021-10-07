@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestUpdatePackages(t *testing.T) {
@@ -19,7 +19,7 @@ func TestUpdatePackages(t *testing.T) {
 	// for foreign key relation
 	insertUploads(t, db, Upload{ID: 42})
 
-	if err := store.UpdatePackages(context.Background(), 42, []semantic.Package{
+	if err := store.UpdatePackages(context.Background(), 42, []precise.Package{
 		{Scheme: "s0", Name: "n0", Version: "v0"},
 		{Scheme: "s1", Name: "n1", Version: "v1"},
 		{Scheme: "s2", Name: "n2", Version: "v2"},

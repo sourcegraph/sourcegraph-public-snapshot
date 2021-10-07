@@ -5,13 +5,14 @@ type TypeDefinitionResult struct {
 }
 
 func NewTypeDefinitionResult(id uint64) TypeDefinitionResult {
-	return TypeDefinitionResult{Vertex{
-		Element: Element{
-			ID:   id,
-			Type: ElementVertex,
-		},
-		Label: VertexTypeDefinitionResult,
-	}}
+	return TypeDefinitionResult{
+		Vertex{
+			Element: Element{
+				ID:   id,
+				Type: ElementVertex,
+			},
+			Label: VertexTypeDefinitionResult,
+		}}
 }
 
 type TextDocumentTypeDefinition struct {

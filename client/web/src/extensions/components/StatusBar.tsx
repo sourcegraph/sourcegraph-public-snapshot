@@ -2,8 +2,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import MenuLeftIcon from 'mdi-react/MenuLeftIcon'
-import MenuRightIcon from 'mdi-react/MenuRightIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Observable, timer } from 'rxjs'
@@ -15,7 +13,6 @@ import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/feature
 import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -23,6 +20,7 @@ import { useCarousel } from '../../components/useCarousel'
 interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     getStatusBarItems: () => Observable<StatusBarItemWithKey[] | 'loading'>
     className?: string
+    statusBarItemClassName?: string
     /**
      * Used to determine when to restart timer to show "Install extensions"
      * message when there are no status bar items. Only necessary when status bar
@@ -36,16 +34,21 @@ interface StatusBarProps extends ExtensionsControllerProps<'extHostAPI' | 'execu
 
     /** Whether to hide the status bar while extensions are loading. */
     hideWhileInitializing?: boolean
+
+    /** If specified, this text will be displayed in a badge left of the status bar items */
+    badgeText?: string
 }
 
 export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     getStatusBarItems,
     className,
+    statusBarItemClassName,
     extensionsController,
     uri,
     location,
     statusBarRef,
     hideWhileInitializing,
+    badgeText,
 }) => {
     const statusBarItems = useObservable(useMemo(() => getStatusBarItems(), [getStatusBarItems]))
 
@@ -75,11 +78,6 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
         onPositiveClicked,
     } = useCarousel({ direction: 'leftToRight' })
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
-    const LeftIcon = isRedesignEnabled ? ChevronLeftIcon : MenuLeftIcon
-    const RightIcon = isRedesignEnabled ? ChevronRightIcon : MenuRightIcon
-
     if (!hasEnoughTimePassed && hideWhileInitializing) {
         return null
     }
@@ -87,7 +85,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
     return (
         <div
             className={classNames(
-                'status-bar w-100 border-top d-flex',
+                'status-bar border-top',
                 'percy-hide', // TODO: Fix flaky status bar in Percy tests: https://github.com/sourcegraph/sourcegraph/issues/20751
                 className
             )}
@@ -109,10 +107,11 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className="btn btn-link status-bar__scroll border-0"
                         onClick={onNegativeClicked}
                     >
-                        <LeftIcon className="icon-inline" />
+                        <ChevronLeftIcon className="icon-inline" />
                     </button>
                 )}
                 <div className="status-bar__items d-flex align-items-center px-2" ref={carouselReference}>
+                    {badgeText && <p className="badge badge-secondary m-0">{badgeText}</p>}
                     {!!statusBarItems && statusBarItems !== 'loading' && statusBarItems.length > 0
                         ? statusBarItems.map(statusBarItem => (
                               <StatusBarItem
@@ -120,6 +119,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                                   statusBarItem={statusBarItem}
                                   extensionsController={extensionsController}
                                   location={location}
+                                  className={statusBarItemClassName}
                               />
                           ))
                         : hasEnoughTimePassed && (
@@ -139,7 +139,7 @@ export const StatusBar: React.FunctionComponent<StatusBarProps> = ({
                         className="btn btn-link status-bar__scroll border-0"
                         onClick={onPositiveClicked}
                     >
-                        <RightIcon className="icon-inline" />
+                        <ChevronRightIcon className="icon-inline" />
                     </button>
                 )}
             </ErrorBoundary>
@@ -154,7 +154,7 @@ const StatusBarItem: React.FunctionComponent<
         component?: JSX.Element
         location: H.Location
     } & ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>
-> = ({ statusBarItem, className = 'status-bar', component, extensionsController, location }) => {
+> = ({ statusBarItem, className, component, extensionsController, location }) => {
     const [commandState, setCommandState] = useState<'loading' | null>(null)
 
     const command = useMemo(() => statusBarItem.command, [statusBarItem.command])
@@ -183,14 +183,12 @@ const StatusBarItem: React.FunctionComponent<
 
     const noop = !command
 
-    const interactive = Boolean(command || statusBarItem.tooltip)
-
     return (
         <ButtonLink
             className={classNames(
-                `${className}__item h-100 d-flex align-items-center px-1 text-decoration-none`,
-                interactive && `${className}__item--interactive`,
-                noop && `${className}__item--noop`
+                'status-bar__item h-100 d-flex align-items-center px-1',
+                noop && 'status-bar__item--noop text-decoration-none',
+                className
             )}
             data-tooltip={statusBarItem.tooltip}
             onSelect={handleCommand}
@@ -199,7 +197,7 @@ const StatusBarItem: React.FunctionComponent<
             disabled={commandState === 'loading'}
         >
             {component || (
-                <small className={classNames(`${className}__text`, commandState === 'loading' && 'text-muted')}>
+                <small className={classNames('status-bar__text', commandState === 'loading' && 'text-muted')}>
                     {statusBarItem.text}
                 </small>
             )}

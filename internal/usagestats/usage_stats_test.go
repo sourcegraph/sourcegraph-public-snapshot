@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -124,7 +125,7 @@ func TestUserUsageStatistics_LogPageView(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, nil, nil)
+	err := logLocalEvent(context.Background(), db, "ViewRepo", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, json.RawMessage("{}"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +155,7 @@ func TestUserUsageStatistics_LogSearchQuery(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, nil, nil)
+	err := logLocalEvent(context.Background(), db, "SearchResultsQueried", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, json.RawMessage("{}"), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +175,7 @@ func TestUserUsageStatistics_LogCodeIntelAction(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, nil, nil)
+	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -194,7 +195,7 @@ func TestUserUsageStatistics_LogCodeHostIntegrationUsage(t *testing.T) {
 	user := types.User{
 		ID: 1,
 	}
-	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil, nil, nil)
+	err := logLocalEvent(context.Background(), db, "hover", "https://sourcegraph.example.com/", user.ID, "test-cookie-id", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -222,7 +223,7 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test single user
-	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil)
+	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,19 +237,19 @@ func TestUserUsageStatistics_getUsersActiveToday(t *testing.T) {
 	}
 
 	// Test multiple users, with repeats
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "test-cookie-id-3", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
 
 	if err != nil {
 		t.Fatal(err)
@@ -290,74 +291,74 @@ func TestUserUsageStatistics_DAUs_WAUs_MAUs(t *testing.T) {
 
 	// 2018/02/27 (2 users, 1 registered)
 	mockTimeNow(oneMonthFourDaysAgo)
-	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil)
+	err := logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/02/28 (2 users, 1 registered)
 	mockTimeNow(oneMonthThreeDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "30dd2661-2e73-4774-bc2b-7a126f360734", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/15 (2 users, 1 registered)
 	mockTimeNow(twoWeeksTwoDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "068ccbfa-8529-4fa7-859e-2c3514af2434", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/17 (2 users, 1 registered)
 	mockTimeNow(twoWeeksAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", 0, "b309dad0-b6f9-440d-bf0a-4cf38030ca70", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/26 (1 user, 1 registered)
 	mockTimeNow(fiveDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// 2018/03/28 (2 users, 2 registered)
 	mockTimeNow(threeDaysAgo)
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "ViewBlob", "https://sourcegraph.example.com/", user2.ID, "test-cookie-id-2", "WEB", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil, nil, nil)
+	err = logLocalEvent(ctx, db, "hover", "https://sourcegraph.example.com/", user1.ID, "test-cookie-id-1", "CODEHOSTINTEGRATION", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -482,7 +483,7 @@ func siteActivityCompare(got, want *types.SiteUsageStatistics) error {
 		return nil
 	}
 	if len(got.DAUs) != len(want.DAUs) || len(got.WAUs) != len(want.WAUs) || len(got.MAUs) != len(want.MAUs) {
-		return fmt.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs))
+		return errors.Errorf("site activities must be same length, got %d want %d (DAUs), got %d want %d (WAUs), got %d want %d (MAUs)", len(got.DAUs), len(want.DAUs), len(got.WAUs), len(want.WAUs), len(got.MAUs), len(want.MAUs))
 	}
 	if err := siteActivityPeriodSliceCompare("DAUs", got.DAUs, want.DAUs); err != nil {
 		return err
@@ -498,7 +499,7 @@ func siteActivityCompare(got, want *types.SiteUsageStatistics) error {
 
 func siteActivityPeriodSliceCompare(label string, got, want []*types.SiteActivityPeriod) error {
 	if got == nil || want == nil {
-		return fmt.Errorf("%v slices can not be nil", label)
+		return errors.Errorf("%v slices can not be nil", label)
 	}
 	for i, v := range got {
 		if err := siteActivityPeriodCompare(label, v, want[i]); err != nil {
@@ -516,7 +517,7 @@ func siteActivityPeriodCompare(label string, got, want *types.SiteActivityPeriod
 		return nil
 	}
 	if got.StartTime != want.StartTime || got.UserCount != want.UserCount || got.RegisteredUserCount != want.RegisteredUserCount || got.AnonymousUserCount != want.AnonymousUserCount || got.IntegrationUserCount != want.IntegrationUserCount {
-		return fmt.Errorf("[%v] got %+v want %+v", label, got, want)
+		return errors.Errorf("[%v] got %+v want %+v", label, got, want)
 	}
 	return nil
 }

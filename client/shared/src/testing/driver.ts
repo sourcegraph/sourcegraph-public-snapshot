@@ -1,7 +1,7 @@
 import * as os from 'os'
 import * as path from 'path'
 
-import { percySnapshot as realPercySnapshot } from '@percy/puppeteer'
+import realPercySnapshot from '@percy/puppeteer'
 import * as jsonc from '@sqs/jsonc-parser'
 import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
@@ -176,7 +176,8 @@ export class Driver {
                                         !message
                                             .text()
                                             .includes('Warning: componentWillReceiveProps has been renamed') &&
-                                        !message.text().includes('React-Hot-Loader') &&
+                                        !message.text().includes('Download the Apollo DevTools') &&
+                                        !message.text().includes('debug') &&
                                         // These requests are expected to fail, we use them to check if the browser extension is installed.
                                         message.location().url !== 'chrome-extension://invalid/'
                                 ),
@@ -203,13 +204,22 @@ export class Driver {
         password: string
         email?: string
     }): Promise<void> {
-        await this.page.goto(this.sourcegraphBaseUrl)
+        /**
+         * Wait for redirects to complete to avoid using an outdated page URL.
+         *
+         * In case a user is not authenticated, and site-init is required, two redirects happen:
+         * 1. Redirect to /sign-in?returnTo=%2F
+         * 2. Redirect to /site-admin/init
+         */
+        await this.page.goto(this.sourcegraphBaseUrl, { waitUntil: 'networkidle0' })
         await this.page.evaluate(() => {
             localStorage.setItem('has-dismissed-browser-ext-toast', 'true')
             localStorage.setItem('has-dismissed-integrations-toast', 'true')
             localStorage.setItem('has-dismissed-survey-toast', 'true')
         })
+
         const url = new URL(this.page.url())
+
         if (url.pathname === '/site-admin/init') {
             await this.page.waitForSelector('.test-signup-form')
             if (email) {
@@ -224,7 +234,7 @@ export class Driver {
             // you back to the login page
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         } else if (url.pathname === '/sign-in') {
             await this.page.waitForSelector('.test-signin-form')
             await this.page.type('input', username)
@@ -232,7 +242,7 @@ export class Driver {
             // TODO(uwedeportivo): see comment above, same reason
             await delay(1000)
             await this.page.click('button[type=submit]')
-            await this.page.waitForNavigation({ timeout: 3 * 10000 })
+            await this.page.waitForNavigation({ timeout: 300000 })
         }
     }
 
@@ -244,13 +254,7 @@ export class Driver {
         await this.page.waitForSelector('.test-sourcegraph-url')
         await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
-        await this.page.waitForFunction(
-            () => {
-                const element = document.querySelector('.test-connection-status')
-                return element?.textContent?.includes('Connected')
-            },
-            { timeout: 5000 }
-        )
+        await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
     }
 
     public async close(): Promise<void> {
@@ -359,8 +363,8 @@ export class Driver {
         // Delete existing external services if there are any.
         if (externalServices.totalCount !== 0) {
             await this.page.goto(this.sourcegraphBaseUrl + '/site-admin/external-services')
-            await this.page.waitFor('.test-filtered-connection')
-            await this.page.waitForSelector('.test-filtered-connection__loader', { hidden: true })
+            await this.page.waitForSelector('[data-testid="filtered-connection"]')
+            await this.page.waitForSelector('[data-testid="filtered-connection-loader"]', { hidden: true })
 
             // Matches buttons for deleting external services named ${displayName}.
             const deleteButtonSelector = `[data-test-external-service-name="${displayName}"] .test-delete-external-service-button`
@@ -745,24 +749,26 @@ interface DriverOptions extends LaunchOptions {
     keepBrowser?: boolean
 }
 
-export async function createDriverForTest(options?: DriverOptions): Promise<Driver> {
+export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
+    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+
     // Apply defaults
-    options = {
-        ...getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools'),
+    const resolvedOptions: typeof config & typeof options = {
+        ...config,
         ...options,
     }
 
-    const { loadExtension } = options
+    const { loadExtension } = resolvedOptions
     const args: string[] = []
     const launchOptions: puppeteer.LaunchOptions = {
         ignoreHTTPSErrors: true,
-        ...options,
+        ...resolvedOptions,
         args,
         defaultViewport: null,
-        timeout: 30000,
+        timeout: 300000,
     }
     let browser: puppeteer.Browser
-    const browserName = options.browser || 'chrome'
+    const browserName = resolvedOptions.browser || 'chrome'
     if (browserName === 'firefox') {
         // Make sure CSP is disabled in FF preferences,
         // because Puppeteer uses new Function() to evaluate code
@@ -824,14 +830,14 @@ export async function createDriverForTest(options?: DriverOptions): Promise<Driv
 
     const page = await browser.newPage()
 
-    return new Driver(browser, page, options)
+    return new Driver(browser, page, resolvedOptions)
 }
 
 /**
  * Get the RevisionInfo (which contains the executable path) for the given
  * browser and revision string.
  */
-function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
+export function getPuppeteerBrowser(browserName: string, revision: string): RevisionInfo {
     const browserFetcher = puppeteer.createBrowserFetcher({ product: browserName })
     const revisionInfo = browserFetcher.revisionInfo(revision)
     if (!revisionInfo.local) {

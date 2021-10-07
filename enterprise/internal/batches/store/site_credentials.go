@@ -4,13 +4,18 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential, credential auth.Authenticator) error {
+func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential, credential auth.Authenticator) (err error) {
+	ctx, endObservation := s.operations.createSiteCredential.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	if c.CreatedAt.IsZero() {
 		c.CreatedAt = s.now()
 	}
@@ -59,7 +64,12 @@ func createSiteCredentialQuery(c *btypes.SiteCredential) *sqlf.Query {
 	)
 }
 
-func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) error {
+func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) (err error) {
+	ctx, endObservation := s.operations.deleteSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	res, err := s.ExecResult(ctx, deleteSiteCredentialQuery(id))
 	if err != nil {
 		return err
@@ -95,11 +105,16 @@ type GetSiteCredentialOpts struct {
 	ExternalServiceID   string
 }
 
-func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (*btypes.SiteCredential, error) {
+func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (sc *btypes.SiteCredential, err error) {
+	ctx, endObservation := s.operations.getSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getSiteCredentialQuery(opts)
 
 	cred := btypes.SiteCredential{Key: s.key}
-	err := s.query(ctx, q, func(sc scanner) error { return scanSiteCredential(&cred, sc) })
+	err = s.query(ctx, q, func(sc scanner) error { return scanSiteCredential(&cred, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +168,9 @@ type ListSiteCredentialsOpts struct {
 }
 
 func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
+	ctx, endObservation := s.operations.listSiteCredentials.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := listSiteCredentialsQuery(opts)
 
 	cs = make([]*btypes.SiteCredential, 0, opts.DBLimit())
@@ -212,7 +230,12 @@ func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 	)
 }
 
-func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredential) error {
+func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredential) (err error) {
+	ctx, endObservation := s.operations.updateSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(c.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	c.UpdatedAt = s.now()
 
 	updated := &btypes.SiteCredential{Key: s.key}

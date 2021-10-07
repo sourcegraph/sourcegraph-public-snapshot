@@ -8,6 +8,8 @@ import (
 )
 
 func GitHubProxy() *monitoring.Container {
+	const containerName = "github-proxy"
+
 	return &monitoring.Container{
 		Name:        "github-proxy",
 		Title:       "GitHub Proxy",
@@ -31,52 +33,11 @@ func GitHubProxy() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleGolangMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.GoGoroutines("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.GoGcDuration("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("github-proxy", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
 	}
 }

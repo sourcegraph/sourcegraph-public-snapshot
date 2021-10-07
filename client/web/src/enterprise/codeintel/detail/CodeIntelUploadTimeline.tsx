@@ -4,8 +4,10 @@ import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import React, { FunctionComponent, useMemo } from 'react'
 
-import { Timeline, TimelineStage } from '../../../components/Timeline'
-import { LsifUploadFields, LSIFUploadState, Maybe } from '../../../graphql-operations'
+import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
+import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
+
+import { LsifUploadFields } from '../../../graphql-operations'
 
 export interface CodeIntelUploadTimelineProps {
     upload: LsifUploadFields
@@ -23,7 +25,7 @@ export const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineP
     now,
     className,
 }) => {
-    let failedStage: Maybe<FailedStage> = null
+    let failedStage: FailedStage | null = null
     if (upload.state === LSIFUploadState.ERRORED && upload.startedAt === null) {
         failedStage = FailedStage.UPLOADING
     } else if (upload.state === LSIFUploadState.ERRORED && upload.startedAt !== null) {
@@ -41,7 +43,7 @@ export const CodeIntelUploadTimeline: FunctionComponent<CodeIntelUploadTimelineP
     return <Timeline stages={stages} now={now} className={className} />
 }
 
-const uploadStages = (upload: LsifUploadFields, failedStage: Maybe<FailedStage>): TimelineStage[] => [
+const uploadStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
         icon: <FileUploadIcon />,
         text:
@@ -61,7 +63,7 @@ const uploadStages = (upload: LsifUploadFields, failedStage: Maybe<FailedStage>)
     },
 ]
 
-const processingStages = (upload: LsifUploadFields, failedStage: Maybe<FailedStage>): TimelineStage[] => [
+const processingStages = (upload: LsifUploadFields, failedStage: FailedStage | null): TimelineStage[] => [
     {
         icon: <ProgressClockIcon />,
         text:

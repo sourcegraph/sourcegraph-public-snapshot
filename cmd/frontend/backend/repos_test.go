@@ -15,6 +15,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -72,8 +74,8 @@ func TestRepos_Add(t *testing.T) {
 	var s repos
 	ctx := testContext()
 
-	const repoName = "my/repo"
-	const newName = "my/repo2"
+	const repoName = "github.com/my/repo"
+	const newName = "github.com/my/repo2"
 
 	calledRepoLookup := false
 	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
@@ -87,6 +89,14 @@ func TestRepos_Add(t *testing.T) {
 	}
 	defer func() { repoupdater.MockRepoLookup = nil }()
 
+	gitserver.MockIsRepoCloneable = func(name api.RepoName) error {
+		if name != repoName {
+			t.Errorf("got %q, want %q", name, repoName)
+		}
+		return nil
+	}
+	defer func() { gitserver.MockIsRepoCloneable = nil }()
+
 	// The repoName could change if it has been renamed on the code host
 	addedName, err := s.Add(ctx, repoName)
 	if err != nil {
@@ -97,6 +107,31 @@ func TestRepos_Add(t *testing.T) {
 	}
 	if !calledRepoLookup {
 		t.Error("!calledRepoLookup")
+	}
+}
+
+func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
+	var s repos
+	ctx := testContext()
+
+	const repoName = "github.private.corp/my/repo"
+
+	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		t.Fatal("unexpected call to repo-updater for non public code host")
+		return nil, nil
+	}
+	defer func() { repoupdater.MockRepoLookup = nil }()
+
+	gitserver.MockIsRepoCloneable = func(name api.RepoName) error {
+		t.Fatal("unexpected call to gitserver for non public code host")
+		return nil
+	}
+	defer func() { gitserver.MockIsRepoCloneable = nil }()
+
+	// The repoName could change if it has been renamed on the code host
+	_, err := s.Add(ctx, repoName)
+	if !errcode.IsNotFound(err) {
+		t.Fatalf("expected a not found error, got: %v", err)
 	}
 }
 

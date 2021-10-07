@@ -7,10 +7,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
@@ -30,19 +30,20 @@ type Aggregator struct {
 	parentStream streaming.Sender
 	db           dbutil.DB
 
-	mu      sync.Mutex
-	results []result.Match
-	stats   streaming.Stats
-	errors  *multierror.Error
+	mu         sync.Mutex
+	results    []result.Match
+	stats      streaming.Stats
+	errors     *multierror.Error
+	matchCount int
 }
 
 // Get finalises aggregation over the stream and returns the aggregated
 // result. It should only be called once each do* function is finished
 // running.
-func (a *Aggregator) Get() ([]result.Match, streaming.Stats, *multierror.Error) {
+func (a *Aggregator) Get() ([]result.Match, streaming.Stats, int, *multierror.Error) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	return a.results, a.stats, a.errors
+	return a.results, a.stats, a.matchCount, a.errors
 }
 
 func (a *Aggregator) Send(event streaming.SearchEvent) {
@@ -58,6 +59,7 @@ func (a *Aggregator) Send(event streaming.SearchEvent) {
 		a.results = append(a.results, event.Results...)
 	}
 
+	a.matchCount += len(event.Results)
 	a.stats.Update(&event.Stats)
 }
 
@@ -77,6 +79,30 @@ func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParamete
 
 	err = SearchRepositories(ctx, args, limit, a)
 	return errors.Wrap(err, "repository search failed")
+}
+
+func jobName(job Job) string {
+	switch job.(type) {
+	case *unindexed.StructuralSearch:
+		return "Structural"
+	default:
+		return "Unknown"
+	}
+}
+
+func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSearchMode) (err error) {
+	name := jobName(job)
+	tr, ctx := trace.New(ctx, "DoSearch", name)
+	tr.LogFields(trace.Stringer("global_search_mode", mode))
+	defer func() {
+		a.Error(err)
+		tr.SetErrorIfNotContext(err)
+		tr.Finish()
+	}()
+
+	err = job.Run(ctx, a)
+	return errors.Wrap(err, jobName(job)+" search failed")
+
 }
 
 func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) (err error) {
@@ -100,44 +126,7 @@ func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextPara
 		tr.Finish()
 	}()
 
-	isDefaultStructuralSearch := args.PatternInfo.IsStructuralPat && args.PatternInfo.FileMatchLimit == search.DefaultMaxSearchResults
-
-	if !isDefaultStructuralSearch {
-		return unindexed.SearchFilesInRepos(ctx, args, a)
-	}
-
-	// For structural search with default limits we retry if we get no results.
-
-	fileMatches, stats, err := unindexed.SearchFilesInReposBatch(ctx, args)
-
-	if len(fileMatches) == 0 && err == nil {
-		// No results for structural search? Automatically search again and force Zoekt
-		// to resolve more potential file matches by setting a higher FileMatchLimit.
-		patternCopy := *(args.PatternInfo)
-		patternCopy.FileMatchLimit = 1000
-		argsCopy := *args
-		argsCopy.PatternInfo = &patternCopy
-		args = &argsCopy
-
-		fileMatches, stats, err = unindexed.SearchFilesInReposBatch(ctx, args)
-
-		if len(fileMatches) == 0 {
-			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
-			stats.IsLimitHit = false // Ensure we don't display "Show more".
-		}
-	}
-
-	matches := make([]result.Match, 0, len(fileMatches))
-	for _, fm := range fileMatches {
-		matches = append(matches, fm)
-	}
-
-	a.Send(streaming.SearchEvent{
-		Results: matches,
-		Stats:   stats,
-	})
-	return err
+	return unindexed.SearchFilesInRepos(ctx, args, a)
 }
 
 func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters) (err error) {
@@ -183,11 +172,6 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 }
 
 func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
-	repos, err := args.RepoPromise.Get(ctx)
-	if err != nil {
-		return err
-	}
-
 	hasTimeFilter := false
 	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
 		hasTimeFilter = true
@@ -196,11 +180,11 @@ func checkDiffCommitSearchLimits(ctx context.Context, args *search.TextParameter
 		hasTimeFilter = true
 	}
 
-	limits := searchrepos.SearchLimits()
-	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(repos) > max {
+	limits := search.SearchLimits(conf.Get())
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && len(args.Repos) > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}
 	}
-	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(repos) > max {
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && len(args.Repos) > max {
 		return &TimeLimitError{ResultType: resultType, Max: max}
 	}
 	return nil

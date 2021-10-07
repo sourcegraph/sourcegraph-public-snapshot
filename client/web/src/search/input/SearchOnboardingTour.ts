@@ -7,21 +7,18 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Shepherd from 'shepherd.js'
 import Tour from 'shepherd.js/src/types/tour'
 
-import { LANGUAGES } from '@sourcegraph/shared/src/search/query/filters'
+import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 
-import { daysActiveCount } from '../../marketing/util'
+import { getDaysActiveCount } from '../../marketing/util'
+import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isMacPlatform } from '../../util'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
-
-export const HAS_CANCELLED_TOUR_KEY = 'has-cancelled-onboarding-tour'
-export const HAS_COMPLETED_TOUR_KEY = 'has-completed-onboarding-tour'
 
 const tourOptions: Shepherd.Tour.TourOptions = {
     ...defaultTourOptions,
@@ -51,7 +48,7 @@ function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; conten
     element.append(close)
     element.querySelector('.tour-card__close')?.addEventListener('click', () => {
         options.tour.cancel()
-        eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber })
+        eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber }, { stage: options.stepNumber })
     })
 
     return element
@@ -133,7 +130,7 @@ const shouldAdvanceLangOrRepoStep = (currentTourStep: TourStepID | undefined, qu
         return (
             filterToken.field.value === 'lang' &&
             filterToken.value?.type === 'literal' &&
-            LANGUAGES.includes(filterToken.value?.value)
+            ALL_LANGUAGES.includes(filterToken.value?.value)
         )
     }
     return false
@@ -322,7 +319,6 @@ interface UseSearchOnboardingTourReturnValue
      * (`false` on the search homepage when the tour is active).
      */
     shouldFocusQueryInput: boolean
-    isSearchOnboardingTourVisible: boolean
 }
 
 /**
@@ -338,10 +334,9 @@ export const useSearchOnboardingTour = ({
 }: UseSearchOnboardingTourOptions): UseSearchOnboardingTourReturnValue => {
     const tour = useTourWithSteps({ setQueryState })
     // True when the user has manually cancelled the tour
-    const [hasCancelledTour, setHasCancelledTour] = useLocalStorage(HAS_CANCELLED_TOUR_KEY, false)
-    // True when the user has completed the tour on the search results page
-    const [, setHasCompletedTour] = useLocalStorage(HAS_COMPLETED_TOUR_KEY, false)
-    const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
+    const [hasCancelledTour, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
+
+    const shouldShowTour = useMemo(() => showOnboardingTour && getDaysActiveCount() === 1 && !hasCancelledTour, [
         showOnboardingTour,
         hasCancelledTour,
     ])
@@ -353,21 +348,16 @@ export const useSearchOnboardingTour = ({
         }
     }, [shouldShowTour, tour])
 
-    // Hook into Tour cancellation and completion events.
+    // Hook into Tour cancellation event.
     useEffect(() => {
         const onCancelled = (): void => {
             setHasCancelledTour(true)
         }
-        const onCompleted = (): void => {
-            setHasCompletedTour(true)
-        }
         tour.on('cancel', onCancelled)
-        tour.on('complete', onCompleted)
         return () => {
             tour.off('cancel', onCancelled)
-            tour.off('complete', onCompleted)
         }
-    }, [tour, setHasCompletedTour, setHasCancelledTour])
+    }, [tour, setHasCancelledTour])
 
     // 'Complete' tour on unmount.
     useEffect(
@@ -424,6 +414,5 @@ export const useSearchOnboardingTour = ({
         onFocus,
         onSuggestionsInitialized,
         shouldFocusQueryInput: !shouldShowTour,
-        isSearchOnboardingTourVisible: shouldShowTour,
     }
 }

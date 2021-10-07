@@ -1,11 +1,13 @@
+import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { FunctionComponent } from 'react'
-
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { Link } from 'react-router-dom'
 
 import { LsifUploadFields } from '../../../graphql-operations'
 import { CodeIntelState } from '../shared/CodeIntelState'
 import { CodeIntelUploadOrIndexLastActivity } from '../shared/CodeIntelUploadOrIndexLastActivity'
+
+import styles from './CodeIntelAssociatedIndex.module.scss'
 
 export interface CodeIntelAssociatedIndexProps {
     node: LsifUploadFields
@@ -16,10 +18,8 @@ export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedInde
     node.associatedIndex && node.projectRoot ? (
         <>
             <div className="list-group position-relative">
-                <div className="codeintel-associated-index__grid mb-3">
-                    <span className="codeintel-associated-index__separator" />
-
-                    <div className="d-flex flex-column codeintel-associated-index__information">
+                <div className={classNames(styles.grid, 'mb-3')}>
+                    <div className={classNames(styles.information, 'd-flex flex-column')}>
                         <div className="m-0">
                             <h3 className="m-0 d-block d-md-inline">This upload was created by an auto-indexing job</h3>
                         </div>
@@ -34,7 +34,7 @@ export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedInde
                         </div>
                     </div>
 
-                    <span className="d-none d-md-inline codeintel-associated-index__state">
+                    <span className={classNames(styles.state, 'd-none d-md-inline')}>
                         <CodeIntelState node={node.associatedIndex} className="d-flex flex-column align-items-center" />
                     </span>
                     <span>
@@ -45,7 +45,7 @@ export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedInde
                         </Link>
                     </span>
 
-                    <span className="codeintel-associated-index__separator" />
+                    <span className={styles.separator} />
                 </div>
             </div>
         </>

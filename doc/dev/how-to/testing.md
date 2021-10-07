@@ -1,6 +1,10 @@
 # Testing
 
-_This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)"._
+> NOTE: This documentation is specifically for the tests in the [sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph) repository. For our general testing principles, please see "[Testing Principles](../background-information/testing_principles.md)".
+
+<span class="virtual-br"></span>
+
+> NOTE: To learn more about our CI pipelines where these tests get run, please see "[Buildkite pipelines](../background-information/continuous_integration.md#buildkite-pipelines)".
 
 ## Backend tests
 
@@ -128,8 +132,8 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 To run integration tests for the web app:
 
 1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-  - Alternatively, `yarn build-web` will only build a bundle once.
-  - If you need to build an Enterprise bundle (to test Enterprise features such as Batch Changes), set `ENTERPRISE=1`
+    - Alternatively, `yarn build-web` will only build a bundle once.
+1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
 1. Run `yarn test-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
@@ -331,5 +335,5 @@ To manually test against a Kubernetes cluster, use https://k8s.sgdev.org.
 For testing with a single Docker image, run something like
 
 ```
-IMAGE=sourcegraph/server:3.29.1 ./dev/run-server-image.sh
+IMAGE=sourcegraph/server:3.32.0 ./dev/run-server-image.sh
 ```

@@ -21,6 +21,9 @@ type MockAPI struct {
 	// AlertsFunc is an instance of a mock function object controlling the
 	// behavior of the method Alerts.
 	AlertsFunc *APIAlertsFunc
+	// BuildinfoFunc is an instance of a mock function object controlling
+	// the behavior of the method Buildinfo.
+	BuildinfoFunc *APIBuildinfoFunc
 	// CleanTombstonesFunc is an instance of a mock function object
 	// controlling the behavior of the method CleanTombstones.
 	CleanTombstonesFunc *APICleanTombstonesFunc
@@ -45,6 +48,9 @@ type MockAPI struct {
 	// QueryFunc is an instance of a mock function object controlling the
 	// behavior of the method Query.
 	QueryFunc *APIQueryFunc
+	// QueryExemplarsFunc is an instance of a mock function object
+	// controlling the behavior of the method QueryExemplars.
+	QueryExemplarsFunc *APIQueryExemplarsFunc
 	// QueryRangeFunc is an instance of a mock function object controlling
 	// the behavior of the method QueryRange.
 	QueryRangeFunc *APIQueryRangeFunc
@@ -85,6 +91,11 @@ func NewMockAPI() *MockAPI {
 				return v1.AlertsResult{}, nil
 			},
 		},
+		BuildinfoFunc: &APIBuildinfoFunc{
+			defaultHook: func(context.Context) (v1.BuildinfoResult, error) {
+				return v1.BuildinfoResult{}, nil
+			},
+		},
 		CleanTombstonesFunc: &APICleanTombstonesFunc{
 			defaultHook: func(context.Context) error {
 				return nil
@@ -106,12 +117,12 @@ func NewMockAPI() *MockAPI {
 			},
 		},
 		LabelNamesFunc: &APILabelNamesFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error) {
+			defaultHook: func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error) {
 				return nil, nil, nil
 			},
 		},
 		LabelValuesFunc: &APILabelValuesFunc{
-			defaultHook: func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
+			defaultHook: func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
 				return nil, nil, nil
 			},
 		},
@@ -123,6 +134,11 @@ func NewMockAPI() *MockAPI {
 		QueryFunc: &APIQueryFunc{
 			defaultHook: func(context.Context, string, time.Time) (model.Value, v1.Warnings, error) {
 				return nil, nil, nil
+			},
+		},
+		QueryExemplarsFunc: &APIQueryExemplarsFunc{
+			defaultHook: func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error) {
+				return nil, nil
 			},
 		},
 		QueryRangeFunc: &APIQueryRangeFunc{
@@ -178,6 +194,9 @@ func NewMockAPIFrom(i v1.API) *MockAPI {
 		AlertsFunc: &APIAlertsFunc{
 			defaultHook: i.Alerts,
 		},
+		BuildinfoFunc: &APIBuildinfoFunc{
+			defaultHook: i.Buildinfo,
+		},
 		CleanTombstonesFunc: &APICleanTombstonesFunc{
 			defaultHook: i.CleanTombstones,
 		},
@@ -201,6 +220,9 @@ func NewMockAPIFrom(i v1.API) *MockAPI {
 		},
 		QueryFunc: &APIQueryFunc{
 			defaultHook: i.Query,
+		},
+		QueryExemplarsFunc: &APIQueryExemplarsFunc{
+			defaultHook: i.QueryExemplars,
 		},
 		QueryRangeFunc: &APIQueryRangeFunc{
 			defaultHook: i.QueryRange,
@@ -436,6 +458,111 @@ func (c APIAlertsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c APIAlertsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// APIBuildinfoFunc describes the behavior when the Buildinfo method of the
+// parent MockAPI instance is invoked.
+type APIBuildinfoFunc struct {
+	defaultHook func(context.Context) (v1.BuildinfoResult, error)
+	hooks       []func(context.Context) (v1.BuildinfoResult, error)
+	history     []APIBuildinfoFuncCall
+	mutex       sync.Mutex
+}
+
+// Buildinfo delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAPI) Buildinfo(v0 context.Context) (v1.BuildinfoResult, error) {
+	r0, r1 := m.BuildinfoFunc.nextHook()(v0)
+	m.BuildinfoFunc.appendCall(APIBuildinfoFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Buildinfo method of
+// the parent MockAPI instance is invoked and the hook queue is empty.
+func (f *APIBuildinfoFunc) SetDefaultHook(hook func(context.Context) (v1.BuildinfoResult, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Buildinfo method of the parent MockAPI instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *APIBuildinfoFunc) PushHook(hook func(context.Context) (v1.BuildinfoResult, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *APIBuildinfoFunc) SetDefaultReturn(r0 v1.BuildinfoResult, r1 error) {
+	f.SetDefaultHook(func(context.Context) (v1.BuildinfoResult, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *APIBuildinfoFunc) PushReturn(r0 v1.BuildinfoResult, r1 error) {
+	f.PushHook(func(context.Context) (v1.BuildinfoResult, error) {
+		return r0, r1
+	})
+}
+
+func (f *APIBuildinfoFunc) nextHook() func(context.Context) (v1.BuildinfoResult, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *APIBuildinfoFunc) appendCall(r0 APIBuildinfoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of APIBuildinfoFuncCall objects describing the
+// invocations of this function.
+func (f *APIBuildinfoFunc) History() []APIBuildinfoFuncCall {
+	f.mutex.Lock()
+	history := make([]APIBuildinfoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// APIBuildinfoFuncCall is an object that describes an invocation of method
+// Buildinfo on an instance of MockAPI.
+type APIBuildinfoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 v1.BuildinfoResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c APIBuildinfoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c APIBuildinfoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -866,23 +993,23 @@ func (c APIFlagsFuncCall) Results() []interface{} {
 // APILabelNamesFunc describes the behavior when the LabelNames method of
 // the parent MockAPI instance is invoked.
 type APILabelNamesFunc struct {
-	defaultHook func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error)
-	hooks       []func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error)
+	defaultHook func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error)
+	hooks       []func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error)
 	history     []APILabelNamesFuncCall
 	mutex       sync.Mutex
 }
 
 // LabelNames delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockAPI) LabelNames(v0 context.Context, v1 time.Time, v2 time.Time) ([]string, v1.Warnings, error) {
-	r0, r1, r2 := m.LabelNamesFunc.nextHook()(v0, v1, v2)
-	m.LabelNamesFunc.appendCall(APILabelNamesFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockAPI) LabelNames(v0 context.Context, v1 []string, v2 time.Time, v3 time.Time) ([]string, v1.Warnings, error) {
+	r0, r1, r2 := m.LabelNamesFunc.nextHook()(v0, v1, v2, v3)
+	m.LabelNamesFunc.appendCall(APILabelNamesFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the LabelNames method of
 // the parent MockAPI instance is invoked and the hook queue is empty.
-func (f *APILabelNamesFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error)) {
+func (f *APILabelNamesFunc) SetDefaultHook(hook func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error)) {
 	f.defaultHook = hook
 }
 
@@ -890,7 +1017,7 @@ func (f *APILabelNamesFunc) SetDefaultHook(hook func(context.Context, time.Time,
 // LabelNames method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *APILabelNamesFunc) PushHook(hook func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error)) {
+func (f *APILabelNamesFunc) PushHook(hook func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -899,7 +1026,7 @@ func (f *APILabelNamesFunc) PushHook(hook func(context.Context, time.Time, time.
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *APILabelNamesFunc) SetDefaultReturn(r0 []string, r1 v1.Warnings, r2 error) {
-	f.SetDefaultHook(func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error) {
+	f.SetDefaultHook(func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
@@ -907,12 +1034,12 @@ func (f *APILabelNamesFunc) SetDefaultReturn(r0 []string, r1 v1.Warnings, r2 err
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *APILabelNamesFunc) PushReturn(r0 []string, r1 v1.Warnings, r2 error) {
-	f.PushHook(func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error) {
+	f.PushHook(func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *APILabelNamesFunc) nextHook() func(context.Context, time.Time, time.Time) ([]string, v1.Warnings, error) {
+func (f *APILabelNamesFunc) nextHook() func(context.Context, []string, time.Time, time.Time) ([]string, v1.Warnings, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -950,10 +1077,13 @@ type APILabelNamesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 time.Time
+	Arg1 []string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
@@ -968,7 +1098,7 @@ type APILabelNamesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c APILabelNamesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -980,23 +1110,23 @@ func (c APILabelNamesFuncCall) Results() []interface{} {
 // APILabelValuesFunc describes the behavior when the LabelValues method of
 // the parent MockAPI instance is invoked.
 type APILabelValuesFunc struct {
-	defaultHook func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)
-	hooks       []func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)
+	defaultHook func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)
+	hooks       []func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)
 	history     []APILabelValuesFuncCall
 	mutex       sync.Mutex
 }
 
 // LabelValues delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockAPI) LabelValues(v0 context.Context, v1 string, v2 time.Time, v3 time.Time) (model.LabelValues, v1.Warnings, error) {
-	r0, r1, r2 := m.LabelValuesFunc.nextHook()(v0, v1, v2, v3)
-	m.LabelValuesFunc.appendCall(APILabelValuesFuncCall{v0, v1, v2, v3, r0, r1, r2})
+func (m *MockAPI) LabelValues(v0 context.Context, v1 string, v2 []string, v3 time.Time, v4 time.Time) (model.LabelValues, v1.Warnings, error) {
+	r0, r1, r2 := m.LabelValuesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.LabelValuesFunc.appendCall(APILabelValuesFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the LabelValues method
 // of the parent MockAPI instance is invoked and the hook queue is empty.
-func (f *APILabelValuesFunc) SetDefaultHook(hook func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)) {
+func (f *APILabelValuesFunc) SetDefaultHook(hook func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)) {
 	f.defaultHook = hook
 }
 
@@ -1004,7 +1134,7 @@ func (f *APILabelValuesFunc) SetDefaultHook(hook func(context.Context, string, t
 // LabelValues method of the parent MockAPI instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *APILabelValuesFunc) PushHook(hook func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)) {
+func (f *APILabelValuesFunc) PushHook(hook func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1013,7 +1143,7 @@ func (f *APILabelValuesFunc) PushHook(hook func(context.Context, string, time.Ti
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *APILabelValuesFunc) SetDefaultReturn(r0 model.LabelValues, r1 v1.Warnings, r2 error) {
-	f.SetDefaultHook(func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
+	f.SetDefaultHook(func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
@@ -1021,12 +1151,12 @@ func (f *APILabelValuesFunc) SetDefaultReturn(r0 model.LabelValues, r1 v1.Warnin
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *APILabelValuesFunc) PushReturn(r0 model.LabelValues, r1 v1.Warnings, r2 error) {
-	f.PushHook(func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
+	f.PushHook(func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *APILabelValuesFunc) nextHook() func(context.Context, string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
+func (f *APILabelValuesFunc) nextHook() func(context.Context, string, []string, time.Time, time.Time) (model.LabelValues, v1.Warnings, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1067,10 +1197,13 @@ type APILabelValuesFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 time.Time
+	Arg2 []string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 time.Time
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 model.LabelValues
@@ -1085,7 +1218,7 @@ type APILabelValuesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c APILabelValuesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -1317,6 +1450,121 @@ func (c APIQueryFuncCall) Args() []interface{} {
 // invocation.
 func (c APIQueryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// APIQueryExemplarsFunc describes the behavior when the QueryExemplars
+// method of the parent MockAPI instance is invoked.
+type APIQueryExemplarsFunc struct {
+	defaultHook func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error)
+	hooks       []func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error)
+	history     []APIQueryExemplarsFuncCall
+	mutex       sync.Mutex
+}
+
+// QueryExemplars delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockAPI) QueryExemplars(v0 context.Context, v1 string, v2 time.Time, v3 time.Time) ([]v1.ExemplarQueryResult, error) {
+	r0, r1 := m.QueryExemplarsFunc.nextHook()(v0, v1, v2, v3)
+	m.QueryExemplarsFunc.appendCall(APIQueryExemplarsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the QueryExemplars
+// method of the parent MockAPI instance is invoked and the hook queue is
+// empty.
+func (f *APIQueryExemplarsFunc) SetDefaultHook(hook func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueryExemplars method of the parent MockAPI instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *APIQueryExemplarsFunc) PushHook(hook func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *APIQueryExemplarsFunc) SetDefaultReturn(r0 []v1.ExemplarQueryResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *APIQueryExemplarsFunc) PushReturn(r0 []v1.ExemplarQueryResult, r1 error) {
+	f.PushHook(func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error) {
+		return r0, r1
+	})
+}
+
+func (f *APIQueryExemplarsFunc) nextHook() func(context.Context, string, time.Time, time.Time) ([]v1.ExemplarQueryResult, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *APIQueryExemplarsFunc) appendCall(r0 APIQueryExemplarsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of APIQueryExemplarsFuncCall objects
+// describing the invocations of this function.
+func (f *APIQueryExemplarsFunc) History() []APIQueryExemplarsFuncCall {
+	f.mutex.Lock()
+	history := make([]APIQueryExemplarsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// APIQueryExemplarsFuncCall is an object that describes an invocation of
+// method QueryExemplars on an instance of MockAPI.
+type APIQueryExemplarsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Time
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []v1.ExemplarQueryResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c APIQueryExemplarsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c APIQueryExemplarsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // APIQueryRangeFunc describes the behavior when the QueryRange method of

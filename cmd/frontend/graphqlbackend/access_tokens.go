@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"sync"
 
@@ -69,16 +68,16 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 				return nil, errors.New("creation of access tokens with sudo scope is disabled")
 			}
 		default:
-			return nil, fmt.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
+			return nil, errors.Errorf("unknown access token scope %q (valid scopes: %q)", scope, authz.AllScopes)
 		}
 
 		if _, seen := seenScope[scope]; seen {
-			return nil, fmt.Errorf("access token scope %q may not be specified multiple times", scope)
+			return nil, errors.Errorf("access token scope %q may not be specified multiple times", scope)
 		}
 		seenScope[scope] = struct{}{}
 	}
 	if !hasUserAllScope {
-		return nil, fmt.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
+		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
 	id, token, err := database.AccessTokens(r.db).Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
@@ -124,13 +123,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
+		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 

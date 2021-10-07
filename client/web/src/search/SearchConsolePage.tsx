@@ -1,7 +1,7 @@
 import * as H from 'history'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { BehaviorSubject } from 'rxjs'
+import { BehaviorSubject, noop } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -13,9 +13,9 @@ import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
 import { fetchSuggestions } from './backend'
-import { addSourcegraphSearchCodeIntelligence } from './input/MonacoQueryInput'
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
+import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
 
@@ -52,7 +52,11 @@ const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const { globbing, streamSearch } = props
+    const {
+        globbing,
+        streamSearch,
+        extensionsController: { extHostAPI: extensionHostAPI },
+    } = props
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -78,23 +82,17 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 caseSensitive: false,
                 versionContext: undefined,
                 trace: undefined,
+                extensionHostAPI,
             }).pipe(debounceTime(500))
-        }, [patternType, props.location.search, streamSearch])
+        }, [patternType, props.location.search, streamSearch, extensionHostAPI])
     )
 
-    const [monacoInstance, setMonacoInstance] = useState<typeof Monaco>()
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
+        patternType,
+        globbing,
+        interpretComments: true,
+    })
 
-    useEffect(() => {
-        if (!monacoInstance) {
-            return
-        }
-        const subscription = addSourcegraphSearchCodeIntelligence(monacoInstance, searchQuery, fetchSuggestions, {
-            patternType,
-            globbing,
-            interpretComments: true,
-        })
-        return () => subscription.unsubscribe()
-    }, [monacoInstance, searchQuery, patternType, globbing])
     const [editorInstance, setEditorInstance] = useState<Monaco.editor.IStandaloneCodeEditor>()
     useEffect(() => {
         if (!editorInstance) {
@@ -106,6 +104,8 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         })
         return () => disposable.dispose()
     }, [editorInstance, searchQuery, props.history])
+
+    useQueryDiagnostics(editorInstance, { patternType, interpretComments: true })
 
     useEffect(() => {
         if (!editorInstance) {
@@ -133,10 +133,10 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     </div>
                     <MonacoEditor
                         {...props}
-                        language="sourcegraphSearch"
+                        language={sourcegraphSearchLanguageId}
                         options={options}
                         height={600}
-                        editorWillMount={setMonacoInstance}
+                        editorWillMount={noop}
                         onEditorCreated={setEditorInstance}
                         value={searchQuery.value}
                     />

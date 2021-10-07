@@ -10,12 +10,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -46,7 +48,7 @@ func assertEqual(t *testing.T, got, want interface{}) {
 func TestSearchResults(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
-	limitOffset := &database.LimitOffset{Limit: searchrepos.SearchLimits().MaxRepos + 1}
+	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{db: db}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -113,7 +115,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
 
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
@@ -166,11 +168,8 @@ func TestSearchResults(t *testing.T) {
 		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
@@ -231,11 +230,8 @@ func TestSearchResults(t *testing.T) {
 		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
@@ -522,6 +518,9 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	database.Mocks.Repos.ListRepoNames = func(_ context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+		if op.OnlyPrivate {
+			return nil, nil
+		}
 		return []types.RepoName{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
 	}
 	database.Mocks.Repos.Count = mockCount
@@ -530,16 +529,18 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	zoektRepo := &zoekt.RepoListEntry{
 		Repository: zoekt.Repository{
+			ID:       uint32(repoWithIDs.ID),
 			Name:     string(repoWithIDs.Name),
 			Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
 		},
 	}
 
 	zoektFileMatches := []zoekt.FileMatch{{
-		Score:      5.0,
-		FileName:   fileName,
-		Repository: string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
-		Branches:   []string{"master"},
+		Score:        5.0,
+		FileName:     fileName,
+		RepositoryID: uint32(repoWithIDs.ID),
+		Repository:   string(repoWithIDs.Name), // Important: this needs to match a name in `repos`
+		Branches:     []string{"master"},
 		LineMatches: []zoekt.LineMatch{
 			{
 				Line: nil,
@@ -548,12 +549,9 @@ func TestSearchResultsHydration(t *testing.T) {
 		Checksum: []byte{0, 1, 2},
 	}}
 
-	z := &searchbackend.Zoekt{
-		Client: &searchbackend.FakeSearcher{
-			Repos:  []*zoekt.RepoListEntry{zoektRepo},
-			Result: &zoekt.SearchResult{Files: zoektFileMatches},
-		},
-		DisableCache: true,
+	z := &searchbackend.FakeSearcher{
+		Repos:  []*zoekt.RepoListEntry{zoektRepo},
+		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	}
 
 	ctx := context.Background()
@@ -886,17 +884,14 @@ func TestEvaluateAnd(t *testing.T) {
 		},
 	}
 
-	minimalRepos, _, zoektRepos := generateRepos(5000)
+	minimalRepos, zoektRepos := generateRepos(5000)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
-			z := &searchbackend.Zoekt{
-				Client: &searchbackend.FakeSearcher{
-					Repos:  zoektRepos,
-					Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
-				},
-				DisableCache: true,
+			z := &searchbackend.FakeSearcher{
+				Repos:  zoektRepos,
+				Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
 			}
 
 			ctx := context.Background()
@@ -964,10 +959,7 @@ func TestSearchContext(t *testing.T) {
 		"userB": 2,
 	}
 
-	mockZoekt := &searchbackend.Zoekt{
-		Client:       &searchbackend.FakeSearcher{Repos: []*zoekt.RepoListEntry{}},
-		DisableCache: true,
-	}
+	mockZoekt := &searchbackend.FakeSearcher{Repos: []*zoekt.RepoListEntry{}}
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1029,16 +1021,16 @@ func TestIsGlobalSearch(t *testing.T) {
 		searchQuery    string
 		versionContext *string
 		patternType    query.SearchType
-		wantIsGlobal   bool
+		mode           search.GlobalSearchMode
 	}{
-		{name: "user search context", searchQuery: "foo context:@userA", wantIsGlobal: false},
-		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, wantIsGlobal: false},
-		{name: "version context", searchQuery: "foo", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, wantIsGlobal: false},
-		{name: "global search context", searchQuery: "foo context:global", wantIsGlobal: true},
-		{name: "global search", searchQuery: "foo", wantIsGlobal: true},
+		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
+		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
+		{name: "version context", searchQuery: "foo", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
+		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
 	}
 
 	for _, tt := range tts {
@@ -1057,9 +1049,9 @@ func TestIsGlobalSearch(t *testing.T) {
 				},
 			}
 
-			gotIsGlobal := resolver.isGlobalSearch()
-			if gotIsGlobal != tt.wantIsGlobal {
-				t.Fatalf("got %+v, want %+v", gotIsGlobal, tt.wantIsGlobal)
+			p, _, _ := resolver.toSearchInputs(resolver.Query)
+			if p.Mode != tt.mode {
+				t.Fatalf("got %+v, want %+v", p.Mode, tt.mode)
 			}
 		})
 	}
@@ -1070,5 +1062,37 @@ func TestZeroElapsedMilliseconds(t *testing.T) {
 	r := &SearchResultsResolver{}
 	if got := r.ElapsedMilliseconds(); got != 0 {
 		t.Fatalf("got %d, want %d", got, 0)
+	}
+}
+
+func TestIsContextError(t *testing.T) {
+	cases := []struct {
+		err  error
+		want bool
+	}{
+		{
+			context.Canceled,
+			true,
+		},
+		{
+			context.DeadlineExceeded,
+			true,
+		},
+		{
+			errors.Wrap(context.Canceled, "wrapped"),
+			true,
+		},
+		{
+			errors.New("not a context error"),
+			false,
+		},
+	}
+	ctx := context.Background()
+	for _, c := range cases {
+		t.Run(c.err.Error(), func(t *testing.T) {
+			if got := isContextError(ctx, c.err); got != c.want {
+				t.Fatalf("wanted %t, got %t", c.want, got)
+			}
+		})
 	}
 }

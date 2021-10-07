@@ -2,76 +2,107 @@
 
 exports[`DiffStat expandedCounts 1`] = `
 <div
-  className="diff-stat"
+  className="diffStat"
   data-tooltip="1 addition, 2 changes, 3 deletions"
 >
-  <span
-    className="diff-stat__total font-weight-bold"
+  <strong
+    className="text-success mr-1"
   >
-    <span
-      className="text-success mr-1"
-    >
-      +
-      1
-    </span>
-    <span
-      className="text-warning mr-1"
-    >
-      •
-      2
-    </span>
-    <span
-      className="text-danger mr-1"
-    >
-      −
-      3
-    </span>
-  </span>
-  <div>
-    <div
-      className="diff-stat__square bg-success"
-    />
-    <div
-      className="diff-stat__square bg-warning"
-    />
-    <div
-      className="diff-stat__square bg-danger"
-    />
-    <div
-      className="diff-stat__square bg-danger"
-    />
-    <div
-      className="diff-stat__square bg-danger"
-    />
-  </div>
+    +
+    1
+  </strong>
+  <strong
+    className="text-warning mr-1"
+  >
+    •
+    2
+  </strong>
+  <strong
+    className="text-danger"
+  >
+    −
+    3
+  </strong>
 </div>
 `;
 
 exports[`DiffStat standard 1`] = `
 <div
-  className="diff-stat"
+  className="diffStat"
   data-tooltip="1 addition, 2 changes, 3 deletions"
 >
-  <small
-    className="diff-stat__total"
-  >
+  <small>
     8
   </small>
-  <div>
+</div>
+`;
+
+exports[`DiffStatSquares 1`] = `
+<div
+  className="squares"
+>
+  <div
+    className="square bg-success"
+  />
+  <div
+    className="square bg-warning"
+  />
+  <div
+    className="square bg-danger"
+  />
+  <div
+    className="square bg-danger"
+  />
+  <div
+    className="square bg-danger"
+  />
+</div>
+`;
+
+exports[`DiffStatStack 1`] = `
+<div
+  className="d-flex flex-column align-items-center"
+>
+  <div
+    className="diffStat pb-1"
+    data-tooltip="1 addition, 2 changes, 3 deletions"
+  >
+    <strong
+      className="text-success mr-1"
+    >
+      +
+      1
+    </strong>
+    <strong
+      className="text-warning mr-1"
+    >
+      •
+      2
+    </strong>
+    <strong
+      className="text-danger"
+    >
+      −
+      3
+    </strong>
+  </div>
+  <div
+    className="squares"
+  >
     <div
-      className="diff-stat__square bg-success"
+      className="square bg-success"
     />
     <div
-      className="diff-stat__square bg-warning"
+      className="square bg-warning"
     />
     <div
-      className="diff-stat__square bg-danger"
+      className="square bg-danger"
     />
     <div
-      className="diff-stat__square bg-danger"
+      className="square bg-danger"
     />
     <div
-      className="diff-stat__square bg-danger"
+      className="square bg-danger"
     />
   </div>
 </div>

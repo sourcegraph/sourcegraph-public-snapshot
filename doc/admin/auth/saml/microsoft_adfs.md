@@ -83,35 +83,22 @@ Click **OK** to apply the new claim rules and close the window.
 
 ## 2. Add the SAML auth provider to Sourcegraph site config
 
-1.  Add an entry to `auth.providers` that points to your ADFS server's SAML metadata URL. This
-    typically contains the path `/federationmetadata/2007-06/federationmetadata.xml`. Example:
+[Add a SAML auth provider](./index.md#add-a-saml-provider) that points to your ADFS server's SAML metadata URL. This
+typically contains the path `/federationmetadata/2007-06/federationmetadata.xml`. Example:
 
-    ```
+```
+{
+  // ...
+  "externalURL": "https://sourcegraph.example.com",
+  "auth.providers": [
     {
-      // ...
-      "externalURL": "https://sourcegraph.example.com",
-      "auth.providers": [
-        {
-          "type": "saml",
-          "configID": "ms_adfs"
-          "identityProviderMetadataURL": "https://adfs.example.com/federationmetadata/2007-06/federationmetadata.xml"
-        }
-      ]
+      "type": "saml",
+      "configID": "ms_adfs"
+      "identityProviderMetadataURL": "https://adfs.example.com/federationmetadata/2007-06/federationmetadata.xml"
     }
-    ```
-
-    **Note:** there should be at most 1 element of type `saml` in `auth.providers`. Otherwise
-    behavior is undefined. If you have another SAML auth provider configured, remove it from
-    `auth.providers` before proceeding.
-
-1.  Confirm there are no error messages in the Sourcegraph Docker container logs (or the
-    `sourcegraph-frontend` pod logs, if Sourcegraph is deployed to a Kubernetes cluster).<br>
-    If there are errors, see [Troubleshooting: Error prefetching SAML service provider
-    metadata](#error-prefetching-saml-service-provider-metadata) or [Other
-    troubleshooting](#other-troubleshooting).
-
-See the [SAML auth provider documentation](../../config/site_config.md#saml) for the full set of
-properties that the SAML auth provider supports.
+  ]
+}
+```
 
 ## Authenticate to Sourcegraph using ADFS
 

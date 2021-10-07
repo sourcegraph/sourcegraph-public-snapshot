@@ -20,6 +20,7 @@ import {
     createFileExternalLinksResult,
     createTreeEntriesResult,
     createBlobContentResult,
+    createRepoChangesetsStatsResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
@@ -31,6 +32,7 @@ export const getCommonRepositoryGraphQlResults = (
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
     RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+    RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRev: () => createResolveRevisionResult(repositoryName),
     FileExternalLinks: ({ filePath }) => createFileExternalLinksResult(filePath),
     TreeEntries: () => createTreeEntriesResult(repositoryUrl, fileEntries),
@@ -410,7 +412,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', clickedFileName])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', `/${clickedFileName}`])
 
             // Return to repo page
             await driver.page.waitForSelector('.test-repo-header-repo-link')
@@ -482,7 +484,11 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', filePath])
+            assert.deepStrictEqual(breadcrumbTexts, [
+                shortRepositoryName,
+                '@master',
+                "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
+            ])
 
             await driver.page.waitForSelector('#monaco-query-input .view-lines')
             // TODO: find a more reliable way to get the current search query,
@@ -543,7 +549,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
 
         it('works with spaces in the repository name', async () => {
@@ -570,7 +576,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
-            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', 'readme.md'])
+            assert.deepStrictEqual(breadcrumbTexts, [shortRepositoryName, '@master', '/readme.md'])
         })
     })
 
@@ -602,6 +608,7 @@ describe('Repository', () => {
                     ),
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -745,16 +752,15 @@ describe('Repository', () => {
                 },
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {
-                                    id: 'TestExtensionID',
+                                    id: 'test',
                                     extensionID: 'test/test',
                                     manifest: {
-                                        raw: JSON.stringify(extensionManifest),
+                                        jsonFields: extensionManifest,
                                     },
-                                    url: '/extensions/test/test',
-                                    viewerCanAdminister: false,
                                 },
                             ],
                         },

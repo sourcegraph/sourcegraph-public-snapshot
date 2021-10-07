@@ -63,7 +63,7 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			got, err := HandleSetPasswordEmail(tst.ctx, tst.id)
+			got, err := HandleSetPasswordEmail(tst.ctx, nil, tst.id)
 			if diff := cmp.Diff(tst.wantURL, got); diff != "" {
 				t.Errorf("Message mismatch (-want +got):\n%s", diff)
 			}

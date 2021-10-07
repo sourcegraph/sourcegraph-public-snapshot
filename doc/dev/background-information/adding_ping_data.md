@@ -16,13 +16,21 @@ All ping data must be:
 
 Treat adding new data to pings as having a very high bar. Would you be willing to send an email to all Sourcegraph users explaining and justifying why we need to collect this additional data from them? If not, don’t propose it.
 
-1. Write an RFC describing the problem, data that will be added, and how Sourcegraph will use the data to make decisions. The BizOps team must be a required reviewer (both @Dan and @EricBM). Please use [these guidelines](https://about.sourcegraph.com/handbook/ops/bizops/index.md#submitting-a-data-request) and the following questions to inform the contents of the RFC:
-    - Why was this particular metric/data chosen?
-    - What business problem does collecting this address?
-    - What specific product or engineering decisions will be made by having this data?
-    - Will this data be needed from every single installation, or only from a select few?
-    - Will it be needed forever, or only for a short time? If only for a short time, what is the criteria and estimated timeline for removing the data point(s)?
-    - Have you considered alternatives? E.g., collecting this data from Sourcegraph.com, or adding a report for admins that we can request from some number of friendly customers?
+1. Write an RFC describing the problem, data that will be added, and how Sourcegraph will use the data to make decisions. The BizOps team must be a required reviewer (both @Farhan and @EricBM). Please include the following information RFC:
+    - What are the exact data fields you're requesting to add?
+    - What are the exact questions you're trying to answer with this new
+    data? Why can't we use existing data to answer them?
+    - How does the JSON payload look once those fields are added?
+    
+    The RFC should also include answers to these questions (if applicable):
+
+    - Why was this particular metric/data chosen? What business problem does  collecting this address?
+    - What specific product or engineering decisions will be made by having  this data?
+    - Will this data be needed from every single installation, or only from a  select few?
+    - Will it be needed forever, or only for a short time? If only for a  short time, what is the criteria and estimated timeline for removing the  data point(s)?
+    - Have you considered alternatives? E.g., collecting this data from Sourcegraph.com, or adding a report for admins that we can request from some number of friendly customers?    
+
+    These RFCs are great examples: [Adding code host versions to Pings](https://docs.google.com/document/d/1Z68vV1SvCmRW5Hz5v4SkI8oUW4pgLmq5199RmLYToeU/edit#heading=h.trqab8y0kufp) and [Adding Sourcegraph Extensions Usage Metrics to Pings](https://docs.google.com/document/d/1HKgwTyG-IcRM81xLAmussWV4EdK95uy7GjKFIG8vgU4/edit#heading=h.trqab8y0kufp).
 1. When the RFC is approved, use the [life of a ping documentation](https://docs.sourcegraph.com/dev/background-information/architecture/life-of-a-ping) with help of [an example PR](https://github.com/sourcegraph/sourcegraph/pull/15389) to implement the change. At least one member of the BizOps team must approve the resulting PR before it can be merged. DO NOT merge your PR yet. Steps 3, 4, and 5 must be completed before merging.
     - Ensure a CHANGELOG entry is added, and that the two sources of truth for ping data are updated along with your PR:
       - Pings documentation: https://docs.sourcegraph.com/admin/pings
@@ -32,9 +40,9 @@ Treat adding new data to pings as having a very high bar. Would you be willing t
 	- Check the data types sent in the JSON match up with the BigQuery schema (e.g. a JSON '1' will not match up with a BigQuery integer).
 	- Every field in the BigQuery schema should not be non-nullable (i.e. `"mode": "NULLABLE"` and `"mode": "REPEATED"` are acceptable). There will be instances on the older Sourcegraph versions that will not be sending new data fields, and this will cause pings to fail.
 1. Once the schema change PR is merged, test the new schema. Contact @EricBM for this part.
-  	- Delete the [test table](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test&page=table) (`$DATASET.$TABLE_test`), create a new table with the same name (`update_checks_test`), and then upload the schema with the newest version (see "Changing the BigQuery schema" for commands). This is done to wipe the data in the table and any legacy configurations that could trigger a false positive test, but keep the connection with Pub/Sub.
-		- Update and publish [a message](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/pubsub_message.json) to [Pub/Sub](https://console.cloud.google.com/cloudpubsub/topic/detail/server-update-checks-test?project=telligentsourcegraph), which will go through [Dataflow](https://console.cloud.google.com/dataflow/jobs/us-central1/2020-02-28_09_44_54-15810172927534693373?project=telligentsourcegraph&organizationId=1006954638239) to the BigQuery test table. The message can use [this example](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/pubsub_message) as a baseline, and add sample data for the new ping data points.
-  	- To see if it worked, go to the [`update_checks_test`](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test&page=table) table, and run a query against it checking for the new data points. Messages that fail to publish are added to the [error records table](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test_error_records&page=table).
+  - Delete the [test table](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test&page=table) (`$DATASET.$TABLE_test`), create a new table with the same name (`update_checks_test`), and then upload the schema with the newest version (see "Changing the BigQuery schema" for commands). This is done to wipe the data in the table and any legacy configurations that could trigger a false positive test, but keep the connection with Pub/Sub.
+	- Update and publish [a message](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/pubsub_message.json) to [Pub/Sub](https://console.cloud.google.com/cloudpubsub/topic/detail/server-update-checks-test?project=telligentsourcegraph), which will go through [Dataflow](https://console.cloud.google.com/dataflow/jobs/us-central1/2020-02-28_09_44_54-15810172927534693373?project=telligentsourcegraph&organizationId=1006954638239) to the BigQuery test table. The message can use [this example](https://github.com/sourcegraph/analytics/blob/master/BigQuery%20Schemas/pubsub_message) as a baseline, and add sample data for the new ping data points.
+  - To see if it worked, go to the [`update_checks_test`](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test&page=table) table, and run a query against it checking for the new data points. Messages that fail to publish are added to the [error records table](https://console.cloud.google.com/bigquery?utm_source=bqui&utm_medium=link&utm_campaign=classic&project=telligentsourcegraph&ws=&p=telligentsourcegraph&d=sourcegraph_analytics&t=update_checks_test_error_records&page=table).
 1. Merge the PR
 
 ## Changing the BigQuery schema

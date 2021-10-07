@@ -3,13 +3,16 @@ package indexing
 import (
 	"context"
 	"regexp"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	gprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -20,6 +23,8 @@ type DBStore interface {
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
+	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
+	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
 }
 
 type DBStoreShim struct {
@@ -32,10 +37,20 @@ type IndexingSettingStore interface {
 
 type IndexingRepoStore interface {
 	ListRepoNames(ctx context.Context, opt database.ReposListOptions) (results []types.RepoName, err error)
+	ListIndexableRepos(ctx context.Context, opts database.ListIndexableReposOptions) (results []types.RepoName, err error)
 }
 
 func (s *DBStoreShim) With(other basestore.ShareableStore) DBStore {
 	return &DBStoreShim{s.Store.With(s)}
+}
+
+type RepoUpdaterClient interface {
+	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error)
+}
+
+type ExternalServiceStore interface {
+	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
 }
 
 type GitserverClient interface {
@@ -44,9 +59,10 @@ type GitserverClient interface {
 	FileExists(ctx context.Context, repositoryID int, commit, file string) (bool, error)
 	RawContents(ctx context.Context, repositoryID int, commit, file string) ([]byte, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+	RepoInfo(ctx context.Context, repos ...api.RepoName) (map[api.RepoName]*gprotocol.RepoInfo, error)
 }
 
 type IndexEnqueuer interface {
-	QueueIndexesForRepository(ctx context.Context, repositoryID int) error
-	QueueIndexesForPackage(ctx context.Context, pkg semantic.Package) error
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
+	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
 }

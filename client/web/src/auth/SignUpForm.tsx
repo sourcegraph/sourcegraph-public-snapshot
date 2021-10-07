@@ -24,6 +24,7 @@ import { enterpriseTrial, signupTerms } from '../util/features'
 
 import { OrDivider } from './OrDivider'
 import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 export interface SignUpArguments {
     email: string
@@ -128,7 +129,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
         (serviceType: string): React.MouseEventHandler<HTMLAnchorElement> => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log('externalAuthSignupClicked', { type: serviceType })
+            eventLogger.log('ExternalAuthSignupClicked', { type: serviceType }, { type: serviceType })
         },
         []
     )
@@ -139,8 +140,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
             {/* eslint-disable-next-line react/forbid-elements */}
             <form
                 className={classNames(
-                    !experimental && 'signin-signup-form',
-                    !experimental && 'signup-form',
+                    !experimental && signInSignUpCommonStyles.signinSignupForm,
                     'test-signup-form',
                     !experimental && 'rounded p-4',
                     'text-left',
@@ -164,7 +164,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         loading={emailState.kind === 'LOADING'}
                     >
                         <EmailInput
-                            className={classNames('signin-signup-form__input', deriveInputClassName(emailState))}
+                            className={deriveInputClassName(emailState)}
                             onChange={nextEmailFieldChange}
                             required={true}
                             value={emailState.value}
@@ -190,7 +190,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         loading={usernameState.kind === 'LOADING'}
                     >
                         <UsernameInput
-                            className={classNames('signin-signup-form__input', deriveInputClassName(usernameState))}
+                            className={deriveInputClassName(usernameState)}
                             onChange={nextUsernameFieldChange}
                             value={usernameState.value}
                             required={true}
@@ -219,7 +219,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         loading={passwordState.kind === 'LOADING'}
                     >
                         <PasswordInput
-                            className={classNames('signin-signup-form__input', deriveInputClassName(passwordState))}
+                            className={deriveInputClassName(passwordState)}
                             onChange={nextPasswordFieldChange}
                             value={passwordState.value}
                             required={true}
@@ -275,7 +275,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <a
-                                    href={provider.authenticationURL}
+                                    href={`${provider.authenticationURL || ''}&redirect=/welcome`}
                                     className="btn btn-secondary btn-block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                 >

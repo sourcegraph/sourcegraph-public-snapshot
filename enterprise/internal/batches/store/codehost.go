@@ -4,20 +4,25 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type ListCodeHostsOpts struct {
 	RepoIDs []api.RepoID
 }
 
-func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
+func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs []*btypes.CodeHost, err error) {
+	ctx, endObservation := s.operations.listCodeHosts.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := listCodeHostsQuery(opts)
 
-	cs := make([]*btypes.CodeHost, 0)
-	err := s.query(ctx, q, func(sc scanner) error {
+	cs = make([]*btypes.CodeHost, 0)
+	err = s.query(ctx, q, func(sc scanner) error {
 		var c btypes.CodeHost
 		if err := scanCodeHost(&c, sc); err != nil {
 			return err
@@ -62,11 +67,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	preds = append(preds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
 
 	if len(opts.RepoIDs) > 0 {
-		repoIDs := make([]*sqlf.Query, len(opts.RepoIDs))
-		for i, id := range opts.RepoIDs {
-			repoIDs[i] = sqlf.Sprintf("%s", id)
-		}
-		preds = append(preds, sqlf.Sprintf("repo.id IN (%s)", sqlf.Join(repoIDs, ",")))
+		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Sprintf("%s", "ssh://%"), sqlf.Join(preds, "AND"))
@@ -86,6 +87,9 @@ type GetExternalServiceIDsOpts struct {
 }
 
 func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServiceIDsOpts) (ids []int64, err error) {
+	ctx, endObservation := s.operations.getExternalServiceIDs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := getExternalServiceIDsQuery(opts)
 
 	err = s.query(ctx, q, func(sc scanner) error {

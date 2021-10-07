@@ -81,8 +81,8 @@ export interface BackgroundPageApi {
         variables: V
         sourcegraphURL?: string
     }): Promise<GraphQLResult<T>>
-    notifyPrivateRepository(isPrivateRepository: boolean): Promise<void>
-    checkPrivateRepository(tabId: number): Promise<boolean>
+    notifyPrivateCloudError(hasPrivateCloudError: boolean): Promise<void>
+    checkPrivateCloudError(tabId: number): Promise<boolean>
 }
 
 /**

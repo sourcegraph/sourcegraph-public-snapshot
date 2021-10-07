@@ -25,6 +25,7 @@ type unknownCommitJanitor struct {
 }
 
 var _ goroutine.Handler = &unknownCommitJanitor{}
+var _ goroutine.ErrorHandler = &unknownCommitJanitor{}
 
 // NewUnknownCommitJanitor returns a background routine that periodically resolves each
 // commit known by code intelligence data via gitserver to ensure that it has not been
@@ -114,7 +115,7 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 		// of the record so we can move on to other data; we deleted records associated
 		// with deleted repositories in a separate janitor process.
 		shouldDelete = false
-	} else if gitserver.IsRevisionNotFound(err) {
+	} else if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 		// Target condition: repository is resolvable bu the commit is not; was probably
 		// force-pushed away and the commit was gc'd after some time or after a re-clone
 		// in gitserver.

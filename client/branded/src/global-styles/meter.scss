@@ -1,10 +1,10 @@
 meter {
     --meter-background: var(--border-color-2);
 
-    .theme-dark.theme-redesign & {
+    .theme-dark & {
         --meter-background: var(--gray-07);
     }
-    .theme-light.theme-redesign & {
+    .theme-light & {
         --meter-background: var(--gray-04);
     }
 

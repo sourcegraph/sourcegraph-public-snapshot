@@ -33,7 +33,7 @@ To give you a rough overview where each part of the code lives, let's take a loo
 
 1. run `src batch preview -f your-batch-spec.yaml`
 1. click on the preview link
-1. click `Apply spec` to publish changesets on the code hosts
+1. click **Apply** to publish changesets on the code hosts
 
 It starts in [`src-cli`](https://github.com/sourcegraph/src-cli):
 
@@ -46,13 +46,13 @@ It starts in [`src-cli`](https://github.com/sourcegraph/src-cli):
 When you then click the "Preview the batch change" link that `src-cli` printed, you'll land on the preview page in the web frontend:
 
 1. The [`BatchChangePreviewPage` component](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/BatchChangePreviewPage.tsx#L43) then sends a GraphQL request to the backend to [query the `BatchSpecByID`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L93-L107).
-1. Once you hit the "Apply spec" button, the component [uses the `applyBatchChange`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L140-L159) to apply the batch spec and create a batch change.
+1. Once you hit the **Apply** button, the component [uses the `applyBatchChange`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/preview/backend.ts#L140-L159) to apply the batch spec and create a batch change.
 1. You're then redirected to the [`BatchChangeDetailsPage` component](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/client/web/src/enterprise/batches/detail/BatchChangeDetailsPage.tsx#L65) that shows you you're newly-created batch change.
 
-In the backend, all Batch Changes related GraphQL queries and mutations start in the [`Resolver` of the `batches/resolver` package](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go):
+In the backend, all Batch Changes related GraphQL queries and mutations start in the [`Resolver` package](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go):
 
-1. The [`CreateChangesetSpec`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go#L461) and [`CreateBatchSpec`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go#L401) mutations that `src-cli` called to create the changeset and batch specs are defined here.
-1. When you clicked "Apply Spec" the [`ApplyBatchChange` resolver](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/resolvers/resolver.go#L349) was executed to create the batch change.
+1. The [`CreateChangesetSpec`](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L545) and [`CreateBatchSpec`](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L489) mutations that `src-cli` called to create the changeset and batch specs are defined here.
+1. When you clicked **Apply** the [`ApplyBatchChange` resolver](https://github.com/sourcegraph/sourcegraph/blob/8b99439e21aaa000443382f03f92e532b0445858/enterprise/cmd/frontend/internal/batches/resolvers/resolver.go#L404) was executed to create the batch change.
 1. Most of that doesn't happen in the resolver layer, but in the service layer: [here is the `(*Service).ApplyBatchChange` method](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/service/service_apply_batch_change.go#L48:19) that talks to the database to create an entry in the `batch_changes` table.
 1. The most important thing that happens in `(*Service).ApplyBatchChange` is that [it calls the `rewirer`](https://github.com/sourcegraph/sourcegraph/blob/e7f26c0d7bc965892669a5fc9835ec65211943aa/enterprise/internal/batches/service/service_apply_batch_change.go#L119-L135) to wire the entries in the `changesets` table to the correct `changeset_specs`.
 1. Once that is done, the `changesets` are created or updated to point to the new `changeset_specs` that you created with `src-cli`.
@@ -92,7 +92,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
     Type definitions of common `batches` types, such as `BatchChange`, `BatchSpec`, `Changeset`, etc. A few helper functions and methods, but no real business logic.
 - `enterprise/internal/batches`:
 
-    The two hooks, `InitBackgroundJobs` and `InitFrontend`, to inject batch changes code into `enterprise/{repo-updater,frontend}`. This is the "glue" in "glue code".
+    The hook `InitBackgroundJobs` injects Batch Changes code into `enterprise/repo-updater`. This is the "glue" in "glue code".
 - `enterprise/internal/batches/background`
 
     Another bit of glue code that starts background goroutines: the changeset reconciler, the stuck-reconciler resetter, the old-changeset-spec expirer.
@@ -108,10 +108,10 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 - `enterprise/internal/batches/search/syntax`:
 
     The old Sourcegraph-search-query parser we inherited from the search team a week or two back (the plan is _not_ to keep it, but switch to the new one when we have time)
-- `enterprise/internal/batches/resolvers`:
+- `enterprise/cmd/frontend/internal/batches/resolvers`:
 
-    The GraphQL resolvers that are injected into the `enterprise/frontend` by the aforementioned `InitFrontend`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
-- `enterprise/internal/batches/resolvers/apitest`:
+    The GraphQL resolvers that are injected into the `enterprise/frontend` in `enterprise/cmd/frontend/internal/batches/init.go`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
+- `enterprise/cmd/frontend/internal/batches/resolvers/apitest`:
 
     A package that helps with testing the resolvers by defining types that match the GraphQL schema.
 - `enterprise/internal/batches/testing`:
@@ -126,7 +126,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 - `enterprise/internal/batches/service`:
 
     This is what's often called the "service layer" in web architectures and contains a lot of the business logic: creating a batch change and validating whether the user can create one, applying new batch specs, calling the `rewirer`, deleting batch changes, closing batch changes, etc.
-- `enterprise/internal/batches/webhooks`:
+- `enterprise/cmd/frontend/internal/batches/webhooks`:
 
     These `webhooks` endpoints are injected by `InitFrontend` into the `frontend` and implement the `cmd/frontend/webhooks` interfaces.
 - `enterprise/internal/batches/store`:
@@ -184,3 +184,21 @@ Take a look at the following links to see some examples of batch changes and the
 - [sourcegraph/batch-change-examples](https://github.com/sourcegraph/batch-change-examples)
 - [k8s.sgdev.org/batch-changes](https://k8s.sgdev.org/batch-changes)
 - [Batch Changes tutorials](https://docs.sourcegraph.com/batch_changes/tutorials)
+
+## Server-side batch changes
+
+### Database tables
+
+There are currently (Sept '21) four tables at the heart of the server-side execution of batch specs:
+
+**`batch_specs`**. These are the `batch_specs` we already have, but in server-side mode they are created through a special mutation that also creates a `batch_spec_resolution_job`, see below.
+
+**`batch_spec_resolution_jobs`**. These are [worker jobs](../workers.md) that are created through the GraphQL when a user wants to kick of a server-side execution. Once a `batch_spec_resolution_job` is created a worker will pick them up, load the corresponding `batch_spec` and resolve its `on` part into `RepoWorkspaces`: a combination of repository, commit, path, steps, branch, etc. For each `RepoWorkspace` they create a `batch_spec_workspace` in the database.
+
+**`batch_spec_workspace`**. Each `batch_spec_workspace` represents a unit of work for a [`src batch exec`](https://github.com/sourcegraph/src-cli/pull/608) invocation inside the executor. Once `src batch exec` has successfully executed, these `batch_spec_workspaces` will contain references to `changeset_specs` and those in turn will be updated to point to the `batch_spec` that kicked all of this off.
+
+**`batch_spec_workspace_execution_jobs`**. These are the worker jobs that get picked up the executor and lead to `src batch exec` being called. Each `batch_spec_workspace_execution_job` points to one `batch_spec_workspace`. This extra table lets us separate the workspace _data_ from the _execution_ of `src batch exec`. Separation of these two tables is the result of us running into tricky concurrency problems where workers were modifying table rows that the GraphQL layer was reading (or even modifying).
+
+Here's a diagram of their relationship:
+
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/dev/diagram.png">

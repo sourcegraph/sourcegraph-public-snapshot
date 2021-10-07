@@ -249,11 +249,7 @@ var requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since tim
 var configuredLimiter = func() *mutablelimiter.Limiter {
 	limiter := mutablelimiter.New(1)
 	conf.Watch(func() {
-		limit := conf.Get().GitMaxConcurrentClones
-		if limit == 0 {
-			limit = 5
-		}
-		limiter.SetLimit(limit)
+		limiter.SetLimit(conf.GitMaxConcurrentClones())
 	})
 	return limiter
 }
@@ -464,6 +460,7 @@ func (s *updateScheduler) ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedu
 
 // updateQueue is a priority queue of repos to update.
 // A repo can't have more than one location in the queue.
+// Implements heap.Interface and sort.Interface.
 type updateQueue struct {
 	mu sync.Mutex
 

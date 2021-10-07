@@ -16,13 +16,14 @@ type SearchEventArgs struct {
 	AlertType     string
 	DurationMs    int64
 	ResultSize    int
+	Error         error
 }
 
 // SearchEvent returns a honey event for the dataset "search".
 func SearchEvent(ctx context.Context, args SearchEventArgs) *libhoney.Event {
-	var act actor.Actor
+	act := &actor.Actor{}
 	if a := actor.FromContext(ctx); a != nil {
-		act = *a
+		act = a
 	}
 	ev := Event("search")
 	ev.AddField("query", args.OriginalQuery)
@@ -30,9 +31,12 @@ func SearchEvent(ctx context.Context, args SearchEventArgs) *libhoney.Event {
 	ev.AddField("actor_internal", act.Internal)
 	ev.AddField("type", args.Typ)
 	ev.AddField("source", args.Source)
-	ev.AddField("Status", args.Status)
+	ev.AddField("status", args.Status)
 	ev.AddField("alert_type", args.AlertType)
 	ev.AddField("duration_ms", args.DurationMs)
 	ev.AddField("result_size", args.ResultSize)
+	if args.Error != nil {
+		ev.AddField("error", args.Error.Error())
+	}
 	return ev
 }

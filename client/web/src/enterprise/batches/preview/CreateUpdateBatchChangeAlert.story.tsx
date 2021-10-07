@@ -3,6 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { MultiSelectContextProvider } from '../MultiSelectContext'
 
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 
@@ -37,6 +38,21 @@ add('Update', () => (
                 batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
+        )}
+    </EnterpriseWebStory>
+))
+add('Disabled', () => (
+    <EnterpriseWebStory>
+        {props => (
+            <MultiSelectContextProvider initialSelected={['id1', 'id2']}>
+                <CreateUpdateBatchChangeAlert
+                    {...props}
+                    specID="123"
+                    toBeArchived={199}
+                    batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                />
+            </MultiSelectContextProvider>
         )}
     </EnterpriseWebStory>
 ))

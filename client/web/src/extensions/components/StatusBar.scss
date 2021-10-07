@@ -1,6 +1,10 @@
 .status-bar {
-    background-color: var(--color-bg-2);
-    height: 1.5rem;
+    background-color: var(--code-bg);
+    height: 2rem;
+    // Define `width` and `display` in this class, instead of with utility classes,
+    // to allow consumers to override them with utility classes
+    width: 100%;
+    display: flex;
 
     &__items {
         overflow-x: auto;
@@ -17,13 +21,10 @@
         width: 1.5rem;
         height: 100%;
         padding: 0;
+        color: var(--icon-color);
 
         &:hover {
             background-color: var(--color-bg-2);
-        }
-
-        .theme-redesign & {
-            color: var(--icon-color);
         }
 
         &--disabled {
@@ -42,20 +43,13 @@
             padding-right: 0.5rem !important;
         }
 
-        &--interactive {
-            &:hover {
-                background-color: var(--color-bg-2);
-                color: var(--link-hover-color);
-            }
-        }
-
         &--noop {
             cursor: default;
+            color: var(--body-color);
         }
     }
 
     &__text {
         padding-top: 0.0625rem; // 1px
-        color: var(--body-color);
     }
 }

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -38,6 +37,7 @@ func trace(ctx context.Context, server, method string, arg interface{}, err *err
 
 	done := func() {
 		elapsed := time.Since(start)
+		span.SetTag("UserID", actor.FromContext(ctx).UID)
 
 		if err != nil && *err != nil {
 			span.SetTag("Error", (*err).Error())
@@ -51,13 +51,6 @@ func trace(ctx context.Context, server, method string, arg interface{}, err *err
 		}
 		requestDuration.With(labels).Observe(elapsed.Seconds())
 		requestGauge.WithLabelValues(name).Dec()
-
-		uid := actor.FromContext(ctx).UID
-		errStr := ""
-		if err != nil && *err != nil {
-			errStr = (*err).Error()
-		}
-		log15.Debug("TRACE backend", "rpc", name, "uid", uid, "trace", tracepkg.SpanURL(span), "error", errStr, "duration", elapsed)
 	}
 
 	return ctx, done

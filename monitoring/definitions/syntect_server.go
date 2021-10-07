@@ -6,10 +6,13 @@ import (
 )
 
 func SyntectServer() *monitoring.Container {
+	const containerName = "syntect-server"
+
 	return &monitoring.Container{
-		Name:        "syntect-server",
-		Title:       "Syntect Server",
-		Description: "Handles syntax highlighting for code files.",
+		Name:                     "syntect-server",
+		Title:                    "Syntect Server",
+		Description:              "Handles syntax highlighting for code files.",
+		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
 				Title: "General",
@@ -56,43 +59,10 @@ func SyntectServer() *monitoring.Container {
 					},
 				},
 			},
-			{
-				Title:  shared.TitleContainerMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ContainerCPUUsage("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ContainerMemoryUsage("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ContainerMissing("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleProvisioningIndicators,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.ProvisioningCPUUsageLongTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageLongTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-					{
-						shared.ProvisioningCPUUsageShortTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-						shared.ProvisioningMemoryUsageShortTerm("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
-			{
-				Title:  shared.TitleKubernetesMonitoring,
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						shared.KubernetesPodsAvailable("syntect-server", monitoring.ObservableOwnerCoreApplication).Observable(),
-					},
-				},
-			},
+
+			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
+			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCoreApplication, nil),
 		},
-		NoSourcegraphDebugServer: true,
 	}
 }

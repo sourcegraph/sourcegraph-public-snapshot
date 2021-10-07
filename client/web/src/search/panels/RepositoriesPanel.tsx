@@ -78,7 +78,11 @@ export const RepositoriesPanel: React.FunctionComponent<Props> = ({
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (repoFilterValues && itemsToLoad === pageSize) {
-            telemetryService.log('RepositoriesPanelLoaded', { empty: repoFilterValues.length === 0 })
+            telemetryService.log(
+                'RepositoriesPanelLoaded',
+                { empty: repoFilterValues.length === 0 },
+                { empty: repoFilterValues.length === 0 }
+            )
         }
     }, [repoFilterValues, telemetryService, itemsToLoad])
 
@@ -127,14 +131,16 @@ function processRepositories(eventLogResult: EventLogResult): string[] | null {
     const recentlySearchedRepos: string[] = []
 
     for (const node of eventLogResult.nodes) {
-        const url = new URL(node.url)
-        const queryFromURL = parseSearchURLQuery(url.search)
-        const scannedQuery = scanSearchQuery(queryFromURL || '')
-        if (scannedQuery.type === 'success') {
-            for (const token of scannedQuery.term) {
-                if (isRepoFilter(token)) {
-                    if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
-                        recentlySearchedRepos.push(token.value.value)
+        if (node.url) {
+            const url = new URL(node.url)
+            const queryFromURL = parseSearchURLQuery(url.search)
+            const scannedQuery = scanSearchQuery(queryFromURL || '')
+            if (scannedQuery.type === 'success') {
+                for (const token of scannedQuery.term) {
+                    if (isRepoFilter(token)) {
+                        if (token.value && !recentlySearchedRepos.includes(token.value.value)) {
+                            recentlySearchedRepos.push(token.value.value)
+                        }
                     }
                 }
             }

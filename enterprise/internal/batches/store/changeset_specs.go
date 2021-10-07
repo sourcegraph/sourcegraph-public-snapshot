@@ -7,11 +7,16 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // changesetSpecInsertColumns is the list of changeset_specs columns that are
@@ -55,7 +60,10 @@ var changesetSpecColumns = []*sqlf.Query{
 }
 
 // CreateChangesetSpec creates the given ChangesetSpec.
-func (s *Store) CreateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) error {
+func (s *Store) CreateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) (err error) {
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q, err := s.createChangesetSpecQuery(c)
 	if err != nil {
 		return err
@@ -125,7 +133,12 @@ func (s *Store) createChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, 
 }
 
 // UpdateChangesetSpec updates the given ChangesetSpec.
-func (s *Store) UpdateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) error {
+func (s *Store) UpdateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec) (err error) {
+	ctx, endObservation := s.operations.updateChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(c.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q, err := s.updateChangesetSpecQuery(c)
 	if err != nil {
 		return err
@@ -187,7 +200,12 @@ func (s *Store) updateChangesetSpecQuery(c *btypes.ChangesetSpec) (*sqlf.Query, 
 }
 
 // DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
-func (s *Store) DeleteChangesetSpec(ctx context.Context, id int64) error {
+func (s *Store) DeleteChangesetSpec(ctx context.Context, id int64) (err error) {
+	ctx, endObservation := s.operations.deleteChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteChangesetSpecQueryFmtstr, id))
 }
 
@@ -200,10 +218,16 @@ DELETE FROM changeset_specs WHERE id = %s
 // ChangesetSpecs.
 type CountChangesetSpecsOpts struct {
 	BatchSpecID int64
+	Type        batcheslib.ChangesetSpecDescriptionType
 }
 
 // CountChangesetSpecs returns the number of changeset specs in the database.
-func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (int, error) {
+func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (count int, err error) {
+	ctx, endObservation := s.operations.countChangesetSpecs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(opts.BatchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.queryCount(ctx, countChangesetSpecsQuery(&opts))
 }
 
@@ -225,6 +249,16 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 		preds = append(preds, cond)
 	}
 
+	if opts.Type != "" {
+		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
+			// Check that externalID is not empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+		} else {
+			// Check that externalID is empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
+		}
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -239,11 +273,17 @@ type GetChangesetSpecOpts struct {
 }
 
 // GetChangesetSpec gets a changeset spec matching the given options.
-func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (*btypes.ChangesetSpec, error) {
+func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (spec *btypes.ChangesetSpec, err error) {
+	ctx, endObservation := s.operations.getChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+		log.String("randID", opts.RandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getChangesetSpecQuery(&opts)
 
 	var c btypes.ChangesetSpec
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return scanChangesetSpec(&c, sc)
 	})
 	if err != nil {
@@ -303,10 +343,14 @@ type ListChangesetSpecsOpts struct {
 	BatchSpecID int64
 	RandIDs     []string
 	IDs         []int64
+	Type        batcheslib.ChangesetSpecDescriptionType
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
 func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsOpts) (cs btypes.ChangesetSpecs, next int64, err error) {
+	ctx, endObservation := s.operations.listChangesetSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := listChangesetSpecsQuery(&opts)
 
 	cs = make(btypes.ChangesetSpecs, 0, opts.DBLimit())
@@ -346,23 +390,21 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	}
 
 	if len(opts.RandIDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.RandIDs))
-		for _, id := range opts.RandIDs {
-			if id != "" {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
-		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id IN (%s)", sqlf.Join(ids, ",")))
+		preds = append(preds, sqlf.Sprintf("changeset_specs.rand_id = ANY (%s)", pq.Array(opts.RandIDs)))
 	}
 
 	if len(opts.IDs) != 0 {
-		ids := make([]*sqlf.Query, 0, len(opts.IDs))
-		for _, id := range opts.IDs {
-			if id != 0 {
-				ids = append(ids, sqlf.Sprintf("%s", id))
-			}
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY (%s)", pq.Array(opts.IDs)))
+	}
+
+	if opts.Type != "" {
+		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
+			// Check that externalID is not empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+		} else {
+			// Check that externalID is empty.
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
 		}
-		preds = append(preds, sqlf.Sprintf("changeset_specs.id IN (%s)", sqlf.Join(ids, ",")))
 	}
 
 	return sqlf.Sprintf(
@@ -372,11 +414,53 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	)
 }
 
+type ChangesetSpecHeadRefConflict struct {
+	RepoID  api.RepoID
+	HeadRef string
+	Count   int
+}
+
+var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
+SELECT
+	repo_id, spec->>'headRef', COUNT(*)
+FROM
+	changeset_specs
+WHERE
+	batch_spec_id = %s
+AND
+	spec->>'headRef' IS NOT NULL
+GROUP BY
+	repo_id, spec->>'headRef'
+HAVING COUNT(*) > 1
+`
+
+func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {
+	ctx, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
+
+	err = s.query(ctx, q, func(sc scanner) error {
+		var c ChangesetSpecHeadRefConflict
+		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
+			return errors.Wrap(err, "scanning head ref conflict")
+		}
+		conflicts = append(conflicts, c)
+		return nil
+	})
+
+	return conflicts, err
+}
+
 // DeleteExpiredChangesetSpecs deletes each ChangesetSpec that has not been
 // attached to a BatchSpec within ChangesetSpecTTL, OR that is attached
 // to a BatchSpec that is not applied and is not attached to a Changeset
 // within BatchSpecTTL
-func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
+func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) (err error) {
+	ctx, endObservation := s.operations.deleteExpiredChangesetSpecs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	changesetSpecTTLExpiration := s.now().Add(-btypes.ChangesetSpecTTL)
 	batchSpecTTLExpiration := s.now().Add(-btypes.BatchSpecTTL)
 	q := sqlf.Sprintf(deleteExpiredChangesetSpecsQueryFmtstr, changesetSpecTTLExpiration, batchSpecTTLExpiration)
@@ -384,7 +468,7 @@ func (s *Store) DeleteExpiredChangesetSpecs(ctx context.Context) error {
 }
 
 var deleteExpiredChangesetSpecsQueryFmtstr = `
--- source: enterprise/internal/batches/store.go:DeleteExpiredChangesetSpecs
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteExpiredChangesetSpecs
 DELETE FROM
   changeset_specs cspecs
 WHERE
@@ -429,7 +513,7 @@ func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 		return errors.Wrap(err, "scanning changeset spec")
 	}
 
-	c.Spec = new(btypes.ChangesetSpecDescription)
+	c.Spec = new(batcheslib.ChangesetSpec)
 	if err = json.Unmarshal(spec, c.Spec); err != nil {
 		return errors.Wrap(err, "scanChangesetSpec: failed to unmarshal spec")
 	}
@@ -497,6 +581,12 @@ type GetRewirerMappingsOpts struct {
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
 // Changeset 3 doesn't have a matching spec and should be detached from the batch change (and closed) (ChangesetSpec == 0, Changeset = 3).
 func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings btypes.RewirerMappings, err error) {
+	ctx, endObservation := s.operations.getRewirerMappings.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(opts.BatchSpecID)),
+		log.Int("batchChangeID", int(opts.BatchChangeID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q, err := getRewirerMappingsQuery(opts)
 	if err != nil {
 		return nil, err

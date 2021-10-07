@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import CalculatorIcon from 'mdi-react/CalculatorIcon'
 import ClipboardPulseOutlineIcon from 'mdi-react/ClipboardPulseOutlineIcon'
 import * as React from 'react'
 
@@ -32,7 +31,6 @@ export const StreamingProgressCount: React.FunctionComponent<
                 'streaming-progress__count--in-progress': state === 'loading',
             })}
         >
-            <CalculatorIcon className="mr-2 icon-inline streaming-progress__count-icon" />
             {abbreviateNumber(progress.matchCount)}
             {limitHit(progress) ? '+' : ''} {pluralize('result', progress.matchCount)} in{' '}
             {(progress.durationMs / 1000).toFixed(2)}s

@@ -50,6 +50,7 @@ $input-btn-focus-width: 2px;
 // should be clearly visible.
 $btn-focus-box-shadow: var(--focus-box-shadow);
 $btn-link-disabled-color: var(--btn-link-disabled-color);
+$btn-padding-y-sm: var(--btn-padding-y-sm);
 
 // Forms don't manipulate the colors at compile time,
 // which is why we can use CSS variables for theming here
@@ -71,7 +72,7 @@ $custom-select-bg-size: 16px 16px;
 $custom-select-disabled-bg: var(--input-disabled-bg);
 $custom-select-focus-box-shadow: var(--input-focus-box-shadow);
 // Icon: mdi-react/ChevronDownIcon
-$custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='#{$redesign-gray-06}' viewBox='0 0 24 24'><path d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z'/></svg>");
+$custom-select-indicator: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' fill='#{$gray-06}' viewBox='0 0 24 24'><path d='M7.41 8.58L12 13.17l4.59-4.59L18 10l-6 6-6-6 1.41-1.42z'/></svg>");
 // Hide feedback icon for custom-select
 $custom-select-feedback-icon-size: 0;
 
@@ -98,9 +99,6 @@ $table-border-color: var(--border-color);
 // Progress
 $progress-height: auto;
 
-// Collapsible
-$collapsible-expand-btn-width: 1.25rem;
-
 $hr-border-color: var(--border-color);
 $hr-margin-y: 0.25rem;
 
@@ -108,8 +106,14 @@ $hr-margin-y: 0.25rem;
 $input-transition: none;
 $badge-transition: none; // Avoids setting transitions on badges that aren't links
 
-// Apply static redesign variables. Should be done before Bootstrap imports.
-@import './variables-redesign';
+// Spacer
+$spacer: 1rem;
+
+:root {
+    --spacer: #{$spacer};
+}
+
+// Apply static variables before Bootstrap imports.
 @import 'bootstrap/scss/functions';
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/mixins';
@@ -119,6 +123,19 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 @import 'bootstrap/scss/progress';
 @import 'bootstrap/scss/tooltip';
 @import 'bootstrap/scss/transitions';
+
+// Modified in `./buttons.scss`
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/button-group';
+
+// Modified in `./forms.scss`
+@import 'bootstrap/scss/forms';
+@import 'bootstrap/scss/custom-forms';
+@import 'bootstrap/scss/input-group';
+
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/tabs/styles';
+
 @import 'wildcard/src/global-styles/breakpoints';
 @import 'shared/src/global-styles/icons';
 @import './background';
@@ -129,8 +146,8 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 @import './meter';
 @import './popover';
 @import './nav';
-@import './typography';
 @import './list-group';
+@import './typography';
 @import './tables';
 @import './code';
 @import './buttons';
@@ -139,7 +156,7 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 @import './highlight';
 @import './tabs';
 @import './tooltips';
-@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 * {
     box-sizing: border-box;
@@ -148,17 +165,12 @@ $badge-transition: none; // Avoids setting transitions on badges that aren't lin
 // Our simple popovers only need these styles. We don't want the caret or special font sizes from
 // Bootstrap's popover CSS.
 .popover-inner {
-    background-color: var(--body-bg);
+    background-color: var(--color-bg-1);
     border: solid 1px var(--border-color);
-    border-radius: $border-radius;
-
-    .theme-redesign & {
-        background-color: var(--color-bg-1);
-        box-shadow: var(--dropdown-shadow);
-        border-radius: var(--popover-border-radius);
-        // Ensure content is clipped by border
-        overflow: hidden;
-    }
+    box-shadow: var(--dropdown-shadow);
+    border-radius: var(--popover-border-radius);
+    // Ensure content is clipped by border
+    overflow: hidden;
 }
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at

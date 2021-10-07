@@ -1,6 +1,16 @@
 import { isEqual } from 'lodash'
 import { from, Observable, Unsubscribable } from 'rxjs'
-import { distinctUntilChanged, filter, first, map, mapTo, publishReplay, refCount } from 'rxjs/operators'
+import {
+    distinctUntilChanged,
+    filter,
+    first,
+    map,
+    mapTo,
+    publishReplay,
+    refCount,
+    switchMap,
+    withLatestFrom,
+} from 'rxjs/operators'
 import type { HoverAlert } from 'sourcegraph'
 
 import { MarkupKind } from '@sourcegraph/extension-api-classes'
@@ -14,7 +24,6 @@ import { isDefined, isNot } from '@sourcegraph/shared/src/util/types'
 import { MutationRecordLike } from '../../util/dom'
 
 import { CodeHost } from './codeHost'
-import { userNeedsToSetupPrivateInstance } from './hoverAlerts'
 import { trackViews } from './views'
 
 const NATIVE_TOOLTIP_HIDDEN = 'native-tooltip--hidden'
@@ -31,22 +40,24 @@ export interface NativeTooltip {
 export function handleNativeTooltips(
     mutations: Observable<MutationRecordLike[]>,
     nativeTooltipsEnabled: Observable<boolean>,
-    { nativeTooltipResolvers, name, getContext }: Pick<CodeHost, 'nativeTooltipResolvers' | 'name' | 'getContext'>,
-    sourcegraphURL: string
+    { nativeTooltipResolvers, name }: Pick<CodeHost, 'nativeTooltipResolvers' | 'name' | 'getContext'>,
+    privateCloudErrors: Observable<boolean>
 ): { nativeTooltipsAlert: Observable<HoverAlert>; subscription: Unsubscribable } {
     const nativeTooltips = mutations.pipe(trackViews(nativeTooltipResolvers || []))
     const nativeTooltipsAlert = nativeTooltips.pipe(
         first(),
-        mapTo({
-            type: NATIVE_TOOLTIP_TYPE,
-            summary: {
-                kind: MarkupKind.Markdown,
-                value: `<small>Sourcegraph has hidden ${name}'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run "Code host: prefer non-Sourcegraph hover tooltips" from the command palette or set <code>{"codeHost.useNativeTooltips": true}</code> in your user settings.</small>`,
-            },
-        }),
-        // If we can't provide the user hovers because it's private code, don't hide native tooltips.
-        // Otherwise we would have to show the user two alerts at the same time.
-        filter(() => !userNeedsToSetupPrivateInstance({ getContext }, sourcegraphURL)),
+        switchMap(() =>
+            privateCloudErrors.pipe(
+                filter(hasError => !hasError),
+                mapTo({
+                    type: NATIVE_TOOLTIP_TYPE,
+                    summary: {
+                        kind: MarkupKind.Markdown,
+                        value: `<small>Sourcegraph has hidden ${name}'s native hover tooltips. You can toggle this at any time: to enable the native tooltips run "Code host: prefer non-Sourcegraph hover tooltips" from the command palette or set <code>{"codeHost.useNativeTooltips": true}</code> in your user settings.</small>`,
+                    },
+                })
+            )
+        ),
         publishReplay(1),
         refCount()
     )
@@ -54,16 +65,15 @@ export function handleNativeTooltips(
         nativeTooltipsAlert,
         subscription: nativeTooltips.subscribe(({ element, subscriptions }) => {
             subscriptions.add(
-                // This subscription is correctly handled through the view's `subscriptions`
-                // eslint-disable-next-line rxjs/no-nested-subscribe
-                nativeTooltipsEnabled.subscribe(enabled => {
-                    // If we can't provide the user hovers because it's private code, don't hide native tooltips.
-                    // Otherwise we would have to show the user two alerts at the same time.
-                    element.classList.toggle(
-                        NATIVE_TOOLTIP_HIDDEN,
-                        !enabled && !userNeedsToSetupPrivateInstance({ getContext }, sourcegraphURL)
-                    )
-                })
+                nativeTooltipsEnabled
+                    .pipe(withLatestFrom(privateCloudErrors))
+                    // This subscription is correctly handled through the view's `subscriptions`
+                    // eslint-disable-next-line rxjs/no-nested-subscribe
+                    .subscribe(([enabled, hasPrivateCloudError]) => {
+                        // If we can't provide the user hovers because it's private code, don't hide native tooltips.
+                        // Otherwise we would have to show the user two alerts at the same time.
+                        element.classList.toggle(NATIVE_TOOLTIP_HIDDEN, !enabled && !hasPrivateCloudError)
+                    })
             )
         }),
     }

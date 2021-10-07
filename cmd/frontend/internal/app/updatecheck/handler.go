@@ -2,10 +2,10 @@ package updatecheck
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -34,17 +34,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	//version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newBuild("3.29.1")
+	latestReleaseDockerServerImageBuild = newBuild("3.32.0")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newBuild("3.29.1")
+	latestReleaseKubernetesBuild = newBuild("3.32.0")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newBuild("3.29.1")
+	latestReleaseDockerComposeOrPureDocker = newBuild("3.32.0")
 )
 
 func getLatestRelease(deployType string) build {
@@ -147,7 +147,7 @@ var timeNow = time.Now
 func canUpdateDate(clientVersionString string) (bool, error) {
 	match := dateRegex.FindStringSubmatch(clientVersionString)
 	if len(match) != 2 {
-		return false, fmt.Errorf("no date in version string %q", clientVersionString)
+		return false, errors.Errorf("no date in version string %q", clientVersionString)
 	}
 
 	t, err := time.ParseInLocation("2006-01-02", match[1], time.UTC)
@@ -421,17 +421,53 @@ func reserializeNewCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 		eventSummaries = append(eventSummaries, translateEventSummary(es))
 	}
 
+	countsByLanguage := make([]jsonCodeIntelRepositoryCountsByLanguage, 0, len(codeIntelUsage.CountsByLanguage))
+	for language, counts := range codeIntelUsage.CountsByLanguage {
+		// note: do not capture loop var by ref
+		languageID := language
+
+		countsByLanguage = append(countsByLanguage, jsonCodeIntelRepositoryCountsByLanguage{
+			LanguageID:                            &languageID,
+			NumRepositoriesWithUploadRecords:      counts.NumRepositoriesWithUploadRecords,
+			NumRepositoriesWithFreshUploadRecords: counts.NumRepositoriesWithFreshUploadRecords,
+			NumRepositoriesWithIndexRecords:       counts.NumRepositoriesWithIndexRecords,
+			NumRepositoriesWithFreshIndexRecords:  counts.NumRepositoriesWithFreshIndexRecords,
+		})
+	}
+	sort.Slice(countsByLanguage, func(i, j int) bool {
+		return *countsByLanguage[i].LanguageID < *countsByLanguage[j].LanguageID
+	})
+
+	numRepositories := codeIntelUsage.NumRepositories
+	if numRepositories == nil && codeIntelUsage.NumRepositoriesWithUploadRecords != nil && codeIntelUsage.NumRepositoriesWithoutUploadRecords != nil {
+		val := *codeIntelUsage.NumRepositoriesWithUploadRecords + *codeIntelUsage.NumRepositoriesWithoutUploadRecords
+		numRepositories = &val
+	}
+
+	var numRepositoriesWithoutUploadRecords *int32
+	if codeIntelUsage.NumRepositories != nil && codeIntelUsage.NumRepositoriesWithUploadRecords != nil {
+		val := *codeIntelUsage.NumRepositories - *codeIntelUsage.NumRepositoriesWithUploadRecords
+		numRepositoriesWithoutUploadRecords = &val
+	}
+
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek:                         codeIntelUsage.StartOfWeek,
-		WAUs:                                codeIntelUsage.WAUs,
-		PreciseWAUs:                         codeIntelUsage.PreciseWAUs,
-		SearchBasedWAUs:                     codeIntelUsage.SearchBasedWAUs,
-		CrossRepositoryWAUs:                 codeIntelUsage.CrossRepositoryWAUs,
-		PreciseCrossRepositoryWAUs:          codeIntelUsage.PreciseCrossRepositoryWAUs,
-		SearchBasedCrossRepositoryWAUs:      codeIntelUsage.SearchBasedCrossRepositoryWAUs,
-		EventSummaries:                      eventSummaries,
-		NumRepositoriesWithUploadRecords:    codeIntelUsage.NumRepositoriesWithUploadRecords,
-		NumRepositoriesWithoutUploadRecords: codeIntelUsage.NumRepositoriesWithoutUploadRecords,
+		StartOfWeek:                                  codeIntelUsage.StartOfWeek,
+		WAUs:                                         codeIntelUsage.WAUs,
+		PreciseWAUs:                                  codeIntelUsage.PreciseWAUs,
+		SearchBasedWAUs:                              codeIntelUsage.SearchBasedWAUs,
+		CrossRepositoryWAUs:                          codeIntelUsage.CrossRepositoryWAUs,
+		PreciseCrossRepositoryWAUs:                   codeIntelUsage.PreciseCrossRepositoryWAUs,
+		SearchBasedCrossRepositoryWAUs:               codeIntelUsage.SearchBasedCrossRepositoryWAUs,
+		EventSummaries:                               eventSummaries,
+		NumRepositories:                              numRepositories,
+		NumRepositoriesWithUploadRecords:             codeIntelUsage.NumRepositoriesWithUploadRecords,
+		NumRepositoriesWithoutUploadRecords:          numRepositoriesWithoutUploadRecords,
+		NumRepositoriesWithFreshUploadRecords:        codeIntelUsage.NumRepositoriesWithFreshUploadRecords,
+		NumRepositoriesWithIndexRecords:              codeIntelUsage.NumRepositoriesWithIndexRecords,
+		NumRepositoriesWithFreshIndexRecords:         codeIntelUsage.NumRepositoriesWithFreshIndexRecords,
+		NumRepositoriesWithIndexConfigurationRecords: codeIntelUsage.NumRepositoriesWithAutoIndexConfigurationRecords,
+		CountsByLanguage:                             countsByLanguage,
+		SettingsPageViewCount:                        codeIntelUsage.SettingsPageViewCount,
 	})
 }
 
@@ -466,30 +502,37 @@ func reserializeOldCodeIntelUsage(payload json.RawMessage) (json.RawMessage, err
 	}
 
 	return json.Marshal(jsonCodeIntelUsage{
-		StartOfWeek:                         week.StartTime,
-		WAUs:                                nil,
-		PreciseWAUs:                         nil,
-		SearchBasedWAUs:                     nil,
-		CrossRepositoryWAUs:                 nil,
-		PreciseCrossRepositoryWAUs:          nil,
-		SearchBasedCrossRepositoryWAUs:      nil,
-		EventSummaries:                      eventSummaries,
-		NumRepositoriesWithUploadRecords:    nil,
-		NumRepositoriesWithoutUploadRecords: nil,
+		StartOfWeek:    week.StartTime,
+		EventSummaries: eventSummaries,
 	})
 }
 
 type jsonCodeIntelUsage struct {
-	StartOfWeek                         time.Time          `json:"start_time"`
-	WAUs                                *int32             `json:"waus"`
-	PreciseWAUs                         *int32             `json:"precise_waus"`
-	SearchBasedWAUs                     *int32             `json:"search_waus"`
-	CrossRepositoryWAUs                 *int32             `json:"xrepo_waus"`
-	PreciseCrossRepositoryWAUs          *int32             `json:"precise_xrepo_waus"`
-	SearchBasedCrossRepositoryWAUs      *int32             `json:"search_xrepo_waus"`
-	EventSummaries                      []jsonEventSummary `json:"event_summaries"`
-	NumRepositoriesWithUploadRecords    *int32             `json:"num_repositories_with_upload_records"`
-	NumRepositoriesWithoutUploadRecords *int32             `json:"num_repositories_without_upload_records"`
+	StartOfWeek                                  time.Time                                 `json:"start_time"`
+	WAUs                                         *int32                                    `json:"waus"`
+	PreciseWAUs                                  *int32                                    `json:"precise_waus"`
+	SearchBasedWAUs                              *int32                                    `json:"search_waus"`
+	CrossRepositoryWAUs                          *int32                                    `json:"xrepo_waus"`
+	PreciseCrossRepositoryWAUs                   *int32                                    `json:"precise_xrepo_waus"`
+	SearchBasedCrossRepositoryWAUs               *int32                                    `json:"search_xrepo_waus"`
+	EventSummaries                               []jsonEventSummary                        `json:"event_summaries"`
+	NumRepositories                              *int32                                    `json:"num_repositories"`
+	NumRepositoriesWithUploadRecords             *int32                                    `json:"num_repositories_with_upload_records"`
+	NumRepositoriesWithoutUploadRecords          *int32                                    `json:"num_repositories_without_upload_records"`
+	NumRepositoriesWithFreshUploadRecords        *int32                                    `json:"num_repositories_with_fresh_upload_records"`
+	NumRepositoriesWithIndexRecords              *int32                                    `json:"num_repositories_with_index_records"`
+	NumRepositoriesWithFreshIndexRecords         *int32                                    `json:"num_repositories_with_fresh_index_records"`
+	NumRepositoriesWithIndexConfigurationRecords *int32                                    `json:"num_repositories_with_index_configuration_records"`
+	CountsByLanguage                             []jsonCodeIntelRepositoryCountsByLanguage `json:"counts_by_language"`
+	SettingsPageViewCount                        *int32                                    `json:"settings_page_view_count"`
+}
+
+type jsonCodeIntelRepositoryCountsByLanguage struct {
+	LanguageID                            *string `json:"language_id"`
+	NumRepositoriesWithUploadRecords      *int32  `json:"num_repositories_with_upload_records"`
+	NumRepositoriesWithFreshUploadRecords *int32  `json:"num_repositories_with_fresh_upload_records"`
+	NumRepositoriesWithIndexRecords       *int32  `json:"num_repositories_with_index_records"`
+	NumRepositoriesWithFreshIndexRecords  *int32  `json:"num_repositories_with_fresh_index_records"`
 }
 
 type jsonEventSummary struct {

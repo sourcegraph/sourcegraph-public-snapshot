@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 )
 
-func TestDecoder(t *testing.T) {
+func TestFrontendClient(t *testing.T) {
 	type Event struct {
 		Name  string
 		Value interface{}
@@ -28,8 +28,12 @@ func TestDecoder(t *testing.T) {
 	}, {
 		Name: "matches",
 		Value: []EventMatch{
-			&EventFileMatch{
-				Type: FileMatchType,
+			&EventContentMatch{
+				Type: ContentMatchType,
+				Path: "test",
+			},
+			&EventPathMatch{
+				Type: PathMatchType,
 				Path: "test",
 			},
 			&EventRepoMatch{
@@ -88,7 +92,7 @@ func TestDecoder(t *testing.T) {
 	defer resp.Body.Close()
 
 	var got []Event
-	err = Decoder{
+	err = FrontendStreamDecoder{
 		OnProgress: func(d *api.Progress) {
 			got = append(got, Event{Name: "progress", Value: d})
 		},

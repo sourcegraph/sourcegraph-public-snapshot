@@ -32,7 +32,11 @@ const BROWSER_DOCUMENTS_GLOB = [
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
 const ALL_DOCUMENTS_GLOB = [...new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB])]
 
-const plugins = [`${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`, 'typescript', 'typescript-operations']
+const SHARED_PLUGINS = [
+  `${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`,
+  'typescript',
+  'typescript-operations',
+]
 
 /**
  * Generates TypeScript files with types for all GraphQL operations.
@@ -49,7 +53,6 @@ async function generateGraphQlOperations() {
         preResolveTypes: true,
         operationResultSuffix: 'Result',
         omitOperationSuffix: true,
-        skipTypename: true,
         namingConvention: {
           typeNames: 'keep',
           enumValues: 'keep',
@@ -80,7 +83,7 @@ async function generateGraphQlOperations() {
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'BrowserGraphQlOperations',
           },
-          plugins,
+          plugins: SHARED_PLUGINS,
         },
 
         [path.join(WEB_FOLDER, './src/graphql-operations.ts')]: {
@@ -91,7 +94,7 @@ async function generateGraphQlOperations() {
             enumValues: '@sourcegraph/shared/src/graphql-operations',
             interfaceNameForOperations: 'WebGraphQlOperations',
           },
-          plugins,
+          plugins: SHARED_PLUGINS,
         },
 
         [path.join(SHARED_FOLDER, './src/graphql-operations.ts')]: {
@@ -101,7 +104,7 @@ async function generateGraphQlOperations() {
             noExport: false,
             interfaceNameForOperations: 'SharedGraphQlOperations',
           },
-          plugins,
+          plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
         },
       },
     },

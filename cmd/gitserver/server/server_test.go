@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"container/list"
 	"context"
 	"encoding/json"
 	"flag"
@@ -465,19 +466,23 @@ func makeSingleCommitRepo(cmd func(string, ...string) string) string {
 }
 
 func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *Server {
-	return &Server{
+	s := &Server{
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
 		DB:               db,
+		CloneQueue:       NewCloneQueue(list.New()),
 		ctx:              ctx,
 		locker:           &RepositoryLocker{},
 		cloneLimiter:     mutablelimiter.New(1),
 		cloneableLimiter: mutablelimiter.New(1),
 		rpsLimiter:       rate.NewLimiter(rate.Inf, 10),
 	}
+
+	s.StartClonePipeline(ctx)
+	return s
 }
 
 func TestCloneRepo(t *testing.T) {
@@ -552,7 +557,7 @@ func TestCloneRepo(t *testing.T) {
 
 	// Test blocking with a failure (already exists since we didn't specify overwrite)
 	_, err = s.cloneRepo(context.Background(), repoName, &cloneOptions{Block: true})
-	if !os.IsExist(errors.Cause(err)) {
+	if !errors.Is(err, os.ErrExist) {
 		t.Fatalf("expected clone repo to fail with already exists: %s", err)
 	}
 	assertCloneStatus(types.CloneStatusCloned)
@@ -633,8 +638,10 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")
+
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -661,7 +668,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -761,7 +768,9 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		s := makeTestServer(ctx, reposDir, remote, nil)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir GitDir) {
-			cmd("sh", "-c", fmt.Sprintf("rm %s/HEAD", tmpDir))
+			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
+				t.Fatal(err)
+			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
 		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
@@ -908,11 +917,6 @@ func TestSyncRepoState(t *testing.T) {
 	s.Hostname = hostname
 	s.ctx = ctx
 
-	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	dbRepo := &types.Repo{
 		Name:        repoName,
 		URI:         string(repoName),
@@ -920,15 +924,20 @@ func TestSyncRepoState(t *testing.T) {
 	}
 
 	// Insert the repo into our database
-	err = database.Repos(db).Create(ctx, dbRepo)
+	err := database.Repos(db).Create(ctx, dbRepo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = database.GitserverRepos(db).GetByID(ctx, dbRepo.ID)
-	if err == nil {
-		// GitserverRepo should not exist
-		t.Fatal("Expected an error")
+	if err != nil {
+		// GitserverRepo should exist after updating the lastFetched time
+		t.Fatal(err)
 	}
 
 	err = s.syncRepoState([]string{hostname}, 10, 10, true)

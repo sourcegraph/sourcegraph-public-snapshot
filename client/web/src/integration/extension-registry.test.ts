@@ -93,22 +93,18 @@ const registryExtensionNodes: RegistryExtensionFieldsForList[] = [
 
 const extensionNodes: ExtensionsResult['extensionRegistry']['extensions']['nodes'] = [
     {
+        id: 'typescript',
         extensionID: 'sourcegraph/typescript',
-        id: 'test-extension-1',
         manifest: {
-            raw: typescriptRawManifest,
+            jsonFields: typescriptRawManifest,
         },
-        url: '/extensions/sourcegraph/typescript',
-        viewerCanAdminister: false,
     },
     {
+        id: 'count',
         extensionID: 'sqs/word-count',
-        id: 'test-extension-2',
         manifest: {
-            raw: wordCountRawManifest,
+            jsonFields: wordCountRawManifest,
         },
-        url: '/extensions/sqs/word-count',
-        viewerCanAdminister: false,
     },
 ]
 
@@ -134,6 +130,7 @@ describe('Extension Registry', () => {
             ...commonWebGraphQlResults,
             ViewerSettings: () => ({
                 viewerSettings: {
+                    __typename: 'SettingsCascade',
                     subjects: [
                         {
                             __typename: 'DefaultSettings',
@@ -192,6 +189,7 @@ describe('Extension Registry', () => {
             }),
             RegistryExtensions: () => ({
                 extensionRegistry: {
+                    __typename: 'ExtensionRegistry',
                     extensions: {
                         error: null,
                         nodes: registryExtensionNodes,
@@ -201,6 +199,7 @@ describe('Extension Registry', () => {
             }),
             Extensions: () => ({
                 extensionRegistry: {
+                    __typename: 'ExtensionRegistry',
                     extensions: {
                         nodes: extensionNodes,
                     },

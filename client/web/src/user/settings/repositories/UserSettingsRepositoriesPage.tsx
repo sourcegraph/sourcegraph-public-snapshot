@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -12,7 +11,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
+import { Badge } from '@sourcegraph/web/src/components/Badge'
+import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
@@ -35,10 +35,14 @@ import {
 } from '../../../graphql-operations'
 import { listUserRepositories } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 
 import { RepositoryNode } from './RepositoryNode'
 
-interface Props extends RouteComponentProps, TelemetryProps {
+interface Props
+    extends RouteComponentProps,
+        TelemetryProps,
+        Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
     userID: string
     routingPrefix: string
 }
@@ -107,8 +111,8 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     userID,
     routingPrefix,
     telemetryService,
+    onUserExternalServicesOrRepositoriesUpdate,
 }) => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const [hasRepos, setHasRepos] = useState(false)
     const [externalServices, setExternalServices] = useState<ExternalServicesResult['externalServices']['nodes']>()
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
@@ -116,9 +120,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [updateReposList, setUpdateReposList] = useState(false)
 
     const NoAddedReposBanner = (
-        <Container
-            className={classNames(isRedesignEnabled && 'text-center', !isRedesignEnabled && 'border rounded p-3')}
-        >
+        <Container className="text-center">
             <h4>You have not added any repositories to Sourcegraph.</h4>
 
             {externalServices?.length === 0 ? (
@@ -153,6 +155,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         ) {
                             node(id: $id) {
                                 ... on User {
+                                    __typename
                                     repositories(
                                         first: $first
                                         query: $query
@@ -217,9 +220,14 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
         // check if user has any manually added or affiliated repositories
         const result = await fetchUserReposCount()
-        if (result?.node?.repositories?.totalCount && result.node.repositories.totalCount > 0) {
+        const userRepoCount =
+            result?.node?.__typename === 'User' && result.node.repositories.totalCount
+                ? result.node.repositories.totalCount
+                : 0
+        if (userRepoCount) {
             setHasRepos(true)
         }
+        onUserExternalServicesOrRepositoriesUpdate(services.length, userRepoCount)
 
         // configure filters
         const specificCodeHostFilters = services.map(service => ({
@@ -238,7 +246,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchUserReposCount])
+    }, [fetchExternalServices, fetchUserReposCount, onUserExternalServicesOrRepositoriesUpdate])
 
     const TWO_SECONDS = 2
 
@@ -300,7 +308,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const queryRepositories = useCallback(
         (
             args: FilteredConnectionQueryArguments
-        ): Observable<NonNullable<UserRepositoriesResult['node']>['repositories']> =>
+        ): Observable<(NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']> =>
             listUserRepositories({ ...args, id: userID }).pipe(
                 tap(() => {
                     if (status === 'schedule-complete') {
@@ -385,6 +393,11 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     return (
         <div className="user-settings-repos">
+            <SelfHostedCtaLink
+                className="user-settings-repos__self-hosted-cta"
+                telemetryService={telemetryService}
+                page="settings/repositories"
+            />
             {status === 'scheduled' && (
                 <div className="alert alert-info">
                     <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories list may not be
@@ -395,12 +408,20 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <PageTitle title="Repositories" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Repositories' }]}
+                path={[
+                    {
+                        text: (
+                            <div className="d-flex">
+                                Repositories <Badge status="beta" className="ml-2" />
+                            </div>
+                        ),
+                    },
+                ]}
                 description={
-                    <>
+                    <div className="text-muted">
                         All repositories synced with Sourcegraph from{' '}
                         <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
-                    </>
+                    </div>
                 }
                 actions={
                     <Link

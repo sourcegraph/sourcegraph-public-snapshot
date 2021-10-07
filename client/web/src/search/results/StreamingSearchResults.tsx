@@ -2,8 +2,8 @@ import classNames from 'classnames'
 import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Observable } from 'rxjs'
-import { debounceTime } from 'rxjs/operators'
 
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -11,11 +11,11 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
+import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import {
     CaseSensitivityProps,
@@ -24,18 +24,21 @@ import {
     resolveVersionContext,
     ParsedSearchQueryProps,
     MutableVersionContextProps,
+    SearchContextProps,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { CodeMonitoringProps } from '../../code-monitoring'
 import { PageTitle } from '../../components/PageTitle'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
-import { isCodeInsightsEnabled } from '../../insights'
+import { CodeInsightsProps } from '../../insights/types'
+import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
-import { SearchStarRadialGradientIcon } from '../CtaIcons'
-import { getSubmittedSearchesCount, QueryState, submitSearch } from '../helpers'
+import { SearchBetaIcon } from '../CtaIcons'
+import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
+import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { SearchSidebar } from './sidebar/SearchSidebar'
 import styles from './StreamingSearchResults.module.scss'
@@ -44,23 +47,23 @@ import { VersionContextWarning } from './VersionContextWarning'
 
 export interface StreamingSearchResultsProps
     extends SearchStreamingProps,
+        Pick<ActivationProps, 'activation'>,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<MutableVersionContextProps, 'versionContext' | 'availableVersionContexts' | 'previousVersionContext'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         SettingsCascadeProps,
         ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
         PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
         TelemetryProps,
         ThemeProps,
         CodeMonitoringProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
-    isSourcegraphDotCom: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -86,6 +89,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         previousVersionContext,
         authenticatedUser,
         telemetryService,
+        codeInsightsEnabled,
+        extensionsController: { extHostAPI: extensionHostAPI },
     } = props
 
     // Log view event on first load
@@ -117,20 +122,21 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     }, [caseSensitive, query, telemetryService])
 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
-    const results = useObservable(
-        useMemo(
-            () =>
-                streamSearch({
-                    query,
-                    version: LATEST_VERSION,
-                    patternType: patternType ?? SearchPatternType.literal,
-                    caseSensitive,
-                    versionContext: resolveVersionContext(versionContext, availableVersionContexts),
-                    trace,
-                }).pipe(debounceTime(500)),
-            [streamSearch, query, patternType, caseSensitive, versionContext, availableVersionContexts, trace]
-        )
+
+    const options: StreamSearchOptions = useMemo(
+        () => ({
+            query,
+            version: LATEST_VERSION,
+            patternType: patternType ?? SearchPatternType.literal,
+            caseSensitive,
+            versionContext: resolveVersionContext(versionContext, availableVersionContexts),
+            trace,
+            extensionHostAPI,
+        }),
+        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext, extensionHostAPI]
     )
+
+    const results = useCachedSearchResults(streamSearch, options, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -221,30 +227,39 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
     const resultsFound = results ? results.results.length > 0 : false
     const submittedSearchesCount = getSubmittedSearchesCount()
     const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
-    const showSignUpCta =
-        !authenticatedUser &&
-        resultsFound &&
-        isValidSignUpCtaCadence &&
-        props.featureFlags.get('w0-signup-optimisation')
+    const showSignUpCta = !authenticatedUser && resultsFound && isValidSignUpCtaCadence
+
+    // Log view event when signup CTA is shown
+    useEffect(() => {
+        if (showSignUpCta) {
+            telemetryService.log('SearchResultResultsCTAShown')
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showSignUpCta])
 
     return (
         <div className={styles.streamingSearchResults}>
             <PageTitle key="page-title" title={query} />
 
             <SearchSidebar
-                {...props}
+                activation={props.activation}
+                caseSensitive={props.caseSensitive}
+                patternType={props.patternType}
+                settingsCascade={props.settingsCascade}
+                telemetryService={props.telemetryService}
+                versionContext={props.versionContext}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
                 className={classNames(
                     styles.streamingSearchResultsSidebar,
                     showSidebar && styles.streamingSearchResultsSidebarShow
                 )}
-                query={props.navbarSearchQueryState.query}
                 filters={results?.filters}
             />
 
             <SearchResultsInfoBar
                 {...props}
                 query={query}
-                enableCodeInsights={isCodeInsightsEnabled(props.settingsCascade)}
+                enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                 resultsFound={resultsFound}
                 className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
                 allExpanded={allExpanded}
@@ -289,16 +304,18 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
                 {showSignUpCta && (
                     <div className="card my-2 mr-3 d-flex p-3 flex-row align-items-center">
-                        <div className={classNames('mr-3', styles.streamingSearchResultsCtaIconWrapper)}>
-                            <SearchStarRadialGradientIcon />
+                        <div className="mr-3">
+                            <SearchBetaIcon />
                         </div>
                         <div className="flex-1">
-                            <div className={classNames('mb-2', styles.streamingSearchResultsCtaTitle)}>
-                                <strong>Search your public (and soon private) code</strong>
+                            <div className={classNames('mb-1', styles.streamingSearchResultsCtaTitle)}>
+                                <strong>
+                                    Sign up to add your public and private repositories and unlock search flow
+                                </strong>
                             </div>
                             <div className={classNames('text-muted', styles.streamingSearchResultsCtaDescription)}>
-                                Create a free account to search all of your repos at once.{' '}
-                                <i>(It's like a developer's superpower.)</i>
+                                Do all the things editors can’t: search multiple repos & commit history, monitor, save
+                                searches and more.
                             </div>
                         </div>
                         <Link
@@ -306,7 +323,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                             to={`/sign-up?src=SearchCTA&returnTo=${encodeURIComponent('/user/settings/repositories')}`}
                             onClick={onSignUpClick}
                         >
-                            Sign up for Sourcegraph
+                            Create a free account
                         </Link>
                     </div>
                 )}

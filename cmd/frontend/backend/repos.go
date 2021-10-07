@@ -116,22 +116,24 @@ func (s *repos) Add(ctx context.Context, name api.RepoName) (addedName api.RepoN
 	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
 	// limit) for repositories that don't exist or private repositories that people attempt to
 	// access.
-	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host != nil {
-		status := "unknown"
-		defer func() {
-			metricIsRepoCloneable.WithLabelValues(status).Inc()
-		}()
-
-		if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
-			if ctx.Err() != nil {
-				status = "timeout"
-			} else {
-				status = "fail"
-			}
-			return "", err
-		}
-		status = "success"
+	if host := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...); host == nil {
+		return "", &database.RepoNotFoundErr{Name: name}
 	}
+
+	status := "unknown"
+	defer func() {
+		metricIsRepoCloneable.WithLabelValues(status).Inc()
+	}()
+
+	if err := gitserver.DefaultClient.IsRepoCloneable(ctx, name); err != nil {
+		if ctx.Err() != nil {
+			status = "timeout"
+		} else {
+			status = "fail"
+		}
+		return "", err
+	}
+	status = "success"
 
 	// Looking up the repo in repo-updater makes it sync that repo to the
 	// database on sourcegraph.com if that repo is from github.com or gitlab.com
@@ -160,7 +162,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 }
 
 // ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
-// default repos which could include private user added repos.
+// indexable repos which could include private user added repos.
 func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
@@ -170,7 +172,13 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 		}
 		done()
 	}()
-	return s.cache.List(ctx)
+
+	if envvar.SourcegraphDotComMode() {
+		return s.cache.List(ctx)
+	}
+
+	trueP := true
+	return s.store.ListRepoNames(ctx, database.ReposListOptions{Index: &trueP})
 }
 
 // ListSearchable calls database.IndexableRepos.ListPublic, with tracing.

@@ -4,6 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -36,10 +42,16 @@ type AllReposIterator struct {
 	// to pull such large numbers of rows from the DB frequently.
 	RepositoryListCacheTime time.Duration
 
+	counter *prometheus.CounterVec
+
 	// Internal fields below.
 	cachedRepoNamesAge time.Time
 	cachedRepoNames    []string
 	cachedPageRequests map[database.LimitOffset]cachedPageRequest
+}
+
+func NewAllReposIterator(indexableReposLister IndexableReposLister, repoStore RepoStore, clock func() time.Time, sourcegraphDotComMode bool, repositoryListCacheTime time.Duration, counterOpts *prometheus.CounterOpts) *AllReposIterator {
+	return &AllReposIterator{IndexableReposLister: indexableReposLister, RepoStore: repoStore, Clock: clock, SourcegraphDotComMode: sourcegraphDotComMode, RepositoryListCacheTime: repositoryListCacheTime, counter: promauto.NewCounterVec(*counterOpts, []string{"result"})}
 }
 
 func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
@@ -55,15 +67,18 @@ func (a *AllReposIterator) timeSince(t time.Time) time.Duration {
 //
 // If the forEach function returns an error, pagination is stopped and the error returned.
 func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName string) error) error {
+	// 🚨 SECURITY: this context will ensure that this iterator goes over all repositories
+	globalCtx := actor.WithInternalActor(ctx)
+
 	if a.SourcegraphDotComMode {
 		// Has the cache expired or empty? If so, refresh it.
 		if a.timeSince(a.cachedRepoNamesAge) > a.RepositoryListCacheTime || a.cachedRepoNames == nil {
 			a.cachedRepoNames = a.cachedRepoNames[:0]
 
 			// We shouldn't try to fill historical data for ALL repos on Sourcegraph.com, it would take
-			// forever. Instead, we use the same list of default repositories used when you do a global
+			// forever. Instead, we use the same list of indexable repositories used when you do a global
 			// search on Sourcegraph.com.
-			res, err := a.IndexableReposLister.List(ctx)
+			res, err := a.IndexableReposLister.List(globalCtx)
 			if err != nil {
 				return errors.Wrap(err, "IndexableReposLister.List")
 			}
@@ -74,8 +89,10 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 		}
 		for _, repo := range a.cachedRepoNames {
 			if err := forEach(repo); err != nil {
+				a.counter.WithLabelValues("error").Inc()
 				return errors.Wrap(err, "forEach")
 			}
+			a.counter.WithLabelValues("success").Inc()
 		}
 		return nil
 	}
@@ -100,8 +117,11 @@ func (a *AllReposIterator) ForEach(ctx context.Context, forEach func(repoName st
 		// Call the forEach function on every repository.
 		for _, r := range repos {
 			if err := forEach(string(r.Name)); err != nil {
+				a.counter.WithLabelValues("error").Inc()
 				return errors.Wrap(err, "forEach")
 			}
+			a.counter.WithLabelValues("success").Inc()
+
 		}
 
 		// Set outselves up to get the next page.
@@ -122,9 +142,9 @@ func (a *AllReposIterator) cachedRepoStoreList(ctx context.Context, page databas
 		return cacheEntry.results, nil
 	}
 
+	trueP := true
 	repos, err := a.RepoStore.List(ctx, database.ReposListOptions{
-		// No point in trying to search uncloned repositories.
-		OnlyCloned: true,
+		Index: &trueP,
 
 		// Order by repository name.
 		OrderBy: database.RepoListOrderBy{{Field: database.RepoListName}},

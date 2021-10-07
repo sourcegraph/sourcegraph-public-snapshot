@@ -4,7 +4,7 @@ import { ButtonLink } from '@sourcegraph/shared/src/components/LinkOrButton'
 
 import { PatternTypeProps } from '../..'
 import { AuthenticatedUser } from '../../../auth'
-import { CodeInsightsIcon } from '../../../insights/components'
+import { CodeInsightsIcon } from '../../../insights/Icons'
 
 interface CreateCodeInsightButtonProps extends Pick<PatternTypeProps, 'patternType'> {
     /** Search query string. */
@@ -35,7 +35,7 @@ export const CreateCodeInsightButton: React.FunctionComponent<CreateCodeInsightB
 
     return (
         <li data-tooltip="Create Insight based on this search query" data-delay={10000} className="nav-item mr-2">
-            <ButtonLink to={toURL} className="btn btn-sm btn-outline-secondary nav-link text-decoration-none">
+            <ButtonLink to={toURL} className="btn btn-sm btn-outline-secondary text-decoration-none">
                 <CodeInsightsIcon className="icon-inline mr-1" />
                 Create Insight
             </ButtonLink>

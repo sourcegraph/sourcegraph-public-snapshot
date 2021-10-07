@@ -2,14 +2,19 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -17,16 +22,17 @@ import (
 var _ graphqlbackend.InsightConnectionResolver = &insightConnectionResolver{}
 
 type insightConnectionResolver struct {
-	insightsStore   store.Interface
-	workerBaseStore *basestore.Store
-	settingStore    discovery.SettingStore
+	insightsStore        store.Interface
+	workerBaseStore      *basestore.Store
+	orgStore             *database.OrgStore
+	insightMetadataStore store.InsightMetadataStore
 
 	// arguments from query
 	ids []string
 
 	// cache results because they are used by multiple fields
 	once     sync.Once
-	insights []insights.SearchInsight
+	insights []types.Insight
 	next     int64
 	err      error
 }
@@ -42,6 +48,7 @@ func (r *insightConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,
 			insight:         insight,
+			metadataStore:   r.insightMetadataStore,
 		})
 	}
 	return resolvers, nil
@@ -63,9 +70,42 @@ func (r *insightConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *insightConnectionResolver) compute(ctx context.Context) ([]insights.SearchInsight, int64, error) {
+func (r *insightConnectionResolver) compute(ctx context.Context) ([]types.Insight, int64, error) {
 	r.once.Do(func() {
-		r.insights, r.err = discovery.Discover(ctx, r.settingStore, discovery.InsightFilterArgs{Ids: r.ids})
+		args := store.InsightQueryArgs{UniqueIDs: r.ids}
+		uid := actor.FromContext(ctx).UID
+		if uid != 0 {
+			// 🚨 SECURITY
+			// only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
+			// insights with a global grant.
+			args.UserID = []int{int(uid)}
+			orgs, err := r.orgStore.GetByUserID(ctx, uid)
+			if err != nil {
+				r.err = err
+				return
+			}
+			orgIDs := make([]int, 0, len(orgs))
+			for _, org := range orgs {
+				orgIDs = append(orgIDs, int(org.ID))
+			}
+			args.OrgID = orgIDs
+		}
+
+		mapped, err := r.insightMetadataStore.GetMapped(ctx, args)
+		if err != nil {
+			r.err = err
+			return
+		}
+		// currently insight metadata is partially stored in user settings. Series will be joined with their appropriate
+		// metadata by sorting based on query text, and joining in the frontend. This is largely a temporary solution
+		// until insights has a full graphql api
+		for _, insight := range mapped {
+			sort.Slice(insight.Series, func(i, j int) bool {
+				return strings.ToUpper(insight.Series[i].Query) < strings.ToUpper(insight.Series[j].Query)
+			})
+		}
+
+		r.insights = mapped
 	})
 	return r.insights, r.next, r.err
 }
@@ -77,11 +117,12 @@ var _ graphqlbackend.InsightResolver = &insightResolver{}
 type insightResolver struct {
 	insightsStore   store.Interface
 	workerBaseStore *basestore.Store
-	insight         insights.SearchInsight
+	metadataStore   store.InsightMetadataStore
+	insight         types.Insight
 }
 
 func (r *insightResolver) ID() string {
-	return r.insight.ID
+	return r.insight.UniqueID
 }
 
 func (r *insightResolver) Title() string { return r.insight.Title }
@@ -96,6 +137,7 @@ func (r *insightResolver) Series() []graphqlbackend.InsightSeriesResolver {
 			insightsStore:   r.insightsStore,
 			workerBaseStore: r.workerBaseStore,
 			series:          series,
+			metadataStore:   r.metadataStore,
 		})
 	}
 	return resolvers

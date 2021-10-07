@@ -13,6 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
+// This matches the default file size limit in Zoekt
+// https://github.com/sourcegraph/zoekt/blob/a2c843bdb1bffcfaf674034ddfd35403f90a70ac/build/builder.go#L240
+const maxFileSize = 2 << 20
+
 // NewFilter is a wrapper around newIgnoreMatcher.
 func NewFilter(ctx context.Context, repo api.RepoName, commit api.CommitID) (store.FilterFunc, error) {
 	ig, err := newIgnoreMatcher(ctx, repo, commit)
@@ -20,6 +24,9 @@ func NewFilter(ctx context.Context, repo api.RepoName, commit api.CommitID) (sto
 		return nil, err
 	}
 	return func(header *tar.Header) bool {
+		if header.Size > maxFileSize {
+			return true
+		}
 		return ig.Match(header.Name)
 	}, nil
 }

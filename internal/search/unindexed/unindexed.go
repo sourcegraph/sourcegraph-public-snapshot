@@ -15,6 +15,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -31,12 +32,12 @@ import (
 // A global limiter on number of concurrent searcher searches.
 var textSearchLimiter = mutablelimiter.New(32)
 
-var MockSearchFilesInRepos func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error)
+var MockSearchFilesInRepos func() ([]result.Match, *streaming.Stats, error)
 
 // SearchFilesInRepos searches a set of repos for a pattern.
 func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream streaming.Sender) (err error) {
 	if MockSearchFilesInRepos != nil {
-		matches, mockStats, err := MockSearchFilesInRepos(args)
+		matches, mockStats, err := MockSearchFilesInRepos()
 		stream.Send(streaming.SearchEvent{
 			Results: matches,
 			Stats:   mockStats.Deref(),
@@ -58,52 +59,28 @@ func SearchFilesInRepos(ctx context.Context, args *search.TextParameters, stream
 		trace.Stringer("global_search_mode", args.Mode),
 	)
 
-	// performance: for global searches, we avoid calling NewIndexedSearchRequest
-	// because zoekt will anyway have to search all its shards.
-	var indexed *zoektutil.IndexedSearchRequest
-	if args.Mode == search.ZoektGlobalSearch {
-		indexed = &zoektutil.IndexedSearchRequest{
-			Args:     args,
-			Typ:      zoektutil.TextRequest,
-			RepoRevs: &zoektutil.IndexedRepoRevs{},
-		}
-	} else {
-		indexed, err = zoektutil.NewIndexedSearchRequest(ctx, args, zoektutil.TextRequest, stream)
-		if err != nil {
-			return err
-		}
-	}
-
-	if args.PatternInfo.IsEmpty() {
-		// Empty query isn't an error, but it has no results.
-		return nil
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
+	if err != nil {
+		return err
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
 
 	if args.Mode != search.SearcherOnly {
-		// Run searches on indexed repositories.
-
-		if !args.PatternInfo.IsStructuralPat {
-			// Run literal and regexp searches.
-			g.Go(func() error {
-				return indexed.Search(ctx, stream)
-			})
-		} else {
-			// Run structural search (fulfilled via searcher).
-			g.Go(func() error {
-				repos := make([]*search.RepositoryRevisions, 0, len(indexed.Repos()))
-				for _, repo := range indexed.Repos() {
-					repos = append(repos, repo)
-				}
-				return callSearcherOverRepos(ctx, args, stream, repos, true)
-			})
-		}
+		// Run literal and regexp searches on indexed repositories.
+		g.Go(func() error {
+			return request.Search(ctx, stream)
+		})
 	}
 
-	// Concurrently run searcher for all unindexed repos regardless whether text, regexp, or structural search.
+	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
-		return callSearcherOverRepos(ctx, args, stream, indexed.Unindexed, false)
+		searcherArgs := &search.SearcherParameters{
+			SearcherURLs:    args.SearcherURLs,
+			PatternInfo:     args.PatternInfo,
+			UseFullDeadline: args.UseFullDeadline,
+		}
+		return callSearcherOverRepos(ctx, searcherArgs, stream, request.UnindexedRepos(), false)
 	})
 
 	return g.Wait()
@@ -123,11 +100,11 @@ func SearchFilesInReposBatch(ctx context.Context, args *search.TextParameters) (
 	return fms, stats, err
 }
 
-var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration) (matches []result.Match, limitHit bool, err error)
+var mockSearchFilesInRepo func(ctx context.Context, repo types.RepoName, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error)
 
-func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration) ([]result.Match, bool, error) {
+func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo types.RepoName, gitserverRepo api.RepoName, rev string, index bool, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (bool, error) {
 	if mockSearchFilesInRepo != nil {
-		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout)
+		return mockSearchFilesInRepo(ctx, repo, gitserverRepo, rev, info, fetchTimeout, stream)
 	}
 
 	// Do not trigger a repo-updater lookup (e.g.,
@@ -136,76 +113,82 @@ func searchFilesInRepo(ctx context.Context, searcherURLs *endpoint.Map, repo typ
 	// repo is not on gitserver.
 	commit, err := git.ResolveRevision(ctx, gitserverRepo, rev, git.ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 
-	shouldBeSearched, err := repoShouldBeSearched(ctx, searcherURLs, info, gitserverRepo, commit, fetchTimeout)
+	shouldBeSearched, err := repoShouldBeSearched(ctx, searcherURLs, info, repo, commit, fetchTimeout)
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	if !shouldBeSearched {
-		return nil, false, err
+		return false, err
 	}
 
 	var indexerEndpoints []string
 	if info.IsStructuralPat {
-		endpoints, err := search.Indexers().Map.Endpoints()
-		for key := range endpoints {
-			indexerEndpoints = append(indexerEndpoints, key)
-		}
+		indexerEndpoints, err = search.Indexers().Map.Endpoints()
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
 	}
-	searcherMatches, limitHit, err := searcher.Search(ctx, searcherURLs, gitserverRepo, rev, commit, index, info, fetchTimeout, indexerEndpoints)
-	if err != nil {
-		return nil, false, err
-	}
 
-	matches := make([]result.Match, 0, len(searcherMatches))
-	for _, fm := range searcherMatches {
-		lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
-		for _, lm := range fm.LineMatches {
-			ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
-			for _, ol := range lm.OffsetAndLengths {
-				ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
-			}
-			lineMatches = append(lineMatches, &result.LineMatch{
-				Preview:          lm.Preview,
-				OffsetAndLengths: ranges,
-				LineNumber:       int32(lm.LineNumber),
-			})
-		}
-
-		matches = append(matches, &result.FileMatch{
-			File: result.File{
-				Path:     fm.Path,
-				Repo:     repo,
-				CommitID: commit,
-				InputRev: &rev,
-			},
-			LineMatches: lineMatches,
-			LimitHit:    fm.LimitHit,
+	toMatches := newToMatches(repo, commit, &rev)
+	onMatches := func(searcherMatches []*protocol.FileMatch) {
+		stream.Send(streaming.SearchEvent{
+			Results: toMatches(searcherMatches),
 		})
 	}
 
-	return matches, limitHit, err
+	return searcher.Search(ctx, searcherURLs, gitserverRepo, repo.ID, rev, commit, index, info, fetchTimeout, indexerEndpoints, onMatches)
+}
+
+// newToMatches returns a closure that converts []*protocol.FileMatch to []result.Match.
+func newToMatches(repo types.RepoName, commit api.CommitID, rev *string) func([]*protocol.FileMatch) []result.Match {
+	return func(searcherMatches []*protocol.FileMatch) []result.Match {
+		matches := make([]result.Match, 0, len(searcherMatches))
+		for _, fm := range searcherMatches {
+			lineMatches := make([]*result.LineMatch, 0, len(fm.LineMatches))
+			for _, lm := range fm.LineMatches {
+				ranges := make([][2]int32, 0, len(lm.OffsetAndLengths))
+				for _, ol := range lm.OffsetAndLengths {
+					ranges = append(ranges, [2]int32{int32(ol[0]), int32(ol[1])})
+				}
+				lineMatches = append(lineMatches, &result.LineMatch{
+					Preview:          lm.Preview,
+					OffsetAndLengths: ranges,
+					LineNumber:       int32(lm.LineNumber),
+				})
+			}
+
+			matches = append(matches, &result.FileMatch{
+				File: result.File{
+					Path:     fm.Path,
+					Repo:     repo,
+					CommitID: commit,
+					InputRev: rev,
+				},
+				LineMatches: lineMatches,
+				LimitHit:    fm.LimitHit,
+			})
+		}
+		return matches
+	}
 }
 
 // repoShouldBeSearched determines whether a repository should be searched in, based on whether the repository
 // fits in the subset of repositories specified in the query's `repohasfile` and `-repohasfile` flags if they exist.
-func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
+func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searchPattern *search.TextPatternInfo, repo types.RepoName, commit api.CommitID, fetchTimeout time.Duration) (shouldBeSearched bool, err error) {
 	shouldBeSearched = true
 	flagInQuery := len(searchPattern.FilePatternsReposMustInclude) > 0
 	if flagInQuery {
-		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, true, searchPattern.FilePatternsReposMustInclude, gitserverRepo, commit, fetchTimeout)
+		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, true, searchPattern.FilePatternsReposMustInclude, repo, commit, fetchTimeout)
 		if err != nil {
 			return shouldBeSearched, err
 		}
 	}
 	negFlagInQuery := len(searchPattern.FilePatternsReposMustExclude) > 0
 	if negFlagInQuery {
-		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, false, searchPattern.FilePatternsReposMustExclude, gitserverRepo, commit, fetchTimeout)
+		shouldBeSearched, err = repoHasFilesWithNamesMatching(ctx, searcherURLs, false, searchPattern.FilePatternsReposMustExclude, repo, commit, fetchTimeout)
 		if err != nil {
 			return shouldBeSearched, err
 		}
@@ -215,14 +198,20 @@ func repoShouldBeSearched(ctx context.Context, searcherURLs *endpoint.Map, searc
 
 // repoHasFilesWithNamesMatching searches in a repository for matches for the patterns in the `repohasfile` or `-repohasfile` flags, and returns
 // whether or not the repoShouldBeSearched in or not, based on whether matches were returned.
-func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, gitserverRepo api.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
+func repoHasFilesWithNamesMatching(ctx context.Context, searcherURLs *endpoint.Map, include bool, repoHasFileFlag []string, repo types.RepoName, commit api.CommitID, fetchTimeout time.Duration) (bool, error) {
 	for _, pattern := range repoHasFileFlag {
+		foundMatches := false
+		onMatches := func(matches []*protocol.FileMatch) {
+			if len(matches) > 0 {
+				foundMatches = true
+			}
+		}
 		p := search.TextPatternInfo{IsRegExp: true, FileMatchLimit: 1, IncludePatterns: []string{pattern}, PathPatternsAreCaseSensitive: false, PatternMatchesContent: true, PatternMatchesPath: true}
-		matches, _, err := searcher.Search(ctx, searcherURLs, gitserverRepo, "", commit, false, &p, fetchTimeout, []string{})
+		_, err := searcher.Search(ctx, searcherURLs, repo.Name, repo.ID, "", commit, false, &p, fetchTimeout, []string{}, onMatches)
 		if err != nil {
 			return false, err
 		}
-		if include && len(matches) == 0 || !include && len(matches) > 0 {
+		if include && !foundMatches || !include && foundMatches {
 			// repo shouldn't be searched if it does not have matches for the patterns in `repohasfile`
 			// or if it has file matches for the patterns in `-repohasfile`.
 			return false, nil
@@ -237,7 +226,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 	for _, match := range matches {
 		fm, ok := match.(*result.FileMatch)
 		if !ok {
-			return nil, fmt.Errorf("expected only file match results")
+			return nil, errors.Errorf("expected only file match results")
 		}
 		fms = append(fms, fm)
 	}
@@ -247,7 +236,7 @@ func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
 // callSearcherOverRepos calls searcher on searcherRepos.
 func callSearcherOverRepos(
 	ctx context.Context,
-	args *search.TextParameters,
+	args *search.SearcherParameters,
 	stream streaming.Sender,
 	searcherRepos []*search.RepositoryRevisions,
 	index bool,
@@ -316,7 +305,7 @@ func callSearcherOverRepos(
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					matches, repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout)
+					repoLimitHit, err := searchFilesInRepo(ctx, args.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], index, args.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repoRev.Repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
@@ -324,8 +313,7 @@ func callSearcherOverRepos(
 					// non-diff search reports timeout through err, so pass false for timedOut
 					stats, err := repos.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
-						Results: matches,
-						Stats:   stats,
+						Stats: stats,
 					})
 					return err
 				})

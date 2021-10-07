@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -61,7 +61,7 @@ func TestLatestPingHandler(t *testing.T) {
 
 			req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 			rec := httptest.NewRecorder()
-			latestPingHandler(db)(rec, req.WithContext(backend.WithAuthzBypass(context.Background())))
+			latestPingHandler(db)(rec, req.WithContext(actor.WithInternalActor(context.Background())))
 
 			resp := rec.Result()
 			body, err := io.ReadAll(resp.Body)

@@ -4,18 +4,15 @@ Guide to contribute to the Sourcegraph web app. Please also see our general [Typ
 
 ## Local development
 
-Common commands for local development are located [here](../../getting-started/quickstart_6_start_server.md).
+See [common commands for local development](../../getting-started/quickstart_7_start_server.md).
 Commands specifically useful for the web team can be found in the root [package.json](https://github.com/sourcegraph/sourcegraph/blob/main/package.json).
 Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
 
 ### Prerequisites
 
 The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md).
-To install it, use the following command.
 
-```sh
-./dev/sg/install.sh
-```
+To install it, [see the instructions](../../getting-started/quickstart_6_install_sg.md).
 
 ### Commands
 

@@ -20,6 +20,8 @@ add(
                     className="site-admin-sidebar"
                     groups={siteAdminSidebarGroups}
                     isSourcegraphDotCom={false}
+                    batchChangesEnabled={false}
+                    batchChangesExecutionEnabled={false}
                 />
             )}
         </WebStory>

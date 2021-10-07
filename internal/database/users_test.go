@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -82,8 +83,8 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			valid := true
 			if _, err := Users(db).Create(ctx, NewUser{Username: test.name}); err != nil {
-				e, ok := err.(errCannotCreateUser)
-				if ok && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
+				var e errCannotCreateUser
+				if errors.As(err, &e) && (e.Code() == "users_username_max_length" || e.Code() == "users_username_valid_chars") {
 					valid = false
 				} else {
 					t.Fatal(err)
@@ -479,6 +480,52 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 	if gotUser.ID != user.ID {
 		t.Errorf("got user %d, want %d", gotUser.ID, user.ID)
 	}
+}
+
+func TestUsers_GetByUsername(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+
+	newUsers := []NewUser{
+		{
+			Email:           "alice@example.com",
+			Username:        "alice",
+			EmailIsVerified: true,
+		},
+		{
+			Email:           "bob@example.com",
+			Username:        "bob",
+			EmailIsVerified: true,
+		},
+	}
+
+	for _, newUser := range newUsers {
+		_, err := Users(db).Create(ctx, newUser)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	for _, want := range []string{"alice", "bob", "cindy"} {
+		have, err := Users(db).GetByUsername(ctx, want)
+		if want == "cindy" {
+			// Make sure the returned err fulfils the NotFounder interface.
+			if !errcode.IsNotFound(err) {
+				t.Fatalf("invalid error, expected not found got %v", err)
+			}
+			continue
+		} else if err != nil {
+			t.Fatal(err)
+		}
+		if have.Username != want {
+			t.Errorf("got %s, but want %s", have.Username, want)
+		}
+	}
+
 }
 
 func TestUsers_GetByUsernames(t *testing.T) {

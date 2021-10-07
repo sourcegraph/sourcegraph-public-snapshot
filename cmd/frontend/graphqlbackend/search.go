@@ -2,11 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -26,7 +25,7 @@ import (
 
 // This file contains the root resolver for search. It currently has a lot of
 // logic that spans out into all the other search_* files.
-var mockResolveRepositories func(effectiveRepoFieldValues []string) (resolved searchrepos.Resolved, err error)
+var mockResolveRepositories func() (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
 	Version        string
@@ -147,7 +146,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "structural":
 			searchType = query.SearchTypeStructural
 		default:
-			return -1, fmt.Errorf("unrecognized patternType: %v", patternType)
+			return -1, errors.Errorf("unrecognized patternType: %v", patternType)
 		}
 	} else {
 		switch version {
@@ -156,7 +155,7 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V2":
 			searchType = query.SearchTypeLiteral
 		default:
-			return -1, fmt.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
+			return -1, errors.Errorf("unrecognized version want \"V1\" or \"V2\": %v", version)
 		}
 	}
 	return searchType, nil
@@ -206,7 +205,7 @@ type searchResolver struct {
 	resolved *searchrepos.Resolved
 	repoErr  error
 
-	zoekt        *searchbackend.Zoekt
+	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
 }
 
@@ -228,11 +227,14 @@ func (r *searchResolver) protocol() search.Protocol {
 	return search.Batch
 }
 
-const defaultMaxSearchResults = 30
-const defaultMaxSearchResultsStreaming = 500
+const (
+	defaultMaxSearchResults          = 30
+	defaultMaxSearchResultsStreaming = 500
+)
 
 var mockDecodedViewerFinalSettings *schema.Settings
 
+// decodedViewerFinalSettings returns the final (merged) settings for the viewer
 func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
 	defer func() {
@@ -242,15 +244,13 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 	if mockDecodedViewerFinalSettings != nil {
 		return mockDecodedViewerFinalSettings, nil
 	}
-	merged, err := viewerFinalSettings(ctx, db)
+
+	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
-	var settings schema.Settings
-	if err := json.Unmarshal([]byte(merged.Contents()), &settings); err != nil {
-		return nil, err
-	}
-	return &settings, nil
+
+	return cascade.finalTyped(ctx)
 }
 
 type resolveRepositoriesOpts struct {
@@ -261,19 +261,25 @@ type resolveRepositoriesOpts struct {
 
 // resolveRepositories calls ResolveRepositories, caching the result for the common case
 // where opts.effectiveRepoFieldValues == nil.
-func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRepositoriesOpts) (resolved searchrepos.Resolved, err error) {
+func (r *searchResolver) resolveRepositories(ctx context.Context, options search.RepoOptions) (resolved searchrepos.Resolved, err error) {
 	if mockResolveRepositories != nil {
-		return mockResolveRepositories(opts.effectiveRepoFieldValues)
+		return mockResolveRepositories()
 	}
 
-	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("opts: %+v", opts))
+	// To send back proper search stats, we want to finish repository resolution
+	// even if we have already found enough results and the parent context was
+	// cancelled because we hit the limit.
+	ctx, cleanup := streaming.IgnoreContextCancellation(ctx, streaming.CanceledLimitHit)
+	defer cleanup()
+
+	tr, ctx := trace.New(ctx, "graphql.resolveRepositories", fmt.Sprintf("options: %+v", options))
 	defer func() {
 		tr.SetError(err)
 		tr.LazyPrintf("%s", resolved.String())
 		tr.Finish()
 	}()
 
-	if len(opts.effectiveRepoFieldValues) == 0 && opts.limit == 0 {
+	if options.CacheLookup {
 		// Cache if opts are empty, so that multiple calls to resolveRepositories only
 		// hit the database once.
 		r.reposMu.Lock()
@@ -288,78 +294,11 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 		}()
 	}
 
-	repoFilters, minusRepoFilters := r.Query.Repositories()
-	if opts.effectiveRepoFieldValues != nil {
-		repoFilters = opts.effectiveRepoFieldValues
-
-	}
-	repoGroupFilters, _ := r.Query.StringValues(query.FieldRepoGroup)
-
-	var settingForks, settingArchived bool
-	if v := r.UserSettings.SearchIncludeForks; v != nil {
-		settingForks = *v
-	}
-	if v := r.UserSettings.SearchIncludeArchived; v != nil {
-		settingArchived = *v
-	}
-
-	fork := query.No
-	if searchrepos.ExactlyOneRepo(repoFilters) || settingForks {
-		// fork defaults to No unless either of:
-		// (1) exactly one repo is being searched, or
-		// (2) user/org/global setting includes forks
-		fork = query.Yes
-	}
-	if setFork := r.Query.Fork(); setFork != nil {
-		fork = *setFork
-	}
-
-	archived := query.No
-	if searchrepos.ExactlyOneRepo(repoFilters) || settingArchived {
-		// archived defaults to No unless either of:
-		// (1) exactly one repo is being searched, or
-		// (2) user/org/global setting includes archives in all searches
-		archived = query.Yes
-	}
-	if setArchived := r.Query.Archived(); setArchived != nil {
-		archived = *setArchived
-	}
-
-	visibilityStr, _ := r.Query.StringValue(query.FieldVisibility)
-	visibility := query.ParseVisibility(visibilityStr)
-
-	commitAfter, _ := r.Query.StringValue(query.FieldRepoHasCommitAfter)
-	searchContextSpec, _ := r.Query.StringValue(query.FieldContext)
-
-	var versionContextName string
-	if r.VersionContext != nil {
-		versionContextName = *r.VersionContext
-	}
-
 	tr.LazyPrintf("resolveRepositories - start")
 	defer tr.LazyPrintf("resolveRepositories - done")
 
-	options := searchrepos.Options{
-		RepoFilters:        repoFilters,
-		MinusRepoFilters:   minusRepoFilters,
-		RepoGroupFilters:   repoGroupFilters,
-		VersionContextName: versionContextName,
-		SearchContextSpec:  searchContextSpec,
-		UserSettings:       r.UserSettings,
-		OnlyForks:          fork == query.Only,
-		NoForks:            fork == query.No,
-		OnlyArchived:       archived == query.Only,
-		NoArchived:         archived == query.No,
-		OnlyPrivate:        visibility == query.Private,
-		OnlyPublic:         visibility == query.Public,
-		CommitAfter:        commitAfter,
-		Query:              r.Query,
-		Ranked:             true,
-		Limit:              opts.limit,
-	}
 	repositoryResolver := &searchrepos.Resolver{
 		DB:                  r.db,
-		Zoekt:               r.zoekt,
 		SearchableReposFunc: backend.Repos.ListSearchable,
 	}
 
@@ -367,17 +306,6 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, opts resolveRe
 }
 
 func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]SearchSuggestionResolver, error) {
-	resolved, err := r.resolveRepositories(ctx, resolveRepositoriesOpts{})
-	if err != nil {
-		return nil, err
-	}
-
-	if resolved.OverLimit {
-		// If we've exceeded the repo limit, then we may miss files from repos we care
-		// about, so don't bother searching filenames at all.
-		return nil, nil
-	}
-
 	q, err := query.ToBasicQuery(r.Query)
 	if err != nil {
 		return nil, err
@@ -390,15 +318,31 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args := search.TextParameters{
 		PatternInfo:     p,
-		RepoPromise:     (&search.RepoPromise{}).Resolve(resolved.RepoRevs),
 		Query:           r.Query,
 		UseFullDeadline: r.Query.Timeout() != nil || r.Query.Count() != nil,
 		Zoekt:           r.zoekt,
 		SearcherURLs:    r.searcherURLs,
 	}
-	if err := args.PatternInfo.Validate(); err != nil {
+
+	isEmpty := args.PatternInfo.Pattern == "" && args.PatternInfo.ExcludePattern == "" && len(args.PatternInfo.IncludePatterns) == 0
+	if isEmpty {
+		// Empty query isn't an error, but it has no results.
+		return nil, nil
+	}
+
+	repoOptions := r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
+	resolved, err := r.resolveRepositories(ctx, repoOptions)
+	if err != nil {
 		return nil, err
 	}
+
+	if resolved.OverLimit {
+		// If we've exceeded the repo limit, then we may miss files from repos we care
+		// about, so don't bother searching filenames at all.
+		return nil, nil
+	}
+
+	args.Repos = resolved.RepoRevs
 
 	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
 	if err != nil {
@@ -419,20 +363,4 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		})
 	}
 	return suggestions, nil
-}
-
-type badRequestError struct {
-	err error
-}
-
-func (e *badRequestError) BadRequest() bool {
-	return true
-}
-
-func (e *badRequestError) Error() string {
-	return "bad request: " + e.err.Error()
-}
-
-func (e *badRequestError) Cause() error {
-	return e.err
 }

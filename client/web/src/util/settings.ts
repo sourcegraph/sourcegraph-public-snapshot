@@ -16,7 +16,7 @@ export const SITE_SUBJECT_NO_ADMIN: Pick<GQL.ISettingsSubject, 'id' | 'viewerCan
 
 export function viewerSubjectFromSettings(
     cascade: SettingsCascadeOrError,
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser?: AuthenticatedUser | null
 ): LayoutProps['viewerSubject'] {
     if (authenticatedUser) {
         return authenticatedUser
@@ -60,45 +60,42 @@ export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascad
 export function experimentalFeaturesFromSettings(
     settingsCascade: SettingsCascadeOrError
 ): {
-    showRepogroupHomepage: boolean
     showOnboardingTour: boolean
     showEnterpriseHomePanels: boolean
     showMultilineSearchConsole: boolean
+    showSearchNotebook: boolean
     showSearchContext: boolean
     showSearchContextManagement: boolean
     showQueryBuilder: boolean
     enableCodeMonitoring: boolean
     enableAPIDocs: boolean
-    designRefreshToggleEnabled: boolean
 } {
     const experimentalFeatures: SettingsExperimentalFeatures =
         (settingsCascade.final && !isErrorLike(settingsCascade.final) && settingsCascade.final.experimentalFeatures) ||
         {}
 
     const {
-        showRepogroupHomepage = false,
         showOnboardingTour = true, // Default to true if not set
         showEnterpriseHomePanels = true, // Default to true if not set
-        showSearchContext = false,
-        showSearchContextManagement = false,
+        showSearchContext = true, // Default to true if not set
+        showSearchContextManagement = true, // Default to true if not set
         showMultilineSearchConsole = false,
+        showSearchNotebook = false,
         showQueryBuilder = false,
         codeMonitoring = true, // Default to true if not set
         // eslint-disable-next-line unicorn/prevent-abbreviations
         apiDocs = true, // Default to true if not set
-        designRefreshToggleEnabled = false,
     } = experimentalFeatures
 
     return {
-        showRepogroupHomepage,
         showOnboardingTour,
         showSearchContext,
         showSearchContextManagement,
         showEnterpriseHomePanels,
         showMultilineSearchConsole,
+        showSearchNotebook,
         showQueryBuilder,
         enableCodeMonitoring: codeMonitoring,
         enableAPIDocs: apiDocs,
-        designRefreshToggleEnabled,
     }
 }

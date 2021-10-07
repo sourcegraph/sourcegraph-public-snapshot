@@ -10,10 +10,14 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+const { TextEncoder } = require('util')
+
 const { JestFakeTimers } = require('@jest/fake-timers')
+const { Crypto } = require('@peculiar/webcrypto')
 const { ModuleMocker } = require('jest-mock')
 const { installCommonGlobals } = require('jest-util')
 const { JSDOM, VirtualConsole } = require('jsdom')
+
 function isWin(globals) {
   return globals.document !== undefined
 }
@@ -84,6 +88,18 @@ class JSDOMEnvironment {
       timerConfig,
     })
     this.global.jsdom = this.dom
+
+    if (typeof this.global.TextEncoder === 'undefined') {
+      // Polyfill is required until the issue below is resolved:
+      // https://github.com/facebook/jest/issues/9983
+      this.global.TextEncoder = TextEncoder
+    }
+
+    if (typeof this.global.crypto === 'undefined') {
+      // A separate polyfill is required until `crypto` is included into `jsdom`:
+      // https://github.com/jsdom/jsdom/issues/1612
+      this.global.crypto = new Crypto()
+    }
   }
   setup() {
     return Promise.resolve()

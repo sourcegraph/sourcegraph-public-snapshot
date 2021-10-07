@@ -25,3 +25,16 @@ add('Block', () => (
         {() => <LoaderButton loading={true} label="loader button" className="btn btn-block btn-primary" />}
     </WebStory>
 ))
+
+add('With label', () => (
+    <WebStory>
+        {() => (
+            <LoaderButton
+                alwaysShowLabel={true}
+                loading={true}
+                label="loader button"
+                className="btn btn-block btn-primary"
+            />
+        )}
+    </WebStory>
+))

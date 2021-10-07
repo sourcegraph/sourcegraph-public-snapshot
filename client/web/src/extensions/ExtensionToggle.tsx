@@ -112,7 +112,11 @@ export const ExtensionToggle: React.FunctionComponent<Props> = ({
                 return
             }
 
-            eventLogger.log('ExtensionToggled', { extension_id: extensionID, subject_type: subject.__typename })
+            eventLogger.log(
+                'ExtensionToggled',
+                { extension_id: extensionID, subject_type: subject.__typename },
+                { extension_id: extensionID, subject_type: subject.__typename }
+            )
 
             if (onToggleChange) {
                 onToggleChange(enabled)

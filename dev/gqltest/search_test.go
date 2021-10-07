@@ -413,6 +413,31 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:      "asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph",
 				zeroResult: true,
 			},
+			// Global search visibility
+			{
+				name: "visibility:all for global search includes private repo",
+				// match content in a private repo sgtest/private and a public repo sgtest/go-diff.
+				query:         `(#\ private|#\ go-diff) visibility:all patterntype:regexp`,
+				minMatchCount: 2,
+			},
+			{
+				name: "visibility:public for global search excludes private repo",
+				// expect no matches because pattern '# private' is only in a private repo.
+				query:      "# private visibility:public",
+				zeroResult: true,
+			},
+			{
+				name: "visibility:private for global includes only private repo",
+				// expect no matches because #go-diff doesn't exist in private repo.
+				query:      "# go-diff visibility:private",
+				zeroResult: true,
+			},
+			{
+				name: "visibility:private for global includes only private",
+				// expect a match because # private is only in a private repo.
+				query:      "# private visibility:private",
+				zeroResult: false,
+			},
 			// Repo search
 			{
 				name:  "repo search by name, case yes, nonzero result",
@@ -538,17 +563,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 					t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
 				}
 			})
-		}
-	})
-
-	t.Run("timeout search options", func(t *testing.T) {
-		results, err := client.SearchFiles(`router index:no timeout:1ns`)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if results.Alert == nil {
-			t.Fatal("Want search alert but got nil")
 		}
 	})
 
@@ -1150,6 +1164,11 @@ func testSearchClient(t *testing.T, client searchClient) {
 				name:   `file contains content predicate type diff`,
 				query:  `type:diff repo:go-diff file:contains(after_success)`, // matches .travis.yml and its 10 commits
 				counts: counts{Commit: 10},
+			},
+			{
+				name:   `select repo on 'and' operation`,
+				query:  `repo:^github\.com/sgtest/go-diff$ (func and main) select:repo`,
+				counts: counts{Repo: 1},
 			},
 		}
 

@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
@@ -236,7 +238,7 @@ FROM lsif_uploads_with_repository_name u
 LEFT JOIN (` + uploadRankQueryFragment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE u.state != 'deleted' AND u.id  IN (%s) AND %s
+WHERE u.state != 'deleted' AND u.id IN (%s) AND %s
 `
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
@@ -257,25 +259,39 @@ func (s *Store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore 
 
 const deleteUploadsStuckUploadingQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsStuckUploading
-WITH deleted AS (
-	UPDATE lsif_uploads
+WITH
+candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.state = 'uploading' AND u.uploaded_at < %s
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+),
+deleted AS (
+	UPDATE lsif_uploads u
 	SET state = 'deleted'
-	WHERE state = 'uploading' AND uploaded_at < %s
-	RETURNING repository_id
+	WHERE id IN (SELECT id FROM candidates)
+	RETURNING u.repository_id
 )
 SELECT count(*) FROM deleted
 `
 
 type GetUploadsOptions struct {
-	RepositoryID   int
-	State          string
-	Term           string
-	VisibleAtTip   bool
-	UploadedBefore *time.Time
-	UploadedAfter  *time.Time
-	OldestFirst    bool
-	Limit          int
-	Offset         int
+	RepositoryID            int
+	State                   string
+	Term                    string
+	VisibleAtTip            bool
+	DependencyOf            int
+	DependentOf             int
+	UploadedBefore          *time.Time
+	UploadedAfter           *time.Time
+	LastRetentionScanBefore *time.Time
+	AllowExpired            bool
+	OldestFirst             bool
+	Limit                   int
+	Offset                  int
 }
 
 // GetUploads returns a list of uploads and the total count of records matching the given conditions.
@@ -285,8 +301,12 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		log.String("state", opts.State),
 		log.String("term", opts.Term),
 		log.Bool("visibleAtTip", opts.VisibleAtTip),
+		log.Int("dependencyOf", opts.DependencyOf),
+		log.Int("dependentOf", opts.DependentOf),
 		log.String("uploadedBefore", nilTimeToString(opts.UploadedBefore)),
 		log.String("uploadedAfter", nilTimeToString(opts.UploadedAfter)),
+		log.String("lastRetentionScanBefore", nilTimeToString(opts.LastRetentionScanBefore)),
+		log.Bool("allowExpired", opts.AllowExpired),
 		log.Bool("oldestFirst", opts.OldestFirst),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
@@ -299,7 +319,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	var conds []*sqlf.Query
+	conds := make([]*sqlf.Query, 0, 11)
 	if opts.RepositoryID != 0 {
 		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
@@ -314,11 +334,33 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 	if opts.VisibleAtTip {
 		conds = append(conds, sqlf.Sprintf("EXISTS ("+visibleAtTipSubselectQuery+")"))
 	}
+	if opts.DependencyOf != 0 {
+		conds = append(conds, sqlf.Sprintf(`
+			u.id IN (
+				SELECT dump_id FROM lsif_packages
+				WHERE (scheme, name, version) IN (SELECT scheme, name, version FROM lsif_references WHERE dump_id = %s)
+			)
+		`, opts.DependencyOf))
+	}
+	if opts.DependentOf != 0 {
+		conds = append(conds, sqlf.Sprintf(`
+			u.id IN (
+				SELECT dump_id FROM lsif_references
+				WHERE (scheme, name, version) IN (SELECT scheme, name, version FROM lsif_packages WHERE dump_id = %s)
+			)
+		`, opts.DependentOf))
+	}
 	if opts.UploadedBefore != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at < %s", *opts.UploadedBefore))
 	}
 	if opts.UploadedAfter != nil {
 		conds = append(conds, sqlf.Sprintf("u.uploaded_at > %s", *opts.UploadedAfter))
+	}
+	if opts.LastRetentionScanBefore != nil {
+		conds = append(conds, sqlf.Sprintf("(u.last_retention_scan_at IS NULL OR u.last_retention_scan_at < %s)", *opts.LastRetentionScanBefore))
+	}
+	if !opts.AllowExpired {
+		conds = append(conds, sqlf.Sprintf("NOT u.expired"))
 	}
 
 	authzConds, err := database.AuthzQueryConds(ctx, tx.Store.Handle().DB())
@@ -568,7 +610,7 @@ func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 
 const deleteUploadByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadByID
-UPDATE lsif_uploads SET state = 'deleted' WHERE id = %s RETURNING repository_id
+UPDATE lsif_uploads u SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END WHERE id = %s RETURNING repository_id
 `
 
 // DeletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
@@ -604,19 +646,28 @@ func (s *Store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Tim
 
 const deleteUploadsWithoutRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:DeleteUploadsWithoutRepository
-WITH deleted_repos AS (
-	SELECT r.id AS id FROM repo r
-	WHERE
-		%s - r.deleted_at >= %s * interval '1 second' AND
-		EXISTS (SELECT 1 from lsif_uploads u WHERE u.repository_id = r.id)
+WITH
+candidates AS (
+	SELECT u.id
+	FROM repo r
+	JOIN lsif_uploads u ON u.repository_id = r.id
+	WHERE %s - r.deleted_at >= %s * interval '1 second'
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
 ),
-deleted_uploads AS (
+deleted AS (
+	-- Note: we can go straight from completed -> deleted here as we
+	-- do not need to preserve the deleted repository's current commit
+	-- graph (the API cannot resolve any queries for this repository).
+
 	UPDATE lsif_uploads u
 	SET state = 'deleted'
-	WHERE u.repository_id IN (SELECT id FROM deleted_repos)
+	WHERE u.id IN (SELECT id FROM candidates)
 	RETURNING u.id, u.repository_id
 )
-SELECT d.repository_id, COUNT(*) FROM deleted_uploads d GROUP BY d.repository_id
+SELECT d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
 // HardDeleteUploadByID deletes the upload record with the given identifier.
@@ -631,12 +682,33 @@ func (s *Store) HardDeleteUploadByID(ctx context.Context, ids ...int) (err error
 		return nil
 	}
 
+	// Ensure ids are sorted so that we take row locks during the
+	// DELETE query in a determinstic order. This should prevent
+	// deadlocks with other queries that mass update lsif_uploads.
+	sort.Ints(ids)
+
 	var idQueries []*sqlf.Query
 	for _, id := range ids {
 		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", ")))
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Before deleting the record, ensure that we decrease the number
+	// of existant references to all of this upload's dependencies.
+	if err := tx.UpdateDependencyNumReferences(ctx, ids, true); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(hardDeleteUploadByIDQuery, sqlf.Join(idQueries, ", "))); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const hardDeleteUploadByIDQuery = `
@@ -644,13 +716,225 @@ const hardDeleteUploadByIDQuery = `
 DELETE FROM lsif_uploads WHERE id IN (%s)
 `
 
-// SoftDeleteOldUploads marks uploads older than the given age that are not visible at the tip of the default branch
-// as deleted. The associated repositories will be marked as dirty so that their commit graphs are updated in the
-// background.
-func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error) {
-	ctx, traceLog, endObservation := s.operations.softDeleteOldUploads.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("maxAge", maxAge.String()),
+// SelectRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence
+// data and a fresh associated commit graph. Repositories that were returned previously from this call
+// within the  given process delay are not returned.
+func (s *Store) SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	return s.selectRepositoriesForRetentionScan(ctx, processDelay, limit, timeutil.Now())
+}
+
+func (s *Store) selectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
+	ctx, endObservation := s.operations.selectRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
+		repositoryIDsForRetentionScanQuery,
+		now,
+		int(processDelay/time.Second),
+		limit,
+		now,
+		now,
+	)))
+}
+
+const repositoryIDsForRetentionScanQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForRetentionScan
+WITH candidate_repositories AS (
+	SELECT DISTINCT u.repository_id AS id
+	FROM lsif_uploads u
+	WHERE u.state = 'completed'
+),
+repositories AS (
+	SELECT cr.id
+	FROM candidate_repositories cr
+	LEFT JOIN lsif_last_retention_scan lrs ON lrs.repository_id = cr.id
+	JOIN lsif_dirty_repositories dr ON dr.repository_id = cr.id
+
+	-- Ignore records that have been checked recently. Note this condition is
+	-- true for a null last_retention_scan_at (which has never been checked).
+	WHERE (%s - lrs.last_retention_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+	AND dr.update_token = dr.dirty_token
+	ORDER BY
+		lrs.last_retention_scan_at NULLS FIRST,
+		cr.id -- tie breaker
+	LIMIT %s
+)
+INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
+SELECT r.id, %s::timestamp FROM repositories r
+ON CONFLICT (repository_id) DO UPDATE
+SET last_retention_scan_at = %s
+RETURNING repository_id
+`
+
+// UpdateUploadRetention updates the last data retention scan timestamp on the upload
+// records with the given protected identifiers and sets the expired field on the upload
+// records with the given expired identifiers.
+func (s *Store) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error {
+	return s.updateUploadRetention(ctx, protectedIDs, expiredIDs, time.Now())
+}
+
+func (s *Store) updateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int, now time.Time) (err error) {
+	ctx, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numProtectedIDs", len(protectedIDs)),
+		log.String("protectedIDs", intsToString(protectedIDs)),
+		log.Int("numExpiredIDs", len(expiredIDs)),
+		log.String("expiredIDs", intsToString(expiredIDs)),
 	}})
+	defer endObservation(1, observation.Args{})
+
+	// Ensure ids are sorted so that we take row locks during the UPDATE
+	// query in a determinstic order. This should prevent deadlocks with
+	// other queries that mass update lsif_uploads.
+	sort.Ints(protectedIDs)
+	sort.Ints(expiredIDs)
+
+	tx, err := s.transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if len(protectedIDs) > 0 {
+		queries := make([]*sqlf.Query, 0, len(protectedIDs))
+		for _, id := range protectedIDs {
+			queries = append(queries, sqlf.Sprintf("%s", id))
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("last_retention_scan_at = %s", now), sqlf.Join(queries, ","))); err != nil {
+			return err
+		}
+	}
+
+	if len(expiredIDs) > 0 {
+		queries := make([]*sqlf.Query, 0, len(expiredIDs))
+		for _, id := range expiredIDs {
+			queries = append(queries, sqlf.Sprintf("%s", id))
+		}
+
+		if err := tx.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const updateUploadRetentionQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateUploadRetention
+UPDATE lsif_uploads SET %s WHERE id IN (%s)`
+
+// UpdateNumReferences calculates the number of existant uploads that reference any
+// of the given upload identifiers and updates the num_references field of each
+// upload.
+func (s *Store) UpdateNumReferences(ctx context.Context, ids []int) (err error) {
+	ctx, endObservation := s.operations.updateNumReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	queries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		queries = append(queries, sqlf.Sprintf("%s", id))
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(updateNumReferencesQuery, sqlf.Join(queries, ", ")))
+}
+
+var updateNumReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateNumReferences
+WITH locked_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.id in (%s)
+	ORDER BY u.id FOR UPDATE
+),
+reference_counts AS (
+	SELECT
+		p.dump_id,
+		count(*) AS count
+	FROM lsif_packages p
+	JOIN lsif_references r
+	ON
+		p.scheme = r.scheme AND
+		p.name = r.name AND
+		p.version = r.version AND
+		p.dump_id != r.dump_id
+	WHERE p.dump_id IN (SELECT id FROM locked_uploads)
+	GROUP BY p.dump_id
+)
+UPDATE lsif_uploads u
+SET num_references = COALESCE((SELECT rc.count FROM reference_counts rc WHERE rc.dump_id = u.id), 0)
+WHERE u.id IN (SELECT id FROM locked_uploads)
+`
+
+// UpdateDependencyNumReferences increments (or decrements) the number of references for
+// each dependency of the uploads with any of the given identifiers.
+func (s *Store) UpdateDependencyNumReferences(ctx context.Context, ids []int, decrement bool) (err error) {
+	ctx, endObservation := s.operations.updateDependencyNumReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numIDs", len(ids)),
+		log.String("ids", intsToString(ids)),
+		log.Bool("decrement", decrement),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(ids) == 0 {
+		return nil
+	}
+
+	idQueries := make([]*sqlf.Query, 0, len(ids))
+	for _, id := range ids {
+		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	}
+
+	delta := 1
+	if decrement {
+		delta = -1
+	}
+
+	return s.Exec(ctx, sqlf.Sprintf(updateDependencyNumReferencesQuery, sqlf.Join(idQueries, ", "), delta))
+}
+
+var updateDependencyNumReferencesQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:UpdateDependencyNumReferences
+WITH
+reference_counts AS (
+	SELECT
+		p.dump_id,
+		count(*) AS count
+	FROM lsif_packages p
+	JOIN lsif_references r
+	ON
+		r.scheme = p.scheme AND
+		r.name = p.name AND
+		r.version = p.version AND
+		r.dump_id != p.dump_id
+	WHERE r.dump_id IN (%s)
+	GROUP BY p.dump_id
+),
+locked_uploads AS (
+	SELECT
+		u.id,
+		rc.count
+	FROM lsif_uploads u
+	JOIN reference_counts rc
+	ON rc.dump_id = u.id
+	ORDER BY u.id FOR UPDATE
+)
+UPDATE lsif_uploads u
+SET num_references = num_references + (lu.count * %s)
+FROM locked_uploads lu WHERE lu.id = u.id
+`
+
+// SoftDeleteExpiredUploads marks upload records that are both expired and have no references
+// as deleted. The associated repositories will be marked as dirty so that their commit graphs
+// are updated in the near future.
+func (s *Store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err error) {
+	ctx, traceLog, endObservation := s.operations.softDeleteExpiredUploads.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	tx, err := s.transact(ctx)
@@ -659,8 +943,7 @@ func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	seconds := strconv.Itoa(int(maxAge / time.Second))
-	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteOldUploadsQuery, now, seconds, now, seconds)))
+	repositories, err := scanCounts(tx.Store.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
 	if err != nil {
 		return 0, err
 	}
@@ -682,21 +965,23 @@ func (s *Store) SoftDeleteOldUploads(ctx context.Context, maxAge time.Duration, 
 	return count, nil
 }
 
-const softDeleteOldUploadsQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:SoftDeleteOldUploads
-WITH u AS (
+const softDeleteExpiredUploadsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:SoftDeleteExpiredUploads
+WITH candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.state = 'completed' AND u.expired AND u.num_references = 0
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+),
+updated AS (
 	UPDATE lsif_uploads u
-		SET state = 'deleted'
-		WHERE
-			(
-				%s - u.finished_at > (%s || ' second')::interval OR
-				(u.finished_at IS NULL AND %s - u.uploaded_at > (%s || ' second')::interval)
-			) AND
-				-- Anything visible from a non-stale branch or tag is protected from expiration
-				u.id NOT IN (SELECT uvt.upload_id FROM lsif_uploads_visible_at_tip uvt WHERE uvt.repository_id = u.repository_id)
-		RETURNING id, repository_id
+	SET state = 'deleting'
+	WHERE u.id IN (SELECT id FROM candidates)
+	RETURNING u.id, u.repository_id
 )
-SELECT u.repository_id, count(*) FROM u GROUP BY u.repository_id
+SELECT u.repository_id, count(*) FROM updated u GROUP BY u.repository_id
 `
 
 // GetOldestCommitDate returns the oldest commit date for all uploads for the given repository. If there are no

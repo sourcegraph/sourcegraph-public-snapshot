@@ -6,7 +6,7 @@ set -euxo pipefail
 # a Kubernetes ready probe.
 
 # We check if the TCP port is available since that is how clients will
-# connect. While upgrading only the unix port will be available, so we
+# connect. While re-indexing only the unix port will be available, so we
 # specifically want to avoid reporting ready in that case.
 
 if [ -n "$POSTGRES_PASSWORD" ]; then

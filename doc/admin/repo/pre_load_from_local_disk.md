@@ -6,17 +6,20 @@
 
 You can use repositories that are already cloned to disk on the host machine to speed up Sourcegraph's cloning. This is useful for very large repositories on which cloning exceeds the resources available to the Docker container. This is not intended for individual users who want to set up a personal Sourcegraph instance just for searching code on their own local disk; we recommend either using a CLI tool such as ripgrep instead, or simply connecting Sourcegraph to your code host with a limited set of repositories.
 
-> WARNING: Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
+The steps documented here are intended for [single-container Sourcegraph instances](../install/docker/index.md). The general process also applies for other deployment methods, with some differences:
 
-The steps documented here are intended for Sourcegraph instances running on a single node. The general process also applies for clustered deployments of Sourcegraph to Kubernetes, but you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
+- [Docker Compose](../install/docker-compose/index.md): you need to perform these steps on the relevant [Docker Compose volumes](../install/docker-compose/operations.md#manage-storage).
+- [Kubernetes](../install/kubernetes/index.md): you need to perform these steps on the underlying node hosting the `gitserver` pod, or on the persistent volume used by the `gitserver` deployment.
+
+> WARNING: For [single-container Sourcegraph instances](../install/docker/index.md), Sourcegraph will alter the contents and structure of files under `/var/opt/sourcegraph` (Sourcegraph’s data volume inside the container), so do not mount repositories in use by other processes under that directory.
 
 If you're using the default `--volume $HOME/.sourcegraph/data:/var/opt/sourcegraph` argument to run the `sourcegraph/server` Docker image, and the repository you want to add is named `github.com/my/repo`, then follow these steps:
 
 1.  Ensure that the added repository is included in [a code host configuration on Sourcegraph](../external_service/index.md).
 
-1.  Stop Sourcegraph if it is running. This is to ensure it doesn't interfere with the clone.
+2.  Stop Sourcegraph if it is running. This is to ensure it doesn't interfere with the clone.
 
-1.  On the host machine, ensure that a bare Git clone of the repository exists at `$HOME/.sourcegraph/data/repos/github.com/my/repo/.git`.
+3.  On the host machine, ensure that a bare Git clone of the repository exists at `$HOME/.sourcegraph/data/repos/github.com/my/repo/.git`.
 
     To create a new clone given its clone URL:
 

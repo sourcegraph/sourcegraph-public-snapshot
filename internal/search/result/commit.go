@@ -5,14 +5,15 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/xeonx/timeago"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/xeonx/timeago"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type CommitMatch struct {
-	Commit         git.Commit
+	Commit         gitapi.Commit
 	Repo           types.RepoName
 	Refs           []string
 	SourceRefs     []string
@@ -73,6 +74,17 @@ func (r *CommitMatch) Select(path filter.SelectPath) Match {
 		return r
 	}
 	return nil
+}
+
+// AppendMatches merges highlight information for commit messages. Diff contents
+// are not currently supported. TODO(@team/search): Diff highlight information
+// cannot reliably merge this way because of offset issues with markdown
+// rendering.
+func (r *CommitMatch) AppendMatches(src *CommitMatch) {
+	if r.MessagePreview != nil && src.MessagePreview != nil {
+		r.MessagePreview.Highlights = append(r.MessagePreview.Highlights, src.MessagePreview.Highlights...)
+		r.Body.Highlights = append(r.Body.Highlights, src.Body.Highlights...)
+	}
 }
 
 // Key implements Match interface's Key() method

@@ -1,5 +1,6 @@
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
+import { useApolloClient } from '@apollo/client'
+import classNames from 'classnames'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { of } from 'rxjs'
 
@@ -14,18 +15,23 @@ import {
 } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
-
+import { FlashMessage } from '../configuration/FlashMessage'
 import {
-    fetchLsifUploads as defaultFetchLsifUploads,
-    fetchCommitGraphMetadata as defaultFetchCommitGraphMetadata,
-} from './backend'
+    queryLsifUploadsByRepository as defaultQueryLsifUploadsByRepository,
+    queryLsifUploadsList as defaultQueryLsifUploadsList,
+} from '../detail/useLsifUpload'
+
 import { CodeIntelUploadNode, CodeIntelUploadNodeProps } from './CodeIntelUploadNode'
+import styles from './CodeIntelUploadsPage.module.scss'
 import { CommitGraphMetadata } from './CommitGraphMetadata'
+import { EmptyUploads } from './EmptyUploads'
+import { queryCommitGraphMetadata as defaultQueryCommitGraphMetadata } from './useLsifIndexList'
 
 export interface CodeIntelUploadsPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
-    fetchLsifUploads?: typeof defaultFetchLsifUploads
-    fetchCommitGraphMetadata?: typeof defaultFetchCommitGraphMetadata
+    queryLsifUploadsByRepository?: typeof defaultQueryLsifUploadsByRepository
+    queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
+    queryCommitGraphMetadata?: typeof defaultQueryCommitGraphMetadata
     now?: () => Date
 }
 
@@ -77,31 +83,57 @@ const filters: FilteredConnectionFilter[] = [
                 tooltip: 'Show uploading uploads only',
                 args: { state: LSIFUploadState.UPLOADING },
             },
+            {
+                label: 'Deleting',
+                value: 'deleting',
+                tooltip: 'Show uploads queued for deletion',
+                args: { state: LSIFUploadState.DELETING },
+            },
         ],
     },
 ]
 
 export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> = ({
     repo,
-    fetchLsifUploads = defaultFetchLsifUploads,
-    fetchCommitGraphMetadata = defaultFetchCommitGraphMetadata,
+    queryLsifUploadsByRepository = defaultQueryLsifUploadsByRepository,
+    queryLsifUploadsList = defaultQueryLsifUploadsList,
+    queryCommitGraphMetadata = defaultQueryCommitGraphMetadata,
     now,
     telemetryService,
+    history,
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
 
-    const queryUploads = useCallback(
-        (args: FilteredConnectionQueryArguments) => fetchLsifUploads({ repository: repo?.id, ...args }),
-        [repo?.id, fetchLsifUploads]
+    const apolloClient = useApolloClient()
+    const queryLsifUploads = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            if (repo?.id) {
+                return queryLsifUploadsByRepository({ ...args }, repo?.id, apolloClient)
+            }
+            return queryLsifUploadsList({ ...args }, apolloClient)
+        },
+        [repo?.id, queryLsifUploadsByRepository, queryLsifUploadsList, apolloClient]
     )
 
     const commitGraphMetadata = useObservable(
-        useMemo(() => (repo ? fetchCommitGraphMetadata({ repository: repo?.id }) : of(undefined)), [
+        useMemo(() => (repo ? queryCommitGraphMetadata(repo?.id, apolloClient) : of(undefined)), [
             repo,
-            fetchCommitGraphMetadata,
+            queryCommitGraphMetadata,
+            apolloClient,
         ])
     )
+
+    const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })
+    useEffect(() => {
+        if (history.location.state) {
+            setDeleteStatus({
+                isDeleting: true,
+                message: history.location.state.message,
+                state: history.location.state.modal,
+            })
+        }
+    }, [history.location.state])
 
     return (
         <div className="code-intel-uploads">
@@ -109,59 +141,47 @@ export const CodeIntelUploadsPage: FunctionComponent<CodeIntelUploadsPageProps> 
             <PageHeader
                 headingElement="h2"
                 path={[{ text: 'Precise code intelligence uploads' }]}
-                description={
-                    <>
-                        Current uploads provide code intelligence for the latest commit on the default branch and are
-                        used in cross-repository <em>Find References</em> requests. Non-current uploads may still
-                        provide code intelligence for historic and branch commits.
-                    </>
-                }
+                description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
+                    repo ? 'for this repository' : 'over all repositories'
+                }.`}
                 className="mb-3"
             />
 
-            <Container>
-                {repo && commitGraphMetadata && (
+            {deleteStatus.isDeleting && (
+                <Container className="mb-2">
+                    <FlashMessage className="mb-0" state={deleteStatus.state} message={deleteStatus.message} />
+                </Container>
+            )}
+
+            {repo && commitGraphMetadata && (
+                <Container className="mb-2">
                     <CommitGraphMetadata
                         stale={commitGraphMetadata.stale}
                         updatedAt={commitGraphMetadata.updatedAt}
+                        className="mb-0"
                         now={now}
                     />
-                )}
+                </Container>
+            )}
 
+            <Container>
                 <div className="list-group position-relative">
                     <FilteredConnection<LsifUploadFields, Omit<CodeIntelUploadNodeProps, 'node'>>
                         listComponent="div"
-                        listClassName="codeintel-uploads__grid"
+                        listClassName={classNames(styles.grid, 'mb-3')}
                         noun="upload"
                         pluralNoun="uploads"
                         nodeComponent={CodeIntelUploadNode}
                         nodeComponentProps={{ now }}
-                        queryConnection={queryUploads}
-                        history={props.history}
+                        queryConnection={queryLsifUploads}
+                        history={history}
                         location={props.location}
                         cursorPaging={true}
                         filters={filters}
-                        defaultFilter="current"
-                        emptyElement={<EmptyLSIFUploadsElement />}
+                        emptyElement={<EmptyUploads />}
                     />
                 </div>
             </Container>
         </div>
     )
 }
-
-const EmptyLSIFUploadsElement: React.FunctionComponent = () => (
-    <p className="text-muted text-center w-100 mb-0 mt-1">
-        <MapSearchIcon className="mb-2" />
-        <br />
-        No uploads yet. Enable precise code intelligence by{' '}
-        <a
-            href="https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence"
-            target="_blank"
-            rel="noreferrer noopener"
-        >
-            uploading LSIF data
-        </a>
-        .
-    </p>
-)

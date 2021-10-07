@@ -1,4 +1,4 @@
-@import '~@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
+@import '@sourcegraph/react-loading-spinner/lib/LoadingSpinner.css';
 
 .hover-overlay {
     --hover-overlay-vertical-padding: 0.25rem;
@@ -217,7 +217,6 @@
     &__action {
         flex: 0 1 auto;
         text-align: center;
-        border: none;
 
         & + & {
             margin-left: 0.25rem;

@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/command"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -20,7 +21,6 @@ func TestHandle(t *testing.T) {
 		t.Fatalf("unexpected error creating workspace: %s", err)
 	}
 
-	store := NewMockStore()
 	runner := NewMockRunner()
 
 	job := executor.Job{
@@ -59,7 +59,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	handler := &handler{
-		idSet:      newIDSet(),
+		nameSet:    janitor.NewNameSet(),
 		options:    Options{},
 		operations: command.NewOperations(&observation.TestContext),
 		runnerFactory: func(dir string, logger *command.Logger, options command.Options, operations *command.Operations) command.Runner {
@@ -76,7 +76,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	if err := handler.Handle(context.Background(), store, job); err != nil {
+	if err := handler.Handle(context.Background(), job); err != nil {
 		t.Fatalf("unexpected error handling record: %s", err)
 	}
 

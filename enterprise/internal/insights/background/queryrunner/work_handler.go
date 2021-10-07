@@ -3,7 +3,16 @@ package queryrunner
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
+	"github.com/hashicorp/go-multierror"
 
 	"golang.org/x/time/rate"
 
@@ -13,40 +22,76 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-var _ dbworker.Handler = &workHandler{}
+var _ workerutil.Handler = &workHandler{}
 
 // workHandler implements the dbworker.Handler interface by executing search queries and
 // inserting insights about them to the insights Timescale database.
 type workHandler struct {
-	workerBaseStore *basestore.Store
+	baseWorkerStore *basestore.Store
 	insightsStore   *store.Store
+	metadadataStore *store.InsightStore
 	limiter         *rate.Limiter
+
+	mu          sync.RWMutex
+	seriesCache map[string]*types.InsightSeries
 }
 
-func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Store, record workerutil.Record) (err error) {
+func (r *workHandler) getSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+	var val *types.InsightSeries
+	var ok bool
+
+	r.mu.RLock()
+	val, ok = r.seriesCache[seriesID]
+	r.mu.RUnlock()
+
+	if !ok {
+		series, err := r.fetchSeries(ctx, seriesID)
+		if err != nil {
+			return nil, err
+		}
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		r.seriesCache[seriesID] = series
+		val = series
+	}
+	return val, nil
+}
+
+func (r *workHandler) fetchSeries(ctx context.Context, seriesID string) (*types.InsightSeries, error) {
+	result, err := r.metadadataStore.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: seriesID})
+	if err != nil || len(result) < 1 {
+		return nil, err
+	}
+	return &result[0], nil
+}
+
+func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
 	defer func() {
 		if err != nil {
 			log15.Error("insights.queryrunner.workHandler", "error", err)
 		}
 	}()
 
-	// Dequeue the job to get information about it, like what search query to perform.
-	job, err := dequeueJob(ctx, r.workerBaseStore, record.RecordID())
-	if err != nil {
-		return err
-	}
-
 	err = r.limiter.Wait(ctx)
 	if err != nil {
 		return err
 	}
+	job, err := dequeueJob(ctx, r.baseWorkerStore, record.RecordID())
+	if err != nil {
+		return err
+	}
+
+	log15.Info("dequeue_job", "job", *job)
+
+	series, err := r.getSeries(ctx, job.SeriesID)
+	if err != nil {
+		return err
+	}
+
 	// Actually perform the search query.
 	//
 	// 🚨 SECURITY: The request is performed without authentication, we get back results from every
@@ -60,9 +105,8 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 		return err
 	}
 
-	// TODO(slimsag): future: Logs are not a good way to surface these errors to users.
 	if len(results.Errors) > 0 {
-		return fmt.Errorf("GraphQL errors: %v", results.Errors)
+		return errors.Errorf("GraphQL errors: %v", results.Errors)
 	}
 	if alert := results.Data.Search.Results.Alert; alert != nil {
 		if alert.Title == "No repositories satisfied your repo: filter" {
@@ -79,11 +123,19 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 			// general.
 		} else {
 			// Maybe the user's search query is actually wrong.
-			return fmt.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
+			return errors.Errorf("insights query issue: alert: %v query=%q", alert, job.SearchQuery)
 		}
 	}
 	if results.Data.Search.Results.LimitHit {
 		log15.Error("insights query issue", "problem", "limit hit", "query", job.SearchQuery)
+		dq := types.DirtyQuery{
+			Query:   job.SearchQuery,
+			ForTime: *job.RecordTime,
+			Reason:  "limit hit",
+		}
+		if err := r.metadadataStore.InsertDirtyQuery(ctx, series, &dq); err != nil {
+			return errors.Wrap(err, "failed to write dirty query record")
+		}
 	}
 	if cloning := len(results.Data.Search.Results.Cloning); cloning > 0 {
 		log15.Error("insights query issue", "cloning_repos", cloning, "query", job.SearchQuery)
@@ -109,39 +161,70 @@ func (r *workHandler) Handle(ctx context.Context, workerStore dbworkerstore.Stor
 	// Figure out how many matches we got for every unique repository returned in the search
 	// results.
 	matchesPerRepo := make(map[string]int, len(results.Data.Search.Results.Results)*4)
+	repoNames := make(map[string]string, len(matchesPerRepo))
 	for _, result := range results.Data.Search.Results.Results {
 		decoded, err := decodeResult(result)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf(`for query "%s"`, job.SearchQuery))
 		}
+		repoNames[decoded.repoID()] = decoded.repoName()
 		matchesPerRepo[decoded.repoID()] = matchesPerRepo[decoded.repoID()] + decoded.matchCount()
 	}
 
-	// Record the number of results we got, one data point per-repository.
-	repoStore := database.Repos(r.workerBaseStore.Handle().DB())
-	for graphQLRepoID, matchCount := range matchesPerRepo {
-		dbRepoID, err := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
-		if err != nil {
-			return errors.Wrap(err, "UnmarshalRepositoryID")
-		}
-		repo, err := repoStore.Get(ctx, dbRepoID)
-		if err != nil {
-			return errors.Wrap(err, "RepoStore.GetByID")
-		}
+	tx, err := r.insightsStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
 
-		repoName := string(repo.Name)
-		err = r.insightsStore.RecordSeriesPoint(ctx, store.RecordSeriesPointArgs{
-			SeriesID: job.SeriesID,
-			Point: store.SeriesPoint{
-				Time:  recordTime,
-				Value: float64(matchCount),
-			},
-			RepoName: &repoName,
-			RepoID:   &repo.ID,
-		})
-		if err != nil {
-			return errors.Wrap(err, "RecordSeriesPoint")
+	if job.PersistMode == string(store.SnapshotMode) {
+		// The purpose of the snapshot is for low fidelity but recently updated data points.
+		// To avoid unbounded growth of the snapshots table we will prune it at the same time as adding new values.
+		if err := tx.DeleteSnapshots(ctx, series); err != nil {
+			return err
 		}
 	}
-	return nil
+
+	// Record the number of results we got, one data point per-repository.
+	for graphQLRepoID, matchCount := range matchesPerRepo {
+		dbRepoID, idErr := graphqlbackend.UnmarshalRepositoryID(graphql.ID(graphQLRepoID))
+		if idErr != nil {
+			err = multierror.Append(err, errors.Wrap(idErr, "UnmarshalRepositoryID"))
+			continue
+		}
+		repoName := repoNames[graphQLRepoID]
+		if len(repoName) == 0 {
+			// this really should never happen, expect if for some reason the gql response is broken
+			err = multierror.Append(err, errors.Newf("MissingRepositoryName for repo_id: %v", string(dbRepoID)))
+			continue
+		}
+
+		args := ToRecording(job, float64(matchCount), recordTime, repoName, dbRepoID)
+		if recordErr := tx.RecordSeriesPoints(ctx, args); recordErr != nil {
+			err = multierror.Append(err, errors.Wrap(recordErr, "RecordSeriesPoints"))
+		}
+	}
+	return err
+}
+
+func ToRecording(record *Job, value float64, recordTime time.Time, repoName string, repoID api.RepoID) []store.RecordSeriesPointArgs {
+	args := make([]store.RecordSeriesPointArgs, 0, len(record.DependentFrames)+1)
+	base := store.RecordSeriesPointArgs{
+		SeriesID: record.SeriesID,
+		Point: store.SeriesPoint{
+			SeriesID: record.SeriesID,
+			Time:     recordTime,
+			Value:    value,
+		},
+		RepoName:    &repoName,
+		RepoID:      &repoID,
+		PersistMode: store.PersistMode(record.PersistMode),
+	}
+	args = append(args, base)
+	for _, dependent := range record.DependentFrames {
+		arg := base
+		arg.Point.Time = dependent
+		args = append(args, arg)
+	}
+	return args
 }

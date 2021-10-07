@@ -249,7 +249,7 @@ func (r *AnyResult) UnmarshalJSON(b []byte) error {
 		}
 		r.Inner = rr
 	default:
-		return fmt.Errorf("Unknown type %s", typeUnmarshaller.TypeName)
+		return errors.Errorf("Unknown type %s", typeUnmarshaller.TypeName)
 	}
 	return nil
 }
@@ -415,7 +415,7 @@ func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
 		}
 		srr.inner = v
 	default:
-		return fmt.Errorf("unknown typename %s", typeDecoder.TypeName)
+		return errors.Errorf("unknown typename %s", typeDecoder.TypeName)
 	}
 
 	return nil
@@ -527,7 +527,7 @@ type SearchStreamClient struct {
 
 func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryResults, error) {
 	var results SearchRepositoryResults
-	err := s.search(query, streamhttp.Decoder{
+	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
 				r, ok := m.(*streamhttp.EventRepoMatch)
@@ -545,7 +545,7 @@ func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryR
 
 func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, error) {
 	var results SearchFileResults
-	err := s.search(query, streamhttp.Decoder{
+	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnProgress: func(p *api.Progress) {
 			results.MatchCount = int64(p.MatchCount)
 		},
@@ -555,7 +555,16 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 				case *streamhttp.EventRepoMatch:
 					results.Results = append(results.Results, &SearchFileResult{})
 
-				case *streamhttp.EventFileMatch:
+				case *streamhttp.EventContentMatch:
+					var r SearchFileResult
+					r.File.Name = v.Path
+					r.Repository.Name = v.Repository
+					if len(v.Branches) > 0 {
+						r.RevSpec.Expr = v.Branches[0]
+					}
+					results.Results = append(results.Results, &r)
+
+				case *streamhttp.EventPathMatch:
 					var r SearchFileResult
 					r.File.Name = v.Path
 					r.Repository.Name = v.Repository
@@ -598,7 +607,7 @@ func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, erro
 }
 func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 	var results []interface{}
-	err := s.search(query, streamhttp.Decoder{
+	err := s.search(query, streamhttp.FrontendStreamDecoder{
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, m := range matches {
 				switch v := m.(type) {
@@ -607,7 +616,7 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 						Name: v.Repository,
 					})
 
-				case *streamhttp.EventFileMatch:
+				case *streamhttp.EventContentMatch:
 					lms := make([]struct {
 						OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
 					}, len(v.LineMatches))
@@ -618,6 +627,12 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 						File:        struct{ Path string }{Path: v.Path},
 						Repository:  RepositoryResult{Name: v.Repository},
 						LineMatches: lms,
+					})
+
+				case *streamhttp.EventPathMatch:
+					results = append(results, FileResult{
+						File:       struct{ Path string }{Path: v.Path},
+						Repository: RepositoryResult{Name: v.Repository},
 					})
 
 				case *streamhttp.EventSymbolMatch:
@@ -654,7 +669,7 @@ func (s *SearchStreamClient) AuthenticatedUserID() string {
 	return s.Client.AuthenticatedUserID()
 }
 
-func (s *SearchStreamClient) search(query string, dec streamhttp.Decoder) error {
+func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {
 	req, err := streamhttp.NewRequest(s.Client.baseURL, query)
 	if err != nil {
 		return err

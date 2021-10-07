@@ -194,3 +194,140 @@ export const fetchDocumentationPathInfo = (
             return JSON.parse(repo.commit.tree.lsif.documentationPathInfo) as GQLDocumentationPathInfo
         })
     )
+
+export interface DocumentationReferencesVariables {
+    repo: Scalars['ID']
+    revspec: string
+    pathID: string
+    first?: number
+    after?: string
+}
+
+interface DocumentationReferencesResults {
+    node: GQL.IRepository
+}
+export const fetchDocumentationReferences = (
+    args: DocumentationReferencesVariables
+): Observable<GQL.ILocationConnection | null> =>
+    requestGraphQL<DocumentationReferencesResults, DocumentationReferencesVariables>(
+        gql`
+            query DocumentationReferences(
+                $repo: ID!
+                $revspec: String!
+                $pathID: String!
+                $first: Int
+                $after: String
+            ) {
+                node(id: $repo) {
+                    ... on Repository {
+                        commit(rev: $revspec) {
+                            tree(path: "/") {
+                                lsif {
+                                    documentationReferences(pathID: $pathID, first: $first, after: $after) {
+                                        nodes {
+                                            resource {
+                                                repository {
+                                                    name
+                                                    url
+                                                }
+                                                commit {
+                                                    oid
+                                                }
+                                                path
+                                                name
+                                            }
+                                            range {
+                                                start {
+                                                    line
+                                                    character
+                                                }
+                                                end {
+                                                    line
+                                                    character
+                                                }
+                                            }
+                                            url
+                                        }
+                                        pageInfo {
+                                            endCursor
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (!data || !data.node) {
+                throw createAggregateError(errors)
+            }
+            const repo = data.node
+            if (!repo.commit || !repo.commit.tree || !repo.commit.tree.lsif) {
+                throw new Error('no LSIF data')
+            }
+            return repo.commit.tree.lsif.documentationReferences as GQL.ILocationConnection | null
+        })
+    )
+
+export interface DocumentationBlameVariables {
+    repo: string
+    revspec: string
+    path: string
+    startLine: number
+    endLine: number
+}
+
+interface DocumentationBlameResults {
+    repository: GQL.IRepository
+}
+export const fetchDocumentationBlame = (args: DocumentationBlameVariables): Observable<GQL.IHunk[]> =>
+    requestGraphQL<DocumentationBlameResults, DocumentationBlameVariables>(
+        gql`
+            query DocumentationBlame(
+                $repo: String!
+                $revspec: String!
+                $path: String!
+                $startLine: Int!
+                $endLine: Int!
+            ) {
+                repository(name: $repo) {
+                    commit(rev: $revspec) {
+                        blob(path: $path) {
+                            blame(startLine: $startLine, endLine: $endLine) {
+                                author {
+                                    person {
+                                        name
+                                        displayName
+                                        email
+                                        avatarURL
+                                    }
+                                    date
+                                }
+                                commit {
+                                    url
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        `,
+        args
+    ).pipe(
+        map(({ data, errors }) => {
+            if (
+                !data ||
+                !data.repository ||
+                !data.repository.commit ||
+                !data.repository.commit.blob ||
+                !data.repository.commit.blob.blame
+            ) {
+                throw createAggregateError(errors)
+            }
+            return data.repository.commit.blob.blame
+        })
+    )

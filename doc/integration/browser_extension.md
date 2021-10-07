@@ -17,12 +17,12 @@ Enterprise, GitLab, Phabricator, and Bitbucket Server.
 </p>
 
 <p>
-  <a target="_blank" href="https://storage.googleapis.com/sourcegraph-for-firefox/latest.xpi" style="display:flex;align-items:center">
+  <a target="_blank" href="https://addons.mozilla.org/en-US/firefox/addon/sourcegraph-for-firefox/" style="display:flex;align-items:center">
   <img src="img/firefox.svg" width="24" height="24" style="margin-right:5px" /> <strong>Install Sourcegraph for Firefox</strong>
   </a>
 </p>
 
->NOTE: The Firefox extension may need to be manually enabled from `about:addons`, you can find more information in [Firefox add-on security](firefox_security.md).
+>NOTE: If you were using our self-hosted version of Firefox Extension and are looking to upgrade, please check our [migration guide](migrating_firefox_extension.md).
 
 <video class="theme-dark-only" width="1760" height="1060" autoplay loop muted playsinline style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/code-host-integration/CodeIntelligenceOnCodeHostDark.webm" type="video/webm">
@@ -109,7 +109,7 @@ To use the browser extension with your private repositories, you need to set up 
 Follow these instructions:
 
 1. [Install Sourcegraph](https://docs.sourcegraph.com/admin/install). Skip this step if you already have a private Sourcegraph instance.
-2. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+2. Click the Sourcegraph extension icon in the browser toolbar on the browser tab for your private Sourcegraph instance then open the settings page.
 3. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`)
 4. Make sure the connection status shows "Looks good!"
 
@@ -175,4 +175,13 @@ Sourcegraph integrations will only connect to Sourcegraph.com as required to pro
 
 If connected to a **private, self-hosted Sourcegraph instance**, Sourcegraph integrations never send any logs, pings, usage statistics, or telemetry to Sourcegraph.com. They will send notifications of usage to that private Sourcegraph instance only. This allows the site admins to see usage statistics.
 
-If connected to the **public Sourcegraph.com instance**, Sourcegraph integrations will send notifications of usage on public repositories to Sourcegraph.com.
+If connected to the **public Sourcegraph.com instance**, Sourcegraph integrations will send notifications of usage on public repositories to Sourcegraph.com.  
+
+The browser extension also does not store sensitive data locally. The information stored is restricted to:
+
+- AnonymousUid
+-  Feature flags
+  - Hover alerts
+- Client settings
+  - Enable/disable status
+  - Sourcegraph URL

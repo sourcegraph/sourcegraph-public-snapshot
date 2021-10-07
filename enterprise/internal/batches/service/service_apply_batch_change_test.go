@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -23,7 +25,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 	db := dbtest.NewDB(t, "")
 
 	admin := ct.CreateTestUser(t, db, true)
@@ -36,7 +38,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := store.NewWithClock(db, nil, clock)
+	store := store.NewWithClock(db, &observation.TestContext, nil, clock)
 	svc := New(store)
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {
@@ -681,7 +683,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			ct.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
-			// NOTE: We cannot use a context that has authz bypassed.
+			// NOTE: We cannot use a context with an internal actor.
 			batchSpec := ct.CreateBatchSpec(t, userCtx, store, "missing-permissions", user.ID)
 
 			ct.CreateChangesetSpec(t, userCtx, store, ct.TestSpecOpts{
@@ -704,12 +706,12 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			if err == nil {
 				t.Fatal("expected error, but got none")
 			}
-			notFoundErr, ok := err.(*database.RepoNotFoundErr)
-			if !ok {
+			var e *database.RepoNotFoundErr
+			if !errors.As(err, &e) {
 				t.Fatalf("expected RepoNotFoundErr but got: %s", err)
 			}
-			if notFoundErr.ID != repos[1].ID {
-				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", notFoundErr.ID)
+			if e.ID != repos[1].ID {
+				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", e.ID)
 			}
 		})
 
@@ -1113,6 +1115,37 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				assertions.ArchiveIn = 0
 				ct.AssertChangeset(t, attachedChangeset, assertions)
 			})
+		})
+
+		t.Run("invalid changeset specs", func(t *testing.T) {
+			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange-invalid-specs", admin.ID)
+
+			// Both specs here have the same HeadRef in the same repository
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:      admin.ID,
+				Repo:      repos[0].ID,
+				BatchSpec: batchSpec.ID,
+				HeadRef:   "refs/heads/my-branch",
+			})
+
+			ct.CreateChangesetSpec(t, ctx, store, ct.TestSpecOpts{
+				User:      admin.ID,
+				Repo:      repos[0].ID,
+				BatchSpec: batchSpec.ID,
+				HeadRef:   "refs/heads/my-branch",
+			})
+
+			_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				BatchSpecRandID: batchSpec.RandID,
+			})
+			if err == nil {
+				t.Fatal("expected error, but got none")
+			}
+
+			if !strings.Contains(err.Error(), "Validating changeset specs resulted in an error") {
+				t.Fatalf("wrong error: %s", err)
+			}
 		})
 	})
 

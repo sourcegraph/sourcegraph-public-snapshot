@@ -20,10 +20,11 @@ func (m *OperationMetrics) Observe(secs, count float64, err *error, lvals ...str
 		return
 	}
 
-	m.Duration.WithLabelValues(lvals...).Observe(secs)
-	m.Count.WithLabelValues(lvals...).Add(count)
 	if err != nil && *err != nil {
 		m.Errors.WithLabelValues(lvals...).Add(1)
+	} else {
+		m.Duration.WithLabelValues(lvals...).Observe(secs)
+		m.Count.WithLabelValues(lvals...).Add(count)
 	}
 }
 
@@ -70,9 +71,9 @@ func WithLabels(labels ...string) OperationMetricsOption {
 func NewOperationMetrics(r prometheus.Registerer, metricPrefix string, fns ...OperationMetricsOption) *OperationMetrics {
 	options := &operationMetricOptions{
 		subsystem:    "",
-		durationHelp: fmt.Sprintf("Time in seconds spent performing %s operations", metricPrefix),
-		countHelp:    fmt.Sprintf("Total number of %s operations", metricPrefix),
-		errorsHelp:   fmt.Sprintf("Total number of errors when performing %s operations", metricPrefix),
+		durationHelp: fmt.Sprintf("Time in seconds spent performing successful %s operations", metricPrefix),
+		countHelp:    fmt.Sprintf("Total number of successful %s operations", metricPrefix),
+		errorsHelp:   fmt.Sprintf("Total number of %s operations resulting in an unexpected error", metricPrefix),
 		labels:       nil,
 	}
 

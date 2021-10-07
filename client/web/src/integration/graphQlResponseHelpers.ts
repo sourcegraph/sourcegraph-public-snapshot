@@ -7,6 +7,7 @@ import {
     RepositoryRedirectResult,
     ResolveRevResult,
     ExternalServiceKind,
+    RepoChangesetsStatsResult,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
@@ -71,7 +72,16 @@ export const createRepositoryRedirectResult = (
         externalURLs: [{ url: new URL(`https://${encodeURIPathComponent(repoName)}`).href, serviceKind }],
         description: 'bla',
         viewerCanAdminister: false,
-        defaultBranch: { displayName: 'master' },
+        defaultBranch: { displayName: 'master', abbrevName: 'master' },
+    },
+})
+
+export const createRepoChangesetsStatsResult = (): RepoChangesetsStatsResult => ({
+    repository: {
+        changesetsStats: {
+            open: 2,
+            merged: 4,
+        },
     },
 })
 

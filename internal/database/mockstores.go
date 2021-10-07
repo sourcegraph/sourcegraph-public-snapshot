@@ -29,4 +29,6 @@ type MockStores struct {
 	Authz MockAuthz
 
 	EventLogs MockEventLogs
+
+	TemporarySettings MockTemporarySettings
 }

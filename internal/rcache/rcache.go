@@ -9,7 +9,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
 
@@ -94,11 +93,7 @@ func (r *Cache) SetMulti(keyvals ...[2]string) {
 	for _, kv := range keyvals {
 		k, v := kv[0], kv[1]
 		if !utf8.Valid([]byte(k)) {
-			if conf.IsDev(conf.DeployType()) {
-				panic(fmt.Sprintf("rcache: keys must be valid utf8 %v", []byte(k)))
-			} else {
-				log15.Error("rcache: keys must be valid utf8", "key", []byte(k))
-			}
+			log15.Error("rcache: keys must be valid utf8", "key", []byte(k))
 			continue
 		}
 		if r.ttlSeconds == 0 {
@@ -135,11 +130,7 @@ func (r *Cache) Set(key string, b []byte) {
 	defer c.Close()
 
 	if !utf8.Valid([]byte(key)) {
-		if conf.IsDev(conf.DeployType()) {
-			panic(fmt.Sprintf("rcache: keys must be valid utf8 %v", []byte(key)))
-		} else {
-			log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
-		}
+		log15.Error("rcache: keys must be valid utf8", "key", []byte(key))
 	}
 
 	if r.ttlSeconds == 0 {

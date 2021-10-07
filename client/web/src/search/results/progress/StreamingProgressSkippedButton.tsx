@@ -1,10 +1,7 @@
-import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
-
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { StreamingProgressProps } from './StreamingProgress'
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
@@ -28,27 +25,14 @@ export const StreamingProgressSkippedButton: React.FunctionComponent<
         [setIsOpen, onSearchAgain]
     )
 
-    const [isRedesignEnabled] = useRedesignToggle()
-
     return (
         <>
             {progress.skipped.length > 0 && (
                 <ButtonDropdown isOpen={isOpen} toggle={toggleOpen}>
                     <DropdownToggle
-                        className={classNames(
-                            'streaming-progress__skipped mb-0 d-flex align-items-center text-decoration-none btn-sm',
-                            {
-                                'streaming-progress__skipped--warning': !isRedesignEnabled && skippedWithWarningOrError,
-                            }
-                        )}
+                        className="streaming-progress__skipped mb-0 d-flex align-items-center text-decoration-none btn-sm"
                         caret={true}
-                        color={
-                            isRedesignEnabled
-                                ? skippedWithWarningOrError
-                                    ? 'outline-danger'
-                                    : 'outline-secondary'
-                                : 'link'
-                        }
+                        color={skippedWithWarningOrError ? 'outline-danger' : 'outline-secondary'}
                     >
                         {skippedWithWarningOrError ? (
                             <AlertCircleIcon className="mr-2 icon-inline" />

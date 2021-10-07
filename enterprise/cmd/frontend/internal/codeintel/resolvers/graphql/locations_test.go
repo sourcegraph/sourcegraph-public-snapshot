@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -20,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 const numRoutines = 5
@@ -47,9 +50,9 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*git.Commit, error) {
+	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitapi.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
-		return &git.Commit{ID: commitID}, nil
+		return &gitapi.Commit{ID: commitID}, nil
 	}
 
 	cachedResolver := NewCachedLocationResolver(db)
@@ -95,7 +98,7 @@ func TestCachedLocationResolver(t *testing.T) {
 					return
 				}
 				if repoID != repositoryID {
-					errs <- fmt.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
+					errs <- errors.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
 					return
 				}
 			}
@@ -108,7 +111,7 @@ func TestCachedLocationResolver(t *testing.T) {
 						return
 					}
 					if commitResolver.OID() != graphqlbackend.GitObjectID(commit) {
-						errs <- fmt.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
+						errs <- errors.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
 						return
 					}
 				}
@@ -123,7 +126,7 @@ func TestCachedLocationResolver(t *testing.T) {
 							return
 						}
 						if treeResolver.Path() != path {
-							errs <- fmt.Errorf("unexpected path. want=%s have=%s", path, treeResolver.Path())
+							errs <- errors.Errorf("unexpected path. want=%s have=%s", path, treeResolver.Path())
 							return
 						}
 
@@ -250,8 +253,8 @@ func TestResolveLocations(t *testing.T) {
 		return api.CommitID(spec), nil
 	}
 
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
-		return &git.Commit{ID: commitID}, nil
+	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitapi.Commit, error) {
+		return &gitapi.Commit{ID: commitID}, nil
 	}
 
 	r1 := lsifstore.Range{Start: lsifstore.Position{Line: 11, Character: 12}, End: lsifstore.Position{Line: 13, Character: 14}}

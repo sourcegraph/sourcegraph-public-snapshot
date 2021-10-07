@@ -231,6 +231,10 @@ func (o *Output) moveUp(lines int) {
 	fmt.Fprintf(o.w, "\033[%dD", o.caps.Width+1)
 }
 
+func (o *Output) MoveUpLines(lines int) {
+	o.moveUp(lines)
+}
+
 // writeStyle is a helper to write a style while respecting the terminal
 // capabilities.
 func (o *Output) writeStyle(style Style) {

@@ -44,6 +44,12 @@
       "group": "Debug",
       "examples": [["20"]]
     },
+    "apidocs.search.index-size-limit-factor": {
+      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "type": "number",
+      "default": 1.0,
+      "additionalProperties": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -72,6 +78,12 @@
             }
           }
         },
+        "apidocs.search.indexing": {
+          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "structuralSearch": {
           "description": "Enables structural search.",
           "type": "string",
@@ -98,6 +110,12 @@
         },
         "perforce": {
           "description": "Allow adding Perforce code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
+        "jvmPackages": {
+          "description": "Allow adding JVM packages code host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
@@ -259,6 +277,12 @@
               "additionalProperties": {
                 "type": "number"
               }
+            },
+            "maxReorderQueueSize": {
+              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 0. Set this to small integers to limit latency increases from slow backends.",
+              "default": 0,
+              "type": "integer",
+              "group": "Search"
             }
           }
         }
@@ -451,6 +475,12 @@
       "type": "string",
       "group": "Internal",
       "hide": true
+    },
+    "gitLongCommandTimeout": {
+      "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
+      "type": "integer",
+      "default": 3600,
+      "group": "External services"
     },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.",
@@ -657,10 +687,6 @@
         "domain": {
           "description": "The HELO domain to provide to the SMTP server (if needed).",
           "type": "string"
-        },
-        "disableTLS": {
-          "description": "DEPRECATED: use noVerifyTLS instead, this field will be removed in a future release",
-          "type": "boolean"
         },
         "noVerifyTLS": {
           "description": "Disable TLS verification",
@@ -899,6 +925,13 @@
       "default": 10,
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.commit.indexer.interval": {
+      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60,
+      "examples": [120]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",
@@ -1308,6 +1341,11 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "allowGroupsPermissionsSync": {
+          "description": "Experimental: Allows sync of GitHub teams and organizations permissions across all external services associated with this provider to allow enabling of [repository permissions caching](https://docs.sourcegraph.com/admin/repo/permissions#permissions-caching).",
+          "default": false,
+          "type": "boolean"
         }
       }
     },
@@ -1441,9 +1479,11 @@
         "apiKey": { "type": "string" },
         "apiUrl": { "type": "string" },
         "tags": {
+          "description": "Comma separated list of tags attached to the notifications - or a Go template that produces such a list. Sourcegraph provides some default ones if this value isn't specified.",
           "type": "string"
         },
         "priority": {
+          "description": "Defines the importance of an alert. Allowed values are P1, P2, P3, P4, P5 - or a Go template that resolves to one of those values. By default, Sourcegraph will fill this in for you if a value isn't specified here.",
           "type": "string"
         },
         "responders": {

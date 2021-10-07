@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { Link, Redirect, useLocation } from 'react-router-dom'
 
@@ -11,9 +12,10 @@ import { FeatureFlagProps } from '../featureFlags/featureFlags'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { ExperimentalSignUpPage, ShowEmailFormQueryParameter } from './ExperimentalSignUpPage'
+import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
 import { getReturnTo } from './SignInSignUpCommon'
+import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
@@ -27,7 +29,6 @@ interface SignUpPageProps extends ThemeProps, TelemetryProps, FeatureFlagProps {
 export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     authenticatedUser,
     context,
-    featureFlags,
     isLightTheme,
     telemetryService,
 }) => {
@@ -65,7 +66,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow) {
-                window.location.replace(new URL('/post-sign-up', window.location.href).pathname)
+                window.location.replace(new URL('/welcome', window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
             }
@@ -73,9 +74,9 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             return Promise.resolve()
         })
 
-    if (context.sourcegraphDotComMode && featureFlags.get('w1-signup-optimisation') && query.get('src')) {
+    if (context.sourcegraphDotComMode) {
         return (
-            <ExperimentalSignUpPage
+            <CloudSignUpPage
                 source={query.get('src')}
                 onSignUp={handleSignUp}
                 isLightTheme={isLightTheme}
@@ -87,7 +88,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
     }
 
     return (
-        <div className="signin-signup-page sign-up-page">
+        <div className={signInSignUpCommonStyles.signinSignupPage}>
             <PageTitle title="Sign up" />
             <HeroPage
                 icon={SourcegraphIcon}
@@ -98,7 +99,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
                 }
                 lessPadding={true}
                 body={
-                    <div className="signup-page__container pb-5">
+                    <div className={classNames('pb-5', signInSignUpCommonStyles.signupPageContainer)}>
                         {context.sourcegraphDotComMode && <p className="pt-1 pb-2">Start searching public code now</p>}
                         <SignUpForm context={context} onSignUp={handleSignUp} />
                         <p className="mt-3">

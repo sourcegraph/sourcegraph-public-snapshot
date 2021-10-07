@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	RobotsTxt = "robots-txt"
-	Favicon   = "favicon"
+	RobotsTxt    = "robots-txt"
+	SitemapXmlGz = "sitemap-xml-gz"
+	Favicon      = "favicon"
 
 	OpenSearch = "opensearch"
 
@@ -24,6 +25,7 @@ const (
 	SignIn             = "sign-in"
 	SignOut            = "sign-out"
 	SignUp             = "sign-up"
+	Welcome            = "welcome"
 	SiteInit           = "site-init"
 	VerifyEmail        = "verify-email"
 	ResetPasswordInit  = "reset-password.init"
@@ -63,12 +65,14 @@ func newRouter() *mux.Router {
 	base.StrictSlash(true)
 
 	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
+	base.Path("/sitemap{number:(?:_(?:[0-9]+))?}.xml.gz").Methods("GET").Name(SitemapXmlGz)
 	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
 	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
 
 	base.Path("/-/logout").Methods("GET").Name(Logout)
 
 	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
+	base.Path("/-/welcome").Methods("GET").Name(Welcome)
 	base.Path("/-/site-init").Methods("POST").Name(SiteInit)
 	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
 	base.Path("/-/sign-in").Methods("POST").Name(SignIn)

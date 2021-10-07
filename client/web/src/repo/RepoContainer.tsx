@@ -1,10 +1,8 @@
-import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
@@ -27,31 +25,40 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { encodeURIPathComponent, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser } from '../auth'
+import { BatchChangesProps } from '../batches'
+import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { FuzzyFinder } from '../components/fuzzyFinder/FuzzyFinder'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
+import { CodeInsightsProps } from '../insights/types'
 import { IS_CHROME } from '../marketing/util'
 import { Settings } from '../schema/settings.schema'
-import { CaseSensitivityProps, PatternTypeProps, SearchContextProps, searchQueryForRepoRevision } from '../search'
-import { QueryState } from '../search/helpers'
+import {
+    CaseSensitivityProps,
+    PatternTypeProps,
+    SearchContextProps,
+    searchQueryForRepoRevision,
+    SearchStreamingProps,
+} from '../search'
+import { useNavbarQueryState } from '../search/navbarSearchQueryState'
+import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { InstallBrowserExtensionAlert } from './actions/InstallBrowserExtensionAlert'
+import { InstallBrowserExtensionAlert, isFirefoxCampaignActive } from './actions/InstallBrowserExtensionAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -80,7 +87,12 @@ export interface RepoContainerContext
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        ActionItemsBarProps {
+        ActionItemsBarProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps,
+        CodeInsightsProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -92,6 +104,10 @@ export interface RepoContainerContext
     onDidUpdateExternalLinks: (externalLinks: ExternalLinkFields[] | undefined) => void
 
     globbing: boolean
+
+    showSearchNotebook: boolean
+
+    isMacPlatform: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -115,20 +131,27 @@ interface RepoContainerProps
         VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         BreadcrumbSetters,
-        BreadcrumbsProps {
+        BreadcrumbsProps,
+        SearchStreamingProps,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
+        CodeIntelligenceProps,
+        BatchChangesProps,
+        CodeInsightsProps {
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
     repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
-    onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
+    showSearchNotebook: boolean
+    isMacPlatform: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'
 const HAS_DISMISSED_ALERT_KEY = 'has-dismissed-extension-alert'
+const HAS_DISMISSED_FIREFOX_ALERT_KEY = 'has-dismissed-firefox-addon-alert'
 
 export const HOVER_THRESHOLD = 5
 
@@ -147,7 +170,6 @@ export interface ExtensionAlertProps {
  * Renders a horizontal bar and content for a repository page.
  */
 export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props => {
-    const [isRedesignEnabled] = useRedesignToggle()
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
@@ -218,34 +240,24 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                 key: 'repository',
                 element: (
                     <>
-                        <div className={classNames('d-inline-flex', isRedesignEnabled && 'btn-group')}>
+                        <div className="d-inline-flex btn-group">
                             <Link
                                 to={
                                     resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
                                         ? resolvedRevisionOrError.rootTreeURL
                                         : repoOrError.url
                                 }
-                                className={classNames(
-                                    'text-nowrap test-repo-header-repo-link',
-                                    isRedesignEnabled ? 'btn btn-sm btn-outline-secondary' : 'font-weight-bold'
-                                )}
+                                className="btn btn-sm btn-outline-secondary text-nowrap test-repo-header-repo-link"
                             >
                                 <SourceRepositoryIcon className="icon-inline" /> {displayRepoName(repoOrError.name)}
                             </Link>
                             <button
                                 type="button"
                                 id="repo-popover"
-                                className={classNames(
-                                    'btn repo-container__repo-change',
-                                    isRedesignEnabled ? 'btn-sm btn-outline-secondary' : 'btn-icon'
-                                )}
+                                className="btn btn-sm btn-outline-secondary repo-container__repo-change"
                                 aria-label="Change repository"
                             >
-                                {isRedesignEnabled ? (
-                                    <ChevronDownIcon className="icon-inline" />
-                                ) : (
-                                    <MenuDownIcon className="icon-inline" />
-                                )}
+                                <ChevronDownIcon className="icon-inline" />
                             </button>
                         </div>
                         <UncontrolledPopover
@@ -261,7 +273,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
                     </>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError, isRedesignEnabled])
+        }, [repoOrError, resolvedRevisionOrError])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision
@@ -300,7 +312,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const { globbing, onNavbarQueryChange } = props
+    const { globbing } = props
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {
@@ -357,10 +370,18 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
         setHasDismissedPopover(true)
     }, [])
 
+    const [hasDismissedFirefoxAlert, setHasDismissedFirefoxAlert] = useLocalStorage(
+        HAS_DISMISSED_FIREFOX_ALERT_KEY,
+        false
+    )
+    const showFirefoxAddonAlert = isFirefox() && !hasDismissedFirefoxAlert && isFirefoxCampaignActive(Date.now())
+
     const onAlertDismissed = useCallback(() => {
         onExtensionAlertDismissed()
         setHasDismissedExtensionAlert(true)
-    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert])
+        // TEMPORARY
+        setHasDismissedFirefoxAlert(true)
+    }, [onExtensionAlertDismissed, setHasDismissedExtensionAlert, setHasDismissedFirefoxAlert])
 
     if (!repoOrError) {
         // Render nothing while loading
@@ -392,25 +413,13 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
 
     return (
         <div className="repo-container test-repo-container w-100 d-flex flex-column action-items">
-            {!isErrorLike(props.settingsCascade.final) &&
-                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
-                resolvedRevisionOrError &&
-                !isErrorLike(resolvedRevisionOrError) && (
-                    <FuzzyFinder
-                        repoName={repoName}
-                        commitID={resolvedRevisionOrError.commitID}
-                        caseInsensitiveFileCountThreshold={
-                            props.settingsCascade.final?.experimentalFeatures
-                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
-                        }
-                    />
-                )}
-            {showExtensionAlert && (
+            {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}
                     onAlertDismissed={onAlertDismissed}
                     externalURLs={repoOrError.externalURLs}
                     codeHostIntegrationMessaging={codeHostIntegrationMessaging}
+                    showFirefoxAddonAlert={showFirefoxAddonAlert}
                 />
             )}
             <RepoHeader

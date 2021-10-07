@@ -85,7 +85,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Viewing batch changes](how-tos/viewing_batch_changes.md)
 - [Tracking existing changesets](how-tos/tracking_existing_changesets.md)
 - [Closing or deleting a batch change](how-tos/closing_or_deleting_a_batch_change.md)
-- [Site admin configuration for batch changes](how-tos/site_admin_configuration.md)
+- [Site admin configuration for Batch Changes](how-tos/site_admin_configuration.md)
 - [Configuring credentials for Batch Changes](how-tos/configuring_credentials.md)
 - [Handling errored changesets](how-tos/handling_errored_changesets.md)
 - [Opting out of batch changes](how-tos/opting_out_of_batch_changes.md)

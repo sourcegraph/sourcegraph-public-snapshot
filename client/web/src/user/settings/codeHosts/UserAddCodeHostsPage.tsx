@@ -2,8 +2,10 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, keyExistsIn } from '@sourcegraph/shared/src/util/types'
+import { SelfHostedCta } from '@sourcegraph/web/src/components/SelfHostedCta'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
@@ -23,7 +25,8 @@ type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps
-    extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
+    extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'>,
+        TelemetryProps {
     user: { id: Scalars['ID']; tags: string[] }
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
@@ -64,6 +67,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     routingPrefix,
     context,
     onUserExternalServicesOrRepositoriesUpdate,
+    telemetryService,
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
@@ -122,6 +126,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         })
     }, [fetchExternalServices])
 
+    const logAddRepositoriesClicked = useCallback(
+        (source: string) => () => {
+            eventLogger.log('UserSettingsAddRepositoriesCTAClicked', null, { source })
+        },
+        []
+    )
+
     const getGitHubUpdateAuthBanner = (needsUpdate: boolean): JSX.Element | null =>
         needsUpdate ? (
             <div className="alert alert-info mb-4" role="alert" key="update-github">
@@ -140,7 +151,11 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         services.length > 0 ? (
             <div className="alert alert-success mb-4" role="alert" key="add-repos">
                 Connected with {services.join(', ')}. Next,{' '}
-                <Link className="alert-link" to={`${routingPrefix}/repositories/manage`}>
+                <Link
+                    className="alert-link"
+                    to={`${routingPrefix}/repositories/manage`}
+                    onClick={logAddRepositoriesClicked('banner')}
+                >
                     add your repositories →
                 </Link>
             </div>
@@ -222,7 +237,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const authProvider = authProvidersByKind[kind]
 
             if (authProvider) {
-                eventLogger.log('UserAttemptConnectCodeHost', { kind })
+                eventLogger.log('ConnectUserCodeHostClicked', { kind }, { kind })
                 window.location.assign(
                     `${authProvider.authenticationURL as string}&redirect=${
                         window.location.href
@@ -242,21 +257,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 description={
                     <>
                         Connect with your code hosts. Then,{' '}
-                        <Link to={`${routingPrefix}/repositories/manage`}>add repositories</Link> to search with
-                        Sourcegraph.
+                        <Link
+                            to={`${routingPrefix}/repositories/manage`}
+                            onClick={logAddRepositoriesClicked('description')}
+                        >
+                            add repositories
+                        </Link>{' '}
+                        to search with Sourcegraph.
                     </>
                 }
                 className="mb-3"
             />
-
             {/* display external service errors and success banners */}
             {getErrorAndSuccessBanners(statusOrError)}
-
             {/* display other errors, e.g. network errors */}
             {isErrorLike(statusOrError) && (
                 <ErrorAlert error={statusOrError} prefix="Code host action error" icon={false} />
             )}
-
             {codeHostExternalServices && isServicesByKind(statusOrError) ? (
                 <Container>
                     <ul className="list-group">
@@ -284,6 +301,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                     <LoadingSpinner className="icon-inline" />
                 </div>
             )}
+
+            <SelfHostedCta className="mt-5" page="settings/code-hosts" telemetryService={telemetryService}>
+                <p className="mb-2">
+                    <strong>Require support for Bitbucket, or nearly any other code host?</strong>
+                </p>
+                <p className="mb-2">You may need our self-hosted installation.</p>
+            </SelfHostedCta>
         </div>
     )
 }

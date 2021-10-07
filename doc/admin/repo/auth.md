@@ -1,60 +1,19 @@
-# Repositories that need HTTP(S) or SSH authentication
+# Repository authentication
 
-If authentication is required to `git clone` a repository then you must provide credentials to the container.
+If authentication (HTTP(S) or SSH) is required to `git clone` a repository then you must provide credentials to the container.
 
 First, ensure your **Site admin > Manage repositories** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
 
-Then, follow the directions below depending on your deployment type.
+Then, follow the directions below depending on your deployment type:
 
-## For single-node deployments (`sourcegraph/server`)
+- [Sourcegraph with Docker Compose](../install/docker-compose/index.md): See [the Docker Compose git configuration guide](../install/docker-compose/operations.md#git-configuration-and-authentication).
+- [Sourcegraph with Kubernetes](../install/docker-compose/index.md): See [Configure repository cloning via SSH](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh).
+- [Single-container Sourcegraph](../install/docker-compose/index.md): See [the single-container git configuration guide](../install/docker/operations.md#git-configuration-and-authentication).
+- [Pure-docker Sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker): See [Configuring SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/pure-docker/README.md#configuring-ssh-cloning).
 
-### SSH authentication (config, keys, `known_hosts`)
+## Troubleshooting
 
-The container consults its own file system (in the standard locations) for SSH configuration, private keys, and `known_hosts`. Upon container start, it copies all files from `/etc/sourcegraph/ssh` into its own `$HOME/.ssh` directory.
-
-To provide SSH authentication configuration to the container, assuming you're using the default `--volume $HOME/.sourcegraph/config:/etc/sourcegraph`, follow these steps:
-
-1. Create files at `$HOME/.sourcegraph/config/ssh/config`, `$HOME/.sourcegraph/config/ssh/known_hosts`, etc., on the host machine as desired to configure SSH.
-1. Start (or restart) the container.
-
-To configure the container to use the same SSH as your user account on the host machine, you can also run `cp -R $HOME/.ssh $HOME/.sourcegraph/config/ssh`.
-
-### HTTP(S) authentication via netrc
-
-The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
-
-Otherwise, the container consults the `$HOME/.netrc` files on its own file system for HTTP(S) authentication. The `.netrc` file is a standard way to specify authentication used to connect to external hosts.
-
-To provide HTTP(S) authentication, assuming you're using the default `--volume $HOME/.sourcegraph/config:/etc/sourcegraph`, follow these steps:
-
-1. Create a file at `$HOME/.sourcegraph/config/netrc` on the host machine that contains lines of the form `machine example.com login alice password mypassword` (replacing `example.com`, `alice`, and `mypassword` with the actual values).
-1. Start (or restart) the container.
-
-## For Docker Compose deployments
-
-## SSH authentication (config, keys, `known_hosts`)
-
-Provide your `gitserver` instance with your SSH / Git configuration (e.g. `.ssh/config`, `.ssh/id_rsa`, `.ssh/id_rsa.pub`, and `.ssh/known_hosts`--but you can also provide other files like `.netrc`, `.gitconfig`, etc. if needed) by mounting a directory that contains this configuration into the `gitserver` container.
-
-For example, in the `gitserver-0` container configuration in your docker-compose.yaml file, add the second volume listed below, replacing `~/path/on/host/` with the path on the host machine to the `.ssh` directory:
-
-```
-gitserver-0:
-  container_name: gitserver-0
-  ...
-  volumes:
-    - 'gitserver-0:/data/repos'
-    - '~/path/on/host/.ssh:/home/sourcegraph/.ssh'
-  ...
-```
-
->NOTE: The permission of your SSH / Git configuration must be set to be readable by the user in the `gitserver` container. For example, run `chmod -v -R 600 ~/path/to/.ssh` in the folder on the host machine.
-
-See [Custom git or ssh config docs](https://docs.sourcegraph.com/admin/repo/custom_git_or_ssh_config#setting-configuration) on setting custom configuration 
-
-### Troubleshooting
-
-#### What should be included in my config file?
+### What should be included in my config file?
 
 We recommend adding the `StrictHostKeyChecking no` and `AddKeysToAgent yes` flags to prevent the need to give permission interactively when cloning from a new host.
 
@@ -64,9 +23,12 @@ Host *
   AddKeysToAgent yes
 ```
 
+See [git configuration](./git_config.md) for more details.
 
-#### Error: `Host key verification failed`
+### Error: `Host key verification failed`
+
 This indicates an invalid key is being used. You can confirm the error by cloning inside the gitserver directly. For example:
+
 ```bash
 docker exec -it gitserver-0 sh
 cd data/repos/<CODE-HOST>/<REPO-OWNER>
@@ -74,6 +36,7 @@ git clone <SSH-URL>
 ```
 
 #### Error: `Bad owner or permissions on /home/sourcegraph/.ssh/<YOUR-CONFIG-FILE>`
+
 This indicates the container is having trouble reading the configuration files due to permission / owner issues.
 The permission and ownership settings inside your `.ssh/` directory should look similar to:
 ```bash
@@ -87,7 +50,7 @@ drwxr-sr-x    1 sourcegr sourcegr      4096 May 12 19:43 ..
 -rw-------    1 sourcegr sourcegr       799 May 12 19:54 known_hosts
 ```
 
-##### Solution:
+##### Solution
 
 - Inside the `.ssh` directory on the Host Machine:
   - Permission on all files must be set to `600`, and `700` for the directory itself.
@@ -100,19 +63,5 @@ drwxr-sr-x    1 sourcegr sourcegr      4096 May 12 19:43 ..
 >NOTE: Once the volume for the configuration files has been mounted, both the `/ssh` directory on the host machine and docker will be synced and changes within one directory will be reflected by the other one. Consquently, you will only need to make the changes within one directory.
 
 #### Error: `Permissions 0644 for '/home/sourcegraph/.ssh/<YOUR-PRIVATE-KEY-FILE>' are too open`
+
 This indicates the permission on your private key file is accessible by users other than the file owner. Setting the file permission to 600 resolves the issue.
-
-### HTTP(S) authentication via netrc
-
-The easiest way to specify HTTP(S) authentication for repositories is to include the username and password in the clone URL itself, such as `https://user:password@example.com/my/repo`. These credentials won't be displayed to non-admin users.
-
-Otherwise, follow the steps above for mounting SSH configuration to mount a host directory containing the desired `.netrc` file to `/home/sourcegraph/` in the `gitserver` container.
-
-## For Kubernetes cluster deployments
-
-See "[Configure repository cloning via SSH
-](../install/kubernetes/configure.md#configure-repository-cloning-via-ssh)" in the Kubernetes cluster administrator guide.
-
-## For pure-Docker cluster deployments
-
-See "[Configuring SSH cloning](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/README.md#configuring-ssh-cloning)" in the Pure-Docker Sourcegraph cluster deployment reference.

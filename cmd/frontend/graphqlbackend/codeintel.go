@@ -19,12 +19,15 @@ type CodeIntelResolver interface {
 	LSIFIndexes(ctx context.Context, args *LSIFIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	LSIFIndexesByRepo(ctx context.Context, args *LSIFRepositoryIndexesQueryArgs) (LSIFIndexConnectionResolver, error)
 	DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error)
+	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]LSIFIndexResolver, error)
+	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+	CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) ([]CodeIntelligenceConfigurationPolicyResolver, error)
+	CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (CodeIntelligenceConfigurationPolicyResolver, error)
+	UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
+	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
-	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobForRepo(ctx context.Context, args *struct{ Repository graphql.ID }) (*EmptyResponse, error)
-	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
-
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -33,6 +36,8 @@ type LSIFUploadsQueryArgs struct {
 	Query           *string
 	State           *string
 	IsLatestForRepo *bool
+	DependencyOf    *graphql.ID
+	DependentOf     *graphql.ID
 	After           *string
 }
 
@@ -112,38 +117,24 @@ type IndexStepResolver interface {
 	LogEntry() ExecutionLogEntryResolver
 }
 
-type ExecutionLogEntryResolver interface {
-	Key() string
-	Command() []string
-	StartTime() DateTime
-	ExitCode() int32
-	Out(ctx context.Context) (string, error)
-	DurationMilliseconds() int32
-}
-
 type LSIFIndexConnectionResolver interface {
 	Nodes(ctx context.Context) ([]LSIFIndexResolver, error)
 	TotalCount(ctx context.Context) (*int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type IndexConfigurationResolver interface {
-	Configuration() *string
-}
-
-type UpdateRepositoryIndexConfigurationArgs struct {
+type QueueAutoIndexJobsForRepoArgs struct {
 	Repository    graphql.ID
-	Configuration string
-}
-
-type QueueAutoIndexJobArgs struct {
-	Repository graphql.ID
+	Rev           *string
+	Configuration *string
 }
 
 type GitTreeLSIFDataResolver interface {
 	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
 	DocumentationPage(ctx context.Context, args *LSIFDocumentationPageArgs) (DocumentationPageResolver, error)
 	DocumentationPathInfo(ctx context.Context, args *LSIFDocumentationPathInfoArgs) (JSONValue, error)
+	DocumentationDefinitions(ctx context.Context, args *LSIFQueryDocumentationArgs) (LocationConnectionResolver, error)
+	DocumentationReferences(ctx context.Context, args *LSIFPagedQueryDocumentationArgs) (LocationConnectionResolver, error)
 }
 
 type CodeIntelligenceCommitGraphResolver interface {
@@ -160,6 +151,7 @@ type GitBlobLSIFDataResolver interface {
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
 	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
+	Documentation(ctx context.Context, args *LSIFQueryPositionArgs) (DocumentationResolver, error)
 }
 
 type GitBlobLSIFDataArgs struct {
@@ -186,6 +178,16 @@ type LSIFPagedQueryPositionArgs struct {
 	After *string
 }
 
+type LSIFQueryDocumentationArgs struct {
+	PathID string
+}
+
+type LSIFPagedQueryDocumentationArgs struct {
+	PathID string
+	graphqlutil.ConnectionArgs
+	After *string
+}
+
 type LSIFDiagnosticsArgs struct {
 	graphqlutil.ConnectionArgs
 }
@@ -199,6 +201,7 @@ type CodeIntelligenceRangeResolver interface {
 	Definitions(ctx context.Context) (LocationConnectionResolver, error)
 	References(ctx context.Context) (LocationConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
+	Documentation(ctx context.Context) (DocumentationResolver, error)
 }
 
 type LocationConnectionResolver interface {
@@ -209,6 +212,10 @@ type LocationConnectionResolver interface {
 type HoverResolver interface {
 	Markdown() Markdown
 	Range() RangeResolver
+}
+
+type DocumentationResolver interface {
+	PathID() string
 }
 
 type DiagnosticConnectionResolver interface {
@@ -223,4 +230,58 @@ type DiagnosticResolver interface {
 	Source() (*string, error)
 	Message() (*string, error)
 	Location(ctx context.Context) (LocationResolver, error)
+}
+
+type CodeIntelConfigurationPolicy struct {
+	Name                      string
+	Type                      GitObjectType
+	Pattern                   string
+	RetentionEnabled          bool
+	RetentionDurationHours    *int32
+	RetainIntermediateCommits bool
+	IndexingEnabled           bool
+	IndexCommitMaxAgeHours    *int32
+	IndexIntermediateCommits  bool
+}
+
+type CodeIntelligenceConfigurationPoliciesArgs struct {
+	Repository *graphql.ID
+}
+
+type CreateCodeIntelligenceConfigurationPolicyArgs struct {
+	Repository *graphql.ID
+	CodeIntelConfigurationPolicy
+}
+
+type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
+	ID graphql.ID
+	CodeIntelConfigurationPolicy
+}
+
+type DeleteCodeIntelligenceConfigurationPolicyArgs struct {
+	Policy graphql.ID
+}
+
+type IndexConfigurationResolver interface {
+	Configuration(ctx context.Context) (*string, error)
+	InferredConfiguration(ctx context.Context) (*string, error)
+}
+
+type UpdateRepositoryIndexConfigurationArgs struct {
+	Repository    graphql.ID
+	Configuration string
+}
+
+type CodeIntelligenceConfigurationPolicyResolver interface {
+	ID() graphql.ID
+	Name() string
+	Type() (GitObjectType, error)
+	Pattern() string
+	Protected() bool
+	RetentionEnabled() bool
+	RetentionDurationHours() *int32
+	RetainIntermediateCommits() bool
+	IndexingEnabled() bool
+	IndexCommitMaxAgeHours() *int32
+	IndexIntermediateCommits() bool
 }

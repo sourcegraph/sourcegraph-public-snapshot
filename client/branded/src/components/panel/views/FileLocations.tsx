@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -11,9 +12,10 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { FileLineMatch } from '@sourcegraph/shared/src/search/stream'
+import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined, property } from '@sourcegraph/shared/src/util/types'
 import { parseRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -36,7 +38,7 @@ export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps, VersionContextProps, TelemetryProps {
     location: H.Location
     /**
      * The observable that emits the locations.
@@ -50,8 +52,6 @@ interface Props extends SettingsCascadeProps, VersionContextProps {
     onSelect?: () => void
 
     className?: string
-
-    isLightTheme: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
@@ -148,7 +148,7 @@ export class FileLocations extends React.PureComponent<Props, State> {
         }
 
         return (
-            <div className={`file-locations ${this.props.className || ''}`}>
+            <div className={classNames('file-locations', this.props.className)}>
                 <VirtualList<OrderedURI, { locationsByURI: Map<string, Location[]> }>
                     itemsToShow={this.state.itemsToShow}
                     onShowMoreItems={this.onShowMoreItems}
@@ -179,24 +179,24 @@ export class FileLocations extends React.PureComponent<Props, State> {
     ): JSX.Element => (
         <FileMatch
             location={this.props.location}
+            telemetryService={this.props.telemetryService}
             expanded={true}
-            result={referencesToFileLineMatch(uri, locationsByURI.get(uri)!)}
+            result={referencesToContentMatch(uri, locationsByURI.get(uri)!)}
             icon={this.props.icon}
             onSelect={this.onSelect}
             showAllMatches={true}
-            isLightTheme={this.props.isLightTheme}
             fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
             settingsCascade={this.props.settingsCascade}
         />
     )
 }
 
-function referencesToFileLineMatch(uri: string, references: Badged<Location>[]): FileLineMatch {
+function referencesToContentMatch(uri: string, references: Badged<Location>[]): ContentMatch {
     const parsedUri = parseRepoURI(uri)
     return {
-        type: 'file',
-        name: parsedUri.filePath || '',
-        version: (parsedUri.commitID || parsedUri.revision)!,
+        type: 'content',
+        path: parsedUri.filePath || '',
+        commit: (parsedUri.commitID || parsedUri.revision)!,
         repository: parsedUri.repoName,
         lineMatches: references.filter(property('range', isDefined)).map(reference => ({
             line: '',

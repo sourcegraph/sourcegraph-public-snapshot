@@ -4,6 +4,11 @@ Batch Changes allow you not only to [publish changesets](publishing_changesets.m
 
 <img src="https://sourcegraphstatic.com/docs/images/batch_changes/tracking_existing_changesets_overview.png" class="screenshot center">
 
+## Requirements
+
+- Sourcegraph instance with repositories in it. See the "[Quickstart](../../index.md#quick-install)" guide on how to setup a Sourcegraph instance.
+- A [global service account token](../how-tos/configuring_credentials.md#global-service-account-tokens) for Batch Changes (**a personal access token cannot currently be used for importing changesets**)
+
 ## Importing changesets into a batch change
 
 To track existing changesets in a batch change you add them to the [batch spec](../explanations/introduction_to_batch_changes.md#batch-spec) under the `importChangesets` property and apply the batch spec.

@@ -16,6 +16,7 @@ import { RouteDescriptor } from '../util/contributions'
 
 import { ExtensionAreaRoute } from './extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extension/ExtensionAreaHeader'
+import styles from './ExtensionsArea.module.scss'
 import { ExtensionsAreaHeader, ExtensionsAreaHeaderActionButton } from './ExtensionsAreaHeader'
 
 const NotFoundPage: React.FunctionComponent = () => <HeroPage icon={MapSearchIcon} title="404: Not Found" />
@@ -38,6 +39,7 @@ export interface ExtensionsAreaRouteContext
     subject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    isSourcegraphDotCom: boolean
 }
 
 interface ExtensionsAreaProps
@@ -57,6 +59,7 @@ interface ExtensionsAreaProps
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionsAreaHeaderActionButtons: readonly ExtensionsAreaHeaderActionButton[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
+    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -77,12 +80,13 @@ export const ExtensionsArea: React.FunctionComponent<ExtensionsAreaProps> = prop
         extensionAreaRoutes: props.extensionAreaRoutes,
         extensionAreaHeaderNavItems: props.extensionAreaHeaderNavItems,
         isLightTheme: props.isLightTheme,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
         telemetryService: props.telemetryService,
         ...childBreadcrumbSetters,
     }
 
     return (
-        <Page className="extensions-area">
+        <Page className={styles.extensionsArea}>
             <ExtensionsAreaHeader
                 {...props}
                 {...context}

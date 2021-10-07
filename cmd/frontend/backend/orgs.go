@@ -5,6 +5,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -33,7 +34,7 @@ func CheckOrgAccess(ctx context.Context, db dbutil.DB, orgID int32) error {
 // checkOrgAccess is a helper method used above which allows optionally allowing
 // site admins to access all organisations.
 func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin bool) error {
-	if hasAuthzBypass(ctx) {
+	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
 	currentUser, err := CurrentUser(ctx, db)

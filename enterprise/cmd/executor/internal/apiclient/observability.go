@@ -8,12 +8,13 @@ import (
 )
 
 type operations struct {
-	dequeue              *observation.Operation
-	addExecutionLogEntry *observation.Operation
-	markComplete         *observation.Operation
-	markErrored          *observation.Operation
-	markFailed           *observation.Operation
-	heartbeat            *observation.Operation
+	dequeue                 *observation.Operation
+	addExecutionLogEntry    *observation.Operation
+	updateExecutionLogEntry *observation.Operation
+	markComplete            *observation.Operation
+	markErrored             *observation.Operation
+	markFailed              *observation.Operation
+	heartbeat               *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -26,18 +27,19 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("apiworker.apiclient.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("apiworker.apiclient.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
 		})
 	}
 
 	return &operations{
-		dequeue:              op("Dequeue"),
-		addExecutionLogEntry: op("AddExecutionLogEntry"),
-		markComplete:         op("MarkComplete"),
-		markErrored:          op("MarkErrored"),
-		markFailed:           op("MarkFailed"),
-		heartbeat:            op("Heartbeat"),
+		dequeue:                 op("Dequeue"),
+		addExecutionLogEntry:    op("AddExecutionLogEntry"),
+		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
+		markComplete:            op("MarkComplete"),
+		markErrored:             op("MarkErrored"),
+		markFailed:              op("MarkFailed"),
+		heartbeat:               op("Heartbeat"),
 	}
 }

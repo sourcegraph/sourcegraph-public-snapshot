@@ -11,13 +11,14 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { useRedesignToggle } from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import { BatchChangesProps } from './batches'
 import { CodeMonitoringProps } from './code-monitoring'
+import { CodeIntelligenceProps } from './codeintel'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
@@ -29,6 +30,7 @@ import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHea
 import { FeatureFlagProps } from './featureFlags/featureFlags'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
+import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
 import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
 import { SurveyToast } from './marketing/SurveyToast'
@@ -48,7 +50,6 @@ import {
     parseSearchURLQuery,
     PatternTypeProps,
     CaseSensitivityProps,
-    RepogroupHomepageProps,
     OnboardingTourProps,
     HomePanelsProps,
     SearchStreamingProps,
@@ -58,15 +59,15 @@ import {
     SearchContextProps,
     getGlobalSearchContextFilter,
 } from './search'
-import { QueryState } from './search/helpers'
+import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { ThemePreferenceProps } from './theme'
+import { useTheme } from './theme'
 import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 export interface LayoutProps
@@ -75,15 +76,12 @@ export interface LayoutProps
         PlatformContextProps,
         ExtensionsControllerProps,
         KeyboardShortcutsProps,
-        ThemeProps,
         TelemetryProps,
-        ThemePreferenceProps,
         ActivationProps,
         ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
         MutableVersionContextProps,
-        RepogroupHomepageProps,
         OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
@@ -91,6 +89,9 @@ export interface LayoutProps
         CodeMonitoringProps,
         SearchContextProps,
         UserExternalServicesOrRepositoriesUpdateProps,
+        CodeIntelligenceProps,
+        BatchChangesProps,
+        CodeInsightsProps,
         FeatureFlagProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
@@ -121,15 +122,13 @@ export interface LayoutProps
     viewerSubject: Pick<GQL.ISettingsSubject, 'id' | 'viewerCanAdminister'>
 
     // Search
-    navbarSearchQueryState: QueryState
-    onNavbarQueryChange: (queryState: QueryState) => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 
     globbing: boolean
     showMultilineSearchConsole: boolean
+    showSearchNotebook: boolean
     showQueryBuilder: boolean
     isSourcegraphDotCom: boolean
-    showBatchChanges: boolean
     fetchSavedSearches: () => Observable<GQL.ISavedSearch[]>
     children?: never
 }
@@ -140,6 +139,8 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
+    const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
+    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
@@ -207,19 +208,15 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         searchContextSpec,
     ])
 
-    // Hack! Hardcode these routes into cmd/frontend/internal/app/ui/router.go
-    const repogroupPages = [
-        '/refactor-python2-to-3',
-        '/kubernetes',
-        '/golang',
-        '/react-hooks',
-        '/android',
-        '/stanford',
-        '/stackstorm',
-        '/temporal',
-        '/cncf',
-    ]
-    const isRepogroupPage = repogroupPages.includes(props.location.pathname)
+    const [hasUsedNonGlobalContext, setHasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    useEffect(() => {
+        if (selectedSearchContextSpec && selectedSearchContextSpec !== 'global' && !hasUsedNonGlobalContext) {
+            setHasUsedNonGlobalContext(true)
+        }
+    }, [selectedSearchContextSpec, setHasUsedNonGlobalContext, hasUsedNonGlobalContext])
+
+    const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
+    const isCommunitySearchContextPage = communitySearchContextPaths.includes(props.location.pathname)
 
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
@@ -229,7 +226,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         props.location.pathname === '/sign-in' ||
         props.location.pathname === '/sign-up' ||
         props.location.pathname === '/password-reset' ||
-        props.location.pathname === '/post-sign-up'
+        props.location.pathname === '/welcome'
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
@@ -238,14 +235,9 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const authRequired = useObservable(authRequiredObservable)
 
-    const hideGlobalSearchInput: boolean =
-        props.location.pathname === '/stats' ||
-        props.location.pathname === '/search/query-builder' ||
-        props.location.pathname === '/search/console'
+    const themeProps = useTheme()
 
     const breadcrumbProps = useBreadcrumbs()
-
-    const [isRedesignEnabled] = useRedesignToggle()
 
     // Control browser extension discoverability animation here.
     // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
@@ -262,9 +254,10 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
 
     const context: LayoutRouteComponentProps<any> = {
         ...props,
+        ...themeProps,
         ...breadcrumbProps,
         onExtensionAlertDismissed,
-        isRedesignEnabled,
+        isMacPlatform,
     }
 
     return (
@@ -274,18 +267,23 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 keyboardShortcuts={props.keyboardShortcuts}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && <SurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
+                    {...themeProps}
                     authRequired={!!authRequired}
-                    showSearchBox={isSearchRelatedPage && !isSearchHomepage && !isRepogroupPage && !isSearchConsolePage}
+                    showSearchBox={
+                        isSearchRelatedPage &&
+                        !isSearchHomepage &&
+                        !isCommunitySearchContextPage &&
+                        !isSearchConsolePage &&
+                        !isSearchNotebookPage
+                    }
                     variant={
-                        hideGlobalSearchInput
-                            ? 'no-search-input'
-                            : isSearchHomepage
+                        isSearchHomepage
                             ? 'low-profile'
-                            : isRepogroupPage
+                            : isCommunitySearchContextPage
                             ? 'low-profile-with-logo'
                             : 'default'
                     }
@@ -293,6 +291,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
@@ -327,6 +326,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 props.location.pathname !== '/sign-in' && (
                     <ResizablePanel
                         {...props}
+                        {...themeProps}
                         repoName={`git://${parseBrowserRepoURL(props.location.pathname).repoName}`}
                         fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                     />

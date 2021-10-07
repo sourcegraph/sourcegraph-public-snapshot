@@ -45,6 +45,8 @@ import {
     MergeChangesetsVariables,
     CloseChangesetsResult,
     CloseChangesetsVariables,
+    PublishChangesetsResult,
+    PublishChangesetsVariables,
 } from '../../../graphql-operations'
 
 const changesetsStatsFragment = gql`
@@ -448,16 +450,10 @@ export const queryExternalChangesetWithFileDiffs = ({
     externalChangeset,
     first,
     after,
-    isLightTheme,
 }: ExternalChangesetFileDiffsVariables): Observable<ExternalChangesetFileDiffsFields> =>
     requestGraphQL<ExternalChangesetFileDiffsResult, ExternalChangesetFileDiffsVariables>(
         gql`
-            query ExternalChangesetFileDiffs(
-                $externalChangeset: ID!
-                $first: Int
-                $after: String
-                $isLightTheme: Boolean!
-            ) {
+            query ExternalChangesetFileDiffs($externalChangeset: ID!, $first: Int, $after: String) {
                 node(id: $externalChangeset) {
                     __typename
                     ...ExternalChangesetFileDiffsFields
@@ -466,7 +462,7 @@ export const queryExternalChangesetWithFileDiffs = ({
 
             ${externalChangesetFileDiffsFields}
         `,
-        { externalChangeset, first, after, isLightTheme }
+        { externalChangeset, first, after }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
@@ -545,6 +541,7 @@ const changesetDiffFragment = gql`
         currentSpec {
             description {
                 ... on GitBranchChangesetDescription {
+                    __typename
                     commits {
                         diff
                     }
@@ -579,7 +576,9 @@ export async function getChangesetDiff(changeset: Scalars['ID']): Promise<string
                     throw new Error(`The given ID is a ${node.__typename}, not an ExternalChangeset`)
                 }
 
-                const commits = node.currentSpec?.description.commits
+                const commits =
+                    node.currentSpec?.description?.__typename === 'GitBranchChangesetDescription' &&
+                    node.currentSpec?.description.commits
                 if (!commits) {
                     throw new Error(`No commit available for changeset ID ${changeset}`)
                 } else if (commits.length !== 1) {
@@ -703,6 +702,24 @@ export async function closeChangesets(batchChange: Scalars['ID'], changesets: Sc
             }
         `,
         { batchChange, changesets }
+    ).toPromise()
+    dataOrThrowErrors(result)
+}
+
+export async function publishChangesets(
+    batchChange: Scalars['ID'],
+    changesets: Scalars['ID'][],
+    draft: boolean
+): Promise<void> {
+    const result = await requestGraphQL<PublishChangesetsResult, PublishChangesetsVariables>(
+        gql`
+            mutation PublishChangesets($batchChange: ID!, $changesets: [ID!]!, $draft: Boolean!) {
+                publishChangesets(batchChange: $batchChange, changesets: $changesets, draft: $draft) {
+                    id
+                }
+            }
+        `,
+        { batchChange, changesets, draft }
     ).toPromise()
     dataOrThrowErrors(result)
 }

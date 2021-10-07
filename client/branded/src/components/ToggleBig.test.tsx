@@ -17,7 +17,7 @@ describe('ToggleBig', () => {
         const onToggle = sinon.spy(() => undefined)
         const component = mount(<ToggleBig onToggle={onToggle} disabled={true} />)
 
-        component.find('.toggle-big').simulate('click')
+        component.find('[role="switch"]').simulate('click')
         sinon.assert.notCalled(onToggle)
         expect(component).toMatchSnapshot()
     })

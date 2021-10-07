@@ -13,8 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 )
 
 func TestReverseProxyRequestPaths(t *testing.T) {
@@ -35,7 +35,7 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 	displayName := displayNameFromEndpoint(ep)
 	rph.Populate([]Endpoint{ep})
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 
 	link := fmt.Sprintf("%s/-/debug/proxies/%s/metrics", proxiedServer.URL, displayName)
 	req := httptest.NewRequest("GET", link, nil)
@@ -75,7 +75,7 @@ func TestIndexLinks(t *testing.T) {
 	displayName := displayNameFromEndpoint(ep)
 	rph.Populate([]Endpoint{ep})
 
-	ctx := backend.WithAuthzBypass(context.Background())
+	ctx := actor.WithInternalActor(context.Background())
 
 	link := fmt.Sprintf("%s/-/debug/", proxiedServer.URL)
 	req := httptest.NewRequest("GET", link, nil)

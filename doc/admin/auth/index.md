@@ -2,17 +2,20 @@
 
 Sourcegraph supports the following ways for users to sign in:
 
-- [Builtin](#builtin-password-authentication)
-- [GitHub OAuth](#github)
-- [GitLab OAuth](#gitlab)
-- [OpenID Connect](#openid-connect) (including [Google accounts on Google Workspace](#google-workspace-google-accounts))
-- [SAML](saml/index.md)
+- [Guidance](#guidance)
+- [Builtin password authentication](#builtin-password-authentication)
+- [GitHub](#github)
+- [GitLab](#gitlab)
+- [OpenID Connect](#openid-connect)
+  - [Google Workspace (Google accounts)](#google-workspace-google-accounts)
 - [HTTP authentication proxies](#http-authentication-proxies)
-- [Troubleshooting](troubleshooting.md)
+  - [Username header prefixes](#username-header-prefixes)
+- [Username normalization](#username-normalization)
+- [Troubleshooting](#troubleshooting)
 
 The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
-### Guidance
+## Guidance
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
 order:
@@ -106,10 +109,6 @@ The `allowOrgs` fields restricts logins to members of the specified GitHub organ
 
 Once you've configured GitHub as a sign-on provider, you may also want to [add GitHub repositories to Sourcegraph](../external_service/github.md#repository-syncing).
 
-### Troubleshooting
-
-Setting the env var `INSECURE_OAUTH2_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` deployment if you're using Kubernetes) causes all OAuth2 requests and responses to be logged.
-
 ## GitLab
 
 [Create a GitLab OAuth application](https://docs.gitlab.com/ee/integration/oauth_provider.html). Set
@@ -140,24 +139,6 @@ configuration.
 
 Once you've configured GitLab as a sign-on provider, you may also want to [add GitLab repositories
 to Sourcegraph](../external_service/gitlab.md#repository-syncing).
-
-### Troubleshooting
-
-Setting the env var `INSECURE_OAUTH2_LOG_TRACES=1` on the `sourcegraph/server` Docker container (or the `sourcegraph-frontend` deployment if you're using Kubernetes) causes all OAuth2 requests and responses to be logged.
-
-If you are unable to use OAuth to login, perhaps after an upgrade, and receive the following error:
-
-```
-An error has occurred
-The requested scope is invalid, unknown, or malformed.
-```
-This could be related to the scopes granted on your `clientID` and `clientSecret` on the `auth.providers` section in your site configuration.
-
-Please check the [GitLab scopes](https://gitlab.com/-/profile/applications) granted to ensure that you have the following configured:
-
-* `api`
-* `read_user`
-* `read_api`
 
 ## OpenID Connect
 
@@ -289,3 +270,5 @@ Usernames from authentication providers are normalized before being used in Sour
 For example, a user whose external username (according the authentication provider) is `alice_smith@example.com` would have the Sourcegraph username `alice-smith`.
 
 If multiple accounts normalize into the same username, only the first user account is created. Other users won't be able to sign in. This is a rare occurrence; contact support if this is a blocker.
+
+## [Troubleshooting](troubleshooting.md)

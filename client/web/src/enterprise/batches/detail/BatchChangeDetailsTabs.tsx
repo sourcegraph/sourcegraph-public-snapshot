@@ -27,6 +27,7 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     queryBulkOperations as _queryBulkOperations,
+    queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 import { BulkOperationsTab } from './BulkOperationsTab'
@@ -57,6 +58,8 @@ export interface BatchChangeDetailsProps
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
     /** For testing only. */
     queryBulkOperations?: typeof _queryBulkOperations
+    /** For testing only. */
+    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
 interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps {
@@ -74,6 +77,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     queryChangesetCountsOverTime,
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
+    queryAllChangesetIDs,
     telemetryService,
 }) => (
     <BatchChangeTabs history={history} location={location}>
@@ -141,6 +145,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     telemetryService={telemetryService}
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
+                    queryAllChangesetIDs={queryAllChangesetIDs}
                     onlyArchived={false}
                 />
             </BatchChangeTabPanel>

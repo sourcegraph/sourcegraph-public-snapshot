@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/cockroachdb/errors"
 	"github.com/derision-test/glock"
 	"github.com/inconshreveable/log15"
@@ -39,6 +41,35 @@ type ResetterMetrics struct {
 	Errors              prometheus.Counter
 }
 
+// NewMetrics returns a metrics object for a resetter that follows standard naming convention. The base metric name should be
+// the same metric name provided to a `worker` ex. my_job_queue. Do not provide prefix "src" or postfix "_record...".
+func NewMetrics(observationContext *observation.Context, metricNameRoot string) *ResetterMetrics {
+	resets := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_" + metricNameRoot + "_record_resets_total",
+		Help: "The number of stalled record resets.",
+	})
+	observationContext.Registerer.MustRegister(resets)
+
+	resetFailures := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_" + metricNameRoot + "_record_reset_failures_total",
+		Help: "The number of stalled record resets marked as failure.",
+	})
+	observationContext.Registerer.MustRegister(resetFailures)
+
+	resetErrors := prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "src_" + metricNameRoot + "_record_reset_errors_total",
+		Help: "The number of errors that occur during stalled " +
+			"record reset.",
+	})
+	observationContext.Registerer.MustRegister(resetErrors)
+
+	return &ResetterMetrics{
+		RecordResets:        resets,
+		RecordResetFailures: resetFailures,
+		Errors:              resetErrors,
+	}
+}
+
 func NewResetter(store store.Store, options ResetterOptions) *Resetter {
 	return newResetter(store, options, glock.NewRealClock())
 }
@@ -66,10 +97,10 @@ func (r *Resetter) Start() {
 
 loop:
 	for {
-		resetIDs, erroredIDs, err := r.store.ResetStalled(r.ctx)
+		resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err := r.store.ResetStalled(r.ctx)
 		if err != nil {
-			if errors.Cause(err) == r.ctx.Err() {
-				// If the error is due to the loop being shut down, just break`
+			if r.ctx.Err() != nil && errors.Is(err, r.ctx.Err()) {
+				// If the error is due to the loop being shut down, just break
 				break loop
 			}
 
@@ -77,15 +108,15 @@ loop:
 			log15.Error("Failed to reset stalled records", "name", r.options.Name, "error", err)
 		}
 
-		for _, id := range resetIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id)
+		for id, lastHeartbeatAge := range resetLastHeartbeatsByIDs {
+			log15.Warn("Reset stalled record back to 'queued' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
 		}
-		for _, id := range erroredIDs {
-			log15.Debug("Reset stalled record", "name", r.options.Name, "id", id)
+		for id, lastHeartbeatAge := range failedLastHeartbeatsByIDs {
+			log15.Warn("Reset stalled record to 'failed' state", "name", r.options.Name, "id", id, "timeSinceLastHeartbeat", lastHeartbeatAge)
 		}
 
-		r.options.Metrics.RecordResets.Add(float64(len(resetIDs)))
-		r.options.Metrics.RecordResetFailures.Add(float64(len(erroredIDs)))
+		r.options.Metrics.RecordResets.Add(float64(len(resetLastHeartbeatsByIDs)))
+		r.options.Metrics.RecordResetFailures.Add(float64(len(failedLastHeartbeatsByIDs)))
 
 		select {
 		case <-r.clock.After(r.options.Interval):

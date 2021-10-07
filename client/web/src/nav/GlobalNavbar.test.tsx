@@ -4,14 +4,14 @@ import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
-import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
-
-import { SearchPatternType } from '../graphql-operations'
 import {
     mockFetchAutoDefinedSearchContexts,
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
-} from '../searchContexts/testHelpers'
+} from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
+import { extensionsController, NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/util/searchTestHelpers'
+
+import { SearchPatternType } from '../graphql-operations'
 import { ThemePreference } from '../theme'
 
 import { GlobalNavbar } from './GlobalNavbar'
@@ -27,8 +27,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     history: createMemoryHistory(),
     keyboardShortcuts: [],
     isSourcegraphDotCom: false,
-    navbarSearchQueryState: { query: 'q' },
-    onNavbarQueryChange: () => undefined,
     onThemePreferenceChange: () => undefined,
     isLightTheme: true,
     themePreference: ThemePreference.Light,
@@ -39,7 +37,8 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     setCaseSensitivity: () => undefined,
     platformContext: {} as any,
     settingsCascade: NOOP_SETTINGS_CASCADE,
-    showBatchChanges: false,
+    batchChangesEnabled: false,
+    batchChangesExecutionEnabled: false,
     enableCodeMonitoring: false,
     telemetryService: {} as any,
     hideNavLinks: true, // used because reactstrap Popover is incompatible with react-test-renderer
@@ -58,12 +57,13 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     showOnboardingTour: false,
     branding: undefined,
     routes: [],
+    searchContextsEnabled: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     hasUserAddedRepositories: false,
     hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
-    featureFlags: new Map(),
+    extensionViews: () => null,
 }
 
 describe('GlobalNavbar', () => {
@@ -83,15 +83,6 @@ describe('GlobalNavbar', () => {
         const { asFragment } = render(
             <MemoryRouter>
                 <GlobalNavbar {...PROPS} variant="low-profile" />
-            </MemoryRouter>
-        )
-        expect(asFragment()).toMatchSnapshot()
-    })
-
-    test('no-search-input', () => {
-        const { asFragment } = render(
-            <MemoryRouter>
-                <GlobalNavbar {...PROPS} variant="no-search-input" />
             </MemoryRouter>
         )
         expect(asFragment()).toMatchSnapshot()

@@ -4,10 +4,13 @@ package ci
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -19,29 +22,41 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Common build env
 	env := map[string]string{
+		// Build meta
+		"BUILDKITE_PULL_REQUEST":             os.Getenv("BUILDKITE_PULL_REQUEST"),
+		"BUILDKITE_PULL_REQUEST_BASE_BRANCH": os.Getenv("BUILDKITE_PULL_REQUEST_BASE_BRANCH"),
+		"BUILDKITE_PULL_REQUEST_REPO":        os.Getenv("BUILDKITE_PULL_REQUEST_REPO"),
+		"COMMIT_SHA":                         c.Commit,
+		"DATE":                               c.Time.Format(time.RFC3339),
+		"VERSION":                            c.Version,
+
+		// Additional flags
 		"GO111MODULE":                      "on",
 		"PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
 		"FORCE_COLOR":                      "3",
 		"ENTERPRISE":                       "1",
-		"COMMIT_SHA":                       c.commit,
-		"DATE":                             c.now.Format(time.RFC3339),
-		"VERSION":                          c.version,
 		// Add debug flags for scripts to consume
-		"CI_DEBUG_PROFILE": strconv.FormatBool(c.profilingEnabled),
-
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
-	if c.releaseBranch {
-		env["PERCY_TARGET_BRANCH"] = c.branch
+	if c.RunType.Is(ReleaseBranch) {
+		env["PERCY_TARGET_BRANCH"] = c.Branch
+	}
+
+	// Build options for pipeline operations that spawn more build steps
+	buildOptions := bk.BuildOptions{
+		Message: os.Getenv("BUILDKITE_MESSAGE"),
+		Commit:  c.Commit,
+		Branch:  c.Branch,
+		Env:     env,
 	}
 
 	// Make all command steps timeout after 60 minutes in case a buildkite agent
 	// got stuck / died.
 	bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
-
 		// bk.Step is a union containing fields across all the different step types.
 		// However, "timeout_in_minutes" only applies to the "command" step type.
 		//
@@ -50,130 +65,141 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// everything.
 		if len(s.Command) > 0 {
 			if s.TimeoutInMinutes == "" {
-
 				// Set the default value iff someone else hasn't set a custom one.
 				s.TimeoutInMinutes = "60"
 			}
 		}
 	})
 
-	if c.profilingEnabled {
+	// Toggle profiling of each step
+	if c.ProfilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
-
 			var prefixed []string
 			for _, cmd := range s.Command {
 				prefixed = append(prefixed, fmt.Sprintf("env time -v %s", cmd))
 			}
-
 			s.Command = prefixed
 		})
 	}
 
-	// Generate pipeline steps. This statement outlines the pipeline steps for each CI case.
-	var pipelineOperations []func(*bk.Pipeline)
-	switch {
-	case c.isPR() && c.isDocsOnly():
-		// If this is a docs-only PR, run only the steps necessary to verify the docs.
-		pipelineOperations = []func(*bk.Pipeline){
-			addDocs,
+	// Set up operations that add steps to a pipeline.
+	var ops operations.Set
+
+	// This statement outlines the pipeline steps for each CI case.
+	//
+	// PERF: Try to order steps such that slower steps are first.
+	switch c.RunType {
+	case PullRequest:
+		if c.ChangedFiles.AffectsClient() {
+			// triggers a slow pipeline, currently only affects web. It's optional so we
+			// set it up separately from CoreTestOperations
+			ops.Append(triggerAsync(buildOptions))
 		}
 
-	case c.buildCandidatesNoTest:
-		pipelineOperations = []func(*bk.Pipeline){
-			addDockerImages(c, false),
-		}
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
-	case c.patchNoTest:
-		// If this is a no-test branch, then run only the Docker build. No tests are run.
-		app := c.branch[27:]
-		pipelineOperations = []func(*bk.Pipeline){
-			addCandidateDockerImage(c, app),
-			wait,
-			addFinalDockerImage(c, app, false),
-		}
-
-	case c.isPR() && c.isGoOnly() && !c.isSgOnly():
-		// If this is a go-only PR, run only the steps necessary to verify the go code.
-		pipelineOperations = []func(*bk.Pipeline){
-			addBackendIntegrationTests(c), // ~11m
-			addGoTests,                    // ~1.5m
-			addCheck,                      // ~1m
-			addGoBuild,                    // ~0.5m
-			addPostgresBackcompat,         // ~0.25m
-		}
-
-	case c.isPR() && c.isSgOnly():
-		// If the changes are only in ./dev/sg then we only need to run a subset of steps.
-		pipelineOperations = []func(*bk.Pipeline){
-			addGoTests,
-			addCheck,
-		}
-
-	case c.isBextReleaseBranch:
+	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		pipelineOperations = []func(*bk.Pipeline){
-			addLint,
+		ops = operations.NewSet([]operations.Operation{
+			addTsLint,
 			addBrowserExt,
-			addSharedTests(c),
+			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps,
-		}
+		})
 
-	case c.isBextNightly:
+	case BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		pipelineOperations = []func(*bk.Pipeline){
-			addLint,
+		ops = operations.NewSet([]operations.Operation{
+			addTsLint,
 			addBrowserExt,
-			addSharedTests(c),
+			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps,
-		}
+		})
 
-	case c.isQuick:
-		// Run fast steps only
-		pipelineOperations = []func(*bk.Pipeline){
-			addCheck,
-			addLint,
-			addBrowserExt,
-			addWebApp,
-			addSharedTests(c),
-			addBrandedTests,
-			addGoTests,
-			addGoBuild,
-			addDockerfileLint,
+	case ImagePatch:
+		// only build candidate image for the specified image in the branch name
+		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
+		patchImage := c.Branch[20:]
+		if !contains(images.SourcegraphDockerImages, patchImage) {
+			panic(fmt.Sprintf("no image %q found", patchImage))
+		}
+		ops = operations.NewSet([]operations.Operation{
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+		})
+		// Test images
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
+		// Publish images
+		ops.Append(publishFinalDockerImage(c, patchImage, false))
+
+	case ImagePatchNoTest:
+		// If this is a no-test branch, then run only the Docker build. No tests are run.
+		app := c.Branch[27:]
+		ops = operations.NewSet([]operations.Operation{
+			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
+			wait,
+			publishFinalDockerImage(c, app, false),
+		})
+
+	case CandidatesNoTest:
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			ops.Append(
+				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
 	default:
-		// Otherwise, run the CI steps for the Sourcegraph web app. Specific
-		// steps may be modified or skipped for certain branches; these
-		// variations are defined in the functions parameterized by the
-		// config.
-		//
-		// PERF: Try to order steps such that slower steps are first.
-		pipelineOperations = []func(*bk.Pipeline){
-			triggerAsync(c),               // triggers a slow pipeline, so do it first.
-			addBackendIntegrationTests(c), // ~11m
-			addDockerImages(c, false),     // ~8m (candidate images)
-			addLint,                       // ~4.5m
-			addSharedTests(c),             // ~4.5m
-			addWebApp,                     // ~3m
-			addBrowserExt,                 // ~2m
-			addBrandedTests,               // ~1.5m
-			addGoTests,                    // ~1.5m
-			addCheck,                      // ~1m
-			addGoBuild,                    // ~0.5m
-			addPostgresBackcompat,         // ~0.25m
-			addDockerfileLint,             // ~0.2m
-			wait,                          // wait for all steps to pass
+		// Slow async pipeline
+		ops.Append(triggerAsync(buildOptions))
 
-			triggerE2EandQA(c, env),  // trigger e2e late so that it can leverage candidate images
-			addDockerImages(c, true), // publish final images
-			wait,
+		// Slow image builds
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+		}
+		// TODO: Disabled because it tends to time out when multiple main builds
+		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
+		// for details.
+		// if c.RunType.Is(MainDryRun, MainBranch) {
+		// 	ops.Append(buildExecutor(c.Time, c.Version))
+		// }
 
-			triggerUpdaterPipeline(c),
+		// Slow tests
+		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
+			ops.Append(addBackendIntegrationTests(c.candidateImageTag()))
+		}
+
+		// Core tests
+		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
+			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
+		}))
+
+		// Trigger e2e late so that it can leverage candidate images
+		ops.Append(triggerE2EandQA(e2eAndQAOptions{
+			candidateImage: c.candidateImageTag(),
+			buildOptions:   buildOptions,
+			async:          c.RunType.Is(MainBranch),
+		}))
+
+		// Add final artifacts
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
+		}
+		// TODO: Disabled because it tends to time out when multiple main builds
+		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
+		// for details.
+		// if c.RunType.Is(MainBranch) {
+		// 	ops.Append(publishExecutor(c.Time, c.Version))
+		// }
+
+		// Propagate changes elsewhere
+		if c.RunType.Is(MainBranch) {
+			ops.Append(
+				// wait for all steps to pass
+				wait,
+				triggerUpdaterPipeline)
 		}
 	}
 
@@ -181,8 +207,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
-	for _, p := range pipelineOperations {
-		p(pipeline)
-	}
+	ops.Apply(pipeline)
 	return pipeline, nil
 }

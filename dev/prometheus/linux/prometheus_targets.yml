@@ -52,11 +52,6 @@
     # worker
     - 127.0.0.1:6089
 - labels:
-    job: executor-queue
-  targets:
-    # executor-queue
-    - 127.0.0.1:6091
-- labels:
     job: sourcegraph-code-intel-indexers
   targets:
     # sourcegraph-code-intel-indexers

@@ -1,10 +1,6 @@
 .git-ref-node {
-    --git-ref-divider-color: var(--border-color);
+    --git-ref-divider-color: var(--border-color-2);
     color: var(--text-muted);
-
-    .theme-redesign & {
-        --git-ref-divider-color: var(--border-color-2);
-    }
 
     display: flex;
     align-items: center;

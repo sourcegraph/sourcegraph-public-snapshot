@@ -52,30 +52,31 @@ let customServerOrigins: string[] = []
 
 /**
  * For each tab, we store a flag if we know that we are on a private
- * repository. The content script notifies the background page if it's on a
- * private repository by `notifyPrivateRepository` message.
+ * repository that has not been added to Cloud (+ the extension
+ * points to Cloud). The content script notifies the background page if it has
+ * experienced a private code on Cloud error by `notifyPrivateCloudError` message.
  */
-const tabPrivateRepositoryCache = (() => {
+const tabPrivateCloudErrorCache = (() => {
     const cache = new Map<number, boolean>()
     const subject = new Subject<ReadonlyMap<number, boolean>>()
     return {
         observable: subject.asObservable(),
         /**
-         * Update the background page's cache of which tabs currently contain a private
-         * repository.
+         * Update the background page's cache of which tabs have experienced a
+         * private code on Cloud error.
          */
-        setTabIsPrivateRepository(tabId: number, isPrivate: boolean): void {
-            if (!isPrivate) {
+        setTabHasPrivateCloudError(tabId: number, hasPrivateCloudError: boolean): void {
+            if (!hasPrivateCloudError) {
                 // An absent value is equivalent to being false; so we can delete it.
                 cache.delete(tabId)
             }
-            cache.set(tabId, isPrivate)
+            cache.set(tabId, hasPrivateCloudError)
 
             // Emit the updated repository cache when it changes, so that consumers can
             // observe the value.
             subject.next(cache)
         },
-        getTabIsPrivateRepository(tabId: number): boolean {
+        getTabHasPrivateCloudError(tabId: number): boolean {
             return !!cache.get(tabId)
         },
     }
@@ -197,8 +198,8 @@ async function main(): Promise<void> {
 
     browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
-            // A new URL is loading in the tab, so clear the cached private repository flag.
-            tabPrivateRepositoryCache.setTabIsPrivateRepository(tabId, false)
+            // A new URL is loading in the tab, so clear the cached private cloud error flag.
+            tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
             return
         }
 
@@ -234,19 +235,19 @@ async function main(): Promise<void> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
 
-        async notifyPrivateRepository(
-            isPrivateRepository: boolean,
+        async notifyPrivateCloudError(
+            hasPrivateCloudError: boolean,
             sender: browser.runtime.MessageSender
         ): Promise<void> {
             const tabId = sender.tab?.id
             if (tabId !== undefined) {
-                tabPrivateRepositoryCache.setTabIsPrivateRepository(tabId, isPrivateRepository)
+                tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, hasPrivateCloudError)
             }
             return Promise.resolve()
         },
 
-        async checkPrivateRepository(tabId: number): Promise<boolean> {
-            return Promise.resolve(!!tabPrivateRepositoryCache.getTabIsPrivateRepository(tabId))
+        async checkPrivateCloudError(tabId: number): Promise<boolean> {
+            return Promise.resolve(!!tabPrivateCloudErrorCache.getTabHasPrivateCloudError(tabId))
         },
     }
 
@@ -419,12 +420,12 @@ function observeCurrentTabId(): Observable<number> {
 }
 
 /**
- * Returns an observable that indicates whether the current tab contains a
- * private repository.
+ * Returns an observable that indicates whether the current tab has experienced
+ * a private code on Cloud error.
  */
-function observeCurrentTabPrivateRepository(): Observable<boolean> {
-    return combineLatest([observeCurrentTabId(), tabPrivateRepositoryCache.observable]).pipe(
-        map(([tabId, privateRepositoryCache]) => !!privateRepositoryCache.get(tabId)),
+function observeCurrentTabPrivateCloudError(): Observable<boolean> {
+    return combineLatest([observeCurrentTabId(), tabPrivateCloudErrorCache.observable]).pipe(
+        map(([tabId, privateCloudErrorCache]) => !!privateCloudErrorCache.get(tabId)),
         distinctUntilChanged()
     )
 }
@@ -441,14 +442,14 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
     return combineLatest([
         observeStorageKey('sync', 'disableExtension'),
         observeSourcegraphUrlValidation(),
-        observeCurrentTabPrivateRepository(),
+        observeCurrentTabPrivateCloudError(),
     ]).pipe(
-        map(([isDisabled, isSourcegraphUrlValid, isPrivateRepository]) => {
+        map(([isDisabled, isSourcegraphUrlValid, hasPrivateCloudError]) => {
             if (isDisabled) {
                 return 'inactive'
             }
 
-            if (!isSourcegraphUrlValid || isPrivateRepository) {
+            if (!isSourcegraphUrlValid || hasPrivateCloudError) {
                 return 'active-with-alert'
             }
 

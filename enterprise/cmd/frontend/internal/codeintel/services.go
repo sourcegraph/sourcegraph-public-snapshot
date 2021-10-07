@@ -3,10 +3,10 @@ package codeintel
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"sync"
 
+	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -29,6 +30,7 @@ var services struct {
 	dbStore         *store.Store
 	locker          *locker.Locker
 	lsifStore       *lsifstore.Store
+	repoStore       *database.RepoStore
 	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
@@ -40,7 +42,7 @@ var once sync.Once
 func initServices(ctx context.Context, db dbutil.DB) error {
 	once.Do(func() {
 		if err := config.UploadStoreConfig.Validate(); err != nil {
-			services.err = fmt.Errorf("failed to load config: %s", err)
+			services.err = errors.Errorf("failed to load config: %s", err)
 			return
 		}
 
@@ -67,11 +69,12 @@ func initServices(ctx context.Context, db dbutil.DB) error {
 		gitserverClient := gitserver.New(dbStore, observationContext)
 
 		// Initialize the index enqueuer
-		indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, observationContext)
+		indexEnqueuer := enqueuer.NewIndexEnqueuer(&enqueuer.DBStoreShim{dbStore}, gitserverClient, repoupdater.DefaultClient, config.AutoIndexEnqueuerConfig, observationContext)
 
 		services.dbStore = dbStore
 		services.locker = locker
 		services.lsifStore = lsifStore
+		services.repoStore = database.ReposWith(dbStore.Store)
 		services.uploadStore = uploadStore
 		services.gitserverClient = gitserverClient
 		services.indexEnqueuer = indexEnqueuer

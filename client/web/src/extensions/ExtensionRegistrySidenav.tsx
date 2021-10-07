@@ -4,7 +4,7 @@ import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reac
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
 
-import { SidebarGroup, SidebarGroupHeader, SidebarGroupItems } from '../components/Sidebar'
+import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
 import styles from './ExtensionRegistrySidenav.module.scss'
@@ -53,22 +53,20 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
         <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
             <SidebarGroup>
                 <SidebarGroupHeader label="Categories" />
-                <SidebarGroupItems>
-                    {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
-                        <button
-                            type="button"
-                            className={classnames(
-                                'btn text-left sidebar__link--inactive d-flex sidebar-nav-link w-100',
-                                selectedCategory === category && 'btn-primary'
-                            )}
-                            data-test-extension-category={category}
-                            key={category}
-                            onClick={() => onSelectCategory(category)}
-                        >
-                            {category}
-                        </button>
-                    ))}
-                </SidebarGroupItems>
+                {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
+                    <button
+                        type="button"
+                        className={classnames(
+                            'btn text-left sidebar__link--inactive d-flex w-100',
+                            selectedCategory === category && 'btn-primary'
+                        )}
+                        data-test-extension-category={category}
+                        key={category}
+                        onClick={() => onSelectCategory(category)}
+                    >
+                        {category}
+                    </button>
+                ))}
             </SidebarGroup>
 
             <hr className={classnames('my-3', styles.divider)} />
@@ -119,7 +117,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 const ExtensionSidenavBanner: React.FunctionComponent = () => (
     <div className={classnames(styles.banner, 'mx-2')}>
         <img className={classnames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
-        {/* Override .theme-redesign h4 font-weight */}
+        {/* Override h4 font-weight */}
         <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
         <small>
             You can improve your workflow by creating custom extensions. See{' '}

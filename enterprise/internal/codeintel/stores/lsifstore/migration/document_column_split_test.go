@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDocumentColumnSplitMigrator(t *testing.T) {
@@ -72,15 +72,15 @@ func TestDocumentColumnSplitMigrator(t *testing.T) {
 
 	n := 500
 	expectedCounts := make([]int, 0, n)
-	hovers := make(map[semantic.ID]string, n)
-	diagnostics := make([]semantic.DiagnosticData, 0, n)
+	hovers := make(map[precise.ID]string, n)
+	diagnostics := make([]precise.DiagnosticData, 0, n)
 
 	for i := 0; i < n; i++ {
 		expectedCounts = append(expectedCounts, i+1)
-		hovers[semantic.ID(strconv.Itoa(i))] = fmt.Sprintf("h%d", i)
-		diagnostics = append(diagnostics, semantic.DiagnosticData{Code: fmt.Sprintf("c%d", i)})
+		hovers[precise.ID(strconv.Itoa(i))] = fmt.Sprintf("h%d", i)
+		diagnostics = append(diagnostics, precise.DiagnosticData{Code: fmt.Sprintf("c%d", i)})
 
-		data, err := serializer.MarshalLegacyDocumentData(semantic.DocumentData{
+		data, err := serializer.MarshalLegacyDocumentData(precise.DocumentData{
 			HoverResults: hovers,
 			Diagnostics:  diagnostics,
 		})

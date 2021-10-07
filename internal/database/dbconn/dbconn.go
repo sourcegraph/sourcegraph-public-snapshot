@@ -16,12 +16,13 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/gchaincl/sqlhooks/v2"
 	"github.com/inconshreveable/log15"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/qustavo/sqlhooks/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -134,11 +135,11 @@ func checkVersion(db *sql.DB) error {
 
 	match := versionPattern.FindStringSubmatch(version)
 	if len(match) == 0 {
-		return fmt.Errorf("unexpected version string: %q", version)
+		return errors.Errorf("unexpected version string: %q", version)
 	}
 
 	if majorVersion, _ := strconv.Atoi(match[1]); majorVersion < 12 {
-		return fmt.Errorf("Sourcegraph requires PostgreSQL 12+")
+		return errors.Errorf("Sourcegraph requires PostgreSQL 12+")
 	}
 
 	return nil
@@ -216,7 +217,7 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	startupDeadline := time.Now().Add(startupTimeout)
 	for {
 		if time.Now().After(startupDeadline) {
-			return nil, fmt.Errorf("database did not start up within %s (%v)", startupTimeout, err)
+			return nil, errors.Errorf("database did not start up within %s (%v)", startupTimeout, err)
 		}
 		db, err = open(cfg)
 		if err == nil {
@@ -233,14 +234,19 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 // isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
 // starting up, and it should not be treated as a fatal error during program initialization.
 func isDatabaseLikelyStartingUp(err error) bool {
-	msg := err.Error()
-	if strings.Contains(msg, "the database system is starting up") {
+	substrings := []string{
 		// Wait for DB to start up.
-		return true
-	}
-	if strings.Contains(msg, "connection refused") || strings.Contains(msg, "failed to receive message") {
+		"the database system is starting up",
 		// Wait for DB to start listening.
-		return true
+		"connection refused",
+		"failed to receive message",
+	}
+
+	msg := err.Error()
+	for _, substring := range substrings {
+		if strings.Contains(msg, substring) {
+			return true
+		}
 	}
 
 	return false
@@ -266,7 +272,14 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	cfgKey := stdlib.RegisterConnConfig(cfg)
 
 	registerOnce.Do(func() {
-		sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), &hook{}))
+		m := promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "src_pgsql_request_total",
+			Help: "Total number of SQL requests to the database.",
+		}, []string{"type"})
+		sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), &hook{
+			metricSQLSuccessTotal: m.WithLabelValues("success"),
+			metricSQLErrorTotal:   m.WithLabelValues("error"),
+		}))
 	})
 	db, err := sql.Open("postgres-proxy", cfgKey)
 	if err != nil {
@@ -307,7 +320,10 @@ func WithBulkInsertion(ctx context.Context, bulkInsertion bool) context.Context 
 	return context.WithValue(ctx, bulkInsertionKey, bulkInsertion)
 }
 
-type hook struct{}
+type hook struct {
+	metricSQLSuccessTotal prometheus.Counter
+	metricSQLErrorTotal   prometheus.Counter
+}
 
 // postgresBulkInsertRowsPattern matches `($1, $2, $3), ($4, $5, $6), ...` which
 // we use to cut out the row payloads from bulk insertion tracing data. We don't
@@ -360,15 +376,17 @@ func (h *hook) After(ctx context.Context, query string, args ...interface{}) (co
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.Finish()
 	}
+	h.metricSQLSuccessTotal.Inc()
 	return ctx, nil
 }
 
-// After implements sqlhooks.OnErroer
+// OnError implements sqlhooks.OnError
 func (h *hook) OnError(ctx context.Context, err error, query string, args ...interface{}) error {
 	if tr := trace.TraceFromContext(ctx); tr != nil {
 		tr.SetError(err)
 		tr.Finish()
 	}
+	h.metricSQLErrorTotal.Inc()
 	return err
 }
 

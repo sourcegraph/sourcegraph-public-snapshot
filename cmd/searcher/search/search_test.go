@@ -5,15 +5,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"sort"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -22,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
@@ -397,69 +395,52 @@ func TestSearch_badrequest(t *testing.T) {
 		if err == nil {
 			t.Fatalf("%v expected to fail", p)
 		}
-		if !strings.HasPrefix(err.Error(), "non-200 response: code=400 ") {
-			t.Fatalf("%v expected to have HTTP 400 response. Got %s", p, err)
-		}
 	}
 }
 
 func doSearch(u string, p *protocol.Request) ([]protocol.FileMatch, error) {
-	form := url.Values{
-		"Repo":            []string{string(p.Repo)},
-		"URL":             []string{p.URL},
-		"Commit":          []string{string(p.Commit)},
-		"Pattern":         []string{p.Pattern},
-		"FetchTimeout":    []string{p.FetchTimeout},
-		"IncludePatterns": p.IncludePatterns,
-		"ExcludePattern":  []string{p.ExcludePattern},
-		"CombyRule":       []string{p.CombyRule},
+	reqBody, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
 	}
-	if p.IsRegExp {
-		form.Set("IsRegExp", "true")
-	}
-	if p.IsStructuralPat {
-		form.Set("IsStructuralPat", "true")
-	}
-	if p.IsWordMatch {
-		form.Set("IsWordMatch", "true")
-	}
-	if p.IsCaseSensitive {
-		form.Set("IsCaseSensitive", "true")
-	}
-	if p.PathPatternsAreRegExps {
-		form.Set("PathPatternsAreRegExps", "true")
-	}
-	if p.PathPatternsAreCaseSensitive {
-		form.Set("PathPatternsAreCaseSensitive", "true")
-	}
-	if p.PatternMatchesContent {
-		form.Set("PatternMatchesContent", "true")
-	}
-	if p.PatternMatchesPath {
-		form.Set("PatternMatchesPath", "true")
-	}
-	if p.IsNegated {
-		form.Set("IsNegated", "true")
-	}
-	resp, err := http.PostForm(u, form)
+	resp, err := http.Post(u, "application/json", bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.Errorf("non-200 response: code=%d body=%s", resp.StatusCode, string(body))
 	}
 
-	var r protocol.Response
-	err = json.Unmarshal(body, &r)
-	if err != nil {
+	var ed searcher.EventDone
+	var matches []protocol.FileMatch
+	dec := searcher.StreamDecoder{
+		OnMatches: func(newMatches []*protocol.FileMatch) {
+			for _, match := range newMatches {
+				matches = append(matches, *match)
+			}
+		},
+		OnDone: func(e searcher.EventDone) {
+			ed = e
+		},
+		OnUnknown: func(event []byte, _ []byte) {
+			panic("unknown event")
+		},
+	}
+	if err := dec.ReadAll(resp.Body); err != nil {
 		return nil, err
 	}
-	return r.Matches, err
+	if ed.Error != "" {
+		return nil, errors.New(ed.Error)
+	}
+	if ed.DeadlineHit {
+		err = context.DeadlineExceeded
+	}
+	return matches, err
 }
 
 func newStore(files map[string]string) (*store.Store, func(), error) {
@@ -527,15 +508,15 @@ func sanityCheckSorted(m []protocol.FileMatch) error {
 	}
 	for i := range m {
 		if i > 0 && m[i].Path == m[i-1].Path {
-			return fmt.Errorf("duplicate FileMatch on %s", m[i].Path)
+			return errors.Errorf("duplicate FileMatch on %s", m[i].Path)
 		}
 		lm := m[i].LineMatches
 		if !sort.IsSorted(sortByLineNumber(lm)) {
-			return fmt.Errorf("unsorted LineMatches for %s", m[i].Path)
+			return errors.Errorf("unsorted LineMatches for %s", m[i].Path)
 		}
 		for j := range lm {
 			if j > 0 && lm[j].LineNumber == lm[j-1].LineNumber {
-				return fmt.Errorf("duplicate LineNumber on %s:%d", m[i].Path, lm[j].LineNumber)
+				return errors.Errorf("duplicate LineNumber on %s:%d", m[i].Path, lm[j].LineNumber)
 			}
 		}
 	}

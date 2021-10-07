@@ -8,9 +8,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestReferences(t *testing.T) {
@@ -96,12 +97,12 @@ func TestReferencesRemote(t *testing.T) {
 		t.Fatalf("unexpected error encoding bloom filter: %s", err)
 	}
 	scanner1 := dbstore.PackageReferenceScannerFromSlice(
-		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 250}, Filter: filter},
-		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 251}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 250}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 251}, Filter: filter},
 	)
 	scanner2 := dbstore.PackageReferenceScannerFromSlice(
-		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 252}, Filter: filter},
-		lsifstore.PackageReference{Package: lsifstore.Package{DumpID: 253}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 252}, Filter: filter},
+		shared.PackageReference{Package: shared.Package{DumpID: 253}, Filter: filter},
 	)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner1, 4, nil)
 	mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner2, 2, nil)
@@ -114,20 +115,20 @@ func TestReferencesRemote(t *testing.T) {
 	mockGitserverClient.CommitExistsFunc.PushReturn(false, nil) // #250
 	mockGitserverClient.CommitExistsFunc.SetDefaultReturn(true, nil)
 
-	monikers := []semantic.MonikerData{
+	monikers := []precise.MonikerData{
 		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},
 		{Kind: "export", Scheme: "tsc", Identifier: "pad_left", PackageInformationID: "52"},
 		{Kind: "import", Scheme: "tsc", Identifier: "pad-left", PackageInformationID: "53"},
 		{Kind: "import", Scheme: "tsc", Identifier: "left_pad"},
 	}
-	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]semantic.MonikerData{{monikers[0]}}, nil)
-	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]semantic.MonikerData{{monikers[1]}}, nil)
-	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]semantic.MonikerData{{monikers[2]}}, nil)
-	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]semantic.MonikerData{{monikers[3]}}, nil)
+	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[0]}}, nil)
+	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[1]}}, nil)
+	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[2]}}, nil)
+	mockLSIFStore.MonikersByPositionFunc.PushReturn([][]precise.MonikerData{{monikers[3]}}, nil)
 
-	packageInformation1 := semantic.PackageInformationData{Name: "leftpad", Version: "0.1.0"}
-	packageInformation2 := semantic.PackageInformationData{Name: "leftpad", Version: "0.2.0"}
-	packageInformation3 := semantic.PackageInformationData{Name: "leftpad", Version: "0.3.0"}
+	packageInformation1 := precise.PackageInformationData{Name: "leftpad", Version: "0.1.0"}
+	packageInformation2 := precise.PackageInformationData{Name: "leftpad", Version: "0.2.0"}
+	packageInformation3 := precise.PackageInformationData{Name: "leftpad", Version: "0.3.0"}
 	mockLSIFStore.PackageInformationFunc.PushReturn(packageInformation1, true, nil)
 	mockLSIFStore.PackageInformationFunc.PushReturn(packageInformation2, true, nil)
 	mockLSIFStore.PackageInformationFunc.PushReturn(packageInformation3, true, nil)
@@ -195,7 +196,7 @@ func TestReferencesRemote(t *testing.T) {
 	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
-		expectedMonikers := []semantic.QualifiedMonikerData{
+		expectedMonikers := []precise.QualifiedMonikerData{
 			{MonikerData: monikers[0], PackageInformationData: packageInformation1},
 			{MonikerData: monikers[1], PackageInformationData: packageInformation2},
 			{MonikerData: monikers[2], PackageInformationData: packageInformation3},
@@ -212,7 +213,7 @@ func TestReferencesRemote(t *testing.T) {
 			t.Errorf("unexpected ids (-want +got):\n%s", diff)
 		}
 
-		expectedMonikers := []semantic.MonikerData{
+		expectedMonikers := []precise.MonikerData{
 			monikers[0],
 			monikers[1],
 			monikers[2],

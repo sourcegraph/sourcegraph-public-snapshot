@@ -4,9 +4,7 @@
 package search
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"math"
 	"net/http"
@@ -17,7 +15,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -25,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -90,16 +86,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	events, inputs, results := h.startSearch(ctx, args)
 	events = batchEvents(events, 50*time.Millisecond)
 
-	traceURL := ""
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		spanURL := trace.SpanURL(span)
-		// URLs starting with # don't have a trace. eg
-		// "#tracer-not-enabled"
-		if !strings.HasPrefix(spanURL, "#") {
-			traceURL = spanURL
-		}
-	}
-
 	// Display is the number of results we send down. If display is < 0 we
 	// want to send everything we find before hitting a limit. Otherwise we
 	// can only send up to limit results.
@@ -118,7 +104,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	progress := progressAggregator{
 		Start:        start,
 		Limit:        inputs.MaxResults(),
-		Trace:        traceURL,
+		Trace:        trace.URL(trace.ID(ctx)),
 		DisplayLimit: displayLimit,
 	}
 
@@ -131,15 +117,11 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Store marshalled matches and flush periodically or when we go over
-	// 32kb.
-	matchesBuf := &jsonArrayBuf{
-		// 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
-		// still write more than that.
-		FlushSize: 32 * 1024,
-		Write: func(data []byte) error {
-			return eventWriter.EventBytes("matches", data)
-		},
-	}
+	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
+	// still write more than that.
+	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
+		return eventWriter.EventBytes("matches", data)
+	})
 	matchesFlush := func() {
 		if err := matchesBuf.Flush(); err != nil {
 			// EOF
@@ -150,11 +132,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendProgress()
 		}
 	}
-	matchesAppend := func(m streamhttp.EventMatch) {
-		// Only possible error is EOF, ignore
-		_ = matchesBuf.Append(m)
-	}
-
 	flushTicker := time.NewTicker(h.flushTickerInternal)
 	defer flushTicker.Stop()
 
@@ -162,24 +139,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer pingTicker.Stop()
 
 	first := true
-
-	for {
-		var event streaming.SearchEvent
-		var ok bool
-		select {
-		case event, ok = <-events:
-		case <-flushTicker.C:
-			ok = true
-			matchesFlush()
-		case <-pingTicker.C:
-			ok = true
-			sendProgress()
-		}
-
-		if !ok {
-			break
-		}
-
+	handleEvent := func(event streaming.SearchEvent) {
 		progress.Update(event)
 		filters.Update(event)
 
@@ -193,9 +153,23 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			display = match.Limit(display)
 		}
 
-		repoMetadata := h.getEventRepoMetadata(ctx, event)
-		for _, match := range event.Results {
-			matchesAppend(fromMatch(match, repoMetadata))
+		repoMetadata, err := getEventRepoMetadata(ctx, h.db, event)
+		if err != nil {
+			log15.Error("failed to get repo metadata", "error", err)
+			return
+		}
+		for i, match := range event.Results {
+			// Don't send matches which we cannot map to a repo the actor has access to. This
+			// check is expected to always pass. Missing metadata is a sign that we have
+			// searched repos that user shouldn't have access to.
+			if md, ok := repoMetadata[match.RepoName().ID]; !ok || md.Name != match.RepoName().Name {
+				continue
+			}
+			eventMatch := fromMatch(match, repoMetadata)
+			if args.DecorationLimit == -1 || args.DecorationLimit > i {
+				eventMatch = withDecoration(ctx, eventMatch, match, args.DecorationKind, args.DecorationContextLines)
+			}
+			_ = matchesBuf.Append(eventMatch)
 		}
 
 		// Instantly send results if we have not sent any yet.
@@ -207,6 +181,22 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				Observe(time.Since(start).Seconds())
 
 			graphqlbackend.LogSearchLatency(ctx, h.db, &inputs, int32(time.Since(start).Milliseconds()))
+		}
+
+	}
+
+LOOP:
+	for {
+		select {
+		case event, ok := <-events:
+			if !ok {
+				break LOOP
+			}
+			handleEvent(event)
+		case <-flushTicker.C:
+			matchesFlush()
+		case <-pingTicker.C:
+			sendProgress()
 		}
 	}
 
@@ -273,6 +263,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			AlertType:     alertType,
 			DurationMs:    time.Since(start).Milliseconds(),
 			ResultSize:    progress.MatchCount,
+			Error:         err,
 		})
 
 		if honey.Enabled() {
@@ -283,25 +274,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
 		}
 	}
-}
-
-func (h *streamHandler) getEventRepoMetadata(ctx context.Context, event streaming.SearchEvent) map[api.RepoID]*types.Repo {
-	ids := repoIDs(event.Results)
-	if len(ids) == 0 {
-		// Return early if there are no repos in the event
-		return nil
-	}
-
-	repoMetadata := make(map[api.RepoID]*types.Repo, len(ids))
-
-	metadataList, err := database.Repos(h.db).GetByIDs(ctx, ids...)
-	if err != nil {
-		log15.Error("streaming: failed to retrieve repo metadata", "error", err)
-	}
-	for _, repo := range metadataList {
-		repoMetadata[repo.ID] = repo
-	}
-	return repoMetadata
 }
 
 // startSearch will start a search. It returns the events channel which
@@ -361,6 +333,13 @@ type args struct {
 	PatternType    string
 	VersionContext string
 	Display        int
+
+	// Optional decoration parameters for server-side rendering a result set
+	// or subset. Decorations may specify, e.g., highlighting results with
+	// HTML markup up-front, and/or including context lines around file results.
+	DecorationLimit        int    // The initial number of files to decorate in the result set.
+	DecorationKind         string // The kind of decoration to apply (HTML highlighting, plaintext, etc.)
+	DecorationContextLines int    // The number of lines of context to include around lines with matches.
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -377,6 +356,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Version:        get("v", "V2"),
 		PatternType:    get("t", ""),
 		VersionContext: get("vc", ""),
+		DecorationKind: get("dk", "html"),
 	}
 
 	if a.Query == "" {
@@ -386,7 +366,17 @@ func parseURLQuery(q url.Values) (*args, error) {
 	display := get("display", "-1")
 	var err error
 	if a.Display, err = strconv.Atoi(display); err != nil {
-		return nil, fmt.Errorf("display must be an integer, got %q: %w", display, err)
+		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	}
+
+	decorationLimit := get("dl", "0")
+	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
+		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
+	}
+
+	decorationContextLines := get("dc", "1")
+	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
+		return nil, errors.Errorf("decorationContextLines must be an integer, got %q: %w", decorationContextLines, err)
 	}
 
 	return &a, nil
@@ -406,7 +396,26 @@ func fromStrPtr(s *string) string {
 	return *s
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
+// withDecoration hydrates event match with decorated hunks for a corresponding file match.
+func withDecoration(ctx context.Context, eventMatch streamhttp.EventMatch, internalResult result.Match, kind string, contextLines int) streamhttp.EventMatch {
+	if _, ok := internalResult.(*result.FileMatch); !ok {
+		return eventMatch
+	}
+
+	event, ok := eventMatch.(*streamhttp.EventContentMatch)
+	if !ok {
+		return eventMatch
+	}
+
+	if kind == "html" {
+		event.Hunks = DecorateFileHunksHTML(ctx, internalResult.(*result.FileMatch))
+	}
+
+	// TODO(team/search-product): support additional decoration for terminal clients #24617.
+	return eventMatch
+}
+
+func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
 		return fromFileMatch(v, repoCache)
@@ -419,11 +428,37 @@ func fromMatch(match result.Match, repoCache map[api.RepoID]*types.Repo) streamh
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) streamhttp.EventMatch {
-	if syms := fm.Symbols; len(syms) > 0 {
+func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) streamhttp.EventMatch {
+	if len(fm.Symbols) > 0 {
 		return fromSymbolMatch(fm, repoCache)
+	} else if len(fm.LineMatches) > 0 {
+		return fromContentMatch(fm, repoCache)
+	}
+	return fromPathMatch(fm, repoCache)
+}
+
+func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
+	pathEvent := &streamhttp.EventPathMatch{
+		Type:         streamhttp.PathMatchType,
+		Path:         fm.Path,
+		Repository:   string(fm.Repo.Name),
+		RepositoryID: int32(fm.Repo.ID),
+		Commit:       string(fm.CommitID),
 	}
 
+	if r, ok := repoCache[fm.Repo.ID]; ok {
+		pathEvent.RepoStars = r.Stars
+		pathEvent.RepoLastFetched = r.LastFetched
+	}
+
+	if fm.InputRev != nil {
+		pathEvent.Branches = []string{*fm.InputRev}
+	}
+
+	return pathEvent
+}
+
+func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventContentMatch {
 	lineMatches := make([]streamhttp.EventLineMatch, 0, len(fm.LineMatches))
 	for _, lm := range fm.LineMatches {
 		lineMatches = append(lineMatches, streamhttp.EventLineMatch{
@@ -433,28 +468,28 @@ func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) s
 		})
 	}
 
-	var branches []string
+	contentEvent := &streamhttp.EventContentMatch{
+		Type:         streamhttp.ContentMatchType,
+		Path:         fm.Path,
+		RepositoryID: int32(fm.Repo.ID),
+		Repository:   string(fm.Repo.Name),
+		Commit:       string(fm.CommitID),
+		LineMatches:  lineMatches,
+	}
+
 	if fm.InputRev != nil {
-		branches = []string{*fm.InputRev}
+		contentEvent.Branches = []string{*fm.InputRev}
 	}
 
-	var stars int
 	if r, ok := repoCache[fm.Repo.ID]; ok {
-		stars = r.Stars
+		contentEvent.RepoStars = r.Stars
+		contentEvent.RepoLastFetched = r.LastFetched
 	}
 
-	return &streamhttp.EventFileMatch{
-		Type:        streamhttp.FileMatchType,
-		Path:        fm.Path,
-		Repository:  string(fm.Repo.Name),
-		RepoStars:   stars,
-		Branches:    branches,
-		Version:     string(fm.CommitID),
-		LineMatches: lineMatches,
-	}
+	return contentEvent
 }
 
-func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventSymbolMatch {
 	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
 	for _, sym := range fm.Symbols {
 		kind := sym.Symbol.LSPKind()
@@ -471,50 +506,53 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Repo)
 		})
 	}
 
-	var branches []string
-	if fm.InputRev != nil {
-		branches = []string{*fm.InputRev}
+	symbolMatch := &streamhttp.EventSymbolMatch{
+		Type:         streamhttp.SymbolMatchType,
+		Path:         fm.Path,
+		Repository:   string(fm.Repo.Name),
+		RepositoryID: int32(fm.Repo.ID),
+		Commit:       string(fm.CommitID),
+		Symbols:      symbols,
 	}
 
-	var stars int
 	if r, ok := repoCache[fm.Repo.ID]; ok {
-		stars = r.Stars
+		symbolMatch.RepoStars = r.Stars
+		symbolMatch.RepoLastFetched = r.LastFetched
 	}
 
-	return &streamhttp.EventSymbolMatch{
-		Type:       streamhttp.SymbolMatchType,
-		Path:       fm.Path,
-		Repository: string(fm.Repo.Name),
-		RepoStars:  stars,
-		Branches:   branches,
-		Version:    string(fm.CommitID),
-		Symbols:    symbols,
+	if fm.InputRev != nil {
+		symbolMatch.Branches = []string{*fm.InputRev}
 	}
+
+	return symbolMatch
 }
 
-func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
 	}
 
 	repoEvent := &streamhttp.EventRepoMatch{
-		Type:       streamhttp.RepoMatchType,
-		Repository: string(rm.Name),
-		Branches:   branches,
+		Type:         streamhttp.RepoMatchType,
+		RepositoryID: int32(rm.ID),
+		Repository:   string(rm.Name),
+		Branches:     branches,
 	}
 
 	if r, ok := repoCache[rm.ID]; ok {
 		repoEvent.RepoStars = r.Stars
+		repoEvent.RepoLastFetched = r.LastFetched
 		repoEvent.Description = r.Description
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
+		repoEvent.Private = r.Private
 	}
 
 	return repoEvent
 }
 
-func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo) *streamhttp.EventCommitMatch {
+func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
 	content := commit.Body.Value
 
 	highlights := commit.Body.Highlights
@@ -523,21 +561,22 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Repo
 		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
 	}
 
-	var stars int
-	if r, ok := repoCache[commit.Repo.ID]; ok {
-		stars = r.Stars
-	}
-
-	return &streamhttp.EventCommitMatch{
+	commitEvent := &streamhttp.EventCommitMatch{
 		Type:       streamhttp.CommitMatchType,
 		Label:      commit.Label(),
 		URL:        commit.URL().String(),
 		Detail:     commit.Detail(),
 		Repository: string(commit.Repo.Name),
-		RepoStars:  stars,
 		Content:    content,
 		Ranges:     ranges,
 	}
+
+	if r, ok := repoCache[commit.Repo.ID]; ok {
+		commitEvent.RepoStars = r.Stars
+		commitEvent.RepoLastFetched = r.LastFetched
+	}
+
+	return commitEvent
 }
 
 // eventStreamOTHook returns a StatHook which logs to log.
@@ -553,57 +592,6 @@ func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
 		}
 		log(fields...)
 	}
-}
-
-// jsonArrayBuf builds up a JSON array by marshalling per item. Once the array
-// has reached FlushSize it will be written out via Write and the buffer will
-// be reset.
-type jsonArrayBuf struct {
-	FlushSize int
-	Write     func([]byte) error
-
-	buf bytes.Buffer
-}
-
-// Append marshals v and adds it to the json array buffer. If the size of the
-// buffer exceed FlushSize the buffer is written out.
-func (j *jsonArrayBuf) Append(v interface{}) error {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return err
-	}
-
-	if j.buf.Len() == 0 {
-		j.buf.WriteByte('[')
-	} else {
-		j.buf.WriteByte(',')
-	}
-
-	// err is always nil for a bytes.Buffer
-	_, _ = j.buf.Write(b)
-
-	if j.buf.Len() >= j.FlushSize {
-		return j.Flush()
-	}
-	return nil
-}
-
-// Flush writes and resets the buffer if there is data to write.
-func (j *jsonArrayBuf) Flush() error {
-	if j.buf.Len() == 0 {
-		return nil
-	}
-
-	// Terminate array
-	j.buf.WriteByte(']')
-
-	buf := j.buf.Bytes()
-	j.buf.Reset()
-	return j.Write(buf)
-}
-
-func (j *jsonArrayBuf) Len() int {
-	return j.buf.Len()
 }
 
 var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -634,6 +622,10 @@ func GuessSource(r *http.Request) trace.SourceType {
 	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
 	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
 		return trace.SourceType("searchblitz_" + match[1])
+	}
+
+	if userAgent == "sourcegraph/query-runner" {
+		return trace.SourceQueryRunner
 	}
 
 	return trace.SourceOther

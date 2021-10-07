@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 
@@ -25,11 +24,14 @@ type GitLabSource struct {
 	au     auth.Authenticator
 }
 
+var _ ChangesetSource = &GitLabSource{}
+var _ DraftChangesetSource = &GitLabSource{}
+
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
-		return nil, fmt.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitLabSource(&c, cf, nil)
 }
@@ -42,7 +44,7 @@ func newGitLabSource(c *schema.GitLabConnection, cf *httpcli.Factory, au auth.Au
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 
 	if cf == nil {
-		cf = httpcli.NewExternalHTTPClientFactory()
+		cf = httpcli.ExternalClientFactory
 	}
 
 	var opts []httpcli.Opt
@@ -390,8 +392,15 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 	}
 	project := c.Repo.Metadata.(*gitlab.Project)
 
+	// Avoid accidentally undrafting the changeset by checking its current
+	// status.
+	title := c.Title
+	if mr.WorkInProgress {
+		title = gitlab.SetWIP(c.Title)
+	}
+
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
-		Title:        c.Title,
+		Title:        title,
 		Description:  c.Body,
 		TargetBranch: git.AbbreviateRef(c.BaseRef),
 	})

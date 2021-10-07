@@ -9,7 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestDatabaseMonikersByPosition(t *testing.T) {
@@ -26,7 +26,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	if actual, err := store.MonikersByPosition(context.Background(), testBundleID, "protocol/protocol.go", 92, 10); err != nil {
 		t.Fatalf("unexpected error %s", err)
 	} else {
-		expected := [][]semantic.MonikerData{
+		expected := [][]precise.MonikerData{
 			{
 				{
 					Kind:                 "export",
@@ -70,35 +70,35 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 	}
 
 	combinedReferences := append(markdownReferenceLocations, edgeReferenceLocations...)
-	edgeMoniker := semantic.MonikerData{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Edge"}
-	markdownMoniker := semantic.MonikerData{Scheme: "gomod", Identifier: "github.com/slimsag/godocmd:ToMarkdown"}
+	edgeMoniker := precise.MonikerData{Scheme: "gomod", Identifier: "github.com/sourcegraph/lsif-go/protocol:Edge"}
+	markdownMoniker := precise.MonikerData{Scheme: "gomod", Identifier: "github.com/slimsag/godocmd:ToMarkdown"}
 
 	testCases := []struct {
 		tableName          string
 		uploadIDs          []int
-		monikers           []semantic.MonikerData
+		monikers           []precise.MonikerData
 		limit              int
 		offset             int
 		expectedLocations  []Location
 		expectedTotalCount int
 	}{
 		// empty cases
-		{"definitions", []int{}, []semantic.MonikerData{edgeMoniker}, 5, 0, nil, 0},
-		{"definitions", []int{testBundleID}, []semantic.MonikerData{}, 5, 0, nil, 0},
+		{"definitions", []int{}, []precise.MonikerData{edgeMoniker}, 5, 0, nil, 0},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{}, 5, 0, nil, 0},
 
 		// single definitions
-		{"definitions", []int{testBundleID}, []semantic.MonikerData{edgeMoniker}, 5, 0, edgeDefinitionLocations, 2},
-		{"definitions", []int{testBundleID}, []semantic.MonikerData{edgeMoniker}, 1, 0, edgeDefinitionLocations[:1], 2},
-		{"definitions", []int{testBundleID}, []semantic.MonikerData{edgeMoniker}, 5, 1, edgeDefinitionLocations[1:], 2},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 0, edgeDefinitionLocations, 2},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 1, 0, edgeDefinitionLocations[:1], 2},
+		{"definitions", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 1, edgeDefinitionLocations[1:], 2},
 
 		// single references
-		{"references", []int{testBundleID}, []semantic.MonikerData{edgeMoniker}, 5, 0, edgeReferenceLocations[:5], 29},
-		{"references", []int{testBundleID}, []semantic.MonikerData{edgeMoniker}, 2, 2, edgeReferenceLocations[2:4], 29},
-		{"references", []int{testBundleID}, []semantic.MonikerData{markdownMoniker}, 5, 0, markdownReferenceLocations, 1},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 5, 0, edgeReferenceLocations[:5], 29},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker}, 2, 2, edgeReferenceLocations[2:4], 29},
+		{"references", []int{testBundleID}, []precise.MonikerData{markdownMoniker}, 5, 0, markdownReferenceLocations, 1},
 
 		// multiple monikers
-		{"references", []int{testBundleID}, []semantic.MonikerData{edgeMoniker, markdownMoniker}, 5, 0, combinedReferences[:5], 30},
-		{"references", []int{testBundleID}, []semantic.MonikerData{edgeMoniker, markdownMoniker}, 5, 1, combinedReferences[1:6], 30},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker, markdownMoniker}, 5, 0, combinedReferences[:5], 30},
+		{"references", []int{testBundleID}, []precise.MonikerData{edgeMoniker, markdownMoniker}, 5, 1, combinedReferences[1:6], 30},
 	}
 
 	for i, testCase := range testCases {

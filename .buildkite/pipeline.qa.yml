@@ -1,14 +1,38 @@
 env:
   VAGRANT_RUN_ENV: "CI"
 steps:
-- label: ':docker::chromium: Sourcegraph QA'
+- label: ':chromium: Sourcegraph E2E'
+  artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
+  agents:
+    queue: 'baremetal'
   command:
-    - .buildkite/vagrant-run.sh sourcegraph-qa-test
+    - .buildkite/vagrant-run.sh sourcegraph-e2e
+
+- label: ':docker::chromium: Sourcegraph QA'
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
   artifact_paths: ./*.png;./*.mp4;./*.log
   agents:
     queue: 'baremetal'
+  command:
+    - .buildkite/vagrant-run.sh sourcegraph-qa-test
+
+- label: ':docker::brain: Code Intel QA'
+  command:
+    - dev/ci/test/code-intel/test.sh
+  artifact_paths: ./*.log
 
 - label: ':docker::arrow_double_up: Sourcegraph Upgrade'
+  retry:
+    automatic:
+      exit_status: "*"
+      limit: 1
   command:
   - .buildkite/vagrant-run.sh sourcegraph-upgrade
   artifact_paths: ./*.png;./*.mp4;./*.log

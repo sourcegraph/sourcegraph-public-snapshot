@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Hover returns the hover text of the symbol at the given position.
@@ -26,7 +26,7 @@ func (s *Store) Hover(ctx context.Context, bundleID int, path string, line, char
 	}
 
 	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := semantic.FindRanges(documentData.Document.Ranges, line, character)
+	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
 	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
 	for _, r := range ranges {

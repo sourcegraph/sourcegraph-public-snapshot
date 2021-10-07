@@ -90,6 +90,59 @@ describe('Blob viewer', () => {
         })
     })
 
+    describe('line number redirects', () => {
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonBlobGraphQlResults,
+                Blob: () => ({
+                    repository: {
+                        commit: {
+                            file: {
+                                content: '// Log to console\nconsole.log("Hello world")\n// Third line',
+                                richHTML: '',
+                                highlight: {
+                                    aborted: false,
+                                    html:
+                                        // Note: whitespace in this string is significant.
+                                        '<table class="test-log-token"><tbody><tr><td class="line" data-line="1"/>' +
+                                        '<td class="code"><span class="hl-source hl-js hl-react"><span class="hl-comment hl-line hl-double-slash hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
+                                        'Log to console\n</span></span></td></tr>' +
+                                        '<tr><td class="line" data-line="2"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<span class="hl-meta hl-function-call hl-method hl-js">' +
+                                        '<span class="hl-support hl-type hl-object hl-console hl-js">console</span>' +
+                                        '<span class="hl-punctuation hl-accessor hl-js">.</span>' +
+                                        '<span class="hl-support hl-function hl-console hl-js test-log-token">log</span>' +
+                                        '<span class="hl-meta hl-group hl-js"><span class="hl-punctuation hl-section hl-group hl-begin hl-js">(</span>' +
+                                        '<span class="hl-meta hl-string hl-js"><span class="hl-string hl-quoted hl-double hl-js">' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-begin hl-js">&quot;</span>Hello world' +
+                                        '<span class="hl-punctuation hl-definition hl-string hl-end hl-js">&quot;</span></span></span>' +
+                                        '<span class="hl-punctuation hl-section hl-group hl-end hl-js">)</span></span>\n</span></span></td></tr>' +
+                                        '<tr><td class="line" data-line="3"/><td class="code"><span class="hl-source hl-js hl-react">' +
+                                        '<span class="hl-meta hl-function-call hl-method hl-js"></span>' +
+                                        '<span class="hl-comment hl-line hl-double-slash hl-js"><span class="hl-punctuation hl-definition hl-comment hl-js">//</span> ' +
+                                        'Third line\n</span></span></td></tr></tbody></table>',
+                                },
+                            },
+                        },
+                    },
+                }),
+            })
+        })
+
+        it('should redirect from line number hash to query parameter', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#2`)
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L2`)
+        })
+
+        it('should redirect from line range hash to query parameter', async () => {
+            await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#1-3`)
+            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L1-3`)
+        })
+    })
+
     // Describes the ways the blob viewer can be extended through Sourcegraph extensions.
     describe('extensibility', () => {
         const getHoverContents = async (): Promise<string[]> => {
@@ -115,6 +168,7 @@ describe('Blob viewer', () => {
                 ...commonBlobGraphQlResults,
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -165,16 +219,15 @@ describe('Blob viewer', () => {
                 }),
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {
-                                    id: 'TestExtensionID',
+                                    id: 'test',
                                     extensionID: 'test/test',
                                     manifest: {
-                                        raw: JSON.stringify(extensionManifest),
+                                        jsonFields: extensionManifest,
                                     },
-                                    url: '/extensions/test/test',
-                                    viewerCanAdminister: false,
                                 },
                             ],
                         },
@@ -243,9 +296,6 @@ describe('Blob viewer', () => {
             id: string
             extensionID: string
             extensionManifest: ExtensionManifest
-            /** The URL of the JavaScript bundle */
-            url: string
-            viewerCanAdminister: boolean
             /**
              * A function whose body is a Sourcegraph extension.
              *
@@ -260,7 +310,7 @@ describe('Blob viewer', () => {
         it('adds and clears line decoration attachments properly', async () => {
             const mockExtensions: MockExtension[] = [
                 {
-                    id: 'TestFixedLineID',
+                    id: 'test',
                     extensionID: 'test/fixed-line',
                     extensionManifest: {
                         url: new URL(
@@ -269,8 +319,6 @@ describe('Blob viewer', () => {
                         ).href,
                         activationEvents: ['*'],
                     },
-                    url: '/extensions/test/fixed-line',
-                    viewerCanAdminister: false,
                     bundle: function extensionBundle(): void {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
@@ -324,7 +372,7 @@ describe('Blob viewer', () => {
                     },
                 },
                 {
-                    id: 'TestSelectedLineID',
+                    id: 'selected-line',
                     extensionID: 'test/selected-line',
                     extensionManifest: {
                         url: new URL(
@@ -333,8 +381,6 @@ describe('Blob viewer', () => {
                         ).href,
                         activationEvents: ['*'],
                     },
-                    url: '/extensions/test/selected-line',
-                    viewerCanAdminister: false,
                     bundle: function extensionBundle(): void {
                         // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                         const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
@@ -401,6 +447,7 @@ describe('Blob viewer', () => {
                 ...commonBlobGraphQlResults,
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -453,10 +500,11 @@ describe('Blob viewer', () => {
                 }),
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: mockExtensions.map(mockExtension => ({
                                 ...mockExtension,
-                                manifest: { raw: JSON.stringify(mockExtension.extensionManifest) },
+                                manifest: { jsonFields: mockExtension.extensionManifest },
                             })),
                         },
                     },
@@ -572,7 +620,7 @@ describe('Blob viewer', () => {
              */
 
             const wordFinder: MockExtension = {
-                id: 'TestWordFinderID',
+                id: 'word-finder',
                 extensionID: 'test/word-finder',
                 extensionManifest: {
                     url: new URL(
@@ -581,8 +629,6 @@ describe('Blob viewer', () => {
                     ).href,
                     activationEvents: ['*'],
                 },
-                url: '/extensions/test/word-finder',
-                viewerCanAdminister: false,
                 bundle: function extensionBundle(): void {
                     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
                     const sourcegraph = require('sourcegraph') as typeof import('sourcegraph')
@@ -663,6 +709,7 @@ describe('Blob viewer', () => {
                     createTreeEntriesResult(repositorySourcegraphUrl, ['README.md', 'test.ts', 'fake.ts']),
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -718,12 +765,13 @@ describe('Blob viewer', () => {
                 },
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {
                                     ...wordFinder,
                                     manifest: {
-                                        raw: JSON.stringify(wordFinder.extensionManifest),
+                                        jsonFields: wordFinder.extensionManifest,
                                     },
                                 },
                             ],
@@ -837,6 +885,7 @@ describe('Blob viewer', () => {
                 ...commonBlobGraphQlResults,
                 ViewerSettings: () => ({
                     viewerSettings: {
+                        __typename: 'SettingsCascade',
                         final: JSON.stringify(userSettings),
                         subjects: [
                             {
@@ -856,16 +905,15 @@ describe('Blob viewer', () => {
                 }),
                 Extensions: () => ({
                     extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
                         extensions: {
                             nodes: [
                                 {
-                                    id: 'TestExtensionID',
+                                    id: 'test',
                                     extensionID: 'test/references',
                                     manifest: {
-                                        raw: JSON.stringify(extensionManifest),
+                                        jsonFields: extensionManifest,
                                     },
-                                    url: '/extensions/test/references',
-                                    viewerCanAdminister: false,
                                 },
                             ],
                         },
@@ -999,6 +1047,13 @@ describe('Blob viewer', () => {
                     response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                 })
 
+            // TEMPORARY: Mock `Date.now` to prevent temporary Firefox from rendering.
+            await driver.page.evaluateOnNewDocument(() => {
+                // Number of ms between Unix epoch and July 1, 2020 (outside of Firefox campaign range)
+                const mockMs = new Date('July 1, 2020 00:00:00 UTC').getTime()
+                Date.now = () => mockMs
+            })
+
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/test.ts`)
 
             // Click on "log" in "console.log()" in line 2
@@ -1035,6 +1090,10 @@ describe('Blob viewer', () => {
             const HOVER_COUNT_KEY = 'hover-count'
 
             it(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
+                testContext.server.get('https://github.com/*').intercept((request, response) => {
+                    response.sendStatus(200)
+                })
+
                 await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
                 await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
                 await driver.page.reload()

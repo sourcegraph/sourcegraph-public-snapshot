@@ -168,7 +168,12 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 
 	// Identify this response as coming from the registry API.
 	w.Header().Set(registry.MediaTypeHeaderName, registry.MediaType)
-	w.Header().Set("Vary", registry.MediaTypeHeaderName)
+
+	// The response differs based on some request headers, and we need to tell caches which ones.
+	//
+	// Accept, User-Agent: because these encode the registry client's API version, and responses are
+	// not cacheable across versions.
+	w.Header().Set("Vary", "Accept, User-Agent")
 
 	// Validate API version.
 	if v := r.Header.Get("Accept"); v != registry.AcceptHeader {
@@ -240,7 +245,7 @@ func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
 		return nil
 	}
 
-	w.Header().Set("Cache-Control", "max-age=30, private")
+	w.Header().Set("Cache-Control", "max-age=120, private")
 	return json.NewEncoder(w).Encode(result)
 }
 

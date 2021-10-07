@@ -11,10 +11,12 @@ type operations struct {
 	addUploadPart                          *observation.Operation
 	calculateVisibleUploads                *observation.Operation
 	commitGraphMetadata                    *observation.Operation
+	commitsVisibleToUpload                 *observation.Operation
+	createConfigurationPolicy              *observation.Operation
 	definitionDumps                        *observation.Operation
+	deleteConfigurationPolicyByID          *observation.Operation
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
-	deleteOldIndexes                       *observation.Operation
 	deleteOverlappingDumps                 *observation.Operation
 	deleteUploadByID                       *observation.Operation
 	deleteUploadsStuckUploading            *observation.Operation
@@ -24,6 +26,9 @@ type operations struct {
 	dirtyRepositories                      *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
+	getAutoindexDisabledRepositories       *observation.Operation
+	getConfigurationPolicies               *observation.Operation
+	getConfigurationPolicyByID             *observation.Operation
 	getDumpsByIDs                          *observation.Operation
 	getIndexByID                           *observation.Operation
 	getIndexConfigurationByRepositoryID    *observation.Operation
@@ -31,7 +36,6 @@ type operations struct {
 	getIndexesByIDs                        *observation.Operation
 	getOldestCommitDate                    *observation.Operation
 	getRepositoriesWithIndexConfiguration  *observation.Operation
-	getAutoindexDisabledRepositories       *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
 	getUploadsByIDs                        *observation.Operation
@@ -39,6 +43,8 @@ type operations struct {
 	hasCommit                              *observation.Operation
 	hasRepository                          *observation.Operation
 	indexQueueSize                         *observation.Operation
+	insertCloneableDependencyRepo          *observation.Operation
+	insertDependencySyncingJob             *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
@@ -57,32 +63,30 @@ type operations struct {
 	repoName                               *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
-	softDeleteOldUploads                   *observation.Operation
+	selectRepositoriesForRetentionScan     *observation.Operation
+	softDeleteExpiredUploads               *observation.Operation
 	staleSourcedCommits                    *observation.Operation
 	updateCommitedAt                       *observation.Operation
+	updateConfigurationPolicy              *observation.Operation
+	updateDependencyNumReferences          *observation.Operation
 	updateIndexConfigurationByRepositoryID *observation.Operation
+	updateNumReferences                    *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+	updateUploadRetention                  *observation.Operation
 
-	writeVisibleUploads        *observation.Operation
 	persistNearestUploads      *observation.Operation
 	persistNearestUploadsLinks *observation.Operation
 	persistUploadsVisibleAtTip *observation.Operation
+	writeVisibleUploads        *observation.Operation
 }
 
-func newOperations(observationContext *observation.Context) *operations {
-	metrics := metrics.NewOperationMetrics(
-		observationContext.Registerer,
-		"codeintel_dbstore",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
-	)
-
+func newOperations(observationContext *observation.Context, metrics *metrics.OperationMetrics) *operations {
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.dbstore.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("codeintel.dbstore.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
 		})
 	}
 
@@ -99,10 +103,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		addUploadPart:                          op("AddUploadPart"),
 		calculateVisibleUploads:                op("CalculateVisibleUploads"),
 		commitGraphMetadata:                    op("CommitGraphMetadata"),
+		commitsVisibleToUpload:                 op("CommitsVisibleToUpload"),
+		createConfigurationPolicy:              op("CreateConfigurationPolicy"),
 		definitionDumps:                        op("DefinitionDumps"),
+		deleteConfigurationPolicyByID:          op("DeleteConfigurationPolicyByID"),
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
-		deleteOldIndexes:                       op("DeleteOldIndexes"),
 		deleteOverlappingDumps:                 op("DeleteOverlappingDumps"),
 		deleteUploadByID:                       op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:            op("DeleteUploadsStuckUploading"),
@@ -112,6 +118,9 @@ func newOperations(observationContext *observation.Context) *operations {
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
+		getAutoindexDisabledRepositories:       op("GetAutoindexDisabledRepositories"),
+		getConfigurationPolicies:               op("GetConfigurationPolicies"),
+		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
 		getIndexByID:                           op("GetIndexByID"),
 		getIndexConfigurationByRepositoryID:    op("GetIndexConfigurationByRepositoryID"),
@@ -119,7 +128,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		getIndexesByIDs:                        op("GetIndexesByIDs"),
 		getOldestCommitDate:                    op("GetOldestCommitDate"),
 		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
-		getAutoindexDisabledRepositories:       op("getAutoindexDisabledRepositories"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
 		getUploadsByIDs:                        op("GetUploadsByIDs"),
@@ -127,6 +135,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		hasCommit:                              op("HasCommit"),
 		hasRepository:                          op("HasRepository"),
 		indexQueueSize:                         op("IndexQueueSize"),
+		insertCloneableDependencyRepo:          op("InsertCloneableDependencyRepo"),
+		insertDependencySyncingJob:             op("InsertDependencySyncingJob"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
@@ -145,16 +155,21 @@ func newOperations(observationContext *observation.Context) *operations {
 		repoName:                               op("RepoName"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
-		softDeleteOldUploads:                   op("SoftDeleteOldUploads"),
+		selectRepositoriesForRetentionScan:     op("SelectRepositoriesForRetentionScan"),
+		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),
 		updateCommitedAt:                       op("UpdateCommitedAt"),
+		updateConfigurationPolicy:              op("UpdateConfigurationPolicy"),
+		updateDependencyNumReferences:          op("UpdateDependencyNumReferences"),
 		updateIndexConfigurationByRepositoryID: op("UpdateIndexConfigurationByRepositoryID"),
+		updateNumReferences:                    op("UpdateNumReferences"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+		updateUploadRetention:                  op("UpdateUploadRetention"),
 
-		writeVisibleUploads:        subOp("writeVisibleUploads"),
 		persistNearestUploads:      subOp("persistNearestUploads"),
 		persistNearestUploadsLinks: subOp("persistNearestUploadsLinks"),
 		persistUploadsVisibleAtTip: subOp("persistUploadsVisibleAtTip"),
+		writeVisibleUploads:        subOp("writeVisibleUploads"),
 	}
 }

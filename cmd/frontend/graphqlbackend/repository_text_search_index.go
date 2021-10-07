@@ -2,8 +2,8 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
+	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
@@ -13,12 +13,13 @@ import (
 )
 
 func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolver {
-	if !search.Indexed().Enabled() {
+	if search.Indexed() == nil {
 		return nil
 	}
+
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: search.Indexed().Client,
+		client: search.Indexed(),
 	}
 }
 
@@ -37,18 +38,20 @@ type repoLister interface {
 
 func (r *repositoryTextSearchIndexResolver) resolve(ctx context.Context) (*zoekt.RepoListEntry, error) {
 	r.once.Do(func() {
-		q := &zoektquery.RepoBranches{Set: map[string][]string{r.repo.Name(): {"HEAD"}}}
+		q := zoektquery.NewSingleBranchesRepos("HEAD", uint32(r.repo.IDInt32()))
 		repoList, err := r.client.List(ctx, q, nil)
 		if err != nil {
 			r.err = err
 			return
 		}
-		if len(repoList.Repos) > 1 {
-			r.err = fmt.Errorf("more than 1 indexed repo found for %q", r.repo.Name())
-			return
-		}
-		if len(repoList.Repos) == 1 {
-			r.entry = repoList.Repos[0]
+		// During rebalancing we have a repo on more than one shard. Pick the
+		// newest one since that will be the winner.
+		var latest time.Time
+		for _, entry := range repoList.Repos {
+			if t := entry.IndexMetadata.IndexTime; t.After(latest) {
+				r.entry = entry
+				latest = t
+			}
 		}
 	})
 	return r.entry, r.err
@@ -181,5 +184,5 @@ func (r *repositoryTextSearchIndexedRef) IndexedCommit() *gitObject {
 	if r.indexedCommit == "" {
 		return nil
 	}
-	return &gitObject{repo: r.ref.repo, oid: r.indexedCommit, typ: gitObjectTypeCommit}
+	return &gitObject{repo: r.ref.repo, oid: r.indexedCommit, typ: GitObjectTypeCommit}
 }

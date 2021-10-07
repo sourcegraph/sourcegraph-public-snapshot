@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 /**
@@ -11,5 +12,5 @@ export const OrgAvatar: React.FunctionComponent<{
 
     className?: string
 }> = ({ org, size = 'md', className = '' }) => (
-    <div className={`org-avatar org-avatar--${size} ${className}`}>{org.slice(0, 2).toUpperCase()}</div>
+    <div className={classNames(`org-avatar org-avatar--${size}`, className)}>{org.slice(0, 2).toUpperCase()}</div>
 )

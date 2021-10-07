@@ -13,6 +13,7 @@ import {
     Unsubscribable,
     concat,
     BehaviorSubject,
+    fromEvent,
 } from 'rxjs'
 import {
     catchError,
@@ -30,6 +31,7 @@ import {
     distinctUntilChanged,
     retryWhen,
     mapTo,
+    take,
 } from 'rxjs/operators'
 import { NotificationType, HoverAlert } from 'sourcegraph'
 
@@ -48,10 +50,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { HoverMerged } from '@sourcegraph/shared/src/api/client/types/hover'
 import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
-import {
-    isPrivateRepoPublicSourcegraphComErrorLike,
-    isRepoNotFoundErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
 import {
     CommandListClassProps,
@@ -91,7 +90,7 @@ import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { observeSourcegraphURL } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -103,13 +102,9 @@ import { phabricatorCodeHost } from '../phabricator/codeHost'
 
 import { CodeView, trackCodeViews, fetchFileContentForDiffOrFileInfo } from './codeViews'
 import { ContentView, handleContentViews } from './contentViews'
+import { RepoURLParseError } from './errors'
 import { applyDecorations, initializeExtensions, renderCommandPalette, renderGlobalDebug } from './extensions'
-import {
-    createPrivateCodeHoverAlert,
-    getActiveHoverAlerts,
-    onHoverAlertDismissed,
-    userNeedsToSetupPrivateInstance,
-} from './hoverAlerts'
+import { createPrivateCodeHoverAlert, getActiveHoverAlerts, onHoverAlertDismissed } from './hoverAlerts'
 import {
     handleNativeTooltips,
     NativeTooltip,
@@ -118,7 +113,7 @@ import {
 } from './nativeTooltips'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
-import { delayUntilIntersecting, ViewResolver } from './views'
+import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
 registerHighlightContributions()
 
@@ -204,6 +199,18 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Resolve {@link CodeView}s from the DOM.
      */
     codeViewResolvers: ViewResolver<CodeView>[]
+
+    /**
+     * Configuration for built-in search input enhancement
+     */
+    searchEnhancement?: {
+        /** Search input element resolver */
+        searchViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Search result element resolver */
+        resultViewResolver: ViewResolver<{ element: HTMLElement }>
+        /** Callback to trigger on input element change */
+        onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
+    }
 
     /**
      * Resolve {@link ContentView}s from the DOM.
@@ -351,10 +358,12 @@ function initCodeIntelligence({
     render,
     telemetryService,
     hoverAlerts,
+    privateCloudErrors,
 }: Pick<CodeIntelligenceProps, 'codeHost' | 'platformContext' | 'extensionsController' | 'telemetryService'> & {
     render: typeof reactDOMRender
     hoverAlerts: Observable<HoverAlert>[]
     mutations: Observable<MutationRecordLike[]>
+    privateCloudErrors: Observable<boolean>
 }): {
     hoverifier: Hoverifier<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec, HoverMerged, ActionItemAction>
     subscription: Unsubscribable
@@ -398,19 +407,25 @@ function initCodeIntelligence({
                 [{ isLoading: true, result: null }],
                 combineLatest([
                     from(extensionsController.extHostAPI).pipe(
-                        switchMap(extensionHost =>
-                            wrapRemoteObservable(
-                                extensionHost.getHover(
-                                    toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                                )
-                            )
+                        withLatestFrom(privateCloudErrors),
+                        switchMap(([extensionHost, hasPrivateCloudError]) =>
+                            // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
+                            hasPrivateCloudError
+                                ? of({ isLoading: true, result: null })
+                                : wrapRemoteObservable(
+                                      extensionHost.getHover(
+                                          toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                                      )
+                                  )
                         )
                     ),
                     getActiveHoverAlerts([
                         ...hoverAlerts,
-                        ...(userNeedsToSetupPrivateInstance(codeHost, platformContext.sourcegraphURL)
-                            ? [of(createPrivateCodeHoverAlert(codeHost))]
-                            : []),
+                        privateCloudErrors.pipe(
+                            distinctUntilChanged(),
+                            map(showAlert => (showAlert ? createPrivateCodeHoverAlert(codeHost) : undefined)),
+                            filter(isDefined)
+                        ),
                     ]),
                 ]).pipe(
                     map(
@@ -423,15 +438,26 @@ function initCodeIntelligence({
             ),
         getDocumentHighlights: ({ line, character, part, ...rest }) =>
             from(extensionsController.extHostAPI).pipe(
-                switchMap(extensionHost =>
-                    wrapRemoteObservable(
-                        extensionHost.getDocumentHighlights(
-                            toTextDocumentPositionParameters({ ...rest, position: { line, character } })
-                        )
-                    )
+                withLatestFrom(privateCloudErrors),
+                switchMap(([extensionHost, hasPrivateCloudError]) =>
+                    // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
+                    hasPrivateCloudError
+                        ? of([])
+                        : wrapRemoteObservable(
+                              extensionHost.getDocumentHighlights(
+                                  toTextDocumentPositionParameters({ ...rest, position: { line, character } })
+                              )
+                          )
                 )
             ),
-        getActions: context => getHoverActions({ extensionsController, platformContext }, context),
+        getActions: context =>
+            // Prevent GraphQL requests that we know will result in error/null when the repo is private (and not added to Cloud)
+            privateCloudErrors.pipe(
+                take(1),
+                switchMap(hasPrivateCloudError =>
+                    hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
+                )
+            ),
         pinningEnabled: true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
@@ -591,11 +617,10 @@ export function observeHoverOverlayMountLocation(
 
 export interface HandleCodeHostOptions extends CodeIntelligenceProps {
     mutations: Observable<MutationRecordLike[]>
-    sourcegraphURL: string
     render: typeof reactDOMRender
     minimalUI: boolean
     hideActions?: boolean
-    background: Pick<BackgroundPageApi, 'notifyPrivateRepository' | 'openOptionsPage'>
+    background: Pick<BackgroundPageApi, 'notifyPrivateCloudError' | 'openOptionsPage'>
 }
 
 export function handleCodeHost({
@@ -604,7 +629,6 @@ export function handleCodeHost({
     extensionsController,
     platformContext,
     showGlobalDebug,
-    sourcegraphURL,
     telemetryService,
     render,
     minimalUI,
@@ -613,17 +637,7 @@ export function handleCodeHost({
 }: HandleCodeHostOptions): Subscription {
     const history = H.createBrowserHistory()
     const subscriptions = new Subscription()
-    const { requestGraphQL } = platformContext
-
-    if (isExtension) {
-        // Notify the background page that we are on a private repository
-        // This information will be used to alert the user when using Sourcegraph Cloud
-        // while on a private repository.
-        const isPrivateRepo = !codeHost.getContext || codeHost.getContext().privateRepository
-        background.notifyPrivateRepository(isPrivateRepo).catch(error => {
-            console.error('Error notifying background page of private repository:', error)
-        })
-    }
+    const { requestGraphQL, sourcegraphURL } = platformContext
 
     const addedElements = mutations.pipe(
         concatAll(),
@@ -631,18 +645,48 @@ export function handleCodeHost({
         filter(isInstanceOf(HTMLElement))
     )
 
+    // Handle theming
+    subscriptions.add(
+        (codeHost.isLightTheme ?? of(true)).subscribe(isLightTheme => {
+            document.body.classList.toggle('theme-light', isLightTheme)
+            document.body.classList.toggle('theme-dark', !isLightTheme)
+        })
+    )
     const nativeTooltipsEnabled = codeHost.nativeTooltipResolvers
         ? nativeTooltipsEnabledFromSettings(platformContext.settings)
         : of(false)
 
     const hoverAlerts: Observable<HoverAlert>[] = []
 
+    /**
+     * A stream that emits a boolean that signifies
+     * whether any request for the current repository has failed on the basis
+     * that it is a private repository that has not been added to Sourcegraph Cloud
+     * (only emits `true` when the Sourcegraph instance is Cloud).
+     * If the current state is `true`, we can short circuit subsequent requests.
+     * */
+    const privateCloudErrors = new BehaviorSubject<boolean>(false)
+    // Set by `ViewOnSourcegraphButton` (cleans up and sets to `false` whenever it is unmounted).
+    const setPrivateCloudError = privateCloudErrors.next.bind(privateCloudErrors)
+
+    /**
+     * Checks whether the error occured because the repository
+     * is a private repository that hasn't been added to Sourcegraph Cloud
+     * (no side effects, doesn't notify `privateCloudErrors`)
+     * */
+    const checkPrivateCloudError = (error: any): boolean =>
+        !!(
+            isRepoNotFoundErrorLike(error) &&
+            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
+            codeHost.getContext?.().privateRepository
+        )
+
     if (codeHost.nativeTooltipResolvers) {
         const { subscription, nativeTooltipsAlert } = handleNativeTooltips(
             mutations,
             nativeTooltipsEnabled,
             codeHost,
-            platformContext.sourcegraphURL
+            privateCloudErrors
         )
         subscriptions.add(subscription)
         hoverAlerts.push(nativeTooltipsAlert)
@@ -657,6 +701,7 @@ export function handleCodeHost({
         render,
         hoverAlerts,
         mutations,
+        privateCloudErrors,
     })
     subscriptions.add(hoverifier)
     subscriptions.add(subscription)
@@ -721,14 +766,14 @@ export function handleCodeHost({
                 return resolveRevision({ repoName: rawRepoName, revision, requestGraphQL }).pipe(
                     retryWhenCloneInProgressError(),
                     mapTo(true),
-                    catchError(error => {
-                        if (isRepoNotFoundErrorLike(error)) {
-                            return [false]
-                        }
-                        return [asError(error)]
-                    }),
                     startWith(undefined)
                 )
+            }),
+            catchError(error => {
+                if (isRepoNotFoundErrorLike(error) || error instanceof RepoURLParseError) {
+                    return [false]
+                }
+                return [asError(error)]
             })
         )
         const onConfigureSourcegraphClick: React.MouseEventHandler<HTMLAnchorElement> = async event => {
@@ -739,6 +784,14 @@ export function handleCodeHost({
             // extension.
             if (isExtension) {
                 await background.openOptionsPage()
+            }
+        }
+        const onPrivateCloudError = (hasPrivateCloudError: boolean): void => {
+            setPrivateCloudError(hasPrivateCloudError)
+            if (isExtension) {
+                background.notifyPrivateCloudError(hasPrivateCloudError).catch(error => {
+                    console.error('Error notifying background page of private cloud error:', error)
+                })
             }
         }
 
@@ -764,11 +817,40 @@ export function handleCodeHost({
                         // The bound function is constant
                         onSignInClose={nextSignInClose}
                         onConfigureSourcegraphClick={isInPage ? undefined : onConfigureSourcegraphClick}
+                        onPrivateCloudError={onPrivateCloudError}
                     />,
                     mount
                 )
             })
         )
+    }
+
+    if (codeHost.searchEnhancement) {
+        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+        const searchURL = new URL('/search', sourcegraphURL)
+        searchURL.searchParams.append('utm_source', getPlatformName())
+        searchURL.searchParams.append('utm_campaign', 'global-search')
+
+        const searchView = mutations.pipe(
+            trackViews([searchViewResolver]),
+            switchMap(({ element }) =>
+                fromEvent(element, 'input').pipe(
+                    map(event => (event.target as HTMLInputElement).value),
+                    startWith((element as HTMLInputElement).value)
+                )
+            ),
+            map(value => ({
+                value,
+                searchURL: searchURL.href,
+            })),
+            observeOn(asyncScheduler)
+        )
+        const resultView = mutations.pipe(trackViews([resultViewResolver]), observeOn(asyncScheduler))
+
+        const searchEnhancementSubscription = combineLatest([searchView, resultView])
+            .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
+            .subscribe(onChange)
+        subscriptions.add(searchEnhancementSubscription)
     }
 
     /** A stream of added or removed code views with the resolved file info */
@@ -786,10 +868,18 @@ export function handleCodeHost({
                 codeViewEvent.resolveFileInfo(codeViewEvent.element, platformContext.requestGraphQL)
             ).pipe(
                 mergeMap(diffOrBlobInfo =>
-                    resolveRepoNamesForDiffOrFileInfo(diffOrBlobInfo, platformContext.requestGraphQL)
+                    resolveRepoNamesForDiffOrFileInfo(
+                        diffOrBlobInfo,
+                        checkPrivateCloudError,
+                        platformContext.requestGraphQL
+                    )
                 ),
                 mergeMap(diffOrBlobInfo =>
-                    fetchFileContentForDiffOrFileInfo(diffOrBlobInfo, platformContext.requestGraphQL).pipe(
+                    fetchFileContentForDiffOrFileInfo(
+                        diffOrBlobInfo,
+                        checkPrivateCloudError,
+                        platformContext.requestGraphQL
+                    ).pipe(
                         map(diffOrBlobInfo => ({
                             diffOrBlobInfo,
                             ...codeViewEvent,
@@ -797,8 +887,8 @@ export function handleCodeHost({
                     )
                 ),
                 catchError(error => {
-                    // Ignore PrivateRepoPublicSourcegraph errors (don't initialize those code views)
-                    if (isPrivateRepoPublicSourcegraphComErrorLike(error)) {
+                    // Ignore private Cloud RepoNotFound errors (don't initialize those code views)
+                    if (checkPrivateCloudError(error)) {
                         return EMPTY
                     }
                     throw error
@@ -887,7 +977,6 @@ export function handleCodeHost({
     subscriptions.add(
         codeViews.subscribe(codeViewEvent => {
             console.log('Code view added')
-
             // This code view could have left the DOM between the time that
             // 1) it entered the DOM
             // 2) requests to Sourcegraph instance for repo name + file info fulfilled
@@ -997,6 +1086,7 @@ export function handleCodeHost({
                                 ...diffOrFileInfo.base,
                                 editor: await initializeModelAndViewerForFileInfo(diffOrFileInfo.base),
                             },
+                            head: undefined,
                         }
                     }
                     return {
@@ -1004,21 +1094,20 @@ export function handleCodeHost({
                             ...diffOrFileInfo.head,
                             editor: await initializeModelAndViewerForFileInfo(diffOrFileInfo.head),
                         },
+                        base: undefined,
                     }
                 }
 
                 const diffOrFileInfoWithEditor = await initializeModelAndViewerForDiffOrFileInfo(diffOrBlobInfo)
 
                 let scopeEditor: CodeEditorWithPartialModel
+
                 if ('blob' in diffOrFileInfoWithEditor) {
                     scopeEditor = diffOrFileInfoWithEditor.blob.editor
-                } else if (diffOrFileInfoWithEditor.head && diffOrFileInfoWithEditor.base) {
-                    // When both editors have been created, default is head
+                } else if (diffOrFileInfoWithEditor.head) {
                     scopeEditor = diffOrFileInfoWithEditor.head.editor
-                } else if (diffOrFileInfoWithEditor.base) {
-                    scopeEditor = diffOrFileInfoWithEditor.base.editor
                 } else {
-                    scopeEditor = diffOrFileInfoWithEditor.head.editor
+                    scopeEditor = diffOrFileInfoWithEditor.base.editor
                 }
 
                 if (wasRemoved) {
@@ -1187,7 +1276,34 @@ const CODE_HOSTS: CodeHost[] = [
     phabricatorCodeHost,
     gerritCodeHost,
 ]
-export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
+
+const CLOUD_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
+
+export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined => {
+    const codeHost = CODE_HOSTS.find(codeHost => codeHost.check())
+
+    if (!codeHost) {
+        return undefined
+    }
+
+    // Prevent repo lookups for code hosts that we know cannot have repositories
+    // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
+    // inevitably fail in this case.
+    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+        const { hostname } = new URL(location.href)
+        const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
+        if (!validCodeHost) {
+            console.log(
+                `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${DEFAULT_SOURCEGRAPH_URL}.\n List of supported code hosts on ${DEFAULT_SOURCEGRAPH_URL}: ${CLOUD_CODE_HOST_HOSTS.join(
+                    ', '
+                )}`
+            )
+            return undefined
+        }
+    }
+
+    return codeHost
+}
 
 export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
@@ -1249,7 +1365,6 @@ export function injectCodeIntelligenceToCodeHost(
                     extensionsController,
                     platformContext,
                     showGlobalDebug,
-                    sourcegraphURL,
                     telemetryService,
                     render: reactDOMRender,
                     minimalUI,

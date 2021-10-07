@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -176,7 +178,7 @@ func lookupMatcher(language string) string {
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *store.ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender *limitedStreamCollector) error {
+func filteredStructuralSearch(ctx context.Context, zipPath string, zipFile *store.ZipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
@@ -240,7 +242,7 @@ type Subset []string
 
 var All UniversalSet = struct{}{}
 
-func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender *limitedStreamCollector) error {
+func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error {
 	log15.Info("structural search", "repo", string(repo))
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
@@ -277,7 +279,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 	return nil
 }
 
-func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender *limitedStreamCollector) (deadlineHit bool, err error) {
+func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender matchSender) (deadlineHit bool, err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -298,9 +300,9 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 	if p.Branch == "" {
 		p.Branch = "HEAD"
 	}
-	repoBranches := map[string][]string{string(p.Repo): {p.Branch}}
+	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
 	useFullDeadline := false
-	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
+	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
 		return false, err
 	}

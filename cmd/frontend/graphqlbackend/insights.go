@@ -31,17 +31,21 @@ type InsightStatusResolver interface {
 	PendingJobs() int32
 	CompletedJobs() int32
 	FailedJobs() int32
+	BackfillQueuedAt() *DateTime
 }
 
 type InsightsPointsArgs struct {
-	From *DateTime
-	To   *DateTime
+	From             *DateTime
+	To               *DateTime
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
 }
 
 type InsightSeriesResolver interface {
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 	Status(ctx context.Context) (InsightStatusResolver, error)
+	DirtyMetadata(ctx context.Context) ([]InsightDirtyQueryResolver, error)
 }
 
 type InsightResolver interface {
@@ -55,4 +59,10 @@ type InsightConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type InsightDirtyQueryResolver interface {
+	Reason(ctx context.Context) string
+	Time(ctx context.Context) DateTime
+	Count(ctx context.Context) int32
 }

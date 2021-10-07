@@ -3,13 +3,12 @@
 package searcher
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -19,34 +18,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var (
-	requestCounter = metrics.NewRequestMeter("textsearch", "Total number of requests sent to the textsearch API.")
-
-	searchHTTPClient = &http.Client{
-		// ot.Transport will propagate opentracing spans
-		Transport: &ot.Transport{
-			RoundTripper: requestCounter.Transport(&http.Transport{
-				// Default is 2, but we can send many concurrent requests
-				MaxIdleConnsPerHost: 500,
-			}, func(u *url.URL) string {
-				return "search"
-			}),
-		},
-	}
+	searchDoer, _ = httpcli.NewInternalClientFactory("search").Doer()
+	MockSearch    func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error)
 )
 
-var MockSearch func(ctx context.Context, repo api.RepoName, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration) (matches []*protocol.FileMatch, limitHit bool, err error)
-
 // Search searches repo@commit with p.
-func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, branch string, commit api.CommitID, indexed bool, p *search.TextPatternInfo, fetchTimeout time.Duration, indexerEndpoints []string) (matches []*protocol.FileMatch, limitHit bool, err error) {
+func Search(
+	ctx context.Context,
+	searcherURLs *endpoint.Map,
+	repo api.RepoName,
+	repoID api.RepoID,
+	branch string,
+	commit api.CommitID,
+	indexed bool,
+	p *search.TextPatternInfo,
+	fetchTimeout time.Duration,
+	indexerEndpoints []string,
+	onMatches func([]*protocol.FileMatch),
+) (limitHit bool, err error) {
 	if MockSearch != nil {
-		return MockSearch(ctx, repo, commit, p, fetchTimeout)
+		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
 	}
 
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
@@ -55,55 +53,45 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 		tr.Finish()
 	}()
 
-	q := url.Values{
-		"Repo":            []string{string(repo)},
-		"Commit":          []string{string(commit)},
-		"Branch":          []string{branch},
-		"Pattern":         []string{p.Pattern},
-		"ExcludePattern":  []string{p.ExcludePattern},
-		"IncludePatterns": p.IncludePatterns,
-		"FetchTimeout":    []string{fetchTimeout.String()},
-		"Languages":       p.Languages,
-		"CombyRule":       []string{p.CombyRule},
-
-		"PathPatternsAreRegExps": []string{"true"},
-		"IndexerEndpoints":       indexerEndpoints,
-		"Select":                 []string{p.Select.Root()},
+	r := protocol.Request{
+		Repo:   repo,
+		RepoID: repoID,
+		Commit: commit,
+		Branch: branch,
+		PatternInfo: protocol.PatternInfo{
+			Pattern:                      p.Pattern,
+			ExcludePattern:               p.ExcludePattern,
+			IncludePatterns:              p.IncludePatterns,
+			Languages:                    p.Languages,
+			CombyRule:                    p.CombyRule,
+			PathPatternsAreRegExps:       true,
+			Select:                       p.Select.Root(),
+			Limit:                        int(p.FileMatchLimit),
+			IsRegExp:                     p.IsRegExp,
+			IsStructuralPat:              p.IsStructuralPat,
+			IsWordMatch:                  p.IsWordMatch,
+			IsCaseSensitive:              p.IsCaseSensitive,
+			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
+			IsNegated:                    p.IsNegated,
+			PatternMatchesContent:        p.PatternMatchesContent,
+			PatternMatchesPath:           p.PatternMatchesPath,
+		},
+		Indexed:          indexed,
+		FetchTimeout:     fetchTimeout.String(),
+		IndexerEndpoints: indexerEndpoints,
 	}
+
 	if deadline, ok := ctx.Deadline(); ok {
 		t, err := deadline.MarshalText()
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
-		q.Set("Deadline", string(t))
+		r.Deadline = string(t)
 	}
-	q.Set("Limit", strconv.FormatInt(int64(p.FileMatchLimit), 10))
-	if p.IsRegExp {
-		q.Set("IsRegExp", "true")
+	body, err := json.Marshal(r)
+	if err != nil {
+		return false, err
 	}
-	if p.IsStructuralPat {
-		q.Set("IsStructuralPat", "true")
-	}
-	if indexed {
-		q.Set("Indexed", "true")
-	}
-	if p.IsWordMatch {
-		q.Set("IsWordMatch", "true")
-	}
-	if p.IsCaseSensitive {
-		q.Set("IsCaseSensitive", "true")
-	}
-	if p.PathPatternsAreCaseSensitive {
-		q.Set("PathPatternsAreCaseSensitive", "true")
-	}
-	if p.IsNegated {
-		q.Set("IsNegated", "true")
-	}
-	// TEMP BACKCOMPAT: always set even if false so that searcher can distinguish new frontends that send
-	// these fields from old frontends that do not (and provide a default in the latter case).
-	q.Set("PatternMatchesContent", strconv.FormatBool(p.PatternMatchesContent))
-	q.Set("PatternMatchesPath", strconv.FormatBool(p.PatternMatchesPath))
-	rawQuery := q.Encode()
 
 	// Searcher caches the file contents for repo@commit since it is
 	// relatively expensive to fetch from gitserver. So we use consistent
@@ -111,56 +99,45 @@ func Search(ctx context.Context, searcherURLs *endpoint.Map, repo api.RepoName, 
 	consistentHashKey := string(repo) + "@" + string(commit)
 	tr.LazyPrintf("%s", consistentHashKey)
 
-	var (
-		// When we retry do not use a host we already tried.
-		excludedSearchURLs = map[string]bool{}
-		attempt            = 0
-		maxAttempts        = 2
-	)
-	for {
-		attempt++
+	nodes, err := searcherURLs.Endpoints()
+	if err != nil {
+		return false, err
+	}
 
-		searcherURL, err := searcherURLs.Get(consistentHashKey, excludedSearchURLs)
-		if err != nil {
-			return nil, false, err
-		}
+	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
+	if err != nil {
+		return false, err
+	}
 
-		// Fallback to a bad host if nothing is left
-		if searcherURL == "" {
-			tr.LazyPrintf("failed to find endpoint, trying again without excludes")
-			searcherURL, err = searcherURLs.Get(consistentHashKey, nil)
-			if err != nil {
-				return nil, false, err
-			}
-		}
+	for attempt := 0; attempt < 2; attempt++ {
+		url := urls[attempt%len(urls)]
 
-		url := searcherURL + "?" + rawQuery
 		tr.LazyPrintf("attempt %d: %s", attempt, url)
-		matches, limitHit, err = textSearchURL(ctx, url)
+		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
-			return matches, limitHit, err
+			return limitHit, err
 		}
 
 		// If we are canceled, return that error.
-		if err := ctx.Err(); err != nil {
-			return nil, false, err
+		if err = ctx.Err(); err != nil {
+			return false, err
 		}
 
 		// If not temporary or our last attempt then don't try again.
-		if !errcode.IsTemporary(err) || attempt == maxAttempts {
-			return nil, false, err
+		if !errcode.IsTemporary(err) {
+			return false, err
 		}
 
 		tr.LazyPrintf("transient error %s", err.Error())
-		// Retry search on another searcher instance (if possible)
-		excludedSearchURLs[searcherURL] = true
 	}
+
+	return false, err
 }
 
-func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
+	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
 	if err != nil {
-		return nil, false, err
+		return false, err
 	}
 	req = req.WithContext(ctx)
 
@@ -172,37 +149,44 @@ func textSearchURL(ctx context.Context, url string) ([]*protocol.FileMatch, bool
 	// Do not lose the context returned by TraceRequest
 	ctx = req.Context()
 
-	resp, err := searchHTTPClient.Do(req)
+	resp, err := searchDoer.Do(req)
 	if err != nil {
 		// If we failed due to cancellation or timeout (with no partial results in the response
 		// body), return just that.
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
-		return nil, false, errors.Wrap(err, "searcher request failed")
+		return false, errors.Wrap(err, "streaming searcher request failed")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, false, err
+			return false, err
 		}
-		return nil, false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
+		return false, errors.WithStack(&searcherError{StatusCode: resp.StatusCode, Message: string(body)})
 	}
 
-	r := struct {
-		Matches     []*protocol.FileMatch
-		LimitHit    bool
-		DeadlineHit bool
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&r)
-	if err != nil {
-		return nil, false, errors.Wrap(err, "searcher response invalid")
+	var ed EventDone
+	dec := StreamDecoder{
+		OnMatches: cb,
+		OnDone: func(e EventDone) {
+			ed = e
+		},
+		OnUnknown: func(event []byte, _ []byte) {
+			err = errors.Errorf("unknown event %q", event)
+		},
 	}
-	if r.DeadlineHit {
+	if err := dec.ReadAll(resp.Body); err != nil {
+		return false, err
+	}
+	if ed.Error != "" {
+		return false, errors.New(ed.Error)
+	}
+	if ed.DeadlineHit {
 		err = context.DeadlineExceeded
 	}
-	return r.Matches, r.LimitHit, err
+	return ed.LimitHit, err
 }
 
 type searcherError struct {

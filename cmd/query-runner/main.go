@@ -20,10 +20,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/query-runner/queryrunnerapi"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 )
@@ -35,9 +37,12 @@ const port = "3183"
 func main() {
 	env.Lock()
 	env.HandleHelpFlag()
+
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	go func() {
 		c := make(chan os.Signal, 1)
@@ -52,10 +57,6 @@ func main() {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	ctx := context.Background()
-
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		log15.Error("failed to wait for frontend", "error", err)
-	}
 
 	http.HandleFunc(queryrunnerapi.PathTestNotification, serveTestNotification)
 
@@ -255,7 +256,7 @@ func performSearch(ctx context.Context, query string) (v *gqlSearchResponse, exe
 		}
 
 		if attempts > 5 {
-			return nil, execDuration, fmt.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout)
+			return nil, execDuration, errors.Errorf("found 0 results due to %d cloning %d timedout repos", cloning, timedout)
 		}
 
 		// We didn't find any search results. Some repos are cloning or timed

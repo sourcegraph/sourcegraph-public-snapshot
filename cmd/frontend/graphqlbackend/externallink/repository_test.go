@@ -6,45 +6,42 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func TestRepository(t *testing.T) {
-	t.Run("repo-updater info with repo.Name", func(t *testing.T) {
+	t.Run("repo", func(t *testing.T) {
 		resetMocks()
-		repoName := "myrepo"
-		repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			if args.Repo != api.RepoName(repoName) {
-				t.Errorf("got %+v, want %+v", args.Repo, repoName)
-			}
-			return &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{
-					Links: &protocol.RepoLinks{
-						Root: "http://example.com/" + repoName,
-					},
-				},
-			}, nil
+		repo := &types.Repo{
+			Name: api.RepoName("github.com/foo/bar"),
+			ExternalRepo: api.ExternalRepoSpec{
+				ServiceID:   extsvc.GitHubDotCom.ServiceID,
+				ServiceType: extsvc.GitHubDotCom.ServiceType,
+			},
+			Metadata: &github.Repository{
+				URL: "http://github.com/foo/bar",
+			},
 		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Repository(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: api.RepoName(repoName)})
+		links, err := Repository(context.Background(), new(dbtesting.MockDB), repo)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
-				url:         "http://example.com/" + repoName,
-				serviceKind: "",
-				serviceType: "",
+				url:         "http://github.com/foo/bar",
+				serviceKind: extsvc.TypeToKind(repo.ExternalRepo.ServiceType),
+				serviceType: repo.ExternalRepo.ServiceType,
 			},
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
@@ -53,9 +50,6 @@ func TestRepository(t *testing.T) {
 
 	t.Run("phabricator", func(t *testing.T) {
 		resetMocks()
-		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return &protocol.RepoLookupResult{}, nil
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
@@ -79,9 +73,6 @@ func TestRepository(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		resetMocks()
-		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return nil, errors.New("x")
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
@@ -101,61 +92,56 @@ func TestFileOrDir(t *testing.T) {
 		path = "mydir/myfile"
 	)
 
+	repo := &types.Repo{
+		Name: api.RepoName("gitlab.com/foo/bar"),
+		ExternalRepo: api.ExternalRepoSpec{
+			ServiceID:   extsvc.GitLabDotCom.ServiceID,
+			ServiceType: extsvc.GitLabDotCom.ServiceType,
+		},
+		Metadata: &gitlab.Project{
+			ProjectCommon: gitlab.ProjectCommon{
+				WebURL: "http://gitlab.com/foo/bar",
+			},
+		},
+	}
+
 	for _, which := range []string{"file", "dir"} {
 		var (
-			repoLinks protocol.RepoLinks
-			isDir     bool
-			wantURL   string
+			isDir   bool
+			wantURL string
 		)
 		switch which {
 		case "file":
-			repoLinks = protocol.RepoLinks{Blob: "http://example.com/myrepo@{rev}/file/{path}"}
 			isDir = false
-			wantURL = "http://example.com/myrepo@myrev/file/mydir/myfile"
+			wantURL = "http://gitlab.com/foo/bar/blob/myrev/mydir/myfile"
 		case "dir":
-			repoLinks = protocol.RepoLinks{Tree: "http://example.com/myrepo@{rev}/dir/{path}"}
 			isDir = true
-			wantURL = "http://example.com/myrepo@myrev/dir/mydir/myfile"
+			wantURL = "http://gitlab.com/foo/bar/tree/myrev/mydir/myfile"
 		}
 
 		t.Run(which, func(t *testing.T) {
-			t.Run("repo-updater info with no repo.ExternalRepo", func(t *testing.T) {
-				resetMocks()
-				repoName := "myrepo"
-				repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-					if args.Repo != api.RepoName(repoName) {
-						t.Errorf("got %+v, want %+v", args.Repo, repoName)
-					}
-					return &protocol.RepoLookupResult{
-						Repo: &protocol.RepoInfo{
-							Links: &repoLinks,
-						},
-					}, nil
-				}
-				database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
-					return nil, errors.New("x")
-				}
-				links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: api.RepoName(repoName)}, rev, path, isDir)
-				if err != nil {
-					t.Fatal(err)
-				}
-				if want := []*Resolver{
-					{
-						url:         wantURL,
-						serviceKind: "",
-					},
-				}; !reflect.DeepEqual(links, want) {
-					t.Errorf("got %+v, want %+v", links, want)
-				}
-			})
+			resetMocks()
+			database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
+				return nil, errors.New("x")
+			}
+			links, err := FileOrDir(context.Background(), new(dbtesting.MockDB), repo, rev, path, isDir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := []*Resolver{
+				{
+					url:         wantURL,
+					serviceKind: extsvc.TypeToKind(repo.ExternalRepo.ServiceType),
+					serviceType: repo.ExternalRepo.ServiceType,
+				},
+			}; !reflect.DeepEqual(links, want) {
+				t.Errorf("got %+v, want %+v", links, want)
+			}
 		})
 	}
 
 	t.Run("phabricator", func(t *testing.T) {
 		resetMocks()
-		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return &protocol.RepoLookupResult{}, nil
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
@@ -183,9 +169,6 @@ func TestFileOrDir(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		resetMocks()
-		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return nil, errors.New("x")
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
@@ -202,33 +185,31 @@ func TestFileOrDir(t *testing.T) {
 func TestCommit(t *testing.T) {
 	const commit = "mycommit"
 
-	t.Run("repo-updater info with no repo.ExternalRepo", func(t *testing.T) {
+	repo := &types.Repo{
+		Name: api.RepoName("github.com/foo/bar"),
+		ExternalRepo: api.ExternalRepoSpec{
+			ServiceID:   extsvc.GitHubDotCom.ServiceID,
+			ServiceType: extsvc.GitHubDotCom.ServiceType,
+		},
+		Metadata: &github.Repository{
+			URL: "http://github.com/foo/bar",
+		},
+	}
+
+	t.Run("repo", func(t *testing.T) {
 		resetMocks()
-		repoName := "myrepo"
-		repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			if args.Repo != api.RepoName(repoName) {
-				t.Errorf("got %+v, want %+v", args.Repo, repoName)
-			}
-			return &protocol.RepoLookupResult{
-				Repo: &protocol.RepoInfo{
-					Links: &protocol.RepoLinks{
-						Commit: "http://example.com/" + repoName + "/commit/{commit}",
-					},
-				},
-			}, nil
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}
-		links, err := Commit(context.Background(), new(dbtesting.MockDB), &types.Repo{Name: api.RepoName(repoName)}, commit)
+		links, err := Commit(context.Background(), new(dbtesting.MockDB), repo, commit)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if want := []*Resolver{
 			{
-				url:         "http://example.com/" + repoName + "/commit/mycommit",
-				serviceKind: "",
-				serviceType: "",
+				url:         "http://github.com/foo/bar/commit/mycommit",
+				serviceKind: extsvc.TypeToKind(repo.ExternalRepo.ServiceType),
+				serviceType: repo.ExternalRepo.ServiceType,
 			},
 		}; !reflect.DeepEqual(links, want) {
 			t.Errorf("got %+v, want %+v", links, want)
@@ -237,9 +218,6 @@ func TestCommit(t *testing.T) {
 
 	t.Run("phabricator", func(t *testing.T) {
 		resetMocks()
-		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return &protocol.RepoLookupResult{}, nil
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			if want := api.RepoName("myrepo"); repo != want {
 				t.Errorf("got %q, want %q", repo, want)
@@ -263,9 +241,6 @@ func TestCommit(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		resetMocks()
-		repoupdater.MockRepoLookup = func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-			return nil, errors.New("x")
-		}
 		database.Mocks.Phabricator.GetByName = func(repo api.RepoName) (*types.PhabricatorRepo, error) {
 			return nil, errors.New("x")
 		}

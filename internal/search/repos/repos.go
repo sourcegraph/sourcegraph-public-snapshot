@@ -3,11 +3,9 @@ package repos
 import (
 	"context"
 	"fmt"
-	"math"
 	"regexp"
 	regexpsyntax "regexp/syntax"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -25,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -37,7 +34,11 @@ import (
 )
 
 type Resolved struct {
-	RepoRevs        []*search.RepositoryRevisions
+	RepoRevs []*search.RepositoryRevisions
+
+	// Perf improvement: we precompute this map during repo resolution to save time
+	// on the critical path.
+	RepoSet         map[api.RepoID]types.RepoName
 	MissingRepoRevs []*search.RepositoryRevisions
 	ExcludedRepos   ExcludedRepos
 	OverLimit       bool
@@ -49,11 +50,10 @@ func (r *Resolved) String() string {
 
 type Resolver struct {
 	DB                  dbutil.DB
-	Zoekt               *searchbackend.Zoekt
 	SearchableReposFunc searchableReposFunc
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
+func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
 	var err error
 	tr, ctx := trace.New(ctx, "resolveRepositories", op.String())
 	defer func() {
@@ -71,7 +71,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	limit := op.Limit
 	if limit == 0 {
-		limit = SearchLimits().MaxRepos
+		limit = search.SearchLimits(conf.Get()).MaxRepos
 	}
 
 	// If any repo groups are specified, take the intersection of the repo
@@ -127,13 +127,13 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
-		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, r.Zoekt, excludePatterns)
+		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, excludePatterns)
 		if err != nil {
-			return Resolved{}, errors.Wrap(err, "getting list of default repos")
+			return Resolved{}, errors.Wrap(err, "getting list of indexable repos")
 		}
 		tr.LazyPrintf("searchableRepos: took %s to add %d repos", time.Since(start), len(searchableRepos))
 
-		// Search all default repos since indexed search is fast.
+		// Search all indexable repos since indexed search is fast.
 		if len(searchableRepos) > limit {
 			limit = len(searchableRepos)
 		}
@@ -159,8 +159,8 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			OnlyForks:    op.OnlyForks,
 			NoArchived:   op.NoArchived,
 			OnlyArchived: op.OnlyArchived,
-			NoPrivate:    op.OnlyPublic,
-			OnlyPrivate:  op.OnlyPrivate,
+			NoPrivate:    op.Visibility == query.Public,
+			OnlyPrivate:  op.Visibility == query.Private,
 		}
 
 		if searchContext.ID != 0 {
@@ -210,6 +210,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			return Resolved{}, err
 		}
 	}
+	repoSet := make(map[api.RepoID]types.RepoName, len(repos))
 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
@@ -277,10 +278,10 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 				if errors.Is(err, context.DeadlineExceeded) {
 					return Resolved{}, context.DeadlineExceeded
 				}
-				if errors.As(err, &git.BadCommitError{}) {
+				if errors.HasType(err, git.BadCommitError{}) {
 					return Resolved{}, err
 				}
-				if gitserver.IsRevisionNotFound(err) {
+				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -298,6 +299,7 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 			repoRev.Revs = append(repoRev.Revs, rev)
 		}
 		repoRevs = append(repoRevs, &repoRev)
+		repoSet[repoRev.Repo.ID] = repoRev.Repo
 	}
 
 	tr.LazyPrintf("Associate/validate revs - done")
@@ -311,105 +313,11 @@ func (r *Resolver) Resolve(ctx context.Context, op Options) (Resolved, error) {
 
 	return Resolved{
 		RepoRevs:        repoRevs,
+		RepoSet:         repoSet,
 		MissingRepoRevs: missingRepoRevs,
 		ExcludedRepos:   excluded,
 		OverLimit:       overLimit,
 	}, err
-}
-
-type Options struct {
-	RepoFilters        []string
-	MinusRepoFilters   []string
-	RepoGroupFilters   []string
-	SearchContextSpec  string
-	VersionContextName string
-	UserSettings       *schema.Settings
-	NoForks            bool
-	OnlyForks          bool
-	NoArchived         bool
-	OnlyArchived       bool
-	CommitAfter        string
-	OnlyPrivate        bool
-	OnlyPublic         bool
-	Ranked             bool // Return results ordered by rank
-	Limit              int
-	Query              query.Q
-}
-
-func (op *Options) String() string {
-	var b strings.Builder
-	if len(op.RepoFilters) == 0 {
-		b.WriteString("r=[]")
-	}
-	for i, r := range op.RepoFilters {
-		if i != 0 {
-			b.WriteByte(' ')
-		}
-		b.WriteString(strconv.Quote(r))
-	}
-
-	if len(op.MinusRepoFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if len(op.RepoGroupFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
-	}
-	if op.VersionContextName != "" {
-		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.VersionContextName)
-	}
-	if op.CommitAfter != "" {
-		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)
-	}
-
-	if op.NoForks {
-		b.WriteString(" NoForks")
-	}
-	if op.OnlyForks {
-		b.WriteString(" OnlyForks")
-	}
-	if op.NoArchived {
-		b.WriteString(" NoArchived")
-	}
-	if op.OnlyArchived {
-		b.WriteString(" OnlyArchived")
-	}
-	if op.OnlyPrivate {
-		b.WriteString(" OnlyPrivate")
-	}
-	if op.OnlyPublic {
-		b.WriteString(" OnlyPublic")
-	}
-
-	return b.String()
-}
-
-func SearchLimits() schema.SearchLimits {
-	// Our configuration reader does not set defaults from schema. So we rely
-	// on Go default values to mean defaults.
-	withDefault := func(x *int, def int) {
-		if *x <= 0 {
-			*x = def
-		}
-	}
-
-	c := conf.Get()
-
-	var limits schema.SearchLimits
-	if c.SearchLimits != nil {
-		limits = *c.SearchLimits
-	}
-
-	// If MaxRepos unset use deprecated value
-	if limits.MaxRepos == 0 {
-		limits.MaxRepos = c.MaxReposToSearch
-	}
-
-	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
-	withDefault(&limits.CommitDiffMaxRepos, 50)
-	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
-	withDefault(&limits.MaxTimeoutSeconds, 60)
-
-	return limits
 }
 
 // ExactlyOneRepo returns whether exactly one repo: literal field is specified and
@@ -617,7 +525,7 @@ type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
 
 // searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, z *searchbackend.Zoekt, excludePatterns []string) (_ []types.RepoName, err error) {
+func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "searchableRepositories", "")
 	defer func() {
 		tr.SetError(err)
@@ -644,25 +552,7 @@ func searchableRepositories(ctx context.Context, getRawSearchableRepos searchabl
 		tr.LazyPrintf("remove excluded repos - done")
 	}
 
-	// Ask Zoekt which repos it has indexed.
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	set, err := z.ListAll(ctx)
-	if err != nil {
-		return nil, err
-	}
-	tr.LazyPrintf("zoekt.ListAll - done")
-
-	// In place filtering of searchableRepos to only include names from set.
-	repos := searchableRepos[:0]
-	for _, r := range searchableRepos {
-		if _, ok := set[string(r.Name)]; ok {
-			repos = append(repos, r)
-		}
-	}
-	tr.LazyPrintf("filtering - done")
-
-	return repos, nil
+	return searchableRepos, nil
 }
 
 func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.RepositoryRevisions, after string) ([]*search.RepositoryRevisions, error) {
@@ -693,7 +583,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if gitserver.IsRevisionNotFound(err) || vcs.IsRepoNotExist(err) {
+					if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
 						continue
 					}
 
@@ -756,7 +646,7 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		} else {
 			status |= search.RepoStatusMissing
 		}
-	} else if gitserver.IsRevisionNotFound(searchErr) {
+	} else if errors.HasType(searchErr, &gitserver.RevisionNotFoundError{}) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

@@ -43,6 +43,7 @@ type ContactProperties struct {
 	LatestPing      int64  `json:"latest_ping"`
 	AnonymousUserID string `json:"anonymous_user_id"`
 	FirstSourceURL  string `json:"first_source_url"`
+	DatabaseID      int32  `json:"database_id"`
 }
 
 // ContactResponse represents HubSpot user properties returned
@@ -61,6 +62,7 @@ func newAPIValues(h *ContactProperties) *apiProperties {
 	apiProps.set("latest_ping", h.LatestPing)
 	apiProps.set("anonymous_user_id", h.AnonymousUserID)
 	apiProps.set("first_source_url", h.FirstSourceURL)
+	apiProps.set("database_id", h.DatabaseID)
 	return apiProps
 }
 

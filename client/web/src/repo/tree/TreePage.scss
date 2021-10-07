@@ -1,5 +1,4 @@
 @import '../../search/input/SearchButton';
-@import '../../insights/components/insights-view-grid/InsightsViewGrid';
 @import './TreeEntriesSection';
 
 .tree-page {
@@ -37,6 +36,10 @@
                 margin-top: -2px;
             }
         }
+    }
+
+    .batch-change-badge {
+        top: 0;
     }
 
     .git-commit-node {

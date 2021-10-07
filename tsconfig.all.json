@@ -10,7 +10,7 @@
     { "path": "client/web/src/regression" },
     { "path": "client/web/src/integration" },
     { "path": "client/browser" },
-    { "path": "client/browser/src/end-to-end" },
+    { "path": "client/browser/src/integration" },
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
     { "path": "client/storybook" },

@@ -1,3 +1,5 @@
+import { SearchPatternType } from 'src/graphql-operations'
+
 import { FILTERS, FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
@@ -67,6 +69,14 @@ export function filterExists(query: string, filter: FilterType): boolean {
         scannedQuery.type === 'success' &&
         scannedQuery.term.some(token => token.type === 'filter' && token.field.value.toLowerCase() === filter)
     )
+}
+
+/**
+ * Returns true if the query contains a pattern.
+ */
+export const containsLiteralOrPattern = (query: string, searchPatternType?: SearchPatternType): boolean => {
+    const result = scanSearchQuery(query, undefined, searchPatternType)
+    return result.type === 'success' && result.term.some(term => term.type === 'literal' || term.type === 'pattern')
 }
 
 /**

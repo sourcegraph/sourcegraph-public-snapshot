@@ -1,0 +1,16 @@
+.content {
+    opacity: 0.7;
+}
+.num,
+.content {
+    padding-top: 0.325rem;
+    padding-bottom: 0.325rem;
+}
+.num {
+    background-color: var(--code-bg);
+
+    /* In the split mode version this selector adds the divider effect between table data cells. */
+    &:nth-child(3) {
+        border-left: 1px solid var(--border-color);
+    }
+}

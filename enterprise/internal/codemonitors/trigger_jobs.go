@@ -142,7 +142,7 @@ type TriggerJobs struct {
 
 func ScanTriggerJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	records, err := scanTriggerJobs(rows, err)
-	if err != nil {
+	if err != nil || len(records) == 0 {
 		return &TriggerJobs{}, false, err
 	}
 	return records[0], true, nil

@@ -9,11 +9,11 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/authz/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -48,6 +48,7 @@ func ProvidersFromConfig(
 	}()
 
 	opt := database.ExternalServicesListOptions{
+		NoNamespace: true,
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,
@@ -77,6 +78,10 @@ func ProvidersFromConfig(
 		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
 
 		for _, svc := range svcs {
+			if svc.CloudDefault { // Only public repos in CloudDefault services
+				continue
+			}
+
 			cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 			if err != nil {
 				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err))
@@ -117,7 +122,7 @@ func ProvidersFromConfig(
 	}
 
 	if len(gitHubConns) > 0 {
-		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns)
+		ghProviders, ghProblems, ghWarnings := github.NewAuthzProviders(gitHubConns, cfg.AuthProviders)
 		providers = append(providers, ghProviders...)
 		seriousProblems = append(seriousProblems, ghProblems...)
 		warnings = append(warnings, ghWarnings...)

@@ -87,3 +87,39 @@ var (
 		}
 	}
 )
+
+type ContainerMonitoringGroupOptions struct {
+	// ContainerMissing transforms the default observable used to construct the container missing panel.
+	ContainerMissing ObservableOption
+
+	// CPUUsage transforms the default observable used to construct the CPU usage panel.
+	CPUUsage ObservableOption
+
+	// MemoryUsage transforms the default observable used to construct the memory usage panel.
+	MemoryUsage ObservableOption
+
+	// IOUsage transforms the default observable used to construct the IO usage panel.
+	IOUsage ObservableOption
+}
+
+// NewContainerMonitoringGroup creates a group containing panels displaying
+// container monitoring metrics - cpu, memory, io resource usage as well as
+// a container missing alert - for the given container.
+func NewContainerMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *ContainerMonitoringGroupOptions) monitoring.Group {
+	if options == nil {
+		options = &ContainerMonitoringGroupOptions{}
+	}
+
+	return monitoring.Group{
+		Title:  TitleContainerMonitoring,
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				options.ContainerMissing.safeApply(ContainerMissing(containerName, owner)).Observable(),
+				options.CPUUsage.safeApply(ContainerCPUUsage(containerName, owner)).Observable(),
+				options.MemoryUsage.safeApply(ContainerMemoryUsage(containerName, owner)).Observable(),
+				options.IOUsage.safeApply(ContainerIOUsage(containerName, owner)).Observable(),
+			},
+		},
+	}
+}

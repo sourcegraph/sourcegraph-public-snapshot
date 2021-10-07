@@ -6,9 +6,6 @@ import (
 	"database/sql/driver"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -68,8 +65,8 @@ type TxBeginner interface {
 }
 
 func IsPostgresError(err error, codename string) bool {
-	e, ok := errors.Cause(err).(*pgconn.PgError)
-	return ok && e.Code == codename
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == codename
 }
 
 // NullTime represents a time.Time that may be null. nullTime implements the
@@ -138,7 +135,7 @@ func (n *NullInt32) Scan(value interface{}) error {
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf("value is not int64: %T", value)
+		return errors.Errorf("value is not int64: %T", value)
 	}
 	return nil
 }
@@ -174,7 +171,7 @@ func (n *NullInt64) Scan(value interface{}) error {
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf("value is not int64: %T", value)
+		return errors.Errorf("value is not int64: %T", value)
 	}
 	return nil
 }
@@ -210,7 +207,7 @@ func (n *NullInt) Scan(value interface{}) error {
 	case nil:
 		return nil
 	default:
-		return fmt.Errorf("value is not int: %T", value)
+		return errors.Errorf("value is not int: %T", value)
 	}
 	return nil
 }
@@ -240,7 +237,7 @@ func (n *JSONInt64Set) Scan(value interface{}) error {
 			return err
 		}
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	if *n.Set == nil {
@@ -281,7 +278,7 @@ func (n *NullJSONRawMessage) Scan(value interface{}) error {
 		n.Raw = make([]byte, len(value))
 		copy(n.Raw, value)
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	return nil
@@ -303,7 +300,7 @@ func (c *CommitBytea) Scan(value interface{}) error {
 	case []byte:
 		*c = CommitBytea(hex.EncodeToString(value))
 	default:
-		return fmt.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("value is not []byte: %T", value)
 	}
 
 	return nil
@@ -312,63 +309,6 @@ func (c *CommitBytea) Scan(value interface{}) error {
 // Value implements the driver Valuer interface.
 func (c CommitBytea) Value() (driver.Value, error) {
 	return hex.DecodeString(string(c))
-}
-
-func PostgresDSN(prefix, currentUser string, getenv func(string) string) string {
-	if prefix != "" {
-		prefix = fmt.Sprintf("%s_", strings.ToUpper(prefix))
-	}
-
-	env := func(name string) string {
-		return getenv(prefix + name)
-	}
-
-	// PGDATASOURCE is a sourcegraph specific variable for just setting the DSN
-	if dsn := env("PGDATASOURCE"); dsn != "" {
-		return dsn
-	}
-
-	// TODO match logic in lib/pq
-	// https://sourcegraph.com/github.com/lib/pq@d6156e141ac6c06345c7c73f450987a9ed4b751f/-/blob/connector.go#L42
-	dsn := &url.URL{
-		Scheme: "postgres",
-		Host:   "127.0.0.1:5432",
-	}
-
-	// Username preference: PGUSER, $USER, postgres
-	username := "postgres"
-	if currentUser != "" {
-		username = currentUser
-	}
-	if user := env("PGUSER"); user != "" {
-		username = user
-	}
-
-	if password := env("PGPASSWORD"); password != "" {
-		dsn.User = url.UserPassword(username, password)
-	} else {
-		dsn.User = url.User(username)
-	}
-
-	if host := env("PGHOST"); host != "" {
-		dsn.Host = host
-	}
-
-	if port := env("PGPORT"); port != "" {
-		dsn.Host += ":" + port
-	}
-
-	if db := env("PGDATABASE"); db != "" {
-		dsn.Path = db
-	}
-
-	if sslmode := env("PGSSLMODE"); sslmode != "" {
-		qry := dsn.Query()
-		qry.Set("sslmode", sslmode)
-		dsn.RawQuery = qry.Encode()
-	}
-
-	return dsn.String()
 }
 
 // Scanner captures the Scan method of sql.Rows and sql.Row

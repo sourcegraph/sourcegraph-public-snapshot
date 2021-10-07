@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"runtime"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 
 	"github.com/cockroachdb/errors"
 )
@@ -131,12 +130,20 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "Encode")
 	}
 
-	url, err := gqlURL("Search")
+	url, err := gqlURL("QueryRunnerSearch")
 	if err != nil {
 		return nil, errors.Wrap(err, "constructing frontend URL")
 	}
 
-	resp, err := ctxhttp.Post(ctx, nil, url, "application/json", &buf)
+	req, err := http.NewRequest("POST", url, &buf)
+	if err != nil {
+		return nil, errors.Wrap(err, "Post")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "sourcegraph/query-runner")
+
+	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.Wrap(err, "Post")
 	}
@@ -147,7 +154,7 @@ func search(ctx context.Context, query string) (*gqlSearchResponse, error) {
 		return nil, errors.Wrap(err, "Decode")
 	}
 	if len(res.Errors) > 0 {
-		return res, fmt.Errorf("graphql: errors: %v", res.Errors)
+		return res, errors.Errorf("graphql: errors: %v", res.Errors)
 	}
 	return res, nil
 }
@@ -174,7 +181,7 @@ func extractTime(result interface{}) (t *time.Time, err error) {
 			buf = buf[:runtime.Stack(buf, false)]
 			log.Printf("failed to extract time from search result: %v\n%s", r, buf)
 		}
-		err = fmt.Errorf("failed to extract time from search result")
+		err = errors.Errorf("failed to extract time from search result")
 	}()
 
 	m := result.(map[string]interface{})
@@ -193,6 +200,6 @@ func extractTime(result interface{}) (t *time.Time, err error) {
 		}
 		return &t, nil
 	default:
-		return nil, fmt.Errorf("unexpected result __typename %q", typeName)
+		return nil, errors.Errorf("unexpected result __typename %q", typeName)
 	}
 }

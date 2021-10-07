@@ -2,15 +2,16 @@ import 'focus-visible'
 
 import { ApolloProvider } from '@apollo/client'
 import { ShortcutProvider } from '@slimsag/react-shortcuts'
+import { createBrowserHistory } from 'history'
 import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
-import { hot } from 'react-hot-loader/root'
-import { Route } from 'react-router'
-import { BrowserRouter } from 'react-router-dom'
+import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, startWith, switchMap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
+import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 import { setLinkComponent } from '@sourcegraph/shared/src/components/Link'
@@ -19,6 +20,8 @@ import {
     createController as createExtensionsController,
 } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { GraphQLClient } from '@sourcegraph/shared/src/graphql/graphql'
+import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { Notifications } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -26,14 +29,11 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
-import {
-    REDESIGN_CLASS_NAME,
-    getIsRedesignEnabled,
-    REDESIGN_TOGGLE_KEY,
-} from '@sourcegraph/shared/src/util/useRedesignToggle'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
-import { client } from './backend/graphql'
+import { getWebGraphQLClient } from './backend/graphql'
+import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
+import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { queryExternalServices } from './components/externalServices/backend'
 import { FeedbackText } from './components/FeedbackText'
@@ -44,7 +44,9 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
-import { logInsightMetrics } from './insights'
+import { ExternalServicesResult, UserRepositoriesResult } from './graphql-operations'
+import { logInsightMetrics } from './insights/analytics'
+import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
 import { updateUserSessionStores } from './marketing/util'
@@ -64,6 +66,7 @@ import {
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
+    SearchContextProps,
 } from './search'
 import {
     fetchSavedSearches,
@@ -77,13 +80,14 @@ import {
     updateSearchContext,
     deleteSearchContext,
     getUserSearchContextNamespaces,
+    fetchSearchContextBySpec,
 } from './search/backend'
-import { QueryState } from './search/helpers'
+import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
+import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
-import { ThemePreference } from './theme'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -91,6 +95,7 @@ import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import { globbingEnabledFromSettings } from './util/globbing'
+import { observeLocation } from './util/location'
 import {
     SITE_SUBJECT_NO_ADMIN,
     viewerSubjectFromSettings,
@@ -99,7 +104,12 @@ import {
     experimentalFeaturesFromSettings,
 } from './util/settings'
 
-export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
+export interface SourcegraphWebAppProps
+    extends CodeIntelligenceProps,
+        CodeInsightsProps,
+        Pick<BatchChangesProps, 'batchChangesEnabled'>,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        KeyboardShortcutsProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
     extensionAreaHeaderNavItems: readonly ExtensionAreaHeaderNavItem[]
     extensionsAreaRoutes: readonly ExtensionsAreaRoute[]
@@ -119,30 +129,23 @@ export interface SourcegraphWebAppProps extends KeyboardShortcutsProps {
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: readonly LayoutRouteProps<any>[]
-    showBatchChanges: boolean
 }
 
 interface SourcegraphWebAppState extends SettingsCascadeProps {
     error?: Error
 
-    /** The currently authenticated user (or null if the viewer is anonymous). */
+    /**
+     * The currently authenticated user:
+     * - `undefined` until `CurrentAuthState` query completion.
+     * - `AuthenticatedUser` if the viewer is authenticated.
+     * - `null` if the viewer is anonymous.
+     */
     authenticatedUser?: AuthenticatedUser | null
 
+    /** GraphQL client initialized asynchronously to restore persisted cache. */
+    graphqlClient?: GraphQLClient
+
     viewerSubject: LayoutProps['viewerSubject']
-
-    /** The user's preference for the theme (light, dark or following system theme) */
-    themePreference: ThemePreference
-
-    /**
-     * Whether the OS uses light theme, synced from a media query.
-     * If the browser/OS does not this, will default to true.
-     */
-    systemIsLightTheme: boolean
-
-    /**
-     * The current search query in the navbar.
-     */
-    navbarSearchQueryState: QueryState
 
     /**
      * The current parsed search query, with all UI-configurable parameters
@@ -175,8 +178,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      */
     previousVersionContext: string | null
 
-    showRepogroupHomepage: boolean
-
     showOnboardingTour: boolean
 
     showEnterpriseHomePanels: boolean
@@ -200,7 +201,12 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showMultilineSearchConsole: boolean
 
     /**
-     * Whether we show the mulitiline editor at /search/query-builder
+     * Whether we show the search notebook.
+     */
+    showSearchNotebook: boolean
+
+    /**
+     * Whether we show the multiline editor at /search/query-builder
      */
     showQueryBuilder: boolean
 
@@ -213,11 +219,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the API docs feature flag is enabled.
      */
     enableAPIDocs: boolean
-
-    /**
-     * Whether the design refresh toggle is enabled.
-     */
-    designRefreshToggleEnabled: boolean
 
     /**
      * Evaluated feature flags for the current viewer
@@ -233,46 +234,44 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-const LIGHT_THEME_LOCAL_STORAGE_KEY = 'light-theme'
 const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
-
-/** Reads the stored theme preference from localStorage */
-const readStoredThemePreference = (): ThemePreference => {
-    const value = localStorage.getItem(LIGHT_THEME_LOCAL_STORAGE_KEY)
-    // Handle both old and new preference values
-    switch (value) {
-        case 'true':
-        case 'light':
-            return ThemePreference.Light
-        case 'false':
-        case 'dark':
-            return ThemePreference.Dark
-        default:
-            return ThemePreference.System
-    }
-}
 
 setLinkComponent(RouterLinkOrAnchor)
 
 const LayoutWithActivation = window.context.sourcegraphDotComMode ? Layout : withActivation(Layout)
 
+const history = createBrowserHistory()
+
 /**
  * The root component.
- *
- * This is the non-hot-reload component. It is wrapped in `hot(...)` below to make it
- * hot-reloadable in development.
  */
-class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
+export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, SourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
     private readonly userRepositoriesUpdates = new Subject<void>()
-    private readonly darkThemeMediaList = window.matchMedia('(prefers-color-scheme: dark)')
     private readonly platformContext: PlatformContext = createPlatformContext()
     private readonly extensionsController: ExtensionsController = createExtensionsController(this.platformContext)
 
     constructor(props: SourcegraphWebAppProps) {
         super(props)
         this.subscriptions.add(this.extensionsController)
+
+        // Preload extensions whenever user enabled extensions or the viewed language changes.
+        this.subscriptions.add(
+            combineLatest([
+                getEnabledExtensions(this.platformContext),
+                observeLocation(history).pipe(
+                    startWith(location),
+                    map(location => getModeFromPath(location.pathname)),
+                    distinctUntilChanged()
+                ),
+            ]).subscribe(([extensions, languageID]) => {
+                preloadExtensions({
+                    extensions,
+                    languages: new Set([languageID]),
+                })
+            })
+        )
 
         const parsedSearchURL = parseSearchURL(window.location.search)
         // The patternType in the URL query parameter. If none is provided, default to literal.
@@ -288,9 +287,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             : undefined
 
         this.state = {
-            themePreference: readStoredThemePreference(),
-            systemIsLightTheme: !this.darkThemeMediaList.matches,
-            navbarSearchQueryState: { query: '' },
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: SITE_SUBJECT_NO_ADMIN,
             parsedSearchQuery: parsedSearchURL.query || '',
@@ -299,7 +295,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             versionContext: resolvedVersionContext,
             availableVersionContexts,
             previousVersionContext,
-            showRepogroupHomepage: false,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -310,22 +305,15 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             showEnterpriseHomePanels: false,
             globbing: false,
             showMultilineSearchConsole: false,
+            showSearchNotebook: false,
             showQueryBuilder: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
             // eslint-disable-next-line react/no-unused-state
             enableAPIDocs: false,
-            designRefreshToggleEnabled: false,
             featureFlags: new Map<FeatureFlagName, boolean>(),
         }
-    }
-
-    /** Returns whether Sourcegraph should be in light theme */
-    private isLightTheme(): boolean {
-        return this.state.themePreference === 'system'
-            ? this.state.systemIsLightTheme
-            : this.state.themePreference === 'light'
     }
 
     public componentDidMount(): void {
@@ -333,8 +321,18 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
         document.documentElement.classList.add('theme')
 
+        getWebGraphQLClient()
+            .then(graphqlClient => this.setState({ graphqlClient }))
+            .catch(error => {
+                console.error('Error initalizing GraphQL client', error)
+            })
+
         this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser.pipe(startWith(null))]).subscribe(
+            combineLatest([
+                from(this.platformContext.settings),
+                // Start with `undefined` while we don't know if the viewer is authenticated or not.
+                authenticatedUser.pipe(startWith(undefined)),
+            ]).subscribe(
                 ([settingsCascade, authenticatedUser]) => {
                     this.setState(state => ({
                         settingsCascade,
@@ -359,16 +357,9 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                 .pipe(bufferCount(2, 1))
                 .subscribe(([[oldSettings], [newSettings, authUser]]) => {
                     if (authUser) {
-                        logInsightMetrics(oldSettings, newSettings, authUser, eventLogger)
+                        logInsightMetrics(oldSettings, newSettings, eventLogger)
                     }
                 })
-        )
-
-        // React to OS theme change
-        this.subscriptions.add(
-            fromEvent<MediaQueryListEvent>(this.darkThemeMediaList, 'change').subscribe(event => {
-                this.setState({ systemIsLightTheme: !event.matches })
-            })
         )
 
         this.subscriptions.add(
@@ -377,16 +368,28 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
                     switchMap(([, authenticatedUser]) =>
                         authenticatedUser
                             ? combineLatest([
-                                  listUserRepositories({ id: authenticatedUser.id, first: 1 }),
+                                  listUserRepositories({
+                                      id: authenticatedUser.id,
+                                      first: window.context.sourcegraphDotComMode ? undefined : 1,
+                                  }),
                                   queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
+                                  [authenticatedUser],
                               ])
                             : of(null)
                     ),
+                    tap(result => {
+                        if (!isErrorLike(result) && result !== null && window.context.sourcegraphDotComMode) {
+                            // Set user properties for Cloud analytics.
+                            const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
+                            this.setUserProperties(userRepositoriesResult, externalServicesResult, authenticatedUser)
+                        }
+                    }),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
+
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
@@ -451,20 +454,6 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
 
     public componentWillUnmount(): void {
         this.subscriptions.unsubscribe()
-        document.documentElement.classList.remove('theme', 'theme-light', 'theme-dark')
-    }
-
-    public componentDidUpdate(): void {
-        localStorage.setItem(LIGHT_THEME_LOCAL_STORAGE_KEY, this.state.themePreference)
-        document.documentElement.classList.toggle('theme-light', this.isLightTheme())
-        document.documentElement.classList.toggle('theme-dark', !this.isLightTheme())
-
-        // If the refresh toggle is enabled and a user hasn't modified the toggle before, default the value to true
-        if (this.state.designRefreshToggleEnabled && localStorage.getItem(REDESIGN_TOGGLE_KEY) === null) {
-            localStorage.setItem(REDESIGN_TOGGLE_KEY, 'true')
-        }
-
-        document.documentElement.classList.toggle(REDESIGN_CLASS_NAME, getIsRedesignEnabled())
     }
 
     public render(): React.ReactFragment | null {
@@ -492,107 +481,108 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser } = this.state
-        if (authenticatedUser === undefined) {
+        const { authenticatedUser, graphqlClient } = this.state
+        if (authenticatedUser === undefined || graphqlClient === undefined) {
             return null
         }
 
         const { children, ...props } = this.props
 
         return (
-            <ApolloProvider client={client}>
+            <ApolloProvider client={graphqlClient}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <BrowserRouter key={0}>
-                            <Route
-                                path="/"
-                                render={routeComponentProps => (
-                                    <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
-                                        <LayoutWithActivation
-                                            {...props}
-                                            {...routeComponentProps}
-                                            authenticatedUser={authenticatedUser}
-                                            viewerSubject={this.state.viewerSubject}
-                                            settingsCascade={this.state.settingsCascade}
-                                            showBatchChanges={this.props.showBatchChanges}
-                                            // Theme
-                                            isLightTheme={this.isLightTheme()}
-                                            themePreference={this.state.themePreference}
-                                            onThemePreferenceChange={this.onThemePreferenceChange}
-                                            // Search query
-                                            navbarSearchQueryState={this.state.navbarSearchQueryState}
-                                            onNavbarQueryChange={this.onNavbarQueryChange}
-                                            fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                                            parsedSearchQuery={this.state.parsedSearchQuery}
-                                            setParsedSearchQuery={this.setParsedSearchQuery}
-                                            patternType={this.state.searchPatternType}
-                                            setPatternType={this.setPatternType}
-                                            caseSensitive={this.state.searchCaseSensitivity}
-                                            setCaseSensitivity={this.setCaseSensitivity}
-                                            versionContext={this.state.versionContext}
-                                            setVersionContext={this.setVersionContext}
-                                            availableVersionContexts={this.state.availableVersionContexts}
-                                            previousVersionContext={this.state.previousVersionContext}
-                                            // Extensions
-                                            platformContext={this.platformContext}
-                                            extensionsController={this.extensionsController}
-                                            telemetryService={eventLogger}
-                                            isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                                            showRepogroupHomepage={this.state.showRepogroupHomepage}
-                                            showOnboardingTour={this.state.showOnboardingTour}
-                                            showSearchContext={this.state.showSearchContext}
-                                            hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                            hasUserAddedExternalServices={this.state.hasUserAddedExternalServices}
-                                            showSearchContextManagement={this.state.showSearchContextManagement}
-                                            selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
-                                            setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
-                                            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
-                                            fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
-                                            fetchSearchContexts={fetchSearchContexts}
-                                            fetchSearchContext={fetchSearchContext}
-                                            createSearchContext={createSearchContext}
-                                            updateSearchContext={updateSearchContext}
-                                            deleteSearchContext={deleteSearchContext}
-                                            convertVersionContextToSearchContext={convertVersionContextToSearchContext}
-                                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
-                                            defaultSearchContextSpec={this.state.defaultSearchContextSpec}
-                                            showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
-                                            globbing={this.state.globbing}
-                                            showMultilineSearchConsole={this.state.showMultilineSearchConsole}
-                                            showQueryBuilder={this.state.showQueryBuilder}
-                                            enableCodeMonitoring={this.state.enableCodeMonitoring}
-                                            fetchSavedSearches={fetchSavedSearches}
-                                            fetchRecentSearches={fetchRecentSearches}
-                                            fetchRecentFileViews={fetchRecentFileViews}
-                                            streamSearch={aggregateStreamingSearch}
-                                            onUserExternalServicesOrRepositoriesUpdate={
-                                                this.onUserExternalServicesOrRepositoriesUpdate
-                                            }
-                                            onSyncedPublicRepositoriesUpdate={this.onSyncedPublicRepositoriesUpdate}
-                                            featureFlags={this.state.featureFlags}
-                                        />
-                                    </CodeHostScopeProvider>
-                                )}
-                            />
-                        </BrowserRouter>
-                        <Tooltip key={1} />
-                        <Notifications
-                            key={2}
-                            extensionsController={this.extensionsController}
-                            notificationClassNames={notificationClassNames}
-                        />
+                        <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
+                            <SearchResultsCacheProvider>
+                                <Router history={history} key={0}>
+                                    <Route
+                                        path="/"
+                                        render={routeComponentProps => (
+                                            <CodeHostScopeProvider authenticatedUser={authenticatedUser}>
+                                                <LayoutWithActivation
+                                                    {...props}
+                                                    {...routeComponentProps}
+                                                    authenticatedUser={authenticatedUser}
+                                                    viewerSubject={this.state.viewerSubject}
+                                                    settingsCascade={this.state.settingsCascade}
+                                                    batchChangesEnabled={this.props.batchChangesEnabled}
+                                                    batchChangesExecutionEnabled={isBatchChangesExecutionEnabled(
+                                                        this.state.settingsCascade
+                                                    )}
+                                                    // Search query
+                                                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                                                    parsedSearchQuery={this.state.parsedSearchQuery}
+                                                    setParsedSearchQuery={this.setParsedSearchQuery}
+                                                    patternType={this.state.searchPatternType}
+                                                    setPatternType={this.setPatternType}
+                                                    caseSensitive={this.state.searchCaseSensitivity}
+                                                    setCaseSensitivity={this.setCaseSensitivity}
+                                                    versionContext={this.state.versionContext}
+                                                    setVersionContext={this.setVersionContext}
+                                                    availableVersionContexts={this.state.availableVersionContexts}
+                                                    previousVersionContext={this.state.previousVersionContext}
+                                                    // Extensions
+                                                    platformContext={this.platformContext}
+                                                    extensionsController={this.extensionsController}
+                                                    telemetryService={eventLogger}
+                                                    isSourcegraphDotCom={window.context.sourcegraphDotComMode}
+                                                    showOnboardingTour={this.state.showOnboardingTour}
+                                                    searchContextsEnabled={this.props.searchContextsEnabled}
+                                                    showSearchContext={this.state.showSearchContext}
+                                                    hasUserAddedRepositories={this.hasUserAddedRepositories()}
+                                                    hasUserAddedExternalServices={
+                                                        this.state.hasUserAddedExternalServices
+                                                    }
+                                                    showSearchContextManagement={this.state.showSearchContextManagement}
+                                                    selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
+                                                    setSelectedSearchContextSpec={this.setSelectedSearchContextSpec}
+                                                    getUserSearchContextNamespaces={getUserSearchContextNamespaces}
+                                                    fetchAutoDefinedSearchContexts={fetchAutoDefinedSearchContexts}
+                                                    fetchSearchContexts={fetchSearchContexts}
+                                                    fetchSearchContextBySpec={fetchSearchContextBySpec}
+                                                    fetchSearchContext={fetchSearchContext}
+                                                    createSearchContext={createSearchContext}
+                                                    updateSearchContext={updateSearchContext}
+                                                    deleteSearchContext={deleteSearchContext}
+                                                    convertVersionContextToSearchContext={
+                                                        convertVersionContextToSearchContext
+                                                    }
+                                                    isSearchContextSpecAvailable={isSearchContextSpecAvailable}
+                                                    defaultSearchContextSpec={this.state.defaultSearchContextSpec}
+                                                    showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
+                                                    globbing={this.state.globbing}
+                                                    showMultilineSearchConsole={this.state.showMultilineSearchConsole}
+                                                    showSearchNotebook={this.state.showSearchNotebook}
+                                                    showQueryBuilder={this.state.showQueryBuilder}
+                                                    enableCodeMonitoring={this.state.enableCodeMonitoring}
+                                                    fetchSavedSearches={fetchSavedSearches}
+                                                    fetchRecentSearches={fetchRecentSearches}
+                                                    fetchRecentFileViews={fetchRecentFileViews}
+                                                    streamSearch={aggregateStreamingSearch}
+                                                    onUserExternalServicesOrRepositoriesUpdate={
+                                                        this.onUserExternalServicesOrRepositoriesUpdate
+                                                    }
+                                                    onSyncedPublicRepositoriesUpdate={
+                                                        this.onSyncedPublicRepositoriesUpdate
+                                                    }
+                                                    featureFlags={this.state.featureFlags}
+                                                />
+                                            </CodeHostScopeProvider>
+                                        )}
+                                    />
+                                </Router>
+                                <Tooltip key={1} />
+                                <Notifications
+                                    key={2}
+                                    extensionsController={this.extensionsController}
+                                    notificationClassNames={notificationClassNames}
+                                />
+                            </SearchResultsCacheProvider>
+                        </TemporarySettingsProvider>
                     </ShortcutProvider>
                 </ErrorBoundary>
             </ApolloProvider>
         )
-    }
-
-    private onThemePreferenceChange = (themePreference: ThemePreference): void => {
-        this.setState({ themePreference })
-    }
-
-    private onNavbarQueryChange = (navbarSearchQueryState: QueryState): void => {
-        this.setState({ navbarSearchQueryState })
     }
 
     private setParsedSearchQuery = (query: string): void => {
@@ -651,6 +641,10 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         this.state.showSearchContext ? this.state.selectedSearchContextSpec : undefined
 
     private setSelectedSearchContextSpec = (spec: string): void => {
+        if (!this.props.searchContextsEnabled) {
+            return
+        }
+
         const { defaultSearchContextSpec } = this.state
         this.subscriptions.add(
             getAvailableSearchContextSpecOrDefault({ spec, defaultSpec: defaultSearchContextSpec }).subscribe(
@@ -666,10 +660,33 @@ class ColdSourcegraphWebApp extends React.Component<SourcegraphWebAppProps, Sour
         )
     }
 
+    private setUserProperties = (
+        reposResult: NonNullable<UserRepositoriesResult['node'] & { __typename: 'User' }>['repositories'],
+        extensionSvcResult: ExternalServicesResult['externalServices'],
+        authenticatedUser: AuthenticatedUser | null
+    ): void => {
+        const userProps: userProperties = {
+            hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
+            numberOfRepositoriesAdded: reposResult.totalCount ? reposResult.totalCount : 0,
+            numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
+            numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
+            hasActiveCodeHost: extensionSvcResult.totalCount > 0,
+            isSourcegraphTeammate: authenticatedUser?.email.endsWith('@sourcegraph.com') || false,
+        }
+        localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
+    }
+
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
 }
 
-export const SourcegraphWebApp = hot(ColdSourcegraphWebApp)
+interface userProperties {
+    hasAddedRepositories: boolean
+    numberOfRepositoriesAdded: number
+    numberOfPublicRepos: number
+    numberOfPrivateRepos: number
+    hasActiveCodeHost: boolean
+    isSourcegraphTeammate: boolean
+}

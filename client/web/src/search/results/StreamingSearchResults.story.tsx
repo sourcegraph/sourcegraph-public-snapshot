@@ -11,7 +11,7 @@ import {
     extensionsController,
     HIGHLIGHTED_FILE_LINES_LONG,
     MULTIPLE_SEARCH_RESULT,
-    REPO_MATCH_RESULT,
+    REPO_MATCH_RESULTS_WITH_METADATA,
 } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { AuthenticatedUser } from '../../auth'
@@ -25,7 +25,7 @@ history.replace({ search: 'q=r:golang/oauth2+test+f:travis' })
 
 const streamingSearchResult: AggregateStreamingSearchResults = {
     state: 'complete',
-    results: [...MULTIPLE_SEARCH_RESULT.results, REPO_MATCH_RESULT],
+    results: [...MULTIPLE_SEARCH_RESULT.results, ...REPO_MATCH_RESULTS_WITH_METADATA],
     filters: MULTIPLE_SEARCH_RESULT.filters,
     progress: {
         durationMs: 500,
@@ -47,12 +47,13 @@ const defaultProps: StreamingSearchResultsProps = {
 
     history,
     location: history.location,
-    authenticatedUser: null,
+    authenticatedUser: {
+        url: '/users/alice',
+        displayName: 'Alice',
+        username: 'alice',
+        email: 'alice@email.test',
+    } as AuthenticatedUser,
     isLightTheme: true,
-
-    navbarSearchQueryState: { query: '' },
-    onNavbarQueryChange: () => {},
-    isSourcegraphDotCom: false,
 
     settingsCascade: {
         subjects: null,
@@ -63,8 +64,9 @@ const defaultProps: StreamingSearchResultsProps = {
     streamSearch: () => of(streamingSearchResult),
 
     fetchHighlightedFileLineRanges: () => of(HIGHLIGHTED_FILE_LINES_LONG),
-    enableCodeMonitoring: false,
+    enableCodeMonitoring: true,
     featureFlags: EMPTY_FEATURE_FLAGS,
+    extensionViews: () => null,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({
@@ -72,6 +74,10 @@ const { add } = storiesOf('web/search/results/StreamingSearchResults', module).a
 })
 
 add('standard render', () => <WebStory>{() => <StreamingSearchResults {...defaultProps} />}</WebStory>)
+
+add('unauthenticated user standard render', () => (
+    <WebStory>{() => <StreamingSearchResults {...defaultProps} authenticatedUser={null} />}</WebStory>
+))
 
 add('no results', () => {
     const result: AggregateStreamingSearchResults = {
@@ -95,14 +101,6 @@ add('diffs tab selected, code monitoring enabled, user logged in', () => (
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis type:diff"
                 enableCodeMonitoring={true}
-                authenticatedUser={
-                    {
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    } as AuthenticatedUser
-                }
             />
         )}
     </WebStory>
@@ -115,14 +113,6 @@ add('code tab selected, code monitoring enabled, user logged in', () => (
                 {...defaultProps}
                 parsedSearchQuery="r:golang/oauth2 test f:travis"
                 enableCodeMonitoring={true}
-                authenticatedUser={
-                    {
-                        url: '/users/alice',
-                        displayName: 'Alice',
-                        username: 'alice',
-                        email: 'alice@email.test',
-                    } as AuthenticatedUser
-                }
             />
         )}
     </WebStory>
@@ -330,11 +320,7 @@ add('results with signup CTA', () => {
     return (
         <WebStory>
             {() => (
-                <StreamingSearchResults
-                    {...defaultProps}
-                    featureFlags={new Map([['w0-signup-optimisation', true]])}
-                    streamSearch={() => of(result)}
-                />
+                <StreamingSearchResults {...defaultProps} authenticatedUser={null} streamSearch={() => of(result)} />
             )}
         </WebStory>
     )

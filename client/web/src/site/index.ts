@@ -1,14 +1,3 @@
-import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { SiteFlagFields } from '../graphql-operations'
 
-export type SiteFlags = Pick<
-    GQL.ISite,
-    | 'needsRepositoryConfiguration'
-    | 'freeUsersExceeded'
-    | 'alerts'
-    | 'authProviders'
-    | 'disableBuiltInSearches'
-    | 'sendsEmailVerificationEmails'
-    | 'updateCheck'
-    | 'productSubscription'
-    | 'productVersion'
->
+export type SiteFlags = SiteFlagFields

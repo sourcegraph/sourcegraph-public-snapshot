@@ -6,10 +6,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/batch-change-utils/overridable"
+
+	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -17,19 +19,20 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 
 	t.Run("Create", func(t *testing.T) {
 		for i := 0; i < cap(batchSpecs); i++ {
+			falsy := overridable.FromBoolOrString(false)
 			c := &btypes.BatchSpec{
 				RawSpec: `{"name": "Foobar", "description": "My description"}`,
-				Spec: btypes.BatchSpecFields{
+				Spec: &batcheslib.BatchSpec{
 					Name:        "Foobar",
 					Description: "My description",
-					ChangesetTemplate: btypes.ChangesetTemplate{
+					ChangesetTemplate: &batcheslib.ChangesetTemplate{
 						Title:  "Hello there",
 						Body:   "This is the body",
 						Branch: "my-branch",
-						Commit: btypes.CommitTemplate{
+						Commit: batcheslib.ExpandedGitCommitDescription{
 							Message: "commit message",
 						},
-						Published: overridable.FromBoolOrString(false),
+						Published: &falsy,
 					},
 				},
 				UserID: int32(i + 1234),
@@ -75,7 +78,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	}
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountBatchSpecs(ctx)
+		count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -271,7 +274,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 				t.Fatal(err)
 			}
 
-			count, err := s.CountBatchSpecs(ctx)
+			count, err := s.CountBatchSpecs(ctx, CountBatchSpecsOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -292,11 +295,14 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			hasChangesetSpecs bool
 			wantDeleted       bool
 		}{
-			{hasBatchChange: false, hasChangesetSpecs: false, createdAt: underTTL, wantDeleted: false},
-			{hasBatchChange: false, hasChangesetSpecs: false, createdAt: overTTL, wantDeleted: true},
+			{createdAt: underTTL, wantDeleted: false},
+			{createdAt: overTTL, wantDeleted: true},
 
-			{hasBatchChange: false, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
-			{hasBatchChange: false, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+			{hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
+
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
+			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},
 
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: underTTL, wantDeleted: false},
 			{hasBatchChange: true, hasChangesetSpecs: true, createdAt: overTTL, wantDeleted: false},

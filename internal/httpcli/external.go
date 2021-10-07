@@ -8,16 +8,34 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type externalTransport struct {
-	base *http.Transport
-
+	base      *http.Transport
 	mu        sync.RWMutex
 	config    *schema.TlsExternal
 	effective *http.Transport
+}
+
+var tlsExternalConfig struct {
+	sync.RWMutex
+	*schema.TlsExternal
+}
+
+// SetTLSExternalConfig is called by the conf package whenever TLSExternalConfig changes.
+// This is needed to avoid circular imports.
+func SetTLSExternalConfig(c *schema.TlsExternal) {
+	tlsExternalConfig.Lock()
+	tlsExternalConfig.TlsExternal = c
+	tlsExternalConfig.Unlock()
+}
+
+// TLSExternalConfig returns the current value of the global TLS external config.
+func TLSExternalConfig() *schema.TlsExternal {
+	tlsExternalConfig.RLock()
+	defer tlsExternalConfig.RUnlock()
+	return tlsExternalConfig.TlsExternal
 }
 
 func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -25,20 +43,19 @@ func (t *externalTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	config, effective := t.config, t.effective
 	t.mu.RUnlock()
 
-	if current := conf.Get().ExperimentalFeatures.TlsExternal; current == nil {
+	if current := TLSExternalConfig(); current == nil {
 		return t.base.RoundTrip(r)
 	} else if !reflect.DeepEqual(config, current) {
-		effective = t.update()
+		effective = t.update(current)
 	}
 
 	return effective.RoundTrip(r)
 }
 
-func (t *externalTransport) update() *http.Transport {
+func (t *externalTransport) update(config *schema.TlsExternal) *http.Transport {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	config := conf.Get().ExperimentalFeatures.TlsExternal
 	effective := t.base.Clone()
 
 	if effective.TLSClientConfig == nil {
@@ -55,7 +72,11 @@ func (t *externalTransport) update() *http.Transport {
 		if effective.TLSClientConfig.RootCAs == nil {
 			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
 			if err != nil {
-				log15.Warn("httpcli external transport failed to load SystemCertPool. Communication with external HTTPS APIs may fail", "error", err)
+				log15.Warn(
+					"httpcli external transport failed to load SystemCertPool. Communication with external HTTPS APIs may fail",
+					"error",
+					err,
+				)
 				pool = x509.NewCertPool()
 			}
 			effective.TLSClientConfig.RootCAs = pool

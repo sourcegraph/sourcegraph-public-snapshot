@@ -6,11 +6,14 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // batchChangeColumns are used by the batch change related Store methods to insert,
@@ -48,7 +51,10 @@ var batchChangeInsertColumns = []*sqlf.Query{
 }
 
 // CreateBatchChange creates the given batch change.
-func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) error {
+func (s *Store) CreateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
+	ctx, endObservation := s.operations.createBatchChange.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
 	q := s.createBatchChangeQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) {
@@ -91,7 +97,12 @@ func (s *Store) createBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 }
 
 // UpdateBatchChange updates the given bach change.
-func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) error {
+func (s *Store) UpdateBatchChange(ctx context.Context, c *btypes.BatchChange) (err error) {
+	ctx, endObservation := s.operations.updateBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(c.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := s.updateBatchChangeQuery(c)
 
 	return s.query(ctx, q, func(sc scanner) (err error) { return scanBatchChange(c, sc) })
@@ -128,7 +139,12 @@ func (s *Store) updateBatchChangeQuery(c *btypes.BatchChange) *sqlf.Query {
 }
 
 // DeleteBatchChange deletes the batch change with the given ID.
-func (s *Store) DeleteBatchChange(ctx context.Context, id int64) error {
+func (s *Store) DeleteBatchChange(ctx context.Context, id int64) (err error) {
+	ctx, endObservation := s.operations.deleteBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return s.Store.Exec(ctx, sqlf.Sprintf(deleteBatchChangeQueryFmtstr, id))
 }
 
@@ -142,6 +158,7 @@ DELETE FROM batch_changes WHERE id = %s
 type CountBatchChangesOpts struct {
 	ChangesetID int64
 	State       btypes.BatchChangeState
+	RepoID      api.RepoID
 
 	InitialApplierID int32
 
@@ -150,8 +167,16 @@ type CountBatchChangesOpts struct {
 }
 
 // CountBatchChanges returns the number of batch changes in the database.
-func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpts) (int, error) {
-	return s.queryCount(ctx, countBatchChangesQuery(&opts))
+func (s *Store) CountBatchChanges(ctx context.Context, opts CountBatchChangesOpts) (count int, err error) {
+	ctx, endObservation := s.operations.countBatchChanges.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return 0, errors.Wrap(err, "CountBatchChanges generating authz query conds")
+	}
+
+	return s.queryCount(ctx, countBatchChangesQuery(&opts, repoAuthzConds))
 }
 
 var countBatchChangesQueryFmtstr = `
@@ -162,7 +187,7 @@ FROM batch_changes
 WHERE %s
 `
 
-func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
+func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -196,6 +221,19 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts) *sqlf.Query {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
 	}
 
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf(`EXISTS(
+			SELECT * FROM changesets
+			INNER JOIN repo ON changesets.repo_id = repo.id
+			WHERE
+				changesets.batch_change_ids ? batch_changes.id::TEXT AND
+				changesets.repo_id = %s AND
+				repo.deleted_at IS NULL AND
+				-- authz conditions:
+				%s
+		)`, opts.RepoID, repoAuthzConds))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -215,11 +253,16 @@ type GetBatchChangeOpts struct {
 }
 
 // GetBatchChange gets a batch change matching the given options.
-func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (*btypes.BatchChange, error) {
+func (s *Store) GetBatchChange(ctx context.Context, opts GetBatchChangeOpts) (bc *btypes.BatchChange, err error) {
+	ctx, endObservation := s.operations.getBatchChange.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(opts.ID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	q := getBatchChangeQuery(&opts)
 
 	var c btypes.BatchChange
-	err := s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc scanner) error {
 		return scanBatchChange(&c, sc)
 	})
 	if err != nil {
@@ -282,7 +325,12 @@ type GetBatchChangeDiffStatOpts struct {
 	BatchChangeID int64
 }
 
-func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (*diff.Stat, error) {
+func (s *Store) GetBatchChangeDiffStat(ctx context.Context, opts GetBatchChangeDiffStatOpts) (stat *diff.Stat, err error) {
+	ctx, endObservation := s.operations.getBatchChangeDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchChangeID", int(opts.BatchChangeID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, errors.Wrap(err, "GetBatchChangeDiffStat generating authz query conds")
@@ -320,6 +368,48 @@ func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sq
 	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.BatchChangeID)), authzConds)
 }
 
+func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *diff.Stat, err error) {
+	ctx, endObservation := s.operations.getRepoDiffStat.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repoID", int(repoID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	authzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, errors.Wrap(err, "GetRepoDiffStat generating authz query conds")
+	}
+	q := getRepoDiffStatQuery(int64(repoID), authzConds)
+
+	var diffStat diff.Stat
+	err = s.query(ctx, q, func(sc scanner) error {
+		return sc.Scan(&diffStat.Added, &diffStat.Changed, &diffStat.Deleted)
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &diffStat, nil
+}
+
+var getRepoDiffStatQueryFmtstr = `
+-- source: enterprise/internal/batches/store.go:GetRepoDiffStat
+SELECT
+	COALESCE(SUM(diff_stat_added), 0) AS added,
+	COALESCE(SUM(diff_stat_changed), 0) AS changed,
+	COALESCE(SUM(diff_stat_deleted), 0) AS deleted
+FROM changesets
+INNER JOIN repo ON changesets.repo_id = repo.id
+WHERE
+	changesets.repo_id = %s AND
+	repo.deleted_at IS NULL AND
+	-- authz conditions:
+	%s
+`
+
+func getRepoDiffStatQuery(repoID int64, authzConds *sqlf.Query) *sqlf.Query {
+	return sqlf.Sprintf(getRepoDiffStatQueryFmtstr, repoID, authzConds)
+}
+
 // ListBatchChangesOpts captures the query options needed for
 // listing batches.
 type ListBatchChangesOpts struct {
@@ -332,11 +422,20 @@ type ListBatchChangesOpts struct {
 
 	NamespaceUserID int32
 	NamespaceOrgID  int32
+
+	RepoID api.RepoID
 }
 
 // ListBatchChanges lists batch changes with the given filters.
 func (s *Store) ListBatchChanges(ctx context.Context, opts ListBatchChangesOpts) (cs []*btypes.BatchChange, next int64, err error) {
-	q := listBatchChangesQuery(&opts)
+	ctx, endObservation := s.operations.listBatchChanges.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	repoAuthzConds, err := database.AuthzQueryConds(ctx, s.Handle().DB())
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "ListBatchChanges generating authz query conds")
+	}
+	q := listBatchChangesQuery(&opts, repoAuthzConds)
 
 	cs = make([]*btypes.BatchChange, 0, opts.DBLimit())
 	err = s.query(ctx, q, func(sc scanner) error {
@@ -364,7 +463,7 @@ WHERE %s
 ORDER BY id DESC
 `
 
-func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
+func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Query) *sqlf.Query {
 	joins := []*sqlf.Query{
 		sqlf.Sprintf("LEFT JOIN users namespace_user ON batch_changes.namespace_user_id = namespace_user.id"),
 		sqlf.Sprintf("LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id"),
@@ -400,6 +499,19 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts) *sqlf.Query {
 
 	if opts.NamespaceOrgID != 0 {
 		preds = append(preds, sqlf.Sprintf("batch_changes.namespace_org_id = %s", opts.NamespaceOrgID))
+	}
+
+	if opts.RepoID != 0 {
+		preds = append(preds, sqlf.Sprintf(`EXISTS(
+			SELECT * FROM changesets
+			INNER JOIN repo ON changesets.repo_id = repo.id
+			WHERE
+				changesets.batch_change_ids ? batch_changes.id::TEXT AND
+				changesets.repo_id = %s AND
+				repo.deleted_at IS NULL AND
+				-- authz conditions:
+				%s
+		)`, opts.RepoID, repoAuthzConds))
 	}
 
 	if len(preds) == 0 {

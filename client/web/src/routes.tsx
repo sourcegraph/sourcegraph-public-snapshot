@@ -1,25 +1,19 @@
 import * as React from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { BatchChangesProps } from './batches'
+import { CodeIntelligenceProps } from './codeintel'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
-import { LayoutProps } from './Layout'
-import { ExtensionAlertProps } from './repo/RepoContainer'
-import { android } from './repogroups/Android'
-import { cncf } from './repogroups/cncf'
-import { golang } from './repogroups/Golang'
-import { kubernetes } from './repogroups/Kubernetes'
-import { python2To3Metadata } from './repogroups/Python2To3'
-import { reactHooks } from './repogroups/ReactHooks'
-import { RepogroupPage } from './repogroups/RepogroupPage'
-import { stackStorm } from './repogroups/StackStorm'
-import { stanford } from './repogroups/Stanford'
-import { temporal } from './repogroups/Temporal'
-import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import type { LayoutProps } from './Layout'
+import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { ThemePreferenceProps } from './theme'
+import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
 
-const SearchPage = lazyComponent(() => import('./search/input/SearchPage'), 'SearchPage')
+const SearchPage = lazyComponent(() => import('./search/home/SearchPage'), 'SearchPage')
 const StreamingSearchResults = lazyComponent(
     () => import('./search/results/StreamingSearchResults'),
     'StreamingSearchResults'
@@ -27,6 +21,7 @@ const StreamingSearchResults = lazyComponent(
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
 const SearchConsolePage = lazyComponent(() => import('./search/SearchConsolePage'), 'SearchConsolePage')
+const SearchNotebookPage = lazyComponent(() => import('./search/notebook/SearchNotebookPage'), 'SearchNotebookPage')
 const SignInPage = lazyComponent(() => import('./auth/SignInPage'), 'SignInPage')
 const SignUpPage = lazyComponent(() => import('./auth/SignUpPage'), 'SignUpPage')
 const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
@@ -35,12 +30,16 @@ const SiteInitPage = lazyComponent(() => import('./site-admin/init/SiteInitPage'
 export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof RouteParameters]?: string }>
     extends RouteComponentProps<RouteParameters>,
         Omit<LayoutProps, 'match'>,
+        ThemeProps,
+        ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
         ExtensionAlertProps,
+        CodeIntelligenceProps,
+        BatchChangesProps,
         UserExternalServicesOrRepositoriesUpdateProps {
     isSourcegraphDotCom: boolean
-    isRedesignEnabled: boolean
+    isMacPlatform: boolean
 }
 
 export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]?: string }> {
@@ -71,12 +70,7 @@ function passThroughToServer(): React.ReactNode {
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/',
-        render: props =>
-            window.context.sourcegraphDotComMode && !props.authenticatedUser ? (
-                <Redirect to="https://about.sourcegraph.com" />
-            ) : (
-                <Redirect to="/search" />
-            ),
+        render: () => <Redirect to="/search" />,
         exact: true,
     },
     {
@@ -97,11 +91,12 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: '/search/console',
         render: props =>
-            props.showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} isMacPlatform={isMacPlatform} />
-            ) : (
-                <Redirect to="/search" />
-            ),
+            props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
+        exact: true,
+    },
+    {
+        path: '/search/notebook',
+        render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
         exact: true,
     },
     {
@@ -115,8 +110,33 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/post-sign-up',
-        render: props => <PostSignUpPage {...props} context={window.context} />,
+        path: '/welcome',
+        render: props =>
+            /**
+             * Welcome flow is allowed when:
+             * 1. user is authenticated
+             * 2. it's a DotComMode instance
+             * AND
+             * instance has enabled enablePostSignupFlow experimental feature
+             * OR
+             * user authenticated has a AllowUserViewPostSignup tag
+             */
+
+            !!props.authenticatedUser &&
+            window.context.sourcegraphDotComMode &&
+            (window.context.experimentalFeatures.enablePostSignupFlow ||
+                props.authenticatedUser?.tags.includes('AllowUserViewPostSignup')) ? (
+                <PostSignUpPage
+                    authenticatedUser={props.authenticatedUser}
+                    telemetryService={props.telemetryService}
+                    context={window.context}
+                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
+                    setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                />
+            ) : (
+                <Redirect to="/search" />
+            ),
+
         exact: true,
     },
     {
@@ -177,106 +197,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         path: '/-/debug/*',
         render: passThroughToServer,
     },
-    {
-        path: '/insights',
-        render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.codeInsights &&
-            props.settingsCascade.final['insights.displayLocation.insightsPage'] !== false,
-    },
-    {
-        path: '/contexts',
-        render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/convert-version-contexts',
-        render: lazyComponent(
-            () => import('./searchContexts/ConvertVersionContextsPage'),
-            'ConvertVersionContextsPage'
-        ),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement &&
-            !!props.authenticatedUser?.siteAdmin,
-    },
-    {
-        path: '/contexts/new',
-        render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
-        exact: true,
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/:id/edit',
-        render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/contexts/:id',
-        render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
-        condition: props =>
-            !isErrorLike(props.settingsCascade.final) &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-            !!props.settingsCascade.final?.experimentalFeatures?.showSearchContextManagement,
-    },
-    {
-        path: '/refactor-python2-to-3',
-        render: props => <RepogroupPage {...props} repogroupMetadata={python2To3Metadata} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/kubernetes',
-        render: props => <RepogroupPage {...props} repogroupMetadata={kubernetes} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/stackstorm',
-        render: props => <RepogroupPage {...props} repogroupMetadata={stackStorm} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/temporal',
-        render: props => <RepogroupPage {...props} repogroupMetadata={temporal} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/golang',
-        render: props => <RepogroupPage {...props} repogroupMetadata={golang} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/react-hooks',
-        render: props => <RepogroupPage {...props} repogroupMetadata={reactHooks} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/android',
-        render: props => <RepogroupPage {...props} repogroupMetadata={android} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/stanford',
-        render: props => <RepogroupPage {...props} repogroupMetadata={stanford} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
-    {
-        path: '/cncf',
-        render: props => <RepogroupPage {...props} repogroupMetadata={cncf} />,
-        condition: ({ isSourcegraphDotCom }) => isSourcegraphDotCom,
-    },
+    ...communitySearchContextsRoutes,
     {
         path: '/:repoRevAndRest+',
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),

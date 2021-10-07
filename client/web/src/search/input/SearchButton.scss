@@ -4,14 +4,11 @@
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
         display: flex;
+        padding: 0.5rem 1rem;
+        border: none;
 
-        .theme-redesign & {
-            padding: 0.5rem 1rem;
-            border: none;
-
-            @media (--xs-breakpoint-down) {
-                border-radius: var(--border-radius);
-            }
+        @media (--xs-breakpoint-down) {
+            border-radius: var(--border-radius);
         }
     }
 }

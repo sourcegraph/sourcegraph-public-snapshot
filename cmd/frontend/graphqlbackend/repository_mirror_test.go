@@ -4,13 +4,12 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -187,15 +186,12 @@ func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
 			}
 
 			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-				return &types.Repo{Name: repoName}, nil
-			}
-
-			repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-				return &protocol.RepoLookupResult{
-					Repo: &protocol.RepoInfo{Name: repoName, VCS: protocol.VCSInfo{URL: tc.repoURL}},
+				return &types.Repo{
+					Name:      repoName,
+					CreatedAt: time.Now(),
+					Sources:   map[string]*types.SourceInfo{"1": {CloneURL: tc.repoURL}},
 				}, nil
 			}
-			defer func() { repoupdater.MockRepoLookup = nil }()
 
 			RunTests(t, []*Test{
 				{

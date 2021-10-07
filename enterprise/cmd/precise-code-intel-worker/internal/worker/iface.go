@@ -9,7 +9,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type DBStore interface {
@@ -20,11 +21,13 @@ type DBStore interface {
 	Transact(ctx context.Context) (DBStore, error)
 	Done(err error) error
 
-	UpdatePackages(ctx context.Context, dumpID int, packages []semantic.Package) error
-	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []semantic.PackageReference) error
+	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) error
+	UpdatePackageReferences(ctx context.Context, dumpID int, packageReferences []precise.PackageReference) error
+	UpdateNumReferences(ctx context.Context, ids []int) error
+	UpdateDependencyNumReferences(ctx context.Context, ids []int, decrement bool) error
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
 	DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) error
-	InsertDependencyIndexingJob(ctx context.Context, uploadID int) (int, error)
+	InsertDependencySyncingJob(ctx context.Context, uploadID int) (int, error)
 	UpdateCommitedAt(ctx context.Context, dumpID int, committedAt time.Time) error
 }
 
@@ -49,13 +52,14 @@ type LSIFStore interface {
 	Transact(ctx context.Context) (LSIFStore, error)
 	Done(err error) error
 
-	WriteMeta(ctx context.Context, bundleID int, meta semantic.MetaData) error
-	WriteDocuments(ctx context.Context, bundleID int, documents chan semantic.KeyedDocumentData) error
-	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan semantic.IndexedResultChunkData) error
-	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
-	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan semantic.MonikerLocations) error
-	WriteDocumentationPages(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPageData) error
-	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *semantic.DocumentationPathInfoData) error
+	WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) error
+	WriteDocuments(ctx context.Context, bundleID int, documents chan precise.KeyedDocumentData) error
+	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) error
+	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
+	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
+	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData) error
+	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) error
+	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) error
 }
 
 type LSIFStoreShim struct {
@@ -75,4 +79,5 @@ type GitserverClient interface {
 	DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
 	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
+	DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error)
 }

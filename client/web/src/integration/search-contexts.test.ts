@@ -62,6 +62,7 @@ describe('Search contexts', () => {
     const viewerSettingsWithSearchContexts: Partial<WebGraphQlOperations> = {
         ViewerSettings: () => ({
             viewerSettings: {
+                __typename: 'SettingsCascade',
                 subjects: [
                     {
                         __typename: 'DefaultSettings',
@@ -105,6 +106,7 @@ describe('Search contexts', () => {
         ...viewerSettingsWithSearchContexts,
         UserRepositories: () => ({
             node: {
+                __typename: 'User',
                 repositories: {
                     totalCount: 1,
                     nodes: [
@@ -139,13 +141,6 @@ describe('Search contexts', () => {
 
     const getSelectedSearchContextSpec = () =>
         driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
-
-    const isSearchContextFeatureTourStepVisible = () =>
-        driver.page.evaluate(
-            () =>
-                document.querySelector<HTMLDivElement>('div[data-shepherd-step-id="search-contexts-start-tour"]') !==
-                null
-        )
 
     const isSearchContextDropdownDisabled = () =>
         driver.page.evaluate(() => document.querySelector<HTMLButtonElement>('.test-search-context-dropdown')?.disabled)
@@ -260,48 +255,18 @@ describe('Search contexts', () => {
             `Sucessfully converted ${versionContexts.length} version contexts into search contexts.`
         )
 
+        await driver.page.waitForFunction(
+            versionContextsCount =>
+                document.querySelectorAll('.test-converted-context').length === versionContextsCount,
+            undefined,
+            versionContexts.length
+        )
+
         // Check that individual context nodes have 'Converted' text
         const convertedContexts = await driver.page.evaluate(
             () => document.querySelectorAll('.test-converted-context').length
         )
         expect(convertedContexts).toBe(versionContexts.length)
-    })
-
-    test('Feature tour step should not be visible with empty local storage on search homepage', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeFalsy()
-    })
-
-    test('Feature tour step should be visible with empty local storage on search results page', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeTruthy()
-    })
-
-    test('Feature tour on search homepage', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
-            waitUntil: 'networkidle0',
-        })
-        await driver.page.evaluate(() => localStorage.setItem('has-cancelled-onboarding-tour', 'true'))
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeTruthy()
-        await clearLocalStorage()
-    })
-
-    test('Do not show feature tour on search homepage if already seen', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search', {
-            waitUntil: 'networkidle0',
-        })
-        await driver.page.evaluate(() => {
-            localStorage.setItem('has-cancelled-onboarding-tour', 'true')
-            localStorage.setItem('has-seen-search-contexts-dropdown-highlight-tour-step', 'true')
-        })
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextFeatureTourStepVisible()).toBeFalsy()
-        await clearLocalStorage()
     })
 
     test('Create search context', async () => {
@@ -399,11 +364,11 @@ describe('Search contexts', () => {
                     })),
                 },
             }),
-            FetchSearchContext: ({ id }) => ({
-                node: {
+            FetchSearchContextBySpec: ({ spec }) => ({
+                searchContextBySpec: {
                     __typename: 'SearchContext',
-                    id,
-                    spec: '@test/context-1',
+                    id: spec,
+                    spec,
                     name: 'context-1',
                     namespace: {
                         __typename: 'User',
@@ -476,11 +441,11 @@ describe('Search contexts', () => {
     test('Cannot edit search context without necessary permissions', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            FetchSearchContext: ({ id }) => ({
-                node: {
+            FetchSearchContextBySpec: ({ spec }) => ({
+                searchContextBySpec: {
                     __typename: 'SearchContext',
-                    id,
-                    spec: 'context-1',
+                    id: spec,
+                    spec,
                     name: 'context-1',
                     namespace: null,
                     description: 'description',
@@ -509,11 +474,11 @@ describe('Search contexts', () => {
                     alwaysNil: '',
                 },
             }),
-            FetchSearchContext: ({ id }) => ({
-                node: {
+            FetchSearchContextBySpec: ({ spec }) => ({
+                searchContextBySpec: {
                     __typename: 'SearchContext',
-                    id,
-                    spec: '@test/context-1',
+                    id: spec,
+                    spec,
                     name: 'context-1',
                     namespace: {
                         __typename: 'User',

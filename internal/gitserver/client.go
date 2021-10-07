@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,27 +34,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
-var requestMeter = metrics.NewRequestMeter("gitserver", "Total number of requests sent to gitserver.")
-
-// defaultTransport is the default transport used in the default client and the
-// default reverse proxy. ot.Transport will propagate opentracing spans.
-var defaultTransport = &ot.Transport{
-	RoundTripper: requestMeter.Transport(&http.Transport{
-		// Default is 2, but we can send many concurrent requests
-		MaxIdleConnsPerHost: 500,
-	}, func(u *url.URL) string {
-		// break it down by API function call (ie "/archive", "/exec", "/is-repo-cloneable", etc)
-		return u.Path
-	}),
-}
+var clientFactory = httpcli.NewInternalClientFactory("gitserver")
+var defaultDoer, _ = clientFactory.Doer()
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
-var DefaultClient = NewClient(&http.Client{Transport: defaultTransport})
+var DefaultClient = NewClient(defaultDoer)
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
@@ -108,9 +97,16 @@ func (c *Client) addrForKey(key string) string {
 	return addrForKey(key, addrs)
 }
 
+var addForRepoInvoked = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_gitserver_addr_for_repo_invoked",
+	Help: "Number of times gitserver.AddrForRepo was invoked",
+})
+
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // It should never be called with an empty slice.
 func AddrForRepo(repo api.RepoName, addrs []string) string {
+	addForRepoInvoked.Inc()
+
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return addrForKey(string(repo), addrs)
 }
@@ -227,7 +223,7 @@ func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOpti
 		}
 	default:
 		resp.Body.Close()
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 }
 
@@ -281,8 +277,65 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 
 	default:
 		resp.Body.Close()
-		return nil, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
+}
+
+// Search executes a search as specified by args, streaming the results as it goes by calling onMatches with each set of results it
+// receives in response.
+func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span.SetTag("query", args.Query.String())
+	span.SetTag("diff", args.IncludeDiff)
+	span.SetTag("limit", args.Limit)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+		}
+		span.Finish()
+	}()
+
+	repoName := protocol.NormalizeRepo(args.Repo)
+
+	protocol.RegisterGob()
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(args); err != nil {
+		return false, err
+	}
+
+	resp, err := c.do(ctx, repoName, "POST", "search", buf.Bytes())
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	var (
+		decodeErr error
+		eventDone protocol.SearchEventDone
+	)
+	dec := StreamSearchDecoder{
+		OnMatches: func(e protocol.SearchEventMatches) {
+			onMatches(e)
+		},
+		OnDone: func(e protocol.SearchEventDone) {
+			eventDone = e
+		},
+		OnUnknown: func(event, _ []byte) {
+			decodeErr = errors.Errorf("unknown event %s", event)
+		},
+	}
+
+	if err := dec.ReadAll(resp.Body); err != nil {
+		return false, err
+	}
+
+	if decodeErr != nil {
+		return false, decodeErr
+	}
+
+	return eventDone.LimitHit, eventDone.Err()
 }
 
 // P4Exec sends a p4 command with given arguments and returns an io.ReadCloser for the output.
@@ -324,7 +377,7 @@ func (c *Client) P4Exec(ctx context.Context, host, user, password string, args .
 		// Read response body at best effort
 		body, _ := io.ReadAll(resp.Body)
 		_ = resp.Body.Close()
-		return nil, nil, fmt.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
+		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, body)
 	}
 }
 
@@ -429,10 +482,10 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 			stderr = stderr[:100] + "... (truncated)"
 		}
 		if errorMsg := c.trailer.Get("X-Exec-Error"); errorMsg != "" {
-			return 0, fmt.Errorf("%s (stderr: %q)", errorMsg, stderr)
+			return 0, errors.Errorf("%s (stderr: %q)", errorMsg, stderr)
 		}
 		if exitStatus := c.trailer.Get("X-Exec-Exit-Status"); exitStatus != "0" {
-			return 0, fmt.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
+			return 0, errors.Errorf("non-zero exit status: %s (stderr: %q)", exitStatus, stderr)
 		}
 	}
 	return n, err
@@ -440,60 +493,6 @@ func (c *cmdReader) Read(p []byte) (int, error) {
 
 func (c *cmdReader) Close() error {
 	return c.rc.Close()
-}
-
-// WaitForGitServers retries a noop request to all gitserver instances until
-// getting back a successful response.
-func (c *Client) WaitForGitServers(ctx context.Context) error {
-	for {
-		if errs := c.pingAll(ctx); len(errs) == 0 {
-			return nil
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(250 * time.Millisecond):
-		}
-	}
-}
-
-func (c *Client) pingAll(ctx context.Context) []error {
-	addrs := c.Addrs()
-
-	ch := make(chan error, len(addrs))
-	for _, addr := range addrs {
-		go func(addr string) {
-			ch <- c.ping(ctx, addr)
-		}(addr)
-	}
-
-	errs := make([]error, 0, len(addrs))
-	for i := 0; i < cap(ch); i++ {
-		if err := <-ch; err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errs
-}
-
-func (c *Client) ping(ctx context.Context, addr string) error {
-	req, err := http.NewRequest("GET", "http://"+addr+"/ping", nil)
-	if err != nil {
-		return err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("ping: bad HTTP response status %d", resp.StatusCode)
-	}
-
-	return nil
 }
 
 // ListGitolite lists Gitolite repositories.
@@ -611,7 +610,7 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: fmt.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "RepoInfo", Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, body)}
 	}
 
 	var info *protocol.RepoUpdateResponse
@@ -641,7 +640,7 @@ func (c *Client) IsRepoCloneable(ctx context.Context, repo api.RepoName) error {
 		return err
 	}
 	if r.StatusCode != http.StatusOK {
-		return fmt.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
+		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, string(body))
 	}
 
 	var resp protocol.IsRepoCloneableResponse
@@ -897,18 +896,22 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	if resp.StatusCode != http.StatusOK {
 		// best-effort inclusion of body in error message
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: fmt.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
+		return &url.Error{URL: resp.Request.URL.String(), Op: "RepoRemove", Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, string(body))}
 	}
 	return nil
 }
 
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
-	return c.do(ctx, repo, "POST", op, payload)
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+	return c.do(ctx, repo, "POST", op, b)
 }
 
 // do performs a request to a gitserver, sharding based on the given
 // repo name (the repo name is otherwise not used).
-func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, payload interface{}) (resp *http.Response, err error) {
+func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, payload []byte) (resp *http.Response, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
 		span.LogKV("repo", string(repo), "method", method, "op", op)
@@ -919,17 +922,12 @@ func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, p
 		span.Finish()
 	}()
 
-	reqBody, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-
 	uri := op
 	if !strings.HasPrefix(op, "http") {
 		uri = "http://" + c.AddrForRepo(repo) + "/" + op
 	}
 
-	req, err := http.NewRequest(method, uri, bytes.NewReader(reqBody))
+	req, err := http.NewRequest(method, uri, bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
@@ -976,14 +974,14 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log15.Warn("reading gitserver create-commit-from-patch response", "err", err.Error())
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, err.Error())}
 	}
 
 	var res protocol.CreateCommitFromPatchResponse
 	err = json.Unmarshal(data, &res)
 	if err != nil {
 		log15.Warn("decoding gitserver create-commit-from-patch response", "err", err.Error())
-		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: fmt.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
+		return "", &url.Error{URL: resp.Request.URL.String(), Op: "CreateCommitFromPatch", Err: errors.Errorf("CreateCommitFromPatch: http status %d %s", resp.StatusCode, string(data))}
 	}
 
 	if res.Error != nil {

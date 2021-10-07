@@ -7,8 +7,12 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gorilla/mux"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
@@ -25,6 +29,9 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	fmt.Fprintln(&buf, "User-agent: *")
 	if allowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
+		if envvar.SourcegraphDotComMode() {
+			fmt.Fprintln(&buf, "Sitemap: https://sourcegraph.com/sitemap.xml.gz")
+		}
 	} else {
 		fmt.Fprintln(&buf, "Disallow: /")
 	}
@@ -32,8 +39,24 @@ func robotsTxtHelper(w io.Writer, allowRobots bool) {
 	_, _ = buf.WriteTo(w)
 }
 
+func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
+	if envvar.SourcegraphDotComMode() || conf.DeployType() == conf.DeployDev {
+		number := mux.Vars(r)["number"]
+		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
+}
+
 func favicon(w http.ResponseWriter, r *http.Request) {
-	path := assetsutil.URL("/img/favicon.png").String()
+	url := assetsutil.URL("/img/favicon.png")
+
+	// Add query parameter for cache busting.
+	query := url.Query()
+	query.Set("v", "2")
+	url.RawQuery = query.Encode()
+	path := url.String()
+
 	if branding := globals.Branding(); branding.Favicon != "" {
 		path = branding.Favicon
 	}

@@ -7,12 +7,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -113,11 +112,14 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
 	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
+
+	reposStore := database.Repos(db)
 	reposList := &reposListServer{
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		Repos:                 backend.Repos,
-		Indexers:              search.Indexers(),
+		ListIndexable:   backend.Repos.ListIndexable,
+		StreamRepoNames: reposStore.StreamRepoNames,
+		Indexers:        search.Indexers(),
 	}
+
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(reposList.serveIndex)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.Route(handler(serveReposListEnabled)))
 	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName)))
@@ -144,8 +146,9 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
-	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(serveSearchConfiguration)))
+	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(serveSearchConfiguration(db))))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
+	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(true)))
 
@@ -181,10 +184,11 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	trace.SetRequestErrorCause(r.Context(), err)
 
 	// Handle custom errors
-	if ee, ok := err.(*handlerutil.URLMovedError); ok {
-		err := handlerutil.RedirectToNewRepoName(w, r, ee.NewRepo)
+	var e *handlerutil.URLMovedError
+	if errors.As(err, &e) {
+		err := handlerutil.RedirectToNewRepoName(w, r, e.NewRepo)
 		if err != nil {
-			log15.Error("error redirecting to new URI", "err", err, "new_url", ee.NewRepo)
+			log15.Error("error redirecting to new URI", "err", err, "new_url", e.NewRepo)
 		}
 		return
 	}
@@ -199,13 +203,11 @@ func (h *errorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 		displayErrBody = errBody
 	}
 	http.Error(w, displayErrBody, status)
-	traceSpan := opentracing.SpanFromContext(r.Context())
-	var spanURL string
-	if traceSpan != nil {
-		spanURL = trace.SpanURL(traceSpan)
-	}
+	traceID := trace.ID(r.Context())
+	traceURL := trace.URL(traceID)
+
 	if status < 200 || status >= 500 {
-		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", spanURL)
+		log15.Error("API HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", status, "error", err, "trace", traceURL, "traceID", traceID)
 	}
 }
 

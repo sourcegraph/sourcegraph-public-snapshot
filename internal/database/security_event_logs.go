@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -25,6 +27,21 @@ const (
 	SecurityEventNameSignInAttempted SecurityEventName = "SignInAttempted"
 	SecurityEventNameSignInFailed    SecurityEventName = "SignInFailed"
 	SecurityEventNameSignInSucceeded SecurityEventName = "SignInSucceeded"
+
+	SecurityEventNameAccountCreated SecurityEventName = "AccountCreated"
+	SecurityEventNameAccountDeleted SecurityEventName = "AccountDeleted"
+	SecurityEventNameAccountNuked   SecurityEventName = "AccountNuked"
+
+	SecurityEventNamPasswordResetRequested SecurityEventName = "PasswordResetRequested"
+	SecurityEventNamPasswordRandomized     SecurityEventName = "PasswordRandomized"
+	SecurityEventNamePasswordChanged       SecurityEventName = "PasswordChanged"
+
+	SecurityEventNameEmailVerified SecurityEventName = "EmailVerified"
+
+	SecurityEventNameRoleChangeDenied  SecurityEventName = "RoleChangeDenied"
+	SecurityEventNameRoleChangeGranted SecurityEventName = "RoleChangeGranted"
+
+	SecurityEventNameAccessGranted SecurityEventName = "AccessGranted"
 )
 
 // SecurityEvent contains information needed for logging a security-relevant event.
@@ -84,6 +101,10 @@ func (s *SecurityEventLogStore) LogEvent(ctx context.Context, e *SecurityEvent) 
 	}
 
 	if err := s.Insert(ctx, e); err != nil {
-		log15.Error(string(e.Name), "err", err)
+		j, _ := json.Marshal(e)
+		log15.Error(string(e.Name), "event", string(j), "traceID", trace.ID(ctx), "err", err)
+		// We want to capture in sentry as it includes a stack trace which will allow us
+		// to track down the root cause.
+		sentry.CaptureError(err, map[string]string{})
 	}
 }

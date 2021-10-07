@@ -4,12 +4,12 @@ import (
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type QualifiedDocumentData struct {
 	UploadID int
-	semantic.KeyedDocumentData
+	precise.KeyedDocumentData
 }
 
 // scanDocumentData reads qualified document data from the given row object.
@@ -34,7 +34,7 @@ func (s *Store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []QualifiedD
 
 // makeDocumentVisitor returns a function that calls the given visitor function over each
 // matching decoded document value.
-func (s *Store) makeDocumentVisitor(f func(string, semantic.DocumentData)) func(rows *sql.Rows, queryErr error) error {
+func (s *Store) makeDocumentVisitor(f func(string, precise.DocumentData)) func(rows *sql.Rows, queryErr error) error {
 	return func(rows *sql.Rows, queryErr error) (err error) {
 		if queryErr != nil {
 			return queryErr
@@ -113,8 +113,8 @@ func (s *Store) scanSingleDocumentDataObject(rows *sql.Rows) (QualifiedDocumentD
 // makeResultChunkVisitor returns a function that accepts a mapping function, reads
 // result chunk values from the given row object and calls the mapping function on
 // each decoded result set.
-func (s *Store) makeResultChunkVisitor(rows *sql.Rows, queryErr error) func(func(int, semantic.ResultChunkData)) error {
-	return func(f func(int, semantic.ResultChunkData)) (err error) {
+func (s *Store) makeResultChunkVisitor(rows *sql.Rows, queryErr error) func(func(int, precise.ResultChunkData)) error {
+	return func(f func(int, precise.ResultChunkData)) (err error) {
 		if queryErr != nil {
 			return queryErr
 		}
@@ -141,7 +141,7 @@ func (s *Store) makeResultChunkVisitor(rows *sql.Rows, queryErr error) func(func
 
 type QualifiedMonikerLocations struct {
 	DumpID int
-	semantic.MonikerLocations
+	precise.MonikerLocations
 }
 
 // scanQualifiedMonikerLocations reads moniker locations values from the given row object.

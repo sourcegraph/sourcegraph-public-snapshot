@@ -1,9 +1,10 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
+import { MockedResponse } from '@apollo/client/testing'
 import { fireEvent, render, RenderResult, act } from '@testing-library/react'
 import React from 'react'
 import { MemoryRouter } from 'react-router'
 
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { UPDATE_USER } from './EditUserProfileForm'
 import { UserSettingsProfilePage } from './UserSettingsProfilePage'
@@ -52,11 +53,11 @@ describe('UserSettingsProfilePage', () => {
 
     beforeEach(() => {
         queries = render(
-            <MockedProvider mocks={mocks}>
+            <MockedTestProvider mocks={mocks}>
                 <MemoryRouter>
                     <UserSettingsProfilePage user={mockUser} />
                 </MemoryRouter>
-            </MockedProvider>
+            </MockedTestProvider>
         )
     })
 

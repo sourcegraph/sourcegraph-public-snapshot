@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestRepositoryComparison(t *testing.T) {
@@ -90,12 +91,12 @@ func TestRepositoryComparison(t *testing.T) {
 	})
 
 	t.Run("Commits", func(t *testing.T) {
-		commits := []*git.Commit{
+		commits := []*gitapi.Commit{
 			{ID: api.CommitID(wantBaseRevision)},
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*git.Commit, error) {
+		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitapi.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -394,7 +395,6 @@ func TestDiffHunk(t *testing.T) {
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
 			DisableTimeout:     false,
 			HighlightLongLines: false,
-			IsLightTheme:       true,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -505,7 +505,6 @@ index 4d14577..10ef458 100644
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
 			DisableTimeout:     false,
 			HighlightLongLines: false,
-			IsLightTheme:       true,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -627,7 +626,7 @@ func TestFileDiffHighlighter(t *testing.T) {
 		case file2.path:
 			return template.HTML(highlightedNew), false, nil
 		default:
-			return "", false, fmt.Errorf("unknown file: %s", p.Filepath)
+			return "", false, errors.Errorf("unknown file: %s", p.Filepath)
 		}
 	}
 	t.Cleanup(highlight.ResetMocks)
@@ -636,7 +635,6 @@ func TestFileDiffHighlighter(t *testing.T) {
 	highlightedBase, highlightedHead, aborted, err := highlighter.Highlight(ctx, &HighlightArgs{
 		DisableTimeout:     false,
 		HighlightLongLines: false,
-		IsLightTheme:       true,
 	})
 	if err != nil {
 		t.Fatal(err)

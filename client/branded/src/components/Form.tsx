@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 interface FormProps extends React.DetailedHTMLProps<React.FormHTMLAttributes<HTMLFormElement>, HTMLFormElement> {
@@ -24,7 +25,7 @@ export class Form extends React.PureComponent<FormProps, FormState> {
             // eslint-disable-next-line react/forbid-elements
             <form
                 {...this.props}
-                className={`${this.props.className || ''} ${this.state.wasValidated ? 'was-validated' : ''}`}
+                className={classNames(this.props.className, this.state.wasValidated && 'was-validated')}
                 onInvalid={this.onInvalid}
             >
                 {this.props.children}

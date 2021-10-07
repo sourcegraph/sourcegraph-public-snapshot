@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -49,13 +51,13 @@ func (s *Store) HasRepository(ctx context.Context, repositoryID int) (_ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(hasRepositoryQuery, repositoryID)))
-	return count > 0, err
+	_, found, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(hasRepositoryQuery, repositoryID)))
+	return found, err
 }
 
 const hasRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:HasRepository
-SELECT COUNT(*) FROM lsif_uploads WHERE state != 'deleted' AND repository_id = %s LIMIT 1
+SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `
 
 // HasCommit determines if the given commit is known for the given repository.
@@ -146,6 +148,61 @@ SELECT lsif_dirty_repositories.repository_id, lsif_dirty_repositories.dirty_toke
     AND repo.deleted_at IS NULL
 `
 
+// CommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
+// To paginate, supply the token returned from this method to the invocation for the next page.
+func (s *Store) CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
+	ctx, endObservation := s.operations.commitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("uploadID", uploadID),
+		log.Int("limit", limit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	after := ""
+	if token != nil {
+		after = *token
+	}
+
+	commits, err := basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), after, limit)))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if len(commits) > 0 {
+		last := commits[len(commits)-1]
+		nextToken = &last
+	}
+
+	return commits, nextToken, nil
+}
+
+const commitsVisibleToUploadQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CommitsVisibleToUpload
+WITH
+direct_commits AS (
+	SELECT nu.repository_id, nu.commit_bytea
+	FROM lsif_nearest_uploads nu
+	WHERE nu.uploads ? %s
+),
+linked_commits AS (
+	SELECT ul.commit_bytea
+	FROM direct_commits dc
+	JOIN lsif_nearest_uploads_links ul
+	ON
+		ul.repository_id = dc.repository_id AND
+		ul.ancestor_commit_bytea = dc.commit_bytea
+),
+combined_commits AS (
+	SELECT dc.commit_bytea FROM direct_commits dc
+	UNION ALL
+	SELECT lc.commit_bytea FROM linked_commits lc
+)
+SELECT encode(c.commit_bytea, 'hex') as commit
+FROM combined_commits c
+WHERE decode(%s, 'hex') < c.commit_bytea
+ORDER BY c.commit_bytea
+LIMIT %s
+`
+
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
 // the most recent commit graph refresh for the given repository.
 func (s *Store) CommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
@@ -200,7 +257,7 @@ func (s *Store) CalculateVisibleUploads(
 	ctx context.Context,
 	repositoryID int,
 	commitGraph *gitserver.CommitGraph,
-	refDescriptions map[string]gitserver.RefDescription,
+	refDescriptions map[string][]gitserver.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 	dirtyToken int,
@@ -276,6 +333,13 @@ func (s *Store) CalculateVisibleUploads(
 		}
 	}
 
+	// All completed uploads are now visible. Mark any uploads queued for deletion as deleted as
+	// they are no longer reachable from the commit graph and cannot be used to fulfill any API
+	// requests.
+	if err := tx.Store.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery, repositoryID)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -287,6 +351,23 @@ SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance FROM lsif
 const calculateVisibleUploadsDirtyRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
 UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
+`
+
+const calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/commits.go:CalculateVisibleUploads
+WITH
+candidates AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.state = 'deleting' AND u.repository_id = %s
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+)
+UPDATE lsif_uploads
+SET state = 'deleted'
+WHERE id IN (SELECT id FROM candidates)
 `
 
 // refineRetentionConfiguration returns the maximum age for no-stale branches and tags, effectively, as configured
@@ -701,7 +782,7 @@ type sanitizedCommitInput struct {
 func sanitizeCommitInput(
 	ctx context.Context,
 	graph *commitgraph.Graph,
-	refDescriptions map[string]gitserver.RefDescription,
+	refDescriptions map[string][]gitserver.RefDescription,
 	maxAgeForNonStaleBranches time.Duration,
 	maxAgeForNonStaleTags time.Duration,
 ) *sanitizedCommitInput {
@@ -756,12 +837,26 @@ func sanitizeCommitInput(
 			}
 		}
 
-		for commit, refDescription := range refDescriptions {
-			if !refDescription.IsDefaultBranch {
-				maxAge, ok := maxAges[refDescription.Type]
-				if !ok || time.Since(refDescription.CreatedDate) > maxAge {
-					continue
+		for commit, refDescriptions := range refDescriptions {
+			isDefaultBranch := false
+			names := make([]string, 0, len(refDescriptions))
+
+			for _, refDescription := range refDescriptions {
+				if refDescription.IsDefaultBranch {
+					isDefaultBranch = true
+				} else {
+					maxAge, ok := maxAges[refDescription.Type]
+					if !ok || time.Since(refDescription.CreatedDate) > maxAge {
+						continue
+					}
 				}
+
+				names = append(names, refDescription.Name)
+			}
+			sort.Strings(names)
+
+			if len(names) == 0 {
+				continue
 			}
 
 			for _, uploadMeta := range graph.UploadsVisibleAtCommit(commit) {
@@ -771,8 +866,8 @@ func sanitizeCommitInput(
 					&sanitized.numUploadsVisibleAtTipRecords,
 					// row values
 					uploadMeta.UploadID,
-					refDescription.Name,
-					refDescription.IsDefaultBranch,
+					strings.Join(names, ","),
+					isDefaultBranch,
 				) {
 					return
 				}

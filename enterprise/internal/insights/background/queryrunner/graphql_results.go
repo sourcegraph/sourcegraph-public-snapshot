@@ -2,7 +2,8 @@ package queryrunner
 
 import (
 	"encoding/json"
-	"fmt"
+
+	"github.com/cockroachdb/errors"
 )
 
 // TODO(slimsag): future: It's really nasty that our GraphQL search API is like this:
@@ -73,6 +74,7 @@ import (
 type result interface {
 	repoID() string
 	matchCount() int
+	repoName() string
 }
 
 func decodeResult(result json.RawMessage) (result, error) {
@@ -102,13 +104,14 @@ func decodeResult(result json.RawMessage) (result, error) {
 		}
 		return &v, nil
 	default:
-		return nil, fmt.Errorf("cannot decode search result: unexpected TypeName: %s", string(result))
+		return nil, errors.Errorf("cannot decode search result: unexpected TypeName: %s", string(result))
 	}
 }
 
 type fileMatch struct {
 	Repository struct {
-		ID string
+		ID   string
+		Name string
 	}
 	LineMatches []struct {
 		OffsetAndLengths [][]int
@@ -116,6 +119,10 @@ type fileMatch struct {
 	Symbols []struct {
 		Name string
 	}
+}
+
+func (r *fileMatch) repoName() string {
+	return r.Repository.Name
 }
 
 func (r *fileMatch) matchCount() int {
@@ -141,9 +148,14 @@ type commitSearchResult struct {
 	}
 	Commit struct {
 		Repository struct {
-			ID string
+			ID   string
+			Name string
 		}
 	}
+}
+
+func (r *commitSearchResult) repoName() string {
+	return r.Commit.Repository.Name
 }
 
 func (r *commitSearchResult) repoID() string {
@@ -159,7 +171,12 @@ func (r *commitSearchResult) matchCount() int {
 }
 
 type repository struct {
-	ID string
+	ID   string
+	Name string
+}
+
+func (r *repository) repoName() string {
+	return r.Name
 }
 
 func (r *repository) repoID() string {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -17,6 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
@@ -48,23 +51,32 @@ func RandomID() (string, error) {
 // from persistent storage.
 type Store struct {
 	*basestore.Store
-	key encryption.Key
-	now func() time.Time
+	key                encryption.Key
+	now                func() time.Time
+	operations         *operations
+	observationContext *observation.Context
 }
 
 // New returns a new Store backed by the given database.
-func New(db dbutil.DB, key encryption.Key) *Store {
-	return NewWithClock(db, key, timeutil.Now)
+func New(db dbutil.DB, observationContext *observation.Context, key encryption.Key) *Store {
+	return NewWithClock(db, observationContext, key, timeutil.Now)
 }
 
 // NewWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func NewWithClock(db dbutil.DB, key encryption.Key, clock func() time.Time) *Store {
+func NewWithClock(db dbutil.DB, observationContext *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
-		Store: basestore.NewWithDB(db, sql.TxOptions{}),
-		key:   key,
-		now:   clock,
+		Store:              basestore.NewWithDB(db, sql.TxOptions{}),
+		key:                key,
+		now:                clock,
+		operations:         newOperations(observationContext),
+		observationContext: observationContext,
 	}
+}
+
+// ObservationContext returns the observation context wrapped in this store.
+func (s *Store) ObservationContext() *observation.Context {
+	return s.observationContext
 }
 
 // Clock returns the clock used by the Store.
@@ -86,7 +98,13 @@ func (s *Store) Handle() *basestore.TransactableHandle { return s.Store.Handle()
 // underlying basestore.Store.
 // Needed to implement the basestore.Store interface
 func (s *Store) With(other basestore.ShareableStore) *Store {
-	return &Store{Store: s.Store.With(other), key: s.key, now: s.now}
+	return &Store{
+		Store:              s.Store.With(other),
+		key:                s.key,
+		operations:         s.operations,
+		observationContext: s.observationContext,
+		now:                s.now,
+	}
 }
 
 // Transact creates a new transaction.
@@ -97,7 +115,13 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Store{Store: txBase, key: s.key, now: s.now}, nil
+	return &Store{
+		Store:              txBase,
+		key:                s.key,
+		operations:         s.operations,
+		observationContext: s.observationContext,
+		now:                s.now,
+	}, nil
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
@@ -129,6 +153,226 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 		return count, err
 	}
 	return count, nil
+}
+
+type operations struct {
+	createBatchChange      *observation.Operation
+	updateBatchChange      *observation.Operation
+	deleteBatchChange      *observation.Operation
+	countBatchChanges      *observation.Operation
+	getBatchChange         *observation.Operation
+	getBatchChangeDiffStat *observation.Operation
+	getRepoDiffStat        *observation.Operation
+	listBatchChanges       *observation.Operation
+
+	createBatchSpecExecution *observation.Operation
+	getBatchSpecExecution    *observation.Operation
+	cancelBatchSpecExecution *observation.Operation
+	listBatchSpecExecutions  *observation.Operation
+
+	createBatchSpec         *observation.Operation
+	updateBatchSpec         *observation.Operation
+	deleteBatchSpec         *observation.Operation
+	countBatchSpecs         *observation.Operation
+	getBatchSpec            *observation.Operation
+	getNewestBatchSpec      *observation.Operation
+	listBatchSpecs          *observation.Operation
+	deleteExpiredBatchSpecs *observation.Operation
+
+	getBulkOperation        *observation.Operation
+	listBulkOperations      *observation.Operation
+	countBulkOperations     *observation.Operation
+	listBulkOperationErrors *observation.Operation
+
+	getChangesetEvent     *observation.Operation
+	listChangesetEvents   *observation.Operation
+	countChangesetEvents  *observation.Operation
+	upsertChangesetEvents *observation.Operation
+
+	createChangesetJob *observation.Operation
+	getChangesetJob    *observation.Operation
+
+	createChangesetSpec                      *observation.Operation
+	updateChangesetSpec                      *observation.Operation
+	deleteChangesetSpec                      *observation.Operation
+	countChangesetSpecs                      *observation.Operation
+	getChangesetSpec                         *observation.Operation
+	listChangesetSpecs                       *observation.Operation
+	deleteExpiredChangesetSpecs              *observation.Operation
+	getRewirerMappings                       *observation.Operation
+	listChangesetSpecsWithConflictingHeadRef *observation.Operation
+
+	createChangeset                   *observation.Operation
+	deleteChangeset                   *observation.Operation
+	countChangesets                   *observation.Operation
+	getChangeset                      *observation.Operation
+	listChangesetSyncData             *observation.Operation
+	listChangesets                    *observation.Operation
+	enqueueChangeset                  *observation.Operation
+	updateChangeset                   *observation.Operation
+	updateChangesetBatchChanges       *observation.Operation
+	updateChangesetUIPublicationState *observation.Operation
+	updateChangesetCodeHostState      *observation.Operation
+	getChangesetExternalIDs           *observation.Operation
+	cancelQueuedBatchChangeChangesets *observation.Operation
+	enqueueChangesetsToClose          *observation.Operation
+	getChangesetsStats                *observation.Operation
+	getRepoChangesetsStats            *observation.Operation
+	enqueueNextScheduledChangeset     *observation.Operation
+	getChangesetPlaceInSchedulerQueue *observation.Operation
+
+	listCodeHosts         *observation.Operation
+	getExternalServiceIDs *observation.Operation
+
+	createSiteCredential *observation.Operation
+	deleteSiteCredential *observation.Operation
+	getSiteCredential    *observation.Operation
+	listSiteCredentials  *observation.Operation
+	updateSiteCredential *observation.Operation
+
+	createBatchSpecWorkspace *observation.Operation
+	getBatchSpecWorkspace    *observation.Operation
+	listBatchSpecWorkspaces  *observation.Operation
+
+	createBatchSpecWorkspaceExecutionJob  *observation.Operation
+	createBatchSpecWorkspaceExecutionJobs *observation.Operation
+	getBatchSpecWorkspaceExecutionJob     *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
+
+	createBatchSpecResolutionJob *observation.Operation
+	getBatchSpecResolutionJob    *observation.Operation
+	listBatchSpecResolutionJobs  *observation.Operation
+
+	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
+	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
+}
+
+var (
+	singletonOperations *operations
+	operationsOnce      sync.Once
+)
+
+// newOperations generates a singleton of the operations struct.
+// TODO: We should create one per observationContext.
+func newOperations(observationContext *observation.Context) *operations {
+	operationsOnce.Do(func() {
+		m := metrics.NewOperationMetrics(
+			observationContext.Registerer,
+			"batches_dbstore",
+			metrics.WithLabels("op"),
+			metrics.WithCountHelp("Total number of method invocations."),
+		)
+
+		op := func(name string) *observation.Operation {
+			return observationContext.Operation(observation.Op{
+				Name:              fmt.Sprintf("batches.dbstore.%s", name),
+				MetricLabelValues: []string{name},
+				Metrics:           m,
+				ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+					if errors.Is(err, ErrNoResults) {
+						return observation.EmitForNone
+					}
+					return observation.EmitForAll
+				},
+			})
+		}
+
+		singletonOperations = &operations{
+			createBatchChange:      op("CreateBatchChange"),
+			updateBatchChange:      op("UpdateBatchChange"),
+			deleteBatchChange:      op("DeleteBatchChange"),
+			countBatchChanges:      op("CountBatchChanges"),
+			listBatchChanges:       op("ListBatchChanges"),
+			getBatchChange:         op("GetBatchChange"),
+			getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
+			getRepoDiffStat:        op("GetRepoDiffStat"),
+
+			createBatchSpecExecution: op("CreateBatchSpecExecution"),
+			getBatchSpecExecution:    op("GetBatchSpecExecution"),
+			cancelBatchSpecExecution: op("CancelBatchSpecExecution"),
+			listBatchSpecExecutions:  op("ListBatchSpecExecutions"),
+
+			createBatchSpec:         op("CreateBatchSpec"),
+			updateBatchSpec:         op("UpdateBatchSpec"),
+			deleteBatchSpec:         op("DeleteBatchSpec"),
+			countBatchSpecs:         op("CountBatchSpecs"),
+			getBatchSpec:            op("GetBatchSpec"),
+			getNewestBatchSpec:      op("GetNewestBatchSpec"),
+			listBatchSpecs:          op("ListBatchSpecs"),
+			deleteExpiredBatchSpecs: op("DeleteExpiredBatchSpecs"),
+
+			getBulkOperation:        op("GetBulkOperation"),
+			listBulkOperations:      op("ListBulkOperations"),
+			countBulkOperations:     op("CountBulkOperations"),
+			listBulkOperationErrors: op("ListBulkOperationErrors"),
+
+			getChangesetEvent:     op("GetChangesetEvent"),
+			listChangesetEvents:   op("ListChangesetEvents"),
+			countChangesetEvents:  op("CountChangesetEvents"),
+			upsertChangesetEvents: op("UpsertChangesetEvents"),
+
+			createChangesetJob: op("CreateChangesetJob"),
+			getChangesetJob:    op("GetChangesetJob"),
+
+			createChangesetSpec:                      op("CreateChangesetSpec"),
+			updateChangesetSpec:                      op("UpdateChangesetSpec"),
+			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
+			countChangesetSpecs:                      op("CountChangesetSpecs"),
+			getChangesetSpec:                         op("GetChangesetSpec"),
+			listChangesetSpecs:                       op("ListChangesetSpecs"),
+			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			getRewirerMappings:                       op("GetRewirerMappings"),
+			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
+
+			createChangeset:                   op("CreateChangeset"),
+			deleteChangeset:                   op("DeleteChangeset"),
+			countChangesets:                   op("CountChangesets"),
+			getChangeset:                      op("GetChangeset"),
+			listChangesetSyncData:             op("ListChangesetSyncData"),
+			listChangesets:                    op("ListChangesets"),
+			enqueueChangeset:                  op("EnqueueChangeset"),
+			updateChangeset:                   op("UpdateChangeset"),
+			updateChangesetBatchChanges:       op("UpdateChangesetBatchChanges"),
+			updateChangesetUIPublicationState: op("UpdateChangesetUIPublicationState"),
+			updateChangesetCodeHostState:      op("UpdateChangesetCodeHostState"),
+			getChangesetExternalIDs:           op("GetChangesetExternalIDs"),
+			cancelQueuedBatchChangeChangesets: op("CancelQueuedBatchChangeChangesets"),
+			enqueueChangesetsToClose:          op("EnqueueChangesetsToClose"),
+			getChangesetsStats:                op("GetChangesetsStats"),
+			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
+			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
+			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
+
+			listCodeHosts:         op("ListCodeHosts"),
+			getExternalServiceIDs: op("GetExternalServiceIDs"),
+
+			createSiteCredential: op("CreateSiteCredential"),
+			deleteSiteCredential: op("DeleteSiteCredential"),
+			getSiteCredential:    op("GetSiteCredential"),
+			listSiteCredentials:  op("ListSiteCredentials"),
+			updateSiteCredential: op("UpdateSiteCredential"),
+
+			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+
+			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
+			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
+			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
+			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
+
+			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
+			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
+			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+
+			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
+			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
+		}
+	})
+
+	return singletonOperations
 }
 
 // scanner captures the Scan method of sql.Rows and sql.Row

@@ -370,79 +370,131 @@ func TestIsQueued(t *testing.T) {
 	}
 }
 
-func TestInsertIndex(t *testing.T) {
+func TestInsertIndexes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	insertRepo(t, db, 50, "")
 
-	id, err := store.InsertIndex(context.Background(), Index{
-		State:        "queued",
-		Commit:       makeCommit(1),
-		RepositoryID: 50,
-		DockerSteps: []DockerStep{
-			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+	indexes, err := store.InsertIndexes(ctx, []Index{
+		{
+			State:        "queued",
+			Commit:       makeCommit(1),
+			RepositoryID: 50,
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/node:12.16",
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				},
+			},
+			LocalSteps:  []string{"echo hello"},
+			Root:        "/foo/bar",
+			Indexer:     "sourcegraph/lsif-tsc:latest",
+			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 			},
 		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
-		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+		{
+			State:        "queued",
+			Commit:       makeCommit(2),
+			RepositoryID: 50,
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/rust:nightly",
+					Commands: []string{"cargo install"},
+				},
+			},
+			LocalSteps:  nil,
+			Root:        "/baz",
+			Indexer:     "sourcegraph/lsif-rust:15",
+			IndexerArgs: []string{"-v"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+			},
 		},
 	})
 	if err != nil {
 		t.Fatalf("unexpected error enqueueing index: %s", err)
 	}
-
-	rank := 1
-	expected := Index{
-		ID:             id,
-		Commit:         makeCommit(1),
-		QueuedAt:       time.Time{},
-		State:          "queued",
-		FailureMessage: nil,
-		StartedAt:      nil,
-		FinishedAt:     nil,
-		RepositoryID:   50,
-		RepositoryName: "n-50",
-		DockerSteps: []DockerStep{
-			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
-			},
-		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/lsif-tsc:latest",
-		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
-		Outfile:     "dump.lsif",
-		ExecutionLogs: []workerutil.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
-		},
-		Rank: &rank,
+	if len(indexes) == 0 {
+		t.Fatalf("expected records to be inserted")
 	}
 
-	if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
-	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else {
-		// Update auto-generated timestamp
-		expected.QueuedAt = index.QueuedAt
+	rank1 := 1
+	rank2 := 2
+	expected := []Index{
+		{
+			ID:             1,
+			Commit:         makeCommit(1),
+			QueuedAt:       time.Time{},
+			State:          "queued",
+			FailureMessage: nil,
+			StartedAt:      nil,
+			FinishedAt:     nil,
+			RepositoryID:   50,
+			RepositoryName: "n-50",
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/node:12.16",
+					Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				},
+			},
+			LocalSteps:  []string{"echo hello"},
+			Root:        "/foo/bar",
+			Indexer:     "sourcegraph/lsif-tsc:latest",
+			IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+			},
+			Rank: &rank1,
+		},
+		{
+			ID:             2,
+			Commit:         makeCommit(2),
+			QueuedAt:       time.Time{},
+			State:          "queued",
+			FailureMessage: nil,
+			StartedAt:      nil,
+			FinishedAt:     nil,
+			RepositoryID:   50,
+			RepositoryName: "n-50",
+			DockerSteps: []DockerStep{
+				{
+					Image:    "cimg/rust:nightly",
+					Commands: []string{"cargo install"},
+				},
+			},
+			LocalSteps:  []string{},
+			Root:        "/baz",
+			Indexer:     "sourcegraph/lsif-rust:15",
+			IndexerArgs: []string{"-v"},
+			Outfile:     "dump.lsif",
+			ExecutionLogs: []workerutil.ExecutionLogEntry{
+				{Command: []string{"op", "1"}, Out: "Done with 1.\n"},
+				{Command: []string{"op", "2"}, Out: "Done with 2.\n"},
+			},
+			Rank: &rank2,
+		},
+	}
 
-		if diff := cmp.Diff(expected, index); diff != "" {
-			t.Errorf("unexpected index (-want +got):\n%s", diff)
-		}
+	for i := range expected {
+		// Update auto-generated timestamp
+		expected[i].QueuedAt = indexes[0].QueuedAt
+	}
+
+	if diff := cmp.Diff(expected, indexes); diff != "" {
+		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
 	}
 }
 
@@ -529,51 +581,5 @@ func TestDeleteIndexesWithoutRepository(t *testing.T) {
 	}
 	if diff := cmp.Diff(expected, ids); diff != "" {
 		t.Errorf("unexpected ids (-want +got):\n%s", diff)
-	}
-}
-
-func TestDeleteOldIndexes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
-
-	t1 := time.Unix(1587396557, 0).UTC()
-	t2 := t1.Add(time.Minute)
-	t3 := t1.Add(time.Minute * 4)
-	t4 := t1.Add(time.Minute * 6)
-
-	insertIndexes(t, db,
-		Index{ID: 1, State: "completed", QueuedAt: t1},
-		Index{ID: 2, State: "errored", QueuedAt: t2},
-		Index{ID: 3, State: "completed", QueuedAt: t3},
-		Index{ID: 4, State: "completed", QueuedAt: t4}, // too new
-		Index{ID: 5, State: "queued", QueuedAt: t4},    // too new
-		Index{ID: 6, State: "queued", QueuedAt: t3},
-		Index{ID: 7, State: "queued", QueuedAt: t4}, // too new
-	)
-
-	if count, err := store.DeleteOldIndexes(context.Background(), time.Minute, t1.Add(time.Minute*6)); err != nil {
-		t.Fatalf("unexpected error pruning indexes: %s", err)
-	} else if count != 4 {
-		t.Fatalf("unexpected number of indexes deleted: want=%d have=%d", 4, count)
-	}
-
-	existence := map[int]bool{
-		1: false,
-		2: false,
-		3: false,
-		4: true,
-		5: true,
-		6: false,
-		7: true,
-	}
-	for id, expectedExists := range existence {
-		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-			t.Fatalf("unexpected error getting index: %s", err)
-		} else if exists != expectedExists {
-			t.Fatalf("unexpected record %d. want=%v have=%v", id, expectedExists, exists)
-		}
 	}
 }

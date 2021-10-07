@@ -35,7 +35,11 @@ export const SavedSearchesPanel: React.FunctionComponent<Props> = ({
     useEffect(() => {
         // Only log the first load (when items to load is equal to the page size)
         if (savedSearches) {
-            telemetryService.log('SavedSearchesPanelLoaded', { empty: savedSearches.length === 0, showAllSearches })
+            telemetryService.log(
+                'SavedSearchesPanelLoaded',
+                { empty: savedSearches.length === 0, showAllSearches },
+                { empty: savedSearches.length === 0, showAllSearches }
+            )
         }
     }, [savedSearches, telemetryService, showAllSearches])
 

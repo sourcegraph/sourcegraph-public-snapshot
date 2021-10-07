@@ -17,6 +17,7 @@ type abandonedUploadJanitor struct {
 }
 
 var _ goroutine.Handler = &abandonedUploadJanitor{}
+var _ goroutine.ErrorHandler = &abandonedUploadJanitor{}
 
 // NewAbandonedUploadJanitor returns a background routine that periodically removes
 // upload records which have not left the uploading state within the given TTL.
@@ -31,7 +32,7 @@ func NewAbandonedUploadJanitor(dbStore DBStore, ttl, interval time.Duration, met
 func (h *abandonedUploadJanitor) Handle(ctx context.Context) error {
 	count, err := h.dbStore.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-h.ttl))
 	if err != nil {
-		return errors.Wrap(err, "DeleteUploadsStuckUploading")
+		return errors.Wrap(err, "dbstore.DeleteUploadsStuckUploading")
 	}
 	if count > 0 {
 		log15.Debug("Deleted abandoned upload records", "count", count)

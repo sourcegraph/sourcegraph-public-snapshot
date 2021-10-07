@@ -9,8 +9,8 @@ import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } fr
 import { isDefined } from '../../util/types'
 import { SearchSuggestion } from '../suggestions'
 
-import { toMonacoRange } from './decoratedToken'
 import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } from './filters'
+import { toMonacoSingleLineRange } from './monaco'
 import { Filter, Token } from './token'
 
 export const repositoryCompletionItemKind = Monaco.languages.CompletionItemKind.Color
@@ -219,7 +219,7 @@ async function completeDefault(
     const staticSuggestions = FILTER_TYPE_COMPLETIONS.map(
         (suggestion): Monaco.languages.CompletionItem => ({
             ...suggestion,
-            range: toMonacoRange(token.range),
+            range: toMonacoSingleLineRange(token.range),
             command: TRIGGER_SUGGESTIONS,
         })
     )
@@ -242,7 +242,7 @@ async function completeDefault(
                 .filter(isDefined)
                 .map(completionItem => ({
                     ...completionItem,
-                    range: toMonacoRange(token.range),
+                    range: toMonacoSingleLineRange(token.range),
                     // Set a sortText so that dynamic suggestions
                     // are shown after filter type suggestions.
                     sortText: '1',
@@ -284,7 +284,7 @@ async function completeFilter(
                 insertText: `${insertText || label} `,
                 filterText: label,
                 insertTextRules: asSnippet ? Monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
-                range: value ? toMonacoRange(value.range) : defaultRange,
+                range: value ? toMonacoSingleLineRange(value.range) : defaultRange,
                 command: COMPLETION_ITEM_SELECTED,
             })
         )
@@ -310,7 +310,7 @@ async function completeFilter(
                 // suggestions, and not display them because they don't match.
                 filterText: value?.value,
                 sortText: index.toString().padStart(2, '0'), // suggestions sort by order in the list, not alphabetically (up to 99 values).
-                range: value ? toMonacoRange(value.range) : defaultRange,
+                range: value ? toMonacoSingleLineRange(value.range) : defaultRange,
                 command: COMPLETION_ITEM_SELECTED,
             }))
     }

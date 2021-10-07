@@ -1,16 +1,33 @@
 package httpcli
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"math"
+	"math/rand"
+	"net"
 	"net/http"
+	"net/url"
+	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/PuerkitoBio/rehttp"
 	"github.com/cockroachdb/errors"
 	"github.com/gregjones/httpcache"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -64,65 +81,82 @@ type Factory struct {
 // too large.
 var redisCache = rcache.NewWithTTL("http", 604800)
 
-// NewExternalHTTPClientFactory returns an httpcli.Factory with common options
-// and middleware pre-set for communicating to external services.
-func NewExternalHTTPClientFactory() *Factory {
+// ExternalClientFactory is a httpcli.Factory with common options
+// and middleware pre-set for communicating with external services.
+var ExternalClientFactory = NewExternalClientFactory()
+
+var (
+	externalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
+	externalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
+	externalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
+	externalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
+)
+
+// NewExternalClientFactory returns a httpcli.Factory with common options
+// and middleware pre-set for communicating with external services.
+func NewExternalClientFactory() *Factory {
 	return NewFactory(
-		// TODO(tsenart): Use middle for Prometheus instrumentation later.
 		NewMiddleware(
 			ContextErrorMiddleware,
 		),
-		NewTimeoutOpt(60*time.Second),
+		NewTimeoutOpt(externalTimeout),
 		// ExternalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
 		ExternalTransportOpt,
+		NewErrorResilientTransportOpt(
+			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts)),
+			ExpJitterDelay(externalRetryDelayBase, externalRetryDelayMax),
+		),
 		TracedTransportOpt,
 		NewCachedTransportOpt(redisCache, true),
 	)
 }
 
+// ExternalDoer is a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+var ExternalDoer, _ = ExternalClientFactory.Doer()
+
+// ExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+var ExternalClient, _ = ExternalClientFactory.Client()
+
+// InternalClientFactory is a httpcli.Factory with common options
+// and middleware pre-set for communicating with internal services.
+var InternalClientFactory = NewInternalClientFactory("internal")
+
 var (
-	externalOnce       sync.Once
-	externalDoer       Doer
-	externalHTTPClient *http.Client
+	internalTimeout, _          = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
+	internalRetryDelayBase, _   = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
+	internalRetryDelayMax, _    = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
+	internalRetryMaxAttempts, _ = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
 )
 
-func externalInit() {
-	externalOnce.Do(func() {
-		var err error
-		externalDoer, err = NewExternalHTTPClientFactory().Doer()
-		if err != nil {
-			panic("httpcli: failed to create the default ExternalDoer. This should not happen: " + err.Error())
-		}
-		externalHTTPClient, err = NewExternalHTTPClientFactory().Client()
-		if err != nil {
-			panic("httpcli: failed to create the default ExternalHTTPClient. This should not happen: " + err.Error())
-		}
-	})
+// NewInternalClientFactory returns a httpcli.Factory with common options
+// and middleware pre-set for communicating with internal services.
+func NewInternalClientFactory(subsystem string) *Factory {
+	return NewFactory(
+		NewMiddleware(
+			ContextErrorMiddleware,
+		),
+		NewTimeoutOpt(internalTimeout),
+		NewMaxIdleConnsPerHostOpt(500),
+		NewErrorResilientTransportOpt(
+			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts)),
+			ExpJitterDelay(internalRetryDelayBase, internalRetryDelayMax),
+		),
+		MeteredTransportOpt(subsystem),
+		TracedTransportOpt,
+	)
 }
 
-// ExternalDoer returns a shared client for external communication. This is a
+// InternalDoer is a shared client for external communication. This is a
 // convenience for existing uses of http.DefaultClient.
-//
-// NOTE: Use this for legacy code. New code should generally take in a
-// httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
-// and passed down.
-func ExternalDoer() Doer {
-	externalInit()
-	return externalDoer
-}
+var InternalDoer, _ = InternalClientFactory.Doer()
 
-// ExternalHTTPClient returns a shared client for external communication. This is
+// InternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
-//
-// NOTE: Use this for legacy code. New code should generally take in a
-// httpcli.Doer and at a high level NewExternalHTTPClientFactory() is called
-// and passed down.
-func ExternalHTTPClient() *http.Client {
-	externalInit()
-	return externalHTTPClient
-}
+var InternalClient, _ = InternalClientFactory.Client()
 
 // Doer returns a new Doer wrapped with the middleware stack
 // provided in the Factory constructor and with the given common
@@ -307,6 +341,195 @@ func TracedTransportOpt(cli *http.Client) error {
 	return nil
 }
 
+// MeteredTransportOpt returns an opt that wraps an existing http.Transport of a http.Client with
+// metrics collection.
+func MeteredTransportOpt(subsystem string) Opt {
+	meter := metrics.NewRequestMeter(
+		subsystem,
+		"Total number of requests sent to "+subsystem,
+	)
+
+	return func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
+
+		cli.Transport = meter.Transport(cli.Transport, func(u *url.URL) string {
+			return u.Path
+		})
+
+		return nil
+	}
+}
+
+var metricRetry = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "src_httpcli_retry_total",
+	Help: "Total number of times we retry HTTP requests.",
+})
+
+// A regular expression to match the error returned by net/http when the
+// configured number of redirects is exhausted. This error isn't typed
+// specifically so we resort to matching on the error string.
+var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
+
+// A regular expression to match the error returned by net/http when the
+// scheme specified in the URL is invalid. This error isn't typed
+// specifically so we resort to matching on the error string.
+var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
+
+// MaxRetries returns the max retries to be attempted, which should be passed
+// to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
+// parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
+func MaxRetries(n int) int {
+	if strings.HasSuffix(os.Args[0], ".test") {
+		return 0
+	}
+	return n
+}
+
+// NewRetryPolicy returns a retry policy used in any Doer or Client returned
+// by NewExternalClientFactory.
+func NewRetryPolicy(max int) rehttp.RetryFn {
+	return func(a rehttp.Attempt) (retry bool) {
+		status := 0
+
+		defer func() {
+			// Avoid trace log spam if we haven't invoked the retry policy.
+			shouldTraceLog := retry || a.Index > 0
+			if span := opentracing.SpanFromContext(a.Request.Context()); span != nil && shouldTraceLog {
+				fields := []otlog.Field{
+					otlog.Event("request-retry-decision"),
+					otlog.Bool("retry", retry),
+					otlog.Int("attempt", a.Index),
+					otlog.String("method", a.Request.Method),
+					otlog.String("url", a.Request.URL.String()),
+					otlog.Int("status", status),
+				}
+				if a.Error != nil {
+					fields = append(fields, otlog.Error(a.Error))
+				}
+				span.LogFields(fields...)
+			}
+
+			if retry {
+				metricRetry.Inc()
+			}
+
+			if retry || a.Error == nil || a.Index == 0 {
+				return
+			}
+
+			log15.Error(
+				"retrying HTTP request failed",
+				"attempt", a.Index,
+				"method", a.Request.Method,
+				"url", a.Request.URL,
+				"status", status,
+				"err", a.Error,
+			)
+		}()
+
+		if a.Response != nil {
+			status = a.Response.StatusCode
+		}
+
+		if a.Index >= max { // Max retries
+			return false
+		}
+
+		switch a.Error {
+		case nil:
+		case context.DeadlineExceeded, context.Canceled:
+			return false
+		default:
+			// Don't retry more than 3 times for no such host errors.
+			// This affords some resilience to dns unreliability while
+			// preventing 20 attempts with a non existing name.
+			var dnsErr *net.DNSError
+			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
+				return false
+			}
+
+			if v, ok := a.Error.(*url.Error); ok {
+				e := v.Error()
+				// Don't retry if the error was due to too many redirects.
+				if redirectsErrorRe.MatchString(e) {
+					return false
+				}
+
+				// Don't retry if the error was due to an invalid protocol scheme.
+				if schemeErrorRe.MatchString(e) {
+					return false
+				}
+
+				// Don't retry if the error was due to TLS cert verification failure.
+				if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
+					return false
+				}
+
+			}
+			// The error is likely recoverable so retry.
+			return true
+		}
+
+		if status == 0 || status == 429 || (status >= 500 && status != 501) {
+			return true
+		}
+
+		return false
+	}
+}
+
+// ExpJitterDelay returns a DelayFn that returns a delay between 0 and
+// base * 2^attempt capped at max (an exponential backoff delay with
+// jitter).
+//
+// See the full jitter algorithm in:
+// http://www.awsarchitectureblog.com/2015/03/backoff.html
+//
+// This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
+// package level PRNG and to be safe against overflows. It assumes that
+// max > base.
+func ExpJitterDelay(base, max time.Duration) rehttp.DelayFn {
+	var mu sync.Mutex
+	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return func(attempt rehttp.Attempt) time.Duration {
+		exp := math.Pow(2, float64(attempt.Index))
+		top := float64(base) * exp
+		n := int64(math.Min(float64(max), top))
+		if n <= 0 {
+			return base
+		}
+
+		mu.Lock()
+		delay := time.Duration(prng.Int63n(n))
+		mu.Unlock()
+
+		// Overflow handling
+		switch {
+		case delay < base:
+			return base
+		case delay > max:
+			return max
+		default:
+			return delay
+		}
+	}
+}
+
+// NewErrorResilientTransportOpt returns an Opt that wraps an existing
+// http.Transport of an http.Client with automatic retries.
+func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) Opt {
+	return func(cli *http.Client) error {
+		if cli.Transport == nil {
+			cli.Transport = http.DefaultTransport
+		}
+
+		cli.Transport = rehttp.NewTransport(cli.Transport, retry, delay)
+		return nil
+	}
+}
+
 // NewIdleConnTimeoutOpt returns a Opt that sets the IdleConnTimeout of an
 // http.Client's transport.
 func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
@@ -322,10 +545,27 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 	}
 }
 
+// NewMaxIdleConnsPerHostOpt returns a Opt that sets the MaxIdleConnsPerHost field of an
+// http.Client's transport.
+func NewMaxIdleConnsPerHostOpt(max int) Opt {
+	return func(cli *http.Client) error {
+		tr, err := getTransportForMutation(cli)
+		if err != nil {
+			return errors.Wrap(err, "httpcli.NewMaxIdleConnsOpt")
+		}
+
+		tr.MaxIdleConnsPerHost = max
+
+		return nil
+	}
+}
+
 // NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
 func NewTimeoutOpt(timeout time.Duration) Opt {
 	return func(cli *http.Client) error {
-		cli.Timeout = timeout
+		if timeout > 0 {
+			cli.Timeout = timeout
+		}
 		return nil
 	}
 }

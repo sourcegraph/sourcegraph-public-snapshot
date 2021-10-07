@@ -3,6 +3,8 @@ package gitserver
 import (
 	"fmt"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,6 +21,7 @@ type operations struct {
 	rawContents       *observation.Operation
 	refDescriptions   *observation.Operation
 	resolveRevision   *observation.Operation
+	repoInfo          *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -31,10 +34,15 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.gitserver.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
-			ErrorFilter:  gitserver.IsRevisionNotFound,
+			Name:              fmt.Sprintf("codeintel.gitserver.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
+			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+					return observation.EmitForNone
+				}
+				return observation.EmitForAll
+			},
 		})
 	}
 
@@ -49,5 +57,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		rawContents:       op("RawContents"),
 		refDescriptions:   op("RefDescriptions"),
 		resolveRevision:   op("ResolveRevision"),
+		repoInfo:          op("RepoInfo"),
 	}
 }

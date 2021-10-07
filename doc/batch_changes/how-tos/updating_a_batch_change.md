@@ -12,7 +12,7 @@ To update a changeset, you need:
 
 1. [admin permissions for the batch change](../explanations/permissions_in_batch_changes.md#permission-levels-for-batch-changes),
 1. write access to the changeset's repository (on the code host), and
-1. a personal access token [configured in Sourcegraph for your code host(s)](configuring_credentials.md).
+1. a [personal access token](configuring_credentials.md#personal-access-tokens) or a [global service account token](configuring_credentials.md#global-service-account-tokens) configured for the code host.
 
 For more information, see [Code host interactions in Batch Changes](../explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes).
 
@@ -25,7 +25,7 @@ In order to update a batch change after previewing the changes, do the following
 
     <pre><code>src batch preview -f <em>YOUR_BATCH_SPEC.batch.yaml</em></code></pre>
 1. Open on the URL that's printed to preview the changes that will be made by applying the new batch spec.
-1. Click **Apply spec** to update the batch change.
+1. Click **Apply** to update the batch change.
 
 All of the changesets on your code host will be updated to the desired state that was shown in the preview.
 

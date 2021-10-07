@@ -75,6 +75,17 @@ type Context struct {
 // TestContext is a behaviorless Context usable for unit tests.
 var TestContext = Context{Registerer: metrics.TestRegisterer}
 
+type ErrorFilterBehaviour uint8
+
+const (
+	EmitForNone    ErrorFilterBehaviour = 0
+	EmitForMetrics ErrorFilterBehaviour = 1 << iota
+	EmitForLogs
+	EmitForTraces
+
+	EmitForAll = EmitForMetrics | EmitForLogs | EmitForTraces
+)
+
 // Op configures an Operation instance.
 type Op struct {
 	Metrics *metrics.OperationMetrics
@@ -82,11 +93,11 @@ type Op struct {
 	// format {GroupName}.{OperationName}, where both sections are title cased
 	// (e.g. Store.GetRepoByID).
 	Name string
-	// MetricLabels that apply for every invocation of this operation.
-	MetricLabels []string
+	// MetricLabelValues that apply for every invocation of this operation.
+	MetricLabelValues []string
 	// LogFields that apply for for every invocation of this operation.
 	LogFields []log.Field
-	// ErrorFilter returns false for any error that should be converted to nil
+	// ErrorFilter returns true for any error that should be converted to nil
 	// for the purposes of metrics and tracing. If this field is not set then
 	// error values are unaltered.
 	//
@@ -94,7 +105,7 @@ type Op struct {
 	// a process interfacing with gitserver. Such an error should not be treated as
 	// an unexpected value in metrics and traces but should be handled higher up in
 	// the stack.
-	ErrorFilter func(err error) bool
+	ErrorFilter func(err error) ErrorFilterBehaviour
 }
 
 // Operation combines the state of the parent context to create a new operation. This value
@@ -105,7 +116,7 @@ func (c *Context) Operation(args Op) *Operation {
 		metrics:      args.Metrics,
 		name:         args.Name,
 		kebabName:    kebabCase(args.Name),
-		metricLabels: args.MetricLabels,
+		metricLabels: args.MetricLabelValues,
 		logFields:    args.LogFields,
 		errorFilter:  args.ErrorFilter,
 	}
@@ -119,7 +130,7 @@ type Operation struct {
 	kebabName    string
 	metricLabels []string
 	logFields    []log.Field
-	errorFilter  func(err error) bool
+	errorFilter  func(err error) ErrorFilterBehaviour
 }
 
 // TraceLogger is returned from WithAndLogger and can be used to add timestamped key and
@@ -132,8 +143,8 @@ type FinishFunc func(count float64, args Args)
 
 // Args configures the observation behavior of an invocation of an operation.
 type Args struct {
-	// MetricLabels that apply only to this invocation of the operation.
-	MetricLabels []string
+	// MetricLabelValues that apply only to this invocation of the operation.
+	MetricLabelValues []string
 	// LogFields that apply only to this invocation of the operation.
 	LogFields []log.Field
 }
@@ -186,12 +197,16 @@ func (op *Operation) WithAndLogger(ctx context.Context, err *error, args Args) (
 		elapsed := time.Since(start).Seconds()
 		defaultFinishFields := []log.Field{log.Float64("count", count), log.Float64("elapsed", elapsed)}
 		logFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
-		metricLabels := mergeLabels(op.metricLabels, args.MetricLabels, finishArgs.MetricLabels)
+		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
-		err = op.applyErrorFilter(err)
-		op.emitErrorLogs(err, logFields)
-		op.emitMetrics(err, count, elapsed, metricLabels)
-		op.finishTrace(err, tr, logFields)
+		var (
+			logErr     = op.applyErrorFilter(err, EmitForLogs)
+			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
+			traceErr   = op.applyErrorFilter(err, EmitForTraces)
+		)
+		op.emitErrorLogs(logErr, logFields)
+		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
+		op.finishTrace(traceErr, tr, logFields)
 	}
 }
 
@@ -253,8 +268,8 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []log.Fi
 
 // applyErrorFilter returns nil if the given error does not pass the registered error filter.
 // The original value is returned otherwise.
-func (op *Operation) applyErrorFilter(err *error) *error {
-	if op.errorFilter != nil && err != nil && op.errorFilter(*err) {
+func (op *Operation) applyErrorFilter(err *error, behaviour ErrorFilterBehaviour) *error {
+	if op.errorFilter != nil && err != nil && op.errorFilter(*err)&behaviour == 0 {
 		return nil
 	}
 

@@ -6,10 +6,10 @@ import { Observable, of, throwError } from 'rxjs'
 import sinon from 'sinon'
 
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { mockGetUserSearchContextNamespaces } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
 
 import { ListSearchContextsResult, SearchContextFields } from '../../graphql-operations'
-import { mockGetUserSearchContextNamespaces } from '../../searchContexts/testHelpers'
 
 import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
 
@@ -102,10 +102,11 @@ describe('SearchContextMenu', () => {
         defaultSearchContextSpec: 'global',
         selectedSearchContextSpec: 'global',
         selectSearchContextSpec: () => {},
-        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
+        fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts,
         fetchSearchContexts: mockFetchSearchContexts,
         closeMenu: () => {},
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+        searchContextsEnabled: true,
     }
 
     const RealIntersectionObserver = window.IntersectionObserver
@@ -280,7 +281,7 @@ describe('SearchContextMenu', () => {
                 <DropdownMenu>
                     <SearchContextMenu
                         {...defaultProps}
-                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts()}
+                        fetchAutoDefinedSearchContexts={errorFetchAutoDefinedSearchContexts}
                     />
                 </DropdownMenu>
             </UncontrolledDropdown>

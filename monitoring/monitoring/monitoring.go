@@ -9,6 +9,8 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/grafana-tools/sdk"
+
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 )
 
 // Container describes a Docker container to be observed.
@@ -24,9 +26,6 @@ type Container struct {
 	// Description of the Docker container. It should describe what the container
 	// is responsible for, so that the impact of issues in it is clear.
 	Description string
-
-	// List of Annotations to apply to the dashboard.
-	Annotations []sdk.Annotation
 
 	// List of Template Variables to apply to the dashboard
 	Templates []sdk.TemplateVar
@@ -44,17 +43,17 @@ type Container struct {
 
 func (c *Container) validate() error {
 	if !isValidGrafanaUID(c.Name) {
-		return fmt.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
+		return errors.Errorf("Name must be lowercase alphanumeric + dashes; found \"%s\"", c.Name)
 	}
 	if c.Title != strings.Title(c.Title) {
-		return fmt.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
+		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, strings.Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
-		return fmt.Errorf("Description must be sentence starting with an uppercas eletter and ending with period; found \"%s\"", c.Description)
+		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
 	}
 	for i, g := range c.Groups {
 		if err := g.validate(); err != nil {
-			return fmt.Errorf("Group %d %q: %v", i, g.Title, err)
+			return errors.Errorf("Group %d %q: %v", i, g.Title, err)
 		}
 	}
 	return nil
@@ -73,8 +72,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 	board.SharedCrosshair = true
 	board.Editable = false
 	board.AddTags("builtin")
-	board.Templating.List = c.Templates
-	board.Templating.List = append(board.Templating.List, sdk.TemplateVar{
+	board.Templating.List = append([]sdk.TemplateVar{{
 		Label:      "Filter alert level",
 		Name:       "alert_level",
 		AllValue:   ".*",
@@ -87,10 +85,8 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 		Query: "critical,warning",
 		Type:  "custom",
-	},
-	)
-	board.Annotations.List = c.Annotations
-	board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
+	}}, c.Templates...)
+	board.Annotations.List = []sdk.Annotation{{
 		Name:       "Alert events",
 		Datasource: StringPtr("Prometheus"),
 		// Show alerts matching the selected alert_level (see template variable above)
@@ -101,8 +97,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 		IconColor:   "rgba(255, 96, 96, 1)",
 		Enable:      false, // disable by default for now
 		Type:        "tags",
-	},
-	)
+	}}
 	// Annotation layers that require a service to export information required by the
 	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
 	if !c.NoSourcegraphDebugServer {
@@ -129,47 +124,21 @@ func (c *Container) renderDashboard() *sdk.Board {
 	description.TextPanel.Content = fmt.Sprintf(`
 	<div style="text-align: left;">
 	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><span style="color: #8e8e8e">%s:</span> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
+	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
 	</div>
 	`, c.Name, c.Description)
 	board.Panels = append(board.Panels, description)
 
-	alertsDefined := sdk.NewTable("Alerts defined")
-	setPanelSize(alertsDefined, 9, 5)
-	setPanelPos(alertsDefined, 0, 3)
-	alertsDefined.TablePanel.Sort = &sdk.Sort{Desc: true, Col: 4}
-	alertsDefined.TablePanel.Styles = []sdk.ColumnStyle{
-		{
-			Pattern: "Time",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "level",
-			Type:    "hidden",
-		},
-		{
-			Pattern: "_01_level",
-			Alias:   StringPtr("level"),
-		},
-		{
-			Pattern:     "Value",
-			Alias:       StringPtr("firing?"),
-			ColorMode:   StringPtr("row"),
-			Colors:      &[]string{"rgba(50, 172, 45, 0.97)", "rgba(237, 129, 40, 0.89)", "rgba(245, 54, 54, 0.9)"},
-			Thresholds:  &[]string{"0.99999", "1"},
-			Type:        "string",
-			MappingType: 1,
-			ValueMaps: []sdk.ValueMap{
-				{TextType: "false", Value: "0"},
-				{TextType: "true", Value: "1"},
-			},
-		},
-	}
-	alertsDefined.AddTarget(&sdk.Target{
-		Expr:    fmt.Sprintf(`label_replace(sum(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description), "_01_level", "$1", "level", "(.*)")`, c.Name),
+	alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
+		Expr: fmt.Sprintf(`label_replace(
+			sum(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})) by (level,description,service_name,grafana_panel_id),
+			"description", "$1", "description", ".*: (.*)"
+		)`, c.Name),
 		Format:  "table",
 		Instant: true,
 	})
+	setPanelSize(alertsDefined, 9, 5)
+	setPanelPos(alertsDefined, 0, 3)
 	board.Panels = append(board.Panels, alertsDefined)
 
 	alertsFiring := sdk.NewGraph("Alerts firing")
@@ -191,7 +160,7 @@ func (c *Container) renderDashboard() *sdk.Board {
 			LogBase:  1,
 			Max:      sdk.NewFloatString(1),
 			Min:      sdk.NewFloatString(0),
-			Show:     true,
+			Show:     false,
 		},
 		{
 			Format:  "short",
@@ -200,9 +169,14 @@ func (c *Container) renderDashboard() *sdk.Board {
 		},
 	}
 	alertsFiring.AddTarget(&sdk.Target{
-		Expr:         fmt.Sprintf(`sum by (service_name,level,name)(max by (level,service_name,name,description)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
+		Expr:         fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
 		LegendFormat: "{{level}}: {{name}}",
 	})
+	alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
+	alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
+		Title: "Graph panel",
+		URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+	}}
 	board.Panels = append(board.Panels, alertsFiring)
 
 	baseY := 8
@@ -289,7 +263,7 @@ func (c *Container) alertDescription(o Observable, alert *ObservableAlertDefinit
 		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
 		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.threshold, units, o.Description)
 	} else {
-		return "", fmt.Errorf("unable to generate description for observable %+v", o)
+		return "", errors.Errorf("unable to generate description for observable %+v", o)
 	}
 
 	// add information about "for"
@@ -330,7 +304,7 @@ func (c *Container) renderRules() (*promRulesFile, error) {
 					// Build the rule with appropriate labels. Labels are leveraged in various integrations, such as with prom-wrapper.
 					description, err := c.alertDescription(o, a)
 					if err != nil {
-						return nil, fmt.Errorf("%s.%s.%s: unable to generate labels: %+v",
+						return nil, errors.Errorf("%s.%s.%s: unable to generate labels: %+v",
 							c.Name, o.Name, level, err)
 					}
 					group.appendRow(alertQuery, map[string]string{
@@ -378,11 +352,11 @@ type Group struct {
 
 func (g Group) validate() error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
-		return fmt.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
+		return errors.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
 	}
 	for i, r := range g.Rows {
 		if err := r.validate(); err != nil {
-			return fmt.Errorf("Row %d: %v", i, err)
+			return errors.Errorf("Row %d: %v", i, err)
 		}
 	}
 	return nil
@@ -395,45 +369,51 @@ type Row []Observable
 
 func (r Row) validate() error {
 	if len(r) < 1 || len(r) > 4 {
-		return fmt.Errorf("row must have 1 to 4 observables only, found %v", len(r))
+		return errors.Errorf("row must have 1 to 4 observables only, found %v", len(r))
 	}
 	for i, o := range r {
 		if err := o.validate(); err != nil {
-			return fmt.Errorf("Observable %d %q: %v", i, o.Name, err)
+			return errors.Errorf("Observable %d %q: %v", i, o.Name, err)
 		}
 	}
 	return nil
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/company/team/org_chart#engineering
+// the handbook: https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
 type ObservableOwner string
 
 const (
 	ObservableOwnerSearch          ObservableOwner = "search"
+	ObservableOwnerSearchCore      ObservableOwner = "search-core"
 	ObservableOwnerBatches         ObservableOwner = "batches"
 	ObservableOwnerCodeIntel       ObservableOwner = "code-intel"
 	ObservableOwnerDistribution    ObservableOwner = "distribution"
 	ObservableOwnerSecurity        ObservableOwner = "security"
 	ObservableOwnerWeb             ObservableOwner = "web"
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
+	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
 func (o ObservableOwner) toMarkdown() string {
-	var teamName string
+	var slug string
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
-	// see https://about.sourcegraph.com/company/team/org_chart#engineering
+	// see https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
 	switch o {
 	case ObservableOwnerCodeIntel:
-		teamName = "code-intelligence"
+		slug = "code-intelligence"
+	case ObservableOwnerCodeInsights:
+		slug = "developer-insights/code-insights"
+	case ObservableOwnerSearchCore:
+		slug = "search/core"
 	default:
-		teamName = string(o)
+		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
 
-	slug := strings.ReplaceAll(teamName, " ", "-")
-	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)", upperFirst(teamName), slug)
+	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)",
+		upperFirst(string(o)), slug)
 }
 
 // Observable describes a metric about a container that can be observed. For example, memory usage.
@@ -558,39 +538,39 @@ type Observable struct {
 
 func (o Observable) validate() error {
 	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
-		return fmt.Errorf("Name must be in lower_snake_case; found \"%s\"", o.Name)
+		return errors.Errorf("Name must be in lower_snake_case; found \"%s\"", o.Name)
 	}
 	if len(o.Description) == 0 {
 		return errors.New("Description must be set")
 	}
 	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
-		return fmt.Errorf("Description must be lowercase; found \"%s\"", o.Description)
+		return errors.Errorf("Description must be lowercase; found \"%s\"", o.Description)
 	}
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")
 	}
-	if !o.Panel.panelType.Valid() {
+	if !o.Panel.panelType.validate() {
 		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
 	}
 
-	allAlertsEmpty := o.Warning.isEmpty() && o.Critical.isEmpty()
+	allAlertsEmpty := o.alertsCount() == 0
 	if allAlertsEmpty || o.NoAlert {
 		// Ensure lack of alerts is intentional
 		if allAlertsEmpty && !o.NoAlert {
-			return fmt.Errorf("Warning or Critical must be set or explicitly disable alerts with NoAlert")
+			return errors.Errorf("Warning or Critical must be set or explicitly disable alerts with NoAlert")
 		} else if !allAlertsEmpty && o.NoAlert {
-			return fmt.Errorf("An alert is set, but NoAlert is also true")
+			return errors.Errorf("An alert is set, but NoAlert is also true")
 		}
 		// PossibleSolutions if there are no alerts is redundant and likely an error
 		if o.PossibleSolutions != "" {
-			return fmt.Errorf(`PossibleSolutions is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
+			return errors.Errorf(`PossibleSolutions is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
 		}
 		// Interpretation must be provided and valid
 		if o.Interpretation == "" {
-			return fmt.Errorf("Interpretation must be provided if no alerts are set")
+			return errors.Errorf("Interpretation must be provided if no alerts are set")
 		} else if o.Interpretation != "none" {
 			if _, err := toMarkdown(o.Interpretation, false); err != nil {
-				return fmt.Errorf("Interpretation cannot be converted to Markdown: %w", err)
+				return errors.Errorf("Interpretation cannot be converted to Markdown: %w", err)
 			}
 		}
 	} else {
@@ -600,22 +580,32 @@ func (o Observable) validate() error {
 			"Critical": o.Critical,
 		} {
 			if err := alert.validate(); err != nil {
-				return fmt.Errorf("%s Alert: %w", alertLevel, err)
+				return errors.Errorf("%s Alert: %w", alertLevel, err)
 			}
 		}
 		// PossibleSolutions must be provided and valid
 		if o.PossibleSolutions == "" {
-			return fmt.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
+			return errors.Errorf(`PossibleSolutions must list solutions or an explicit "none"`)
 		} else if o.PossibleSolutions != "none" {
 			if solutions, err := toMarkdown(o.PossibleSolutions, true); err != nil {
-				return fmt.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
+				return errors.Errorf("PossibleSolutions cannot be converted to Markdown: %w", err)
 			} else if l := strings.ToLower(solutions); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-				return fmt.Errorf("PossibleSolutions should not include mentions of contacting support")
+				return errors.Errorf("PossibleSolutions should not include mentions of contacting support")
 			}
 		}
 	}
 
 	return nil
+}
+
+func (o Observable) alertsCount() (count int) {
+	if !o.Warning.isEmpty() {
+		count++
+	}
+	if !o.Critical.isEmpty() {
+		count++
+	}
+	return
 }
 
 // Alert provides a builder for defining alerting on an Observable.

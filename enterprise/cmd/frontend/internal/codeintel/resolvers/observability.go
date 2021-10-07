@@ -15,14 +15,17 @@ import (
 )
 
 type operations struct {
-	queryResolver         *observation.Operation
-	definitions           *observation.Operation
-	diagnostics           *observation.Operation
-	hover                 *observation.Operation
-	ranges                *observation.Operation
-	references            *observation.Operation
-	documentationPage     *observation.Operation
-	documentationPathInfo *observation.Operation
+	queryResolver             *observation.Operation
+	definitions               *observation.Operation
+	diagnostics               *observation.Operation
+	hover                     *observation.Operation
+	ranges                    *observation.Operation
+	references                *observation.Operation
+	documentationPage         *observation.Operation
+	documentationPathInfo     *observation.Operation
+	documentationIDsToPathIDs *observation.Operation
+	documentationReferences   *observation.Operation
+	documentation             *observation.Operation
 
 	findClosestDumps *observation.Operation
 }
@@ -37,9 +40,9 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:         fmt.Sprintf("codeintel.resolvers.%s", name),
-			MetricLabels: []string{name},
-			Metrics:      metrics,
+			Name:              fmt.Sprintf("codeintel.resolvers.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           metrics,
 		})
 	}
 
@@ -53,14 +56,17 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		queryResolver:         op("QueryResolver"),
-		definitions:           op("Definitions"),
-		diagnostics:           op("Diagnostics"),
-		hover:                 op("Hover"),
-		ranges:                op("Ranges"),
-		references:            op("References"),
-		documentationPage:     op("DocumentationPage"),
-		documentationPathInfo: op("DocumentationPathInfo"),
+		queryResolver:             op("QueryResolver"),
+		definitions:               op("Definitions"),
+		diagnostics:               op("Diagnostics"),
+		hover:                     op("Hover"),
+		ranges:                    op("Ranges"),
+		references:                op("References"),
+		documentationPage:         op("DocumentationPage"),
+		documentationPathInfo:     op("DocumentationPathInfo"),
+		documentationIDsToPathIDs: op("DocumentationIDsToPathIDs"),
+		documentationReferences:   op("DocumentationReferences"),
+		documentation:             op("Documentation"),
 
 		findClosestDumps: subOp("findClosestDumps"),
 	}
@@ -103,7 +109,13 @@ func lowSlowRequest(name string, duration time.Duration, err *error, observation
 	log15.Warn("Slow codeintel request", pairs...)
 }
 
-func createHoneyEvent(ctx context.Context, name string, observationArgs observation.Args, err *error, duration time.Duration) *libhoney.Event {
+func createHoneyEvent(
+	ctx context.Context,
+	name string,
+	observationArgs observation.Args,
+	err *error,
+	duration time.Duration,
+) *libhoney.Event {
 	fields := map[string]interface{}{
 		"type":        name,
 		"duration_ms": duration.Milliseconds(),
@@ -115,8 +127,9 @@ func createHoneyEvent(ctx context.Context, name string, observationArgs observat
 	for key, value := range observationArgs.LogFieldMap() {
 		fields[key] = value
 	}
-	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
-		fields["trace"] = spanURL
+	if traceID := trace.ID(ctx); traceID != "" {
+		fields["trace"] = trace.URL(traceID)
+		fields["traceID"] = traceID
 	}
 
 	return honey.EventWithFields("codeintel", fields)

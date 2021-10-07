@@ -41,6 +41,7 @@ func TestRepoContainsPredicate(t *testing.T) {
 			{`negated content`, `-content:test`, nil},
 			{`unsupported syntax`, `abc:test`, nil},
 			{`unnamed content`, `test`, nil},
+			{`catch invalid content regexp`, `file:foo content:([)`, nil},
 		}
 
 		for _, tc := range invalid {
@@ -73,7 +74,7 @@ func TestParseAsPredicate(t *testing.T) {
 			}
 
 			if params != tc.params {
-				t.Fatalf("expected params %s, got %s", tc.name, name)
+				t.Fatalf("expected params %s, got %s", tc.params, params)
 			}
 		})
 	}

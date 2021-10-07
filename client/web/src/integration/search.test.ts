@@ -33,9 +33,17 @@ const mockDefaultStreamEvents: SearchEvent[] = [
         data: [
             { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'generic', limitHit: true },
             { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'generic', limitHit: true },
+            // Two repo filters to trigger the repository sidebar section
             {
                 label: 'github.com/Algorilla/manta-ray',
                 value: 'repo:^github\\.com/Algorilla/manta-ray$',
+                count: 1,
+                kind: 'repo',
+                limitHit: true,
+            },
+            {
+                label: 'github.com/Algorilla/manta-ray2',
+                value: 'repo:^github\\.com/Algorilla/manta-ray2$',
                 count: 1,
                 kind: 'repo',
                 limitHit: true,
@@ -54,6 +62,9 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
     }),
     RepoGroups: (): RepoGroupsResult => ({
         repoGroups: [],
+    }),
+    IsSearchContextAvailable: () => ({
+        isSearchContextAvailable: true,
     }),
 }
 
@@ -90,7 +101,7 @@ describe('Search', () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
 
             const dynamicFilters = ['archived:yes', 'repo:^github\\.com/Algorilla/manta-ray$']
-            const origQuery = 'foo'
+            const origQuery = 'context:global foo'
             for (const filter of dynamicFilters) {
                 await driver.page.goto(
                     `${driver.sourcegraphBaseUrl}/search?q=${encodeURIComponent(origQuery)}&patternType=literal`
@@ -223,7 +234,11 @@ describe('Search', () => {
             testContext.overrideGraphQL({
                 ...commonSearchGraphQLResults,
                 RegistryExtensions: () => ({
-                    extensionRegistry: { extensions: { error: null, nodes: [] }, featuredExtensions: null },
+                    extensionRegistry: {
+                        __typename: 'ExtensionRegistry',
+                        extensions: { error: null, nodes: [] },
+                        featuredExtensions: null,
+                    },
                 }),
             })
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
@@ -255,7 +270,7 @@ describe('Search', () => {
             await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal&case=yes')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
         })
 
         test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
@@ -268,7 +283,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-case-sensitivity-toggle')
             await driver.page.click('.test-case-sensitivity-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
         })
     })
 
@@ -285,7 +300,7 @@ describe('Search', () => {
             await waitAndFocusInput()
             await driver.page.type('.test-query-input', 'test')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
         test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
@@ -299,7 +314,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=structural')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=structural')
         })
 
         test('Clicking toggle turns off structural saerch and reverts to default pattern type', async () => {
@@ -312,7 +327,7 @@ describe('Search', () => {
             await driver.page.waitForSelector('.test-query-input', { visible: true })
             await driver.page.waitForSelector('.test-structural-search-toggle')
             await driver.page.click('.test-structural-search-toggle')
-            await driver.assertWindowLocation('/search?q=test&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
         })
     })
 
@@ -328,7 +343,7 @@ describe('Search', () => {
             // Note: Delay added because this test has been intermittently failing without it. Monaco search bar may drop events if it gets too many too fast.
             await driver.page.keyboard.type(' hello', { delay: 50 })
             await driver.page.click('.test-search-button')
-            await driver.assertWindowLocation('/search?q=test+hello&patternType=regexp')
+            await driver.assertWindowLocation('/search?q=context:global+test+hello&patternType=regexp')
         })
     })
 
@@ -340,22 +355,22 @@ describe('Search', () => {
                     data: [
                         { type: 'repo', repository: 'github.com/sourcegraph/sourcegraph' },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                         },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
-                            version: 'abcd',
+                            commit: 'abcd',
                         },
                         {
-                            type: 'file',
+                            type: 'content',
                             lineMatches: [],
-                            name: 'stream.ts',
+                            path: 'stream.ts',
                             repository: 'github.com/sourcegraph/sourcegraph',
                             branches: ['test/branch'],
                         },
@@ -423,7 +438,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -444,7 +459,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await hideCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('.search-result-match__code-excerpt .selection-highlight', {
+            await driver.page.waitForSelector('[data-testid="search-result-match-code-excerpt"] .selection-highlight', {
                 visible: true,
             })
             await driver.page.waitForSelector('#monaco-query-input', { visible: true })
@@ -513,13 +528,19 @@ describe('Search', () => {
                     ) !== null
             )
 
+        beforeEach(() => {
+            testContext.overrideGraphQL({
+                ...commonSearchGraphQLResults,
+            })
+        })
+
         test('Do not show create code monitor button feature tour with missing search type', async () => {
             testContext.overrideSearchStreamEvents(mockDefaultStreamEvents)
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test', {
                 waitUntil: 'networkidle0',
             })
             await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-search-result-label', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
 
@@ -529,7 +550,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await resetCreateCodeMonitorFeatureTour()
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-search-result-label', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeTruthy()
         })
 
@@ -539,7 +560,7 @@ describe('Search', () => {
                 waitUntil: 'networkidle0',
             })
             await resetCreateCodeMonitorFeatureTour(false)
-            await driver.page.waitForSelector('#monaco-query-input', { visible: true })
+            await driver.page.waitForSelector('.test-search-result-label', { visible: true })
             expect(await isCreateCodeMonitorFeatureTourVisible()).toBeFalsy()
         })
     })

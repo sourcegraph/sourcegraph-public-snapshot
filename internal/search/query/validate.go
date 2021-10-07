@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -60,15 +59,15 @@ func IsStreamingCompatible(p Plan) bool {
 	return false
 }
 
-// exists traverses every node in nodes and returns early as soon as fn is satisfied.
-func exists(nodes []Node, fn func(node Node) bool) bool {
+// Exists traverses every node in nodes and returns early as soon as fn is satisfied.
+func Exists(nodes []Node, fn func(node Node) bool) bool {
 	found := false
 	for _, node := range nodes {
 		if fn(node) {
 			return true
 		}
 		if operator, ok := node.(Operator); ok {
-			if exists(operator.Operands, fn) {
+			if Exists(operator.Operands, fn) {
 				return true
 			}
 		}
@@ -76,24 +75,34 @@ func exists(nodes []Node, fn func(node Node) bool) bool {
 	return found
 }
 
-// forAll traverses every node in nodes and returns whether all nodes satisfy fn.
-func forAll(nodes []Node, fn func(node Node) bool) bool {
+// ForAll traverses every node in nodes and returns whether all nodes satisfy fn.
+func ForAll(nodes []Node, fn func(node Node) bool) bool {
 	sat := true
 	for _, node := range nodes {
 		if !fn(node) {
 			return false
 		}
 		if operator, ok := node.(Operator); ok {
-			return forAll(operator.Operands, fn)
+			return ForAll(operator.Operands, fn)
 		}
 	}
 	return sat
 }
 
+// returns true if the query contains a predicate value.
+func ContainsPredicate(nodes []Node) bool {
+	return Exists(nodes, func(node Node) bool {
+		if v, ok := node.(Parameter); ok && v.Annotation.Labels.IsSet(IsPredicate) {
+			return true
+		}
+		return false
+	})
+}
+
 // isPatternExpression returns true if every leaf node in nodes is a search
 // pattern expression.
 func isPatternExpression(nodes []Node) bool {
-	return !exists(nodes, func(node Node) bool {
+	return !Exists(nodes, func(node Node) bool {
 		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
 		_, ok := node.(Parameter)
 		return ok
@@ -102,7 +111,7 @@ func isPatternExpression(nodes []Node) bool {
 
 // containsPattern returns true if any descendent of nodes is a search pattern.
 func containsPattern(node Node) bool {
-	return exists([]Node{node}, func(node Node) bool {
+	return Exists([]Node{node}, func(node Node) bool {
 		_, ok := node.(Pattern)
 		return ok
 	})
@@ -184,7 +193,7 @@ func parseBool(s string) (bool, error) {
 	default:
 		b, err := strconv.ParseBool(s)
 		if err != nil {
-			err = fmt.Errorf("invalid boolean %q", s)
+			err = errors.Errorf("invalid boolean %q", s)
 		}
 		return b, err
 	}
@@ -193,14 +202,14 @@ func parseBool(s string) (bool, error) {
 func validateField(field, value string, negated bool, seen map[string]struct{}) error {
 	isNotNegated := func() error {
 		if negated {
-			return fmt.Errorf("field %q does not support negation", field)
+			return errors.Errorf("field %q does not support negation", field)
 		}
 		return nil
 	}
 
 	isSingular := func() error {
 		if _, notSingular := seen[field]; notSingular {
-			return fmt.Errorf("field %q may not be used more than once", field)
+			return errors.Errorf("field %q may not be used more than once", field)
 		}
 		return nil
 	}
@@ -222,13 +231,13 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	isNumber := func() error {
 		count, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
-			if err.(*strconv.NumError).Err == strconv.ErrRange {
-				return fmt.Errorf("field %s has a value that is out of range, try making it smaller", field)
+			if errors.Is(err, strconv.ErrRange) {
+				return errors.Errorf("field %s has a value that is out of range, try making it smaller", field)
 			}
-			return fmt.Errorf("field %s has value %[2]s, %[2]s is not a number", field, value)
+			return errors.Errorf("field %s has value %[2]s, %[2]s is not a number", field, value)
 		}
 		if count <= 0 {
-			return fmt.Errorf("field %s requires a positive number", field)
+			return errors.Errorf("field %s requires a positive number", field)
 		}
 		return nil
 	}
@@ -244,7 +253,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	isLanguage := func() error {
 		_, ok := enry.GetLanguageByAlias(value)
 		if !ok {
-			return fmt.Errorf("unknown language: %q", value)
+			return errors.Errorf("unknown language: %q", value)
 		}
 		return nil
 	}
@@ -252,17 +261,22 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	isYesNoOnly := func() error {
 		v := ParseYesNoOnly(value)
 		if v == Invalid {
-			return fmt.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
+			return errors.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
 		}
 		return nil
 	}
 
 	isUnrecognizedField := func() error {
-		return fmt.Errorf("unrecognized field %q", field)
+		return errors.Errorf("unrecognized field %q", field)
 	}
 
 	isValidSelect := func() error {
 		_, err := filter.SelectPathFromString(value)
+		return err
+	}
+
+	isValidGitDate := func() error {
+		_, err := ParseGitDate(value, time.Now)
 		return err
 	}
 
@@ -312,7 +326,7 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	case
 		FieldBefore,
 		FieldAfter:
-		return satisfies(isNotNegated)
+		return satisfies(isNotNegated, isValidGitDate)
 	case
 		FieldAuthor,
 		FieldCommitter,
@@ -344,15 +358,22 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	return nil
 }
 
-// A query is invalid if it contains a rev: filter and a repo is specified with @.
+// A query with a rev: filter is invalid if:
+// (1) a repo is specified with @, OR
+// (2) no repo is specified, OR
+// (3) an empty repo value is specified (i.e., repo:"").
 func validateRepoRevPair(nodes []Node) error {
 	var seenRepoWithCommit bool
+	var seenRepo bool
+	var seenEmptyRepo bool
 	VisitField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) {
+		seenRepo = true
+		seenEmptyRepo = value == ""
 		if !negated && strings.ContainsRune(value, '@') {
 			seenRepoWithCommit = true
 		}
 	})
-	revSpecified := exists(nodes, func(node Node) bool {
+	revSpecified := Exists(nodes, func(node Node) bool {
 		n, ok := node.(Parameter)
 		if ok && n.Field == FieldRev {
 			return true
@@ -362,6 +383,12 @@ func validateRepoRevPair(nodes []Node) error {
 	if seenRepoWithCommit && revSpecified {
 		return errors.New("invalid syntax. You specified both @ and rev: for a" +
 			" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+	}
+	if !seenRepo && revSpecified {
+		return errors.New("invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again")
+	}
+	if seenEmptyRepo && revSpecified {
+		return errors.New("invalid syntax. The query contains `rev:` but `repo:` is empty. Add a non-empty `repo:` filter and try again")
 	}
 	return nil
 }
@@ -380,7 +407,7 @@ func validateCommitParameters(nodes []Node) error {
 		}
 	})
 	if seenCommitParam != "" && !typeCommitExists {
-		return fmt.Errorf(`your query contains the field '%s', which requires type:commit or type:diff in the query`, seenCommitParam)
+		return errors.Errorf(`your query contains the field '%s', which requires type:commit or type:diff in the query`, seenCommitParam)
 	}
 	return nil
 }
@@ -389,7 +416,7 @@ func validateTypeStructural(nodes []Node) error {
 	seenStructural := false
 	seenType := false
 	typeDiff := false
-	invalid := exists(nodes, func(node Node) bool {
+	invalid := Exists(nodes, func(node Node) bool {
 		if p, ok := node.(Pattern); ok && p.Annotation.Labels.IsSet(Structural) {
 			seenStructural = true
 		}
@@ -409,26 +436,31 @@ func validateTypeStructural(nodes []Node) error {
 	return nil
 }
 
-// validatePredicates validates predicate parameters with respect to their validation logic.
-func validatePredicates(nodes []Node) error {
-	var err error
-	VisitParameter(nodes, func(field, value string, negated bool, annotation Annotation) {
-		if err != nil {
-			return
-		}
-		if annotation.Labels.IsSet(IsPredicate) {
-			if negated {
-				err = errors.New("predicates do not currently support negation")
-				return
-			}
-			name, params := ParseAsPredicate(value)                // guaranteed to succeed
-			predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-			if parseErr := predicate.ParseParams(params); parseErr != nil {
-				err = fmt.Errorf("invalid predicate value: %s", parseErr)
-			}
-		}
+func validateRefGlobs(nodes []Node) error {
+	if !ContainsRefGlobs(nodes) {
+		return nil
+	}
+	var indexValue string
+	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
+		indexValue = value
 	})
-	return err
+	if ParseYesNoOnly(indexValue) == Only {
+		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
+	}
+	return nil
+}
+
+// validatePredicates validates predicate parameters with respect to their validation logic.
+func validatePredicate(field, value string, negated bool) error {
+	if negated {
+		return errors.New("predicates do not currently support negation")
+	}
+	name, params := ParseAsPredicate(value)                // guaranteed to succeed
+	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
+	if err := predicate.ParseParams(params); err != nil {
+		return errors.Errorf("invalid predicate value: %s", err)
+	}
+	return nil
 }
 
 // validateRepoHasFile validates that the repohasfile parameter can be executed.
@@ -454,7 +486,7 @@ func validateRepoHasFile(nodes []Node) error {
 // operators nested inside concat. It may happen that we interpret a query this
 // way due to ambiguity. If this happens, return an error message.
 func validatePureLiteralPattern(nodes []Node, balanced bool) error {
-	impure := exists(nodes, func(node Node) bool {
+	impure := Exists(nodes, func(node Node) bool {
 		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
 			for _, node := range operator.Operands {
 				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
@@ -476,8 +508,13 @@ func validatePureLiteralPattern(nodes []Node, balanced bool) error {
 func validateParameters(nodes []Node) error {
 	var err error
 	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool, _ Annotation) {
+	VisitParameter(nodes, func(field, value string, negated bool, annotation Annotation) {
 		if err != nil {
+			return
+		}
+		if annotation.Labels.IsSet(IsPredicate) {
+			err = validatePredicate(field, value, negated)
+			seen[field] = struct{}{}
 			return
 		}
 		err = validateField(field, value, negated, seen)
@@ -489,16 +526,13 @@ func validateParameters(nodes []Node) error {
 func validatePattern(nodes []Node) error {
 	var err error
 	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
+		if err != nil {
+			return
+		}
 		if annotation.Labels.IsSet(Regexp) {
-			if err != nil {
-				return
-			}
 			_, err = regexp.Compile(value)
 		}
 		if annotation.Labels.IsSet(Structural) && negated {
-			if err != nil {
-				return
-			}
 			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
 		}
 	})
@@ -521,8 +555,8 @@ func validate(nodes []Node) error {
 		validateRepoRevPair,
 		validateRepoHasFile,
 		validateCommitParameters,
-		validatePredicates,
 		validateTypeStructural,
+		validateRefGlobs,
 	)
 }
 

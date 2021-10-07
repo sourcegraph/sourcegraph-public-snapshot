@@ -15,11 +15,12 @@
 | `-force-override-ignore` | Do not ignore repositories that have a .batchignore file. | `false` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
-| `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `16` |
+| `-j` | The maximum number of parallel jobs. Default is GOMAXPROCS. | `8` |
 | `-keep-logs` | Retain logs after executing steps. | `false` |
 | `-n` | Alias for -namespace. |  |
 | `-namespace` | The user or organization namespace to place the batch change within. Default is the currently authenticated user. |  |
 | `-skip-errors` | If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped. | `false` |
+| `-text-only` | INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines. | `false` |
 | `-timeout` | The maximum duration a single batch spec step can take. | `1h0m0s` |
 | `-tmp` | Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable. | `/tmp` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
@@ -52,7 +53,7 @@ Usage of 'src batch preview':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -j int
-    	The maximum number of parallel jobs. Default is GOMAXPROCS. (default 16)
+    	The maximum number of parallel jobs. Default is GOMAXPROCS. (default 8)
   -keep-logs
     	Retain logs after executing steps.
   -n string
@@ -61,6 +62,8 @@ Usage of 'src batch preview':
     	The user or organization namespace to place the batch change within. Default is the currently authenticated user.
   -skip-errors
     	If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped.
+  -text-only
+    	INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.
   -timeout duration
     	The maximum duration a single batch spec step can take. (default 1h0m0s)
   -tmp string

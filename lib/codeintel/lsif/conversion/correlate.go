@@ -2,7 +2,6 @@ package conversion
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -16,14 +15,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Correlate reads LSIF data from the given reader and returns a correlation state object with
 // the same data canonicalized and pruned for storage.
 //
 // If getChildren == nil, no pruning of irrelevant data is performed.
-func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*semantic.GroupedBundleDataChans, error) {
+func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
 	if err != nil {
@@ -49,7 +48,29 @@ func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathex
 	return groupedBundleData, nil
 }
 
-func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*semantic.GroupedBundleDataChans, error) {
+func CorrelateLocalGitRelative(ctx context.Context, dumpPath, relativeRoot string) (*precise.GroupedBundleDataChans, error) {
+	absoluteProjectRoot, err := filepath.Abs(relativeRoot)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error getting absolute root of project: "+relativeRoot)
+	}
+
+	getChildrenFunc := pathexistence.LocalGitGetChildrenFunc(absoluteProjectRoot)
+
+	file, err := os.Open(dumpPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error opening dump path: "+dumpPath)
+	}
+	defer file.Close()
+
+	bundle, err := Correlate(context.Background(), file, "", getChildrenFunc)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error correlating dump: "+dumpPath)
+	}
+
+	return bundle, nil
+}
+
+func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*precise.GroupedBundleDataChans, error) {
 	absoluteProjectRoot, err := filepath.Abs(projectRoot)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error getting absolute root of project: "+projectRoot)
@@ -63,6 +84,10 @@ func CorrelateLocalGit(ctx context.Context, dumpPath, projectRoot string) (*sema
 	getChildrenFunc := pathexistence.LocalGitGetChildrenFunc(gitRoot)
 
 	relRoot, err := filepath.Rel(gitRoot, absoluteProjectRoot)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get relative path of %q and %q", gitRoot, absoluteProjectRoot)
+	}
+
 	// workaround: filepath.Rel returns a path starting with '../' if gitRoot and root are equal
 	if gitRoot == absoluteProjectRoot {
 		relRoot = ""
@@ -112,11 +137,11 @@ func correlateFromReader(ctx context.Context, r io.Reader, root string) (*State,
 		i++
 
 		if pair.Err != nil {
-			return nil, fmt.Errorf("dump malformed on element %d: %s", i, pair.Err)
+			return nil, errors.Errorf("dump malformed on element %d: %s", i, pair.Err)
 		}
 
 		if err := correlateElement(wrappedState, pair.Element); err != nil {
-			return nil, fmt.Errorf("dump malformed on element %d: %s", i, err)
+			return nil, errors.Errorf("dump malformed on element %d: %s", i, err)
 		}
 	}
 
@@ -150,7 +175,7 @@ func correlateElement(state *wrappedState, element Element) error {
 		return correlateEdge(state, element)
 	}
 
-	return fmt.Errorf("unknown element type %s", element.Type)
+	return errors.Errorf("unknown element type %s", element.Type)
 }
 
 var vertexHandlers = map[string]func(state *wrappedState, element Element) error{
@@ -260,7 +285,7 @@ func correlateDocument(state *wrappedState, element Element) error {
 
 	relativeURI, err := filepath.Rel(state.ProjectRoot, payload)
 	if err != nil {
-		return fmt.Errorf("document URI %q is not relative to project root %q (%s)", payload, state.ProjectRoot, err)
+		return errors.Errorf("document URI %q is not relative to project root %q (%s)", payload, state.ProjectRoot, err)
 	}
 
 	state.DocumentData[element.ID] = relativeURI

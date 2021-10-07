@@ -9,30 +9,30 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-type gitObjectType string
+type GitObjectType string
 
-func (gitObjectType) ImplementsGraphQLType(name string) bool { return name == "GitObjectType" }
+func (GitObjectType) ImplementsGraphQLType(name string) bool { return name == "GitObjectType" }
 
 const (
-	gitObjectTypeCommit  gitObjectType = "GIT_COMMIT"
-	gitObjectTypeTag     gitObjectType = "GIT_TAG"
-	gitObjectTypeTree    gitObjectType = "GIT_TREE"
-	gitObjectTypeBlob    gitObjectType = "GIT_BLOB"
-	gitObjectTypeUnknown gitObjectType = "GIT_UNKNOWN"
+	GitObjectTypeCommit  GitObjectType = "GIT_COMMIT"
+	GitObjectTypeTag     GitObjectType = "GIT_TAG"
+	GitObjectTypeTree    GitObjectType = "GIT_TREE"
+	GitObjectTypeBlob    GitObjectType = "GIT_BLOB"
+	GitObjectTypeUnknown GitObjectType = "GIT_UNKNOWN"
 )
 
-func toGitObjectType(t git.ObjectType) gitObjectType {
+func toGitObjectType(t git.ObjectType) GitObjectType {
 	switch t {
 	case git.ObjectTypeCommit:
-		return gitObjectTypeCommit
+		return GitObjectTypeCommit
 	case git.ObjectTypeTag:
-		return gitObjectTypeTag
+		return GitObjectTypeTag
 	case git.ObjectTypeTree:
-		return gitObjectTypeTree
+		return GitObjectTypeTree
 	case git.ObjectTypeBlob:
-		return gitObjectTypeBlob
+		return GitObjectTypeBlob
 	}
-	return gitObjectTypeUnknown
+	return GitObjectTypeUnknown
 }
 
 type GitObjectID string
@@ -52,7 +52,7 @@ func (id *GitObjectID) UnmarshalGraphQL(input interface{}) error {
 type gitObject struct {
 	repo *RepositoryResolver
 	oid  GitObjectID
-	typ  gitObjectType
+	typ  GitObjectType
 }
 
 func (o *gitObject) OID(ctx context.Context) (GitObjectID, error) { return o.oid, nil }
@@ -63,7 +63,7 @@ func (o *gitObject) AbbreviatedOID(ctx context.Context) (string, error) {
 func (o *gitObject) Commit(ctx context.Context) (*GitCommitResolver, error) {
 	return o.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(o.oid)})
 }
-func (o *gitObject) Type(context.Context) (gitObjectType, error) { return o.typ, nil }
+func (o *gitObject) Type(context.Context) (GitObjectType, error) { return o.typ, nil }
 
 type gitObjectResolver struct {
 	repo    *RepositoryResolver
@@ -71,11 +71,11 @@ type gitObjectResolver struct {
 
 	once sync.Once
 	oid  GitObjectID
-	typ  gitObjectType
+	typ  GitObjectType
 	err  error
 }
 
-func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, gitObjectType, error) {
+func (o *gitObjectResolver) resolve(ctx context.Context) (GitObjectID, GitObjectType, error) {
 	o.once.Do(func() {
 		oid, objectType, err := git.GetObject(ctx, o.repo.RepoName(), o.revspec)
 		if err != nil {
@@ -109,7 +109,7 @@ func (o *gitObjectResolver) Commit(ctx context.Context) (*GitCommitResolver, err
 	return o.repo.Commit(ctx, &RepositoryCommitArgs{Rev: string(oid)})
 }
 
-func (o *gitObjectResolver) Type(ctx context.Context) (gitObjectType, error) {
+func (o *gitObjectResolver) Type(ctx context.Context) (GitObjectType, error) {
 	_, typ, err := o.resolve(ctx)
 	return typ, err
 }

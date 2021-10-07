@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestGroupBundleData(t *testing.T) {
@@ -289,14 +289,14 @@ func TestGroupBundleData(t *testing.T) {
 		t.Fatalf("unexpected error converting correlation state to types: %s", err)
 	}
 
-	expectedMetaData := semantic.MetaData{
+	expectedMetaData := precise.MetaData{
 		NumResultChunks: 1,
 	}
 	if diff := cmp.Diff(expectedMetaData, actualBundleData.Meta); diff != "" {
 		t.Errorf("unexpected meta data (-want +got):\n%s", diff)
 	}
 
-	expectedPackages := []semantic.Package{
+	expectedPackages := []precise.Package{
 		{Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
 		{Scheme: "scheme E", Name: "pkg C", Version: "3.2.1"},
 	}
@@ -311,9 +311,9 @@ func TestGroupBundleData(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error creating bloom filter: %s", err)
 	}
-	expectedPackageReferences := []semantic.PackageReference{
+	expectedPackageReferences := []precise.PackageReference{
 		{
-			Package: semantic.Package{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0"},
+			Package: precise.Package{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0"},
 			Filter:  expectedFilter,
 		},
 	}
@@ -324,7 +324,7 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected package references (-want +got):\n%s", diff)
 	}
 
-	documents := map[string]semantic.DocumentData{}
+	documents := map[string]precise.DocumentData{}
 	for v := range actualBundleData.Documents {
 		documents[v.Path] = v.Document
 	}
@@ -336,9 +336,9 @@ func TestGroupBundleData(t *testing.T) {
 		}
 	}
 
-	expectedDocumentData := map[string]semantic.DocumentData{
+	expectedDocumentData := map[string]precise.DocumentData{
 		"foo.go": {
-			Ranges: map[semantic.ID]semantic.RangeData{
+			Ranges: map[precise.ID]precise.RangeData{
 				"2001": {
 					StartLine:          1,
 					StartCharacter:     2,
@@ -347,7 +347,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3001",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{"4001", "4002"},
+					MonikerIDs:         []precise.ID{"4001", "4002"},
 				},
 				"2002": {
 					StartLine:          2,
@@ -357,7 +357,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "3006",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{"4003", "4004"},
+					MonikerIDs:         []precise.ID{"4003", "4004"},
 				},
 				"2003": {
 					StartLine:          3,
@@ -367,11 +367,11 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3002",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 			},
-			HoverResults: map[semantic.ID]string{},
-			Monikers: map[semantic.ID]semantic.MonikerData{
+			HoverResults: map[precise.ID]string{},
+			Monikers: map[precise.ID]precise.MonikerData{
 				"4001": {
 					Kind:                 "import",
 					Scheme:               "scheme A",
@@ -397,7 +397,7 @@ func TestGroupBundleData(t *testing.T) {
 					PackageInformationID: "",
 				},
 			},
-			PackageInformation: map[semantic.ID]semantic.PackageInformationData{
+			PackageInformation: map[precise.ID]precise.PackageInformationData{
 				"5001": {
 					Name:    "pkg A",
 					Version: "0.1.0",
@@ -407,7 +407,7 @@ func TestGroupBundleData(t *testing.T) {
 					Version: "1.2.3",
 				},
 			},
-			Diagnostics: []semantic.DiagnosticData{
+			Diagnostics: []precise.DiagnosticData{
 				{
 					Severity:       1,
 					Code:           "1234",
@@ -431,7 +431,7 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		"bar.go": {
-			Ranges: map[semantic.ID]semantic.RangeData{
+			Ranges: map[precise.ID]precise.RangeData{
 				"2004": {
 					StartLine:          4,
 					StartCharacter:     5,
@@ -440,7 +440,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "3007",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 				"2005": {
 					StartLine:          5,
@@ -450,7 +450,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3003",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 				"2006": {
 					StartLine:          6,
@@ -460,13 +460,13 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3008",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 			},
-			HoverResults:       map[semantic.ID]string{"3008": "foo"},
-			Monikers:           map[semantic.ID]semantic.MonikerData{},
-			PackageInformation: map[semantic.ID]semantic.PackageInformationData{},
-			Diagnostics: []semantic.DiagnosticData{
+			HoverResults:       map[precise.ID]string{"3008": "foo"},
+			Monikers:           map[precise.ID]precise.MonikerData{},
+			PackageInformation: map[precise.ID]precise.PackageInformationData{},
+			Diagnostics: []precise.DiagnosticData{
 				{
 					Severity:       3,
 					Code:           "3234",
@@ -490,7 +490,7 @@ func TestGroupBundleData(t *testing.T) {
 			},
 		},
 		"baz.go": {
-			Ranges: map[semantic.ID]semantic.RangeData{
+			Ranges: map[precise.ID]precise.RangeData{
 				"2007": {
 					StartLine:          7,
 					StartCharacter:     8,
@@ -499,7 +499,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3004",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 				"2008": {
 					StartLine:          8,
@@ -509,7 +509,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3009",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 				"2009": {
 					StartLine:          9,
@@ -519,20 +519,20 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3005",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []semantic.ID{},
+					MonikerIDs:         []precise.ID{},
 				},
 			},
-			HoverResults:       map[semantic.ID]string{"3009": "bar"},
-			Monikers:           map[semantic.ID]semantic.MonikerData{},
-			PackageInformation: map[semantic.ID]semantic.PackageInformationData{},
-			Diagnostics:        []semantic.DiagnosticData{},
+			HoverResults:       map[precise.ID]string{"3009": "bar"},
+			Monikers:           map[precise.ID]precise.MonikerData{},
+			PackageInformation: map[precise.ID]precise.PackageInformationData{},
+			Diagnostics:        []precise.DiagnosticData{},
 		},
 	}
 	if diff := cmp.Diff(expectedDocumentData, documents, datastructures.Comparers...); diff != "" {
 		t.Errorf("unexpected document data (-want +got):\n%s", diff)
 	}
 
-	resultChunkData := map[int]semantic.ResultChunkData{}
+	resultChunkData := map[int]precise.ResultChunkData{}
 	for v := range actualBundleData.ResultChunks {
 		resultChunkData[v.Index] = v.ResultChunk
 	}
@@ -542,14 +542,14 @@ func TestGroupBundleData(t *testing.T) {
 		}
 	}
 
-	expectedResultChunkData := map[int]semantic.ResultChunkData{
+	expectedResultChunkData := map[int]precise.ResultChunkData{
 		0: {
-			DocumentPaths: map[semantic.ID]string{
+			DocumentPaths: map[precise.ID]string{
 				"1001": "foo.go",
 				"1002": "bar.go",
 				"1003": "baz.go",
 			},
-			DocumentIDRangeIDs: map[semantic.ID][]semantic.DocumentIDRangeID{
+			DocumentIDRangeIDs: map[precise.ID][]precise.DocumentIDRangeID{
 				"3001": {
 					{DocumentID: "1001", RangeID: "2003"},
 					{DocumentID: "1002", RangeID: "2004"},
@@ -592,17 +592,17 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
 	}
 
-	var definitions []semantic.MonikerLocations
+	var definitions []precise.MonikerLocations
 	for v := range actualBundleData.Definitions {
 		definitions = append(definitions, v)
 	}
 	sortMonikerLocations(definitions)
 
-	expectedDefinitions := []semantic.MonikerLocations{
+	expectedDefinitions := []precise.MonikerLocations{
 		{
 			Scheme:     "scheme A",
 			Identifier: "ident A",
-			Locations: []semantic.LocationData{
+			Locations: []precise.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -611,7 +611,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme B",
 			Identifier: "ident B",
-			Locations: []semantic.LocationData{
+			Locations: []precise.LocationData{
 				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -622,17 +622,17 @@ func TestGroupBundleData(t *testing.T) {
 		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
 	}
 
-	var references []semantic.MonikerLocations
+	var references []precise.MonikerLocations
 	for v := range actualBundleData.References {
 		references = append(references, v)
 	}
 	sortMonikerLocations(references)
 
-	expectedReferences := []semantic.MonikerLocations{
+	expectedReferences := []precise.MonikerLocations{
 		{
 			Scheme:     "scheme C",
 			Identifier: "ident C",
-			Locations: []semantic.LocationData{
+			Locations: []precise.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -641,7 +641,7 @@ func TestGroupBundleData(t *testing.T) {
 		{
 			Scheme:     "scheme D",
 			Identifier: "ident D",
-			Locations: []semantic.LocationData{
+			Locations: []precise.LocationData{
 				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
 				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
 				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
@@ -656,19 +656,19 @@ func TestGroupBundleData(t *testing.T) {
 //
 //
 
-func sortMonikerIDs(s []semantic.ID) {
+func sortMonikerIDs(s []precise.ID) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(string(s[i]), string(s[j])) < 0
 	})
 }
 
-func sortDiagnostics(s []semantic.DiagnosticData) {
+func sortDiagnostics(s []precise.DiagnosticData) {
 	sort.Slice(s, func(i, j int) bool {
 		return strings.Compare(s[i].Message, s[j].Message) < 0
 	})
 }
 
-func sortDocumentIDRangeIDs(s []semantic.DocumentIDRangeID) {
+func sortDocumentIDRangeIDs(s []precise.DocumentIDRangeID) {
 	sort.Slice(s, func(i, j int) bool {
 		if cmp := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); cmp != 0 {
 			return cmp < 0
@@ -678,7 +678,7 @@ func sortDocumentIDRangeIDs(s []semantic.DocumentIDRangeID) {
 	})
 }
 
-func sortMonikerLocations(monikerLocations []semantic.MonikerLocations) {
+func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
 	sort.Slice(monikerLocations, func(i, j int) bool {
 		if cmp := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); cmp != 0 {
 			return cmp < 0
@@ -693,7 +693,7 @@ func sortMonikerLocations(monikerLocations []semantic.MonikerLocations) {
 	}
 }
 
-func sortLocations(locations []semantic.LocationData) {
+func sortLocations(locations []precise.LocationData) {
 	sort.Slice(locations, func(i, j int) bool {
 		if cmp := strings.Compare(locations[i].URI, locations[j].URI); cmp != 0 {
 			return cmp < 0

@@ -17,7 +17,7 @@ var ErrMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
 func CheckCurrentUserIsSiteAdmin(ctx context.Context, db dbutil.DB) error {
-	if hasAuthzBypass(ctx) {
+	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
 	user, err := CurrentUser(ctx, db)
@@ -35,7 +35,7 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context, db dbutil.DB) error {
 
 // CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.
 func CheckUserIsSiteAdmin(ctx context.Context, db dbutil.DB, userID int32) error {
-	if hasAuthzBypass(ctx) {
+	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
 	user, err := database.Users(db).GetByID(ctx, userID)
@@ -67,34 +67,28 @@ func (e *InsufficientAuthorizationError) Unauthorized() bool { return true }
 // It is used when an action on a user can be performed by site admins and the
 // user themselves, but nobody else.
 //
-// Returns an error containing the name of the given user.
+// Returns an error without the name of the given user.
 func CheckSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, subjectUserID int32) error {
-	if hasAuthzBypass(ctx) {
-		return nil
-	}
 	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && a.UID == subjectUserID {
+	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
 		return nil
 	}
 	isSiteAdminErr := CheckCurrentUserIsSiteAdmin(ctx, db)
 	if isSiteAdminErr == nil {
 		return nil
 	}
-	subjectUser, err := database.Users(db).GetByID(ctx, subjectUserID)
+	_, err := database.Users(db).GetByID(ctx, subjectUserID)
 	if err != nil {
 		return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())}
 	}
-	return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as %s or as an admin (%s)", subjectUser.Username, isSiteAdminErr.Error())}
+	return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as the authorized user or as an admin (%s)", isSiteAdminErr.Error())}
 }
 
 // CheckSameUser returns an error if the user is not the user specified by
 // subjectUserID.
 func CheckSameUser(ctx context.Context, subjectUserID int32) error {
-	if hasAuthzBypass(ctx) {
-		return nil
-	}
 	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && a.UID == subjectUserID {
+	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
 		return nil
 	}
 	return &InsufficientAuthorizationError{Message: fmt.Sprintf("Must be authenticated as user with id %d", subjectUserID)}
@@ -112,20 +106,3 @@ func CurrentUser(ctx context.Context, db dbutil.DB) (*types.User, error) {
 	}
 	return user, nil
 }
-
-// WithAuthzBypass returns a context that backend.CheckXyz funcs report as being a site admin. It
-// is used to bypass the backend.CheckXyz access control funcs when needed.
-//
-// 🚨 SECURITY: The caller MUST ensure that it performs its own access controls or removal of
-// sensitive data.
-func WithAuthzBypass(ctx context.Context) context.Context {
-	return context.WithValue(ctx, authzBypass, struct{}{})
-}
-
-func hasAuthzBypass(ctx context.Context) bool {
-	return ctx.Value(authzBypass) != nil
-}
-
-type contextKey int
-
-const authzBypass contextKey = iota

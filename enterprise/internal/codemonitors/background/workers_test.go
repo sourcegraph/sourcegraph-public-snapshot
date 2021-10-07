@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/storetest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
@@ -68,7 +67,7 @@ func TestActionRunner(t *testing.T) {
 		Priority:       "New",
 		SearchURL:      externalURL + "/search?q=test+patternType%3Aliteral&utm_source=code-monitoring-email",
 		Description:    "test description",
-		CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID(resolvers.MonitorKind, 1)) + "?utm_source=code-monitoring-email",
+		CodeMonitorURL: externalURL + "/code-monitoring/" + string(relay.MarshalID("CodeMonitor", 1)) + "?utm_source=code-monitoring-email",
 	}
 
 	var (
@@ -106,7 +105,7 @@ func TestActionRunner(t *testing.T) {
 			}
 
 			a := actionRunner{s}
-			err = a.Handle(ctx, createDBWorkerStoreForActionJobs(s), record)
+			err = a.Handle(ctx, record)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/golang/gddo/httputil"
@@ -40,11 +39,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const port = "3182"
@@ -67,9 +66,11 @@ func Main(enterpriseInit EnterpriseInit) {
 		log.Fatalf("failed to start profiler: %v", err)
 	}
 
+	conf.Init()
 	logging.Init()
 	tracer.Init()
-	trace.Init(true)
+	sentry.Init()
+	trace.Init()
 
 	// Signals health of startup
 	ready := make(chan struct{})
@@ -107,17 +108,6 @@ func Main(enterpriseInit EnterpriseInit) {
 
 	clock := func() time.Time { return time.Now().UTC() }
 
-	// Syncing relies on access to frontend and git-server, so wait until they started up.
-	if err := api.InternalClient.WaitForFrontend(ctx); err != nil {
-		log.Fatalf("sourcegraph-frontend not reachable: %v", err)
-	}
-	log15.Debug("detected frontend ready")
-
-	if err := gitserver.DefaultClient.WaitForGitServers(ctx); err != nil {
-		log.Fatalf("gitservers not reachable: %v", err)
-	}
-	log15.Debug("detected gitservers ready")
-
 	dsn := conf.Get().ServiceConnections.PostgresDSN
 	conf.Watch(func() {
 		newDSN := conf.Get().ServiceConnections.PostgresDSN
@@ -153,21 +143,22 @@ func Main(enterpriseInit EnterpriseInit) {
 		store.Metrics = m
 	}
 
-	cf := httpcli.NewExternalHTTPClientFactory()
+	cf := httpcli.ExternalClientFactory
 
 	var src repos.Sourcer
 	{
 		m := repos.NewSourceMetrics()
 		m.MustRegister(prometheus.DefaultRegisterer)
 
-		src = repos.NewSourcer(cf, repos.ObservedSource(log15.Root(), m))
+		src = repos.NewSourcer(cf, repos.WithDB(db), repos.ObservedSource(log15.Root(), m))
 	}
 
 	scheduler := repos.NewUpdateScheduler()
 	server := &repoupdater.Server{
-		Store:           store,
-		Scheduler:       scheduler,
-		GitserverClient: gitserver.DefaultClient,
+		Store:                 store,
+		Scheduler:             scheduler,
+		GitserverClient:       gitserver.DefaultClient,
+		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 
 	rateLimitSyncer := repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore)
@@ -185,51 +176,6 @@ func Main(enterpriseInit EnterpriseInit) {
 		debugDumpers = enterpriseInit(db, store, keyring.Default(), cf, server)
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		server.SourcegraphDotComMode = true
-
-		es, err := store.ExternalServiceStore.List(ctx, database.ExternalServicesListOptions{
-			// On Cloud we only want to fetch site level external services here where the
-			// cloud_default flag has been set.
-			NoNamespace:      true,
-			OnlyCloudDefault: true,
-			Kinds:            []string{extsvc.KindGitHub, extsvc.KindGitLab},
-		})
-		if err != nil {
-			log.Fatalf("failed to list external services: %v", err)
-		}
-
-		for _, e := range es {
-			cfg, err := e.Configuration()
-			if err != nil {
-				log.Fatalf("bad external service config: %v", err)
-			}
-
-			switch c := cfg.(type) {
-			case *schema.GitHubConnection:
-				if strings.HasPrefix(c.Url, "https://github.com") && c.Token != "" {
-					server.GithubDotComSource, err = repos.NewGithubSource(e, cf)
-				}
-			case *schema.GitLabConnection:
-				if strings.HasPrefix(c.Url, "https://gitlab.com") && c.Token != "" {
-					server.GitLabDotComSource, err = repos.NewGitLabSource(e, cf)
-				}
-			}
-
-			if err != nil {
-				log.Fatalf("failed to construct source: %v", err)
-			}
-		}
-
-		if server.GithubDotComSource == nil {
-			log.Fatalf("No github.com external service configured with a token")
-		}
-
-		if server.GitLabDotComSource == nil {
-			log.Fatalf("No gitlab.com external service configured with a token")
-		}
-	}
-
 	syncer := &repos.Syncer{
 		Sourcer: src,
 		Store:   store,
@@ -244,16 +190,11 @@ func Main(enterpriseInit EnterpriseInit) {
 	var gps *repos.GitolitePhabricatorMetadataSyncer
 	if !envvar.SourcegraphDotComMode() {
 		gps = repos.NewGitolitePhabricatorMetadataSyncer(store)
-
-		// WARNING: This enables the streaming inserter which allows it to sync private repos. If
-		// this is ever enabled for sourcegraph.com, we want to be sure we are not unintentionally
-		// syncing private repos.
-		syncer.SingleRepoSynced = make(chan repos.Diff)
 	}
 
-	go watchSyncer(ctx, syncer, scheduler, gps)
+	go watchSyncer(ctx, syncer, scheduler, gps, server.PermsSyncer)
 	go func() {
-		log.Fatal(syncer.Run(ctx, db, store, repos.RunOptions{
+		log.Fatal(syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
 			IsCloud:         envvar.SourcegraphDotComMode(),
 			MinSyncInterval: repos.ConfRepoListUpdateInterval,
@@ -397,7 +338,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	httpSrv := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      ot.Middleware(authzBypass(handler)),
+		Handler:      ot.Middleware(trace.HTTPTraceMiddleware(authzBypass(handler))),
 	})
 	goroutine.MonitorBackgroundRoutines(ctx, httpSrv)
 }
@@ -416,7 +357,18 @@ type scheduler interface {
 	EnsureScheduled([]types.RepoName)
 }
 
-func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps *repos.GitolitePhabricatorMetadataSyncer) {
+type permsSyncer interface {
+	// ScheduleRepos schedules new permissions syncing requests for given repositories.
+	ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
+}
+
+func watchSyncer(
+	ctx context.Context,
+	syncer *repos.Syncer,
+	sched scheduler,
+	gps *repos.GitolitePhabricatorMetadataSyncer,
+	permsSyncer permsSyncer,
+) {
 	log15.Debug("started new repo syncer updates scheduler relay thread")
 
 	for {
@@ -427,19 +379,38 @@ func watchSyncer(ctx context.Context, syncer *repos.Syncer, sched scheduler, gps
 			if !conf.Get().DisableAutoGitUpdates {
 				sched.UpdateFromDiff(diff)
 			}
+
+			// PermsSyncer is only available in enterprise mode.
+			if permsSyncer != nil {
+				// Schedule a repo permissions sync for all private repos that were added or
+				// modified.
+				var repoIDs []api.RepoID
+
+				for _, r := range diff.Added {
+					if r.Private {
+						repoIDs = append(repoIDs, r.ID)
+					}
+				}
+
+				for _, r := range diff.Modified {
+					if r.Private {
+						repoIDs = append(repoIDs, r.ID)
+					}
+				}
+
+				permsSyncer.ScheduleRepos(ctx, repoIDs...)
+			}
+
 			if gps == nil {
 				continue
 			}
+
 			go func() {
 				if err := gps.Sync(ctx, diff.Repos()); err != nil {
 					log15.Error("GitolitePhabricatorMetadataSyncer", "error", err)
 				}
 			}()
 
-		case diff := <-syncer.SingleRepoSynced:
-			if !conf.Get().DisableAutoGitUpdates {
-				sched.UpdateFromDiff(diff)
-			}
 		}
 	}
 }
@@ -463,7 +434,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 			IncludePrivate: true,
 		}
 		if u, err := baseRepoStore.ListIndexableRepos(ctx, opts); err != nil {
-			log15.Error("Listing default repos", "error", err)
+			log15.Error("Listing indexable repos", "error", err)
 			return
 		} else {
 			// Ensure that uncloned indexable repos are known to the scheduler

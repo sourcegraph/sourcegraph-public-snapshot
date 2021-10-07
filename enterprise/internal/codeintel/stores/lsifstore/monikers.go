@@ -9,14 +9,14 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // MonikersByPosition returns all monikers attached ranges containing the given position. If multiple
 // ranges contain the position, then this method will return multiple sets of monikers. Each slice
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
-func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]semantic.MonikerData, err error) {
+func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
 	ctx, traceLog, endObservation := s.operations.monikersByPosition.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
 		log.String("path", path),
@@ -31,12 +31,12 @@ func (s *Store) MonikersByPosition(ctx context.Context, bundleID int, path strin
 	}
 
 	traceLog(log.Int("numRanges", len(documentData.Document.Ranges)))
-	ranges := semantic.FindRanges(documentData.Document.Ranges, line, character)
+	ranges := precise.FindRanges(documentData.Document.Ranges, line, character)
 	traceLog(log.Int("numIntersectingRanges", len(ranges)))
 
-	monikerData := make([][]semantic.MonikerData, 0, len(ranges))
+	monikerData := make([][]precise.MonikerData, 0, len(ranges))
 	for _, r := range ranges {
-		batch := make([]semantic.MonikerData, 0, len(r.MonikerIDs))
+		batch := make([]precise.MonikerData, 0, len(r.MonikerIDs))
 		for _, monikerID := range r.MonikerIDs {
 			if moniker, exists := documentData.Document.Monikers[monikerID]; exists {
 				batch = append(batch, moniker)
@@ -73,7 +73,7 @@ LIMIT 1
 // BulkMonikerResults returns the locations within one of the given bundles that define or reference
 // one of the given monikers. This method also returns the size of the complete result set to aid in
 // pagination.
-func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []semantic.MonikerData, limit, offset int) (_ []Location, _ int, err error) {
+func (s *Store) BulkMonikerResults(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []Location, _ int, err error) {
 	ctx, traceLog, endObservation := s.operations.bulkMonikerResults.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("tableName", tableName),
 		log.Int("numUploadIDs", len(uploadIDs)),
@@ -153,7 +153,7 @@ const bulkMonikerResultsQuery = `
 SELECT dump_id, scheme, identifier, data FROM %s WHERE dump_id IN (%s) AND (scheme, identifier) IN (%s) ORDER BY (dump_id, scheme, identifier)
 `
 
-func monikersToString(vs []semantic.MonikerData) string {
+func monikersToString(vs []precise.MonikerData) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
 		strs = append(strs, fmt.Sprintf("%s:%s", v.Scheme, v.Identifier))

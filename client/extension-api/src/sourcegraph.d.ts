@@ -787,24 +787,26 @@ declare module 'sourcegraph' {
         data: D[]
 
         /** The series (lines) of the chart. */
-        series: {
-            /** The key in each data object for the values this line should be calculated from. */
-            dataKey: keyof D
-
-            /** The name of the line shown in the legend and tooltip. */
-            name?: string
-
-            /**
-             * The link URLs for each data point.
-             * A link URL should take the user to more details about the specific data point.
-             */
-            linkURLs?: string[]
-
-            /** The CSS color of the line. */
-            stroke?: string
-        }[]
+        series: LineChartSeries<D>[]
 
         xAxis: ChartAxis<XK, D>
+    }
+
+    export interface LineChartSeries<D> {
+        /** The key in each data object for the values this line should be calculated from. */
+        dataKey: keyof D
+
+        /** The name of the line shown in the legend and tooltip. */
+        name?: string
+
+        /**
+         * The link URLs for each data point.
+         * A link URL should take the user to more details about the specific data point.
+         */
+        linkURLs?: string[]
+
+        /** The CSS color of the line. */
+        stroke?: string
     }
 
     export interface BarChartContent<D extends object, XK extends keyof D> {
@@ -1819,47 +1821,7 @@ declare module 'sourcegraph' {
         }
         export interface ErrorGraphQLResult {
             data: undefined
-            errors: GraphQLError[]
-        }
-
-        /**
-         * A spec-compliant member of the GraphQL `errors` array.
-         */
-        export interface GraphQLError {
-            /**
-             * Every error must contain an entry with the key message with a string description of the error intended for
-             * the developer as a guide to understand and correct the error.
-             */
-            message: string
-
-            /**
-             * If an error can be associated to a particular point in the requested GraphQL document, it should contain an
-             * entry with the key locations with a list of locations, where each location is a map with the keys line and
-             * column, both positive numbers starting from 1 which describe the beginning of an associated syntax element.
-             */
-            locations?: {
-                line: number
-                column: number
-            }[]
-
-            /**
-             * If an error can be associated to a particular field in the GraphQL result, it must contain an entry with the
-             * key path that details the path of the response field which experienced the error. This allows clients to
-             * identify whether a null result is intentional or caused by a runtime error.
-             *
-             * This field should be a list of path segments starting at the root of the response and ending with the field
-             * associated with the error. Path segments that represent fields should be strings, and path segments that
-             * represent list indices should be 0‐indexed integers. If the error happens in an aliased field, the path to
-             * the error should use the aliased name, since it represents a path in the response, not in the query.
-             */
-            path?: (string | number)[]
-
-            /**
-             * GraphQL services may provide an additional entry to errors with key extensions. This entry, if set, must
-             * have a map as its value. This entry is reserved for implementors to add additional information to errors
-             * however they see fit, and there are no additional restrictions on its contents.
-             */
-            extensions?: Record<string, unknown>
+            errors: readonly import('graphql').GraphQLError[]
         }
     }
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -32,7 +34,7 @@ func New(dbStore DBStore, observationContext *observation.Context) *Client {
 	}
 }
 
-// Head determines the tip commit of the default branch for the given repository.
+// CommitExists determines if the given commit exists in the given repository.
 func (c *Client) CommitExists(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
 	ctx, endObservation := c.operations.commitExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
@@ -62,7 +64,7 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 
 	revision, err := c.execGitCommand(ctx, repositoryID, "rev-parse", "HEAD")
 	if err != nil {
-		if gitserver.IsRevisionNotFound(err) {
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			err = nil
 		}
 
@@ -86,6 +88,20 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	}
 
 	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+}
+
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
+	ctx, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numRepos", len(repos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	resp, err := gitserver.DefaultClient.RepoInfo(ctx, repos...)
+	if resp == nil {
+		return nil, err
+	}
+
+	return resp.Results, err
 }
 
 type CommitGraph struct {
@@ -208,7 +224,7 @@ var refPrefixes = map[string]RefType{
 
 // RefDescriptions returns a map from commits to descriptions of the tip of each
 // branch and tag of the given repository.
-func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string]RefDescription, err error) {
+func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[string][]RefDescription, err error) {
 	ctx, endObservation := c.operations.refDescriptions.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 	}})
@@ -235,8 +251,8 @@ func (c *Client) RefDescriptions(ctx context.Context, repositoryID int) (_ map[s
 // - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
 // - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
 // - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
-	refDescriptions := make(map[string]RefDescription, len(lines))
+func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
+	refDescriptions := make(map[string][]RefDescription, len(lines))
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
@@ -245,7 +261,7 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 
 		parts := strings.SplitN(line, ":", 4)
 		if len(parts) != 4 {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
 		commit := parts[0]
@@ -261,23 +277,91 @@ func parseRefDescriptions(lines []string) (map[string]RefDescription, error) {
 			}
 		}
 		if refType == RefTypeUnknown {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
 		}
 
 		createdDate, err := time.Parse(time.RFC3339, parts[3])
 		if err != nil {
-			return nil, fmt.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
 		}
 
-		refDescriptions[commit] = RefDescription{
+		refDescriptions[commit] = append(refDescriptions[commit], RefDescription{
 			Name:            name,
 			Type:            refType,
 			IsDefaultBranch: isDefaultBranch,
 			CreatedDate:     createdDate,
-		}
+		})
 	}
 
 	return refDescriptions, nil
+}
+
+// BranchesContaining returns a map from branch names to branch tip hashes for each brach
+// containing the given commit.
+func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
+	out, err := c.execGitCommand(ctx, repositoryID, "branch", "--contains", commit, "--format", "%(refname)")
+	if err != nil {
+		return nil, err
+	}
+
+	return parseBranchesContaining(strings.Split(out, "\n")), nil
+}
+
+func parseBranchesContaining(lines []string) []string {
+	names := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		refname := line
+
+		// Remove refs/heads/ or ref/tags/ prefix
+		for prefix := range refPrefixes {
+			if strings.HasPrefix(line, prefix) {
+				refname = line[len(prefix):]
+			}
+		}
+
+		names = append(names, refname)
+	}
+	sort.Strings(names)
+
+	return names
+}
+
+// DefaultBranchContains tells if the default branch contains the given commit ID.
+//
+// TODO(apidocs): future: This could be implemented more optimally, but since it is called
+// infrequently it is fine for now.
+func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	// Determine default branch name.
+	descriptions, err := c.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return false, errors.Wrap(err, "RefDescriptions")
+	}
+	var defaultBranchName string
+	for _, descriptions := range descriptions {
+		for _, ref := range descriptions {
+			if ref.IsDefaultBranch {
+				defaultBranchName = ref.Name
+				break
+			}
+		}
+	}
+
+	// Determine if branch contains commit.
+	branches, err := c.BranchesContaining(ctx, repositoryID, commit)
+	if err != nil {
+		return false, errors.Wrap(err, "BranchesContaining")
+	}
+	for _, branch := range branches {
+		if branch == defaultBranchName {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.

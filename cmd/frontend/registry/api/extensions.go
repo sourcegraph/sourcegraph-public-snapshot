@@ -2,9 +2,10 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -24,15 +25,15 @@ import (
 func SplitExtensionID(extensionID string) (prefix, publisher, name string, err error) {
 	parts := strings.Split(extensionID, "/")
 	if len(parts) == 0 || len(parts) == 1 {
-		return "", "", "", fmt.Errorf("invalid extension ID: %q (2+ slash-separated path components required)", extensionID)
+		return "", "", "", errors.Errorf("invalid extension ID: %q (2+ slash-separated path components required)", extensionID)
 	}
 	name = parts[len(parts)-1] // last
 	if name == "" {
-		return "", "", "", fmt.Errorf("invalid extension ID: %q (trailing slash is forbidden)", extensionID)
+		return "", "", "", errors.Errorf("invalid extension ID: %q (trailing slash is forbidden)", extensionID)
 	}
 	publisher = parts[len(parts)-2] // 2nd to last
 	if publisher == "" {
-		return "", "", "", fmt.Errorf("invalid extension ID: %q (empty publisher)", extensionID)
+		return "", "", "", errors.Errorf("invalid extension ID: %q (empty publisher)", extensionID)
 	}
 	prefix = strings.Join(parts[:len(parts)-2], "/") // prefix
 	return
@@ -54,12 +55,12 @@ func ParseExtensionID(extensionID string) (prefix, extensionIDWithoutPrefix stri
 		if configuredPrefix == nil {
 			// Don't look up fully qualified extensions from Sourcegraph.com; it only cares about
 			// its own extensions.
-			return "", "", false, fmt.Errorf("remote extension lookup is not supported for host %q", prefix)
+			return "", "", false, errors.Errorf("remote extension lookup is not supported for host %q", prefix)
 		}
 
 		// Local extension on non-Sourcegraph.com instance.
 		if prefix != *configuredPrefix {
-			return "", "", false, fmt.Errorf("remote extension lookup is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", prefix, *configuredPrefix)
+			return "", "", false, errors.Errorf("remote extension lookup is forbidden (extension ID prefix %q, allowed prefixes are \"\" (default) and %q (local))", prefix, *configuredPrefix)
 		}
 		isLocal = true
 	} else if configuredPrefix == nil { // Extension ID is publisher/name.
@@ -170,7 +171,7 @@ func getRemoteRegistryExtension(ctx context.Context, field, value string) (*regi
 	}
 
 	if x != nil && !IsRemoteExtensionAllowed(x.ExtensionID) {
-		return nil, fmt.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
+		return nil, errors.Errorf("extension is not allowed in site configuration: %q", x.ExtensionID)
 	}
 
 	return x, err
@@ -240,13 +241,7 @@ func GetFeaturedExtensions(ctx context.Context, db dbutil.DB) ([]graphqlbackend.
 }
 
 // IsWorkInProgressExtension reports whether the extension manifest indicates that this extension is
-// marked as a work-in-progress extension (by having a "wip": true property, or (for backcompat) a
-// title that begins with "WIP:" or "[WIP]").
-//
-// BACKCOMPAT: This still supports titles even though extensions no longer have titles. In Feb 2019
-// it will probably be safe to remove the title handling.
-//
-// NOTE: Keep this pattern in sync with WorkInProgressExtensionTitlePostgreSQLPattern.
+// marked as a work-in-progress extension (by having a "wip": true property).
 func IsWorkInProgressExtension(manifest *string) bool {
 	if manifest == nil {
 		// Extensions with no manifest (== no releases published yet) are considered
@@ -254,22 +249,18 @@ func IsWorkInProgressExtension(manifest *string) bool {
 		return true
 	}
 
-	var result struct {
-		schema.SourcegraphExtensionManifest
-		Title string
+	// jsonc-parsing the manifest can be slow, so do a first pass. If the manifest doesn't even
+	// contain `"wip"`, then there is no way that it could be WIP.
+	if !strings.Contains(*manifest, `"wip"`) {
+		return false
 	}
+
+	var result schema.SourcegraphExtensionManifest
 	if err := jsonc.Unmarshal(*manifest, &result); err != nil {
 		// An extension whose manifest fails to parse is problematic for other reasons (and an error
 		// will be displayed), but it isn't helpful to also consider it work-in-progress.
 		return false
 	}
 
-	return result.Wip || strings.HasPrefix(result.Title, "WIP:") || strings.HasPrefix(result.Title, "[WIP]")
+	return result.Wip
 }
-
-// WorkInProgressExtensionTitlePostgreSQLPattern is the PostgreSQL "SIMILAR TO" pattern that matches
-// the extension manifest's "title" property. See
-// https://www.postgresql.org/docs/9.3/functions-matching.html.
-//
-// NOTE: Keep this pattern in sync with IsWorkInProgressExtension.
-const WorkInProgressExtensionTitlePostgreSQLPattern = `(\[WIP]|WIP:)%`

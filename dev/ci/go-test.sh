@@ -2,10 +2,6 @@
 
 set -e
 
-# For symbol tests
-echo "--- build libsqlite"
-./dev/libsqlite3-pcre/build.sh
-
 # For searcher
 echo "--- comby install"
 ./dev/comby-install-or-upgrade.sh
@@ -24,7 +20,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
   go mod download
 
   echo "--- $d go test"
-  go test -timeout 5m -coverprofile=coverage.txt -covermode=atomic -race ./...
+  go test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race ./...
 
   popd >/dev/null
 done

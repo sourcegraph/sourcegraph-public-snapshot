@@ -1,3 +1,4 @@
+import { kebabCase } from 'lodash'
 import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import React, { useMemo } from 'react'
 
@@ -16,6 +17,8 @@ const isJSON = (string: string): boolean => {
         return false
     }
 }
+
+export const getFileName = (name: string): string => `${kebabCase(name)}.batch.yaml`
 
 export interface BatchSpecProps {
     originalInput: BatchChangeFields['currentSpec']['originalInput']
@@ -39,10 +42,10 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
 > = React.memo(function BatchSpecDownloadLink({ name, originalInput }) {
     return (
         <a
-            download={`${name}.batch.yaml`}
+            download={getFileName(name)}
             href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className="text-right btn btn-outline-secondary text-nowrap"
-            data-tooltip={`Download ${name}.batch.yaml`}
+            data-tooltip={`Download ${getFileName(name)}`}
         >
             <FileDownloadIcon className="icon-inline" /> Download YAML
         </a>

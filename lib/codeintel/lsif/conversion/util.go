@@ -4,27 +4,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
-
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
-
-func newID() (semantic.ID, error) {
-	uuid, err := uuid.NewRandom()
-	if err != nil {
-		return "", err
-	}
-	return semantic.ID(uuid.String()), nil
-}
 
 func makeKey(parts ...string) string {
 	return strings.Join(parts, ":")
 }
 
-func toID(id int) semantic.ID {
+func toID(id int) precise.ID {
 	if id == 0 {
-		return semantic.ID("")
+		return precise.ID("")
 	}
 
-	return semantic.ID(strconv.FormatInt(int64(id), 10))
+	return precise.ID(strconv.FormatInt(int64(id), 10))
 }

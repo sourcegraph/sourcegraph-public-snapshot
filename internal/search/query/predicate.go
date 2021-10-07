@@ -1,7 +1,6 @@
 package query
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -111,17 +110,23 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			if f.File != "" {
 				return errors.New("cannot specify file multiple times")
 			}
+			if _, err := regexp.Compile(v.Value); err != nil {
+				return errors.Errorf("`contains` predicate has invalid `file` argument: %w", err)
+			}
 			f.File = v.Value
 		case "content":
 			if f.Content != "" {
 				return errors.New("cannot specify content multiple times")
 			}
+			if _, err := regexp.Compile(v.Value); err != nil {
+				return errors.Errorf("`contains` predicate has invalid `content` argument: %w", err)
+			}
 			f.Content = v.Value
 		default:
-			return fmt.Errorf("unsupported option %q", v.Field)
+			return errors.Errorf("unsupported option %q", v.Field)
 		}
 	case Pattern:
-		return fmt.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
+		return errors.Errorf(`prepend 'file:' or 'content:' to "%s" to search repositories containing files or content respectively.`, v.Value)
 	case Operator:
 		if v.Kind == Or {
 			return errors.New("predicates do not currently support 'or' queries")
@@ -132,7 +137,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 			}
 		}
 	default:
-		return fmt.Errorf("unsupported node type %T", n)
+		return errors.Errorf("unsupported node type %T", n)
 	}
 	return nil
 }
@@ -175,10 +180,10 @@ type RepoContainsContentPredicate struct {
 
 func (f *RepoContainsContentPredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return fmt.Errorf("contains.content argument: %w", err)
+		return errors.Errorf("contains.content argument: %w", err)
 	}
 	if params == "" {
-		return fmt.Errorf("contains.content argument should not be empty")
+		return errors.Errorf("contains.content argument should not be empty")
 	}
 	f.Pattern = params
 	return nil
@@ -199,10 +204,10 @@ type RepoContainsFilePredicate struct {
 
 func (f *RepoContainsFilePredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return fmt.Errorf("contains.file argument: %w", err)
+		return errors.Errorf("contains.file argument: %w", err)
 	}
 	if params == "" {
-		return fmt.Errorf("contains.file argument should not be empty")
+		return errors.Errorf("contains.file argument should not be empty")
 	}
 	f.Pattern = params
 	return nil
@@ -250,10 +255,10 @@ type FileContainsContentPredicate struct {
 
 func (f *FileContainsContentPredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return fmt.Errorf("file:contains.content argument: %w", err)
+		return errors.Errorf("file:contains.content argument: %w", err)
 	}
 	if params == "" {
-		return fmt.Errorf("file:contains.content argument should not be empty")
+		return errors.Errorf("file:contains.content argument should not be empty")
 	}
 	f.Pattern = params
 	return nil

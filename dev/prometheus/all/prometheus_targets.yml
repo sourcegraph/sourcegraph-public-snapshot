@@ -52,11 +52,6 @@
     # worker
     - host.docker.internal:6089
 - labels:
-    job: executor-queue
-  targets:
-    # executor-queue
-    - host.docker.internal:6091
-- labels:
     job: sourcegraph-code-intel-indexers
   targets:
     # sourcegraph-code-intel-indexers

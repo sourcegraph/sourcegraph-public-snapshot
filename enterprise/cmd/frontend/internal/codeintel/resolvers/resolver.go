@@ -1,9 +1,7 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -28,11 +26,17 @@ type Resolver interface {
 	IndexConnectionResolver(opts store.GetIndexesOptions) *IndexesResolver
 	DeleteUploadByID(ctx context.Context, uploadID int) error
 	DeleteIndexByID(ctx context.Context, id int) error
-	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error)
-	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 	CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error)
-	QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error
+	QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error)
 	QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (QueryResolver, error)
+	GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error)
+	GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error)
+	CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error)
+	UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error)
+	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
+	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
+	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
+	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
 }
 
 type resolver struct {
@@ -108,40 +112,6 @@ func (r *resolver) DeleteIndexByID(ctx context.Context, id int) error {
 	return err
 }
 
-func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, error) {
-	configuration, exists, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	if exists {
-		return configuration.Data, nil
-	}
-
-	// nothing in DB, prepopulate with a best guess from the inference engine
-	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
-	if err != nil || maybeConfig == nil {
-		return nil, err
-	}
-
-	marshaled, err := config.MarshalJSON(*maybeConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	var indented bytes.Buffer
-	_ = json.Indent(&indented, marshaled, "", "\t")
-	return indented.Bytes(), nil
-}
-
-func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {
-	if _, err := config.UnmarshalJSON([]byte(configuration)); err != nil {
-		return err
-	}
-
-	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
-}
-
 func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeIntelligenceCommitGraphResolver, error) {
 	stale, updatedAt, err := r.dbStore.CommitGraphMetadata(ctx, repositoryID)
 	if err != nil {
@@ -151,8 +121,8 @@ func (r *resolver) CommitGraph(ctx context.Context, repositoryID int) (gql.CodeI
 	return NewCommitGraphResolver(stale, updatedAt), nil
 }
 
-func (r *resolver) QueueAutoIndexJobForRepo(ctx context.Context, repositoryID int) error {
-	return r.indexEnqueuer.ForceQueueIndexesForRepository(ctx, repositoryID)
+func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]store.Index, error) {
+	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true)
 }
 
 const slowQueryResolverRequestThreshold = time.Second
@@ -199,4 +169,53 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		dumps,
 		r.operations,
 	), nil
+}
+
+func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts store.GetConfigurationPoliciesOptions) ([]store.ConfigurationPolicy, error) {
+	return r.dbStore.GetConfigurationPolicies(ctx, opts)
+}
+
+func (r *resolver) GetConfigurationPolicyByID(ctx context.Context, id int) (store.ConfigurationPolicy, bool, error) {
+	return r.dbStore.GetConfigurationPolicyByID(ctx, id)
+}
+
+func (r *resolver) CreateConfigurationPolicy(ctx context.Context, configurationPolicy store.ConfigurationPolicy) (store.ConfigurationPolicy, error) {
+	return r.dbStore.CreateConfigurationPolicy(ctx, configurationPolicy)
+}
+
+func (r *resolver) UpdateConfigurationPolicy(ctx context.Context, policy store.ConfigurationPolicy) (err error) {
+	return r.dbStore.UpdateConfigurationPolicy(ctx, policy)
+}
+
+func (r *resolver) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
+	return r.dbStore.DeleteConfigurationPolicyByID(ctx, id)
+}
+
+func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error) {
+	configuration, exists, err := r.dbStore.GetIndexConfigurationByRepositoryID(ctx, repositoryID)
+	if err != nil {
+		return nil, false, err
+	}
+	if !exists {
+		return nil, false, nil
+	}
+
+	return configuration.Data, true, nil
+}
+
+func (r *resolver) InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error) {
+	maybeConfig, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID)
+	if err != nil || maybeConfig == nil {
+		return nil, false, err
+	}
+
+	return maybeConfig, true, nil
+}
+
+func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error {
+	if _, err := config.UnmarshalJSON([]byte(configuration)); err != nil {
+		return err
+	}
+
+	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
 }

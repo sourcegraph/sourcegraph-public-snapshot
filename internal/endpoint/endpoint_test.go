@@ -4,40 +4,46 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestNew(t *testing.T) {
 	m := New("http://test")
-	expectEndpoints(t, m, nil, "http://test")
+	expectEndpoints(t, m, "http://test")
 
 	m = New("http://test-1 http://test-2")
-	expectEndpoints(t, m, nil, "http://test-1", "http://test-2")
+	expectEndpoints(t, m, "http://test-1", "http://test-2")
 }
 
 func TestStatic(t *testing.T) {
 	m := Static("http://test")
-	expectEndpoints(t, m, nil, "http://test")
+	expectEndpoints(t, m, "http://test")
 
 	m = Static("http://test-1", "http://test-2")
-	expectEndpoints(t, m, nil, "http://test-1", "http://test-2")
+	expectEndpoints(t, m, "http://test-1", "http://test-2")
 }
 
-func TestExclude(t *testing.T) {
+func TestGetN(t *testing.T) {
 	endpoints := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
 	m := Static(endpoints...)
 
-	exclude := map[string]bool{}
-	for len(endpoints) > 0 {
-		expectEndpoints(t, m, exclude, endpoints...)
+	node, _ := m.Get("foo")
+	have, _ := m.GetN("foo", 3)
 
-		exclude[endpoints[len(endpoints)-1]] = true
-		endpoints = endpoints[:len(endpoints)-1]
+	if len(have) != 3 {
+		t.Fatalf("GetN(3) didn't return 3 nodes")
+	}
+
+	if have[0] != node {
+		t.Fatalf("GetN(foo, 3)[0] != Get(foo): %s != %s", have[0], node)
+	}
+
+	want := []string{"http://test-3", "http://test-2", "http://test-4"}
+	if !reflect.DeepEqual(have, want) {
+		t.Fatalf("GetN(\"foo\", 3):\nhave: %v\nwant: %v", have, want)
 	}
 }
 
-func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ...string) {
+func expectEndpoints(t *testing.T, m *Map, endpoints ...string) {
 	t.Helper()
 
 	// We ask for the URL of a large number of keys, we expect to see every
@@ -47,7 +53,7 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 		count[e] = 0
 	}
 	for i := 0; i < len(endpoints)*10; i++ {
-		v, err := m.Get(fmt.Sprintf("test-%d", i), exclude)
+		v, err := m.Get(fmt.Sprintf("test-%d", i))
 		if err != nil {
 			t.Fatalf("Get failed: %v", err)
 		}
@@ -67,7 +73,7 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 	var keys, vals []string
 	for i := 0; i < len(endpoints)*10; i++ {
 		keys = append(keys, fmt.Sprintf("test-%d", i))
-		v, err := m.Get(keys[i], nil)
+		v, err := m.Get(keys[i])
 		if err != nil {
 			t.Fatalf("Get for GetMany failed: %v", err)
 		}
@@ -81,38 +87,13 @@ func expectEndpoints(t *testing.T, m *Map, exclude map[string]bool, endpoints ..
 }
 
 func TestEndpoints(t *testing.T) {
-	eps := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
-	want := map[string]struct{}{}
-	for _, addr := range eps {
-		want[addr] = struct{}{}
-	}
-
-	m := Static(eps...)
+	want := []string{"http://test-1", "http://test-2", "http://test-3", "http://test-4"}
+	m := Static(want...)
 	got, err := m.Endpoints()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("m.Endpoints() unexpected return:\ngot:  %v\nwant: %v", got, want)
-	}
-}
-
-func TestK8sURL(t *testing.T) {
-	endpoint := "endpoint.service"
-	cases := map[string]string{
-		"k8s+http://searcher:3181":          "http://endpoint.service:3181",
-		"k8s+http://searcher":               "http://endpoint.service",
-		"k8s+http://searcher.namespace:123": "http://endpoint.service:123",
-		"k8s+rpc://indexed-search:6070":     "endpoint.service:6070",
-	}
-	for rawurl, want := range cases {
-		u, err := parseURL(rawurl)
-		if err != nil {
-			t.Fatal(err)
-		}
-		got := u.endpointURL(endpoint)
-		if got != want {
-			t.Errorf("mismatch on %s (-want +got):\n%s", rawurl, cmp.Diff(want, got))
-		}
 	}
 }

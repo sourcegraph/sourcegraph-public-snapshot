@@ -10,22 +10,18 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/user/orgs?per_page=100
+    url: https://api.github.com/user/orgs?per_page=100&page=1
     method: GET
   response:
-    body: '[{"login":"mesos","id":229272,"node_id":"MDEyOk9yZ2FuaXphdGlvbjIyOTI3Mg==","url":"https://api.github.com/orgs/mesos","repos_url":"https://api.github.com/orgs/mesos/repos","events_url":"https://api.github.com/orgs/mesos/events","hooks_url":"https://api.github.com/orgs/mesos/hooks","issues_url":"https://api.github.com/orgs/mesos/issues","members_url":"https://api.github.com/orgs/mesos/members{/member}","public_members_url":"https://api.github.com/orgs/mesos/public_members{/member}","avatar_url":"https://avatars2.githubusercontent.com/u/229272?v=4","description":"DISCLAIMER:
-      The Apache Software Foundation does not govern or endorse repositories within
-      this organization"},{"login":"sourcegraph","id":3979584,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM5Nzk1ODQ=","url":"https://api.github.com/orgs/sourcegraph","repos_url":"https://api.github.com/orgs/sourcegraph/repos","events_url":"https://api.github.com/orgs/sourcegraph/events","hooks_url":"https://api.github.com/orgs/sourcegraph/hooks","issues_url":"https://api.github.com/orgs/sourcegraph/issues","members_url":"https://api.github.com/orgs/sourcegraph/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph/public_members{/member}","avatar_url":"https://avatars0.githubusercontent.com/u/3979584?v=4","description":"Code
-      search and navigation for teams (self-hosted, OSS)"},{"login":"dockerlisbon","id":6493338,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY0OTMzMzg=","url":"https://api.github.com/orgs/dockerlisbon","repos_url":"https://api.github.com/orgs/dockerlisbon/repos","events_url":"https://api.github.com/orgs/dockerlisbon/events","hooks_url":"https://api.github.com/orgs/dockerlisbon/hooks","issues_url":"https://api.github.com/orgs/dockerlisbon/issues","members_url":"https://api.github.com/orgs/dockerlisbon/members{/member}","public_members_url":"https://api.github.com/orgs/dockerlisbon/public_members{/member}","avatar_url":"https://avatars0.githubusercontent.com/u/6493338?v=4","description":"Docker
-      Lisbon Meetup Group"},{"login":"SICPDistilled","id":8573970,"node_id":"MDEyOk9yZ2FuaXphdGlvbjg1NzM5NzA=","url":"https://api.github.com/orgs/SICPDistilled","repos_url":"https://api.github.com/orgs/SICPDistilled/repos","events_url":"https://api.github.com/orgs/SICPDistilled/events","hooks_url":"https://api.github.com/orgs/SICPDistilled/hooks","issues_url":"https://api.github.com/orgs/SICPDistilled/issues","members_url":"https://api.github.com/orgs/SICPDistilled/members{/member}","public_members_url":"https://api.github.com/orgs/SICPDistilled/public_members{/member}","avatar_url":"https://avatars3.githubusercontent.com/u/8573970?v=4","description":""},{"login":"distributed-fuzzing","id":13280436,"node_id":"MDEyOk9yZ2FuaXphdGlvbjEzMjgwNDM2","url":"https://api.github.com/orgs/distributed-fuzzing","repos_url":"https://api.github.com/orgs/distributed-fuzzing/repos","events_url":"https://api.github.com/orgs/distributed-fuzzing/events","hooks_url":"https://api.github.com/orgs/distributed-fuzzing/hooks","issues_url":"https://api.github.com/orgs/distributed-fuzzing/issues","members_url":"https://api.github.com/orgs/distributed-fuzzing/members{/member}","public_members_url":"https://api.github.com/orgs/distributed-fuzzing/public_members{/member}","avatar_url":"https://avatars2.githubusercontent.com/u/13280436?v=4","description":""},{"login":"oklog","id":24411296,"node_id":"MDEyOk9yZ2FuaXphdGlvbjI0NDExMjk2","url":"https://api.github.com/orgs/oklog","repos_url":"https://api.github.com/orgs/oklog/repos","events_url":"https://api.github.com/orgs/oklog/events","hooks_url":"https://api.github.com/orgs/oklog/hooks","issues_url":"https://api.github.com/orgs/oklog/issues","members_url":"https://api.github.com/orgs/oklog/members{/member}","public_members_url":"https://api.github.com/orgs/oklog/public_members{/member}","avatar_url":"https://avatars3.githubusercontent.com/u/24411296?v=4","description":"The
-      logs are gonna be okay"}]'
+    body: '[{"login":"sourcegraph-vcr-repos","id":65169595,"node_id":"MDEyOk9yZ2FuaXphdGlvbjY1MTY5NTk1","url":"https://api.github.com/orgs/sourcegraph-vcr-repos","repos_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/repos","events_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/events","hooks_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/hooks","issues_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/issues","members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/members{/member}","public_members_url":"https://api.github.com/orgs/sourcegraph-vcr-repos/public_members{/member}","avatar_url":"https://avatars.githubusercontent.com/u/65169595?v=4","description":null}]'
     headers:
       Access-Control-Allow-Origin:
       - '*'
       Access-Control-Expose-Headers:
       - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
-        X-RateLimit-Reset, X-OAuth-Scopes, X-Accepted-OAuth-Scopes, X-Poll-Interval,
-        X-GitHub-Media-Type
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Security-Policy:
@@ -33,20 +29,18 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 20 Dec 2019 17:21:40 GMT
+      - Wed, 25 Aug 2021 14:52:59 GMT
       Etag:
-      - W/"cf9988181c41252f7368e4a9a577bd35"
+      - W/"19387c0635b352f1318b0233897813c9c1cded546f3ca171e9b91b4078f36f76"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
       - GitHub.com
-      Status:
-      - 200 OK
       Strict-Transport-Security:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept, Authorization, Cookie, X-GitHub-OTP
-      - Accept-Encoding
+      - Accept-Encoding, Accept, X-Requested-With
       X-Accepted-Oauth-Scopes:
       - admin:org, read:org, repo, user, write:org
       X-Content-Type-Options:
@@ -54,20 +48,26 @@ interactions:
       X-Frame-Options:
       - deny
       X-Github-Media-Type:
-      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; format=json,
-        github.machine-man-preview; format=json
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
       X-Github-Request-Id:
-      - DF94:3842D:3CBC5D3:48C7186:5DFD0324
+      - F098:0D7B:E8788:1F6C85:6126594B
       X-Oauth-Scopes:
-      - admin:org_hook, admin:repo_hook, repo
+      - admin:enterprise, admin:gpg_key, admin:org, admin:org_hook, admin:public_key,
+        admin:repo_hook, delete:packages, delete_repo, gist, notifications, repo,
+        user, workflow, write:discussion, write:packages
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4998"
+      - "4979"
       X-Ratelimit-Reset:
-      - "1576866100"
+      - "1629906603"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "21"
       X-Xss-Protection:
-      - 1; mode=block
+      - "0"
     status: 200 OK
     code: 200
     duration: ""

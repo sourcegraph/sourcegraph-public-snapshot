@@ -44,7 +44,7 @@ func NewCleaner(ctx context.Context, workerBaseStore *basestore.Store, observati
 func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleaned int, err error) {
 	numCleaned, _, err = basestore.ScanFirstInt(workerBaseStore.Query(
 		ctx,
-		sqlf.Sprintf(cleanJobsFmtStr, time.Now().Add(-12*time.Hour)),
+		sqlf.Sprintf(cleanJobsFmtStr, time.Now().Add(-168*time.Hour)),
 	))
 	return
 }
@@ -52,6 +52,6 @@ func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleane
 const cleanJobsFmtStr = `
 -- source: enterprise/internal/insights/background/queryrunner/cleaner.go:cleanJobs
 WITH deleted AS (
-	DELETE FROM insights_query_runner_jobs WHERE (state='completed' OR state='failed') AND started_at >= %s RETURNING *
+	DELETE FROM insights_query_runner_jobs WHERE state='completed' AND started_at <= %s RETURNING *
 ) SELECT count(*) FROM deleted
 `

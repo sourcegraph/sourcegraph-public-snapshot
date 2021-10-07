@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/cockroachdb/errors"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -47,7 +48,9 @@ func (l Info) IsExpiredWithGracePeriod() bool {
 // HasTag reports whether tag is in l's list of tags.
 func (l Info) HasTag(tag string) bool {
 	for _, t := range l.Tags {
-		if tag == t {
+		// NOTE: Historically, our web form have accidentally submitted tags with
+		//  surrounding spaces.
+		if tag == strings.TrimSpace(t) {
 			return true
 		}
 	}
@@ -68,10 +71,19 @@ func ParseTagsInput(tagsStr string) []string {
 		return nil
 	}
 	tags := strings.Split(tagsStr, ",")
-	for i, tag := range tags {
-		tags[i] = strings.TrimSpace(tag)
+	return SanitizeTagsList(tags)
+}
+
+// SanitizeTagsList removes whitespace around tags and removes empty tags before
+// returning the list of tags.
+func SanitizeTagsList(tags []string) []string {
+	sTags := make([]string, 0)
+	for _, tag := range tags {
+		if tag := strings.TrimSpace(tag); tag != "" {
+			sTags = append(sTags, tag)
+		}
 	}
-	return tags
+	return sTags
 }
 
 type encodedInfo struct {
@@ -96,7 +108,7 @@ func (l *Info) decode(data []byte) error {
 		return err
 	}
 	if e.Version != formatVersion {
-		return fmt.Errorf("license key format is version %d, expected version %d", e.Version, formatVersion)
+		return errors.Errorf("license key format is version %d, expected version %d", e.Version, formatVersion)
 	}
 	*l = e.Info
 	return nil

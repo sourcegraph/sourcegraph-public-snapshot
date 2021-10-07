@@ -15,21 +15,23 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type handler struct {
 	dbStore         DBStore
+	workerStore     dbworkerstore.Store
 	lsifStore       LSIFStore
 	uploadStore     uploadstore.Store
 	gitserverClient GitserverClient
@@ -37,12 +39,14 @@ type handler struct {
 	budgetRemaining int64
 }
 
-var _ dbworker.Handler = &handler{}
-var _ workerutil.WithPreDequeue = &handler{}
-var _ workerutil.WithHooks = &handler{}
+var (
+	_ workerutil.Handler        = &handler{}
+	_ workerutil.WithPreDequeue = &handler{}
+	_ workerutil.WithHooks      = &handler{}
+)
 
-func (h *handler) Handle(ctx context.Context, tx dbworkerstore.Store, record workerutil.Record) error {
-	_, err := h.handle(ctx, tx, h.dbStore.With(tx), record.(store.Upload))
+func (h *handler) Handle(ctx context.Context, record workerutil.Record) error {
+	_, err := h.handle(ctx, record.(store.Upload))
 	return err
 }
 
@@ -77,7 +81,7 @@ func (h *handler) getSize(record workerutil.Record) int64 {
 
 // handle converts a raw upload into a dump within the given transaction context. Returns true if the
 // upload record was requeued and false otherwise.
-func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, dbStore DBStore, upload store.Upload) (requeued bool, err error) {
+func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued bool, err error) {
 	start := time.Now()
 	defer func() {
 		if honey.Enabled() {
@@ -85,8 +89,19 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 		}
 	}()
 
-	if requeued, err := requeueIfCloning(ctx, workerStore, upload); err != nil || requeued {
+	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
+	if err != nil {
+		return false, errors.Wrap(err, "Repos.Get")
+	}
+
+	if requeued, err := requeueIfCloning(ctx, h.workerStore, upload, repo); err != nil || requeued {
 		return requeued, err
+	}
+
+	// Determine if the upload is for the default Git branch.
+	isDefaultBranch, err := h.gitserverClient.DefaultBranchContains(ctx, upload.RepositoryID, upload.Commit)
+	if err != nil {
+		return false, errors.Wrap(err, "gitserver.DefaultBranchContains")
 	}
 
 	getChildren := func(ctx context.Context, dirnames []string) (map[string][]string, error) {
@@ -105,7 +120,7 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeData(ctx, h.lsifStore, upload.ID, groupedBundleData); err != nil {
+		if err := writeData(ctx, h.lsifStore, upload, repo, isDefaultBranch, groupedBundleData); err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
@@ -121,7 +136,7 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 		// point fails, we want to update the upload record with an error message but do not want to
 		// alter any other data in the database. Rolling back to this savepoint will allow us to discard
 		// any other changes but still commit the transaction as a whole.
-		if err := inTransaction(ctx, dbStore, func(tx DBStore) error {
+		return inTransaction(ctx, h.dbStore, func(tx DBStore) error {
 			// Find the date of the commit and store that in the upload record. We do this now as we
 			// will need to find the _oldest_ commit with code intelligence data to efficiently update
 			// the commit graph for the repository.
@@ -141,6 +156,17 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
 
+			// When inserting a new completed upload record, update the reference counts both to it from
+			// existing uploads, as well as the reference counts to all of this new upload's dependencies.
+			// We decrement reference counts of dependencies on upload deletion, so this count should
+			// always be up to date as records are created and removed.
+			if err := tx.UpdateNumReferences(ctx, []int{upload.ID}); err != nil {
+				return errors.Wrap(err, "store.UpdateNumReferences")
+			}
+			if err := tx.UpdateDependencyNumReferences(ctx, []int{upload.ID}, false); err != nil {
+				return errors.Wrap(err, "store.UpdateDependencyNumReferences")
+			}
+
 			// Before we mark the upload as complete, we need to delete any existing completed uploads
 			// that have the same repository_id, commit, root, and indexer values. Otherwise the transaction
 			// will fail as these values form a unique constraint.
@@ -148,10 +174,10 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			// Insert a companion record to this upload that will asynchronously trigger another worker to
-			// queue auto-index records for the monikers written into the lsif_references table attached by
-			// this index processing job.
-			if _, err := tx.InsertDependencyIndexingJob(ctx, upload.ID); err != nil {
+			// Insert a companion record to this upload that will asynchronously trigger other workers to
+			// sync/create referenced dependency repositories and queue auto-index records for the monikers
+			// written into the lsif_references table attached by this index processing job.
+			if _, err := tx.InsertDependencySyncingJob(ctx, upload.ID); err != nil {
 				return errors.Wrap(err, "store.InsertDependencyIndexingJob")
 			}
 
@@ -162,15 +188,11 @@ func (h *handler) handle(ctx context.Context, workerStore dbworkerstore.Store, d
 			// repository rather than having a set of uploads for the same repo re-calculate nearly identical
 			// data multiple times.
 			if err := tx.MarkRepositoryAsDirty(ctx, upload.RepositoryID); err != nil {
-				return errors.Wrap(err, "store.MarkRepositoryDirty")
+				return errors.Wrap(err, "store.MarkRepositoryAsDirty")
 			}
 
 			return nil
-		}); err != nil {
-			return err
-		}
-
-		return nil
+		})
 	})
 }
 
@@ -191,12 +213,7 @@ const CloneInProgressDelay = time.Minute
 // if the repo has finished cloning and the revision does not exist, then the upload will fail to process.
 // If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
 // increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
-func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload) (requeued bool, _ error) {
-	repo, err := backend.Repos.Get(ctx, api.RepoID(upload.RepositoryID))
-	if err != nil {
-		return false, errors.Wrap(err, "Repos.Get")
-	}
-
+func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
 	if _, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit); err != nil {
 		if !vcs.IsCloneInProgress(err) {
 			return false, errors.Wrap(err, "Repos.ResolveRev")
@@ -243,45 +260,44 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 }
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
-func writeData(ctx context.Context, lsifStore LSIFStore, id int, groupedBundleData *semantic.GroupedBundleDataChans) (err error) {
+func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.WriteMeta(ctx, id, groupedBundleData.Meta); err != nil {
+	if err := tx.WriteMeta(ctx, upload.ID, groupedBundleData.Meta); err != nil {
 		return errors.Wrap(err, "store.WriteMeta")
 	}
-	if err := tx.WriteDocuments(ctx, id, groupedBundleData.Documents); err != nil {
+	if err := tx.WriteDocuments(ctx, upload.ID, groupedBundleData.Documents); err != nil {
 		return errors.Wrap(err, "store.WriteDocuments")
 	}
-	if err := tx.WriteResultChunks(ctx, id, groupedBundleData.ResultChunks); err != nil {
+	if err := tx.WriteResultChunks(ctx, upload.ID, groupedBundleData.ResultChunks); err != nil {
 		return errors.Wrap(err, "store.WriteResultChunks")
 	}
-	if err := tx.WriteDefinitions(ctx, id, groupedBundleData.Definitions); err != nil {
+	if err := tx.WriteDefinitions(ctx, upload.ID, groupedBundleData.Definitions); err != nil {
 		return errors.Wrap(err, "store.WriteDefinitions")
 	}
-	if err := tx.WriteReferences(ctx, id, groupedBundleData.References); err != nil {
+	if err := tx.WriteReferences(ctx, upload.ID, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	if err := tx.WriteDocumentationPages(ctx, id, groupedBundleData.DocumentationPages); err != nil {
+	if err := tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
-	if err := tx.WriteDocumentationPathInfo(ctx, id, groupedBundleData.DocumentationPathInfo); err != nil {
+	if err := tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPathInfo")
+	}
+	if err := tx.WriteDocumentationMappings(ctx, upload.ID, groupedBundleData.DocumentationMappings); err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationMappings")
 	}
 
 	return nil
 }
 
 func isUniqueConstraintViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		return pgErr.Code == "23505"
-	}
-
-	return false
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505"
 }
 
 func createHoneyEvent(ctx context.Context, upload store.Upload, err error, duration time.Duration) *libhoney.Event {
@@ -301,8 +317,9 @@ func createHoneyEvent(ctx context.Context, upload store.Upload, err error, durat
 	if upload.UploadSize != nil {
 		fields["uploadSize"] = upload.UploadSize
 	}
-	if spanURL := trace.SpanURLFromContext(ctx); spanURL != "" {
-		fields["trace"] = spanURL
+	if traceID := trace.ID(ctx); traceID != "" {
+		fields["trace"] = trace.URL(traceID)
+		fields["traceID"] = traceID
 	}
 
 	return honey.EventWithFields("codeintel-worker", fields)

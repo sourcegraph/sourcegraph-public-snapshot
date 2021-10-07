@@ -8,6 +8,9 @@ sequenceDiagram
   loop for each dumps[i]
     QueryResolver     -->>+ Position adjuster: AdjustPosition(file, position, from: commit, to: dumps[i].commit)
     Position adjuster -->>- QueryResolver: adjusted file, adjusted position
+  end
+
+  loop for each dumps[i]
     QueryResolver      ->>+ LSIF store: Definitions(dumps[i], adjusted file, adjusted position)
     LSIF store        -->>- QueryResolver: locations
   end

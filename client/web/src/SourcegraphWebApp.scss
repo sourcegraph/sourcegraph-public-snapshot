@@ -3,6 +3,10 @@ This is the main entry point for all styles for the web app.
 It should import all component stylesheets.
 */
 
+// Global libraries styles
+@import 'react-grid-layout/css/styles.css';
+@import 'react-resizable/css/styles.css';
+
 // Use duplicate selectors for the light-theme
 // stylelint-disable no-duplicate-selectors
 
@@ -67,68 +71,44 @@ body,
     min-width: 0;
 }
 
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/dialog/styles.css';
+@import '@reach/combobox/styles.css';
+@import '@reach/menu-button/styles.css';
+@import '@reach/listbox/styles.css';
+
 // Pages
 @import './Layout';
 @import './api/ApiConsole';
-@import './extensions/ExtensionsArea';
-@import './extensions/extension/ExtensionArea';
 @import './extensions/components/StatusBar';
 @import './extensions/components/ActionItemsBar';
-@import './global/GlobalAlerts';
 @import './global/GlobalDebug';
-@import './global/Notices';
 @import './savedSearches/index';
-@import './search/input/SearchPage';
+@import './search/home/SearchPage';
 @import './search/SearchConsolePage';
 @import './search/ShepherdTour';
-@import './repogroups/RepogroupPage';
 @import './search/queryBuilder/index';
-@import './searchContexts/index';
 @import './search/results/SearchResultsInfoBar';
 @import './search/results/progress/StreamingProgress.scss';
 @import './settings/MonacoSettingsEditor';
 @import './settings/SettingsFile';
-@import './site-admin/init/SiteInitPage';
-@import './site-admin/SiteAdmin';
 @import './tree/Tree';
+@import './views/view-global-styles';
 @import './nav/GlobalNavbar';
-@import './nav/NavLinks';
-@import './auth/ResetPasswordPage';
-@import './auth/SignInPage';
-@import './auth/SignUpPage';
-@import './auth/OrDivider';
-@import './repo/GitReferenceTag';
+@import './nav/Feedback/FeedbackPrompt.scss';
+@import './nav/UserNavItem.scss';
+@import './nav/StatusMessagesNavItem.scss';
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
 @import './repo/settings/RepoSettingsArea';
 @import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
-@import './components/CopyableText';
-@import './components/FilteredConnection';
-@import './components/SaveToolbar';
-@import './components/HeroPage';
-@import './components/ModalPage';
-@import './components/RadioButtons';
 @import './components/Dialog';
-@import './components/CtaBanner.scss';
 @import './user/settings/UserSettingsArea';
-@import './site-admin/SiteAdminAlert';
 @import './site/DockerForMacAlert';
 @import './user/UserAvatar';
 @import './user/area/UserArea';
 @import './org/OrgsArea';
-@import './insights/pages/insights/insights-page/InsightsPage';
-@import './components/Badge';
-@import './components/Collapsible';
-@import './components/Timeline';
-@import './marketing/SurveyPage';
-@import './components/branding/BrandLogo';
-@import './components/SingleValueCard';
-@import './components/SearchResult';
-@import './components/SearchResultMatch';
-@import './components/diff/FileDiffNode';
-@import './components/externalServices/AddExternalServicesPage';
-@import './components/Sidebar';
 @import '../../branded/src/components/panel/views/FileLocations';
 @import '../../branded/src/components/LoaderInput';
 

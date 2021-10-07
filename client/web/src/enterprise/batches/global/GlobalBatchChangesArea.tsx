@@ -21,6 +21,8 @@ import type { BatchSpecExecutionDetailsPageProps } from '../execution/BatchSpecE
 import type { BatchChangeListPageProps, NamespaceBatchChangeListPageProps } from '../list/BatchChangeListPage'
 import type { BatchChangePreviewPageProps } from '../preview/BatchChangePreviewPage'
 
+import type { DotcomGettingStartedPageProps } from './DotcomGettingStartedPage'
+
 const BatchChangeListPage = lazyComponent<BatchChangeListPageProps, 'BatchChangeListPage'>(
     () => import('../list/BatchChangeListPage'),
     'BatchChangeListPage'
@@ -49,12 +51,10 @@ const BatchSpecExecutionDetailsPage = lazyComponent<
     BatchSpecExecutionDetailsPageProps,
     'BatchSpecExecutionDetailsPage'
 >(() => import('../execution/BatchSpecExecutionDetailsPage'), 'BatchSpecExecutionDetailsPage')
-
-const RedirectToMarketing: React.FunctionComponent<{}> = () => {
-    window.location.href = 'https://about.sourcegraph.com/batch-changes'
-    return null
-}
-
+const DotcomGettingStartedPage = lazyComponent<DotcomGettingStartedPageProps, 'DotcomGettingStartedPage'>(
+    () => import('./DotcomGettingStartedPage'),
+    'DotcomGettingStartedPage'
+)
 interface Props
     extends RouteComponentProps<{}>,
         ThemeProps,
@@ -71,7 +71,7 @@ interface Props
  */
 export const GlobalBatchChangesArea: React.FunctionComponent<Props> = props => {
     if (props.isSourcegraphDotCom) {
-        return <RedirectToMarketing />
+        return <DotcomGettingStartedPage />
     }
     return <AuthenticatedBatchChangesArea {...props} />
 }

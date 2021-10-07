@@ -64,17 +64,11 @@
         }
 
         &--selected {
-            background-color: var(--color-bg-4);
-
-            .theme-redesign & {
-                background-color: var(--color-bg-3);
-            }
+            background-color: var(--color-bg-3);
         }
 
         &--highlighted {
-            .theme-redesign & {
-                font-weight: 700;
-            }
+            font-weight: 700;
         }
 
         &:hover,
@@ -84,13 +78,11 @@
             box-shadow: none;
             outline: none;
 
-            .theme-redesign & {
-                background-color: var(--primary);
-                color: var(--light-text);
+            background-color: var(--primary);
+            color: var(--light-text);
 
-                > .search-context-menu__item-description {
-                    color: var(--light-text);
-                }
+            > .search-context-menu__item-description {
+                color: var(--light-text);
             }
         }
 
@@ -112,12 +104,7 @@
         padding: 0.75rem 1rem 0.5rem;
 
         &-button {
-            color: var(--web-content-link-color);
-
-            .theme-redesign & {
-                color: var(--link-color);
-            }
-
+            color: var(--link-color);
             padding: 0;
         }
     }

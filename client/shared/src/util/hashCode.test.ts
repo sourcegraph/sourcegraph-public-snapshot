@@ -18,17 +18,17 @@ describe('hashCode', () => {
         'fe84ef0e-c8ec-42ee-ba03-45a017fda5e6': 'QXasxWcoUgFBh1yLFa6WMSZJ7f7t9XIyg5Wc0rqNC1Y=',
     }
 
-    test('UUIDs', () => {
+    test('UUIDs', async () => {
         for (const [UUID, hash] of Object.entries(testCaseUUIDs)) {
-            expect(hashCode(UUID)).toBe(hash)
+            expect(await hashCode(UUID)).toBe(hash)
         }
     })
 
-    test('is deterministic', () => {
+    test('is deterministic', async () => {
         const extensionID = 'some-website.co/publisher/name'
 
-        const hash = hashCode(extensionID)
+        const hash = await hashCode(extensionID)
 
-        expect(hashCode(extensionID)).toBe(hash)
+        expect(await hashCode(extensionID)).toBe(hash)
     })
 })

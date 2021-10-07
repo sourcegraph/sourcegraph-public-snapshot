@@ -5,7 +5,7 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/semantic"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // AdjustedLocation is a path and range pair from within a particular upload. The adjusted commit
@@ -30,10 +30,18 @@ type AdjustedDiagnostic struct {
 // within a block of lines. The definition and reference locations have been adjusted to fit the
 // target (originally requested) commit.
 type AdjustedCodeIntelligenceRange struct {
-	Range       lsifstore.Range
-	Definitions []AdjustedLocation
-	References  []AdjustedLocation
-	HoverText   string
+	Range               lsifstore.Range
+	Definitions         []AdjustedLocation
+	References          []AdjustedLocation
+	HoverText           string
+	DocumentationPathID string
+}
+
+func (a *AdjustedCodeIntelligenceRange) ToDocumentation() *Documentation {
+	if a.DocumentationPathID == "" {
+		return nil
+	}
+	return &Documentation{PathID: a.DocumentationPathID}
 }
 
 // QueryResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
@@ -46,8 +54,15 @@ type QueryResolver interface {
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
-	DocumentationPage(ctx context.Context, pathID string) (*semantic.DocumentationPageData, error)
-	DocumentationPathInfo(ctx context.Context, pathID string) (*semantic.DocumentationPathInfoData, error)
+	DocumentationPage(ctx context.Context, pathID string) (*precise.DocumentationPageData, error)
+	DocumentationPathInfo(ctx context.Context, pathID string) (*precise.DocumentationPathInfoData, error)
+	Documentation(ctx context.Context, line int, character int) ([]*Documentation, error)
+	DocumentationDefinitions(ctx context.Context, pathID string) ([]AdjustedLocation, error)
+	DocumentationReferences(ctx context.Context, pathID string, limit int, rawCursor string) ([]AdjustedLocation, string, error)
+}
+
+type Documentation struct {
+	PathID string
 }
 
 type queryResolver struct {

@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 var root string
@@ -119,7 +120,7 @@ func InitGitRepository(t testing.TB, cmds ...string) string {
 func GitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = append(c.Env, "GIT_CONFIG="+path.Join(dir, ".git", "config"))
+	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"))
 	return c
 }
 
@@ -137,7 +138,7 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	return repo
 }
 
-func CommitsEqual(a, b *Commit) bool {
+func CommitsEqual(a, b *gitapi.Commit) bool {
 	if (a == nil) != (b == nil) {
 		return false
 	}

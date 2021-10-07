@@ -12,10 +12,7 @@
         }
     }
     &__bg-expanded {
-        background-color: var(--oc-blue-0);
-        :global(.theme-redesign) & {
-            background-color: var(--body-bg);
-        }
+        background-color: var(--body-bg);
     }
     &__expanded-section {
         // Make it full width in the current row.

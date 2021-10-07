@@ -22,7 +22,7 @@ linters-settings:
     packages-with-error-message:
       - errors: 'Use github.com/cockroachdb/errors instead'
       - github.com/pkg/errors: 'Use github.com/cockroachdb/errors instead'
-      - ioutil: 'The ioutil package has been deprecated'
+      - io/ioutil: 'The ioutil package has been deprecated'
   gocritic:
     disabled-checks:
       - appendAssign # Too many false positives
@@ -35,6 +35,10 @@ linters-settings:
   govet:
     disable:
       - composites
+  forbidigo:
+    forbid:
+      # Use errors.New instead
+      - 'fmt\.Errorf'
 
 issues:
   exclude-rules:
