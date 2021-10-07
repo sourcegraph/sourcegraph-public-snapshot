@@ -28,6 +28,9 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 
 	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
 	initConn, err := dbconn.NewRaw(timescaleDSN)
+	// TODO: This didn't alert me when I tried running "go test" without the codeinsights-db running.
+	// Maybe they should be fmt.Println statements instead, because t.Log only prints out when the test completes?
+	// (My test hung for at least several minutes and it took me a while to understand why.)
 	if err != nil {
 		t.Log("")
 		t.Log("README: To run these tests you need to have the codeinsights TimescaleDB running:")
