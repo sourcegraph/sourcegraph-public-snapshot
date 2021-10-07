@@ -80,18 +80,8 @@ func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParamete
 	return errors.Wrap(err, "repository search failed")
 }
 
-func jobName(job Job) string {
-	switch job.(type) {
-	case *unindexed.StructuralSearch:
-		return "Structural"
-	default:
-		return "Unknown"
-	}
-}
-
 func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSearchMode) (err error) {
-	name := jobName(job)
-	tr, ctx := trace.New(ctx, "DoSearch", name)
+	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
 		a.Error(err)
@@ -100,7 +90,7 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSe
 	}()
 
 	err = job.Run(ctx, a)
-	return errors.Wrap(err, jobName(job)+" search failed")
+	return errors.Wrap(err, job.Name()+" search failed")
 
 }
 
