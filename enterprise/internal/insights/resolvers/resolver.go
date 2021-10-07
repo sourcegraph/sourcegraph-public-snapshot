@@ -23,6 +23,7 @@ type Resolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
 	insightMetadataStore store.InsightMetadataStore
+	dashboardStore       *store.DBDashboardStore
 	insightsDatabase     dbutil.DB
 	postgresDatabase     dbutil.DB
 }
@@ -39,6 +40,7 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 		insightsStore:        store.NewWithClock(timescale, store.NewInsightPermissionStore(postgres), clock),
 		workerBaseStore:      basestore.NewWithDB(postgres, sql.TxOptions{}),
 		insightMetadataStore: store.NewInsightStore(timescale),
+		dashboardStore:       store.NewDashboardStore(timescale),
 		insightsDatabase:     timescale,
 		postgresDatabase:     postgres,
 	}
@@ -82,5 +84,9 @@ func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.In
 }
 
 func (r *disabledResolver) InsightDashboards(ctx context.Context, args *graphqlbackend.InsightDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	return nil, errors.New(r.reason)
 }

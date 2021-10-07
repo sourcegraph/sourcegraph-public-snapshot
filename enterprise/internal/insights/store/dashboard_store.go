@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"
@@ -78,6 +79,14 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	return scanDashboard(s.Query(ctx, q))
 }
 
+func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int64) error {
+	err := s.Exec(ctx, sqlf.Sprintf(deleteDashboardSql, id))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete dashboard with id: %s", id)
+	}
+	return nil
+}
+
 func dashboardPermissionsQuery(args DashboardQueryArgs) *sqlf.Query {
 	permsPreds := make([]*sqlf.Query, 0, 2)
 	if len(args.OrgID) > 0 {
@@ -132,6 +141,12 @@ ORDER BY db.id
 %S;
 `
 
+const deleteDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:DeleteDashboard
+update dashboard set deleted_at = NOW() where id = %s;
+`
+
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
+	DeleteDashboard(ctx context.Context, id int64) error
 }
