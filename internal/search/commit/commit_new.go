@@ -257,7 +257,7 @@ func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange
 	return res
 }
 
-func CheckSearchLimits(ctx context.Context, args *search.TextParameters, resultType string) error {
+func CheckSearchLimits(args *search.TextParameters, resultType string) error {
 	hasTimeFilter := false
 	if _, afterPresent := args.Query.Fields()["after"]; afterPresent {
 		hasTimeFilter = true
