@@ -12,7 +12,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
@@ -1481,7 +1483,11 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 	// TODO: Ignoring the lock. We want to store this lock in memory so that the gitserver
 	// requesting the migration can make another HTTP request to intimate this gitserver instance to
 	// release the lock.
-	_, ok := s.locker.TryAcquire(dir, repoMigrationStart)
+
+	l, ok := s.locker.TryAcquire(dir, repoMigrationStart)
+
+	// TODO: Cannot release here. Need for testing.
+	defer l.Release()
 	if !ok {
 		status, _ := s.locker.Status(dir)
 
@@ -1517,15 +1523,44 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	mw := multipart.NewWriter(w)
+	w.Header().Set("Content-Type", mw.FormDataContentType())
 	// application/bundle isn't a legit MIME type but I'm not sure what MIME type should be used for
 	// a git-bundle either.
-	w.Header().Set("Content-Type", "application/bundle")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.bundle", repoName))
+	// w.Header().Set("Content-Type", "application/bundle")
 
-	if _, err := io.Copy(w, f); err != nil {
+	fw, err := mw.CreateFormField(fmt.Sprintf("attachment; filename=%s.bundle", repoName))
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log15.Error("handleRepoArchive: io.Copy", "error", err)
+		log15.Error("handleRepoArchive: mw.CreateFormField", "error", err)
+		return
 	}
+
+	buf, err := ioutil.ReadAll(f)
+	_, err = fw.Write(buf)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleRepoArchive: fw.Write", "error", err)
+		return
+	}
+
+	sgRefhash, err := os.Open(filepath.Join(string(dir), "sg_refhash"))
+	fw2, err := mw.CreateFormField("attachment; filename=sg_refhash")
+	buf2, err := ioutil.ReadAll(sgRefhash)
+	if err != nil {
+		return
+	}
+	_, err = fw2.Write(buf2)
+
+	// w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s.bundle", repoName))
+
+	// if _, err := io.Copy(w, f); err != nil {
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	log15.Error("handleRepoArchive: io.Copy", "error", err)
+	// }
+
+	// w.Header().Set("Content-Type", w.Form)
+
 }
 
 func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
