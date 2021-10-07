@@ -5,10 +5,10 @@ This guide will provide steps for migrating from repository groups to [search co
 ## Steps to convert repository groups to search contexts
 
 1. Log in to your Sourcegraph instance.
-2. Navigate to `https://your_sourcegraph_instance.com/user/settings` to access your settings
-3. If you are a site-admin, navigate to `https://sourcegraph.com/site-admin/global-settings` to access global settings
-3. Find the `search.repositoryGroups` object to view the current repository groups
-4. For each of the repository groups you want to convert, do the following:
+1. Navigate to `https://your_sourcegraph_instance.com/user/settings` to access your settings
+1. If you are a site-admin, navigate to `https://sourcegraph.com/site-admin/global-settings` to access global settings
+1. Find the `search.repositoryGroups` object to view the current repository groups
+1. For each of the repository groups you want to convert, do the following:
     - Navigate to `https://your_sourcegraph_instance.com/contexts`
     - Enter the repository group name as the context name
     - Optionally enter a description and choose a preferred visibility option
@@ -41,5 +41,5 @@ Once desired existing repository groups have been converted into search contexts
 To discontinue use of repository groups:
 
 1. Navigate to your settings.
-2. Locate the `search.repositoryGroups` object in the settings, and remove it
-3. Save changes.
+1. Locate the `search.repositoryGroups` object in the settings, and remove it
+1. Save changes.
