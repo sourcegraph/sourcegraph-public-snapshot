@@ -410,7 +410,7 @@ func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
 
 // ConstructedQuery returns the query as if constructted with the protocol.New* functions
 func (q queryGenerator) ConstructedQuery() protocol.Node {
-	return constructedQuery(q.RawQuery)
+	return protocol.Reduce(constructedQuery(q.RawQuery))
 }
 
 // constructedQuery takes any query and recursively reduces it with the
