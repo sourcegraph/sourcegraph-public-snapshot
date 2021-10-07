@@ -148,7 +148,7 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 		// run a diff against the previous commits:
 		// get the latest builds for the current branch
 		// from buildkite
-		builds, _, err := bkClient.Builds.List(&buildkite.BuildsListOptions{
+		builds, _, err := bkClient.Builds.ListByPipeline("sourcegraph", "sourcegraph", &buildkite.BuildsListOptions{
 			Branch: branch,
 			State:  []string{"passed"},
 			ListOptions: buildkite.ListOptions{
