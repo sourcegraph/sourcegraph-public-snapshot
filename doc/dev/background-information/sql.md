@@ -2,10 +2,6 @@
 
 This document contains recommendations on how to write efficient SQL for certain classes of tasks.
 
-## Choosing indexes
-
-TODO
-
 ## Batch operations
 
 ### Insertions
@@ -163,7 +159,7 @@ Sample uses:
 
 ## Materialized cache
 
-TODO
+TODO - introduce materialized cache concept here
 
 ```sql
 CREATE TABLE conditions (
@@ -171,20 +167,69 @@ CREATE TABLE conditions (
     location_id int NOT NULL,
     temperature_celsius double precision NOT NULL,
     PRIMARY KEY (time, location_id)
-)
+);
 
 CREATE INDEX conditions_location_id_time ON conditions(location_id, time);
 ```
 
-Show query plan:
+TODO - explain following query plan:
 
 ```sql
-SELECT DISTINCT location_id FROM conditions
+SELECT DISTINCT location_id FROM conditions;
 ```
 
-#### Insert trigger
+```
+                                                         QUERY PLAN
+----------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=94347.90..94841.93 rows=49403 width=4) (actual time=1155.067..1171.370 rows=50000 loops=1)
+   Group Key: location_id
+   Batches: 5  Memory Usage: 4145kB  Disk Usage: 3368kB
+   ->  Seq Scan on conditions  (cost=0.00..81847.92 rows=4999992 width=4) (actual time=0.025..392.017 rows=5000000 loops=1)
+ Planning Time: 0.055 ms
+ Execution Time: 1176.541 ms
+(6 rows)
 
-TODO
+Time: 1176.797 ms (00:01.177)
+```
+
+#### Create table
+
+TODO - describe simple solution
+
+```sql
+CREATE TABLE condition_locations (
+    location_id int NOT NULL,
+    PRIMARY KEY (location_id)
+);
+```
+
+TODO - talk about how to pre-populate with select?
+
+TODO - explain difference here:
+
+```sql
+SELECT DISTINCT location_id FROM condition_locations;
+```
+
+```
+                                                         QUERY PLAN
+-----------------------------------------------------------------------------------------------------------------------------
+ HashAggregate  (cost=847.00..1347.00 rows=50000 width=4) (actual time=11.717..17.368 rows=50000 loops=1)
+   Group Key: location_id
+   Batches: 5  Memory Usage: 4145kB  Disk Usage: 200kB
+   ->  Seq Scan on condition_locations  (cost=0.00..722.00 rows=50000 width=4) (actual time=0.006..3.415 rows=50000 loops=1)
+ Planning Time: 0.045 ms
+ Execution Time: 20.475 ms
+(6 rows)
+
+Time: 20.766 ms
+```
+
+#### Triggers
+
+TODO - how to keep table updated
+
+TODO - explain insert
 
 ```sql
 CREATE OR REPLACE FUNCTION update_condition_locations_insert() RETURNS trigger AS $$ BEGIN
@@ -197,9 +242,7 @@ AFTER INSERT ON conditions REFERENCING NEW TABLE AS newtab
 FOR EACH STATEMENT EXECUTE PROCEDURE update_condition_locations_insert();
 ```
 
-#### Delete trigger
-
-TODO
+TODO - explain delete
 
 ```sql
 CREATE OR REPLACE FUNCTION update_condition_locations_delete() RETURNS trigger AS $$ BEGIN
@@ -215,11 +258,9 @@ AFTER DELETE ON conditions REFERENCING OLD TABLE AS oldtab
 FOR EACH STATEMENT EXECUTE PROCEDURE update_condition_locations_delete();
 ```
 
-Show query plan:
+Sample uses:
 
-```
-SELECT DISTINCT location_id FROM condition_locations
-```
+- [file.go](TODO)
 
 #### Batch triggers
 
