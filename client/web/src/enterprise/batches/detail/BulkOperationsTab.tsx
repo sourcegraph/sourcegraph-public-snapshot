@@ -33,7 +33,7 @@ export interface BulkOperationsTabProps {
 const BATCH_COUNT = 15
 
 export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({ batchChangeID }) => {
-    const { connection, error, loading, fetchMore, hasNextPage } = useConnection<
+    const { connection, error, loading, fetchMore, hasNextPage, startPolling, stopPolling } = useConnection<
         BatchChangeBulkOperationsResult,
         BatchChangeBulkOperationsVariables,
         BulkOperationFields
@@ -63,14 +63,22 @@ export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> 
 
     useEffect(() => {
         if (connection?.nodes?.length) {
-            for (const node of connection.nodes) {
-                if (node.state !== BulkOperationState.PROCESSING) {
-                    // Automatically dismiss alerts for bulk operations once they have been viewed.
-                    dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
-                }
+            // Filter to bulk operations that are done running.
+            const finishedNodes = connection.nodes.filter(node => node.state !== BulkOperationState.PROCESSING)
+
+            // If any operations are still actively running, poll for updates.
+            if (finishedNodes.length < connection.nodes.length) {
+                startPolling(2000)
+            } else {
+                stopPolling()
+            }
+
+            // Automatically dismiss alerts for bulk operations once they have been viewed.
+            for (const node of finishedNodes) {
+                dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
             }
         }
-    }, [connection])
+    }, [connection, startPolling, stopPolling])
 
     return (
         <Container>
