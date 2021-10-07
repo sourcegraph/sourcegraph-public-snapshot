@@ -1642,9 +1642,22 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
+	wgForJob := func(job run.Job) *sync.WaitGroup {
+		switch job.Name() {
+		case "Diff":
+			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
+		case "Commit":
+			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		case "Structural":
+			return waitGroup(true)
+		default:
+			panic("unknown job name " + job.Name())
+		}
+	}
+
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
-		wg := waitGroup(true)
+		wg := wgForJob(job)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()

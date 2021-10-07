@@ -67,6 +67,13 @@ func (j SearchJob) Run(ctx context.Context, stream streaming.Sender) error {
 	return g.Wait()
 }
 
+func (j SearchJob) Name() string {
+	if j.Diff {
+		return "Diff"
+	}
+	return "Commit"
+}
+
 func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*SearchJob, error) {
 	resultType := "commit"
 	if diff {
