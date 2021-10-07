@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -173,7 +172,7 @@ func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboar
 	} else if len(viewIds) == 0 {
 		return nil
 	}
-	q := sqlf.Sprintf(fmt.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboard.ID, "%s"), pq.Array(viewIds))
+	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, int32(dashboard.ID), pq.Array(viewIds))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -214,7 +213,7 @@ INSERT INTO dashboard (title) VALUES (%s) RETURNING id;
 const insertDashboardInsightViewConnectionsByViewIds = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:AssociateViewsByViewIds
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
-    SELECT %d AS dashboard_id, insight_view.id AS insight_view_id
+    SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
     WHERE unique_id = ANY(%s));`
 
