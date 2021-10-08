@@ -9,6 +9,7 @@ export const fileDiffHunkRangeFields = gql`
 
 export const diffStatFields = gql`
     fragment DiffStatFields on DiffStat {
+        __typename
         added
         changed
         deleted

@@ -93,7 +93,7 @@ func addDocs(pipeline *bk.Pipeline) {
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark: Misc Linters",
+	pipeline.AddStep(":clipboard: Misc Linters",
 		bk.Cmd("./dev/check/all.sh"))
 }
 
@@ -527,7 +527,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
-		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app),
+		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", app),
 			// This step just pulls a prebuild image and pushes it to some registries. The
 			// only possible failure here is a registry flake, so we retry a few times.
 			bk.AutomaticRetry(3),
@@ -558,6 +558,6 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 // 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
 // 		}
 
-// 		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
+// 		pipeline.AddStep(":packer: :truck: executor image", cmds...)
 // 	}
 // }

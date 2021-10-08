@@ -1,6 +1,6 @@
 import { FilterType } from './filters'
 import { Filter } from './token'
-import { appendContextFilter, omitFilter, updateFilter, updateFilters } from './transformer'
+import { appendContextFilter, omitFilter, sanitizeQueryForTelemetry, updateFilter, updateFilters } from './transformer'
 import { FilterKind, findFilter } from './validate'
 
 expect.addSnapshotSerializer({
@@ -81,5 +81,34 @@ describe('updateFilters (all filters)', () => {
     test('update all counts count', () => {
         const query = '(foo count:5) or (bar count:10)'
         expect(updateFilters(query, 'count', '5000')).toMatchInlineSnapshot('(foo count:5000) or (bar count:5000)')
+    })
+})
+
+describe('sanitizeQueryForTelemetry', () => {
+    test('no effect without redactable filters', () => {
+        const query = 'test before:today type:diff'
+        expect(sanitizeQueryForTelemetry(query)).toEqual(query)
+    })
+
+    test('all filters', () => {
+        const query =
+            'test context:codename repo:^github.com/foo/bar$@version file:baz rev:test repohasfile:foobar message:here'
+        expect(sanitizeQueryForTelemetry(query)).toEqual(
+            'test context:[REDACTED] repo:[REDACTED] file:[REDACTED] rev:[REDACTED] repohasfile:[REDACTED] message:[REDACTED]'
+        )
+    })
+
+    test('aliased filters', () => {
+        const query = 'test r:^github.com/foo/bar$ f:baz revision:test m:here'
+        expect(sanitizeQueryForTelemetry(query)).toEqual(
+            'test r:[REDACTED] f:[REDACTED] revision:[REDACTED] m:[REDACTED]'
+        )
+    })
+
+    test('negated filters', () => {
+        const query = 'test -repo:^github.com/foo/bar$ -r:bar -file:test -f:baz'
+        expect(sanitizeQueryForTelemetry(query)).toEqual(
+            'test -repo:[REDACTED] -r:[REDACTED] -file:[REDACTED] -f:[REDACTED]'
+        )
     })
 })

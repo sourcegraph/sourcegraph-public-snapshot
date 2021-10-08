@@ -1,0 +1,11 @@
+[]*types.Dashboard{
+	&types.Dashboard{
+		ID:         1,
+		Title:      "test dashboard",
+		InsightIDs: []string{"unique1234"},
+	},
+	&types.Dashboard{
+		ID:    2,
+		Title: "private dashboard for user 3",
+	},
+}

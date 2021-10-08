@@ -10,7 +10,8 @@ The [developing observability page](../background-information/observability/inde
 
 ### With all services
 
-The monitoring stack is included in the `./dev/start.sh` and `./enterprise/dev/start.sh` scripts.
+The monitoring stack is not included in `sg start` (or `sg start oss` and `sg start enterprise`) scripts.
+It needs to be started separately with `sg start monitoring`.
 Learn more about these in the [general development getting started guide](../getting-started/index.md).
 
 ### Without all services
@@ -79,7 +80,7 @@ One way to do this is to [start up Prometheus alongside all Sourcegraph services
 You can alternatively spin up just the frontend separately:
 
 ```sh
-./dev/start.sh --only frontend
+sg run enterprise-frontend # or: sg run frontend
 ```
 
 This should be sufficient to access the frontend API and the admin console (`/site-admin`), which is where most of the integration is.

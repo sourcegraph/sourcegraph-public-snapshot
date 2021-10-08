@@ -12,7 +12,7 @@ import { createNotificationClassNameGetter } from '../shared/getNotificationClas
 import { ViewResolver } from '../shared/views'
 
 import { getContext } from './context'
-import { diffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
+import { diffDOMFunctions, newDiffDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import {
     resolveCommitViewFileInfo,
     resolveCompareFileInfo,
@@ -25,13 +25,16 @@ import { isCommitsView, isCompareView, isPullRequestView, isSingleFileView } fro
 /**
  * Gets or creates the toolbar mount for allcode views.
  */
-export const getToolbarMount = (codeView: HTMLElement): HTMLElement => {
+export const getToolbarMount = (
+    codeView: HTMLElement,
+    fileToolbarSelector = '.file-toolbar .secondary'
+): HTMLElement => {
     const existingMount = codeView.querySelector<HTMLElement>('.sg-toolbar-mount')
     if (existingMount) {
         return existingMount
     }
 
-    const fileActions = codeView.querySelector<HTMLElement>('.file-toolbar .secondary')
+    const fileActions = codeView.querySelector<HTMLElement>(fileToolbarSelector)
     if (!fileActions) {
         throw new Error('Unable to find mount location')
     }
@@ -80,10 +83,6 @@ const createPositionAdjuster = (
     return of(newPosition)
 }
 
-const toolbarButtonProps = {
-    className: 'aui-button',
-}
-
 /**
  * A code view spec for single file code view in the "source" view (not diff).
  */
@@ -92,14 +91,14 @@ const singleFileSourceCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     resolveFileInfo: resolveFileInfoForSingleFileSourceView,
     getPositionAdjuster: () => createPositionAdjuster(singleFileDOMFunctions),
-    toolbarButtonProps,
 }
 
 const baseDiffCodeView: Omit<CodeView, 'element' | 'resolveFileInfo'> = {
     getToolbarMount,
     dom: diffDOMFunctions,
     getPositionAdjuster: () => createPositionAdjuster(diffDOMFunctions),
-    toolbarButtonProps,
+    // Bitbucket diff views are not tokenized.
+    overrideTokenize: true,
 }
 /**
  * A code view spec for a single file "diff to previous" view
@@ -158,6 +157,31 @@ const codeViewResolver: ViewResolver<CodeView> = {
     },
 }
 
+/**
+ * New diff code view resolver.
+ * As of Bitbucket v7.11.2, this is only used for the pull request page.
+ */
+const diffCodeViewResolver: ViewResolver<CodeView> = {
+    selector: '.change-view',
+    resolveView: element => ({ element, ...newDiffCodeView }),
+}
+
+const newDiffToolbarButtonProps = {
+    listItemClass: 'action-nav-item--bitbucket-server-new-diff',
+    actionItemClass: 'action-item--bitbucket-server-new-diff',
+}
+
+/**
+ * New diff code view element.
+ * As of Bitbucket v7.11.2, this is only used for the pull request page.
+ */
+const newDiffCodeView: Omit<CodeView, 'element'> = {
+    resolveFileInfo: resolvePullRequestFileInfo,
+    getToolbarMount: codeView => getToolbarMount(codeView, '.change-header .diff-actions'),
+    toolbarButtonProps: newDiffToolbarButtonProps,
+    dom: newDiffDOMFunctions,
+}
+
 const getCommandPaletteMount: MountGetter = (container: HTMLElement): HTMLElement | null => {
     const headerElement = querySelectorOrSelf(container, '.aui-header-primary .aui-nav')
     if (!headerElement) {
@@ -208,7 +232,7 @@ export const bitbucketServerCodeHost: CodeHost = {
     type: 'bitbucket-server',
     name: 'Bitbucket Server',
     check: checkIsBitbucket,
-    codeViewResolvers: [codeViewResolver],
+    codeViewResolvers: [codeViewResolver, diffCodeViewResolver],
     getCommandPaletteMount,
     notificationClassNames,
     commandPaletteClassProps: {

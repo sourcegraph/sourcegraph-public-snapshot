@@ -4,12 +4,11 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Button } from '@sourcegraph/wildcard'
 
-import { enqueueIndexJob as defaultEnqueueIndexJob } from './backend'
+import { useEnqueueIndexJob } from './useLsifIndexList'
 
 export interface EnqueueFormProps {
     repoId: string
     querySubject: Subject<string>
-    enqueueIndexJob: typeof defaultEnqueueIndexJob
 }
 
 enum State {
@@ -18,11 +17,12 @@ enum State {
     Queued,
 }
 
-export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, querySubject, enqueueIndexJob }) => {
+export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, querySubject }) => {
     const [revlike, setRevlike] = useState('HEAD')
     const [state, setState] = useState(() => State.Idle)
     const [queueResult, setQueueResult] = useState<number>()
     const [enqueueError, setEnqueueError] = useState<Error>()
+    const { handleEnqueueIndexJob } = useEnqueueIndexJob()
 
     const enqueue = useCallback(async () => {
         setState(State.Queueing)
@@ -30,10 +30,14 @@ export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, query
         setQueueResult(undefined)
 
         try {
-            const indexes = await enqueueIndexJob(repoId, revlike).toPromise()
-            setQueueResult(indexes.length)
-            if (indexes.length > 0) {
-                querySubject.next(indexes[0].inputCommit)
+            const indexes = await handleEnqueueIndexJob({
+                variables: { id: repoId, rev: revlike },
+            }).then(({ data }) => data)
+
+            const queueResultLength = indexes?.queueAutoIndexJobsForRepo.length || 0
+            setQueueResult(queueResultLength)
+            if (queueResultLength > 0) {
+                querySubject.next(indexes?.queueAutoIndexJobsForRepo[0].inputCommit)
             }
         } catch (error) {
             setEnqueueError(error)
@@ -41,7 +45,7 @@ export const EnqueueForm: FunctionComponent<EnqueueFormProps> = ({ repoId, query
         } finally {
             setState(State.Queued)
         }
-    }, [repoId, revlike, querySubject, enqueueIndexJob])
+    }, [repoId, revlike, querySubject, handleEnqueueIndexJob])
 
     return (
         <>

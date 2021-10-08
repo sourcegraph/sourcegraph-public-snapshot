@@ -38,6 +38,7 @@ const nodes: ChangesetFields[] = [
                 url: 'http://test.test/pr/123',
             },
             diffStat: {
+                __typename: 'DiffStat',
                 added: 10,
                 changed: 20,
                 deleted: 8,

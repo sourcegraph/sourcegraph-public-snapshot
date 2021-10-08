@@ -49,6 +49,7 @@ add('All states', () => {
                                         url: 'http://test.test/pr/123',
                                     },
                                     diffStat: {
+                                        __typename: 'DiffStat',
                                         added: 10,
                                         changed: 20,
                                         deleted: 8,
@@ -121,6 +122,7 @@ add('Unpublished', () => {
                         externalID: null,
                         externalURL: null,
                         diffStat: {
+                            __typename: 'DiffStat',
                             added: 10,
                             changed: 20,
                             deleted: 8,

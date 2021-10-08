@@ -1,6 +1,6 @@
 import { SearchPatternType } from 'src/graphql-operations'
 
-import { FILTERS, FilterType } from './filters'
+import { AliasedFilterType, FILTERS, FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
 
@@ -63,11 +63,17 @@ export const findFilter = (query: string, field: string, kind: FilterKind): Filt
 export const findFilters = (tokens: Token[], field: string): Filter[] =>
     tokens.filter(token => token.type === 'filter' && token.field.value.toLowerCase() === field) as Filter[]
 
-export function filterExists(query: string, filter: FilterType): boolean {
+export function filterExists(
+    query: string,
+    filter: FilterType | keyof typeof AliasedFilterType,
+    negated: boolean = false
+): boolean {
     const scannedQuery = scanSearchQuery(query)
     return (
         scannedQuery.type === 'success' &&
-        scannedQuery.term.some(token => token.type === 'filter' && token.field.value.toLowerCase() === filter)
+        scannedQuery.term.some(
+            token => token.type === 'filter' && token.field.value.toLowerCase() === `${negated ? '-' : ''}${filter}`
+        )
     )
 }
 

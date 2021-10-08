@@ -17,7 +17,7 @@ import (
 
 var (
 	funkyLogoFlagSet = flag.NewFlagSet("sg logo", flag.ExitOnError)
-	funkLogoCommand  = &ffcli.Command{
+	funkyLogoCommand = &ffcli.Command{
 		Name:       "logo",
 		ShortUsage: "sg logo [classic]",
 		ShortHelp:  "Print the sg logo",

@@ -1,7 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Container } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
@@ -13,7 +12,7 @@ export interface IndexingSettingsProps {
 }
 
 export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({ policy, setPolicy }) => (
-    <Container className="mt-2">
+    <div className="form-group">
         <h3>Auto-indexing</h3>
 
         <div className="form-group">
@@ -28,7 +27,7 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({ pol
             </label>
         </div>
 
-        <div className="form-group">
+        <div className="mb-4">
             <label htmlFor="index-commit-max-age">Commit max age</label>
             <DurationSelect
                 id="index-commit-max-age"
@@ -52,5 +51,5 @@ export const IndexingSettings: FunctionComponent<IndexingSettingsProps> = ({ pol
                 </label>
             </div>
         )}
-    </Container>
+    </div>
 )
