@@ -336,9 +336,10 @@ export const useSearchOnboardingTour = ({
     const [hasCancelledTour, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
     const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
 
-    const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
+    const activeForOneDay = !daysActiveCount.loading && daysActiveCount.value === 1
+    const shouldShowTour = useMemo(() => showOnboardingTour && activeForOneDay && !hasCancelledTour, [
         showOnboardingTour,
-        daysActiveCount,
+        activeForOneDay,
         hasCancelledTour,
     ])
 

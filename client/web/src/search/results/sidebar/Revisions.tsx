@@ -163,14 +163,16 @@ export interface RevisionsProps {
 
 export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(
     ({ repoName, onFilterClick, query, _initialTab }) => {
-        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab')
+        const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.revisions.tab', 0)
+        const userSelectedTab = !selectedTab.loading && selectedTab.value
+
         const onRevisionFilterClick = (value: string): void =>
             onFilterClick([
                 { type: 'updateOrAppendFilter', field: FilterType.rev, value },
                 { type: 'appendFilter', field: FilterType.repo, value: `^${repoName}$`, unique: true },
             ])
         return (
-            <Tabs index={_initialTab ?? selectedTab ?? 0} onChange={setSelectedTab}>
+            <Tabs index={_initialTab ?? (userSelectedTab || 0)} onChange={setSelectedTab}>
                 <TabList className={styles.sidebarSectionTabsHeader}>
                     <Tab index={TabIndex.BRANCHES}>Branches</Tab>
                     <Tab index={TabIndex.TAGS}>Tags</Tab>

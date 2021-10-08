@@ -37,7 +37,7 @@ export interface UserSettingsSidebarProps
 
 /** Sidebar for user account pages. */
 export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarProps> = props => {
-    const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
+    const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
 
     if (!props.authenticatedUser) {
         return null

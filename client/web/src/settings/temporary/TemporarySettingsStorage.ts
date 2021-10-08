@@ -1,4 +1,4 @@
-import { ApolloClient, gql } from '@apollo/client'
+import { ApolloClient, gql, throwServerError } from '@apollo/client'
 import { isEqual } from 'lodash'
 import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
@@ -7,13 +7,37 @@ import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
-import { TemporarySettings } from './TemporarySettings'
+import { TemporarySettings, TemporarySettingsSchema } from './TemporarySettings'
+
+interface SettingInFlightResponse {
+    loading: true
+}
+
+interface SettingFoundResponse<K extends keyof TemporarySettings, D extends TemporarySettings[K]> {
+    loading: false
+    value: TemporarySettingsSchema[K] | D
+}
+
+/**
+ * Returned response when fetching an individual setting
+ */
+export type SettingResponse<K extends keyof TemporarySettings, D extends TemporarySettings[K]> =
+    | SettingInFlightResponse
+    | SettingFoundResponse<K, D>
+
+/**
+ * Returned response when fetching all settings
+ */
+interface TemporarySettingsResponse {
+    loading: boolean
+    settings: TemporarySettings
+}
 
 export class TemporarySettingsStorage {
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()
-    private settings: TemporarySettings = {}
+    // private settings: TemporarySettings = {}
 
-    private onChange = new ReplaySubject<TemporarySettings>(1)
+    private onChange = new ReplaySubject<TemporarySettingsResponse>(1)
 
     private loadSubscription: Subscription | null = null
     private saveSubscription: Subscription | null = null
@@ -42,33 +66,46 @@ export class TemporarySettingsStorage {
 
         this.settingsBackend = backend
 
-        this.loadSubscription = this.settingsBackend.load().subscribe(settings => {
-            this.settings = settings
-            this.onChange.next(settings)
+        this.loadSubscription = this.settingsBackend.load().subscribe(({ loading, settings }) => {
+            // TODO: Is it possible and safer to rely on Apollo cache update instead of manipulating settings?
+            // Maybe we need to do this for localStorage
+            // this.settings[key] = value
+            this.onChange.next({ loading, settings })
         })
     }
 
     public set<K extends keyof TemporarySettings>(key: K, value: TemporarySettings[K]): void {
-        this.settings[key] = value
-        this.onChange.next(this.settings)
+        // TODO: Is it possible and safer to rely on Apollo cache update instead of manipulating settings?
+        // Maybe we need to do this for localStorage
+        // this.settings[key] = value
+        // this.onChange.next({ loading: false, value: this.settings })
 
         this.saveSubscription?.unsubscribe()
         this.saveSubscription = this.settingsBackend.edit({ [key]: value }).subscribe()
     }
 
-    public get<K extends keyof TemporarySettings>(
+    public get<K extends keyof TemporarySettings, D extends TemporarySettings[K]>(
         key: K,
-        defaultValue?: TemporarySettings[K]
-    ): Observable<TemporarySettings[K]> {
+        defaultValue: D
+    ): Observable<SettingResponse<K, D>> {
         return this.onChange.pipe(
-            map(settings => (key in settings ? settings[key] : defaultValue)),
+            map(({ loading, settings }) => {
+                if (loading) {
+                    return { loading: true } as const
+                }
+
+                return {
+                    loading: false,
+                    value: key in settings ? (settings[key] as TemporarySettingsSchema[K]) : defaultValue,
+                } as const
+            }),
             distinctUntilChanged((a, b) => isEqual(a, b))
         )
     }
 }
 
 export interface SettingsBackend {
-    load: () => Observable<TemporarySettings>
+    load: () => Observable<TemporarySettingsResponse>
     edit: (settings: TemporarySettings) => Observable<void>
 }
 
@@ -80,16 +117,16 @@ export interface SettingsBackend {
 class LocalStorageSettingsBackend implements SettingsBackend {
     private readonly TemporarySettingsKey = 'temporarySettings'
 
-    public load(): Observable<TemporarySettings> {
-        return new Observable<TemporarySettings>(observer => {
+    public load(): Observable<TemporarySettingsResponse> {
+        return new Observable<TemporarySettingsResponse>(observer => {
             let settingsLoaded = false
 
-            const loadObserver = (observer: Subscriber<TemporarySettings>): void => {
+            const loadObserver = (observer: Subscriber<TemporarySettingsResponse>): void => {
                 try {
                     const settings = localStorage.getItem(this.TemporarySettingsKey)
                     if (settings) {
                         const parsedSettings = JSON.parse(settings) as TemporarySettings
-                        observer.next(parsedSettings)
+                        observer.next({ loading: false, settings: parsedSettings })
                         settingsLoaded = true
                     }
                 } catch (error: unknown) {
@@ -97,7 +134,7 @@ class LocalStorageSettingsBackend implements SettingsBackend {
                 }
 
                 if (!settingsLoaded) {
-                    observer.next({})
+                    observer.next({ loading: true, settings: {} })
                 }
             }
 
@@ -153,14 +190,14 @@ class ServersideSettingsBackend implements SettingsBackend {
 
     constructor(private apolloClient: ApolloClient<object>) {}
 
-    public load(): Observable<TemporarySettings> {
+    public load(): Observable<TemporarySettingsResponse> {
         const temporarySettingsQuery = this.apolloClient.watchQuery<GetTemporarySettingsResult>({
             query: this.GetTemporarySettingsQuery,
             pollInterval: this.PollInterval,
         })
 
         return fromObservableQuery(temporarySettingsQuery).pipe(
-            map(({ data }) => {
+            map(({ data, loading }) => {
                 let parsedSettings: TemporarySettings = {}
 
                 try {
@@ -170,7 +207,7 @@ class ServersideSettingsBackend implements SettingsBackend {
                     console.error(error)
                 }
 
-                return parsedSettings || {}
+                return { loading, settings: parsedSettings || {} }
             })
         )
     }
@@ -217,8 +254,8 @@ class ServersideSettingsBackend implements SettingsBackend {
  */
 export class InMemoryMockSettingsBackend implements SettingsBackend {
     constructor(private settings: TemporarySettings) {}
-    public load(): Observable<TemporarySettings> {
-        return of(this.settings)
+    public load(): Observable<TemporarySettingsResponse> {
+        return of({ loading: false, settings: this.settings })
     }
     public edit(settings: TemporarySettings): Observable<void> {
         this.settings = { ...this.settings, ...settings }

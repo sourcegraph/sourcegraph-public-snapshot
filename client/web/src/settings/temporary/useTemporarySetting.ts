@@ -1,9 +1,8 @@
-import { useCallback, useContext, useMemo } from 'react'
-
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useCallback, useContext, useEffect, useState } from 'react'
 
 import { TemporarySettings } from './TemporarySettings'
 import { TemporarySettingsContext } from './TemporarySettingsProvider'
+import { SettingResponse } from './TemporarySettingsStorage'
 
 /**
  * React Hook to get and set a single temporary setting.
@@ -16,39 +15,43 @@ import { TemporarySettingsContext } from './TemporarySettingsProvider'
  * @param key - name of the setting
  * @param defaultValue - value to use when the setting hasn't been set yet
  */
-export const useTemporarySetting = <K extends keyof TemporarySettings>(
+export const useTemporarySetting = <K extends keyof TemporarySettings, D extends TemporarySettings[K]>(
     key: K,
-    defaultValue?: TemporarySettings[K]
+    defaultValue: D
 ): [
-    TemporarySettings[K],
+    SettingResponse<K, D>,
     (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])) => void
 ] => {
     const temporarySettings = useContext(TemporarySettingsContext)
+    const [response, setResponse] = useState<SettingResponse<K, D>>({
+        loading: true,
+    })
 
-    const updatedValue = useObservable(
-        useMemo(
-            () => temporarySettings.get(key, defaultValue),
-            // `defaultValue` should not be a dependency, otherwise the
-            // observable would be recomputed if the caller used e.g. an object
-            // literal as default value. `useTemporarySetting` works more like
-            // `useState` in this regard.
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-            [temporarySettings, key]
-        )
+    useEffect(
+        () => {
+            const subscription = temporarySettings.get(key, defaultValue).subscribe({ next: setResponse })
+            return () => subscription.unsubscribe()
+        },
+        // `defaultValue` should not be a dependency, otherwise the
+        // observable would be recomputed if the caller used e.g. an object
+        // literal as default value. `useTemporarySetting` works more like
+        // `useState` in this regard.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [temporarySettings, key]
     )
 
     const setValueAndSave = useCallback(
         (newValue: TemporarySettings[K] | ((oldValue: TemporarySettings[K]) => TemporarySettings[K])): void => {
             let finalValue: TemporarySettings[K]
             if (typeof newValue === 'function') {
-                finalValue = newValue(updatedValue)
+                finalValue = newValue('value' in response ? response.value : undefined)
             } else {
                 finalValue = newValue
             }
             temporarySettings.set(key, finalValue)
         },
-        [key, temporarySettings, updatedValue]
+        [key, response, temporarySettings]
     )
 
-    return [updatedValue, setValueAndSave]
+    return [response, setValueAndSave]
 }

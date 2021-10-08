@@ -52,7 +52,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         telemetryService,
     } = props
 
-    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext')
+    const [hasUsedNonGlobalContext] = useTemporarySetting('search.usedNonGlobalContext', false)
 
     const [isOpen, setIsOpen] = useState(false)
     const toggleOpen = useCallback(() => {
@@ -61,6 +61,9 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
     }, [telemetryService])
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
+
+    // TODO: Check
+    const showSearchContextPrompt = hasUsedNonGlobalContext.loading || !hasUsedNonGlobalContext.value
 
     // Disable the dropdown if the query contains a context filter or if a version context is active
     const isDisabled = isContextFilterInQuery || !!versionContext
@@ -142,7 +145,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
-                {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
+                {isSourcegraphDotCom && !hasUserAddedRepositories && showSearchContextPrompt ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}

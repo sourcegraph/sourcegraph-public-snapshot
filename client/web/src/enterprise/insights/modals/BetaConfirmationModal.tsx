@@ -23,7 +23,7 @@ export const BetaConfirmationModal: React.FunctionComponent = () => {
 
     // We should not render confirmation modal if we haven't got the temporary settings yet
     // or cause users have already accepted the free beta info.
-    if (isFreeBetaAccepted === undefined || isFreeBetaAccepted) {
+    if (isFreeBetaAccepted.loading || isFreeBetaAccepted.value) {
         return null
     }
 
