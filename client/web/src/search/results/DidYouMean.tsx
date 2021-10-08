@@ -20,10 +20,15 @@ interface DidYouMeanProps
         Pick<VersionContextProps, 'versionContext'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {}
 
-const normalizedLanguages = new Set(ALL_LANGUAGES.map(lang => lang.toLowerCase()))
+const normalizedLanguages = new Map(ALL_LANGUAGES.map(lang => [lang.toLowerCase(), lang]))
 
-function getQuerySuggestions(query: string, patternType: SearchPatternType): string[] {
-    const result: string[] = []
+interface Suggestion {
+    query: string
+    text: React.ReactElement
+}
+
+function getQuerySuggestions(query: string, patternType: SearchPatternType): Suggestion[] {
+    const result: Suggestion[] = []
 
     const scanResult = scanSearchQuery(query, false, patternType)
     if (scanResult.type !== 'success') {
@@ -50,8 +55,19 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): str
     if (nTerms === 1 || nTerms > 3 || !terms.every(term => term.type === 'pattern')) {
         return result
     }
-    if (terms[0].type === 'pattern' && normalizedLanguages.has(terms[0].value.toLowerCase())) {
-        result.push(`lang:${terms[0].value} ${stringHuman(terms.slice(1))}`)
+    if (terms[0].type === 'pattern') {
+        const normalizedSearchTerm = terms[0].value.toLowerCase()
+        if (normalizedLanguages.has(normalizedSearchTerm)) {
+            const queryTail = stringHuman(terms.slice(1))
+            result.push({
+                query: `lang:${terms[0].value} ${queryTail}`,
+                text: (
+                    <span>
+                        Search in <em>{normalizedLanguages.get(normalizedSearchTerm)}</em> files
+                    </span>
+                ),
+            })
+        }
     }
     return result
 }
@@ -71,16 +87,19 @@ export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
                 <ul className={styles.container}>
                     {suggestions.map(suggestion => {
                         const builtURLQuery = buildSearchURLQuery(
-                            suggestion,
+                            suggestion.query,
                             patternType,
                             caseSensitive,
                             versionContext,
                             selectedSearchContextSpec
                         )
                         return (
-                            <li key={suggestion}>
-                                <Link to={{ pathname: '/search', search: builtURLQuery }} className={styles.suggestion}>
-                                    <SyntaxHighlightedSearchQuery query={suggestion} />
+                            <li key={suggestion.query}>
+                                <Link to={{ pathname: '/search', search: builtURLQuery }}>
+                                    <span className={styles.suggestion}>
+                                        <SyntaxHighlightedSearchQuery query={suggestion.query} />
+                                    </span>
+                                    {suggestion.text}
                                 </Link>
                             </li>
                         )
