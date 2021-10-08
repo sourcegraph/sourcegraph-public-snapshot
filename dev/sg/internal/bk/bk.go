@@ -7,6 +7,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -48,13 +49,11 @@ func getTokenFromUser(out *output.Output) (string, error) {
 - read_builds
 - read_build_logs
 - read_pipelines
+- (optional) write_builds
+
+To use functionality that manipulates builds, you must also have the 'write_builds' scope.
 `, buildkiteOrg))
-	fmt.Printf("Paste it here: ")
-	var token string
-	if _, err := fmt.Scan(&token); err != nil {
-		return "", err
-	}
-	return token, nil
+	return open.Prompt("Paste your token here:")
 }
 
 type Client struct {
@@ -88,4 +87,12 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 	}
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	return &builds[0], nil
+}
+
+func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
+	build, _, err := c.bk.Builds.Create(buildkiteOrg, pipeline, &buildkite.CreateBuild{
+		Commit: commit,
+		Branch: branch,
+	})
+	return build, err
 }

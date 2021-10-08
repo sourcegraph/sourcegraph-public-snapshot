@@ -12,7 +12,7 @@ Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/
 
 The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md).
 
-To install it, [see the instructions](../../getting-started/quickstart_6_install_sg.md).
+To install it, [see the instructions](../../getting-started/quickstart_3_install_sg.md).
 
 ### Commands
 

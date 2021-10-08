@@ -129,8 +129,11 @@ func publishSourcegraphDotComEvent(args Event) error {
 		FeatureFlags:    string(featureFlagJSON),
 		CohortID:        args.CohortID,
 		PublicArgument:  string(args.PublicArgument),
+<<<<<<< HEAD
 		DeviceID:        args.DeviceID,
 		InsertID:        args.InsertID,
+=======
+>>>>>>> main
 	})
 	if err != nil {
 		return err
