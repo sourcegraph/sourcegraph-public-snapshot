@@ -51,19 +51,19 @@ func TestUser(t *testing.T) {
 						Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 						Schema:  mustParseGraphQLSchema(t),
 						Query: `
-				{
-					user(username: "alice") {
-						username
-					}
-				}
-			`,
+							{
+								user(username: "alice") {
+									username
+								}
+							}
+						`,
 						ExpectedResult: `
-				{
-					"user": {
-						"username": "alice"
-					}
-				}
-			`,
+							{
+								"user": {
+									"username": "alice"
+								}
+							}
+						`,
 					},
 				})
 			}
@@ -81,19 +81,19 @@ func TestUser(t *testing.T) {
 						Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 						Schema:  mustParseGraphQLSchema(t),
 						Query: `
-				{
-					user(username: "alice") {
-						username
-					}
-				}
-			`,
+							{
+								user(username: "alice") {
+									username
+								}
+							}
+						`,
 						ExpectedResult: `
-				{
-					"user": {
-						"username": "alice"
-					}
-				}
-			`,
+							{
+								"user": {
+									"username": "alice"
+								}
+							}
+						`,
 					},
 				})
 			}
@@ -112,12 +112,12 @@ func TestUser(t *testing.T) {
 					{
 						Schema: mustParseGraphQLSchema(t),
 						Query: `
-				{
-					user(username: "alice") {
-						username
-					}
-				}
-			`,
+							{
+								user(username: "alice") {
+									username
+								}
+							}
+						`,
 						ExpectedResult: `{"user": null}`,
 						ExpectedErrors: []*gqlerrors.QueryError{
 							{
