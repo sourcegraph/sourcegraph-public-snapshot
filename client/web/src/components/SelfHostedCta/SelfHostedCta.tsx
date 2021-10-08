@@ -21,15 +21,15 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
     const linkProps = { rel: 'noopener noreferrer' }
 
     const gettingStartedCTAOnClick = (): void => {
-        telemetryService.log('InstallSourcegraphCTAClicked', { page })
+        telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
     }
 
     const selfVsCloudDocumentsLinkOnClick = (): void => {
-        telemetryService.log('SelfVsCloudDocsLink', { page })
+        telemetryService.log('SelfVsCloudDocsLink', { page }, { page })
     }
 
     const helpGettingStartedCTAOnClick = (): void => {
-        telemetryService.log('HelpGettingStartedCTA', { page })
+        telemetryService.log('HelpGettingStartedCTA', { page }, { page })
     }
 
     return (
