@@ -4,7 +4,7 @@ To work on most frontend issues, it is necessary to run three applications local
 
 1. The web app in the [client/web directory](https://github.com/sourcegraph/sourcegraph/tree/main/client/web).
 2. Storybook ([client/storybook](https://github.com/sourcegraph/sourcegraph/tree/main/client/storybook))
-3. The browser extension: https://github.com/sourcegraph/sourcegraph/tree/main/client/browser.
+3. The browser extension ([client/browser](https://github.com/sourcegraph/sourcegraph/tree/main/client/browser))
 
 ## Project Setup
 
