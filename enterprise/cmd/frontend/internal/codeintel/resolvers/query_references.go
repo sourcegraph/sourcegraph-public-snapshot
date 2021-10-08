@@ -112,7 +112,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// more local results remaining, just as we did above.
 	if cursor.Phase == "remote" {
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "references", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "references", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
@@ -300,58 +300,58 @@ func (r *queryResolver) pageRemoteReferences(
 	adjustedUploads []adjustedUpload,
 	orderedMonikers []precise.QualifiedMonikerData,
 	definitionUploadIDs []int,
-	cursor *referencesCursor,
+	cursor *remoteCursor,
 	limit int,
 	traceLog observation.TraceLogger,
 ) ([]lsifstore.Location, bool, error) {
-	for len(cursor.BatchIDs) == 0 {
-		if cursor.RemoteBatchOffset < 0 {
+	for len(cursor.UploadBatchIDs) == 0 {
+		if cursor.UploadOffset < 0 {
 			// No more batches
 			return nil, false, nil
 		}
 
 		// Find the next batch of indexes to perform a moniker search over
-		referenceUploadIDs, recordScanned, totalCount, err := r.uploadIDsWithReferences(
+		referenceUploadIDs, recordsScanned, totalRecords, err := r.uploadIDsWithReferences(
 			ctx,
 			orderedMonikers,
 			definitionUploadIDs,
 			maximumIndexesPerMonikerSearch,
-			cursor.RemoteBatchOffset,
+			cursor.UploadOffset,
 			traceLog,
 		)
 		if err != nil {
 			return nil, false, err
 		}
 
-		cursor.BatchIDs = referenceUploadIDs
-		cursor.RemoteBatchOffset += recordScanned
+		cursor.UploadBatchIDs = referenceUploadIDs
+		cursor.UploadOffset += recordsScanned
 
-		if cursor.RemoteBatchOffset >= totalCount {
+		if cursor.UploadOffset >= totalRecords {
 			// Signal no batches remaining
-			cursor.RemoteBatchOffset = -1
+			cursor.UploadOffset = -1
 		}
 	}
 
 	// Fetch the upload records we don't currently have hydrated and insert them into the map
-	monikerSearchUploads, err := r.uploadsByIDs(ctx, cursor.BatchIDs)
+	monikerSearchUploads, err := r.uploadsByIDs(ctx, cursor.UploadBatchIDs)
 	if err != nil {
 		return nil, false, err
 	}
 
 	// Perform the moniker search
-	locations, totalCount, err := r.monikerLocations(ctx, monikerSearchUploads, orderedMonikers, lsifDataTable, limit, cursor.RemoteOffset)
+	locations, totalCount, err := r.monikerLocations(ctx, monikerSearchUploads, orderedMonikers, lsifDataTable, limit, cursor.LocationOffset)
 	if err != nil {
 		return nil, false, err
 	}
 
 	numLocations := len(locations)
 	traceLog(log.Int("pageLocalReferences.pageRemoteReferences", numLocations))
-	cursor.RemoteOffset += numLocations
+	cursor.LocationOffset += numLocations
 
-	if cursor.RemoteOffset >= totalCount {
+	if cursor.LocationOffset >= totalCount {
 		// Require a new batch on next page
-		cursor.RemoteOffset = 0
-		cursor.BatchIDs = nil
+		cursor.LocationOffset = 0
+		cursor.UploadBatchIDs = nil
 	}
 
 	// Perform an in-place filter to remove specific duplicate locations. Ranges that enclose the
@@ -369,7 +369,7 @@ func (r *queryResolver) pageRemoteReferences(
 	// We have another page if we still have results in the current batch of reference indexes, or if
 	// we can query a next batch of reference indexes. We may return true here when we are actually
 	// out of references. This behavior may change in the future.
-	return filtered, len(cursor.BatchIDs) > 0 || cursor.RemoteBatchOffset >= 0, nil
+	return filtered, len(cursor.UploadBatchIDs) > 0 || cursor.UploadOffset >= 0, nil
 }
 
 // isSourceLocation returns true if the given location encloses the source position within one of the visible uploads.

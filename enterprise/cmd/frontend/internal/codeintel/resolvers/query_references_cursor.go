@@ -16,15 +16,21 @@ type referencesCursor struct {
 	OrderedMonikers     []precise.QualifiedMonikerData `json:"orderedMonikers"`
 	Phase               string                         `json:"phase"`
 	LocalCursor         localCursor                    `json:"localCursor"`
-	BatchIDs            []int                          `json:"batchIDs"`
-	RemoteOffset        int                            `json:"remoteOffset"`
-	RemoteBatchOffset   int                            `json:"remoteBatchOffset"`
+	RemoteCursor        remoteCursor                   `json:"remoteCursor"`
 }
 
 // localCursor is an upload offset and a location offset within that upload.
 type localCursor struct {
 	UploadOffset int `json:"uploadOffset"`
 	// The location offset within the associated upload.
+	LocationOffset int `json:"locationOffset"`
+}
+
+// remoteCursor is an upload offset, the current batch of uploads, and a location offset within the batch of uploads.
+type remoteCursor struct {
+	UploadOffset   int   `json:"batchOffset"`
+	UploadBatchIDs []int `json:"uploadBatchIDs"`
+	// The location offset within the associated batch of uploads.
 	LocationOffset int `json:"locationOffset"`
 }
 

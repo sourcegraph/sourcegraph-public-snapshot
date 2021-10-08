@@ -105,7 +105,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// more local results remaining, just as we did above.
 	if cursor.Phase == "remote" {
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "definitions", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "definitions", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
