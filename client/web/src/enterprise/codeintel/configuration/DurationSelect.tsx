@@ -41,8 +41,8 @@ export const DurationSelect: FunctionComponent<DurationSelectProps> = ({
                     }
                 }}
             >
-                {durationValues.map(({ value: vxy, displayText }) => (
-                    <option key={vxy} value={vxy || undefined}>
+                {durationValues.map(({ value, displayText }) => (
+                    <option key={value} value={value || undefined}>
                         {displayText}
                     </option>
                 ))}
