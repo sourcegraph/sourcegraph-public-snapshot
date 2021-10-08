@@ -17,7 +17,7 @@ const { add } = storiesOf('shared/HoverOverlay', module)
 const bitbucketClassProps: HoverOverlayClassProps = {
     className: 'aui-dialog',
     actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
-    closeButtonClassName: 'aui-button btn-icon--bitbucket-server',
+    closeButtonClassName: 'aui-button btn-icon--bitbucket-server close',
     iconClassName: 'aui-icon',
     getAlertClassName: alertKind => {
         switch (alertKind) {
