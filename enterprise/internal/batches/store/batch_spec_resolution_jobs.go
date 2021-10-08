@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cockroachdb/errors"
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -77,17 +75,10 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.Bat
 	err = s.query(ctx, q, func(sc scanner) (err error) {
 		return scanBatchSpecResolutionJob(wj, sc)
 	})
-	if err != nil {
-		var e *pgconn.PgError
-		if errors.As(err, &e) {
-			fmt.Printf("e=%v\n", e)
-		}
-		if isUniqueConstraintViolation(err, "batch_spec_resolution_jobs_batch_spec_id_unique") {
-			return ErrResolutionJobAlreadyExists{BatchSpecID: wj.BatchSpecID}
-		}
-		return err
+	if err != nil && isUniqueConstraintViolation(err, "batch_spec_resolution_jobs_batch_spec_id_unique") {
+		return ErrResolutionJobAlreadyExists{BatchSpecID: wj.BatchSpecID}
 	}
-	return nil
+	return err
 }
 
 var createBatchSpecResolutionJobQueryFmtstr = `
