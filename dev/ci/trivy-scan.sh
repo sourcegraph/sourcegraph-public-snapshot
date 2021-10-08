@@ -22,8 +22,10 @@ TRIVY_VERSION="${TRIVY_VERSION:-0.20.0}"
 curl "https://raw.githubusercontent.com/aquasecurity/trivy/v${TRIVY_VERSION}/contrib/html.tpl" >"${HTML_TEMPLATE_FILE}"
 
 ANNOTATION_FILE="${OUTPUT}/annotation.html"
+ANNOTATION_MARKDOWN="${OUTPUT}/annotation.md"
 
 if ! trivy image --format template --template "@${OUTPUT}/html.tpl" -o "${ANNOTATION_FILE}" "$@"; then
-  buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
+  pandoc "${ANNOTATION_FILE}" --to gfm -o "${ANNOTATION_MARKDOWN}"
+  buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_MARKDOWN}"
   exit 1
 fi
