@@ -111,6 +111,7 @@ import {
     nativeTooltipsEnabledFromSettings,
     registerNativeTooltipContributions,
 } from './nativeTooltips'
+import { SearchResults } from './SearchResults'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
@@ -210,6 +211,10 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
         resultViewResolver: ViewResolver<{ element: HTMLElement }>
         /** Callback to trigger on input element change */
         onChange: (args: { value: string; searchURL: string; resultElement: HTMLElement }) => void
+
+        searchPageEnhancement: {
+            isActive: () => boolean
+        }
     }
 
     /**
@@ -826,7 +831,8 @@ export function handleCodeHost({
     }
 
     if (codeHost.searchEnhancement) {
-        const { searchViewResolver, resultViewResolver, onChange } = codeHost.searchEnhancement
+        const { searchViewResolver, resultViewResolver, onChange, searchPageEnhancement } = codeHost.searchEnhancement
+        // search input enhancement
         const searchURL = new URL('/search', sourcegraphURL)
         searchURL.searchParams.append('utm_source', getPlatformName())
         searchURL.searchParams.append('utm_campaign', 'global-search')
@@ -850,6 +856,39 @@ export function handleCodeHost({
         const searchEnhancementSubscription = combineLatest([searchView, resultView])
             .pipe(map(([search, { element: resultElement }]) => ({ ...search, resultElement })))
             .subscribe(onChange)
+
+        // -----
+
+        // search page enhancement
+        if (searchPageEnhancement.isActive()) {
+            const tabElement = document.querySelector<HTMLElement>('#js-pjax-container nav')
+            const selectedTab = tabElement?.querySelector<HTMLElement>('.menu-item.selected')
+            if (selectedTab) {
+                const sourcegraphTab = selectedTab?.cloneNode(true) as HTMLElement
+                sourcegraphTab.textContent = 'Sourcegraph'
+                const href = sourcegraphTab.getAttribute('href')!.replace(/type=[^&]+/, 'type=sourcegraph')
+                sourcegraphTab.setAttribute('href', href)
+                tabElement?.prepend(sourcegraphTab)
+                // Clone + create Sourcegraph tab
+
+                const searchParameters = new URLSearchParams(location.search)
+                const type = searchParameters.get('type')
+
+                if (type === 'sourcegraph') {
+                    // Remove selected class from selected tab
+                    selectedTab.classList.remove('selected')
+                    reactDOMRender(
+                        <SearchResults query={searchParameters.get('q') ?? ''} platformContext={platformContext} />,
+                        document.querySelector('.codesearch-results')
+                    )
+                    // TODO: Run sourcegraph search query, replace body with loading spinner -> render results
+                } else {
+                    sourcegraphTab.classList.remove('selected')
+                    // Remove selected class from sourcegraph tab
+                }
+            }
+        }
+        // ---------
         subscriptions.add(searchEnhancementSubscription)
     }
 

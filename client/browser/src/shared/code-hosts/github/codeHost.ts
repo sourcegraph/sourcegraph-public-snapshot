@@ -313,6 +313,9 @@ const notificationClassNames = {
 }
 
 const searchEnhancement: CodeHost['searchEnhancement'] = {
+    searchPageEnhancement: {
+        isActive: () => window.location.pathname === '/search',
+    },
     searchViewResolver: {
         selector: '.js-site-search-form input[type="text"][aria-controls="jump-to-results"]',
         resolveView: element => ({ element }),
