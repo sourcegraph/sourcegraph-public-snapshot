@@ -20,7 +20,7 @@ type InsightsResolver interface {
 
 	// Mutations
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
-	AddInsightViewToDashboard(ctx context.Context, input AddInsightViewToDashboardInput) (InsightDashboardPayloadResolver, error)
+	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightDashboardPayloadResolver, error)
 }
 
 type InsightsArgs struct {
@@ -108,6 +108,10 @@ type InsightViewResolver interface {
 
 type InsightDashboardPayloadResolver interface {
 	Dashboard(ctx context.Context) (InsightDashboardResolver, error)
+}
+
+type AddInsightViewToDashboardArgs struct {
+	Input AddInsightViewToDashboardInput
 }
 
 type AddInsightViewToDashboardInput struct {

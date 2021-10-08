@@ -154,13 +154,13 @@ func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
 	return true
 }
 
-func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, input graphqlbackend.AddInsightViewToDashboardInput) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
 	var viewID string
-	err := relay.UnmarshalSpec(input.InsightViewID, &viewID)
+	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
 	}
-	dashboardID, err := unmarshalDashboardID(input.DashboardID)
+	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
