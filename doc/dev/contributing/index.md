@@ -1,0 +1,9 @@
+# Contributing
+
+1. Go through the [CONTRIBUTING.md](https://github.com/sourcegraph/sourcegraph/blob/main/CONTRIBUTING.md)
+2. Check out [the Github board](https://github.com/orgs/sourcegraph/projects/210) with curated list of good first issues.
+
+## Project setup and CI checks
+
+- [Frontend issue](frontend_contribution.md).
+- [Backend issue](../getting-started/index.md).
