@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
@@ -19,8 +21,10 @@ import (
 )
 
 var (
-	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
-	ciCommand = &ffcli.Command{
+	ciFlagSet      = flag.NewFlagSet("sg ci", flag.ExitOnError)
+	ciLogsFlagSet  = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
+	ciLogsJobState = ciLogsFlagSet.String("state", "failed", "Job states to export logs for")
+	ciCommand      = &ffcli.Command{
 		Name:       "ci",
 		ShortUsage: "sg ci [preview|status|build]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
@@ -157,6 +161,38 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					return fmt.Errorf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
 				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
+				return nil
+			},
+		}, {
+			Name:    "logs",
+			FlagSet: ciLogsFlagSet,
+			Exec: func(ctx context.Context, args []string) error {
+				client, err := bk.NewClient(ctx, out)
+				if err != nil {
+					return err
+				}
+				logs, err := client.ExportLogs(ctx, "sourcegraph", "110894", bk.ExportLogsOpts{
+					// Job: "d6eb20fc-f6c9-46f1-897c-619d2d15ebc9",
+					State: *ciLogsJobState,
+				})
+				if err != nil {
+					return err
+				}
+
+				for _, log := range logs {
+					// out.Write(*log.Content)
+					stream, err := loki.NewStreamFromJobLogs(log)
+					if err != nil {
+						return err
+					}
+					b, _ := json.Marshal(stream)
+					out.Write(string(b))
+
+					if err := loki.PushStreams(ctx, []*loki.Stream{stream}); err != nil {
+						return err
+					}
+				}
+
 				return nil
 			},
 		}},

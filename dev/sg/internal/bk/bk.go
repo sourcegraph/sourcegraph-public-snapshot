@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
@@ -95,4 +96,116 @@ func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit stri
 		Branch: branch,
 	})
 	return build, err
+}
+
+type ExportLogsOpts struct {
+	Job   string
+	State string
+}
+
+type JobLogs struct {
+	JobMeta JobMeta
+
+	Content *string
+}
+
+// Used as labels to identify a log stream
+type JobMeta struct {
+	Build string `json:"build"`
+	Job   string `json:"job"`
+
+	Name    *string `json:"name,omitempty"`
+	Label   *string `json:"label,omitempty"`
+	StepKey *string `json:"step_key,omitempty"`
+	Command *string `json:"command,omitempty"`
+	Type    *string `json:"type,omitempty"`
+
+	State        *string    `json:"state,omitempty"`
+	ExitStatus   *int       `json:"exit_status,omitempty"`
+	StartedAt    *time.Time `json:"started_at,omitempty"`
+	FinishedAt   *time.Time `json:"finished_at,omitempty"`
+	RetriesCount int        `json:"retries_count"`
+}
+
+func maybeTime(ts *buildkite.Timestamp) *time.Time {
+	if ts == nil {
+		return nil
+	}
+	return &ts.Time
+}
+
+func newJobMeta(build string, j *buildkite.Job) JobMeta {
+	return JobMeta{
+		Build: build,
+		Job:   *j.ID,
+
+		Name:    j.Name,
+		Label:   j.Label,
+		StepKey: j.StepKey,
+		Command: j.Command,
+		Type:    j.Type,
+
+		State:        j.State,
+		ExitStatus:   j.ExitStatus,
+		StartedAt:    maybeTime(j.StartedAt),
+		FinishedAt:   maybeTime(j.FinishedAt),
+		RetriesCount: j.RetriesCount,
+	}
+}
+
+func hasState(job *buildkite.Job, state string) bool {
+	if state == "" {
+		return true
+	}
+	return job.State != nil && *job.State == state
+}
+
+func (c *Client) ExportLogs(ctx context.Context, pipeline, build string, opts ExportLogsOpts) ([]*JobLogs, error) {
+	buildDetails, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, build, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if opts.Job != "" {
+		var jobDetails *buildkite.Job
+		for _, job := range buildDetails.Jobs {
+			if *job.ID == opts.Job {
+				jobDetails = job
+				break
+			}
+		}
+		if jobDetails == nil {
+			return nil, fmt.Errorf("no job %q found in build %q", opts.Job, build)
+		}
+		if !hasState(jobDetails, opts.State) {
+			return []*JobLogs{}, nil
+		}
+
+		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, build, opts.Job)
+		if err != nil {
+			return nil, err
+		}
+		return []*JobLogs{{
+			JobMeta: newJobMeta(build, jobDetails),
+			Content: l.Content,
+		}}, nil
+	}
+
+	logs := []*JobLogs{}
+	for _, job := range buildDetails.Jobs {
+		if !hasState(job, opts.State) {
+			continue
+		}
+
+		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, build, *job.ID)
+		if err != nil {
+			return nil, err
+		}
+		logs = append(logs, &JobLogs{
+			JobMeta: newJobMeta(build, job),
+			Content: l.Content,
+		})
+	}
+
+	return logs, nil
 }
