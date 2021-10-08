@@ -55,6 +55,7 @@ And the more explanatory body. And the more explanatory body. And the more expla
                 },
             ],
             diffStat: {
+                __typename: 'DiffStat',
                 added: 10,
                 changed: 8,
                 deleted: 2,

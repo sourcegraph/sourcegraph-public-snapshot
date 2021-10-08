@@ -31,13 +31,13 @@ To install it, [see the instructions](../../getting-started/quickstart_6_install
 2. Start all backend services with the frontend server.
 
     ```sh
-    ./dev/start.sh
+    sg start # which defaults to `sg start enterprise`
     ```
 
-    For the enterprise version:
+    For the open-source version:
 
     ```sh
-    ./enterprise/dev/start.sh
+    sg start oss
     ```
 
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.

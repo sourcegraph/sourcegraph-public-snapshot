@@ -9,6 +9,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -37,7 +38,7 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 		args := &protocol.SearchRequest{
 			Repo:        rr.Repo.Name,
 			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(query, query.IsCaseSensitive(), diff)},
+			Query:       gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(query, query.IsCaseSensitive(), diff)...)),
 			IncludeDiff: diff,
 			Limit:       limit,
 		}
@@ -100,9 +101,9 @@ func queryNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitp
 func queryOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
 	switch op.Kind {
 	case query.And:
-		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return gitprotocol.NewAnd(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
 	case query.Or:
-		return &gitprotocol.Operator{Kind: protocol.And, Operands: queryNodesToPredicates(op.Operands, caseSensitive, diff)}
+		return gitprotocol.NewOr(queryNodesToPredicates(op.Operands, caseSensitive, diff)...)
 	default:
 		// I don't think we should have concats at this point, but ignore it if we do
 		return nil
@@ -123,7 +124,7 @@ func queryPatternToPredicate(pattern query.Pattern, caseSensitive, diff bool) gi
 	}
 
 	if pattern.Negated {
-		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
+		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
 }
@@ -157,7 +158,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	}
 
 	if parameter.Negated {
-		return &gitprotocol.Operator{Kind: protocol.Not, Operands: []gitprotocol.Node{newPred}}
+		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
 }
@@ -254,4 +255,41 @@ func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange
 	}
 
 	return res
+}
+
+// CheckSearchLimits will return an error if commit/diff limits are exceeded for the
+// given query and number of repos that will be searched.
+func CheckSearchLimits(q query.Q, repoCount int, resultType string) error {
+	hasTimeFilter := false
+	if _, afterPresent := q.Fields()["after"]; afterPresent {
+		hasTimeFilter = true
+	}
+	if _, beforePresent := q.Fields()["before"]; beforePresent {
+		hasTimeFilter = true
+	}
+
+	limits := search.SearchLimits(conf.Get())
+	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && repoCount > max {
+		return &RepoLimitError{ResultType: resultType, Max: max}
+	}
+	if max := limits.CommitDiffWithTimeFilterMaxRepos; hasTimeFilter && repoCount > max {
+		return &TimeLimitError{ResultType: resultType, Max: max}
+	}
+	return nil
+}
+
+type DiffCommitError struct {
+	ResultType string
+	Max        int
+}
+
+type RepoLimitError DiffCommitError
+type TimeLimitError DiffCommitError
+
+func (*RepoLimitError) Error() string {
+	return "repo limit error"
+}
+
+func (*TimeLimitError) Error() string {
+	return "time limit error"
 }

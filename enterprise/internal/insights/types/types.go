@@ -73,3 +73,9 @@ type DirtyQueryAggregate struct {
 	ForTime time.Time
 	Reason  string
 }
+
+type Dashboard struct {
+	ID         int
+	Title      string
+	InsightIDs []string // shallow references
+}

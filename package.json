@@ -313,6 +313,7 @@
     "webpack-cli": "^4.7.2",
     "webpack-dev-server": "^4.0.0",
     "webpack-manifest-plugin": "^3.1.0",
+    "wildcard-mock-link": "^2.0.1",
     "worker-loader": "^3.0.8",
     "yarn-deduplicate": "^3.1.0"
   },
@@ -327,7 +328,7 @@
     "@reach/visually-hidden": "^0.15.2",
     "@sentry/browser": "^6.13.2",
     "@slimsag/react-shortcuts": "^1.2.1",
-    "@sourcegraph/codeintellify": "^7.2.2",
+    "@sourcegraph/codeintellify": "^7.3.0",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",

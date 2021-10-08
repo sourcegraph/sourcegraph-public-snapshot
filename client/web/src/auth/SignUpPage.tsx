@@ -14,7 +14,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
 import { SourcegraphIcon } from './icons'
-import { getReturnTo } from './SignInSignUpCommon'
+import { getReturnTo, maybeAddPostSignUpRedirect } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
@@ -66,7 +66,7 @@ export const SignUpPage: React.FunctionComponent<SignUpPageProps> = ({
             // if sign up is successful and enablePostSignupFlow feature is ON -
             // redirect user to the /post-sign-up page
             if (context.experimentalFeatures.enablePostSignupFlow) {
-                window.location.replace(new URL('/welcome', window.location.href).pathname)
+                window.location.replace(new URL(maybeAddPostSignUpRedirect(), window.location.href).pathname)
             } else {
                 window.location.replace(getReturnTo(location))
             }

@@ -21,7 +21,7 @@ This structure is inspired by the [Divio documentation system](https://documenta
 
 ## Previewing changes locally
 
-You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../getting-started/index.md) (using `dev/start.sh` or `enterprise/dev/start.sh`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
+You can preview the documentation site at http://localhost:5080 when running Sourcegraph in [local development](../getting-started/index.md) (using `sg start`). It uses content, templates, and assets from the local disk. There is no caching or background build process, so you'll see all changes reflected immediately after you reload the page in your browser.
 
 You can also run the docsite on its own with the following command:
 
