@@ -45,7 +45,7 @@ var defaultDoer, _ = clientFactory.Doer()
 var DefaultClient = NewClient(defaultDoer)
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject func(objectName string) (*domain.GitObject, error)
+	GetObject func(repo api.RepoName, objectName string) (*domain.GitObject, error)
 }
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
@@ -1003,6 +1003,10 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 // GetObject fetches git object data in the supplied repo
 func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*domain.GitObject, error) {
+	if ClientMocks.GetObject != nil {
+		return ClientMocks.GetObject(repo, objectName)
+	}
+
 	req := protocol.GetObjectRequest{
 		Repo:       repo,
 		ObjectName: objectName,

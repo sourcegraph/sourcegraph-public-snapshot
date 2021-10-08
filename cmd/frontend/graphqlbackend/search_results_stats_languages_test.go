@@ -51,7 +51,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	gitserver.ClientMocks.GetObject = func(objectName string) (*domain.GitObject, error) {
+	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*domain.GitObject, error) {
 		oid := domain.OID{} // empty is OK for this test
 		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
 		return &domain.GitObject{
