@@ -149,6 +149,7 @@ func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights 
 func (m *settingMigrator) migrate(ctx context.Context) error {
 	insightStore := store.NewInsightStore(m.insights)
 	loader := insights.NewLoader(m.base)
+	dashboardStore := store.NewDashboardStore(m.insights)
 
 	discovered, err := discoverIntegrated(ctx, loader)
 	if err != nil {
@@ -179,8 +180,68 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		count++
 	}
 	log15.Info("insights settings migration complete", "count", count, "skipped", skipped, "errors", errorCount)
+
+	log15.Info("insights migration: migrating dashboards")
+	dashboards, err := loader.LoadDashboards(ctx)
+	if err != nil {
+		return err
+	}
+	err = clearDashboards(ctx, m.insights)
+	if err != nil {
+		return errors.Wrap(err, "clearDashboards")
+	}
+	for _, dashboard := range dashboards {
+		err := migrateDashboard(ctx, dashboardStore, dashboard)
+		if err != nil {
+			log15.Info("insights migration: error while migrating dashboard", "error", err)
+			continue
+		}
+	}
 	return nil
 }
+
+func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
+	tx, err := dashboardStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	dashboard := types.Dashboard{
+		Title:      from.Title,
+		InsightIDs: from.InsightIds,
+	}
+	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
+
+	var grants []store.DashboardGrant
+	if from.UserID != nil {
+		grants = []store.DashboardGrant{store.UserDashboardGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.DashboardGrant{store.OrgDashboardGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
+	}
+	_, err = dashboardStore.CreateDashboard(ctx, dashboard, grants)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// clearDashboards will delete all dashboards. This should be deprecated as soon as possible, and is only useful to ensure a smooth migration from settings to database.
+func clearDashboards(ctx context.Context, db dbutil.DB) error {
+	_, err := db.ExecContext(ctx, deleteAllDashboardsSql)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const deleteAllDashboardsSql = `
+-- source: enterprise/internal/insights/discovery/discovery.go:clearDashboards
+delete from dashboard;
+`
 
 // migrateSeries will attempt to take an insight defined in Sourcegraph settings and migrate it to the database.
 func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from insights.SearchInsight) (err error) {
