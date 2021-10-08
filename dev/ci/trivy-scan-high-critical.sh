@@ -47,6 +47,7 @@ TRIVY_ARGS=(
 )
 
 if ! trivy image "${TRIVY_ARGS[@]}"; then
+  buildkite-agent artifact upload "${ANNOTATION_FILE}"
   buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
   exit 1
 fi
