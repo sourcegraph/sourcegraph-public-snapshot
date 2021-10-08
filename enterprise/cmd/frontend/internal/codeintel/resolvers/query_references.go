@@ -51,7 +51,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// References at the given file:line:character could come from multiple uploads, so we
 	// need to look in all uploads and merge the results.
 
-	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, &cursor)
+	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, &cursor.AdjustedUploads)
 	if err != nil {
 		return nil, "", err
 	}
@@ -130,10 +130,10 @@ var ErrConcurrentModification = errors.New("result set changed while paginating"
 //
 // An error is returned if the set of visible uploads has changed since the previous request of this
 // result set (specifically if an index becomes invisible). This behavior may change in the future.
-func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, character int, cursor *referencesCursor) ([]adjustedUpload, error) {
-	if cursor.AdjustedUploads != nil {
-		adjustedUploads := make([]adjustedUpload, 0, len(cursor.AdjustedUploads))
-		for _, u := range cursor.AdjustedUploads {
+func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, character int, cursorAdjustedUploads *[]cursorAdjustedUpload) ([]adjustedUpload, error) {
+	if *cursorAdjustedUploads != nil {
+		adjustedUploads := make([]adjustedUpload, 0, len(*cursorAdjustedUploads))
+		for _, u := range *cursorAdjustedUploads {
 			upload, ok := r.uploadCache[u.DumpID]
 			if !ok {
 				return nil, ErrConcurrentModification
@@ -155,9 +155,9 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 		return nil, err
 	}
 
-	cursorAdjustedUploads := make([]cursorAdjustedUpload, 0, len(adjustedUploads))
+	*cursorAdjustedUploads = make([]cursorAdjustedUpload, 0, len(adjustedUploads))
 	for i := range adjustedUploads {
-		cursorAdjustedUploads = append(cursorAdjustedUploads, cursorAdjustedUpload{
+		*cursorAdjustedUploads = append(*cursorAdjustedUploads, cursorAdjustedUpload{
 			DumpID:               adjustedUploads[i].Upload.ID,
 			AdjustedPath:         adjustedUploads[i].AdjustedPath,
 			AdjustedPosition:     adjustedUploads[i].AdjustedPosition,
@@ -165,7 +165,6 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 		})
 	}
 
-	cursor.AdjustedUploads = cursorAdjustedUploads
 	return adjustedUploads, nil
 }
 

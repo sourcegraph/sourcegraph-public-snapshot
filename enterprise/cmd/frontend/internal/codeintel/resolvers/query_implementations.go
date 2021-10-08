@@ -44,7 +44,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// the target commit. This data may already be stashed in the cursor decoded above, in
 	// which case we don't need to hit the database.
 
-	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, &cursor)
+	adjustedUploads, err := r.adjustedUploadsFromCursor(ctx, line, character, &cursor.AdjustedUploads)
 	if err != nil {
 		return nil, "", err
 	}
