@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -17,28 +16,6 @@ type referencesCursor struct {
 	Phase               string                         `json:"phase"`
 	LocalCursor         localCursor                    `json:"localCursor"`
 	RemoteCursor        remoteCursor                   `json:"remoteCursor"`
-}
-
-// localCursor is an upload offset and a location offset within that upload.
-type localCursor struct {
-	UploadOffset int `json:"uploadOffset"`
-	// The location offset within the associated upload.
-	LocationOffset int `json:"locationOffset"`
-}
-
-// remoteCursor is an upload offset, the current batch of uploads, and a location offset within the batch of uploads.
-type remoteCursor struct {
-	UploadOffset   int   `json:"batchOffset"`
-	UploadBatchIDs []int `json:"uploadBatchIDs"`
-	// The location offset within the associated batch of uploads.
-	LocationOffset int `json:"locationOffset"`
-}
-
-type cursorAdjustedUpload struct {
-	DumpID               int                `json:"dumpID"`
-	AdjustedPath         string             `json:"adjustedPath"`
-	AdjustedPosition     lsifstore.Position `json:"adjustedPosition"`
-	AdjustedPathInBundle string             `json:"adjustedPathInBundle"`
 }
 
 // decodeCursor is the inverse of encodeCursor. If the given encoded string is empty, then
