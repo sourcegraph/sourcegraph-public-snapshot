@@ -313,7 +313,7 @@ func TestUpdateExternalService(t *testing.T) {
 				},
 			})
 
-			want := errNoAccessExternalService.Error()
+			want := backend.ErrNoAccessExternalService.Error()
 			got := fmt.Sprintf("%v", err)
 			if got != want {
 				t.Errorf("err: want %q but got %q", want, got)
@@ -494,7 +494,7 @@ func TestDeleteExternalService(t *testing.T) {
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 
-			want := errNoAccessExternalService.Error()
+			want := backend.ErrNoAccessExternalService.Error()
 			got := fmt.Sprintf("%v", err)
 			if got != want {
 				t.Errorf("err: want %q but got %q", want, got)
@@ -592,7 +592,7 @@ func TestExternalServices(t *testing.T) {
 			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
-			if want := errNoAccessExternalService; err != want {
+			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -617,7 +617,7 @@ func TestExternalServices(t *testing.T) {
 			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
-			if want := errNoAccessExternalService; err != want {
+			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -723,8 +723,8 @@ func TestExternalServices(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"externalServices"},
-					Message:       errNoAccessExternalService.Error(),
-					ResolverError: errNoAccessExternalService,
+					Message:       backend.ErrNoAccessExternalService.Error(),
+					ResolverError: backend.ErrNoAccessExternalService,
 				},
 			},
 			ExpectedResult: `null`,
