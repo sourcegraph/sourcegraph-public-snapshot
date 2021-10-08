@@ -52,15 +52,15 @@ trivy_scan() {
   trivy image "${TRIVY_ARGS[@]}"
 }
 
-ANNOTATION_FILE="annotation.html"
-ARTIFACT_FILE="artifact.html"
-
-if ! trivy_scan "./dev/ci/trivy-annotation-html.tpl" "${OUTPUT}/${ANNOTATION_FILE}" "${IMAGE}"; then
-  trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${OUTPUT}/${ARTIFACT_FILE}" "${IMAGE}" || true
+ARTIFACT_FILE="${IMAGE}-security-report.html"
+if ! trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${OUTPUT}/${ARTIFACT_FILE}" "${IMAGE}"; then
 
   pushd "${OUTPUT}"
   buildkite-agent artifact upload "${ARTIFACT_FILE}"
-  buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
+
+  cat <<EOF | annotate --style warning --context "Docker Image security scan"
+      The \`${IMAGE}\` Docker image has \`HIGH/CRITICAL\` severity CVE(s): <a href="artifact://${ARTIFACT_FILE}">security scan report</a>
+EOF
   popd
 
   exit 1
