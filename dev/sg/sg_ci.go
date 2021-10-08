@@ -118,7 +118,8 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 			},
 		}, {
 			Name:      "build",
-			ShortHelp: "Manually request a build for the currently checked out commit and branch",
+			ShortHelp: "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks)",
+			LongHelp:  "Manually request a Buildkite build for the currently checked out commit and branch. This is most useful when triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)",
 			Exec: func(ctx context.Context, args []string) error {
 				client, err := bk.NewClient(ctx, out)
 				if err != nil {

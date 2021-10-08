@@ -49,8 +49,8 @@ func getTokenFromUser(out *output.Output) (string, error) {
 - read_builds
 - read_build_logs
 - read_pipelines
-  - (optional) write_builds 
-  
+- (optional) write_builds
+
 To use functionality that manipulates builds, you must also have the 'write_builds' scope.
 `, buildkiteOrg))
 	return open.Prompt("Paste your token here:")
