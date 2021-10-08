@@ -139,12 +139,17 @@ async function webpackDevelopmentServer() {
   }
 
   const compiler = createWebpackCompiler(webpackConfig)
+  let compilationDoneOnce = false
   compiler.hooks.done.tap('Print external URL', stats => {
     stats = stats.toJson()
     if (stats.errors !== undefined && stats.errors.length > 0) {
       // show errors
       return
     }
+    if (compilationDoneOnce) {
+      return
+    }
+    compilationDoneOnce = true
 
     const url = `https://${sockHost}:${sockPort}`
     const banner = '==============================================='
