@@ -49,7 +49,7 @@ ARGS=(
   "accept:application/vnd.github.v3+json"
 
   "--raw-field"
-  "tool_name=trivy@${APP}"
+  "tool_name=trivy@${IMAGE}"
 
   "--field"
   "commit_sha=${COMMIT:-${BUILDKITE_COMMIT}}"
