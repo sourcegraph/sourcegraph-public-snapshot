@@ -49,7 +49,6 @@ import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
-import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
@@ -94,6 +93,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
@@ -317,8 +317,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidMount(): void {
-        updateUserSessionStores()
-
         document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
@@ -577,6 +575,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     extensionsController={this.extensionsController}
                                     notificationClassNames={notificationClassNames}
                                 />
+                                <UserSessionStores />
                             </SearchResultsCacheProvider>
                         </TemporarySettingsProvider>
                     </ShortcutProvider>

@@ -16,6 +16,9 @@ import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlert
 import { HoverOverlayContents } from './HoverOverlayContents'
 import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
+// Dummy CSS module to generate `inject.bundle.css`
+import './HoverOverlay.module.scss'
+
 const LOADING = 'loading' as const
 
 const transformMouseEvent = (handler: (event: MouseEvent) => void) => (event: React.MouseEvent<HTMLElement>) =>

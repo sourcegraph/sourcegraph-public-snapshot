@@ -1,4 +1,4 @@
-# Quickstart step 5: Configure HTTPS reverse proxy
+# Quickstart step 6: Configure HTTPS reverse proxy
 
 Sourcegraph's development environment ships with a [Caddy 2](https://caddyserver.com/) HTTPS reverse proxy that allows you to access your local sourcegraph instance via `https://sourcegraph.test:3443` (a fake domain with a self-signed certificate that's added to `/etc/hosts`).
 
@@ -46,4 +46,4 @@ Enter your Firefox master password here and proceed. See [this issue on GitHub](
 
 You might need to restart your web browsers in order for them to recognize the certificates.
 
-[< Previous](quickstart_4_initialize_database.md) | [Next >](quickstart_6_install_sg.md)
+[< Previous](quickstart_5_initialize_database.md) | [Next >](quickstart_7_start_server.md)

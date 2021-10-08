@@ -2,7 +2,7 @@
 
 This file documents how we test code at Sourcegraph.
 
-Related pages: [How to run tests](../how-to/testing.md) | [Testing Go code](languages/testing_go_code.md) | [Testing web code](testing_web_code.md)
+Related pages: [How to run tests](../how-to/testing.md) | [Testing Go code](languages/testing_go_code.md) | [Testing web code](testing_web_code.md) | [Continuous integration](continuous_integration.md)
 
 ## Philosophy
 
@@ -28,7 +28,7 @@ Typical reasons why a test may be flaky:
 - Unreliable test infrastructure (such as CI)
 - Reliance on third-party services that are inconsistent
 
-We do not tolerate flaky tests of any kind. Any engineer that sees a flaky test should immediately:
+**We do not tolerate flaky tests of any kind.** Any engineer that sees a flaky test in [continuous integration](./continuous_integration.md) should immediately:
 
 1. Open a PR to disable the flaky test.
 1. Open an issue to re-enable the flaky test (use the [Flaky Test template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=flaky_test.md&title=Flake%3A+%24TEST_NAME+disabled)), and assign it to the most likely owner, and add it to the current release milestone.

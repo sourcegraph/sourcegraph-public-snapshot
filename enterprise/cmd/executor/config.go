@@ -18,7 +18,6 @@ type Config struct {
 	env.BaseConfig
 
 	FrontendURL          string
-	FrontendUsername     string
 	FrontendPassword     string
 	QueueName            string
 	QueuePollInterval    time.Duration
@@ -38,7 +37,6 @@ type Config struct {
 
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
-	c.FrontendUsername = c.Get("EXECUTOR_FRONTEND_USERNAME", "", "The username supplied to the frontend.")
 	c.FrontendPassword = c.Get("EXECUTOR_FRONTEND_PASSWORD", "", "The password supplied to the frontend.")
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
@@ -131,7 +129,6 @@ func (c *Config) BaseClientOptions() apiclient.BaseClientOptions {
 func (c *Config) EndpointOptions() apiclient.EndpointOptions {
 	return apiclient.EndpointOptions{
 		URL:      c.FrontendURL,
-		Username: c.FrontendUsername,
 		Password: c.FrontendPassword,
 	}
 }

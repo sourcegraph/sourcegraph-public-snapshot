@@ -5,11 +5,10 @@ import { useHistory } from 'react-router'
 
 import { eventLogger } from '../tracking/eventLogger'
 
-import toastStyles from './Toast.module.scss'
+import radioStyles from './SurveyRatingRadio.module.scss'
 
 interface SurveyRatingRadio {
     ariaLabelledby?: string
-    className?: string
     score?: number
     onChange?: (score: number) => void
     openSurveyInNewTab?: boolean
@@ -37,7 +36,12 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
     }
 
     return (
-        <fieldset aria-labelledby={props.ariaLabelledby} className={props.className} onBlur={handleBlur}>
+        <fieldset
+            aria-labelledby={props.ariaLabelledby}
+            aria-describedby="survey-rating-scale"
+            className={radioStyles.scores}
+            onBlur={handleBlur}
+        >
             {range(0, 11).map(score => {
                 const pressed = score === props.score
                 const focused = score === focusedIndex
@@ -45,7 +49,7 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
                 return (
                     <label
                         key={score}
-                        className={classNames('btn btn-primary', toastStyles.ratingBtn, {
+                        className={classNames('btn btn-primary', radioStyles.ratingBtn, {
                             active: pressed,
                             focus: focused,
                         })}
@@ -56,13 +60,17 @@ export const SurveyRatingRadio: React.FunctionComponent<SurveyRatingRadio> = pro
                             value={score}
                             onChange={() => handleChange(score)}
                             onFocus={() => handleFocus(score)}
-                            className={toastStyles.ratingRadio}
+                            className={radioStyles.ratingRadio}
                         />
 
                         {score}
                     </label>
                 )
             })}
+            <div id="survey-rating-scale" className={radioStyles.ratingScale}>
+                <small>Not likely at all</small>
+                <small>Very likely</small>
+            </div>
         </fieldset>
     )
 }

@@ -137,7 +137,7 @@ export interface Completion {
 }
 
 interface BaseFilterDefinition {
-    alias?: string
+    alias?: keyof typeof AliasedFilterType
     description: string
     discreteValues?: (value: Literal | undefined, isSourcegraphDotCom?: boolean) => Completion[]
     suggestions?: SearchSuggestion['__typename']
@@ -189,7 +189,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
-        alias: 'unitl',
+        alias: 'until',
         description: 'Commits made before a certain date',
     },
     [FilterType.case]: {
@@ -275,7 +275,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
     [FilterType.rev]: {
-        alias: 'rev',
+        alias: 'revision',
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
         singular: true,
     },

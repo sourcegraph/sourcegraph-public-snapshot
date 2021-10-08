@@ -1,3 +1,4 @@
+import { useApolloClient } from '@apollo/client'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { timer } from 'rxjs'
@@ -15,15 +16,14 @@ import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
 
-import { deleteLsifIndex as defaultDeleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
 import { CodeIntelAssociatedUpload } from './CodeIntelAssociatedUpload'
 import { CodeIntelDeleteIndex } from './CodeIntelDeleteIndex'
 import { CodeIntelIndexMeta } from './CodeIntelIndexMeta'
 import { CodeIntelIndexTimeline } from './CodeIntelIndexTimeline'
+import { queryLisfIndex as defaultQueryLsifIndex, useDeleteLsifIndex } from './useLsifIndex'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
-    fetchLsifIndex?: typeof defaultFetchLsifIndex
-    deleteLsifIndex?: typeof defaultDeleteLsifIndex
+    queryLisfIndex?: typeof defaultQueryLsifIndex
     now?: () => Date
 }
 
@@ -38,29 +38,36 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     match: {
         params: { id },
     },
-    fetchLsifIndex = defaultFetchLsifIndex,
-    deleteLsifIndex = defaultDeleteLsifIndex,
+    queryLisfIndex = defaultQueryLsifIndex,
     telemetryService,
     now,
     history,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndex'), [telemetryService])
 
+    const apolloClient = useApolloClient()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
+    const { handleDeleteLsifIndex, deleteError } = useDeleteLsifIndex()
+
+    useEffect(() => {
+        if (deleteError) {
+            setDeletionOrError(deleteError)
+        }
+    }, [deleteError])
 
     const indexOrError = useObservable(
         useMemo(
             () =>
                 timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
                     concatMap(() =>
-                        fetchLsifIndex({ id }).pipe(
+                        queryLisfIndex(id, apolloClient).pipe(
                             catchError((error): [ErrorLike] => [asError(error)]),
                             repeatWhen(observable => observable.pipe(delay(REFRESH_INTERVAL_MS)))
                         )
                     ),
                     takeWhile(shouldReload, true)
                 ),
-            [id, fetchLsifIndex]
+            [id, queryLisfIndex, apolloClient]
         )
     )
 
@@ -77,7 +84,10 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
         setDeletionOrError('loading')
 
         try {
-            await deleteLsifIndex({ id }).toPromise()
+            await handleDeleteLsifIndex({
+                variables: { id },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            })
             setDeletionOrError('deleted')
             history.push({
                 state: {
@@ -94,7 +104,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                 },
             })
         }
-    }, [id, indexOrError, deleteLsifIndex, history])
+    }, [id, indexOrError, handleDeleteLsifIndex, history])
 
     return deletionOrError === 'deleted' ? (
         <Redirect to="." />

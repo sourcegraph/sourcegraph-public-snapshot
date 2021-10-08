@@ -211,8 +211,6 @@ export const queryLsifUploadsByRepository = (
         after: after ?? null,
     }
 
-    console.log('i am being called')
-
     return from(
         client.query<LsifUploadsForRepoResult, LsifUploadsForRepoVariables>({
             query: getDocumentNode(LSIF_UPLOAD_LIST_BY_REPO_ID),

@@ -19,7 +19,7 @@ Next: **create your first batch change!**
 
 > NOTE: **Make sure your local development environment is set up** by going through the "[Getting started](https://docs.sourcegraph.com/dev/getting-started)" guide.
 
-1. Since Batch Changes is an enterprise-only feature, make sure to start your local environment with `./enterprise/dev/start.sh`.
+1. Since Batch Changes is an enterprise-only feature, make sure to start your local environment with `sg start` (which defaults to `sg start enterprise`).
 1. Go through the [Quickstart for Batch Changes](https://docs.sourcegraph.com/batch_changes/quickstart) to create a batch change in your local environment. See "[Testing repositories](#testing-repositories)" for a list of repositories in which you can safely publish changesets.
 1. Now combine what you just did with some background information by reading the following:
 
