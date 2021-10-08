@@ -7,6 +7,7 @@ import {
 } from '@sourcegraph/react-loading-spinner'
 
 interface LoadingSpinnerProps extends ReactLoadingSpinnerProps {
+    /** Determine whether the spinner should be besides any other element or not */
     inline?: boolean
 }
 

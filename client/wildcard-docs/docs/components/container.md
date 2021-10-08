@@ -1,88 +1,42 @@
 ---
-sidebar_position: 2
+id: "Container"
+title: "Container"
+sidebar_label: "Container"
+sidebar_position: 0
+custom_edit_url: null
 ---
 
-# Container
+• **Container**: `React.FunctionComponent`<`Props`\>
 
-Let's translate `docs/intro.md` to French.
+## Overview
 
-## Configure i18n
+A container wrapper. Used for grouping content together.
 
-Modify `docusaurus.config.js` to add support for the `fr` locale:
+#### Defined in
 
-```js title="docusaurus.config.js"
-module.exports = {
-  i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'fr'],
-  },
-};
+[components/Container/Container.tsx:11](https://github.com/sourcegraph/sourcegraph/blob/49e75f130e/client/wildcard/src/components/Container/Container.tsx#L11)
+
+## Usage
+```tsx
+import { Container } from '@sourcegraph/wildcard'
+
+<Container>
+  <Form>
+    <Input type="text">
+  </Form>
+</Container>
 ```
 
-## Translate a doc
+## Props
+___
 
-Copy the `docs/intro.md` file to the `i18n/fr` folder:
+### outline
 
-```bash
-mkdir -p i18n/fr/docusaurus-plugin-content-docs/current/
+• `Optional` **className**: `string`
 
-cp docs/intro.md i18n/fr/docusaurus-plugin-content-docs/current/intro.md
-```
 
-Translate `i18n/fr/docusaurus-plugin-content-docs/current/intro.md` in French.
+#### Defined in
 
-## Start your localized site
+[client/wildcard/src/components/Button/Button.tsx:15](https://github.com/sourcegraph/sourcegraph/blob/49e75f130e/client/wildcard/src/components/Button/Button.tsx#L15)
 
-Start your site on the French locale:
-
-```bash
-npm run start -- --locale fr
-```
-
-Your localized site is accessible at `http://localhost:3000/fr/` and the `Getting Started` page is translated.
-
-:::caution
-
-In development, you can only use one locale at a same time.
-
-:::
-
-## Add a Locale Dropdown
-
-To navigate seamlessly across languages, add a locale dropdown.
-
-Modify the `docusaurus.config.js` file:
-
-```js title="docusaurus.config.js"
-module.exports = {
-  themeConfig: {
-    navbar: {
-      items: [
-        // highlight-start
-        {
-          type: 'localeDropdown',
-        },
-        // highlight-end
-      ],
-    },
-  },
-};
-```
-
-The locale dropdown now appears in your navbar:
-
-![Locale Dropdown](/img/tutorial/localeDropdown.png)
-
-## Build your localized site
-
-Build your site for a specific locale:
-
-```bash
-npm run build -- --locale fr
-```
-
-Or build your site to include all the locales at once:
-
-```bash
-npm run build
-```
+___

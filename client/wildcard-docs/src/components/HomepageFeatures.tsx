@@ -7,7 +7,6 @@
 import clsx from 'clsx'
 import React from 'react'
 
-import { DocGen } from './DocGen'
 import styles from './HomepageFeatures.module.css'
 
 interface FeatureItem {
@@ -49,7 +48,7 @@ const FeatureList: FeatureItem[] = [
     },
 ]
 
-function Feature({ title, image, description }: FeatureItem) {
+function Feature({ title, image, description }: FeatureItem): JSX.Element {
     return (
         <div className={clsx('col col--4')}>
             <div className="text--center">
@@ -59,17 +58,18 @@ function Feature({ title, image, description }: FeatureItem) {
                 <h3>{title}</h3>
                 <p>{description}</p>
             </div>
-            {/* <DocGen /> */}
         </div>
     )
 }
 
+// eslint-disable-next-line import/no-default-export
 export default function HomepageFeatures(): JSX.Element {
     return (
         <section className={styles.features}>
             <div className="container">
                 <div className="row">
                     {FeatureList.map((props, index) => (
+                        // eslint-disable-next-line react/no-array-index-key
                         <Feature key={index} {...props} />
                     ))}
                 </div>

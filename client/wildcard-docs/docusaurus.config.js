@@ -10,21 +10,23 @@ const lightCodeTheme = require('prism-react-renderer/themes/github');
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/logo.svg',
   organizationName: 'Sourcegraph', // Usually your GitHub org/user name.
   projectName: 'wildcard-docs', // Usually your repo name.
-  plugins: [
-    [
-      'docusaurus-plugin-typedoc',
+  // plugins: [
+  //   [
+  //     'docusaurus-plugin-typedoc',
 
-      // Plugin / TypeDoc options
-      {
-        entryPoints: '../wildcard/src/index.ts',
-        tsconfig: '../wildcard/tsconfig.json',
-        entryPointStrategy: 'Expand'
-      },
-    ],
-  ],
+  //     // Plugin / TypeDoc options
+  //     {
+  //       entryPoints: '../wildcard/src/index.ts',
+  //       tsconfig: '../wildcard/tsconfig.json',
+  //       entryPointStrategy: 'Expand',
+  //       exclude: '../wildcard/+(.test|.story|.module.scss).tsx',
+  //       allReflectionsHaveOwnDocument: true
+  //     },
+  //   ],
+  // ],
   presets: [
     [
       '@docusaurus/preset-classic',
@@ -32,15 +34,11 @@ const lightCodeTheme = require('prism-react-renderer/themes/github');
       ({
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          // Please change this to your repo.
-          editUrl: 'https://github.com/facebook/docusaurus/edit/main/website/',
+          editUrl: 'https://github.com/sourcegraph/sourcegraph/wildcard-docs/edit/main/website/',
+          path: './docs',
+          routeBasePath: '/'
         },
-        blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
-          editUrl:
-            'https://github.com/facebook/docusaurus/edit/main/website/blog/',
-        },
+        blog: false,
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
