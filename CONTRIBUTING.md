@@ -17,10 +17,10 @@ All interactions with the Sourcegraph open source project are governed by the
 
 1. Clone the repo: git clone https://github.com/sourcegraph/sourcegraph/ 
 2. Make sure your node environment is running version 16.x.x.
-3. Please sign our [contributor license agreement](https://docs.google.com/forms/d/1Z8zQHZs1ycfOCaR8N43S2lalgsmTTeKoUizrc93xk6M/edit?usp=drive_web). Once you have already signed it, you will have permission to merge your contributions after an appropriate review and approval. 
-If one or more people ask for the same issue, it will be assigned to the first person who asked.
-4. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
-5. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
+3. **IMPORTANT:** Once you have a Pull Request ready to review, add the user `natectang` as a reviewer. Then 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our Bot. Once you sign, your pull request will be ready for review.
+4. If one or more people ask for the same issue, it will be assigned to the first person who asked.
+5. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
+6. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
 
 ## Relevant development docs
 
