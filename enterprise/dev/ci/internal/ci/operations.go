@@ -489,20 +489,6 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 // specified by "app" and "tag".
 func trivyScanCandidateImage(app, tag string) operations.Operation {
 	image := images.DevRegistryImage(app, tag)
-	trivyArgs := []string{
-		// fail the step if there is a vulnerability
-		"--exit-code",
-		"1",
-
-		// we can't do anything if there is no upstream solution
-		"--ignore-unfixed",
-
-		// we'll only take action on higher severity CVE's
-		"--severity",
-		"HIGH,CRITICAL",
-
-		app,
-	}
 
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
@@ -514,9 +500,9 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
 
 			bk.Env("IMAGE", app),
-			bk.Env("APP", app),
-			bk.Cmd("./dev/ci/trivy-upload.sh"),
-			bk.Cmd(fmt.Sprintf("./dev/ci/trivy-scan.sh %s", strings.Join(trivyArgs, " "))),
+
+			bk.Cmd("./dev/ci/trivy-upload-all.sh"),
+			bk.Cmd("./dev/ci/trivy-scan-high-critical.sh"),
 		}
 
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)

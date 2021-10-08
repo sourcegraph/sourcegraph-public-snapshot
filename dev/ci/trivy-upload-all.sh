@@ -60,7 +60,7 @@ ARGS=(
   "ref=refs/heads/${BUILDKITE_BRANCH}"
 
   "--field"
-  "checkout_uri=${APP}"
+  "checkout_uri=${IMAGE}"
 
   "--field"
   "started_at=${DATE}"
