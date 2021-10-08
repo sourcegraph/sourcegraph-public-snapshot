@@ -91,9 +91,6 @@ type bigQueryEvent struct {
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
 	PublicArgument  string  `json:"public_argument"`
-	DeviceID        *string `json:"device_id,omitempty"`
-	EventID         *int32  `json:"event_id,omitempty"`
-	InsertID        *string `json:"insert_id,omitempty"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -129,9 +126,6 @@ func publishSourcegraphDotComEvent(args Event) error {
 		FeatureFlags:    string(featureFlagJSON),
 		CohortID:        args.CohortID,
 		PublicArgument:  string(args.PublicArgument),
-		DeviceID:        args.DeviceID,
-		EventID:         args.EventID,
-		InsertID:        args.InsertID,
 	})
 	if err != nil {
 		return err
