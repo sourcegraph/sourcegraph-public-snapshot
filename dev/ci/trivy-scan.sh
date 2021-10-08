@@ -2,6 +2,12 @@
 
 set -euo pipefail
 
+OUTPUT=$(mktemp -d -t trivy_XXXX)
+cleanup() {
+  rm -rf "$OUTPUT"
+}
+trap cleanup EXIT
+
 export GITHUB_TOKEN="${GH_TOKEN}"
 
 # do not move this "set -x" above the GITHUB_TOKEN
@@ -9,4 +15,8 @@ export GITHUB_TOKEN="${GH_TOKEN}"
 # inside of CI's logs
 set -x
 
-trivy image "$@"
+ANNOTATION_FILE="${OUTPUT}/annotation.md"
+
+if ! trivy image "$@" >"${ANNOTATION_FILE}"; then
+  buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
+fi
