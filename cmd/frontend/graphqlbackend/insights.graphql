@@ -193,6 +193,11 @@ extend type Mutation {
     Delete a dashboard. Any views that would become dangling will be deleted.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
+
+    """
+    Associate an existing insight view with this dashboard.
+    """
+    addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightDashboardPayload!
 }
 
 """
@@ -252,4 +257,19 @@ type InsightView implements Node {
     The View ID.
     """
     id: ID!
+}
+
+"""
+Response wrapper object for insight dashboard mutations.
+"""
+type InsightDashboardPayload {
+    dashboard: InsightDashboard!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input AddInsightViewToDashboardInput {
+    insightViewId: ID!
+    dashboardId: ID!
 }

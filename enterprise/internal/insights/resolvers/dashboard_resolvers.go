@@ -24,6 +24,7 @@ var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionR
 var _ graphqlbackend.InsightDashboardResolver = &insightDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
+var _ graphqlbackend.InsightDashboardPayloadResolver = &insightDashboardPayloadResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
@@ -41,7 +42,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	d.once.Do(func() {
 		args := store.DashboardQueryArgs{}
 		if d.args.After != nil {
-			afterID, err := unmarshal(graphql.ID(*d.args.After))
+			afterID, err := unmarshalDashboardID(graphql.ID(*d.args.After))
 			if err != nil {
 				d.err = errors.Wrap(err, "unmarshalID")
 				return
@@ -126,7 +127,7 @@ func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Contex
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
-	dashboardID, err := unmarshal(args.Id)
+	dashboardID, err := unmarshalDashboardID(args.Id)
 	if err != nil {
 		return emptyResponse, err
 	}
@@ -151,4 +152,35 @@ func (s *stubInsightViewResolver) ID() graphql.ID {
 
 func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
 	return true
+}
+
+func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, input graphqlbackend.AddInsightViewToDashboardInput) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+	var viewID string
+	err := relay.UnmarshalSpec(input.InsightViewID, &viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+	}
+	dashboardID, err := unmarshalDashboardID(input.DashboardID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+	}
+
+	err = r.dashboardStore.AssociateViewsByViewIds(ctx, int(dashboardID.Arg), []string{viewID})
+	if err != nil {
+		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
+	}
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+	if err != nil || len(dashboards) < 1 {
+		return nil, errors.Wrap(err, "GetDashboards")
+	}
+	return &insightDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+}
+
+type insightDashboardPayloadResolver struct {
+	dashboard *types.Dashboard
+}
+
+func (i *insightDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightDashboardResolver, error) {
+	id := newRealDashboardID(int64(i.dashboard.ID))
+	return &insightDashboardResolver{dashboard: i.dashboard, id: &id}, nil
 }

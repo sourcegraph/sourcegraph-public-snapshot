@@ -20,6 +20,7 @@ type InsightsResolver interface {
 
 	// Mutations
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
+	AddInsightViewToDashboard(ctx context.Context, input AddInsightViewToDashboardInput) (InsightDashboardPayloadResolver, error)
 }
 
 type InsightsArgs struct {
@@ -103,4 +104,13 @@ type InsightViewResolver interface {
 	// ToXX type guard methods, we need _something_ that makes this interface
 	// not match any other Node implementing type.
 	VeryUniqueResolver() bool
+}
+
+type InsightDashboardPayloadResolver interface {
+	Dashboard(ctx context.Context) (InsightDashboardResolver, error)
+}
+
+type AddInsightViewToDashboardInput struct {
+	InsightViewID graphql.ID
+	DashboardID   graphql.ID
 }
