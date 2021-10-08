@@ -361,7 +361,8 @@ export PGSSLMODE=disable`,
 
 var codeInstructions = []instruction{
 	{
-		prompt:  `Run the following command in a folder where you want to keep a copy of the code. Command will create a new sub-folder (sourcegraph) in this folder.`,
+		prompt:  `Cloning the code`,
+		comment: `Run the following command in a folder where you want to keep a copy of the code. Command will create a new sub-folder (sourcegraph) in this folder.`,
 		command: `git clone https://github.com/sourcegraph/sourcegraph.git`,
 	},
 	{
@@ -369,9 +370,11 @@ var codeInstructions = []instruction{
 		readsBool: "employee",
 	},
 	{
-		prompt: `In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: sourcegraph/dev-private. It contains convenient preconfigured settings and code host connections.`,
-		comment: `It needs to be cloned into the same folder as sourcegraph/sourcegraph, so they sit alongside each other. To illustrate:
-/dir
+		prompt: `Getting access to private resources`,
+		comment: `In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: sourcegraph/dev-private. It contains convenient preconfigured settings and code host connections.
+It needs to be cloned into the same folder as sourcegraph/sourcegraph, so they sit alongside each other.
+To illustrate:
+ /dir
  |-- dev-private
  +-- sourcegraph
 NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-private as the secrets are updated from time to time.`,
@@ -382,26 +385,31 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 
 var httpReverseProxyInstructions = []instruction{
 	{
-		prompt: `Sourcegraph's development environment ships with a Caddy 2 HTTPS reverse proxy that allows you to access your local sourcegraph instance via https://sourcegraph.test:3443 (a fake domain with a self-signed certificate that's added to /etc/hosts).
+		prompt: `Making sourcegraph.test accessible`,
+		comment: `Sourcegraph's development environment ships with a Caddy 2 HTTPS reverse proxy that allows you to access your local sourcegraph instance via https://sourcegraph.test:3443 (a fake domain with a self-signed certificate that's added to /etc/hosts).
 
 If you'd like Sourcegraph to be accessible under https://sourcegraph.test (port 443) instead, you can set up authbind and set the environment variable SOURCEGRAPH_HTTPS_PORT=443.
 
- Prerequisites
+Prerequisites:
 In order to configure the HTTPS reverse-proxy, you'll need to edit /etc/hosts and initialize Caddy 2.
 
- Add sourcegraph.test to /etc/hosts
-sourcegraph.test needs to be added to /etc/hosts as an alias to 127.0.0.1. There are two main ways of accomplishing this:
+Add sourcegraph.test to /etc/hosts:
+sourcegraph.test needs to be added to /etc/hosts as an alias to 127.0.0.1.
 
-Manually append 127.0.0.1 sourcegraph.test to /etc/hosts
-Use the provided ./dev/add_https_domain_to_hosts.sh convenience script (sudo may be required).`,
+There are two main ways of accomplishing this:
+- Manually append 127.0.0.1 sourcegraph.test to /etc/hosts
+- Or use the provided ./dev/add_https_domain_to_hosts.sh convenience script (sudo may be required).`,
 		command: `./dev/add_https_domain_to_hosts.sh`,
 	},
 	{
-		prompt: `Initialize Caddy 2
-Caddy 2 automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them. The first time that Caddy runs, it needs root/sudo permissions to add its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password if prompted:`,
-		comment: `(firefox users) If you are using Firefox and have a master password set, the following prompt will come up first:
-Enter Password or Pin for "NSS Certificate DB":
-Enter your Firefox master password here and proceed.
+		prompt: `Initialize Caddy 2`,
+		comment: `Caddy 2 automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them.
+The first time that Caddy runs, it needs root/sudo permissions to add its keys to your system's certificate store.
+You can get this out the way after installing Caddy 2 by running the following command and entering your password if prompted:
+
+(firefox users) If you are using Firefox and have a master password set, the following prompt will come up first:
+  Enter Password or Pin for "NSS Certificate DB":
+  Enter your Firefox master password here and proceed.
 
 See this Github issue for more informations: https://github.com/FiloSottile/mkcert/issues/50
 `,
