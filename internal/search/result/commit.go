@@ -17,6 +17,7 @@ type CommitMatch struct {
 	Repo           types.RepoName
 	Refs           []string
 	SourceRefs     []string
+	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
 	MessagePreview *HighlightedString
 	DiffPreview    *HighlightedString
 	Body           HighlightedString
