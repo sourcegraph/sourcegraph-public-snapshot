@@ -20,7 +20,7 @@ All interactions with the Sourcegraph open source project are governed by the
 3. In case you want to contribute, please sign our [contributor license agreement](https://docs.google.com/forms/d/1Z8zQHZs1ycfOCaR8N43S2lalgsmTTeKoUizrc93xk6M/edit?usp=drive_web). Once you have already signed it, you will have permission to merge your contributions after an appropriate review and approval. 
 If one or more people ask for the same issue, the first person asking for it will have the priority for the assignation.
 4. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
-5. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please take in mind time zones differences.
+5. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
 
 ## Relevant development docs
 
