@@ -508,10 +508,13 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 		cmds := []bk.StepOpt{
 			bk.DependsOn(candidateImageStepKey(app)),
 
-			bk.Env("IMAGE", image),
-			bk.Env("APP", app),
-
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+
+			// have trivy use a shorter name in its output
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
+
+			bk.Env("IMAGE", app),
+			bk.Env("APP", app),
 			bk.Cmd("./dev/ci/trivy-upload.sh"),
 			bk.Cmd(fmt.Sprintf("./dev/ci/trivy-scan.sh %s", strings.Join(trivyArgs, " "))),
 		}

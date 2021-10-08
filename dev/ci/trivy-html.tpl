@@ -28,9 +28,11 @@
         <td class="pkg-version">{{ escapeXML .InstalledVersion }}</td>
         <td>{{ escapeXML .FixedVersion }}</td>
         <td class="links" data-more-links="off">
+          <ul>
           {{- range .Vulnerability.References }}
-          <a href={{ escapeXML . | printf "%q" }}>{{ escapeXML . }}</a>
+            <li><a href={{ escapeXML . | printf "%q" }}>{{ escapeXML . }}</a></li>
           {{- end }}
+          </ul>
         </td>
       </tr>
         {{- end }}
