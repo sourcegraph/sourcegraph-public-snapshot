@@ -67,7 +67,24 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
             </div>
             <div className="text-muted">{copyText}</div>
 
-            <label className="d-flex align-items-center mt-2">
+            <div className="mt-2">
+                <Link
+                    className={classNames('btn btn-primary', styles.searchContextCtaPromptButton)}
+                    to={linkTo}
+                    onClick={onClick}
+                >
+                    {buttonText}
+                </Link>
+                <button
+                    type="button"
+                    className={classNames('btn btn-secondary ml-2', styles.searchContextCtaPromptButton)}
+                    onClick={onDismissClick}
+                >
+                    Maybe later
+                </button>
+            </div>
+
+            <label className="d-flex align-items-center justify-content-end mt-3 mb-0">
                 <input
                     type="checkbox"
                     className="mr-2"
@@ -76,21 +93,6 @@ export const SearchContextCtaPrompt: React.FunctionComponent<SearchContextCtaPro
                 />
                 Don't show this again
             </label>
-
-            <Link
-                className={classNames('btn btn-primary', styles.searchContextCtaPromptButton)}
-                to={linkTo}
-                onClick={onClick}
-            >
-                {buttonText}
-            </Link>
-            <button
-                type="button"
-                className={classNames('btn btn-secondary ml-2', styles.searchContextCtaPromptButton)}
-                onClick={onDismissClick}
-            >
-                Maybe later
-            </button>
         </div>
     )
 }
