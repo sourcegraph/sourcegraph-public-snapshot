@@ -15,9 +15,15 @@ export GITHUB_TOKEN="${GH_TOKEN}"
 # inside of CI's logs
 set -x
 
-ANNOTATION_FILE="${OUTPUT}/annotation.md"
+# download html template
+HTML_TEMPLATE_FILE="${OUTPUT}/html.tpl"
 
-if ! trivy image -o "${ANNOTATION_FILE}" "$@"; then
+TRIVY_VERSION="${TRIVY_VERSION:-0.20.0}"
+curl "https://raw.githubusercontent.com/aquasecurity/trivy/v${TRIVY_VERSION}/contrib/html.tpl" >"${HTML_TEMPLATE_FILE}"
+
+ANNOTATION_FILE="${OUTPUT}/annotation.html"
+
+if ! trivy image --format template --template "@${OUTPUT}/html.tpl" -o "${ANNOTATION_FILE}" "$@"; then
   buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
   exit 1
 fi
