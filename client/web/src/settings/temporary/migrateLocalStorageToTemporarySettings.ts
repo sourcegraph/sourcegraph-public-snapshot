@@ -16,7 +16,7 @@ const migrations: Migration[] = [
         type: 'boolean',
     },
     {
-        localStorageKey: 'daysActiveCount',
+        localStorageKey: 'days-active-count',
         temporarySettingsKey: 'user.daysActiveCount',
         type: 'number',
     },
