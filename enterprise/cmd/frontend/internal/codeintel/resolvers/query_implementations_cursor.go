@@ -7,9 +7,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-// referencesCursor stores (enough of) the state of a previous References request used to
+// implementationsCursor stores (enough of) the state of a previous Implementations request used to
 // calculate the offset into the result set to be returned by the current request.
-type referencesCursor struct {
+type implementationsCursor struct {
 	AdjustedUploads     []cursorAdjustedUpload         `json:"adjustedUploads"`
 	DefinitionUploadIDs []int                          `json:"definitionUploadIDs"`
 	OrderedMonikers     []precise.QualifiedMonikerData `json:"orderedMonikers"`
@@ -18,25 +18,25 @@ type referencesCursor struct {
 	RemoteCursor        remoteCursor                   `json:"remoteCursor"`
 }
 
-// decodeReferencesCursor is the inverse of encodeCursor. If the given encoded string is empty, then
+// decodeCursor is the inverse of encodeCursor. If the given encoded string is empty, then
 // a fresh cursor is returned.
-func decodeReferencesCursor(rawEncoded string) (referencesCursor, error) {
+func decodeImplementationsCursor(rawEncoded string) (implementationsCursor, error) {
 	if rawEncoded == "" {
-		return referencesCursor{Phase: "local"}, nil
+		return implementationsCursor{Phase: "local"}, nil
 	}
 
 	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
 	if err != nil {
-		return referencesCursor{}, err
+		return implementationsCursor{}, err
 	}
 
-	var cursor referencesCursor
+	var cursor implementationsCursor
 	err = json.Unmarshal(raw, &cursor)
 	return cursor, err
 }
 
-// encodeReferencesCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
-func encodeReferencesCursor(cursor referencesCursor) string {
+// encodeCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
+func encodeImplementationsCursor(cursor implementationsCursor) string {
 	rawEncoded, _ := json.Marshal(cursor)
 	return base64.RawURLEncoding.EncodeToString(rawEncoded)
 }

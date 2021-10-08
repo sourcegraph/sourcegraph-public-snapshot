@@ -36,7 +36,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// We use the cursor state track offsets with the result set and cache initial data that
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
-	cursor, err := decodeCursor(rawCursor)
+	cursor, err := decodeImplementationsCursor(rawCursor)
 	if err != nil {
 		return nil, "", errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
@@ -121,7 +121,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	fmt.Println("Implementations: len(locations)", len(locations))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
-	// locations within the repository the user is browsing so that it appears all references
+	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
 	adjustedLocations, err := r.adjustLocations(ctx, locations)
@@ -132,7 +132,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 
 	nextCursor := ""
 	if cursor.Phase != "done" {
-		nextCursor = encodeCursor(cursor)
+		nextCursor = encodeImplementationsCursor(cursor)
 	}
 
 	return adjustedLocations, nextCursor, nil

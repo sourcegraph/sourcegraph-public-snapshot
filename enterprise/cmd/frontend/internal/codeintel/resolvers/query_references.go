@@ -39,7 +39,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// We use the cursor state track offsets with the result set and cache initial data that
 	// is used to resolve each page. This cursor will be modified in-place to become the
 	// cursor used to fetch the subsequent page of results in this result set.
-	cursor, err := decodeCursor(rawCursor)
+	cursor, err := decodeReferencesCursor(rawCursor)
 	if err != nil {
 		return nil, "", errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
 	}
@@ -139,7 +139,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 
 	nextCursor := ""
 	if cursor.Phase != "done" {
-		nextCursor = encodeCursor(cursor)
+		nextCursor = encodeReferencesCursor(cursor)
 	}
 
 	return adjustedLocations, nextCursor, nil
