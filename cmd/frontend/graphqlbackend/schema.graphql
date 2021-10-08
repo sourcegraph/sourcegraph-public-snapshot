@@ -1319,10 +1319,10 @@ type Query {
     ): Namespace
 
     """
-    Repos affiliated with the user & code hosts, these repos are not necessarily synced, but ones that
-    the configured code hosts are able to see.
+    Repos affiliated with the namespace (a user or an organization) & code hosts, these repos are not necessarily synced,
+    but ones that the configured code hosts are able to see.
     """
-    affiliatedRepositories(user: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
+    affiliatedRepositories(namespace: ID!, codeHost: ID, query: String): CodeHostRepositoryConnection!
 
     """
     Returns true if any of the code hosts supplied are syncing now or within "seconds" from now.
