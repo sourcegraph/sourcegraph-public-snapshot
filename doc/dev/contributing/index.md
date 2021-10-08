@@ -5,5 +5,5 @@
 
 ## Project setup and CI checks
 
-- [Frontend issue](frontend_contribution.md).
+- For [frontend issues](frontend_contribution.md).
 - For [backend issues](../getting-started/index.md).
