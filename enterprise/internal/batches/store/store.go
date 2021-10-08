@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/dineshappavoo/basex"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -459,4 +460,9 @@ func (o LimitOpts) ToDB() string {
 		limitClause = fmt.Sprintf("LIMIT %d", o.DBLimit())
 	}
 	return limitClause
+}
+
+func isUniqueConstraintViolation(err error, constraintName string) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
 }
