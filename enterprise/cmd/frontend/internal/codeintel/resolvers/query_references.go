@@ -227,12 +227,6 @@ func (r *queryResolver) definitionUploadIDsFromCursor(ctx context.Context, adjus
 		}
 	}
 
-	// Make definition indexes the first batch we'll process during our "remote" phase moniker search.
-	// We do this instead of prepending these elements to the first batch to keep batch sizes fairly
-	// similar on each page of results.
-
-	cursor.BatchIDs = definitionUploadIDs
-
 	// Stash the definition upload IDs and set a flag indicating their presence. We set a flag explicitly
 	// to avoid ambiguity between no data in the cursor and an empty list in the cursor.
 
