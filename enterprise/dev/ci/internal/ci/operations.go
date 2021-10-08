@@ -501,7 +501,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 		"--severity",
 		"HIGH,CRITICAL",
 
-		image,
+		app,
 	}
 
 	return func(pipeline *bk.Pipeline) {
