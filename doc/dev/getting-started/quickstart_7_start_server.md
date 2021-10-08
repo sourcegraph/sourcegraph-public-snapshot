@@ -66,4 +66,4 @@ sg start monitoring
 ```
 
 <!-- omit in toc -->
-[< Previous](quickstart_6_install_sg.md) | [Next >](quickstart_8_additional_resources.md)
+[< Previous](quickstart_6_configure_https_reverse_proxy.md) | [Next >](quickstart_8_additional_resources.md)

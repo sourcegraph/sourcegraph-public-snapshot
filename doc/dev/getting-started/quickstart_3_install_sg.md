@@ -1,4 +1,4 @@
-# Quickstart step 6: Install `sg`
+# Quickstart step 3: Install `sg`
 
 At Sourcegraph we use [`sg`](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg), the Sourcegraph developer tool, to manage our local developer environment.
 
@@ -25,4 +25,4 @@ To install `sg`, do the following:
 See the [`sg` README](https://github.com/sourcegraph/sourcegraph/tree/main/dev/sg) for more information or ask in the `#dev-experience` Slack channel.
 
 <!-- omit in toc -->
-[< Previous](quickstart_5_configure_https_reverse_proxy.md) | [Next >](quickstart_7_start_server.md)
+[< Previous](quickstart_2_clone_repository.md) | [Next >](quickstart_4_start_docker.md)

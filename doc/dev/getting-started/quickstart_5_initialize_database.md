@@ -1,4 +1,4 @@
-# Quickstart step 4: Initialize your database
+# Quickstart step 5: Initialize your database
 
 ## With Docker
 
@@ -80,4 +80,4 @@ For more information about data storage, [read our full PostgreSQL page](../back
 
 Migrations are applied automatically.
 
-[< Previous](quickstart_3_start_docker.md) | [Next >](quickstart_5_configure_https_reverse_proxy.md)
+[< Previous](quickstart_4_start_docker.md) | [Next >](quickstart_6_configure_https_reverse_proxy.md)
