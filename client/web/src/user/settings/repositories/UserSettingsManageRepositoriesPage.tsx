@@ -197,7 +197,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const fetchAffiliatedRepos = useCallback(
         async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
             listAffiliatedRepositories({
-                user: authenticatedUser.id,
+                namespace: authenticatedUser.id,
                 codeHost: null,
                 query: null,
             })
