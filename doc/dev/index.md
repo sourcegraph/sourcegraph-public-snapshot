@@ -20,50 +20,6 @@ A hands-on introduction for setting up your local development environment.
 - [Step 7: Start the server](getting-started/quickstart_7_start_server.md)
 - [Step 8: Additional resources](getting-started/quickstart_8_additional_resources.md)
 
-## [How-to guides](how-to/index.md)
-
-Guides to help with troubleshooting, configuring test instances, debugging, and more.
-
-### Local development
-
-- [How to debug live code](how-to/debug_live_code.md)
-- [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
-- [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
-- [Use `golangci-lint`](how-to/use-golangci-lint.md)
-
-### New features
-
-- [How to add support for a language](how-to/add_support_for_a_language.md)
-- [How to use feature flags](how-to/use_feature_flags.md)
-
-### [Troubleshooting](how-to/troubleshooting_local_development.md)
-
-- [Problems with node_modules or Javascript packages](how-to/troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
-- [dial tcp 127.0.0.1:3090: connect: connection refused](how-to/troubleshooting_local_development.md#dial-tcp-1270013090-connect-connection-refused)
-- [Database migration failures](how-to/troubleshooting_local_development.md#database-migration-failures)
-- [Internal Server Error](how-to/troubleshooting_local_development.md#internal-server-error)
-- [Increase maximum available file descriptors.](how-to/troubleshooting_local_development.md#increase-maximum-available-file-descriptors)
-- [Caddy 2 certificate problems](how-to/troubleshooting_local_development.md#caddy-2-certificate-problems)
-- [Running out of disk space](how-to/troubleshooting_local_development.md#running-out-of-disk-space)
-- [Certificate expiry](how-to/troubleshooting_local_development.md#certificate-expiry)
-- [CPU/RAM/bandwidth/battery usage](how-to/troubleshooting_local_development.md#cpurambandwidthbattery-usage)
-- [Permission errors for Grafana and Prometheus](how-to/troubleshooting_local_development.md#permission-errors-for-grafana-and-prometheus-containers)
-
-### Implementing Sourcegraph
-
-- [Developing the product documentation](how-to/documentation_implementation.md)
-- [Observability](background-information/observability/index.md)
-  - [How to find monitoring](how-to/find_monitoring.md)
-  - [How to add monitoring](how-to/add_monitoring.md)
-  - [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
-
-### Testing Sourcegraph & CI
-
-- [How to write and run tests](how-to/testing.md)
-- [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
-- [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
-- [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
-
 ## [Background information](background-information/index.md)
 
 Clarification and discussion about key concepts, architecture, and development stack.
@@ -141,3 +97,48 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Code reviews](background-information/code_reviews.md)
 - [Open source FAQ](https://about.sourcegraph.com/community/faq)
 - [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
+
+## [How-to guides](how-to/index.md)
+
+Guides to help with troubleshooting, configuring test instances, debugging, and more.
+
+### Local development
+
+- [How to debug live code](how-to/debug_live_code.md)
+- [Set up local development with Zoekt and Sourcegraph](how-to/zoekt_local_dev.md)
+- [Ignoring editor config files in Git](how-to/ignoring_editor_config_files.md)
+- [Use `golangci-lint`](how-to/use-golangci-lint.md)
+
+### New features
+
+- [How to add support for a language](how-to/add_support_for_a_language.md)
+- [How to use feature flags](how-to/use_feature_flags.md)
+
+### [Troubleshooting](how-to/troubleshooting_local_development.md)
+
+- [Problems with node_modules or Javascript packages](how-to/troubleshooting_local_development.md#problems-with-nodemodules-or-javascript-packages)
+- [dial tcp 127.0.0.1:3090: connect: connection refused](how-to/troubleshooting_local_development.md#dial-tcp-1270013090-connect-connection-refused)
+- [Database migration failures](how-to/troubleshooting_local_development.md#database-migration-failures)
+- [Internal Server Error](how-to/troubleshooting_local_development.md#internal-server-error)
+- [Increase maximum available file descriptors.](how-to/troubleshooting_local_development.md#increase-maximum-available-file-descriptors)
+- [Caddy 2 certificate problems](how-to/troubleshooting_local_development.md#caddy-2-certificate-problems)
+- [Running out of disk space](how-to/troubleshooting_local_development.md#running-out-of-disk-space)
+- [Certificate expiry](how-to/troubleshooting_local_development.md#certificate-expiry)
+- [CPU/RAM/bandwidth/battery usage](how-to/troubleshooting_local_development.md#cpurambandwidthbattery-usage)
+- [Permission errors for Grafana and Prometheus](how-to/troubleshooting_local_development.md#permission-errors-for-grafana-and-prometheus-containers)
+
+### Implementing Sourcegraph
+
+- [Developing the product documentation](how-to/documentation_implementation.md)
+- [Observability](background-information/observability/index.md)
+  - [How to find monitoring](how-to/find_monitoring.md)
+  - [How to add monitoring](how-to/add_monitoring.md)
+  - [Set up local Sourcegraph monitoring development](how-to/monitoring_local_dev.md)
+
+### Testing Sourcegraph & CI
+
+- [How to write and run tests](how-to/testing.md)
+- [Configure a test instance of Phabricator and Gitolite](how-to/configure_phabricator_gitolite.md)
+- [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
+- [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
+
