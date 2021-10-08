@@ -990,3 +990,34 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 	return res.Rev, nil
 }
+
+func (c *Client) MigrateRepo(ctx context.Context, repo api.RepoName) error {
+	cloneRepo := func() bool {
+		resp, err := c.do(ctx, repo, "GET", fmt.Sprintf("git/%s", string(repo)), nil)
+		if err != nil {
+			return false
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			return true
+		}
+
+		return false
+	}
+
+	retries := 3
+	for retries > 0 {
+		if cloneRepo() {
+			break
+		}
+
+		retries--
+	}
+
+	// We exhausted our quota of retries without a succesful clone.
+	if retries == 0 {
+		return errors.New("max retries exceeded")
+	}
+
+	return nil
+}
