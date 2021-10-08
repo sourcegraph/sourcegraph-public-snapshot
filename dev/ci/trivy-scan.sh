@@ -17,7 +17,7 @@ set -x
 
 ANNOTATION_FILE="${OUTPUT}/annotation.md"
 
-if ! trivy image "$@" -o "${ANNOTATION_FILE}"; then
+if ! trivy image -o "${ANNOTATION_FILE}" "$@"; then
   buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
   exit 1
 fi
