@@ -203,7 +203,7 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 // The upload records returned from the database, if any, are also returned from this method to help reduce
 // the number of database queries necessary.
 func (r *queryResolver) definitionUploadIDsFromCursor(ctx context.Context, adjustedUploads []adjustedUpload, orderedMonikers []precise.QualifiedMonikerData, cursor *referencesCursor) ([]int, error) {
-	if cursor.DefinitionUploadIDsCached {
+	if cursor.DefinitionUploadIDs != nil {
 		return cursor.DefinitionUploadIDs, nil
 	}
 
@@ -237,7 +237,6 @@ func (r *queryResolver) definitionUploadIDsFromCursor(ctx context.Context, adjus
 	// to avoid ambiguity between no data in the cursor and an empty list in the cursor.
 
 	cursor.DefinitionUploadIDs = definitionUploadIDs
-	cursor.DefinitionUploadIDsCached = true
 	return definitionUploadIDs, nil
 }
 
