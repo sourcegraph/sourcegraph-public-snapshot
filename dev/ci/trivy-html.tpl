@@ -5,7 +5,7 @@
 {{- if . }}
   </head>
   <body>
-    <h2>{{- escapeXML ( index . 0 ).Target }}</h2>
+    <h3>{{- escapeXML ( index . 0 ).Target }} Vulnerabilities</h3>
     <table>
     {{- range . }}
       <tr class="group-header"><th colspan="6">{{ escapeXML .Type }}</th></tr>
