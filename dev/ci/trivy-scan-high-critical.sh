@@ -63,5 +63,6 @@ if ! trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${OUTPUT}/${ARTIFACT_FILE}" 
 EOF
   popd
 
+  echo "High or critical severity CVEs were discovered in ${IMAGE}. Please read the buildkite annotation for more info."
   exit 1
 fi
