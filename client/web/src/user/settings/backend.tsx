@@ -177,7 +177,7 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
             userProperties: window.context.sourcegraphDotComMode ? eventLogger.getUserProperties() : null,
             deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
             eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
-            insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID(event) : null,
+            insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
         }
     )
         .pipe(map(dataOrThrowErrors))
