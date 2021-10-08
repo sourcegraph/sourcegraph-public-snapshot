@@ -991,33 +991,118 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 	return res.Rev, nil
 }
 
+type migrateRepoMetadata struct {
+	GitConfig []byte `json:"gitConfig"`
+	SgRefhash []byte `json:"sgRefhash"`
+}
+
 func (c *Client) MigrateRepo(ctx context.Context, repo api.RepoName) error {
-	cloneRepo := func() bool {
+	maxRetries := 3
+
+	httpGET := func(url string) (int, []byte, error) {
+
 		resp, err := c.do(ctx, repo, "GET", fmt.Sprintf("git/%s", string(repo)), nil)
 		if err != nil {
+			return -1, nil, err
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return -1, nil, err
+		}
+
+		return resp.StatusCode, body, nil
+	}
+
+	// ---------- First we attempt to clone the repo. ----------
+
+	cloneRepo := func() bool {
+		status, body, err := httpGET(fmt.Sprintf("git/%s", string(repo)))
+		if err != nil {
+			log15.Error("gitserver.Client.Migration.cloneRepo: failed GET", "error", err)
 			return false
 		}
 
-		if resp.StatusCode == http.StatusOK {
-			return true
+		if status != http.StatusOK {
+			log15.Error(
+				"gitserver.Client.MigrateRepo.cloneRepo: unsuccessful GET",
+				"status", status,
+				"body", body,
+			)
+
+			return false
 		}
 
-		return false
+		return true
 	}
 
-	retries := 3
-	for retries > 0 {
+	cloneRetries := maxRetries
+	for cloneRetries > 0 {
 		if cloneRepo() {
 			break
 		}
 
-		retries--
+		cloneRetries--
 	}
 
 	// We exhausted our quota of retries without a succesful clone.
-	if retries == 0 {
+	if cloneRetries == 0 {
 		return errors.New("max retries exceeded")
 	}
+
+	// ---------- Clone was succesful, so now we get the metadata. ----------
+
+	getRepoMetadata := func() (*migrateRepoMetadata, bool) {
+		status, body, err := httpGET(fmt.Sprintf("migrate-repo/?repo=%s", string(repo)))
+		if err != nil {
+			log15.Error("gitserver.Client.MigrateRepo.getRepoMetadata: failed GET", "error", err)
+			return nil, false
+		}
+
+		if status != http.StatusOK {
+			log15.Error(
+				"gitserver.Client.MigrateRepo.getRepoMetadata: unsuccessful GET",
+				"status", status,
+				"body", body,
+			)
+			return nil, false
+		}
+
+		metadata := migrateRepoMetadata{}
+		if err := json.Unmarshal(body, &metadata); err != nil {
+			log15.Error("gitserver.Client.MigrateRepo.getRepoMetadata: json.Unmarshal", "error", err)
+			return nil, false
+		}
+
+		return &metadata, true
+	}
+
+	m := &migrateRepoMetadata{}
+	getMetdataRetries := maxRetries
+	for getMetdataRetries > 0 {
+		var ok bool
+		m, ok = getRepoMetadata()
+		if ok {
+			break
+		}
+	}
+
+	// ---------- We have received the repo metadata, so now we update the local copy. ----------
+
+	// TODO: We need access to GitDir to be able to write the config and sg_refhash here. But they
+	// are only available in the server at the moment. We may need to rethink this unless there's an
+	// easier way around this.
+
+	// GET /migrate-repo?repo=foobar&head_SHA=<<<<>>>>
+	// Update metadata locally on disk
+
+	/////////////////// TRANSACTION
+	// Update gitserver_repos
+	// Update migration table done thingy.
+	///////////////////
+
+	// Schedule a syncRepo.
 
 	return nil
 }
