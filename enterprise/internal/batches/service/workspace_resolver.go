@@ -9,8 +9,6 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
-
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 	"github.com/hashicorp/go-multierror"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"

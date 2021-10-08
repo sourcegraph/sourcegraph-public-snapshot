@@ -4,11 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 )
 
 func TestGetObject(t *testing.T) {

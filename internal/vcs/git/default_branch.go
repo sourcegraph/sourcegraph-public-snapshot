@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
-
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 )
 
 // GetDefaultBranch returns the name of the default branch and the commit it's

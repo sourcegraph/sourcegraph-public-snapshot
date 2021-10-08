@@ -3,9 +3,8 @@ package git
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 )
 
 // ModeSubmodule is an os.FileMode mask indicating that the file is a Git submodule.
