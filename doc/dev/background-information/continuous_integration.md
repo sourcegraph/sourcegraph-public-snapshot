@@ -15,10 +15,6 @@ To see what checks will get run against your checked out branch and changes, use
 sg ci preview
 ```
 
-### Run types and options
-
-There are a variety of special run types available, such as `main-dry-run`
-
 ### Development
 
 The source code of the pipeline generator is in [`/enterprise/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
