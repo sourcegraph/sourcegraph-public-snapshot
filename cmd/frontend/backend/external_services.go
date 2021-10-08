@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-var errNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
+var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
 
 // CheckExternalServiceAccess checks whether the current user is allowed to
 // access the supplied external service.
@@ -29,5 +29,5 @@ func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUser
 		return nil
 	}
 
-	return errNoAccessExternalService
+	return ErrNoAccessExternalService
 }
