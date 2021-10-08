@@ -141,3 +141,58 @@ func TestDeleteDashboard(t *testing.T) {
 		}}).Equal(t, got)
 	})
 }
+
+func TestAssociateViewsById(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	_, err := timescale.Exec(`
+		INSERT INTO dashboard (id, title)
+		VALUES (1, 'test dashboard 1'), (2, 'test dashboard 2');
+		INSERT INTO dashboard_grants (dashboard_id, global)
+		VALUES (1, true), (2, true);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store := NewDashboardStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("create and add view to dashboard", func(t *testing.T) {
+		insightStore := NewInsightStore(timescale)
+		view, err := insightStore.CreateView(ctx, types.InsightView{
+			Title:       "great view",
+			Description: "my view",
+			UniqueID:    "view1234567",
+		}, []InsightViewGrant{GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{ID: 1})
+		if err != nil || len(dashboards) != 1 {
+			t.Errorf("failed to fetch dashboard before adding insight")
+		}
+
+		dashboard := dashboards[0]
+		if len(dashboard.InsightIDs) != 0 {
+			t.Errorf("unexpected value for insight views on dashboard before adding view")
+		}
+		err = store.AssociateViewsByViewIds(ctx, dashboard.ID, []string{view.UniqueID})
+		if err != nil {
+			t.Errorf("failed to add view to dashboard")
+		}
+		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{ID: 1})
+		if err != nil || len(dashboards) != 1 {
+			t.Errorf("failed to fetch dashboard after adding insight")
+		}
+		got := dashboards[0]
+		autogold.Want("check views are added to dashboard", &types.Dashboard{ID: 1, Title: "test dashboard 1", InsightIDs: []string{
+			"view1234567",
+		}}).Equal(t, got)
+	})
+}
