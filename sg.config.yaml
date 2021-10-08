@@ -115,7 +115,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
@@ -160,7 +160,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
     env:
       HOSTNAME: 127.0.0.1:3178
@@ -175,7 +175,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
+      go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
     checkBinary: .bin/github-proxy
     env:
       HOSTNAME: 127.0.0.1:3178
@@ -190,7 +190,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
@@ -202,7 +202,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
       - lib
       - internal
@@ -216,7 +216,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     watch:
       - lib
@@ -229,7 +229,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/enterprise-repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
@@ -247,7 +247,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
+      go build -gcflags="$GCFLAGS" -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
     checkBinary: .bin/query-runner
     watch:
       - lib
@@ -267,7 +267,7 @@ commands:
       fi
 
       ./cmd/symbols/build-ctags.sh &&
-      go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -283,7 +283,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
+      go build -gcflags="$GCFLAGS" -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
     checkBinary: .bin/searcher
     watch:
       - lib
@@ -443,7 +443,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
     checkBinary: .bin/precise-code-intel-worker
     watch:
       - lib
@@ -460,7 +460,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
       mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
     checkBinary: .bin/executor
     env:
