@@ -15,39 +15,27 @@ All interactions with the Sourcegraph open source project are governed by the
 
 ## How to contribute
 
-1. Clone the repo: git clone https://github.com/sourcegraph/sourcegraph/
-2. Make sure your node environment is running version 16.x.x.
-3. **IMPORTANT:** Once you have a Pull Request ready to review, add the user `natectang` as a reviewer. Then 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our Bot. Once you sign, your pull request will be ready for review.
-4. If one or more people ask for the same issue, it will be assigned to the first person who asked.
-5. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
-6. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
+1. Select one of the issues labeled as [good first issue](https://github.com/orgs/sourcegraph/projects/210).
+2. Clone the repo: `git clone https://github.com/sourcegraph/sourcegraph/`.
+3. [Setup your development environment](https://docs.sourcegraph.com/dev/contributing) to run the project locally.
+4. Before creating a Pull Request ensure that [recommended checks](https://docs.sourcegraph.com/dev/contributing) pass locally. We're actively working on making our CI pipeline public to automate this step.
+5. **IMPORTANT:** Once you have a pull request ready to review, the 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add the user `natectang` as a reviewer. After that your pull request will be ready for review.
+6. If one or more people ask for the same issue, it will be assigned to the first person who asked.
+7. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
+8. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.
 
 ## Relevant development docs
 
 ### Getting applications up and running
 
-- [Developing the Sourcegraph web app](https://docs.sourcegraph.com/dev/background-information/web/web_app#commands)
-- [Table of contents](https://docs.sourcegraph.com/dev/background-information/web)
-- Configuring backend services locally is not required for most frontend issues. However, a guide on how to do this can be found here.
-
-### How to style UI
-
-- [Guidelines](https://docs.sourcegraph.com/dev/background-information/web/styling)
-- [Wildcard Component Library](https://docs.sourcegraph.com/dev/background-information/web/wildcard)
-  ### Client packages [overview](https://github.com/sourcegraph/sourcegraph/blob/main/client/README.md)
+- [Getting Started Guide](https://docs.sourcegraph.com/dev/getting-started)
+- [Troubleshooting section](https://docs.sourcegraph.com/dev/how-to/troubleshooting_local_development)
 
 ### How to write tests
 
-- [testing web code](https://docs.sourcegraph.com/dev/background-information/testing_web_code)
-- [testing principles](https://docs.sourcegraph.com/dev/background-information/testing_principles)
-- [how to testing](https://docs.sourcegraph.com/dev/how-to/testing)
-
-### Continuous integration pipeline
-
-- [Github actions](https://github.com/sourcegraph/sourcegraph/actions)
-- [Visual testing](https://docs.sourcegraph.com/dev/background-information/testing_principles#visual-testing)
-  - We use percy.io and chromatic.com for visual testing.
-- [Buildkite](https://buildkite.com/sourcegraph/sourcegraph) is used to run most of our tests.
+- [How to write tests](https://docs.sourcegraph.com/dev/how-to/testing)
+- [Testing principles](https://docs.sourcegraph.com/dev/background-information/testing_principles)
+- [Testing web code](https://docs.sourcegraph.com/dev/background-information/testing_web_code)
 
 ### Pull Requests
 
