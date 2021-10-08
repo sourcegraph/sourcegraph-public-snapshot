@@ -34,7 +34,10 @@
     "@types/react": "^17.0.14",
     "@types/react-helmet": "^6.1.2",
     "@types/react-router-dom": "^5.1.8",
-    "typescript": "^4.3.5"
+    "typescript": "^4.3.5",
+    "typedoc": "*",
+    "typedoc-plugin-markdown": "*",
+    "docusaurus-plugin-typedoc": "*"
   },
   "browserslist": {
     "production": [
