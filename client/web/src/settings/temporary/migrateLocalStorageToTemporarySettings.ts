@@ -22,12 +22,12 @@ const migrations: Migration[] = [
     },
     {
         localStorageKey: 'has-dismissed-survey-toast',
-        temporarySettingsKey: 'survey.toast.hasTemporarilyDismissed',
+        temporarySettingsKey: 'npsSurvey.hasTemporarilyDismissed',
         type: 'boolean',
     },
     {
         localStorageKey: 'has-permanently-dismissed-survey-toast',
-        temporarySettingsKey: 'survey.toast.hasPermanentlyDismissed',
+        temporarySettingsKey: 'npsSurvey.hasPermanentlyDismissed',
         type: 'boolean',
     },
 ]

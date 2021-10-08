@@ -18,11 +18,11 @@ interface SurveyToastProps {
 export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
     const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
     const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
-        'survey.toast.hasTemporarilyDismissed',
+        'npsSurvey.hasTemporarilyDismissed',
         false
     )
     const [permanentlyDismissed, setPermanentlyDismissed] = useTemporarySetting(
-        'survey.toast.hasPermanentlyDismissed',
+        'npsSurvey.hasPermanentlyDismissed',
         false
     )
     const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)

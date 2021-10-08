@@ -11,8 +11,8 @@ export interface TemporarySettingsSchema {
     'search.onboarding.tourCancelled': boolean
     'search.usedNonGlobalContext': boolean
     'insights.freeBetaAccepted': boolean
-    'survey.toast.hasTemporarilyDismissed': boolean
-    'survey.toast.hasPermanentlyDismissed': boolean
+    'npsSurvey.hasTemporarilyDismissed': boolean
+    'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
 }
