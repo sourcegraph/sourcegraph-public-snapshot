@@ -10,12 +10,11 @@ import (
 // referencesCursor stores (enough of) the state of a previous References request used to
 // calculate the offset into the result set to be returned by the current request.
 type referencesCursor struct {
-	AdjustedUploads     []cursorAdjustedUpload         `json:"adjustedUploads"`
-	DefinitionUploadIDs []int                          `json:"definitionUploadIDs"`
-	OrderedMonikers     []precise.QualifiedMonikerData `json:"orderedMonikers"`
-	Phase               string                         `json:"phase"`
-	LocalCursor         localCursor                    `json:"localCursor"`
-	RemoteCursor        remoteCursor                   `json:"remoteCursor"`
+	AdjustedUploads []cursorAdjustedUpload         `json:"adjustedUploads"`
+	OrderedMonikers []precise.QualifiedMonikerData `json:"orderedMonikers"`
+	Phase           string                         `json:"phase"`
+	LocalCursor     localCursor                    `json:"localCursor"`
+	RemoteCursor    remoteCursor                   `json:"remoteCursor"`
 }
 
 // decodeReferencesCursor is the inverse of encodeCursor. If the given encoded string is empty, then

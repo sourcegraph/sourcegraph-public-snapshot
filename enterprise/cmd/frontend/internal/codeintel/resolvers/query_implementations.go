@@ -69,20 +69,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		fmt.Println("- ", moniker)
 	}
 
-	// Determine the set of uploads that define one of the ordered monikers. This may include
-	// one of the adjusted indexes. This data may already be stashed in the cursor decoded above,
-	// in which case we don't need to hit the database.
-
-	// Set of dumps that cover the monikers' packages
-	definitionUploadIDs, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, cursor.OrderedMonikers, &cursor)
-	if err != nil {
-		return nil, "", err
-	}
-	traceLog(
-		log.Int("numDefinitionUploads", len(definitionUploadIDs)),
-		log.String("definitionUploads", intsToString(definitionUploadIDs)),
-	)
-
 	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
 	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
 	// no more local results remaining.
@@ -105,7 +91,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// more local results remaining, just as we did above.
 	if cursor.Phase == "remote" {
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "definitions", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor.RemoteCursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "definitions", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
