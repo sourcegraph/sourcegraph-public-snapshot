@@ -1,12 +1,11 @@
 import classnames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { Link } from 'react-router-dom'
 
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
@@ -16,13 +15,13 @@ import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
-import { getSubjectDashboardByID } from '../../../hooks/use-dashboards/utils'
-import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
 import { InsightsDashboardCreationContent } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 import { useDashboardSettings } from '../creation/hooks/use-dashboard-settings'
 
 import styles from './EditDashboardPage.module.scss'
 import { useUpdateDashboardCallback } from './hooks/use-update-dashboard'
+import { InsightsApiContext } from '../../../core/backend/api-provider';
+import { useObservable } from '../../../../../../../shared/src/util/useObservable';
 
 interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, PlatformContextProps<'updateSettings'> {
     dashboardId: string
@@ -35,23 +34,17 @@ interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, Platfor
  */
 export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
     const { dashboardId, settingsCascade, authenticatedUser, platformContext } = props
+    const { getDashboard, getInsightSubjects } = useContext(InsightsApiContext)
+
     const history = useHistory()
-    const subjects = useInsightSubjects({ settingsCascade })
 
-    const [previousDashboard] = useState(() => {
-        const subjects = settingsCascade.subjects
-        const configureSubject = subjects?.find(
-            ({ settings }) => settings && !isErrorLike(settings) && !!settings['insights.dashboards']?.[dashboardId]
-        )
+    const subjects = useObservable(
+        useMemo(() => getInsightSubjects(), [getInsightSubjects])
+    )
 
-        if (!configureSubject || !configureSubject.settings || isErrorLike(configureSubject.settings)) {
-            return undefined
-        }
-
-        const { subject, settings } = configureSubject
-
-        return getSubjectDashboardByID(subject, settings, dashboardId)
-    })
+    const previousDashboard = useObservable(
+        useMemo(() => getDashboard(dashboardId), [getDashboard, dashboardId])
+    )
 
     const dashboardInitialValues = useMemo(() => {
         if (!previousDashboard) {

@@ -37,7 +37,7 @@ export type ReachableInsight = Insight & {
  * User subject has access to all insights from all organizations and global site settings.
  * Organization subject has access to only its insights.
  */
-export function useReachableInsights(props: UseReachableInsightsProps): ReachableInsight[] {
+export function getReachableInsights(props: UseReachableInsightsProps): ReachableInsight[] {
     const { settingsCascade, ownerId } = props
 
     if (!settingsCascade.subjects) {

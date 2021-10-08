@@ -5,8 +5,13 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { ExtensionInsight } from '../types'
-import { SearchBackendBasedInsight, SearchBasedInsightSeries } from '../types/insight/search-insight'
+import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
+import {
+    SearchBackendBasedInsight,
+    SearchBasedBackendFilters,
+    SearchBasedInsightSeries
+} from '../types/insight/search-insight'
+import { SupportedInsightSubject } from '../types/subjects';
 
 import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
 
@@ -62,7 +67,56 @@ export interface LangStatsInsightsSettings {
     otherThreshold: number
 }
 
-export interface ApiService {
+export type ReachableInsight = Insight & {
+    owner: {
+        id: string
+        name: string
+    }
+}
+
+export interface DashboardInfo {
+    dashboardSettingKey: string
+    dashboardOwnerId: string,
+    insightIds: string[],
+}
+
+export interface CreateInsightWithFiltersInputs {
+    insightName: string
+    originalInsight: SearchBackendBasedInsight
+    dashboard: InsightDashboard
+    filters: SearchBasedBackendFilters
+}
+
+export interface CodeInsightsBackend {
+
+    /**
+     * Returns all accessible code insights dashboards for the current user.
+     * This includes virtual (like "all insights") and real dashboards.
+     */
+    getDashboards: () => Observable<InsightDashboard[]>
+
+    getDashboard: (dashboardId:string) => Observable<SettingsBasedInsightDashboard | null>
+
+    /**
+     * Returns all reachable subject's insights by owner id.
+     *
+     * User subject has access to all insights from all organizations and global site settings.
+     * Organization subject has access to only its insights.
+     */
+    getReachableInsights: (ownerId: string) => Observable<ReachableInsight[]>
+
+    getInsights: (ids: string[]) => Observable<Insight[]>
+
+    updateInsightDrillDownFilters: (insight: SearchBackendBasedInsight, filters: SearchBasedBackendFilters) => Observable<void>
+
+    createInsightWithNewFilters: (options: CreateInsightWithFiltersInputs) => Observable<void>
+
+    updateDashboardInsightIds: (options: DashboardInfo) => Observable<void>
+
+    deleteDashboard: (dashboardSettingKey: string, dashboardOwnerId: string) => Observable<void>
+
+    getInsightSubjects: () => Observable<SupportedInsightSubject[]>
+
     /**
      * Returns backend insight (via gql API handler)
      */

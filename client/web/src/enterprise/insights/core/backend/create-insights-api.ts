@@ -1,4 +1,33 @@
-import { throwError } from 'rxjs'
+import { camelCase } from 'lodash';
+import { Observable, of, throwError } from 'rxjs'
+import { switchMap } from 'rxjs/operators';
+
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context';
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings';
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { isDefined } from '@sourcegraph/shared/src/util/types';
+
+import { Settings } from '../../../../schema/settings.schema';
+import { getInsightsDashboards } from '../../hooks/use-dashboards/use-dashboards';
+import { getSubjectDashboardByID } from '../../hooks/use-dashboards/utils';
+import { findInsightById } from '../../hooks/use-insight/use-insight';
+import { getReachableInsights } from '../../pages/dashboards/dashboard-page/components/add-insight-modal/hooks/get-reachable-insights';
+import {
+    addInsightToDashboard,
+    removeDashboardFromSettings,
+    updateDashboardInsightIds
+} from '../settings-action/dashboards';
+import { addInsightToSettings } from '../settings-action/insights';
+import {
+    Insight,
+    InsightDashboard,
+    InsightTypePrefix,
+    isVirtualDashboard,
+    SettingsBasedInsightDashboard
+} from '../types';
+import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard';
+import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../types/insight/search-insight';
+import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/subjects';
 
 import { getBackendInsight } from './api/get-backend-insight'
 import { getBuiltInInsight } from './api/get-built-in-insight'
@@ -7,45 +36,167 @@ import { getRepositorySuggestions } from './api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
 import { getSearchInsightContent } from './api/get-search-insight-content/get-search-insight-content'
 import { getSubjectSettings, updateSubjectSettings } from './api/subject-settings'
-import { ApiService } from './types'
+import { CodeInsightsBackend, CreateInsightWithFiltersInputs, DashboardInfo, ReachableInsight } from './types'
 
-/**
- * Main API service to get data for code insights
- *
- * See {@link ApiService} for full description of each method.
- */
-export const createInsightAPI = (overrides: Partial<ApiService> = {}): ApiService => ({
+export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
+
+    constructor(
+        private settingCascade: SettingsCascadeOrError<Settings>,
+        private platformContext: PlatformContext
+    ) {}
+
     // Insights loading
-    getBackendInsight,
-    getBuiltInInsight,
+    public getBackendInsight = getBackendInsight
+    public getBuiltInInsight = getBuiltInInsight
 
-    // Subject operations
-    getSubjectSettings,
-    updateSubjectSettings,
+    // Subject operations TODO [VK] remove this setting oriented methods
+    public getSubjectSettings = getSubjectSettings
+    public updateSubjectSettings = updateSubjectSettings
 
     // Live preview fetchers
-    getSearchInsightContent,
-    getLangStatsInsightContent,
+    public getSearchInsightContent = getSearchInsightContent
+    public getLangStatsInsightContent = getLangStatsInsightContent
 
     // Repositories API
-    getRepositorySuggestions,
-    getResolvedSearchRepositories,
-    ...overrides,
-})
+    public getRepositorySuggestions = getRepositorySuggestions
+    public getResolvedSearchRepositories = getResolvedSearchRepositories
 
-/**
- * Mock API service. Used to mock part or some specific api requests in demo and
- * storybook stories.
- */
-export const createMockInsightAPI = (overrideRequests: Partial<ApiService>): ApiService => ({
-    getBackendInsight: () => throwError(new Error('Implement getBackendInsightById handler first')),
-    getBuiltInInsight: () => throwError(new Error('Implement getBuiltInInsight handler first')),
-    getSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
-    updateSubjectSettings: () => throwError(new Error('Implement getSubjectSettings handler first')),
-    getSearchInsightContent: () => Promise.reject(new Error('Implement getSubjectSettings handler first')),
-    getLangStatsInsightContent: () => Promise.reject(new Error('Implement getLangStatsInsightContent handler first')),
-    getRepositorySuggestions: () => Promise.reject(new Error('Implement getRepositorySuggestions handler first')),
-    getResolvedSearchRepositories: () =>
-        Promise.reject(new Error('Implement getResolvedSearchRepositories handler first')),
-    ...overrideRequests,
-})
+    // NEW API
+
+    public getDashboards(): Observable<InsightDashboard[]> {
+        const { subjects, final } = this.settingCascade
+
+        return of(getInsightsDashboards(subjects, final))
+    }
+
+    public updateDashboardInsightIds(options: DashboardInfo): Observable<void> {
+        const { dashboardOwnerId, dashboardSettingKey, insightIds} = options
+
+        return this.getSubjectSettings(dashboardOwnerId).pipe(
+            switchMap(settings => {
+                const editedSettings = updateDashboardInsightIds(settings.contents, dashboardSettingKey, insightIds)
+
+                return this.updateSubjectSettings(this.platformContext, dashboardOwnerId, editedSettings)
+            })
+        )
+    }
+
+    public deleteDashboard(dashboardSettingKey: string, dashboardOwnerId: string): Observable<void> {
+        return this.getSubjectSettings(dashboardOwnerId).pipe(
+            switchMap(settings => {
+                const updatedSettings = removeDashboardFromSettings(settings.contents, dashboardSettingKey)
+
+                return updateSubjectSettings(this.platformContext, dashboardOwnerId, updatedSettings)
+            })
+        )
+    }
+
+    public getReachableInsights(ownerId: string): Observable<ReachableInsight[]> {
+        return of(getReachableInsights({ settingsCascade: this.settingCascade, ownerId }))
+    }
+
+    public getInsights(ids: string[]): Observable<Insight[]> {
+        return of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
+    }
+
+    public updateInsightDrillDownFilters(insight: SearchBackendBasedInsight, filters: SearchBasedBackendFilters): Observable<void> {
+        return this.getSubjectSettings(insight.visibility).pipe(
+            switchMap(settings => {
+                const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
+                const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
+
+                return updateSubjectSettings(this.platformContext, insight.visibility, editedSettings)
+            })
+        )
+    }
+
+    public createInsightWithNewFilters(inputs: CreateInsightWithFiltersInputs): Observable<void> {
+        const { dashboard, insightName, originalInsight, filters } = inputs
+
+        // Get id of insight setting subject (owner of it insight)
+        const subjectId = isVirtualDashboard(dashboard) ? originalInsight.visibility : dashboard.owner.id
+
+        // Create new insight by name and last valid filters value
+        const newInsight: SearchBackendBasedInsight = {
+            ...originalInsight,
+            id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
+            title: insightName,
+            filters,
+        }
+
+        return this.getSubjectSettings(subjectId).pipe(
+            switchMap(settings => {
+                const updatedSettings = [
+                    (settings: string) => addInsightToSettings(settings, newInsight),
+                    (settings: string) => {
+                        // Virtual and built-in dashboards calculate their insight dynamically in runtime
+                        // no need to store insight list for them explicitly
+                        if (isVirtualDashboard(dashboard) || !isSettingsBasedInsightsDashboard(dashboard)) {
+                            return settings
+                        }
+
+                        return addInsightToDashboard(settings, dashboard.settingsKey, newInsight.id)
+                    },
+                ].reduce((settings, transformer) => transformer(settings), settings.contents)
+
+                return this.updateSubjectSettings(this.platformContext, subjectId, updatedSettings)
+            })
+        )
+    }
+
+    public getInsightSubjects(): Observable<SupportedInsightSubject[]> {
+        if (!this.settingCascade.subjects) {
+            return of([])
+        }
+
+        return of(
+            this.settingCascade.subjects
+                .map(configureSubject => configureSubject.subject)
+                .filter<SupportedInsightSubject>(isSubjectInsightSupported)
+        )
+    }
+
+    public getDashboard(dashboardId: string): Observable<SettingsBasedInsightDashboard | null> {
+        const subjects = this.settingCascade.subjects
+        const configureSubject = subjects?.find(
+            ({ settings }) => settings && !isErrorLike(settings) && !!settings['insights.dashboards']?.[dashboardId]
+        )
+
+        if (!configureSubject || !configureSubject.settings || isErrorLike(configureSubject.settings)) {
+            return of(null)
+        }
+
+        const { subject, settings } = configureSubject
+
+        return of(getSubjectDashboardByID(subject, settings, dashboardId))
+    }
+}
+
+const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
+
+export class CodeInsightsFakeBackend implements CodeInsightsBackend {
+    // Insights loading
+    public getBackendInsight = errorMockMethod('getBackendInsight')
+    public getBuiltInInsight = errorMockMethod('getBuiltInInsight')
+    public getSubjectSettings = errorMockMethod('getSubjectSettings')
+    public updateSubjectSettings = errorMockMethod('updateSubjectSettings')
+
+    // Live preview fetchers
+    public getSearchInsightContent = () => errorMockMethod('getSearchInsightContent')().toPromise()
+    public getLangStatsInsightContent = () => errorMockMethod('getLangStatsInsightContent')().toPromise()
+
+    // Repositories API
+    public getRepositorySuggestions = () => errorMockMethod('getRepositorySuggestions')().toPromise()
+    public getResolvedSearchRepositories = () => errorMockMethod('getResolvedSearchRepositories')().toPromise()
+
+    // New high level API
+    public getDashboards = errorMockMethod('getDashboards')
+    public updateDashboardInsightIds = errorMockMethod('updateDashboardInsightIds')
+    public deleteDashboard = errorMockMethod('deleteDashboard')
+    public getReachableInsights = errorMockMethod('getReachableInsights')
+    public getInsights = errorMockMethod('getInsights')
+    public updateInsightDrillDownFilters = errorMockMethod('updateInsightDrillDownFilters')
+    public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
+    public getInsightSubjects = errorMockMethod('getInsightSubjects')
+    public getDashboard = errorMockMethod('getDashboard')
+}

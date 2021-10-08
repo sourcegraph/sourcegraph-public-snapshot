@@ -79,9 +79,9 @@ export function getSubjectDashboardByID(
     subject: SettingsSubject,
     settings: Settings,
     dashboardKey: string
-): SettingsBasedInsightDashboard | undefined {
+): SettingsBasedInsightDashboard | null {
     if (!isSubjectInsightSupported(subject)) {
-        return undefined
+        return null
     }
 
     const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
@@ -90,7 +90,7 @@ export function getSubjectDashboardByID(
     const dashboardSettings = settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY]?.[dashboardKey]
 
     if (!dashboardSettings) {
-        return undefined
+        return null
     }
 
     return {

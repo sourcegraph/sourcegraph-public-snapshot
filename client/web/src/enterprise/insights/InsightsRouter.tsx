@@ -1,5 +1,5 @@
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React from 'react'
+import React, { useMemo } from 'react'
 import { RouteComponentProps, Switch, Route, useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
@@ -12,6 +12,8 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { lazyComponent } from '../../util/lazyComponent'
 
+import { InsightsApiContext } from './core/backend/api-provider';
+import { CodeInsightsSettingBasedBackend } from './core/backend/create-insights-api';
 import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
@@ -43,9 +45,13 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
+    const api = useMemo(
+        () => new CodeInsightsSettingBasedBackend(settingsCascade, platformContext),
+        [platformContext, settingsCascade]
+    )
 
     return (
-        <>
+        <InsightsApiContext.Provider value={api}>
             <Route path="*" component={BetaConfirmationModal} />
             <Switch>
                 <Redirect from={match.url} exact={true} to={`${match.url}/dashboards/all`} />
@@ -80,6 +86,6 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>
-        </>
+        </InsightsApiContext.Provider>
     )
 })

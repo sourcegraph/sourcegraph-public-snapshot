@@ -1,6 +1,6 @@
-import React from 'react'
+import { createContext } from 'react'
 
-import { createInsightAPI } from './create-insights-api'
-import { ApiService } from './types'
+import { CodeInsightsFakeBackend } from './create-insights-api'
+import { CodeInsightsBackend } from './types'
 
-export const InsightsApiContext = React.createContext<ApiService>(createInsightAPI())
+export const InsightsApiContext = createContext<CodeInsightsBackend>(new CodeInsightsFakeBackend())

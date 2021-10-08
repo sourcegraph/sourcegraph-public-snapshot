@@ -18,7 +18,7 @@ import {
     AddInsightFormValues,
     AddInsightModalContent,
 } from './components/add-insight-modal-content/AddInsightModalContent'
-import { useReachableInsights } from './hooks/use-reachable-insights'
+import { getReachableInsights } from './hooks/get-reachable-insights'
 
 export interface AddInsightModalProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
     dashboard: SettingsBasedInsightDashboard
@@ -29,7 +29,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const { dashboard, settingsCascade, platformContext, onClose } = props
     const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
 
-    const insights = useReachableInsights({ ownerId: dashboard.owner.id, settingsCascade })
+    const insights = getReachableInsights({ ownerId: dashboard.owner.id, settingsCascade })
 
     const initialValues = useMemo<AddInsightFormValues>(
         () => ({

@@ -48,9 +48,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const [isDeleteDashboardActive, setDeleteDashboardActive] = useState<boolean>(false)
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
+
     const handleDashboardSelect = useDashboardSelectHandler()
-    const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
+    const [copyURL, isCopied] = useCopyURLHandler()
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
