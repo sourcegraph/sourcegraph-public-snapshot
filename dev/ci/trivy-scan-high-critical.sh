@@ -16,38 +16,52 @@ export GITHUB_TOKEN="${GH_TOKEN}"
 # inside of CI's logs
 set -x
 
-ANNOTATION_FILE="${OUTPUT}/annotation.html"
+trivy_scan() {
+  local templateFile="$1"
+  local outputFile="$2"
+  local target="$3"
 
-TRIVY_ARGS=(
-  # fail the step if there is a vulnerability
-  "--exit-code"
-  "1"
+  TRIVY_ARGS=(
+    # fail the step if there is a vulnerability
+    "--exit-code"
+    "1"
 
-  # ignore issues that we can't fix
-  "--ignore-unfixed"
+    # ignore issues that we can't fix
+    "--ignore-unfixed"
 
-  # we'll only take action on higher CVEs
-  "--severity"
-  "HIGH,CRITICAL"
+    # we'll only take action on higher CVEs
+    "--severity"
+    "HIGH,CRITICAL"
 
-  # tell trivy to dump its output to an HTML file
-  "--format"
-  "template"
+    # tell trivy to dump its output to an HTML file
+    "--format"
+    "template"
 
-  # use the custom "trivy-html" that we have in this folder
-  "--template"
-  "@./dev/ci/trivy-html.tpl"
+    # use the custom "trivy-html" that we have in this folder
+    "--template"
+    "@${templateFile}"
 
-  # dump the HTML output to a file named "ANNOTATION_FILE"
-  "--output"
-  "${ANNOTATION_FILE}"
+    # dump the HTML output to a file named "ANNOTATION_FILE"
+    "--output"
+    "${outputFile}"
 
-  # scan the docker image named "IMAGE"
-  "${IMAGE}"
-)
+    # scan the docker image named "target"
+    "${target}"
+  )
 
-if ! trivy image "${TRIVY_ARGS[@]}"; then
-  buildkite-agent artifact upload "${ANNOTATION_FILE}"
+  trivy image "${TRIVY_ARGS[@]}"
+}
+
+ANNOTATION_FILE="annotation.html"
+ARTIFACT_FILE="artifact.html"
+
+if ! trivy_scan "./dev/ci/trivy-annotation-html.tpl" "${OUTPUT}/${ANNOTATION_FILE}" "${IMAGE}"; then
+  trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${OUTPUT}/${ARTIFACT_FILE}" "${IMAGE}" || true
+
+  pushd "${OUTPUT}"
+  buildkite-agent artifact upload "${ARTIFACT_FILE}"
   buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_FILE}"
+  popd
+
   exit 1
 fi
