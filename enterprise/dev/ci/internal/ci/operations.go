@@ -93,7 +93,7 @@ func addDocs(pipeline *bk.Pipeline) {
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark: Misc Linters",
+	pipeline.AddStep(":clipboard: Misc Linters",
 		bk.Cmd("./dev/check/all.sh"))
 }
 
