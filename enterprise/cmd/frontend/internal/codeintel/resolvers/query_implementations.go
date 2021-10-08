@@ -49,21 +49,22 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		return nil, "", err
 	}
 
-	// Gather allmonikers attached to the ranges enclosing the requested position. This data
+	// Gather all monikers attached to the ranges enclosing the requested position. This data
 	// may already be stashed in the cursor decoded above, in which case we don't need to hit
 	// the database.
 
-	orderedMonikers, err := r.orderedMonikersFromCursor(ctx, adjustedUploads, &cursor, "implementation")
-	if err != nil {
-		return nil, "", err
+	if cursor.OrderedMonikers == nil {
+		if cursor.OrderedMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "implementation"); err != nil {
+			return nil, "", err
+		}
 	}
 	traceLog(
-		log.Int("numMonikers", len(orderedMonikers)),
-		log.String("monikers", monikersToString(orderedMonikers)),
+		log.Int("numMonikers", len(cursor.OrderedMonikers)),
+		log.String("monikers", monikersToString(cursor.OrderedMonikers)),
 	)
 
 	fmt.Println("monikers:")
-	for _, moniker := range orderedMonikers {
+	for _, moniker := range cursor.OrderedMonikers {
 		fmt.Println("- ", moniker)
 	}
 
@@ -72,7 +73,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// in which case we don't need to hit the database.
 
 	// Set of dumps that cover the monikers' packages
-	definitionUploadIDs, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, orderedMonikers, &cursor)
+	definitionUploadIDs, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, cursor.OrderedMonikers, &cursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -85,7 +86,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// slice will be empty if the definition ids were cached on the cursor.
 
 	// Query a single page of location results
-	locations, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, orderedMonikers, definitionUploadIDs, &cursor, limit)
+	locations, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor, limit)
 	if err != nil {
 		return nil, "", err
 	}

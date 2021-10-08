@@ -56,24 +56,25 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		return nil, "", err
 	}
 
-	// Gather allmonikers attached to the ranges enclosing the requested position. This data
+	// Gather all monikers attached to the ranges enclosing the requested position. This data
 	// may already be stashed in the cursor decoded above, in which case we don't need to hit
 	// the database.
 
-	orderedMonikers, err := r.orderedMonikersFromCursor(ctx, adjustedUploads, &cursor, "export")
-	if err != nil {
-		return nil, "", err
+	if cursor.OrderedMonikers == nil {
+		if cursor.OrderedMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "export"); err != nil {
+			return nil, "", err
+		}
 	}
 	traceLog(
-		log.Int("numMonikers", len(orderedMonikers)),
-		log.String("monikers", monikersToString(orderedMonikers)),
+		log.Int("numMonikers", len(cursor.OrderedMonikers)),
+		log.String("monikers", monikersToString(cursor.OrderedMonikers)),
 	)
 
 	// Determine the set of uploads that define one of the ordered monikers. This may include
 	// one of the adjusted indexes. This data may already be stashed in the cursor decoded above,
 	// in which case we don't need to hit the database.
 
-	definitionUploadIDs, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, orderedMonikers, &cursor)
+	definitionUploadIDs, err := r.definitionUploadIDsFromCursor(ctx, adjustedUploads, cursor.OrderedMonikers, &cursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -88,7 +89,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		"references",
 		"references",
 		adjustedUploads,
-		orderedMonikers,
+		cursor.OrderedMonikers,
 		definitionUploadIDs,
 		&cursor,
 		limit,
@@ -166,24 +167,6 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 
 	cursor.AdjustedUploads = cursorAdjustedUploads
 	return adjustedUploads, nil
-}
-
-// orderedMonikersFromCursor returns the set of monikers attached to the ranges specified by the given
-// upload list. The returned slice will be cached on the given cursor. If this data is already stashed
-// in the given cursor, we don't need to hit the database.
-func (r *queryResolver) orderedMonikersFromCursor(ctx context.Context, adjustedUploads []adjustedUpload, cursor *referencesCursor, kind string) ([]precise.QualifiedMonikerData, error) {
-	if cursor.OrderedMonikers != nil {
-		return cursor.OrderedMonikers, nil
-	}
-
-	// Gather all monikers attached to the ranges enclosing the requested position
-	orderedMonikers, err := r.orderedMonikers(ctx, adjustedUploads, kind)
-	if err != nil {
-		return nil, err
-	}
-
-	cursor.OrderedMonikers = orderedMonikers
-	return orderedMonikers, nil
 }
 
 // definitionUploadIDsFromCursor returns a set of identifiers for uploads that provide any of the given
