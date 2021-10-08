@@ -354,6 +354,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/getGitolitePhabricatorMetadata", s.handleGetGitolitePhabricatorMetadata)
 	mux.HandleFunc("/create-commit-from-patch", s.handleCreateCommitFromPatch)
 	mux.HandleFunc("/repo-archive", s.handleRepoArchive)
+	mux.HandleFunc("/migrate-repo", s.handleMigrateRepo)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -1561,6 +1562,66 @@ func (s *Server) handleRepoArchive(w http.ResponseWriter, r *http.Request) {
 
 	// w.Header().Set("Content-Type", w.Form)
 
+}
+
+type migrateRepoMetadata struct {
+	GitConfig []byte `json:"gitConfig"`
+	SgRefhash []byte `json:"sgRefhash"`
+}
+
+func (s *Server) handleMigrateRepo(w http.ResponseWriter, r *http.Request) {
+	repo := r.URL.Query().Get("repo")
+	if repo == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		log15.Error("handleMigrateRepo", "error", "empty query arg: repo")
+		return
+	}
+
+	dir := s.dir(api.RepoName(repo))
+	if !repoCloned(dir) {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	readFile := func(name string) ([]byte, error) {
+		f, err := os.Open(name)
+		if err != nil {
+			return nil, err
+		}
+
+		return ioutil.ReadAll(f)
+	}
+
+	metadata := migrateRepoMetadata{}
+	var err error
+
+	metadata.GitConfig, err = readFile(filepath.Join(string(dir), "config"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleMigrateRepo: readFile gitConfig", "error", err)
+		return
+	}
+
+	metadata.SgRefhash, err = readFile(filepath.Join(string(dir), "sg_refhash"))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleMigrateRepo: readFile sg_refhash", "error", err)
+		return
+	}
+
+	data, err := json.Marshal(metadata)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleMigrateRepo: json.Marshal", "error", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := w.Write(data); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("handleMigrateRepo: w.Write", "error", err)
+		return
+	}
 }
 
 func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
