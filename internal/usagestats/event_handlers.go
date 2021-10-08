@@ -92,7 +92,6 @@ type bigQueryEvent struct {
 	Referrer        string  `json:"referrer,omitempty"`
 	PublicArgument  string  `json:"public_argument"`
 	DeviceID        *string `json:"device_id,omitempty"`
-	EventID         *int32  `json:"event_id,omitempty"`
 	InsertID        *string `json:"insert_id,omitempty"`
 }
 
@@ -101,6 +100,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
+
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
@@ -130,7 +130,6 @@ func publishSourcegraphDotComEvent(args Event) error {
 		CohortID:        args.CohortID,
 		PublicArgument:  string(args.PublicArgument),
 		DeviceID:        args.DeviceID,
-		EventID:         args.EventID,
 		InsertID:        args.InsertID,
 	})
 	if err != nil {
