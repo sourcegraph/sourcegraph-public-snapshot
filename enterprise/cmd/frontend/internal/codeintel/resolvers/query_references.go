@@ -352,7 +352,7 @@ func rangeContainsPosition(r lsifstore.Range, pos lsifstore.Position) bool {
 	return true
 }
 
-// uploadIDsWithReferences returns uploads (ignoring the given uploads) that probably contain an import
+// uploadIDsWithReferences returns uploads that probably contain an import
 // or implementation moniker whose identifier matches any of the given monikers' identifiers. This method
 // will not return uploads for commits which are unknown to gitserver, nor will it return uploads which
 // are listed in the given ignored identifier slice. This method also returns the number of records
