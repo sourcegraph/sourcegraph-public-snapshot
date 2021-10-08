@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ set -x
 ANNOTATION_FILE="${OUTPUT}/annotation.html"
 ANNOTATION_MARKDOWN="${OUTPUT}/annotation.md"
 
-if ! trivy image --format template --template "@html.tpl" -o "${ANNOTATION_FILE}" "$@"; then
+if ! trivy image --format template --template "@./dev/ci/trivy-html.tpl" -o "${ANNOTATION_FILE}" "$@"; then
   pandoc "${ANNOTATION_FILE}" --to gfm -o "${ANNOTATION_MARKDOWN}"
   buildkite-agent annotate --style warning --context "${APP} Docker Image security scan" <"${ANNOTATION_MARKDOWN}"
   exit 1
