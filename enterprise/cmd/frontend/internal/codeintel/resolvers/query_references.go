@@ -92,7 +92,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			ctx,
 			"references",
 			adjustedUploads,
-			&cursor,
+			&cursor.LocalCursor,
 			limit-len(locations),
 			traceLog,
 		)
@@ -242,12 +242,12 @@ func (r *queryResolver) pageLocalReferences(
 	ctx context.Context,
 	ty string,
 	adjustedUploads []adjustedUpload,
-	cursor *referencesCursor,
+	cursor *localCursor,
 	limit int,
 	traceLog observation.TraceLogger,
 ) ([]lsifstore.Location, bool, error) {
 	var allLocations []lsifstore.Location
-	for _, adjustedUpload := range adjustedUploads[cursor.LocalBatchOffset:] {
+	for _, adjustedUpload := range adjustedUploads[cursor.UploadOffset:] {
 		if len(allLocations) >= limit {
 			// We've filled the page
 			break
@@ -264,7 +264,7 @@ func (r *queryResolver) pageLocalReferences(
 			adjustedUpload.AdjustedPosition.Line,
 			adjustedUpload.AdjustedPosition.Character,
 			limit-len(allLocations),
-			cursor.LocalOffset,
+			cursor.LocationOffset,
 		)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "lsifstore.References")
@@ -272,18 +272,18 @@ func (r *queryResolver) pageLocalReferences(
 
 		numLocations := len(locations)
 		traceLog(log.Int("pageLocalReferences.numLocations", numLocations))
-		cursor.LocalOffset += numLocations
+		cursor.LocationOffset += numLocations
 
-		if cursor.LocalOffset >= totalCount {
+		if cursor.LocationOffset >= totalCount {
 			// Skip this index on next request
-			cursor.LocalOffset = 0
-			cursor.LocalBatchOffset++
+			cursor.LocationOffset = 0
+			cursor.UploadOffset++
 		}
 
 		allLocations = append(allLocations, locations...)
 	}
 
-	return allLocations, cursor.LocalBatchOffset < len(adjustedUploads), nil
+	return allLocations, cursor.UploadOffset < len(adjustedUploads), nil
 }
 
 // maximumIndexesPerMonikerSearch configures the maximum number of reference upload identifiers
