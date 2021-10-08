@@ -1,4 +1,4 @@
-# Quickstart step 3: Start Docker
+# Quickstart step 4: Start Docker
 
 ## macOS
 
@@ -34,4 +34,4 @@ If you have issues running Docker, try [adding your user to the docker group][do
 [dockerGroup]: https://stackoverflow.com/a/48957722
 [socketPermissions]: https://stackoverflow.com/a/51362528
 
-[< Previous](quickstart_2_clone_repository.md) | [Next >](quickstart_4_initialize_database.md)
+[< Previous](quickstart_3_install_sg.md) | [Next >](quickstart_5_initialize_database.md)
