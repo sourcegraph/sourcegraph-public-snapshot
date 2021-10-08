@@ -83,21 +83,48 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		log.String("definitionUploads", intsToString(definitionUploadIDs)),
 	)
 
-	// Query a single page of location results
-	locations, err := r.pageReferences(
-		ctx,
-		"references",
-		"references",
-		adjustedUploads,
-		cursor.OrderedMonikers,
-		definitionUploadIDs,
-		&cursor,
-		limit,
-		traceLog,
-	)
-	if err != nil {
-		return nil, "", err
+	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
+	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
+	// no more local results remaining.
+	var locations []lsifstore.Location
+	if cursor.Phase == "local" {
+		localLocations, hasMore, err := r.pageLocalReferences(
+			ctx,
+			"references",
+			adjustedUploads,
+			&cursor,
+			limit-len(locations),
+			traceLog,
+		)
+		if err != nil {
+			return nil, "", err
+		}
+		locations = append(locations, localLocations...)
+
+		if !hasMore {
+			// No more local results, move on to phase 2
+			cursor.Phase = "remote"
+		}
 	}
+
+	// Phase 2: Gather all "remote" locations via moniker search. We only do this if there are no more local
+	// results. We'll continue to request additional locations until we fill an entire page or there are no
+	// more local results remaining, just as we did above.
+	if cursor.Phase == "remote" {
+		for len(locations) < limit {
+			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "references", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor, limit-len(locations), traceLog)
+			if err != nil {
+				return nil, "", err
+			}
+			locations = append(locations, remoteLocations...)
+
+			if !hasMore {
+				cursor.Phase = "done"
+				break
+			}
+		}
+	}
+
 	traceLog(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
@@ -212,79 +239,6 @@ func (r *queryResolver) definitionUploadIDsFromCursor(ctx context.Context, adjus
 	cursor.DefinitionUploadIDs = definitionUploadIDs
 	cursor.DefinitionUploadIDsCached = true
 	return definitionUploadIDs, nil
-}
-
-// pageReferences returns a slice of the result set denoted by the given cursor. The given cursor will be
-// adjusted to reflect the offsets required to resolve the next page of results. If there are no more pages
-// left in the result set, a false-valued flag is returned.
-func (r *queryResolver) pageReferences(
-	ctx context.Context,
-	ty string,
-	lsifDataTable string,
-	adjustedUploads []adjustedUpload,
-	orderedMonikers []precise.QualifiedMonikerData,
-	definitionUploadIDs []int,
-	cursor *referencesCursor,
-	limit int,
-	traceLog observation.TraceLogger,
-) ([]lsifstore.Location, error) {
-	var locations []lsifstore.Location
-
-	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
-	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
-	// no more local results remaining.
-
-	if cursor.Phase == "local" {
-		localLocations, hasMore, err := r.pageLocalReferences(
-			ctx,
-			ty,
-			adjustedUploads,
-			cursor,
-			limit-len(locations),
-			traceLog,
-		)
-		if err != nil {
-			return nil, err
-		}
-		traceLog(log.Int("pageReferences.numLocalLocations", len(localLocations)))
-		locations = append(locations, localLocations...)
-
-		if !hasMore {
-			// No more local results, move on to phase 2
-			cursor.Phase = "remote"
-		}
-	}
-
-	// Phase 2: Gather all "remote" locations via moniker search. We only do this if there are no more local
-	// results. We'll continue to request additional locations until we fill an entire page or there are no
-	// more local results remaining, just as we did above.
-
-	if cursor.Phase == "remote" {
-		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(
-				ctx,
-				lsifDataTable,
-				adjustedUploads,
-				orderedMonikers,
-				definitionUploadIDs,
-				cursor,
-				limit-len(locations),
-				traceLog,
-			)
-			if err != nil {
-				return nil, err
-			}
-			traceLog(log.Int("pageReferences.numRemoteLocations", len(remoteLocations)))
-			locations = append(locations, remoteLocations...)
-
-			if !hasMore {
-				cursor.Phase = "done"
-				return locations, nil
-			}
-		}
-	}
-
-	return locations, nil
 }
 
 // pageLocalReferences returns a slice of the (local) result set denoted by the given cursor fulfilled by

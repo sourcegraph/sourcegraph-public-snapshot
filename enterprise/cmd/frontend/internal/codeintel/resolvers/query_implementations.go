@@ -8,6 +8,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -82,14 +83,40 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		log.String("definitionUploads", intsToString(definitionUploadIDs)),
 	)
 
-	// If we pulled additional records back from the database, add them to the upload map. This
-	// slice will be empty if the definition ids were cached on the cursor.
+	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
+	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
+	// no more local results remaining.
+	var locations []lsifstore.Location
+	if cursor.Phase == "local" {
+		localLocations, hasMore, err := r.pageLocalReferences(ctx, "implementations", adjustedUploads, &cursor, limit-len(locations), traceLog)
+		if err != nil {
+			return nil, "", err
+		}
+		locations = append(locations, localLocations...)
 
-	// Query a single page of location results
-	locations, err := r.pageReferences(ctx, "implementations", "definitions", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor, limit)
-	if err != nil {
-		return nil, "", err
+		if !hasMore {
+			// No more local results, move on to phase 2
+			cursor.Phase = "remote"
+		}
 	}
+
+	// Phase 2: Gather all "remote" locations via moniker search. We only do this if there are no more local
+	// results. We'll continue to request additional locations until we fill an entire page or there are no
+	// more local results remaining, just as we did above.
+	if cursor.Phase == "remote" {
+		for len(locations) < limit {
+			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "definitions", adjustedUploads, cursor.OrderedMonikers, definitionUploadIDs, &cursor, limit-len(locations), traceLog)
+			if err != nil {
+				return nil, "", err
+			}
+			locations = append(locations, remoteLocations...)
+
+			if !hasMore {
+				cursor.Phase = "done"
+			}
+		}
+	}
+
 	traceLog(log.Int("numLocations", len(locations)))
 	fmt.Println("Implementations: len(locations)", len(locations))
 
