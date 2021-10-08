@@ -1,6 +1,6 @@
 ---
 id: "useControlledState"
-title: "Function: useControlledState"
+title: "useControlledState"
 sidebar_label: "useControlledState"
 sidebar_position: 0
 custom_edit_url: null

@@ -1,6 +1,6 @@
 ---
 id: "useAutoFocus"
-title: "Function: useAutoFocus"
+title: "useAutoFocus"
 sidebar_label: "useAutoFocus"
 sidebar_position: 0
 custom_edit_url: null

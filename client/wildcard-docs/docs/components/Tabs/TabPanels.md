@@ -1,6 +1,6 @@
 ---
 id: "TabPanels"
-title: "Variable: TabPanels"
+title: "TabPanels"
 sidebar_label: "TabPanels"
 sidebar_position: 3
 custom_edit_url: null

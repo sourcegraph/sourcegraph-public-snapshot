@@ -1,6 +1,6 @@
 ---
 id: "useDebounce"
-title: "Function: useDebounce"
+title: "useDebounce"
 sidebar_label: "useDebounce"
 sidebar_position: 0
 custom_edit_url: null

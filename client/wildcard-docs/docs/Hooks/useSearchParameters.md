@@ -1,6 +1,6 @@
 ---
 id: "useSearchParameters"
-title: "Function: useSearchParameters"
+title: "useSearchParameters"
 sidebar_label: "useSearchParameters"
 sidebar_position: 0
 custom_edit_url: null

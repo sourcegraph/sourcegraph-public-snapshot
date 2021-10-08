@@ -1,6 +1,6 @@
 ---
 id: "useOffsetPagination"
-title: "Function: useOffsetPagination"
+title: "useOffsetPagination"
 sidebar_label: "useOffsetPagination"
 sidebar_position: 0
 custom_edit_url: null
