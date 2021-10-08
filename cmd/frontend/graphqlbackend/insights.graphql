@@ -263,6 +263,9 @@ type InsightView implements Node {
 Response wrapper object for insight dashboard mutations.
 """
 type InsightDashboardPayload {
+    """
+    The result dashboard after mutation.
+    """
     dashboard: InsightDashboard!
 }
 
@@ -270,6 +273,13 @@ type InsightDashboardPayload {
 Input object for adding insight view to dashboard.
 """
 input AddInsightViewToDashboardInput {
+    """
+    ID of the insight view to attach to the dashboard
+    """
     insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
     dashboardId: ID!
 }
