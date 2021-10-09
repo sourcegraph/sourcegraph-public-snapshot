@@ -1,7 +1,7 @@
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import { ApolloError, QueryResult, WatchQueryFetchPolicy, NetworkStatus, useApolloClient } from '@apollo/client'
 import { useMemo, useRef } from 'react'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+import { GraphQLResult, useQuery, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 import { useSearchParameters } from '@sourcegraph/wildcard'
 
@@ -49,9 +49,12 @@ export const useConnection = <TResult, TVariables, TData>({
     getConnection: getConnectionFromGraphQLResult,
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
+    const client = useApolloClient()
     const searchParameters = useSearchParameters()
 
+    const fetchPolicy = options?.fetchPolicy || client.defaultOptions.watchQuery?.fetchPolicy
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
+
     const firstReference = useRef({
         /**
          * The number of results that we will typically want to load in the next request (unless `visible` is used).
@@ -89,17 +92,39 @@ export const useConnection = <TResult, TVariables, TData>({
     )
 
     /**
+     * Initial variables provided to the query.
+     * Further pagination requests update these values in `fetchMore`.
+     */
+    const queryVariables = {
+        ...variables,
+        ...initialControls,
+    }
+
+    /**
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore } = useQuery<TResult, TVariables>(query, {
-        variables: {
-            ...variables,
-            ...initialControls,
-        },
+    const { data, error, loading: queryLoading, networkStatus, fetchMore } = useQuery<TResult, TVariables>(query, {
+        variables: queryVariables,
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
-        fetchPolicy: options?.fetchPolicy,
+        fetchPolicy,
     })
+
+    let loading = queryLoading
+
+    /**
+     * Apollo still sets `loading` to `true` when `cache-and-network` is used, even if the query is immediately returned from the cache.
+     * We override this behavior to set `loading` to `false` if the query can immediately be returned from the cache.
+     * If a user is fetching more data, we still preserve the original behavior as the cache is updated in-place.
+     */
+    if (loading && fetchPolicy === 'cache-and-network' && networkStatus !== NetworkStatus.fetchMore) {
+        const inCache = client.readQuery<TResult, TVariables>({
+            query: getDocumentNode(query),
+            variables: queryVariables,
+        })
+
+        loading = !inCache
+    }
 
     /**
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
