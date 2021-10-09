@@ -24,7 +24,6 @@ import {
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
-    UserRepositoriesResult,
     RepositoriesResult,
     SiteAdminRepositoryFields,
 } from '../../../graphql-operations'
@@ -520,15 +519,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
         },
         [
-            publicRepoState.repos,
             publicRepoState.enabled,
-            ownerID,
-            codeHosts.hosts,
+            publicRepoState.repos,
             selectionState.radio,
             selectionState.repos,
+            onSyncedPublicRepositoriesUpdate,
+            isOrgMode,
             history,
             routingPrefix,
-            onSyncedPublicRepositoriesUpdate,
+            ownerID,
+            codeHosts.hosts,
         ]
     )
 
