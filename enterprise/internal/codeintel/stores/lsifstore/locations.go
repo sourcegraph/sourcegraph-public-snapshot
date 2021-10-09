@@ -86,7 +86,7 @@ func (s *Store) locations(ctx context.Context, bundleID int, ids []precise.ID, l
 	}
 
 	// Get the list of indexes we need to read in order to find each result set identifier
-	indexes, err := s.translateIDsToResultChunkIndexes(ctx, bundleID, ids) // might have fucked this up somehow
+	indexes, err := s.translateIDsToResultChunkIndexes(ctx, bundleID, ids)
 	if err != nil {
 		return nil, 0, err
 	}
