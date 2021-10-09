@@ -25,7 +25,7 @@ export const showPasswordsPage = (props: UserProps): boolean => {
 
 export const showAccountSecurityPage = (props: UserProps): boolean => !showPasswordsPage(props)
 
-export const externalServiceUserModeFromTags = (tags: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
+export const externalServiceUserModeFromTags = (tags?: string[]): 'disabled' | 'public' | 'all' | 'unknown' => {
     const siteMode = window.context.externalServicesUserMode
     if (siteMode === 'all') {
         // Site mode already allows all repo types, no need to check user tags

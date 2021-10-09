@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { isEqual } from 'lodash'
 import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -25,10 +25,12 @@ import {
     Maybe,
     AffiliatedRepositoriesResult,
     UserRepositoriesResult,
+    RepositoriesResult,
     SiteAdminRepositoryFields,
 } from '../../../graphql-operations'
 import {
     listUserRepositories,
+    listOrgRepositories,
     queryUserPublicRepositories,
     setUserPublicRepositories,
 } from '../../../site-admin/backend'
@@ -38,17 +40,11 @@ import { externalServiceUserModeFromTags } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
-interface authenticatedUser {
-    id: string
-    siteAdmin: boolean
-    tags: string[]
-}
-
 interface Props
-    extends RouteComponentProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
-    authenticatedUser: authenticatedUser
+    ownerID: string
+    ownerType: 'user' | 'org'
     routingPrefix: string
 }
 
@@ -142,8 +138,8 @@ const displayAffiliateRepoProblems = (
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
-    history,
-    authenticatedUser,
+    ownerID,
+    ownerType,
     routingPrefix,
     telemetryService,
     onSyncedPublicRepositoriesUpdate,
@@ -152,8 +148,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
+    const history = useHistory()
+    const isOrgMode = ownerType === 'org'
+
+    const listRepositories = isOrgMode ? listOrgRepositories : listUserRepositories
+
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags() === 'all'
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -186,35 +187,33 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: authenticatedUser.id,
+                namespace: ownerID,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [authenticatedUser.id]
+        [ownerID]
     )
 
     const fetchAffiliatedRepos = useCallback(
         async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
             listAffiliatedRepositories({
-                namespace: authenticatedUser.id,
+                namespace: ownerID,
                 codeHost: null,
                 query: null,
             })
                 .toPromise()
                 .then(({ affiliatedRepositories: { nodes } }) => nodes),
 
-        [authenticatedUser.id]
+        [ownerID]
     )
 
     const fetchSelectedRepositories = useCallback(
-        async (): Promise<
-            (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']['nodes']
-        > =>
-            listUserRepositories({ id: authenticatedUser.id, first: 2000 })
+        async (): Promise<NonNullable<RepositoriesResult>['repositories']['nodes']> =>
+            listRepositories({ id: ownerID, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
-        [authenticatedUser.id]
+        [ownerID, listRepositories]
     )
 
     const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
@@ -387,7 +386,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // fetch public repos for the "other public repositories" textarea
     const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
-        const result = await queryUserPublicRepositories(authenticatedUser.id).toPromise()
+        const result = await queryUserPublicRepositories(ownerID).toPromise()
 
         if (!result) {
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
@@ -400,11 +399,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
-    }, [authenticatedUser.id])
+    }, [ownerID])
 
     useEffect(() => {
-        fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
-    }, [fetchAndSetPublicRepos])
+        if (!isOrgMode) {
+            fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
+        }
+    }, [fetchAndSetPublicRepos, isOrgMode])
 
     // select repos by code host and query
     useEffect(() => {
@@ -472,12 +473,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setFetchingRepos('loading')
             onSyncedPublicRepositoriesUpdate(publicRepos.length)
 
-            try {
-                await setUserPublicRepositories(authenticatedUser.id, publicRepos).toPromise()
-            } catch (error) {
-                setOtherPublicRepoError(asError(error))
-                setFetchingRepos(undefined)
-                return
+            if (!isOrgMode) {
+                try {
+                    await setUserPublicRepositories(ownerID, publicRepos).toPromise()
+                } catch (error) {
+                    setOtherPublicRepoError(asError(error))
+                    setFetchingRepos(undefined)
+                    return
+                }
             }
 
             if (!selectionState.radio) {
@@ -519,7 +522,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         [
             publicRepoState.repos,
             publicRepoState.enabled,
-            authenticatedUser.id,
+            ownerID,
             codeHosts.hosts,
             selectionState.radio,
             selectionState.repos,
@@ -816,7 +819,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             }
                         </div>
                     </li>
-                    {window.context.sourcegraphDotComMode && (
+                    {window.context.sourcegraphDotComMode && !isOrgMode && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
                             <div>
                                 <h3>Other public repositories</h3>

@@ -11,7 +11,7 @@ import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { SettingsRepositoriesPage } from '../../user/settings/repositories/SettingsRepositoriesPage'
-// import { UserAddCodeHostsPageContainer } from '../../user/settings/UserAddCodeHostsPageContainer'
+import { UserSettingsManageRepositoriesPage } from '../../user/settings/repositories/UserSettingsManageRepositoriesPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
 import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
@@ -116,6 +116,21 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                         ownerType="org"
                                         routingPrefix={`${props.org.url}/settings`}
                                         onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
+                                    />
+                                )}
+                            />
+                            <Route
+                                path={`${props.match.path}/repositories/manage`}
+                                key="hardcoded-key"
+                                exact={true}
+                                render={routeComponentProps => (
+                                    <UserSettingsManageRepositoriesPage
+                                        {...routeComponentProps}
+                                        {...props}
+                                        ownerID={props.org.id}
+                                        ownerType="org"
+                                        routingPrefix={`${props.org.url}/settings`}
+                                        onSyncedPublicRepositoriesUpdate={() => {}}
                                     />
                                 )}
                             />
