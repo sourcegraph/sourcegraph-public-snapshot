@@ -15,6 +15,8 @@ export interface UseConnectionResult<TData> {
     fetchMore: () => void
     loading: boolean
     hasNextPage: boolean
+    startPolling: (pollInterval: number) => void
+    stopPolling: () => void
 }
 
 interface UseConnectionConfig {
@@ -92,7 +94,7 @@ export const useConnection = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore } = useQuery<TResult, TVariables>(query, {
+    const { data, error, loading, fetchMore, startPolling, stopPolling } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
@@ -156,5 +158,7 @@ export const useConnection = <TResult, TVariables, TData>({
         error,
         fetchMore: fetchMoreData,
         hasNextPage: connection ? hasNextPage(connection) : false,
+        startPolling,
+        stopPolling,
     }
 }
