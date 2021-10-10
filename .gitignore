@@ -62,11 +62,15 @@ yarn-error.log
 /ui/assets/webpack.manifest.json
 /ui/assets/vs
 /ui/assets/*.html
+/ui/assets/*.html.br
 /ui/assets/*.map
 /ui/assets/*.txt
 /ui/assets/extension
 /ui/.tmp
 /ui/assets/scripts/
+/ui/assets/styles/
+/ui/assets/*.br
+
 *.json.actual
 
 eb-bundle.zip

@@ -1,7 +1,12 @@
+import fs from 'fs'
+import https from 'https'
+import path from 'path'
+
 import chalk from 'chalk'
 import compression from 'compression'
 import historyApiFallback from 'connect-history-api-fallback'
 import express, { RequestHandler } from 'express'
+import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
@@ -15,6 +20,7 @@ import {
     STATIC_INDEX_PATH,
     WEB_SERVER_URL,
     shouldCompressResponse,
+    ROOT_PATH,
 } from '../utils'
 
 const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
@@ -31,14 +37,18 @@ async function startProductionServer(): Promise<void> {
     const app = express()
 
     // Compress all HTTP responses
-    app.use(compression({ filter: shouldCompressResponse }))
+    // app.use(compression({ filter: shouldCompressResponse }))
     // Serve index.html in place of any 404 responses.
     app.use(historyApiFallback() as RequestHandler)
     // Attach `CSRF_COOKIE_NAME` cookie to every response to avoid "CSRF token is invalid" API error.
     app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
 
     // Serve build artifacts.
-    app.use('/.assets', express.static(STATIC_ASSETS_PATH))
+
+    app.use(
+        '/.assets',
+        expressStaticGzip(STATIC_ASSETS_PATH, { enableBrotli: true, orderPreference: ['br'], index: false })
+    )
 
     // Proxy API requests to the `process.env.SOURCEGRAPH_API_URL`.
     app.use(
@@ -55,7 +65,9 @@ async function startProductionServer(): Promise<void> {
     // Redirect remaining routes to index.html
     app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))
 
-    app.listen(SOURCEGRAPH_HTTPS_PORT, () => {
+    const server = https.createServer({ requestCert: false, rejectUnauthorized: false }, app)
+
+    server.listen(SOURCEGRAPH_HTTPS_PORT, () => {
         signale.success(`Production server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
     })
 }

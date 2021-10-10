@@ -86,9 +86,15 @@ async function startWebpackDevelopmentServer({
         historyApiFallback: {
             disableDotRule: true,
         },
-        port: SOURCEGRAPH_HTTPS_PORT,
+        port: 3080,
         client: {
             overlay: false,
+            webSocketTransport: 'ws',
+            logging: 'verbose',
+            webSocketURL: {
+                port: SOURCEGRAPH_HTTPS_PORT,
+                protocol: 'wss',
+            },
         },
         static: {
             directory: STATIC_ASSETS_PATH,
