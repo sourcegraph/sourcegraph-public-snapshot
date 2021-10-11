@@ -2,7 +2,7 @@
 
 set -e
 
-BASE_URL=http://localhost:3443
+BASE_URL=https://localhost:3443
 TEST_LABEL=$1
 TEST_PATH=$2
 
@@ -17,8 +17,17 @@ echo "--- Yarn install in root"
 # mutex is necessary since CI runs various yarn installs in parallel
 NODE_ENV='' yarn --mutex network --frozen-lockfile --network-timeout 60000
 
+echo "--- Stopping Caddy"
+./dev/caddy.sh stop --config=dev/Caddyfile
+
+# echo "--- Starting Caddy"
+# ./dev/caddy.sh start --config=dev/Caddyfile
+
 echo "--- Collecting Lighthouse results"
 yarn lhci collect --url="$BASE_URL$TEST_PATH"
+
+# echo "--- Stopping Caddy"
+# ./dev/caddy.sh stop --config=dev/Caddyfile
 
 echo "--- Uploading Lighthouse results"
 yarn lhci upload --githubStatusContextSuffix="/$TEST_LABEL" --uploadUrlMap="$SHOULD_STORE_RESULTS"

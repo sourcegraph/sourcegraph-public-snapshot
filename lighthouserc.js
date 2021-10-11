@@ -4,8 +4,8 @@ const config = {
   ci: {
     collect: {
       // Note: We override this URL in CI through ./dev/ci/yarn-lighthouse.sh
-      url: 'http://sourcegraph.test:3443/',
-      startServerCommand: 'sg start web-standalone',
+      url: 'https://sourcegraph.test:3443/',
+      startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
       settings: {
         preset: 'desktop',
         chromeFlags: '--no-sandbox',
@@ -13,9 +13,6 @@ const config = {
         skipAudits: [
           // SEO: Normally enabled dynamically for different paths in the production server
           'meta-description',
-          // Best practices: HTTPS currently disabled in local server: https://github.com/sourcegraph/sourcegraph/issues/21869
-          'is-on-https',
-          'uses-http2',
           // SEO: Robots.txt file isn't served locally
           'robots-txt',
         ],
