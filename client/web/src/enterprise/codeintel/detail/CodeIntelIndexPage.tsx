@@ -1,13 +1,12 @@
 import { useApolloClient } from '@apollo/client'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { timer } from 'rxjs'
-import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
+import { takeWhile } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
@@ -26,8 +25,6 @@ export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: strin
     queryLisfIndex?: typeof defaultQueryLsifIndex
     now?: () => Date
 }
-
-const REFRESH_INTERVAL_MS = 5000
 
 const classNamesByState = new Map([
     [LSIFIndexState.COMPLETED, 'alert-success'],
@@ -56,19 +53,11 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     }, [deleteError])
 
     const indexOrError = useObservable(
-        useMemo(
-            () =>
-                timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
-                    concatMap(() =>
-                        queryLisfIndex(id, apolloClient).pipe(
-                            catchError((error): [ErrorLike] => [asError(error)]),
-                            repeatWhen(observable => observable.pipe(delay(REFRESH_INTERVAL_MS)))
-                        )
-                    ),
-                    takeWhile(shouldReload, true)
-                ),
-            [id, queryLisfIndex, apolloClient]
-        )
+        useMemo(() => queryLisfIndex(id, apolloClient).pipe(takeWhile(shouldReload, true)), [
+            id,
+            queryLisfIndex,
+            apolloClient,
+        ])
     )
 
     const deleteIndex = useCallback(async (): Promise<void> => {
