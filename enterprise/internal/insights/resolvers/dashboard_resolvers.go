@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -24,6 +25,7 @@ var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionR
 var _ graphqlbackend.InsightDashboardResolver = &insightDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
+var _ graphqlbackend.InsightDashboardPayloadResolver = &insightDashboardPayloadResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
@@ -41,7 +43,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	d.once.Do(func() {
 		args := store.DashboardQueryArgs{}
 		if d.args.After != nil {
-			afterID, err := unmarshal(graphql.ID(*d.args.After))
+			afterID, err := unmarshalDashboardID(graphql.ID(*d.args.After))
 			if err != nil {
 				d.err = errors.Wrap(err, "unmarshalID")
 				return
@@ -128,14 +130,14 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 	for _, userGrant := range *args.Input.Grants.Users {
 		userID, err := graphqlbackend.UnmarshalUserID(userGrant)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal user id: %s", userGrant))
 		}
 		dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
 	}
 	for _, orgGrant := range *args.Input.Grants.Organizations {
 		orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal org id: %s", orgGrant))
 		}
 		dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
 	}
@@ -153,7 +155,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
-	dashboardID, err := unmarshal(args.Id)
+	dashboardID, err := unmarshalDashboardID(args.Id)
 	if err != nil {
 		return emptyResponse, err
 	}

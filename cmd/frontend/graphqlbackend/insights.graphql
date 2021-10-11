@@ -236,17 +236,17 @@ type InsightDashboard implements Node {
 }
 
 """
-A payload containing a single dashboard.
+Response wrapper object for insight dashboard mutations.
 """
 type InsightDashboardPayload {
     """
-    A dashboard of insights.
+    The result dashboard after mutation.
     """
     dashboard: InsightDashboard!
 }
 
 """
-Arguments needed to create a new dashboard.
+Input object for creating a new dashboard.
 """
 input CreateInsightDashboardInput {
     """
@@ -262,7 +262,7 @@ input CreateInsightDashboardInput {
 """
 Permissions to grant.
 """
-input InsightsPermissionGrants {
+type InsightsPermissionGrants {
     """
     Specific users to grant permissions to.
     """
