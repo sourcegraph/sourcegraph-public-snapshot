@@ -300,3 +300,16 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		t.Errorf("unexpected state (-want +got):\n%s", diff)
 	}
 }
+
+func TestCorrelateConflictingDocumentProperties(t *testing.T) {
+	// dump4 is the same as dump1, but with one wrong "document" property
+	input, err := os.ReadFile("../testdata/dump4.lsif")
+	if err != nil {
+		t.Fatalf("unexpected error reading test file: %s", err)
+	}
+
+	_, err = correlateFromReader(context.Background(), bytes.NewReader(input), "")
+	if err == nil {
+		t.Fatalf("expected an error correlating input with conflicting documents for different item edges")
+	}
+}
