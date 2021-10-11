@@ -1,31 +1,31 @@
 import classnames from 'classnames'
+import { camelCase } from 'lodash';
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { Link } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
+import { asError } from '@sourcegraph/shared/src/util/errors';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
-import { InsightsDashboardCreationContent } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
-import { useDashboardSettings } from '../creation/hooks/use-dashboard-settings'
+import { FORM_ERROR } from '../../../components/form/hooks/useForm';
+import { InsightsApiContext } from '../../../core/backend/api-provider'
+import {
+    DashboardCreationFields,
+    InsightsDashboardCreationContent
+} from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
-import { useUpdateDashboardCallback } from './hooks/use-update-dashboard'
-import { InsightsApiContext } from '../../../core/backend/api-provider';
-import { useObservable } from '../../../../../../../shared/src/util/useObservable';
 
-interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, PlatformContextProps<'updateSettings'> {
+interface EditDashboardPageProps {
     dashboardId: string
-
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'organizations' | 'username'>
 }
 
@@ -33,48 +33,22 @@ interface EditDashboardPageProps extends SettingsCascadeProps<Settings>, Platfor
  * Displays the edit (configure) dashboard page.
  */
 export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> = props => {
-    const { dashboardId, settingsCascade, authenticatedUser, platformContext } = props
-    const { getDashboard, getInsightSubjects } = useContext(InsightsApiContext)
+    const { dashboardId, authenticatedUser } = props
 
     const history = useHistory()
+    const { getDashboard, getInsightSubjects, updateDashboard } = useContext(InsightsApiContext)
 
-    const subjects = useObservable(
-        useMemo(() => getInsightSubjects(), [getInsightSubjects])
-    )
+    // Load edit dashboard information
+    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const dashboard = useObservable(useMemo(() => getDashboard(dashboardId), [getDashboard, dashboardId]))
 
-    const previousDashboard = useObservable(
-        useMemo(() => getDashboard(dashboardId), [getDashboard, dashboardId])
-    )
+    // Loading state
+    if (!subjects || dashboard === undefined) {
+        return <LoadingSpinner />
+    }
 
-    const dashboardInitialValues = useMemo(() => {
-        if (!previousDashboard) {
-            return undefined
-        }
-
-        const dashboardOwnerID = previousDashboard.owner.id
-
-        return {
-            name: previousDashboard.title,
-            visibility: dashboardOwnerID,
-        }
-    }, [previousDashboard])
-
-    const finalDashboardSettings = useDashboardSettings({
-        settingsCascade,
-
-        // Final settings used below as a store of all existing dashboards
-        // Usually we have a validation step for the title of dashboard because
-        // users can't have two dashboards with the same name/id. In edit mode
-        // we should allow users to have insight with id (camelCase(dashboard name))
-        // which already exists in the settings. For turning off this id/title
-        // validation we remove current dashboard from the final settings.
-        excludeDashboardIds: [dashboardId],
-    })
-
-    const handleSubmit = useUpdateDashboardCallback({ authenticatedUser, platformContext, previousDashboard })
-    const handleCancel = (): void => history.goBack()
-
-    if (!previousDashboard) {
+    // In case if we got null that means we couldn't find this dashboard
+    if (dashboard === null) {
         return (
             <HeroPage
                 icon={MapSearchIcon}
@@ -89,6 +63,31 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             />
         )
     }
+
+    // Convert dashboard info to initial form values
+    const dashboardInitialValues = dashboard
+        ? { name: dashboard.title, visibility: dashboard.owner.id }
+        : undefined
+
+    const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<void| unknown> => {
+        if (!dashboard) {
+            return
+        }
+
+        try {
+            await updateDashboard({
+                previousDashboard: dashboard,
+                nextDashboardInput: dashboardValues
+            }).toPromise()
+
+            history.push(`/insights/dashboards/${camelCase(dashboardValues.name.trim())}`)
+        } catch (error) {
+            return { [FORM_ERROR]: asError(error) }
+        }
+
+        return
+    }
+    const handleCancel = (): void => history.goBack()
 
     return (
         <Page className={classnames('col-8', styles.page)}>
@@ -110,7 +109,6 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             <Container className="mt-4">
                 <InsightsDashboardCreationContent
                     initialValues={dashboardInitialValues}
-                    dashboardsSettings={finalDashboardSettings}
                     subjects={subjects}
                     onSubmit={handleSubmit}
                 >

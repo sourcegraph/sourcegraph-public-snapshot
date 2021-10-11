@@ -5,6 +5,7 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
+import { InsightDashboard as InsightDashboardConfiguration } from '../../../../schema/settings.schema';
 import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
 import {
     SearchBackendBasedInsight,
@@ -87,6 +88,16 @@ export interface CreateInsightWithFiltersInputs {
     filters: SearchBasedBackendFilters
 }
 
+export interface UpdateDashboardInput {
+    previousDashboard: SettingsBasedInsightDashboard
+    nextDashboardInput: DashboardInput
+}
+
+export interface DashboardInput {
+    name: string
+    visibility: string
+}
+
 export interface CodeInsightsBackend {
 
     /**
@@ -96,6 +107,11 @@ export interface CodeInsightsBackend {
     getDashboards: () => Observable<InsightDashboard[]>
 
     getDashboard: (dashboardId:string) => Observable<SettingsBasedInsightDashboard | null>
+
+    createDashboard: (input: DashboardInput) => Observable<void>
+    updateDashboard: (input: UpdateDashboardInput) => Observable<void>
+
+    findDashboardByName: (name: string) => Observable<InsightDashboardConfiguration | null>
 
     /**
      * Returns all reachable subject's insights by owner id.

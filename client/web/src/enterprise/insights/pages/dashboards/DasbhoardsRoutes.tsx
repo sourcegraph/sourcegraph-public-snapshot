@@ -32,9 +32,7 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
                 path={`${match.url}/dashboards/:dashboardId/edit`}
                 render={(routeProps: RouteComponentProps<{ dashboardId: string }>) => (
                     <EditDashboardPage
-                        platformContext={platformContext}
                         authenticatedUser={authenticatedUser}
-                        settingsCascade={settingsCascade}
                         dashboardId={routeProps.match.params.dashboardId}
                     />
                 )}
@@ -56,10 +54,8 @@ export const DashboardsRoutes: React.FunctionComponent<DashboardsRoutesProps> = 
                 path={`${match.url}/add-dashboard`}
                 render={() => (
                     <InsightsDashboardCreationPage
-                        platformContext={platformContext}
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
-                        settingsCascade={settingsCascade}
                     />
                 )}
             />

@@ -1,33 +1,34 @@
-import { camelCase } from 'lodash';
+import { camelCase } from 'lodash'
 import { Observable, of, throwError } from 'rxjs'
-import { switchMap } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context';
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings';
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
-import { isDefined } from '@sourcegraph/shared/src/util/types';
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings } from '../../../../schema/settings.schema';
-import { getInsightsDashboards } from '../../hooks/use-dashboards/use-dashboards';
-import { getSubjectDashboardByID } from '../../hooks/use-dashboards/utils';
-import { findInsightById } from '../../hooks/use-insight/use-insight';
-import { getReachableInsights } from '../../pages/dashboards/dashboard-page/components/add-insight-modal/hooks/get-reachable-insights';
+import { InsightDashboard as InsightDashboardConfiguration, Settings } from '../../../../schema/settings.schema'
+import { getInsightsDashboards } from '../../hooks/use-dashboards/use-dashboards'
+import { getSubjectDashboardByID } from '../../hooks/use-dashboards/utils'
+import { findInsightById } from '../../hooks/use-insight/use-insight'
+import { createSanitizedDashboard } from '../../pages/dashboards/creation/utils/dashboard-sanitizer';
+import { getReachableInsights } from '../../pages/dashboards/dashboard-page/components/add-insight-modal/hooks/get-reachable-insights'
 import {
+    addDashboardToSettings,
     addInsightToDashboard,
     removeDashboardFromSettings,
-    updateDashboardInsightIds
-} from '../settings-action/dashboards';
-import { addInsightToSettings } from '../settings-action/insights';
+    updateDashboardInsightIds,
+} from '../settings-action/dashboards'
+import { addInsightToSettings } from '../settings-action/insights'
 import {
-    Insight,
-    InsightDashboard,
+    Insight, InsightDashboard,
     InsightTypePrefix,
     isVirtualDashboard,
-    SettingsBasedInsightDashboard
-} from '../types';
-import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard';
-import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../types/insight/search-insight';
-import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/subjects';
+    SettingsBasedInsightDashboard,
+} from '../types'
+import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
+import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../types/insight/search-insight'
+import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/subjects'
 
 import { getBackendInsight } from './api/get-backend-insight'
 import { getBuiltInInsight } from './api/get-built-in-insight'
@@ -36,14 +37,16 @@ import { getRepositorySuggestions } from './api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
 import { getSearchInsightContent } from './api/get-search-insight-content/get-search-insight-content'
 import { getSubjectSettings, updateSubjectSettings } from './api/subject-settings'
-import { CodeInsightsBackend, CreateInsightWithFiltersInputs, DashboardInfo, ReachableInsight } from './types'
+import {
+    CodeInsightsBackend,
+    CreateInsightWithFiltersInputs,
+    DashboardInfo, DashboardInput,
+    ReachableInsight,
+    UpdateDashboardInput,
+} from './types'
 
 export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
-
-    constructor(
-        private settingCascade: SettingsCascadeOrError<Settings>,
-        private platformContext: PlatformContext
-    ) {}
+    constructor(private settingCascade: SettingsCascadeOrError<Settings>, private platformContext: PlatformContext) {}
 
     // Insights loading
     public getBackendInsight = getBackendInsight
@@ -70,7 +73,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
     }
 
     public updateDashboardInsightIds(options: DashboardInfo): Observable<void> {
-        const { dashboardOwnerId, dashboardSettingKey, insightIds} = options
+        const { dashboardOwnerId, dashboardSettingKey, insightIds } = options
 
         return this.getSubjectSettings(dashboardOwnerId).pipe(
             switchMap(settings => {
@@ -99,7 +102,10 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         return of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
     }
 
-    public updateInsightDrillDownFilters(insight: SearchBackendBasedInsight, filters: SearchBasedBackendFilters): Observable<void> {
+    public updateInsightDrillDownFilters(
+        insight: SearchBackendBasedInsight,
+        filters: SearchBasedBackendFilters
+    ): Observable<void> {
         return this.getSubjectSettings(insight.visibility).pipe(
             switchMap(settings => {
                 const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
@@ -170,6 +176,77 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
 
         return of(getSubjectDashboardByID(subject, settings, dashboardId))
     }
+
+    public updateDashboard(input: UpdateDashboardInput): Observable<void> {
+        const { previousDashboard, nextDashboardInput } = input
+
+        return of(null).pipe(
+            switchMap(() => {
+                if (previousDashboard.owner.id !== nextDashboardInput.visibility) {
+                    return this.getSubjectSettings(previousDashboard.owner.id).pipe(
+                        switchMap(settings => {
+                            const editedSettings = removeDashboardFromSettings(
+                                settings.contents,
+                                previousDashboard.settingsKey
+                            )
+
+                            return this.updateSubjectSettings(
+                                this.platformContext,
+                                previousDashboard.owner.id,
+                                editedSettings
+                            )
+                        })
+                    )
+                }
+
+                return of(null)
+            }),
+            switchMap(() => getSubjectSettings(nextDashboardInput.visibility)),
+            switchMap(settings => {
+                let settingsContent = settings.contents
+
+                // Since id (settings key) of insight dashboard is based on its title
+                // if title was changed we need remove old dashboard object from the settings
+                // by dashboard's old id
+                if (previousDashboard.title !== nextDashboardInput.name) {
+                    settingsContent = removeDashboardFromSettings(settingsContent, previousDashboard.settingsKey)
+                }
+
+                const updatedDashboard: InsightDashboardConfiguration = {
+                    ...createSanitizedDashboard(nextDashboardInput),
+                    // We have to preserve id and insights IDs value since edit UI
+                    // doesn't have these options.
+                    id: previousDashboard.id,
+                    insightIds: previousDashboard.insightIds,
+                }
+
+                settingsContent = addDashboardToSettings(settingsContent, updatedDashboard)
+
+                return this.updateSubjectSettings(this.platformContext, nextDashboardInput.visibility, settingsContent)
+            })
+        )
+    }
+
+    public findDashboardByName(name: string): Observable<InsightDashboardConfiguration | null> {
+        if (isErrorLike(this.settingCascade.final) || !this.settingCascade.final) {
+            return of(null)
+        }
+
+        const dashboards = this.settingCascade.final['insights.dashboards'] ?? {}
+
+        return of(dashboards[camelCase(name)] ?? null)
+    }
+
+    public createDashboard(input: DashboardInput): Observable<void> {
+        return this.getSubjectSettings(input.visibility).pipe(
+            switchMap(settings => {
+                const dashboard = createSanitizedDashboard(input)
+                const editedSettings = addDashboardToSettings(settings.contents, dashboard)
+
+                return this.updateSubjectSettings(this.platformContext, input.visibility, editedSettings)
+            })
+        )
+    }
 }
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
@@ -199,4 +276,7 @@ export class CodeInsightsFakeBackend implements CodeInsightsBackend {
     public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
     public getInsightSubjects = errorMockMethod('getInsightSubjects')
     public getDashboard = errorMockMethod('getDashboard')
+    public updateDashboard = errorMockMethod('updateDashboard')
+    public findDashboardByName = errorMockMethod('findDashboardByName')
+    public createDashboard = errorMockMethod('createDashboard')
 }
