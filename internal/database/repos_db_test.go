@@ -533,7 +533,7 @@ func TestRepos_List_cloned(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r"})
+	mine := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "a/r"}, types.GitserverRepo{CloneStatus: types.CloneStatusNotCloned})
 	yours := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "b/r"}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	tests := []struct {
