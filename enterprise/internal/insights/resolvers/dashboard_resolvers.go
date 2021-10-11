@@ -136,7 +136,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 			dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
 		}
 	}
-	if args.Input.Grants.Users != nil {
+	if args.Input.Grants.Organizations != nil {
 		for _, orgGrant := range *args.Input.Grants.Organizations {
 			orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
 			if err != nil {
