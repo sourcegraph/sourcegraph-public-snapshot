@@ -19,7 +19,8 @@ import { OpenDiffOnSourcegraph } from './OpenDiffOnSourcegraph'
 import { OpenOnSourcegraph } from './OpenOnSourcegraph'
 
 export interface ButtonProps {
-    className?: string
+    listItemClass?: string
+    actionItemClass?: string
 }
 
 export interface CodeViewToolbarClassProps extends ActionNavItemsClassProps {
@@ -46,6 +47,9 @@ export interface CodeViewToolbarProps
      */
     fileInfoOrError: DiffOrBlobInfo<FileInfoWithContent> | ErrorLike
 
+    /**
+     * Code-view specific className overrides.
+     */
     buttonProps?: ButtonProps
     onSignInClose: () => void
     location: H.Location
@@ -57,7 +61,11 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
         {!props.hideActions && (
             <ActionsNavItems
                 {...props}
-                listItemClass={classNames('code-view-toolbar__item', props.listItemClass)}
+                listItemClass={classNames(
+                    'code-view-toolbar__item',
+                    props.buttonProps?.listItemClass ?? props.listItemClass
+                )}
+                actionItemClass={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                 menu={ContributableMenu.EditorTitle}
                 extensionsController={props.extensionsController}
                 platformContext={props.platformContext}
@@ -70,18 +78,23 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                 <SignInButton
                     sourcegraphURL={props.sourcegraphURL}
                     onSignInClose={props.onSignInClose}
-                    className={props.actionItemClass}
+                    className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                     iconClassName={props.actionItemIconClass}
                 />
             ) : null
         ) : (
             <>
                 {!('blob' in props.fileInfoOrError) && props.fileInfoOrError.head && props.fileInfoOrError.base && (
-                    <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                    <li
+                        className={classNames(
+                            'code-view-toolbar__item',
+                            props.buttonProps?.listItemClass ?? props.listItemClass
+                        )}
+                    >
                         <OpenDiffOnSourcegraph
                             ariaLabel="View file diff on Sourcegraph"
                             platformContext={props.platformContext}
-                            className={props.actionItemClass}
+                            className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                             iconClassName={props.actionItemIconClass}
                             openProps={{
                                 sourcegraphURL: props.sourcegraphURL,
@@ -100,10 +113,15 @@ export const CodeViewToolbar: React.FunctionComponent<CodeViewToolbarProps> = pr
                     // Only show the "View file" button if we were able to fetch the file contents
                     // from the Sourcegraph instance
                     'blob' in props.fileInfoOrError && props.fileInfoOrError.blob.content !== undefined && (
-                        <li className={classNames('code-view-toolbar__item', props.listItemClass)}>
+                        <li
+                            className={classNames(
+                                'code-view-toolbar__item',
+                                props.buttonProps?.actionItemClass ?? props.listItemClass
+                            )}
+                        >
                             <OpenOnSourcegraph
                                 ariaLabel="View file on Sourcegraph"
-                                className={props.actionItemClass}
+                                className={classNames(props.buttonProps?.actionItemClass ?? props.actionItemClass)}
                                 iconClassName={props.actionItemIconClass}
                                 openProps={{
                                     sourcegraphURL: props.sourcegraphURL,

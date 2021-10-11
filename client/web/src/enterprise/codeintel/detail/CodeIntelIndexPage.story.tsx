@@ -408,13 +408,12 @@ const Template: Story<CodeIntelIndexPageProps> = args => (
 
 const defaults: Partial<CodeIntelIndexPageProps> = {
     now,
-    deleteLsifIndex: () => of(),
 }
 
 export const Queued = Template.bind({})
 Queued.args = {
     ...defaults,
-    fetchLsifIndex: () =>
+    queryLisfIndex: () =>
         of({
             ...indexPrototype,
             id: '1',
@@ -428,7 +427,7 @@ Queued.args = {
 export const Processing = Template.bind({})
 Processing.args = {
     ...defaults,
-    fetchLsifIndex: () =>
+    queryLisfIndex: () =>
         of({
             ...indexPrototype,
             id: '1',
@@ -442,7 +441,7 @@ Processing.args = {
 export const Completed = Template.bind({})
 Completed.args = {
     ...defaults,
-    fetchLsifIndex: () =>
+    queryLisfIndex: () =>
         of({
             ...indexPrototype,
             id: '1',
@@ -457,7 +456,7 @@ Completed.args = {
 export const Errored = Template.bind({})
 Errored.args = {
     ...defaults,
-    fetchLsifIndex: () =>
+    queryLisfIndex: () =>
         of({
             ...indexPrototype,
             id: '1',
@@ -474,7 +473,7 @@ Errored.args = {
 export const AssociatedUpload = Template.bind({})
 AssociatedUpload.args = {
     ...defaults,
-    fetchLsifIndex: () =>
+    queryLisfIndex: () =>
         of({
             ...indexPrototype,
             id: '1',

@@ -11,6 +11,7 @@
  deleted_at      | timestamp with time zone |           |          | 
  creator_user_id | integer                  |           | not null | 
  scopes          | text[]                   |           | not null | 
+ internal        | boolean                  |           |          | false
 Indexes:
     "access_tokens_pkey" PRIMARY KEY, btree (id)
     "access_tokens_value_sha256_key" UNIQUE CONSTRAINT, btree (value_sha256)
@@ -18,6 +19,8 @@ Indexes:
 Foreign-key constraints:
     "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
+Referenced by:
+    TABLE "batch_spec_workspace_execution_jobs" CONSTRAINT "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
 
 ```
 
@@ -98,6 +101,7 @@ Indexes:
  updated_at        | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
 
@@ -122,11 +126,13 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  cancel                  | boolean                  |           | not null | false
+ access_token_id         | bigint                   |           |          | 
 Indexes:
     "batch_spec_workspace_execution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_workspace_execution_jobs_cancel" btree (cancel)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
+    "batch_spec_workspace_execution_jobs_access_token_id_fkey" FOREIGN KEY (access_token_id) REFERENCES access_tokens(id) ON DELETE SET NULL DEFERRABLE
 
 ```
 
@@ -171,6 +177,7 @@ Referenced by:
  user_id           | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
+ created_from_raw  | boolean                  |           | not null | false
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -785,6 +792,7 @@ Referenced by:
  last_error            | text                     |           |          | 
  updated_at            | timestamp with time zone |           | not null | now()
  last_fetched          | timestamp with time zone |           | not null | now()
+ last_changed          | timestamp with time zone |           | not null | now()
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repos_cloned_status_idx" btree (repo_id) WHERE clone_status = 'cloned'::text

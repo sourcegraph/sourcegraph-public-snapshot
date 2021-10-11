@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -133,7 +134,7 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 	archivedNotSet := archived == nil
 
 	// Handle repogroup-only scenarios.
-	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 {
+	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 && len(minusRepoFilters) == 0 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
@@ -499,8 +500,8 @@ func capFirst(s string) string {
 func alertForError(err error) *searchAlert {
 	var (
 		alert *searchAlert
-		rErr  *run.RepoLimitError
-		tErr  *run.TimeLimitError
+		rErr  *commit.RepoLimitError
+		tErr  *commit.TimeLimitError
 		mErr  *missingRepoRevsError
 	)
 

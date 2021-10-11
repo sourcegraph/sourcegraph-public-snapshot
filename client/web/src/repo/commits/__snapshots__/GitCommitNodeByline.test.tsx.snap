@@ -14,7 +14,9 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
+  <div
+    className="overflow-hidden"
+  >
     committed by 
     <span
       className="font-weight-bold"
@@ -47,7 +49,9 @@ exports[`GitCommitNodeByline author 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
+  <div
+    className="overflow-hidden"
+  >
     committed by 
     <span
       className="font-weight-bold"
@@ -71,7 +75,9 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
   className=""
   data-testid="git-commit-node-byline"
 >
-  <div>
+  <div
+    className="flex-shrink-0"
+  >
     <img
       alt=""
       className="user-avatar icon-inline"
@@ -88,14 +94,16 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       src="http://example.com/bob.png"
     />
   </div>
-  <div>
+  <div
+    className="overflow-hidden"
+  >
     <span
       className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     authored and
+     authored and commited by
      
     <a
       className="font-weight-bold"
@@ -104,13 +112,12 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       bYang
     </a>
-     commited
      
     <span
       className="timestamp"
-      data-tooltip="1990-01-01"
+      data-tooltip="1991-01-01"
     >
-      about 16 years ago
+      about 15 years ago
     </span>
   </div>
 </div>
@@ -121,7 +128,9 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
   className=""
   data-testid="git-commit-node-byline"
 >
-  <div>
+  <div
+    className="flex-shrink-0"
+  >
     <img
       alt=""
       className="user-avatar icon-inline"
@@ -138,14 +147,16 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       src="http://example.com/bob.png"
     />
   </div>
-  <div>
+  <div
+    className="overflow-hidden"
+  >
     <span
       className="font-weight-bold"
       data-tooltip="alice@example.com"
     >
       Alice Zhao
     </span>
-     authored and
+     authored and commited by
      
     <a
       className="font-weight-bold"
@@ -154,13 +165,12 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       bYang
     </a>
-     commited
      
     <span
       className="timestamp"
-      data-tooltip="1990-01-01"
+      data-tooltip="1991-01-01"
     >
-      about 16 years ago
+      about 15 years ago
     </span>
   </div>
 </div>
@@ -180,7 +190,9 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
+  <div
+    className="overflow-hidden"
+  >
     committed by 
     <span
       className="font-weight-bold"
@@ -213,7 +225,9 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       src="http://example.com/alice.png"
     />
   </div>
-  <div>
+  <div
+    className="overflow-hidden"
+  >
     committed by 
     <span
       className="font-weight-bold"

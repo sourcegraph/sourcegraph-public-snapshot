@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/dineshappavoo/basex"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -243,6 +244,9 @@ type operations struct {
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
+
+	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
+	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
 }
 
 var (
@@ -363,6 +367,9 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+
+			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
+			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 		}
 	})
 
@@ -453,4 +460,9 @@ func (o LimitOpts) ToDB() string {
 		limitClause = fmt.Sprintf("LIMIT %d", o.DBLimit())
 	}
 	return limitClause
+}
+
+func isUniqueConstraintViolation(err error, constraintName string) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
 }

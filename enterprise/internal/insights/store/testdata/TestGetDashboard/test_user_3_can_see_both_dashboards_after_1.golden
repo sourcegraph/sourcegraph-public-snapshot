@@ -1,0 +1,4 @@
+[]*types.Dashboard{&types.Dashboard{
+	ID:    2,
+	Title: "private dashboard for user 3",
+}}

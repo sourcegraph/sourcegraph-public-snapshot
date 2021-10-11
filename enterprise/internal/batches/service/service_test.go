@@ -1270,6 +1270,10 @@ func TestService(t *testing.T) {
 				t.Fatalf("new batch spec has different NamespaceOrgID. new=%d, old=%d", newSpec.NamespaceOrgID, spec.NamespaceOrgID)
 			}
 
+			if !newSpec.CreatedFromRaw {
+				t.Fatalf("new batch spec not createdFromRaw: %t", newSpec.CreatedFromRaw)
+			}
+
 			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
 				BatchSpecID: newSpec.ID,
 			})
@@ -1340,6 +1344,10 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			if !newSpec.CreatedFromRaw {
+				t.Fatalf("batchSpec not createdFromRaw: %t", newSpec.CreatedFromRaw)
+			}
+
 			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
 				BatchSpecID: newSpec.ID,
 			})
@@ -1363,6 +1371,10 @@ func TestService(t *testing.T) {
 			})
 			if err != nil {
 				t.Fatal(err)
+			}
+
+			if !newSpec.CreatedFromRaw {
+				t.Fatalf("batchSpec not createdFromRaw: %t", newSpec.CreatedFromRaw)
 			}
 
 			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{

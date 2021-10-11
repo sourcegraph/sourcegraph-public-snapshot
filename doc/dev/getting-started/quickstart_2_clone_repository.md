@@ -20,4 +20,4 @@ It needs to be cloned into the same folder as `sourcegraph/sourcegraph`, so they
 
 > NOTE: Ensure that you periodically pull the latest changes from [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) as the secrets are updated from time to time.
 
-[< Previous](quickstart_1_install_dependencies.md) | [Next >](quickstart_3_start_docker.md)
+[< Previous](quickstart_1_install_dependencies.md) | [Next >](quickstart_3_install_sg.md)
