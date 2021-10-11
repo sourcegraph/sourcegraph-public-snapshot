@@ -42,15 +42,3 @@ type UserProperties struct {
 	HasActiveCodeHost       bool                `json:"has_active_code_host"`
 	IsSourcegraphTeammate   bool                `json:"is_sourcegraph_teammate"`
 }
-
-// FrontendUserProperties contains the subset of user properties that are stored
-// in localStorage in the web app, and passed in the userProperties field of
-// Events in the EventLogger.
-type FrontendUserProperties struct {
-	HasAddedRepos           bool `json:"hasAddedRepositories"`
-	NumberOfReposAdded      int  `json:"numberOfRepositoriesAdded"`
-	NumberPublicReposAdded  int  `json:"numberOfPublicRepos"`
-	NumberPrivateReposAdded int  `json:"numberOfPrivateRepos"`
-	HasActiveCodeHost       bool `json:"hasActiveCodeHost"`
-	IsSourcegraphTeammate   bool `json:"isSourcegraphTeammate"`
-}

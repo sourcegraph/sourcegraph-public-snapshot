@@ -368,26 +368,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                             ? combineLatest([
                                   listUserRepositories({
                                       id: authenticatedUser.id,
-                                      first: window.context.sourcegraphDotComMode ? undefined : 1,
+                                      first: 1,
                                   }),
                                   queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
                                   [authenticatedUser],
                               ])
                             : of(null)
                     ),
-                    tap(result => {
-                        if (!isErrorLike(result) && result !== null && window.context.sourcegraphDotComMode) {
-                            // Set user properties for Cloud analytics.
-                            const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
-                            this.setUserProperties(userRepositoriesResult, externalServicesResult, authenticatedUser)
-                        }
-                    }),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
                     if (!isErrorLike(result) && result !== null) {
                         const [userRepositoriesResult, externalServicesResult] = result
-
                         this.setState({
                             hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
                             hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
@@ -659,33 +651,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
-    private setUserProperties = (
-        reposResult: NonNullable<UserRepositoriesResult['node'] & { __typename: 'User' }>['repositories'],
-        extensionSvcResult: ExternalServicesResult['externalServices'],
-        authenticatedUser: AuthenticatedUser | null
-    ): void => {
-        const userProps: userProperties = {
-            hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
-            numberOfRepositoriesAdded: reposResult.totalCount ? reposResult.totalCount : 0,
-            numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
-            numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
-            hasActiveCodeHost: extensionSvcResult.totalCount > 0,
-            isSourcegraphTeammate: authenticatedUser?.email.endsWith('@sourcegraph.com') || false,
-        }
-        localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
-    }
-
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
-}
-
-interface userProperties {
-    hasAddedRepositories: boolean
-    numberOfRepositoriesAdded: number
-    numberOfPublicRepos: number
-    numberOfPrivateRepos: number
-    hasActiveCodeHost: boolean
-    isSourcegraphTeammate: boolean
 }

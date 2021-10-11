@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -40,7 +41,6 @@ type Event struct {
 	Referrer       *string
 	Argument       json.RawMessage
 	PublicArgument json.RawMessage
-	UserProperties json.RawMessage
 	DeviceID       *string
 	InsertID       *string
 	EventID        *int32
@@ -66,17 +66,80 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
 	}
+
 	if envvar.SourcegraphDotComMode() {
 		err := publishSourcegraphDotComEvent(args)
 		if err != nil {
 			return err
 		}
-		err = publishAmplitudeEvent(args)
+		err = publishAmplitudeEvent(ctx, args, db)
 		if err != nil {
 			return err
 		}
 	}
 	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument, args.PublicArgument, args.FeatureFlags, args.CohortID)
+}
+
+func getUserProperties(ctx context.Context, db dbutil.DB, args Event) (json.RawMessage, error) {
+	firstSourceURL := ""
+	if args.FirstSourceURL != nil {
+		firstSourceURL = *args.FirstSourceURL
+	}
+	referrer := ""
+	if args.Referrer != nil {
+		referrer = *args.Referrer
+	}
+
+	userProps := amplitude.UserProperties{
+		AnonymousUserID:         args.UserCookieID,
+		FirstSourceURL:          firstSourceURL,
+		Referrer:                referrer,
+		CohortID:                args.CohortID,
+		FeatureFlags:            args.FeatureFlags,
+		HasCloudAccount:         args.UserID != 0,
+		NumberOfReposAdded:      0,
+		HasAddedRepos:           false,
+		NumberPublicReposAdded:  0,
+		NumberPrivateReposAdded: 0,
+		HasActiveCodeHost:       false,
+		IsSourcegraphTeammate:   false,
+	}
+
+	if args.UserID == 0 {
+		return json.Marshal(userProps)
+	}
+
+	numberOfReposAdded, err := database.Repos(db).Count(ctx, database.ReposListOptions{UserID: args.UserID})
+	if err != nil {
+		return nil, err
+	}
+
+	userProps.NumberOfReposAdded = numberOfReposAdded
+	userProps.HasAddedRepos = numberOfReposAdded > 0
+	numberOfPublicReposAdded, err := database.Repos(db).Count(ctx, database.ReposListOptions{UserID: args.UserID, NoPrivate: true})
+	if err != nil {
+		return nil, err
+	}
+
+	userProps.NumberPrivateReposAdded = numberOfReposAdded - numberOfPublicReposAdded
+	userProps.NumberPublicReposAdded = numberOfPublicReposAdded
+	externalServicesAdded, err := database.ExternalServices(db).Count(ctx, database.ExternalServicesListOptions{NamespaceUserID: args.UserID})
+	if err != nil {
+		return nil, err
+	}
+	userProps.HasActiveCodeHost = externalServicesAdded > 0
+
+	userEmails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{UserID: args.UserID, OnlyVerified: true})
+	if err != nil {
+		return nil, err
+	}
+	for _, email := range userEmails {
+		if strings.HasSuffix(email.Email, "@sourcegraph.com") {
+			userProps.IsSourcegraphTeammate = true
+			break
+		}
+	}
+	return json.Marshal(userProps)
 }
 
 type bigQueryEvent struct {
@@ -139,10 +202,11 @@ func publishSourcegraphDotComEvent(args Event) error {
 	return pubsub.Publish(pubSubDotComEventsTopicID, string(pubsubEvent))
 }
 
-func publishAmplitudeEvent(args Event) error {
+func publishAmplitudeEvent(ctx context.Context, args Event, db dbutil.DB) error {
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
+
 	if amplitudeAPIToken == "" {
 		return nil
 	}
@@ -169,11 +233,8 @@ func publishAmplitudeEvent(args Event) error {
 	if args.InsertID == nil {
 		return errors.New("amplitude: Missing insert ID")
 	}
-	if args.UserProperties == nil {
-		return errors.New("amplitude: Missing user properties")
-	}
 
-	userProperties, err := getAmplitudeUserProperties(args)
+	userProperties, err := getUserProperties(ctx, db, args)
 	if err != nil {
 		return err
 	}
@@ -197,41 +258,6 @@ func publishAmplitudeEvent(args Event) error {
 
 	return amplitude.Publish(amplitudeEvent)
 
-}
-
-func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
-	firstSourceURL := ""
-	if args.FirstSourceURL != nil {
-		firstSourceURL = *args.FirstSourceURL
-	}
-	referrer := ""
-	if args.Referrer != nil {
-		referrer = *args.Referrer
-	}
-	var userPropertiesFromFrontend amplitude.FrontendUserProperties
-	err := json.Unmarshal(args.UserProperties, &userPropertiesFromFrontend)
-	if err != nil {
-		return nil, err
-	}
-	userProperties, err := json.Marshal(amplitude.UserProperties{
-		AnonymousUserID:         args.UserCookieID,
-		FirstSourceURL:          firstSourceURL,
-		Referrer:                referrer,
-		CohortID:                args.CohortID,
-		FeatureFlags:            args.FeatureFlags,
-		HasCloudAccount:         args.UserID != 0,
-		NumberOfReposAdded:      userPropertiesFromFrontend.NumberOfReposAdded,
-		HasAddedRepos:           userPropertiesFromFrontend.HasAddedRepos,
-		NumberPublicReposAdded:  userPropertiesFromFrontend.NumberPublicReposAdded,
-		NumberPrivateReposAdded: userPropertiesFromFrontend.NumberPrivateReposAdded,
-		HasActiveCodeHost:       userPropertiesFromFrontend.HasActiveCodeHost,
-		IsSourcegraphTeammate:   userPropertiesFromFrontend.IsSourcegraphTeammate,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return userProperties, nil
 }
 
 // logLocalEvent logs users events.
