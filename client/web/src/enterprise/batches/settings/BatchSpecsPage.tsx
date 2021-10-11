@@ -1,3 +1,4 @@
+import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useCallback } from 'react'
 import { RouteComponentProps } from 'react-router'
 
@@ -11,17 +12,17 @@ import { PageTitle } from '../../../components/PageTitle'
 import { BatchSpecListFields } from '../../../graphql-operations'
 
 import { queryBatchSpecs as _queryBatchSpecs } from './backend'
-import { BatchSpecExecutionNode, BatchSpecExecutionNodeProps } from './BatchSpecExecutionNode'
-import styles from './BatchSpecExecutionsPage.module.scss'
+import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
+import styles from './BatchSpecsPage.module.scss'
 
-export interface BatchSpecExecutionsPageProps extends Pick<RouteComponentProps, 'history' | 'location'> {
+export interface BatchSpecsPageProps extends Pick<RouteComponentProps, 'history' | 'location'> {
     /** For testing purposes only. */
     queryBatchSpecs?: typeof _queryBatchSpecs
     /** For testing purposes only. Sets the current date */
     now?: () => Date
 }
 
-export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecutionsPageProps> = ({
+export const BatchSpecsPage: React.FunctionComponent<BatchSpecsPageProps> = ({
     history,
     location,
     queryBatchSpecs = _queryBatchSpecs,
@@ -40,40 +41,49 @@ export const BatchSpecExecutionsPage: React.FunctionComponent<BatchSpecExecution
 
     return (
         <>
-            <PageTitle title="Batch spec executions" />
-            <PageHeader headingElement="h2" path={[{ text: 'Batch spec executions' }]} className="mb-3" />
+            <PageTitle title="Batch specs" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Batch specs' }]}
+                description="All batch specs that currently exist."
+                className="mb-3"
+            />
             <Container>
-                <FilteredConnection<BatchSpecListFields, Omit<BatchSpecExecutionNodeProps, 'node'>>
+                <FilteredConnection<BatchSpecListFields, Omit<BatchSpecNodeProps, 'node'>>
                     history={history}
                     location={location}
-                    nodeComponent={BatchSpecExecutionNode}
+                    nodeComponent={BatchSpecNode}
                     nodeComponentProps={{ now }}
                     queryConnection={query}
                     hideSearch={true}
                     defaultFirst={20}
-                    noun="execution"
-                    pluralNoun="executions"
-                    listClassName={styles.executionsGrid}
+                    noun="batch spec"
+                    pluralNoun="batch specs"
+                    listClassName={styles.specsGrid}
                     listComponent="div"
                     withCenteredSummary={true}
-                    headComponent={ExecutionsHeader}
+                    headComponent={Header}
                     cursorPaging={true}
                     noSummaryIfAllNodesVisible={true}
-                    // TODO: This list is just for admins and is not public yet but we
-                    // should think about what to show a new Sourcegraph admin when this
-                    // list is empty.
-                    emptyElement={<>Nobody has executed a batch change yet!</>}
+                    emptyElement={<EmptyList />}
                 />
             </Container>
         </>
     )
 }
 
-const ExecutionsHeader: React.FunctionComponent<{}> = () => (
+const Header: React.FunctionComponent<{}> = () => (
     <>
         <span className="d-none d-md-block" />
         <h5 className="p-2 d-none d-md-block text-uppercase text-center text-nowrap">State</h5>
         <h5 className="p-2 d-none d-md-block text-uppercase text-nowrap">Batch spec</h5>
         <h5 className="d-none d-md-block text-uppercase text-center text-nowrap">Execution time</h5>
     </>
+)
+
+const EmptyList: React.FunctionComponent<{}> = () => (
+    <div className="text-muted text-center mb-3 w-100">
+        <MapSearchIcon className="icon" />
+        <div className="pt-2">No batch specs have been created so far.</div>
+    </div>
 )

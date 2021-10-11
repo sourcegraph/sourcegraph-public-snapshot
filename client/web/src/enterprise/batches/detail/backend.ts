@@ -33,9 +33,6 @@ import {
     ChangesetScheduleEstimateVariables,
     CreateChangesetCommentsResult,
     CreateChangesetCommentsVariables,
-    BatchChangeBulkOperationsResult,
-    BatchChangeBulkOperationsVariables,
-    BulkOperationConnectionFields,
     AllChangesetIDsResult,
     AllChangesetIDsVariables,
     ChangesetIDConnectionFields,
@@ -738,48 +735,32 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
-export const queryBulkOperations = (
-    args: BatchChangeBulkOperationsVariables
-): Observable<BulkOperationConnectionFields> =>
-    requestGraphQL<BatchChangeBulkOperationsResult, BatchChangeBulkOperationsVariables>(
-        gql`
-            query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        bulkOperations(first: $first, after: $after) {
-                            ...BulkOperationConnectionFields
-                        }
-                    }
+export const BULK_OPERATIONS = gql`
+    query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                bulkOperations(first: $first, after: $after) {
+                    ...BulkOperationConnectionFields
                 }
             }
+        }
+    }
 
-            fragment BulkOperationConnectionFields on BulkOperationConnection {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                    endCursor
-                }
-                nodes {
-                    ...BulkOperationFields
-                }
-            }
+    fragment BulkOperationConnectionFields on BulkOperationConnection {
+        __typename
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        nodes {
+            ...BulkOperationFields
+        }
+    }
 
-            ${bulkOperationFragment}
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Batch change with ID ${args.batchChange} does not exist`)
-            }
-            if (node.__typename !== 'BatchChange') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
-            }
-            return node.bulkOperations
-        })
-    )
+    ${bulkOperationFragment}
+`
 
 export const queryAllChangesetIDs = ({
     batchChange,

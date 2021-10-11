@@ -1,13 +1,15 @@
+import { gql } from '@apollo/client'
+import { createMockClient } from '@apollo/client/testing'
 import { cleanup, within, fireEvent } from '@testing-library/react'
 import React from 'react'
+import { take } from 'rxjs/operators'
 
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
 
-import {
-    DAYS_ACTIVE_STORAGE_KEY,
-    HAS_DISMISSED_TOAST_STORAGE_KEY,
-    HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY,
-} from './constants'
+import { TemporarySettings } from '../settings/temporary/TemporarySettings'
+import { TemporarySettingsContext } from '../settings/temporary/TemporarySettingsProvider'
+import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from '../settings/temporary/TemporarySettingsStorage'
+
 import { SurveyToast } from './SurveyToast'
 
 describe('SurveyToast', () => {
@@ -18,20 +20,35 @@ describe('SurveyToast', () => {
         cleanup()
     })
 
-    const setDaysActive = (daysActive: string) => localStorage.setItem(DAYS_ACTIVE_STORAGE_KEY, daysActive)
-    const setToastDismissed = (dismissed: string) => localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, dismissed)
-    const setToastPermanentlyDismissed = (dismissed: string) =>
-        localStorage.setItem(HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY, dismissed)
+    const mockClient = createMockClient(
+        { contents: JSON.stringify({}) },
+        gql`
+            query {
+                temporarySettings {
+                    contents
+                }
+            }
+        `
+    )
+
+    const settingsStorage = new TemporarySettingsStorage(mockClient, true)
+
+    const renderwithTemporarySettings = (settings: TemporarySettings) => {
+        settingsStorage.setSettingsBackend(new InMemoryMockSettingsBackend(settings))
+        return renderWithRouter(
+            <TemporarySettingsContext.Provider value={settingsStorage}>
+                <SurveyToast />
+            </TemporarySettingsContext.Provider>
+        )
+    }
+
+    const getTemporarySetting = (key: keyof TemporarySettings) =>
+        new Promise(resolve => settingsStorage.get(key).pipe(take(1)).subscribe({ next: resolve }))
 
     describe('toast has not been dismissed by the user', () => {
-        beforeEach(() => {
-            setToastDismissed('false')
-        })
-
         describe('before day 3', () => {
             beforeEach(() => {
-                setDaysActive('1')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 1 })
             })
 
             it('the user is not surveyed', () => {
@@ -43,22 +60,21 @@ describe('SurveyToast', () => {
             const mockScore = 10
 
             beforeEach(() => {
-                setDaysActive('3')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 3 })
             })
 
             it('the user is surveyed', () => {
                 expect(renderResult.getByText('Tell us what you think')).toBeVisible()
             })
 
-            it('correctly handles dismissing the toast', () => {
+            it('correctly handles dismissing the toast', async () => {
                 const closeIcon = renderResult.getByLabelText('Close')
                 expect(closeIcon).toBeVisible()
                 fireEvent.click(closeIcon)
-                expect(localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
+                expect(await getTemporarySetting('npsSurvey.hasTemporarilyDismissed')).toBe(true)
             })
 
-            it('correctly handles dismissing the toast permanently', () => {
+            it('correctly handles dismissing the toast permanently', async () => {
                 const dontShowAgain = renderResult.getByLabelText("Don't show this again")
                 expect(dontShowAgain).toBeVisible()
                 fireEvent.click(dontShowAgain)
@@ -67,11 +83,10 @@ describe('SurveyToast', () => {
                 expect(closeIcon).toBeVisible()
                 fireEvent.click(closeIcon)
 
-                expect(localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
-                expect(localStorage.getItem(HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
+                expect(await getTemporarySetting('npsSurvey.hasPermanentlyDismissed')).toBe(true)
             })
 
-            it('correctly submits and dismisses the toast', () => {
+            it('correctly submits and dismisses the toast temporarily', async () => {
                 const recommendRadioGroup = renderResult.getByLabelText(
                     'How likely is it that you would recommend Sourcegraph to a friend?'
                 )
@@ -79,10 +94,10 @@ describe('SurveyToast', () => {
                 const score10 = within(recommendRadioGroup).getByLabelText(mockScore)
                 fireEvent.click(score10)
                 expect(renderResult.history.location.pathname).toBe(`/survey/${mockScore}`)
-                expect(localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
+                expect(await getTemporarySetting('npsSurvey.hasTemporarilyDismissed')).toBe(true)
             })
 
-            it('correctly submits and permanently dismisses the toast', () => {
+            it('correctly submits and permanently dismisses the toast if selected', async () => {
                 const dontShowAgain = renderResult.getByLabelText("Don't show this again")
                 expect(dontShowAgain).toBeVisible()
                 fireEvent.click(dontShowAgain)
@@ -95,15 +110,13 @@ describe('SurveyToast', () => {
                 fireEvent.click(score10)
 
                 expect(renderResult.history.location.pathname).toBe(`/survey/${mockScore}`)
-                expect(localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
-                expect(localStorage.getItem(HAS_PERMANENTLY_DISMISSED_TOAST_STORAGE_KEY)).toBe('true')
+                expect(await getTemporarySetting('npsSurvey.hasPermanentlyDismissed')).toBe(true)
             })
         })
 
         describe('on day 4', () => {
             beforeEach(() => {
-                setDaysActive('4')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 4 })
             })
 
             it('the user is not surveyed', () => {
@@ -113,8 +126,7 @@ describe('SurveyToast', () => {
 
         describe('on day 33', () => {
             beforeEach(() => {
-                setDaysActive('33')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({ 'user.daysActiveCount': 33 })
             })
 
             it('the user is surveyed as it has been 30 days since the last notification', () => {
@@ -123,15 +135,13 @@ describe('SurveyToast', () => {
         })
     })
 
-    describe('toast has been dismissed by the user', () => {
-        beforeEach(() => {
-            setToastDismissed('true')
-        })
-
+    describe('toast has been temporarily dismissed by the user', () => {
         describe('on day 3', () => {
             beforeEach(() => {
-                setDaysActive('3')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({
+                    'npsSurvey.hasTemporarilyDismissed': true,
+                    'user.daysActiveCount': 3,
+                })
             })
 
             it('the user is not surveyed', () => {
@@ -141,26 +151,27 @@ describe('SurveyToast', () => {
 
         describe('on day 30', () => {
             beforeEach(() => {
-                setDaysActive('30')
+                renderResult = renderwithTemporarySettings({
+                    'npsSurvey.hasTemporarilyDismissed': true,
+                    'user.daysActiveCount': 30,
+                })
                 renderResult = renderWithRouter(<SurveyToast />)
             })
 
-            it('the user is not surveyed but toast dismissal is cleared', () => {
+            it('the user is not surveyed but toast dismissal is set to false', async () => {
                 expect(renderResult.container).toBeEmptyDOMElement()
-                expect(localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY)).toBe('false')
+                expect(await getTemporarySetting('npsSurvey.hasTemporarilyDismissed')).toBe(false)
             })
         })
     })
 
     describe('toast has been permanently dismissed by the user', () => {
-        beforeEach(() => {
-            setToastPermanentlyDismissed('true')
-        })
-
         describe('on day 3', () => {
             beforeEach(() => {
-                setDaysActive('3')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({
+                    'npsSurvey.hasPermanentlyDismissed': true,
+                    'user.daysActiveCount': 3,
+                })
             })
 
             it('the user is not surveyed', () => {
@@ -170,8 +181,10 @@ describe('SurveyToast', () => {
 
         describe('on day 33', () => {
             beforeEach(() => {
-                setDaysActive('33')
-                renderResult = renderWithRouter(<SurveyToast />)
+                renderResult = renderwithTemporarySettings({
+                    'npsSurvey.hasPermanentlyDismissed': true,
+                    'user.daysActiveCount': 3,
+                })
             })
 
             it('the user is still not surveyed', () => {

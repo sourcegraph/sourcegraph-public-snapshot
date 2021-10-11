@@ -111,7 +111,11 @@ env:
 commands:
   frontend:
     cmd: .bin/frontend
-    install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
@@ -128,7 +132,11 @@ commands:
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/enterprise-frontend
-    install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
     checkBinary: .bin/enterprise-frontend
     env:
       CONFIGURATION_MODE: server
@@ -148,7 +156,11 @@ commands:
 
   gitserver:
     cmd: .bin/gitserver
-    install: go build -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
     env:
       HOSTNAME: 127.0.0.1:3178
@@ -159,7 +171,11 @@ commands:
 
   github-proxy:
     cmd: .bin/github-proxy
-    install: go build -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
     checkBinary: .bin/github-proxy
     env:
       HOSTNAME: 127.0.0.1:3178
@@ -170,7 +186,11 @@ commands:
 
   worker:
     cmd: .bin/worker
-    install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
@@ -178,7 +198,11 @@ commands:
 
   enterprise-worker:
     cmd: .bin/worker
-    install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
       - lib
       - internal
@@ -188,7 +212,11 @@ commands:
 
   repo-updater:
     cmd: .bin/repo-updater
-    install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     watch:
       - lib
@@ -197,7 +225,11 @@ commands:
 
   enterprise-repo-updater:
     cmd: .bin/enterprise-repo-updater
-    install: go build -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/enterprise-repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
@@ -211,7 +243,11 @@ commands:
 
   query-runner:
     cmd: .bin/query-runner
-    install: go build -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
     checkBinary: .bin/query-runner
     watch:
       - lib
@@ -226,8 +262,12 @@ commands:
       rm -f libsqlite3-pcre.dylib || true
       rm -f libsqlite3-pcre.so || true
 
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
       ./cmd/symbols/build-ctags.sh &&
-      go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -239,7 +279,11 @@ commands:
 
   searcher:
     cmd: .bin/searcher
-    install: go build -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
     checkBinary: .bin/searcher
     watch:
       - lib
@@ -396,7 +440,10 @@ commands:
   precise-code-intel-worker:
     cmd: .bin/precise-code-intel-worker
     install: |
-      go build -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
     checkBinary: .bin/precise-code-intel-worker
     watch:
       - lib
@@ -410,7 +457,10 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
-      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
       mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
     checkBinary: .bin/executor
     env:

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -19,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
 
 func TestBatchSpecResolver(t *testing.T) {
@@ -143,6 +146,8 @@ func TestBatchSpecResolver(t *testing.T) {
 			TotalCount: 1,
 			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
+
+		State: "COMPLETED",
 	}
 
 	input := map[string]interface{}{"batchSpec": apiID}
@@ -245,6 +250,84 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 }
 
+func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+
+	admin := ct.CreateTestUser(t, db, true)
+	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	svc := service.New(cstore)
+	spec, err := svc.CreateBatchSpecFromRaw(adminCtx, service.CreateBatchSpecFromRawOpts{
+		RawSpec:         ct.TestRawBatchSpecYAML,
+		NamespaceUserID: admin.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var unmarshaled interface{}
+	err = yaml.UnmarshalValidate(schema.BatchSpecJSON, []byte(spec.RawSpec), &unmarshaled)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	apiID := string(marshalBatchSpecRandID(spec.RandID))
+	adminAPIID := string(graphqlbackend.MarshalUserID(admin.ID))
+
+	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", admin.Username, apiID)
+	want := apitest.BatchSpec{
+		Typename: "BatchSpec",
+		ID:       apiID,
+
+		OriginalInput: spec.RawSpec,
+		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+
+		ApplyURL:            &applyUrl,
+		Namespace:           apitest.UserOrg{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
+		Creator:             &apitest.User{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
+		ViewerCanAdminister: true,
+
+		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+
+		ChangesetSpecs: apitest.ChangesetSpecConnection{
+			Nodes: []apitest.ChangesetSpec{},
+		},
+
+		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{
+			Nodes: []apitest.BatchChangesCodeHost{},
+		},
+		OnlyWithoutCredential: apitest.BatchChangesCodeHostsConnection{
+			Nodes: []apitest.BatchChangesCodeHost{},
+		},
+
+		// TODO(ssbc): not implemented yet
+		State: "PROCESSING",
+	}
+
+	input := map[string]interface{}{"batchSpec": apiID}
+	{
+		var response struct{ Node apitest.BatchSpec }
+		apitest.MustExec(adminCtx, t, s, input, &response, queryBatchSpecNode)
+
+		if diff := cmp.Diff(want, response.Node); diff != "" {
+			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		}
+	}
+}
+
 const queryBatchSpecNode = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
@@ -323,6 +406,8 @@ query($batchSpec: ID!) {
           }
         }
 	  }
+
+      state
     }
   }
 }

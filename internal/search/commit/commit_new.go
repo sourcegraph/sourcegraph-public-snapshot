@@ -10,7 +10,6 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -22,40 +21,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
-func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) error {
+type CommitSearch struct {
+	Query gitprotocol.Node
+	Repos []*search.RepositoryRevisions
+	Diff  bool
+	Limit int
+}
+
+func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range textParams.Repos {
+	for _, repoRev := range j.Repos {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			continue
 		}
 
-		rr := repoRev
-		query := params.CommitParams.Query
-		diff := params.CommitParams.Diff
-		limit := int(textParams.PatternInfo.FileMatchLimit)
-
 		args := &protocol.SearchRequest{
-			Repo:        rr.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(query, query.IsCaseSensitive(), diff)...)),
-			IncludeDiff: diff,
-			Limit:       limit,
+			Repo:        repoRev.Repo.Name,
+			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
+			Query:       j.Query,
+			IncludeDiff: j.Diff,
+			Limit:       j.Limit,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
 			res := make([]result.Match, 0, len(in))
 			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(rr.Repo, diff, protocolMatch))
+				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
 			}
-			params.ResultChannel.Send(streaming.SearchEvent{
+			stream.Send(streaming.SearchEvent{
 				Results: res,
 			})
 		}
 
 		g.Go(func() error {
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-			params.ResultChannel.Send(streaming.SearchEvent{
+			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -63,8 +64,31 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 			return err
 		})
 	}
-
 	return g.Wait()
+}
+
+func (j CommitSearch) Name() string {
+	if j.Diff {
+		return "Diff"
+	}
+	return "Commit"
+}
+
+func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*CommitSearch, error) {
+	resultType := "commit"
+	if diff {
+		resultType = "diff"
+	}
+	if err := CheckSearchLimits(q, len(repos), resultType); err != nil {
+		return nil, err
+	}
+
+	return &CommitSearch{
+		Query: gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...),
+		Repos: repos,
+		Diff:  diff,
+		Limit: limit,
+	}, nil
 }
 
 func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {

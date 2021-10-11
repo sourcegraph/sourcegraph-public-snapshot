@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { parseISO } from 'date-fns'
 import { upperFirst } from 'lodash'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
@@ -6,7 +7,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -15,38 +16,26 @@ import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
 
 import { BatchSpecListFields } from '../../../graphql-operations'
 
-import styles from './BatchSpecExecutionNode.module.scss'
+import styles from './BatchSpecNode.module.scss'
 
-export interface BatchSpecExecutionNodeProps {
+export interface BatchSpecNodeProps {
     node: BatchSpecListFields
     /** Used for testing purposes. Sets the current date */
     now?: () => Date
 }
 
-export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionNodeProps> = ({
-    node,
-    now = () => new Date(),
-}) => {
+export const BatchSpecNode: React.FunctionComponent<BatchSpecNodeProps> = ({ node, now = () => new Date() }) => {
     const [isExpanded, setIsExpanded] = useState(false)
-    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(
-        event => {
-            event.preventDefault()
-            setIsExpanded(!isExpanded)
-        },
-        [isExpanded]
-    )
-
-    const executionDuration = useMemo(() => {
-        const endTime = node.finishedAt ? new Date(node.finishedAt).getTime() : now().getTime()
-        return endTime - new Date(node.createdAt).getTime()
-    }, [node.finishedAt, node.createdAt, now])
+    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
+        setIsExpanded(!isExpanded)
+    }, [isExpanded])
 
     return (
         <>
             <span className={styles.nodeSeparator} />
             <button
                 type="button"
-                className="btn btn-icon test-batches-expand-changeset d-none d-sm-block pb-1"
+                className="btn btn-icon"
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
@@ -57,7 +46,7 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
                 )}
             </button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
-                <ExecutionStateIcon state={node.state} />
+                <StateIcon state={node.state} />
                 <span className="text-muted">{upperFirst(node.state.toLowerCase())}</span>
             </div>
             <div className="px-2 pb-1">
@@ -74,7 +63,9 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
                     Executed by <strong>{node.creator?.username}</strong> <Timestamp date={node.createdAt} now={now} />
                 </small>
             </div>
-            <div className="text-center pb-1">{(executionDuration / 1000).toFixed(0)}s</div>
+            <div className="text-center pb-1">
+                <Duration start={parseISO(node.createdAt)} end={node.finishedAt ? new Date(node.finishedAt) : now()} />
+            </div>
             {isExpanded && (
                 <div className={styles.nodeExpandedSection}>
                     <h4>Input spec</h4>
@@ -85,7 +76,7 @@ export const BatchSpecExecutionNode: React.FunctionComponent<BatchSpecExecutionN
     )
 }
 
-const ExecutionStateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }) => {
+const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }) => {
     switch (state) {
         case BatchSpecState.COMPLETED:
             return <CheckCircleIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-success mb-1')} />
@@ -103,4 +94,23 @@ const ExecutionStateIcon: React.FunctionComponent<{ state: BatchSpecState }> = (
         default:
             return <ErrorIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
     }
+}
+
+const Duration: React.FunctionComponent<{ start: Date; end: Date }> = ({ start, end }) => {
+    // The duration in seconds.
+    let duration = (end.getTime() - start.getTime()) / 1000
+    const hours = Math.floor(duration / (60 * 60))
+    duration -= hours * 60 * 60
+    const minutes = Math.floor(duration / 60)
+    duration -= minutes * 60
+    const seconds = Math.round(duration)
+    return (
+        <>
+            {ensureTwoDigits(hours)}:{ensureTwoDigits(minutes)}:{ensureTwoDigits(seconds)}
+        </>
+    )
+}
+
+function ensureTwoDigits(value: number): string {
+    return value < 10 ? `0${value}` : `${value}`
 }
