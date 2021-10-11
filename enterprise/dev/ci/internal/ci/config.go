@@ -197,6 +197,10 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 	if out, err := exec.Command("git", "fetch", "origin", branch).CombinedOutput(); err != nil {
 		return nil, "", fmt.Errorf("error while fetching the current branch, err: %w, output: %q", err, string(out))
 	}
+	// checkout the current branch
+	if out, err := exec.Command("git", "fetch", "origin", branch).CombinedOutput(); err != nil {
+		return nil, "", fmt.Errorf("error while fetching the current branch, err: %w, output: %q", err, string(out))
+	}
 
 	// diff with the previous build commit
 	// after making sure the commit is in that branch
@@ -218,7 +222,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 	}
 
 	if !found {
-		fmt.Fprintln(os.Stderr, "Commit of previous build not found in current branch. Comparing with main")
+		fmt.Fprintln(os.Stderr, "Commit of previous build not found in current branch. Comparing with main...")
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 
