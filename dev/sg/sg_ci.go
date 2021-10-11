@@ -230,7 +230,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 			style = output.StyleSuccess
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
 		case "running", "scheduled":
-			elapsed = time.Now().Sub(job.StartedAt.Time)
+			elapsed = time.Since(job.StartedAt.Time)
 			style = output.StylePending
 		case "failed":
 			failed = true
