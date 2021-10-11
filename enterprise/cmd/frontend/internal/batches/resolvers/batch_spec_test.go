@@ -413,7 +413,7 @@ func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schem
 func setJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, state btypes.BatchSpecWorkspaceExecutionJobState) {
 	t.Helper()
 
-	job.State = btypes.BatchSpecWorkspaceExecutionJobState(state)
+	job.State = state
 
 	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
 	if err != nil {
