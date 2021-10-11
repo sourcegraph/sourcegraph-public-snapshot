@@ -18,7 +18,6 @@ steps:
     key: lighthouse:prep
     label: ':lighthouse: Lighthouse production build'
     env:
-      NODE_ENV: production
       WEBPACK_SERVE_INDEX: 'true'
   - command: dev/ci/yarn-lighthouse.sh homepage /
     depends_on: lighthouse:prep
