@@ -7,7 +7,9 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
+	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
@@ -18,9 +20,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+func newCIStatusFlagSet() *flag.FlagSet {
+	fs := flag.NewFlagSet("status", flag.ExitOnError)
+	fs.BoolVar(&waitFlag, "wait", false, "Wait until build is finished")
+	fs.StringVar(&branchFlag, "branch", "", "Specific branch to check")
+	return fs
+}
+
 var (
-	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
-	ciCommand = &ffcli.Command{
+	waitFlag   bool
+	branchFlag string
+	ciFlagSet  = flag.NewFlagSet("sg ci", flag.ExitOnError)
+	ciCommand  = &ffcli.Command{
 		Name:       "ci",
 		ShortUsage: "sg ci [preview|status|build]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
@@ -60,59 +71,63 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 		}, {
 			Name:      "status",
 			ShortHelp: "Get the status of the CI run associated with the currently checked out branch",
+			FlagSet:   newCIStatusFlagSet(),
 			Exec: func(ctx context.Context, args []string) error {
 				client, err := bk.NewClient(ctx, out)
 				if err != nil {
 					return err
 				}
-
-				branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
-				if err != nil {
-					return err
+				branch := branchFlag
+				if branch == "" {
+					var err error
+					branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
+					if err != nil {
+						return err
+					}
 				}
-
 				// Just support main pipeline for now
-				build, err := client.GetMostRecentBuild(ctx, "sourcegraph", branch)
-				if err != nil {
-					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+				var build *buildkite.Build
+				if !waitFlag {
+					var err error
+					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+					if err != nil {
+						return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+					}
+				} else {
+					statusTicker(ctx, func() (bool, error) {
+						var err error
+						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+						if err != nil {
+							return false, fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+						}
+						for _, job := range build.Jobs {
+							if job.State != nil && *job.State == "failed" && !job.SoftFailed {
+								// If a job has failed, return immediately, we don't have to wait until all
+								// steps are completed.
+								return true, nil
+							}
+						}
+						if build.FinishedAt == nil {
+							// No failure yet, we can keep waiting.
+							return false, nil
+						}
+						return true, nil
+					})
 				}
+				printBuildOverview(build)
 
-				// Print a high level overview
-				out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
-				out.Writef("Commit: %s\nStarted: %s", *build.Commit, build.StartedAt)
-				if build.FinishedAt != nil {
-					out.Writef("Finished: %s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
-				}
-
-				// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run
-				// https://buildkite.com/docs/apis/rest-api/builds
-				var style output.Style
-				var emoji string
-				switch *build.State {
-				case "passed":
-					style = output.StyleSuccess
-					emoji = output.EmojiSuccess
-				case "running", "scheduled":
-					style = output.StylePending
-					emoji = output.EmojiInfo
-				case "failed":
-					emoji = output.EmojiFailure
-					fallthrough
-				default:
-					style = output.StyleWarning
-				}
-				out.WriteLine(output.Linef(emoji, style, "Status: %s", *build.State))
-
-				// Warn if build commit is not your commit
-				commit, err := run.GitCmd("rev-parse", "HEAD")
-				if err != nil {
-					return err
-				}
-				commit = strings.TrimSpace(commit)
-				if commit != *build.Commit {
-					out.WriteLine(output.Linef(output.EmojiWarning, output.StyleWarning,
-						"The currently checked out commit %q does not match the commit of the build found, %q.\nHave you pushed your most recent changes yet?",
-						commit, *build.Commit))
+				if branchFlag == "" {
+					// If we're not on a specific branch, warn if build commit is not your commit
+					commit, err := run.GitCmd("rev-parse", "HEAD")
+					if err != nil {
+						return err
+					}
+					commit = strings.TrimSpace(commit)
+					if commit != *build.Commit {
+						out.WriteLine(output.Linef("⚠️", output.StyleWarning,
+							"The currently checked out commit %q does not match the commit of the build found, %q.\nHave you pushed your most recent changes yet?",
+							commit, *build.Commit))
+					}
 				}
 				return nil
 			},
@@ -170,4 +185,82 @@ func allLinesPrefixed(lines []string, match string) bool {
 		}
 	}
 	return true
+}
+
+func printBuildOverview(build *buildkite.Build) {
+	// Print a high level overview
+	out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
+	out.Writef("Commit: %s\nStarted: %s", *build.Commit, build.StartedAt)
+	if build.FinishedAt != nil {
+		out.Writef("Finished: %s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
+	}
+
+	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run
+	// https://buildkite.com/docs/apis/rest-api/builds
+	var style output.Style
+	var emoji string
+	switch *build.State {
+	case "passed":
+		style = output.StyleSuccess
+		emoji = output.EmojiSuccess
+	case "running", "scheduled":
+		style = output.StylePending
+		emoji = output.EmojiInfo
+	case "failed":
+		emoji = output.EmojiFailure
+		fallthrough
+	default:
+		style = output.StyleWarning
+	}
+	out.WriteLine(output.Linef(emoji, style, "Status: %s", *build.State))
+
+	for _, job := range build.Jobs {
+		var elapsed time.Duration
+		if job.State == nil || job.Name == nil {
+			continue
+		}
+		switch *job.State {
+		case "passed":
+			style = output.StyleSuccess
+			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
+		case "running", "scheduled":
+			elapsed = time.Now().Sub(job.StartedAt.Time)
+			style = output.StylePending
+		case "failed":
+			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
+			fallthrough
+		default:
+			style = output.StyleWarning
+		}
+		out.WriteLine(output.Linef("", style, "  - %s (%s)", *job.Name, elapsed))
+	}
+}
+
+func statusTicker(ctx context.Context, f func() (bool, error)) error {
+	// Start immediately
+	ok, err := f()
+	if err != nil {
+		return err
+	}
+	if ok {
+		return nil
+	}
+	// Not finished, start ticking ...
+	ticker := time.NewTicker(30 * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			ok, err := f()
+			if err != nil {
+				return err
+			}
+			if ok {
+				return nil
+			}
+		case <-time.After(30 * time.Minute):
+			return fmt.Errorf("status polling, timeout reached")
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
