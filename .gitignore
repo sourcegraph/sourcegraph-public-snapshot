@@ -144,3 +144,6 @@ sg.config.overwrite.yaml
 # Generated sitemaps are not committed, they're hosted in a GCS bucket.
 sitemap/
 sitemap_query.db
+
+# Lighthouse CI reports
+.lighthouseci/
