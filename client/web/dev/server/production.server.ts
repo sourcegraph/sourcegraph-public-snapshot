@@ -60,4 +60,8 @@ async function startProductionServer(): Promise<void> {
     })
 }
 
-startProductionServer().catch(error => signale.error(error))
+startProductionServer()
+    .then(() => {
+        console.log('We did it')
+    })
+    .catch(error => signale.error(error))
