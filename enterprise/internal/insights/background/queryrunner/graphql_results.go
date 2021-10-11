@@ -165,7 +165,14 @@ func (r *commitSearchResult) repoID() string {
 func (r *commitSearchResult) matchCount() int {
 	sum := 0
 	for _, match := range r.Matches {
-		sum += len(match.Highlights)
+		matchSum := 1
+		if len(match.Highlights) > 0 {
+			// this logic is because we can have a match with no highlights (not a text block) which implies each match object is a single unique match.
+			// Otherwise if we have highlights it implies we are in a text block, for which the fact that we are in a match object is not relevant,
+			// only the highlight counts are relevant.
+			matchSum = len(match.Highlights)
+		}
+		sum += matchSum
 	}
 	return sum
 }
