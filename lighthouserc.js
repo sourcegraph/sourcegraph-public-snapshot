@@ -4,8 +4,8 @@ const config = {
   ci: {
     collect: {
       // Note: We override this URL in CI through ./dev/ci/yarn-lighthouse.sh
-      url: 'http://localhost:3443/',
-      startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
+      url: 'http://sourcegraph.test:3443/',
+      startServerCommand: 'sg start web-standalone',
       settings: {
         preset: 'desktop',
         chromeFlags: '--no-sandbox',

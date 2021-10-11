@@ -17,7 +17,7 @@ import {
     shouldCompressResponse,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
 async function startProductionServer(): Promise<void> {
     if (!SOURCEGRAPH_API_URL) {
@@ -55,7 +55,7 @@ async function startProductionServer(): Promise<void> {
     // Redirect remaining routes to index.html
     app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))
 
-    app.listen(SOURCEGRAPH_HTTPS_PORT, () => {
+    app.listen(CLIENT_PROXY_DEVELOPMENT_PORT, () => {
         signale.success(`Production server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
     })
 }

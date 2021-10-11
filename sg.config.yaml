@@ -333,27 +333,10 @@ commands:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
-  enterprise-web-standalone:
-    cmd: yarn workspace @sourcegraph/web serve:dev
-    install: yarn --no-progress
-    env:
-      ENTERPRISE: 1
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
   web-standalone-prod:
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
-  enterprise-web-standalone-prod:
-    cmd: yarn workspace @sourcegraph/web serve:prod
-    install: yarn workspace @sourcegraph/web run build
-    env:
-      ENTERPRISE: 1
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -452,8 +435,8 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-template: &executor_template
-    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+  executor-template:
+    &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
@@ -477,7 +460,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/indexer-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: codeintel
-      SRC_PROF_HTTP: ":6092"
+      SRC_PROF_HTTP: ':6092'
 
   batches-executor:
     <<: *executor_template
@@ -486,7 +469,7 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
-      SRC_PROF_HTTP: ":6093"
+      SRC_PROF_HTTP: ':6093'
 
   # If you want to use this, either start it with `sg run batches-executor-firecracker` or
   # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
@@ -499,7 +482,7 @@ commands:
     env:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
-      SRC_PROF_HTTP: ":6093"
+      SRC_PROF_HTTP: ':6093'
 
   minio:
     cmd: |
@@ -562,7 +545,7 @@ commands:
       COMPOSE_ARGS: --force-recreate
       # Set the following to a path on disk to persist data (or unset to not persist data)
       PGDATA_DIR: $HOME/.sourcegraph-dev/data/postgresql
-      REDIS_DATA_DIR: ""
+      REDIS_DATA_DIR: ''
 
   jaeger:
     cmd: |
@@ -632,8 +615,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
       CACHE: false
     watch:
       - monitoring
@@ -683,11 +666,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ""
-      DOCKER_NET: ""
+      DOCKER_USER: ''
+      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ""
+      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -912,6 +895,44 @@ commandsets:
       - enterprise-frontend
       - enterprise-web
       - caddy
+
+  web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+    env:
+      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
+
+  enterprise-web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+    env:
+      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
+      ENTERPRISE: 1
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  web-standalone-prod:
+    commands:
+      - web-standalone-prod
+      - caddy
+    env:
+      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+
+  enterprise-web-standalone-prod:
+    commands:
+      - web-standalone-prod
+      - caddy
+    env:
+      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
+      ENTERPRISE: 1
+      NODE_ENV: production
+      WEBPACK_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
 tests:
   # These can be run with `sg test [name]`
