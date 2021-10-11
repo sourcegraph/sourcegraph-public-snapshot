@@ -9,6 +9,7 @@ const config = {
       settings: {
         preset: 'desktop',
         chromeFlags: '--no-sandbox',
+        disableStorageReset: true,
         // We skip a series of audits that are not currently supported by the local server
         skipAudits: [
           // SEO: Normally enabled dynamically for different paths in the production server
@@ -16,6 +17,7 @@ const config = {
           // Best practices: HTTPS currently disabled in local server: https://github.com/sourcegraph/sourcegraph/issues/21869
           'is-on-https',
           'uses-http2',
+          'redirects-http',
           // SEO: Robots.txt file isn't served locally
           'robots-txt',
         ],
