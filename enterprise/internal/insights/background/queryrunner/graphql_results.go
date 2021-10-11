@@ -141,7 +141,7 @@ func (r *fileMatch) repoID() string {
 }
 
 type commitSearchResult struct {
-	Matches struct {
+	Matches []struct {
 		Highlights []struct {
 			Line int
 		}
@@ -163,11 +163,11 @@ func (r *commitSearchResult) repoID() string {
 }
 
 func (r *commitSearchResult) matchCount() int {
-	matches := 1
-	if len(r.Matches.Highlights) > 0 {
-		matches = len(r.Matches.Highlights)
+	sum := 0
+	for _, match := range r.Matches {
+		sum += len(match.Highlights)
 	}
-	return matches
+	return sum
 }
 
 type repository struct {
