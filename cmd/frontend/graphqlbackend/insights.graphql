@@ -192,7 +192,7 @@ extend type Mutation {
     """
     Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
     """
-    createInsightsDashboard(input: CreateInsightDashboardInput!): InsightDashboardPayload!
+    createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
 
     """
     Delete a dashboard. Any views that would become dangling will be deleted.
@@ -241,19 +241,9 @@ type InsightsDashboard implements Node {
 }
 
 """
-Response wrapper object for insight dashboard mutations.
-"""
-type InsightDashboardPayload {
-    """
-    The result dashboard after mutation.
-    """
-    dashboard: InsightDashboard!
-}
-
-"""
 Input object for creating a new dashboard.
 """
-input CreateInsightDashboardInput {
+input CreateInsightsDashboardInput {
     """
     Dashboard title.
     """

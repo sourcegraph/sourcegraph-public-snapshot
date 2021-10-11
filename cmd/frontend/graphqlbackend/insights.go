@@ -16,12 +16,12 @@ import (
 type InsightsResolver interface {
 	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
-	InsightsDashboards(ctx context.Context, args *InsightDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 
 	// Mutations
-	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightDashboardPayloadResolver, error)
+	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
-	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightDashboardPayloadResolver, error)
+	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 }
 
 type InsightsArgs struct {
@@ -74,7 +74,7 @@ type InsightDirtyQueryResolver interface {
 	Count(ctx context.Context) int32
 }
 
-type InsightDashboardsArgs struct {
+type InsightsDashboardsArgs struct {
 	First *int32
 	After *string
 }
@@ -82,10 +82,6 @@ type InsightDashboardsArgs struct {
 type InsightsDashboardConnectionResolver interface {
 	Nodes(ctx context.Context) ([]InsightsDashboardResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-}
-
-type InsightsDashboardPayloadResolver interface {
-	Dashboard() (InsightsDashboardResolver, error)
 }
 
 type InsightsDashboardResolver interface {
@@ -126,7 +122,7 @@ type InsightViewResolver interface {
 	VeryUniqueResolver() bool
 }
 
-type InsightDashboardPayloadResolver interface {
+type InsightsDashboardPayloadResolver interface {
 	Dashboard(ctx context.Context) (InsightsDashboardResolver, error)
 }
 
