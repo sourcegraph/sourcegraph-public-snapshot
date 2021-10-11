@@ -224,7 +224,7 @@ VALUES %s;
 
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
-INSERT INTO dashboard (title, save) VALUES (%s, %b) RETURNING id;
+INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
