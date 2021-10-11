@@ -245,7 +245,7 @@ func TestRepos_Get(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := mustCreateGitserverRepo(ctx, t, db, &types.Repo{
+	want := mustCreate(ctx, t, db, &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "r",
 			ServiceType: extsvc.TypeGitHub,
@@ -266,7 +266,7 @@ func TestRepos_Get(t *testing.T) {
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
-	}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
+	})
 
 	repo, err := Repos(db).Get(ctx, want[0].ID)
 	if err != nil {
@@ -337,7 +337,7 @@ func TestRepos_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := mustCreateGitserverRepo(ctx, t, db, &types.Repo{
+	want := mustCreate(ctx, t, db, &types.Repo{
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "r",
 			ServiceType: extsvc.TypeGitHub,
@@ -358,7 +358,7 @@ func TestRepos_List(t *testing.T) {
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
-	}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
+	})
 
 	repos, err := Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
