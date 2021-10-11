@@ -145,7 +145,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
 	}
 
-	dashboard, err := r.dashboardStore.CreateDashboard(ctx, types.Dashboard{Title: args.Input.Title}, dashboardGrants)
+	dashboard, err := r.dashboardStore.CreateDashboard(ctx, types.Dashboard{Title: args.Input.Title, Save: true}, dashboardGrants)
 	if err != nil {
 		return nil, err
 	}

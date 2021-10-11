@@ -78,4 +78,5 @@ type Dashboard struct {
 	ID         int
 	Title      string
 	InsightIDs []string // shallow references
+	Save       bool     // temporarily save dashboards from being cleared during setting migration
 }

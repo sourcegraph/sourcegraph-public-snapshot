@@ -156,6 +156,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 
 	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
 		dashboard.Title,
+		dashboard.Save,
 	))
 	if row.Err() != nil {
 		return types.Dashboard{}, row.Err()
@@ -223,7 +224,7 @@ VALUES %s;
 
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
-INSERT INTO dashboard (title) VALUES (%s) RETURNING id;
+INSERT INTO dashboard (title, save) VALUES (%s, %b) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
