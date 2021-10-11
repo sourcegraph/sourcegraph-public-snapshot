@@ -49,13 +49,3 @@ if (isChromatic()) {
     `
     document.head.append(style)
 }
-
-window.MonacoEnvironment = {
-    getWorkerUrl(moduleId: string, label: string) {
-        if (label === 'json') {
-            return '/json.worker.bundle.js'
-        }
-
-        return '/editor.worker.bundle.js'
-    },
-}
