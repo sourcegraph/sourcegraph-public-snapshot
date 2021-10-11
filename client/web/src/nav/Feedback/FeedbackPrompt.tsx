@@ -115,7 +115,7 @@ export const FeedbackPromptContent: React.FunctionComponent<ContentProps> = ({
                     <TickIcon className="feedback-prompt__success--tick" />
                     <h3>We‘ve received your feedback!</h3>
                     <p className="d-inline">
-                        Thank you for your help.
+                        Thank you for your help!!
                         {window.context.productResearchPageEnabled && (
                             <>
                                 {' '}
