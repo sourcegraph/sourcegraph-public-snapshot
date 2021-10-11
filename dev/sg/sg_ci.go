@@ -244,7 +244,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 
 	if notify {
 		if failed {
-			beeep.Notify(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), *build.WebURL, "")
+			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), *build.WebURL, "")
 		} else {
 			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), *build.WebURL, "")
 		}
