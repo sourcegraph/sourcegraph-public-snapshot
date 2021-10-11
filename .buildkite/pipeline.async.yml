@@ -27,27 +27,28 @@ steps:
         limit: 3
     env:
       SOURCEGRAPH_API_URL: https://sourcegraph.com
-  - command: dev/ci/yarn-lighthouse.sh search_results /search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js
-    depends_on: lighthouse:prep
-    label: ':lighthouse: lighthouse:search_results'
-    retry:
-      automatic:
-        limit: 3
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.com
-  - command: dev/ci/yarn-lighthouse.sh repository_page /github.com/sourcegraph/lighthouse-ci-test-repository
-    depends_on: lighthouse:prep
-    label: ':lighthouse: lighthouse:repository_page'
-    retry:
-      automatic:
-        limit: 3
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.com
-  - command: dev/ci/yarn-lighthouse.sh file_blob /github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js
-    depends_on: lighthouse:prep
-    label: ':lighthouse: lighthouse:file_blob'
-    retry:
-      automatic:
-        limit: 3
-    env:
-      SOURCEGRAPH_API_URL: https://sourcegraph.com
+  # Temporarily disabled to investigate flakiness. Issue to fix: https://github.com/sourcegraph/sourcegraph/issues/25910
+  # - command: dev/ci/yarn-lighthouse.sh search_results /search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js
+  #   depends_on: lighthouse:prep
+  #   label: ':lighthouse: lighthouse:search_results'
+  #   retry:
+  #     automatic:
+  #       limit: 3
+  #   env:
+  #     SOURCEGRAPH_API_URL: https://sourcegraph.com
+  # - command: dev/ci/yarn-lighthouse.sh repository_page /github.com/sourcegraph/lighthouse-ci-test-repository
+  #   depends_on: lighthouse:prep
+  #   label: ':lighthouse: lighthouse:repository_page'
+  #   retry:
+  #     automatic:
+  #       limit: 3
+  #   env:
+  #     SOURCEGRAPH_API_URL: https://sourcegraph.com
+  # - command: dev/ci/yarn-lighthouse.sh file_blob /github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js
+  #   depends_on: lighthouse:prep
+  #   label: ':lighthouse: lighthouse:file_blob'
+  #   retry:
+  #     automatic:
+  #       limit: 3
+  #   env:
+  #     SOURCEGRAPH_API_URL: https://sourcegraph.com
