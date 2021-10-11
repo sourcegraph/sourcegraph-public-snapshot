@@ -29,6 +29,6 @@ export const Toast: React.FunctionComponent<ToastProps> = props => (
             {props.subtitle}
             {props.cta && <div className={styles.contentsCta}>{props.cta}</div>}
         </div>
-        {props.footer && <div className={styles.footer}>{props.footer}</div>}
+        {props.footer && <div className={classNames(styles.footer)}>{props.footer}</div>}
     </div>
 )

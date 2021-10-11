@@ -1,73 +1,126 @@
-import * as H from 'history'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useCallback } from 'react'
-import { delay, repeatWhen, tap } from 'rxjs/operators'
+import React, { useEffect } from 'react'
 
 import { BulkOperationState } from '@sourcegraph/shared/src/graphql-operations'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
+import {
+    useConnection,
+    UseConnectionResult,
+} from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '@sourcegraph/web/src/components/FilteredConnection/ui'
 import { Container } from '@sourcegraph/wildcard'
 
 import { dismissAlert } from '../../../components/DismissibleAlert'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
-import { BulkOperationFields, Scalars } from '../../../graphql-operations'
+import {
+    BatchChangeBulkOperationsResult,
+    BatchChangeBulkOperationsVariables,
+    BulkOperationFields,
+    Scalars,
+} from '../../../graphql-operations'
 
-import { queryBulkOperations as _queryBulkOperations } from './backend'
-import { BulkOperationNode, BulkOperationNodeProps } from './bulk-operations/BulkOperationNode'
+import { BULK_OPERATIONS } from './backend'
+import { BulkOperationNode } from './bulk-operations/BulkOperationNode'
 
 export interface BulkOperationsTabProps {
     batchChangeID: Scalars['ID']
-    history: H.History
-    location: H.Location
-
-    queryBulkOperations?: typeof _queryBulkOperations
 }
 
-export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({
-    batchChangeID,
-    history,
-    location,
-    queryBulkOperations = _queryBulkOperations,
-}) => {
-    const query = useCallback(
-        ({ first, after }: FilteredConnectionQueryArguments) =>
-            queryBulkOperations({ batchChange: batchChangeID, after: after ?? null, first: first ?? null }).pipe(
-                tap(connection => {
-                    for (const node of connection.nodes) {
-                        if (node.state !== BulkOperationState.PROCESSING) {
-                            // Hide alerts for bulk operations seen already.
-                            // When the user visits this tab, we want to auto-dismiss notifications
-                            // for failed and completed operations.
-                            dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
-                        }
-                    }
-                }),
-                repeatWhen(notifier => notifier.pipe(delay(2000)))
-            ),
-        [batchChangeID, queryBulkOperations]
-    )
+export const BulkOperationsTab: React.FunctionComponent<BulkOperationsTabProps> = ({ batchChangeID }) => {
+    const { connection, error, loading, fetchMore, hasNextPage } = useBulkOperationsListConnection(batchChangeID)
+
     return (
         <Container>
-            <FilteredConnection<BulkOperationFields, Omit<BulkOperationNodeProps, 'node'>>
-                nodeComponent={BulkOperationNode}
-                queryConnection={query}
-                hideSearch={true}
-                defaultFirst={15}
-                noun="bulk operation"
-                pluralNoun="bulk operations"
-                history={history}
-                location={location}
-                useURLQuery={true}
-                listComponent="div"
-                emptyElement={<EmptyBulkOperationsListElement />}
-                noSummaryIfAllNodesVisible={true}
-                withCenteredSummary={true}
-            />
+            <ConnectionContainer>
+                {error && <ConnectionError errors={[error.message]} />}
+                <ConnectionList className="list-group list-group-flush">
+                    {connection?.nodes?.map(node => (
+                        <BulkOperationNode key={node.id} node={node} />
+                    ))}
+                </ConnectionList>
+                {loading && <ConnectionLoading />}
+                {connection && (
+                    <SummaryContainer centered={true}>
+                        <ConnectionSummary
+                            noSummaryIfAllNodesVisible={true}
+                            first={BATCH_COUNT}
+                            connection={connection}
+                            noun="bulk operation"
+                            pluralNoun="bulk operations"
+                            hasNextPage={hasNextPage}
+                            emptyElement={<EmptyBulkOperationsListElement />}
+                        />
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
         </Container>
     )
 }
 
-export const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
+const EmptyBulkOperationsListElement: React.FunctionComponent<{}> = () => (
     <div className="text-muted text-center mb-3 w-100">
         <MapSearchIcon className="icon" />
         <div className="pt-2">No bulk operations have been run on this batch change.</div>
     </div>
 )
+
+const BATCH_COUNT = 15
+
+const useBulkOperationsListConnection = (batchChangeID: Scalars['ID']): UseConnectionResult<BulkOperationFields> => {
+    const { connection, startPolling, stopPolling, ...rest } = useConnection<
+        BatchChangeBulkOperationsResult,
+        BatchChangeBulkOperationsVariables,
+        BulkOperationFields
+    >({
+        query: BULK_OPERATIONS,
+        variables: {
+            batchChange: batchChangeID,
+            after: null,
+            first: BATCH_COUNT,
+        },
+        options: {
+            useURL: true,
+            fetchPolicy: 'cache-and-network',
+        },
+        getConnection: result => {
+            const data = dataOrThrowErrors(result)
+
+            if (!data.node) {
+                throw new Error(`Batch change with ID ${batchChangeID} does not exist`)
+            }
+            if (data.node.__typename !== 'BatchChange') {
+                throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchChange`)
+            }
+            return data.node.bulkOperations
+        },
+    })
+
+    useEffect(() => {
+        if (connection?.nodes?.length) {
+            // Filter to bulk operations that are done running.
+            const finishedNodes = connection.nodes.filter(node => node.state !== BulkOperationState.PROCESSING)
+
+            // If any operations are still actively running, poll for updates.
+            if (finishedNodes.length < connection.nodes.length) {
+                startPolling(2000)
+            } else {
+                stopPolling()
+            }
+
+            // Automatically dismiss alerts for bulk operations once they have been viewed.
+            for (const node of finishedNodes) {
+                dismissAlert(`bulkOperation-${node.state.toLocaleLowerCase()}-${node.id}`)
+            }
+        }
+    }, [connection, startPolling, stopPolling])
+
+    return { connection, startPolling, stopPolling, ...rest }
+}

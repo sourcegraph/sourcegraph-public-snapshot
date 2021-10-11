@@ -1,6 +1,8 @@
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { PageHeader } from '@sourcegraph/wildcard'
+
 import { PageTitle } from '../../../components/PageTitle'
 
 import { queryGlobalBatchChangesCodeHosts } from './backend'
@@ -14,6 +16,7 @@ export interface BatchChangesSiteConfigSettingsAreaProps extends Pick<RouteCompo
 export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<BatchChangesSiteConfigSettingsAreaProps> = props => (
     <>
         <PageTitle title="Batch changes settings" />
+        <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />
         <CodeHostConnections
             headerLine={
                 <>
