@@ -403,7 +403,7 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	}
 
 	switch {
-	case canceling && !allFinished:
+	case canceling:
 		return "CANCELING", nil
 	case canceled && allFinished:
 		return "CANCELED", nil
