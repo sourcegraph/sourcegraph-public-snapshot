@@ -332,9 +332,9 @@ func (h *historicalEnqueuer) buildForRepo(ctx context.Context, uniqueSeries map[
 
 			frames := FirstOfMonthFrames(12, series.CreatedAt.Truncate(time.Hour*24))
 
-			log15.Info("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
+			log15.Debug("insights: starting frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 			plan := h.frameFilter.FilterFrames(ctx, frames, repo.ID)
-			log15.Info("insights: sampling historical data frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
+			log15.Debug("insights: sampling historical data frames", "repo_id", repo.ID, "series_id", series.SeriesID, "frames", frames)
 
 			for i := len(plan.Executions) - 1; i >= 0; i-- {
 				queryExecution := plan.Executions[i]
