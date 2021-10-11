@@ -21,9 +21,10 @@ import (
 )
 
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
-var _ graphqlbackend.InsightDashboardResolver = &insightDashboardResolver{}
+var _ graphqlbackend.InsightsDashboardResolver = &insightDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
+var _ graphqlbackend.InsightDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
@@ -41,7 +42,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	d.once.Do(func() {
 		args := store.DashboardQueryArgs{}
 		if d.args.After != nil {
-			afterID, err := unmarshal(graphql.ID(*d.args.After))
+			afterID, err := unmarshalDashboardID(graphql.ID(*d.args.After))
 			if err != nil {
 				d.err = errors.Wrap(err, "unmarshalID")
 				return
@@ -66,12 +67,12 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	return d.dashboards, d.next, d.err
 }
 
-func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightDashboardResolver, error) {
+func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
 	dashboards, _, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.InsightDashboardResolver, 0, len(dashboards))
+	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
 	for _, dashboard := range dashboards {
 		id := newRealDashboardID(int64(dashboard.ID))
 		resolvers = append(resolvers, &insightDashboardResolver{dashboard: dashboard, id: &id})
@@ -126,7 +127,7 @@ func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Contex
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
-	dashboardID, err := unmarshal(args.Id)
+	dashboardID, err := unmarshalDashboardID(args.Id)
 	if err != nil {
 		return emptyResponse, err
 	}
@@ -151,4 +152,35 @@ func (s *stubInsightViewResolver) ID() graphql.ID {
 
 func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
 	return true
+}
+
+func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+	var viewID string
+	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+	}
+	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+	}
+
+	err = r.dashboardStore.AssociateViewsByViewIds(ctx, int(dashboardID.Arg), []string{viewID})
+	if err != nil {
+		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
+	}
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+	if err != nil || len(dashboards) < 1 {
+		return nil, errors.Wrap(err, "GetDashboards")
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+}
+
+type insightsDashboardPayloadResolver struct {
+	dashboard *types.Dashboard
+}
+
+func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
+	id := newRealDashboardID(int64(i.dashboard.ID))
+	return &insightDashboardResolver{dashboard: i.dashboard, id: &id}, nil
 }

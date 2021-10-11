@@ -185,7 +185,7 @@ extend type Query {
     """
     Return dashboards visible to the authenticated user.
     """
-    insightDashboards(first: Int, after: String): InsightsDashboardConnection!
+    insightsDashboards(first: Int, after: String): InsightsDashboardConnection!
 }
 
 extend type Mutation {
@@ -193,6 +193,11 @@ extend type Mutation {
     Delete a dashboard. Any views that would become dangling will be deleted.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
+
+    """
+    Associate an existing insight view with this dashboard.
+    """
+    addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
 }
 
 """
@@ -202,7 +207,7 @@ type InsightsDashboardConnection {
     """
     A list of dashboards.
     """
-    nodes: [InsightDashboard!]!
+    nodes: [InsightsDashboard!]!
 
     """
     Pagination information.
@@ -213,7 +218,7 @@ type InsightsDashboardConnection {
 """
 A dashboard of insights.
 """
-type InsightDashboard implements Node {
+type InsightsDashboard implements Node {
     """
     The Dashboard ID.
     """
@@ -252,4 +257,29 @@ type InsightView implements Node {
     The View ID.
     """
     id: ID!
+}
+
+"""
+Response wrapper object for insight dashboard mutations.
+"""
+type InsightsDashboardPayload {
+    """
+    The result dashboard after mutation.
+    """
+    dashboard: InsightsDashboard!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input AddInsightViewToDashboardInput {
+    """
+    ID of the insight view to attach to the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
 }
