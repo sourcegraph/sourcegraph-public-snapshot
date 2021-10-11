@@ -225,6 +225,10 @@ sg ci preview
 
 # Check on the status of your changes in the Buildkite pipeline
 sg ci status
+# Check on the status of a specific branch 
+sg ci status --branch my-branch
+# Block until the build has completed (will send a system notification)
+sg ci status --wait 
 ```
 
 ### `sg teammate` - Get current time or open their handbook page
