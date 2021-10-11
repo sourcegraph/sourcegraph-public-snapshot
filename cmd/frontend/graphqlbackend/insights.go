@@ -19,6 +19,7 @@ type InsightsResolver interface {
 	InsightDashboards(ctx context.Context, args *InsightDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 
 	// Mutations
+	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightDashboardPayloadResolver, error)
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
 }
 
@@ -82,10 +83,29 @@ type InsightsDashboardConnectionResolver interface {
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
+type InsightDashboardPayloadResolver interface {
+	Dashboard() (InsightDashboardResolver, error)
+}
+
 type InsightDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
 	Views() InsightViewConnectionResolver
+}
+
+type CreateInsightsDashboardArgs struct {
+	Input *CreateInsightsDashboardInput
+}
+
+type CreateInsightsDashboardInput struct {
+	Title  string
+	Grants *InsightsPermissionGrants
+}
+
+type InsightsPermissionGrants struct {
+	Users         *[]graphql.ID
+	Organizations *[]graphql.ID
+	Global        *bool
 }
 
 type DeleteInsightsDashboardArgs struct {

@@ -190,6 +190,11 @@ extend type Query {
 
 extend type Mutation {
     """
+    Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
+    """
+    createInsightsDashboard(input: CreateInsightDashboardInput!): InsightDashboardPayload!
+
+    """
     Delete a dashboard. Any views that would become dangling will be deleted.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
@@ -218,6 +223,7 @@ type InsightDashboard implements Node {
     The Dashboard ID.
     """
     id: ID!
+
     """
     The Dashboard Title.
     """
@@ -227,6 +233,48 @@ type InsightDashboard implements Node {
     The list of associated insights to the dashboard.
     """
     views: InsightViewConnection
+}
+
+"""
+A payload containing a single dashboard.
+"""
+type InsightDashboardPayload {
+    """
+    A dashboard of insights.
+    """
+    dashboard: InsightDashboard!
+}
+
+"""
+Arguments needed to create a new dashboard.
+"""
+input CreateInsightDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String!
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrants
+}
+
+"""
+Permissions to grant.
+"""
+input InsightsPermissionGrants {
+    """
+    Specific users to grant permissions to.
+    """
+    users: [ID!]
+    """
+    Organizations to grant permissions to.
+    """
+    organizations: [ID!]
+    """
+    Set global to true to grant global permission.
+    """
+    global: Boolean
 }
 
 """

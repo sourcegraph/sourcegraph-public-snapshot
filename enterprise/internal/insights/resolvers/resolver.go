@@ -87,6 +87,10 @@ func (r *disabledResolver) InsightDashboards(ctx context.Context, args *graphqlb
 	return nil, errors.New(r.reason)
 }
 
+func (r *disabledResolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
 func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	return nil, errors.New(r.reason)
 }

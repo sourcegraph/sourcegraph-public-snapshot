@@ -236,5 +236,6 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
 
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
+	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
 }

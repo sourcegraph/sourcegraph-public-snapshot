@@ -123,6 +123,33 @@ func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Contex
 	return graphqlutil.HasNextPage(false), nil
 }
 
+func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+	var dashboardGrants []store.DashboardGrant
+	for _, userGrant := range *args.Input.Grants.Users {
+		userID, err := graphqlbackend.UnmarshalUserID(userGrant)
+		if err != nil {
+			return nil, err
+		}
+		dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
+	}
+	for _, orgGrant := range *args.Input.Grants.Organizations {
+		orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
+		if err != nil {
+			return nil, err
+		}
+		dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
+	}
+	if *args.Input.Grants.Global {
+		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
+	}
+
+	dashboard, err := r.dashboardStore.CreateDashboard(ctx, types.Dashboard{Title: args.Input.Title}, dashboardGrants)
+	if err != nil {
+		return nil, err
+	}
+	return &insightDashboardPayloadResolver{&dashboard}, nil
+}
+
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
@@ -151,4 +178,13 @@ func (s *stubInsightViewResolver) ID() graphql.ID {
 
 func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
 	return true
+}
+
+type insightDashboardPayloadResolver struct {
+	dashboard *types.Dashboard
+}
+
+func (i *insightDashboardPayloadResolver) Dashboard() (graphqlbackend.InsightDashboardResolver, error) {
+	id := newRealDashboardID(int64(i.dashboard.ID))
+	return &insightDashboardResolver{dashboard: i.dashboard, id: &id}, nil
 }
