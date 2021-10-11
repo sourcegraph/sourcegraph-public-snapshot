@@ -220,6 +220,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 	}
 	out.WriteLine(output.Linef(emoji, style, "Status: %s", *build.State))
 
+	description := []string{}
 	for _, job := range build.Jobs {
 		var elapsed time.Duration
 		if job.State == nil || job.Name == nil {
@@ -229,12 +230,15 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 		case "passed":
 			style = output.StyleSuccess
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
+			description = append(description, fmt.Sprintf("- ✅ %s", *job.Name))
 		case "running", "scheduled":
 			elapsed = time.Since(job.StartedAt.Time)
 			style = output.StylePending
+			description = append(description, fmt.Sprintf("- ⏳ %s", *job.Name))
 		case "failed":
 			failed = true
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
+			description = append(description, fmt.Sprintf("- ❌ %s", *job.Name))
 			fallthrough
 		default:
 			style = output.StyleWarning
@@ -244,7 +248,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 
 	if notify {
 		if failed {
-			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), *build.WebURL, "")
+			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), strings.Join(description, "\n"), "")
 		} else {
 			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), *build.WebURL, "")
 		}
