@@ -981,7 +981,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		defer close(resultChan)
 		done := ctx.Done()
 
-		mt, err := search.ToMatchTree(args.Query)
+		mt, err := search.ToMatcher(args.Query)
 		if err != nil {
 			return err
 		}

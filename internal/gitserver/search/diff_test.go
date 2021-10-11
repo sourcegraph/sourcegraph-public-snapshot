@@ -26,7 +26,7 @@ func TestDiffSearch(t *testing.T) {
 	require.NoError(t, err)
 
 	query := &protocol.DiffMatches{Expr: "(?i)polly"}
-	matchTree, err := ToMatchTree(query)
+	matchTree, err := ToMatcher(query)
 	require.NoError(t, err)
 
 	matched, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
@@ -97,7 +97,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 		b.Run("with optimization", func(b *testing.B) {
 			query := &protocol.DiffMatches{Expr: "polly", IgnoreCase: true}
-			matchTree, err := ToMatchTree(query)
+			matchTree, err := ToMatcher(query)
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
@@ -108,7 +108,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 		b.Run("without optimization", func(b *testing.B) {
 			query := &protocol.DiffMatches{Expr: "(?i)polly", IgnoreCase: false}
-			matchTree, err := ToMatchTree(query)
+			matchTree, err := ToMatcher(query)
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
@@ -126,7 +126,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 		b.Run("many matches", func(b *testing.B) {
 			b.Run("with optimization", func(b *testing.B) {
 				query := &protocol.DiffMatches{Expr: "suggestion", IgnoreCase: true}
-				matchTree, err := ToMatchTree(query)
+				matchTree, err := ToMatcher(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
@@ -137,7 +137,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 			b.Run("without optimization", func(b *testing.B) {
 				query := &protocol.DiffMatches{Expr: "(?i)suggestion", IgnoreCase: false}
-				matchTree, err := ToMatchTree(query)
+				matchTree, err := ToMatcher(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
@@ -150,7 +150,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 		b.Run("few matches", func(b *testing.B) {
 			b.Run("with optimization", func(b *testing.B) {
 				query := &protocol.DiffMatches{Expr: "limitoffset", IgnoreCase: true}
-				matchTree, err := ToMatchTree(query)
+				matchTree, err := ToMatcher(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
@@ -161,7 +161,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 			b.Run("without optimization", func(b *testing.B) {
 				query := &protocol.DiffMatches{Expr: "(?i)limitoffset", IgnoreCase: false}
-				matchTree, err := ToMatchTree(query)
+				matchTree, err := ToMatcher(query)
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {

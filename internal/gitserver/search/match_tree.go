@@ -12,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-// ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
+// ToMatcher converts a protocol.SearchQuery into its equivalent MatchTree.
 // We don't send a match tree directly over the wire so using the protocol
 // package doesn't pull in all the dependencies that the match tree needs.
-func ToMatchTree(q protocol.Node) (MatchTree, error) {
+func ToMatcher(q protocol.Node) (Matcher, error) {
 	switch v := q.(type) {
 	case *protocol.CommitBefore:
 		return &CommitBefore{*v}, nil
@@ -39,9 +39,9 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	case *protocol.Boolean:
 		return &Constant{v.Value}, nil
 	case *protocol.Operator:
-		operands := make([]MatchTree, 0, len(v.Operands))
+		operands := make([]Matcher, 0, len(v.Operands))
 		for _, operand := range v.Operands {
-			sub, err := ToMatchTree(operand)
+			sub, err := ToMatcher(operand)
 			if err != nil {
 				return nil, err
 			}
@@ -53,12 +53,19 @@ func ToMatchTree(q protocol.Node) (MatchTree, error) {
 	}
 }
 
-// MatchTree is an interface representing the queries we can run against a commit.
-type MatchTree interface {
+// Matcher is an interface representing the queries we can run against a commit.
+type Matcher interface {
+	CommitMatcher
+	FileDiffMatcher
+}
+
+type CommitMatcher interface {
 	// Match returns whether the given predicate matches a commit and, if it does,
 	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit, MatchTree) (matched bool, highlights MatchedCommit, err error)
+	Match(*LazyCommit, FileDiffMatcher) (matched bool, highlights MatchedCommit, err error)
+}
 
+type FileDiffMatcher interface {
 	// MatchFileDiff executes the query against the portion of a diff applying to a single file.
 	// This method is necessary because DiffModifiesFile and DiffMatches are not independent when applied
 	// to a full diff. When matching the full diff, you may get results where one file diff matches
@@ -74,7 +81,7 @@ type AuthorMatches struct {
 	*casetransform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit, _ MatchTree) (bool, MatchedCommit, error) {
+func (a *AuthorMatches) Match(lc *LazyCommit, _ FileDiffMatcher) (bool, MatchedCommit, error) {
 	return a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf), MatchedCommit{}, nil
 }
 
@@ -88,7 +95,7 @@ type CommitterMatches struct {
 	*casetransform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit, _ MatchTree) (bool, MatchedCommit, error) {
+func (c *CommitterMatches) Match(lc *LazyCommit, _ FileDiffMatcher) (bool, MatchedCommit, error) {
 	return c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf), MatchedCommit{}, nil
 }
 
@@ -101,7 +108,7 @@ type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit, _ MatchTree) (bool, MatchedCommit, error) {
+func (c *CommitBefore) Match(lc *LazyCommit, _ FileDiffMatcher) (bool, MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, MatchedCommit{}, err
@@ -118,7 +125,7 @@ type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit, _ MatchTree) (bool, MatchedCommit, error) {
+func (c *CommitAfter) Match(lc *LazyCommit, _ FileDiffMatcher) (bool, MatchedCommit, error) {
 	authorDate, err := lc.AuthorDate()
 	if err != nil {
 		return false, MatchedCommit{}, err
@@ -136,7 +143,7 @@ type MessageMatches struct {
 	*casetransform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit, _ MatchTree) (bool, MatchedCommit, error) {
+func (m *MessageMatches) Match(lc *LazyCommit, _ FileDiffMatcher) (bool, MatchedCommit, error) {
 	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
 	if results == nil {
 		return false, MatchedCommit{}, nil
@@ -157,7 +164,7 @@ type DiffMatches struct {
 	*casetransform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit, q MatchTree) (bool, MatchedCommit, error) {
+func (dm *DiffMatches) Match(lc *LazyCommit, q FileDiffMatcher) (bool, MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, MatchedCommit{}, err
@@ -225,7 +232,7 @@ type DiffModifiesFile struct {
 	*casetransform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit, mt MatchTree) (bool, MatchedCommit, error) {
+func (dmf *DiffModifiesFile) Match(lc *LazyCommit, mt FileDiffMatcher) (bool, MatchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
 		return false, MatchedCommit{}, err
@@ -265,7 +272,7 @@ type Constant struct {
 	Value bool
 }
 
-func (c *Constant) Match(_ *LazyCommit, _ MatchTree) (bool, MatchedCommit, error) {
+func (c *Constant) Match(_ *LazyCommit, _ FileDiffMatcher) (bool, MatchedCommit, error) {
 	return c.Value, MatchedCommit{}, nil
 }
 
@@ -275,10 +282,10 @@ func (c *Constant) MatchFileDiff(_ *diff.FileDiff, _ *[]byte) (bool, MatchedFile
 
 type Operator struct {
 	Kind     protocol.OperatorKind
-	Operands []MatchTree
+	Operands []Matcher
 }
 
-func (o *Operator) Match(commit *LazyCommit, mt MatchTree) (bool, MatchedCommit, error) {
+func (o *Operator) Match(commit *LazyCommit, mt FileDiffMatcher) (bool, MatchedCommit, error) {
 	switch o.Kind {
 	case protocol.Not:
 		matched, _, err := o.Operands[0].Match(commit, mt)

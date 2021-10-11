@@ -73,7 +73,7 @@ const (
 
 type CommitSearcher struct {
 	RepoDir     string
-	Query       MatchTree
+	Query       Matcher
 	Revisions   []protocol.RevisionSpecifier
 	IncludeDiff bool
 }

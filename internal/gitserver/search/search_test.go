@@ -67,7 +67,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("match one", func(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "commit2"}
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir: dir,
@@ -83,7 +83,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("match both, in order", func(t *testing.T) {
 		query := &protocol.MessageMatches{Expr: "c"}
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir: dir,
@@ -101,7 +101,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("and with no operands matches all", func(t *testing.T) {
 		query := protocol.NewAnd()
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir: dir,
@@ -117,7 +117,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("match diff content", func(t *testing.T) {
 		query := &protocol.DiffMatches{Expr: "ipsum"}
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir: dir,
@@ -134,7 +134,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("author matches", func(t *testing.T) {
 		query := &protocol.AuthorMatches{Expr: "2"}
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir: dir,
@@ -151,7 +151,7 @@ func TestSearch(t *testing.T) {
 
 	t.Run("file matches", func(t *testing.T) {
 		query := &protocol.DiffModifiesFile{Expr: "file1"}
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir: dir,
@@ -171,7 +171,7 @@ func TestSearch(t *testing.T) {
 			&protocol.DiffMatches{Expr: "lorem"},
 			&protocol.DiffMatches{Expr: "ipsum"},
 		)
-		tree, err := ToMatchTree(query)
+		tree, err := ToMatcher(query)
 		require.NoError(t, err)
 		searcher := &CommitSearcher{
 			RepoDir:     dir,
@@ -298,7 +298,7 @@ index 0000000000..7e54670557
 		diff: parsedDiff,
 	}
 
-	mt, err := ToMatchTree(protocol.NewAnd(
+	mt, err := ToMatcher(protocol.NewAnd(
 		&protocol.AuthorMatches{Expr: "Camden"},
 		&protocol.DiffModifiesFile{Expr: "test"},
 		protocol.NewAnd(
@@ -356,7 +356,7 @@ index 0000000000..7e54670557
 }
 
 func TestFuzzQueryCNF(t *testing.T) {
-	matchTreeMatches := func(mt MatchTree, a authorNameGenerator) bool {
+	matchTreeMatches := func(mt Matcher, a authorNameGenerator) bool {
 		lc := &LazyCommit{
 			RawCommit: &RawCommit{
 				AuthorName: []byte(a),
@@ -368,13 +368,13 @@ func TestFuzzQueryCNF(t *testing.T) {
 	}
 
 	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
-		mt, err := ToMatchTree(q.RawQuery)
+		mt, err := ToMatcher(q.RawQuery)
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
 	}
 
 	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
-		mt, err := ToMatchTree(q.ConstructedQuery())
+		mt, err := ToMatcher(q.ConstructedQuery())
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
 	}
