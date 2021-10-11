@@ -6,10 +6,10 @@ import { of } from 'rxjs'
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { queryBatchSpecs as _queryBatchSpecs } from './backend'
-import { BatchSpecExecutionsPage } from './BatchSpecExecutionsPage'
+import { BatchSpecsPage } from './BatchSpecsPage'
 import { NODES, successNode } from './testData'
 
-const { add } = storiesOf('web/batches/settings/executions/BatchSpecExecutionsPage', module)
+const { add } = storiesOf('web/batches/settings/specs/BatchSpecsPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
     .addParameters({
         chromatic: {
@@ -30,7 +30,7 @@ const queryBatchSpecs: typeof _queryBatchSpecs = () =>
         nodes: [...NODES, successNode('pid1'), successNode('pid2'), successNode('pid3')],
     })
 
-const queryNoBatchSpecExecutions: typeof _queryBatchSpecs = () =>
+const queryNoBatchSpecs: typeof _queryBatchSpecs = () =>
     of({
         __typename: 'BatchSpecConnection',
         totalCount: 0,
@@ -41,14 +41,14 @@ const queryNoBatchSpecExecutions: typeof _queryBatchSpecs = () =>
         nodes: [],
     })
 
-add('List of executions', () => (
+add('List of specs', () => (
     <EnterpriseWebStory>
-        {props => <BatchSpecExecutionsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}
+        {props => <BatchSpecsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}
     </EnterpriseWebStory>
 ))
 
-add('No executions', () => (
+add('No specs', () => (
     <EnterpriseWebStory>
-        {props => <BatchSpecExecutionsPage {...props} queryBatchSpecs={queryNoBatchSpecExecutions} now={NOW} />}
+        {props => <BatchSpecsPage {...props} queryBatchSpecs={queryNoBatchSpecs} now={NOW} />}
     </EnterpriseWebStory>
 ))
