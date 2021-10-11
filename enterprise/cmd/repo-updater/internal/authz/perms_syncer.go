@@ -475,7 +475,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 	// always nil and no user IDs here because we don't restrict access to
 	// non-private repositories.
 	if provider == nil && len(userIDs) == 0 {
-		log15.Debug("PermsSyncer.syncRepoPerms.noProvider",
+		log15.Debug("PermsSyncer.syncRepoPerms.skipFetchPerms",
 			"repoID", repo.ID,
 			"private", repo.Private,
 		)
@@ -504,7 +504,11 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		// return a nil error and log a warning message.
 		var e *github.APIError
 		if errors.As(err, &e) && e.Code == http.StatusNotFound {
-			log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError", "repoID", repo.ID, "err", err, "suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions")
+			log15.Warn("PermsSyncer.syncRepoPerms.ignoreUnauthorizedAPIError",
+				"repoID", repo.ID,
+				"err", err,
+				"suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions",
+			)
 			return errors.Wrap(s.permsStore.TouchRepoPermissions(ctx, int32(repoID)), "touch repository permissions")
 		}
 

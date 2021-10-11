@@ -145,10 +145,13 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
 	// When true, only include external services not under any namespace (i.e. owned
-	// by all site admins), and value of NamespaceUserID is ignored.
+	// by all site admins), and value of NamespaceUserID and ExcludeNamespaceUser
+	// are ignored.
 	NoNamespace bool
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
+	// When true, exclude external services under any user namespace.
+	ExcludeNamespaceUser bool
 	// When specified, only include external services with given list of kinds.
 	Kinds []string
 	// When specified, only include external services with ID below this number
@@ -173,9 +176,11 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}
 	if o.NoNamespace {
-		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
 	} else if o.NamespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
+	} else if o.ExcludeNamespaceUser {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
 	}
 	if len(o.Kinds) > 0 {
 		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
