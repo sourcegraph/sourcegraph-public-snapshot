@@ -190,12 +190,12 @@ extend type Query {
 
 extend type Mutation {
     """
-    Create a new dashboard. Permissions will automatically be granted to the user creating the dashboard.
+    Create a new dashboard.
     """
     createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
 
     """
-    Delete a dashboard. Any views that would become dangling will be deleted.
+    Delete a dashboard.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
 
