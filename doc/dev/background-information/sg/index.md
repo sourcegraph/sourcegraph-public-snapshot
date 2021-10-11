@@ -1,4 +1,4 @@
-# sg - the Sourcegraph developer tool
+# `sg` - the Sourcegraph developer tool
 
 ```none
           _____                    _____
