@@ -202,7 +202,7 @@ func publishAmplitudeEvent(args Event) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("publishing", args.EventName)
+
 	return amplitude.Publish(amplitudeEvent)
 
 }
