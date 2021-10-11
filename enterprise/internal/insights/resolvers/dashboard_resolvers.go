@@ -176,6 +176,28 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
 }
 
+func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+	var viewID string
+	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+	}
+	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+	}
+
+	err = r.dashboardStore.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+	if err != nil {
+		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
+	}
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+	if err != nil || len(dashboards) < 1 {
+		return nil, errors.Wrap(err, "GetDashboards")
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+}
+
 type insightsDashboardPayloadResolver struct {
 	dashboard *types.Dashboard
 }

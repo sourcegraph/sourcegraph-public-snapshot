@@ -94,3 +94,7 @@ func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *gr
 func (r *disabledResolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }
+
+func (r *disabledResolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}

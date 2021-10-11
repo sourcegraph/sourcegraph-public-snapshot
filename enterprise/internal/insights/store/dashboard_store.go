@@ -192,6 +192,20 @@ func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboar
 	return nil
 }
 
+func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboardId int, viewIds []string) error {
+	if dashboardId == 0 {
+		return errors.New("unable to associate views to dashboard invalid dashboard ID")
+	} else if len(viewIds) == 0 {
+		return nil
+	}
+	q := sqlf.Sprintf(removeDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) error {
 	if dashboard.ID == 0 {
 		return errors.New("unable to grant dashboard permissions invalid dashboard id")
@@ -233,6 +247,14 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     FROM insight_view
     WHERE unique_id = ANY(%s)
 );`
+
+const removeDashboardInsightViewConnectionsByViewIds = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:RemoveViewsFromDashboard
+DELETE
+FROM dashboard_insight_view
+WHERE dashboard_id = %s
+  AND insight_view_id IN (SELECT id FROM insight_view WHERE unique_id = ANY(%s));
+`
 
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)

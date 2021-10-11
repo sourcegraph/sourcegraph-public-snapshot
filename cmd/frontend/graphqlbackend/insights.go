@@ -21,6 +21,7 @@ type InsightsResolver interface {
 	// Mutations
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightDashboardPayloadResolver, error)
+	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightDashboardPayloadResolver, error)
 }
 
 type InsightsArgs struct {
@@ -115,6 +116,15 @@ type AddInsightViewToDashboardArgs struct {
 }
 
 type AddInsightViewToDashboardInput struct {
+	InsightViewID graphql.ID
+	DashboardID   graphql.ID
+}
+
+type RemoveInsightViewFromDashboardArgs struct {
+	Input RemoveInsightViewFromDashboardInput
+}
+
+type RemoveInsightViewFromDashboardInput struct {
 	InsightViewID graphql.ID
 	DashboardID   graphql.ID
 }
