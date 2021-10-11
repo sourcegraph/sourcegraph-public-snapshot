@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
-// ToMatcher converts a protocol.SearchQuery into its equivalent MatchTree.
+// ToMatcher converts a protocol.SearchQuery into its equivalent Matcher.
 // We don't send a match tree directly over the wire so using the protocol
 // package doesn't pull in all the dependencies that the match tree needs.
 func ToMatcher(q protocol.Node) (Matcher, error) {

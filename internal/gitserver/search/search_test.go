@@ -356,7 +356,7 @@ index 0000000000..7e54670557
 }
 
 func TestFuzzQueryCNF(t *testing.T) {
-	matchTreeMatches := func(mt Matcher, a authorNameGenerator) bool {
+	matcherMatches := func(mt Matcher, a authorNameGenerator) bool {
 		lc := &LazyCommit{
 			RawCommit: &RawCommit{
 				AuthorName: []byte(a),
@@ -370,13 +370,13 @@ func TestFuzzQueryCNF(t *testing.T) {
 	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
 		mt, err := ToMatcher(q.RawQuery)
 		require.NoError(t, err)
-		return matchTreeMatches(mt, a)
+		return matcherMatches(mt, a)
 	}
 
 	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
 		mt, err := ToMatcher(q.ConstructedQuery())
 		require.NoError(t, err)
-		return matchTreeMatches(mt, a)
+		return matcherMatches(mt, a)
 	}
 
 	err := quick.CheckEqual(rawQueryMatches, reducedQueryMatches, nil)
