@@ -13,6 +13,16 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+### Removed
+
+## 3.31.1
+
+### Added
+
 - For internal use only: the `src batch exec` command executes the provided batch spec in the given workspaces.
 
 ### Changed
@@ -22,8 +32,6 @@ All notable changes to `src-cli` are documented in this file.
 ### Fixed
 
 - `src batch repos` failed with a template error in src-cli 3.31.1 and 3.32.0. This has been fixed. [#625](https://github.com/sourcegraph/src-cli/pull/625)
-
-### Removed
 
 ## 3.31.1
 
