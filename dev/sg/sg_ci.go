@@ -243,7 +243,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 		if failed {
 			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), strings.Join(description, "\n"), "")
 		} else {
-			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), build.FinishedAt.Sub(build.StartedAt.Time).String(), "")
+			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), fmt.Sprintf("%d jobs passed in %s", len(build.Jobs), build.FinishedAt.Sub(build.StartedAt.Time)), "")
 		}
 	}
 }
