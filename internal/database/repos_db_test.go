@@ -59,7 +59,15 @@ func createRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo)
 	}
 }
 
-func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo, cloneStatus types.CloneStatus) []*types.Repo {
+func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo) []*types.Repo {
+	t.Helper()
+
+	return mustCreateGitserverRepo(ctx, t, db, repo, types.GitserverRepo{
+		CloneStatus: types.CloneStatusNotCloned,
+	})
+}
+
+func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo, gitserver types.GitserverRepo) []*types.Repo {
 	t.Helper()
 
 	var createdRepos []*types.Repo
@@ -70,12 +78,13 @@ func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo,
 	}
 	createdRepos = append(createdRepos, repo)
 
+	gitserver.RepoID = repo.ID
+	if gitserver.ShardID == "" {
+		gitserver.ShardID = "test"
+	}
+
 	// Add a row in gitserver_repos
-	if err := GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
-		RepoID:      repo.ID,
-		ShardID:     "test",
-		CloneStatus: cloneStatus,
-	}); err != nil {
+	if err := GitserverRepos(db).Upsert(ctx, &gitserver); err != nil {
 		t.Fatal(err)
 	}
 
