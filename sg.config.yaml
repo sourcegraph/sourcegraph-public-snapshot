@@ -907,17 +907,11 @@ commandsets:
       - caddy
     env:
       ENTERPRISE: 1
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-prod:
     commands:
       - web-standalone-prod
       - caddy
-    env:
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   enterprise-web-standalone-prod:
     commands:
@@ -925,9 +919,6 @@ commandsets:
       - caddy
     env:
       ENTERPRISE: 1
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
 tests:
   # These can be run with `sg test [name]`
