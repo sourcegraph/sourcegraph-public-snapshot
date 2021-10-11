@@ -2,6 +2,7 @@ package conversion
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -25,6 +26,12 @@ import (
 func Correlate(ctx context.Context, r io.Reader, root string, getChildren pathexistence.GetChildrenFunc) (*precise.GroupedBundleDataChans, error) {
 	// Read raw upload stream and return a correlation state
 	state, err := correlateFromReader(ctx, r, root)
+	if err != nil {
+		return nil, err
+	}
+
+	// Perform validation
+	err = validate(state)
 	if err != nil {
 		return nil, err
 	}
