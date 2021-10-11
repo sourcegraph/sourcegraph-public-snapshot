@@ -260,7 +260,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		sortedSeriesIDs = append(sortedSeriesIDs, seriesID)
 	}
 	if err := h.buildFrames(ctx, uniqueSeries, sortedSeriesIDs); err != nil {
-		return multierror.Append(multi, err)
+		multi = multierror.Append(multi, err)
 	}
 	if err == nil {
 		// we successfully performed a full repo iteration without any "hard" errors, so we will update the metadata
@@ -269,7 +269,7 @@ func (h *historicalEnqueuer) Handler(ctx context.Context) error {
 		h.markInsightsComplete(ctx, foundInsights)
 	}
 
-	return nil
+	return multi
 }
 
 func (h *historicalEnqueuer) markInsightsComplete(ctx context.Context, completed []itypes.InsightSeries) {

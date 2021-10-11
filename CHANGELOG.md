@@ -33,6 +33,9 @@ All notable changes to Sourcegraph are documented in this file.
 - An issue where clicking on a link in the 'Revisions' search sidebar section would result in an invalid query if the query didn't already contain a 'repo:' filter. [#25076](https://github.com/sourcegraph/sourcegraph/pull/25076)
 - An issue where links to jump to Bitbucket Cloud wouldn't render in the UI. [#25533](https://github.com/sourcegraph/sourcegraph/pull/25533)
 - Fixed some code insights pings being aggregated on `anonymous_user_id` instead of `user_id`. [#25926](https://github.com/sourcegraph/sourcegraph/pull/25926)
+- Code insights running over all repositories using a commit search (`type:commit` or `type:diff`) would fail to deserialize and produce no results. [#25928](https://github.com/sourcegraph/sourcegraph/pull/25928)
+- Fixed an issue where code insights queries could produce a panic on queued records that did not include a `record_time` [#25929](https://github.com/sourcegraph/sourcegraph/pull/25929)
+- Fixed an issue where Batch Change changeset diffs would sometimes render incorrectly when previewed from the UI if they contained deleted empty lines. [#25866](https://github.com/sourcegraph/sourcegraph/pull/25866
 
 ### Removed
 
