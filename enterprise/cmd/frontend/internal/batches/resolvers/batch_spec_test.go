@@ -344,34 +344,34 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs processing
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
 	want.State = "PROCESSING"
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 processing
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
 	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
 	// Expect same state
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs complete, 2/3 processing
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	// Expect same state
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 jobs complete
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
-	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	want.State = "COMPLETED"
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 completed
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
 	want.State = "FAILED"
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
 	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
 	want.State = "PROCESSING"
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
