@@ -2,10 +2,11 @@ env:
   ENTERPRISE: '1'
   MINIFY: '1'
   FORCE_COLOR: '3'
+  NODE_OPTIONS: '--max_old_space_size=4096'
 
 steps:
   - command:
-      - COVERAGE_INSTRUMENT=true NODE_OPTIONS="--max_old_space_size=4096" dev/ci/yarn-run.sh build-storybook
+      - COVERAGE_INSTRUMENT=true dev/ci/yarn-run.sh build-storybook
       - yarn --cwd client/shared run download-puppeteer-browser
       - yarn run cover-storybook
       - yarn nyc report -r json
