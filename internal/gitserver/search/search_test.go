@@ -308,7 +308,7 @@ index 0000000000..7e54670557
 	))
 	require.NoError(t, err)
 
-	matches, highlights, err := mt.Match(lc)
+	matches, highlights, err := mt.Match(lc, mt)
 	require.NoError(t, err)
 	require.True(t, matches)
 
@@ -362,7 +362,7 @@ func TestFuzzQueryCNF(t *testing.T) {
 				AuthorName: []byte(a),
 			},
 		}
-		matches, _, err := mt.Match(lc)
+		matches, _, err := mt.Match(lc, mt)
 		require.NoError(t, err)
 		return matches
 	}
