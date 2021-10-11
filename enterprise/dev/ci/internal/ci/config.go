@@ -211,7 +211,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 	if err := cmd.Run(); err != nil {
 		return nil, "", err
 	}
-	fmt.Fprintf(os.Stderr, "Commit found in the following branches: %v", buf.String())
+	fmt.Fprintf(os.Stderr, "Previous build commit %q found in the following branches: %v\n", *build.Commit, buf.String())
 
 	var found bool
 	for _, b := range strings.Split(buf.String(), "\n") {
@@ -222,7 +222,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 	}
 
 	if !found {
-		fmt.Fprintln(os.Stderr, "Commit of previous build not found in current branch. Comparing with main...")
+		fmt.Fprintf(os.Stderr, "Previous build commit %q not found in current branch. Comparing with main...\n", *build.Commit)
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 
