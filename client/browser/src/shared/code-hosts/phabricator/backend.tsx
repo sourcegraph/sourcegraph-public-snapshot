@@ -109,9 +109,9 @@ function createConduitRequestForm(): FormData {
  * Native installation of the Phabricator extension does not allow for us to fetch the style.bundle from a script element.
  * To get around this we fetch the bundled CSS contents and append it to the DOM.
  */
-export async function getPhabricatorCSS(sourcegraphURL: string): Promise<string> {
+export async function getPhabricatorCSS(cssURL: string): Promise<string> {
     const bundleUID = process.env.BUNDLE_UID!
-    const response = await fetch(sourcegraphURL + `/.assets/extension/css/style.bundle.css?v=${bundleUID}`, {
+    const response = await fetch(`${cssURL}?v=${bundleUID}`, {
         method: 'GET',
         credentials: 'include',
         headers: new Headers({ Accept: 'text/html' }),

@@ -40,7 +40,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         // The author and committer both exist and are different people.
         return (
             <div data-testid="git-commit-node-byline" className={className}>
-                <div>
+                <div className="flex-shrink-0">
                     <UserAvatar
                         className="icon-inline"
                         user={author.person}
@@ -52,7 +52,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                         data-tooltip={`${formatPersonName(committer.person)} (committer)`}
                     />
                 </div>
-                <div>
+                <div className="overflow-hidden">
                     {!compact ? (
                         <>
                             {messageElement}
@@ -81,7 +81,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
                     data-tooltip={formatPersonName(author.person)}
                 />
             </div>
-            <div>
+            <div className="overflow-hidden">
                 {!compact && (
                     <>
                         {messageElement}

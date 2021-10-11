@@ -4,17 +4,21 @@ import (
 	"cloud.google.com/go/profiler"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
-// Init starts the Google Cloud Profiler when in sourcegraph.com mode.
-// https://cloud.google.com/profiler/docs/profiling-go
+// Init starts the Google Cloud Profiler when in sourcegraph.com mode in
+// production.  https://cloud.google.com/profiler/docs/profiling-go
 func Init() error {
-	if envvar.DisableProfiler() {
+	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
-	if !envvar.SourcegraphDotComMode() {
+
+	// SourcegraphDotComMode can be true in dev, so check we are in a k8s
+	// cluster.
+	if !conf.IsDeployTypeKubernetes(conf.DeployType()) {
 		return nil
 	}
 

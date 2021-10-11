@@ -1,3 +1,4 @@
+import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -15,16 +16,19 @@ import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields, LSIFIndexState } from '../../../graphql-operations'
 import { FlashMessage } from '../configuration/FlashMessage'
 
-import { enqueueIndexJob as defaultEnqueueIndexJob, fetchLsifIndexes as defaultFetchLsifIndexes } from './backend'
 import styles from './CodeIntelIndexesPage.module.scss'
 import { CodeIntelIndexNode, CodeIntelIndexNodeProps } from './CodeIntelIndexNode'
 import { EmptyAutoIndex } from './EmptyAutoIndex'
 import { EnqueueForm } from './EnqueueForm'
+import {
+    queryLsifIndexListByRepository as defaultQueryLsifIndexListByRepository,
+    queryLsifIndexList as defaultQueryLsifIndexList,
+} from './useLsifIndexList'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
     repo?: { id: string }
-    fetchLsifIndexes?: typeof defaultFetchLsifIndexes
-    enqueueIndexJob?: typeof defaultEnqueueIndexJob
+    queryLsifIndexListByRepository?: typeof defaultQueryLsifIndexListByRepository
+    queryLsifIndexList?: typeof defaultQueryLsifIndexList
     now?: () => Date
 }
 
@@ -70,8 +74,8 @@ const filters: FilteredConnectionFilter[] = [
 
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     repo,
-    fetchLsifIndexes = defaultFetchLsifIndexes,
-    enqueueIndexJob = defaultEnqueueIndexJob,
+    queryLsifIndexListByRepository = defaultQueryLsifIndexListByRepository,
+    queryLsifIndexList = defaultQueryLsifIndexList,
     now,
     telemetryService,
     history,
@@ -79,9 +83,16 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
 
+    const apolloClient = useApolloClient()
     const queryIndexes = useCallback(
-        (args: FilteredConnectionQueryArguments) => fetchLsifIndexes({ repository: repo?.id, ...args }),
-        [repo?.id, fetchLsifIndexes]
+        (args: FilteredConnectionQueryArguments) => {
+            if (repo?.id) {
+                return queryLsifIndexListByRepository(args, repo?.id, apolloClient)
+            }
+
+            return queryLsifIndexList(args, apolloClient)
+        },
+        [repo?.id, queryLsifIndexListByRepository, queryLsifIndexList, apolloClient]
     )
 
     const querySubject = useMemo(() => new Subject<string>(), [])
@@ -98,7 +109,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
 
             {repo && (
                 <Container className="mb-2">
-                    <EnqueueForm repoId={repo.id} querySubject={querySubject} enqueueIndexJob={enqueueIndexJob} />
+                    <EnqueueForm repoId={repo.id} querySubject={querySubject} />
                 </Container>
             )}
 

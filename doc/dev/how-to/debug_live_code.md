@@ -35,7 +35,7 @@ Then install `pgrep`:
 brew install proctools
 ```
 
-Make sure to run `env DELVE=true dev/start.sh` to disable optimizations during compilation, otherwise Delve will have difficulty stepping through optimized functions (line numbers will be off, you won't be able to print local variables, etc.).
+Make sure to run `env DELVE=true sg start` to disable optimizations during compilation, otherwise Delve will have difficulty stepping through optimized functions (line numbers will be off, you won't be able to print local variables, etc.).
 
 Now you can attach a debugger to any Go process (e.g. frontend, searcher, go-langserver) in 1 command:
 
@@ -55,4 +55,4 @@ Delve will pause the process once it attaches the debugger. Most used [commands]
 
 ## Attaching via Goland
 
-After running with `env DELVE=true dev/start.sh` you may use Run | Attach to Process in Goland to debug a running Go binary (⌥⇧F5 on macOS).
+After running with `env DELVE=true sg start` you may use Run | Attach to Process in Goland to debug a running Go binary (⌥⇧F5 on macOS).

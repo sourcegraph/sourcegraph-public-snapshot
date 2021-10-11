@@ -106,6 +106,10 @@ export async function getInsightContent(inputs: GetInsightContentInput): Promise
         }))
     )
 
+    if (searchQueries.length === 0) {
+        throw new Error('Data for these repositories not found')
+    }
+
     const rawSearchResults = await defer(() => fetchRawSearchInsightResults(searchQueries.map(search => search.query)))
         // The bulk search may timeout, but a retry is then likely faster
         // because caches are warm

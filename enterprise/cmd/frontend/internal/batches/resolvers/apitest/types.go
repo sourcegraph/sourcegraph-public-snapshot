@@ -216,6 +216,8 @@ type BatchSpec struct {
 	// NEW
 	SupersedingBatchSpec *BatchSpec
 	AppliesToBatchChange BatchChange
+
+	State string
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.

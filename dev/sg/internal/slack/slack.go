@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/slack-go/slack"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -44,13 +45,8 @@ func retrieveToken(ctx context.Context) (string, error) {
 
 // getTokenFromUser prompts the user for a slack OAuth token.
 func getTokenFromUser() (string, error) {
-	out.WriteLine(output.Linef("", output.StyleWarning, `Please copy the content of "SG Slack Integration" from the "Shared" 1Password vault`))
-	fmt.Printf("Paste it here: ")
-	var token string
-	if _, err := fmt.Scan(&token); err != nil {
-		return "", err
-	}
-	return token, nil
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StylePending, `Please copy the content of "SG Slack Integration" from the "Shared" 1Password vault`))
+	return open.Prompt("Paste your token here:")
 }
 
 // QueryUserCurrentTime returns a given sourcegrapher current time, in its own timezone.

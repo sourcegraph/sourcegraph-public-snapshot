@@ -253,6 +253,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceUserID = opts.NamespaceUserID
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
+	spec.CreatedFromRaw = true
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -483,6 +484,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
 	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
 	newSpec.UserID = batchSpec.UserID
+	newSpec.CreatedFromRaw = true
 
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,

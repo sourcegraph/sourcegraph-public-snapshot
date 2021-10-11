@@ -7,13 +7,11 @@ import (
 	"testing"
 )
 
-func init() {
-	sharedConfig.FrontendUsername = "test"
-	sharedConfig.FrontendPassword = "hunter2"
-}
-
 func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
+	accessToken := "hunter2"
+
 	ts := httptest.NewServer(basicAuthMiddleware(
+		func() string { return accessToken },
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusTeapot)
 		}),
@@ -37,18 +35,8 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 		t.Errorf("unexpected www-authenticate header. want=%q have=%q", `Basic realm="Sourcegraph"`, value)
 	}
 
-	// wrong username
-	req.SetBasicAuth(strings.ToUpper(sharedConfig.FrontendUsername), sharedConfig.FrontendPassword)
-	resp, err = http.DefaultClient.Do(req)
-	if err != nil {
-		t.Fatalf("unexpected error performing request: %s", err)
-	}
-	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusForbidden, resp.StatusCode)
-	}
-
 	// wrong password
-	req.SetBasicAuth(sharedConfig.FrontendUsername, strings.ToUpper(sharedConfig.FrontendPassword))
+	req.SetBasicAuth("anything", strings.ToUpper(accessToken))
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)
@@ -58,7 +46,7 @@ func TestInternalProxyAuthTokenMiddleware(t *testing.T) {
 	}
 
 	// correct token
-	req.SetBasicAuth(sharedConfig.FrontendUsername, sharedConfig.FrontendPassword)
+	req.SetBasicAuth("anything", accessToken)
 	resp, err = http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("unexpected error performing request: %s", err)

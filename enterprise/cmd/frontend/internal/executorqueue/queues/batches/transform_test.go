@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -22,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
+func TestTransformRecord(t *testing.T) {
 	accessToken := "thisissecret-dont-tell-anyone"
 	var accessTokenID int64 = 1234
 	database.Mocks.AccessTokens.CreateInternal = func(subjectUserID int32, scopes []string, note string, creatorID int32) (int64, string, error) {
@@ -39,12 +38,6 @@ func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 	t.Cleanup(func() {
 		conf.Mock(nil)
 	})
-	config := &Config{
-		Shared: &config.SharedConfig{
-			FrontendUsername: "test*",
-			FrontendPassword: "hunter2",
-		},
-	}
 
 	batchSpec := &btypes.BatchSpec{UserID: 123, NamespaceUserID: 123, RawSpec: "horse"}
 
@@ -92,7 +85,7 @@ func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	job, err := transformBatchSpecWorkspaceExecutionJobRecord(context.Background(), store, workspaceExecutionJob, config)
+	job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
 	if err != nil {
 		t.Fatalf("unexpected error transforming record: %s", err)
 	}
@@ -109,16 +102,15 @@ func TestTransformBatchSpecWorkspaceExecutionJobRecord(t *testing.T) {
 				},
 				Dir: ".",
 				Env: []string{
-					"SRC_ENDPOINT=https://test%2A:hunter2@test.io",
+					"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
 					"SRC_ACCESS_TOKEN=" + accessToken,
 				},
 			},
 		},
 		RedactedValues: map[string]string{
-			"https://test%2A:hunter2@test.io": "https://USERNAME_REMOVED:PASSWORD_REMOVED@test.io",
-			"test*":                           "USERNAME_REMOVED",
-			"hunter2":                         "PASSWORD_REMOVED",
-			accessToken:                       "SRC_ACCESS_TOKEN_REMOVED",
+			"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
+			"hunter2":                             "PASSWORD_REMOVED",
+			accessToken:                           "SRC_ACCESS_TOKEN_REMOVED",
 		},
 	}
 	if diff := cmp.Diff(expected, job); diff != "" {

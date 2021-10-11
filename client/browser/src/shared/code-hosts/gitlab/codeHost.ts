@@ -15,10 +15,6 @@ import { getCommandPaletteMount } from './extensions'
 import { resolveCommitFileInfo, resolveDiffFileInfo, resolveFileInfo } from './fileInfo'
 import { getPageInfo, GitLabPageKind, getFilePathsFromCodeView } from './scrape'
 
-const toolbarButtonProps = {
-    className: 'btn btn-default btn-sm',
-}
-
 export function checkIsGitlab(): boolean {
     return !!document.head.querySelector('meta[content="GitLab"]')
 }
@@ -65,7 +61,6 @@ const singleFileCodeView: Omit<CodeView, 'element'> = {
     dom: singleFileDOMFunctions,
     getToolbarMount,
     resolveFileInfo,
-    toolbarButtonProps,
     getSelections: getSelectionsFromHash,
     observeSelections: observeSelectionsFromHash,
 }
@@ -82,7 +77,6 @@ const mergeRequestCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
     getToolbarMount,
     resolveFileInfo: resolveDiffFileInfo,
-    toolbarButtonProps,
     getScrollBoundaries: getFileTitle,
 }
 
@@ -90,7 +84,6 @@ const commitCodeView: Omit<CodeView, 'element'> = {
     dom: diffDOMFunctions,
     getToolbarMount,
     resolveFileInfo: resolveCommitFileInfo,
-    toolbarButtonProps,
     getScrollBoundaries: getFileTitle,
 }
 

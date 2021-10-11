@@ -81,9 +81,6 @@ const getPositionAdjuster = (
         })
     )
 
-const toolbarButtonProps = {
-    className: 'button grey button-grey has-icon has-text phui-button-default msl',
-}
 export const commitCodeView = {
     dom: diffDomFunctions,
     resolveFileInfo: resolveRevisionFileInfo,
@@ -106,7 +103,6 @@ export const commitCodeView = {
 
         return mount
     },
-    toolbarButtonProps,
 }
 
 export const diffCodeView = {
@@ -129,7 +125,6 @@ export const diffCodeView = {
         mountLocation.prepend(mount, ' ')
         return mount
     },
-    toolbarButtonProps,
     isDiff: true,
 }
 
@@ -163,7 +158,6 @@ const diffusionSourceCodeViewResolver = toCodeViewResolver('.diffusion-source', 
 
         return mount
     },
-    toolbarButtonProps,
 })
 
 // Matches Diffusion single file code views on recent Phabricator versions.
