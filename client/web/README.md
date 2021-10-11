@@ -16,25 +16,25 @@ It's possible to overwrite these variables by creating `sg.config.overwrite.yaml
 ### Development server
 
 ```sh
-sg run web-standalone
+sg start web-standalone
 ```
 
 For enterprise version:
 
 ```sh
-sg run enterprise-web-standalone
+sg start enterprise-web-standalone
 ```
 
 ### Production server
 
 ```sh
-sg run web-standalone-prod
+sg start web-standalone-prod
 ```
 
 For enterprise version:
 
 ```sh
-sg run enterprise-web-standalone-prod
+sg start enterprise-web-standalone-prod
 ```
 
 Web app should be available at `http://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}` (note the `http` not `https`). Build artifacts will be served from `<rootRepoPath>/ui/assets`.
