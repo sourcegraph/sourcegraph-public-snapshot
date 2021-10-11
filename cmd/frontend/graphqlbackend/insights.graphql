@@ -260,9 +260,9 @@ input CreateInsightDashboardInput {
 }
 
 """
-Permissions to grant.
+Input object for permissions to grant.
 """
-type InsightsPermissionGrants {
+input InsightsPermissionGrants {
     """
     Specific users to grant permissions to.
     """
