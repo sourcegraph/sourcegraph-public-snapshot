@@ -223,11 +223,11 @@ Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.co
 # Preview what a CI run for your current changes will look like
 sg ci preview
 
-# Check on the status of your changes in the Buildkite pipeline
+# Check on the status of your changes on the current branch in the Buildkite pipeline
 sg ci status
-# Check on the status of a specific branch
+# Check on the status of a specific branch instead
 sg ci status --branch my-branch
-# Block until the build has completed (will send a system notification)
+# Block until the build has completed (it will send a system notification)
 sg ci status --wait
 ```
 
