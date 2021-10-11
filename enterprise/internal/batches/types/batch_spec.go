@@ -33,6 +33,11 @@ type BatchSpec struct {
 
 	UserID int32
 
+	// CreatedFromRaw is true when the BatchSpec was created through the
+	// createBatchSpecFromRaw GraphQL mutation, which means that it's meant to be
+	// executed server-side.
+	CreatedFromRaw bool
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
