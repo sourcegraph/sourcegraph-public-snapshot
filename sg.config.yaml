@@ -900,15 +900,12 @@ commandsets:
     commands:
       - web-standalone
       - caddy
-    env:
-      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
 
   enterprise-web-standalone:
     commands:
       - web-standalone
       - caddy
     env:
-      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
       ENTERPRISE: 1
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -918,7 +915,6 @@ commandsets:
       - web-standalone-prod
       - caddy
     env:
-      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -928,7 +924,6 @@ commandsets:
       - web-standalone-prod
       - caddy
     env:
-      CLIENT_PROXY_DEVELOPMENT_PORT: 3080
       ENTERPRISE: 1
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
