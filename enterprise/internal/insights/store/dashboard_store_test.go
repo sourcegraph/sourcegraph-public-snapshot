@@ -234,12 +234,12 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("dashboards before removing a view", []*types.Dashboard{
-			&types.Dashboard{
+			{
 				ID:         1,
 				Title:      "first",
 				InsightIDs: []string{"view1"},
 			},
-			&types.Dashboard{
+			{
 				ID:         2,
 				Title:      "second",
 				InsightIDs: []string{"view1"},
@@ -255,12 +255,12 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("dashboards after removing a view", []*types.Dashboard{
-			&types.Dashboard{
+			{
 				ID:         1,
 				Title:      "first",
 				InsightIDs: []string{"view1"},
 			},
-			&types.Dashboard{
+			{
 				ID:    2,
 				Title: "second",
 			},
