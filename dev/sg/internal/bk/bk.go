@@ -3,6 +3,7 @@ package bk
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -99,8 +100,8 @@ func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit stri
 }
 
 type ExportLogsOpts struct {
-	Job   string
-	State string
+	JobQuery string
+	State    string
 }
 
 type JobLogs struct {
@@ -111,7 +112,7 @@ type JobLogs struct {
 
 // Used as labels to identify a log stream
 type JobMeta struct {
-	Build string `json:"build"`
+	Build int    `json:"build"`
 	Job   string `json:"job"`
 
 	Name    *string `json:"name,omitempty"`
@@ -134,7 +135,7 @@ func maybeTime(ts *buildkite.Timestamp) *time.Time {
 	return &ts.Time
 }
 
-func newJobMeta(build string, j *buildkite.Job) JobMeta {
+func newJobMeta(build int, j *buildkite.Job) JobMeta {
 	return JobMeta{
 		Build: build,
 		Job:   *j.ID,
@@ -160,33 +161,36 @@ func hasState(job *buildkite.Job, state string) bool {
 	return job.State != nil && *job.State == state
 }
 
-func (c *Client) ExportLogs(ctx context.Context, pipeline, build string, opts ExportLogsOpts) ([]*JobLogs, error) {
-	buildDetails, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, build, nil)
+func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opts ExportLogsOpts) ([]*JobLogs, error) {
+	buildID := strconv.Itoa(build)
+	buildDetails, _, err := c.bk.Builds.Get(buildkiteOrg, pipeline, buildID, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	if opts.Job != "" {
-		var jobDetails *buildkite.Job
-		for _, job := range buildDetails.Jobs {
-			if *job.ID == opts.Job {
-				jobDetails = job
+	if opts.JobQuery != "" {
+		var job *buildkite.Job
+		for _, j := range buildDetails.Jobs {
+			idMatch := (j.ID != nil && *j.ID == opts.JobQuery)
+			nameMatch := (j.Name != nil && strings.Contains(*j.Name, opts.JobQuery))
+			if idMatch || nameMatch {
+				job = j
 				break
 			}
 		}
-		if jobDetails == nil {
-			return nil, fmt.Errorf("no job %q found in build %q", opts.Job, build)
+		if job == nil {
+			return nil, fmt.Errorf("no job %q found in build %q", opts.JobQuery, build)
 		}
-		if !hasState(jobDetails, opts.State) {
+		if !hasState(job, opts.State) {
 			return []*JobLogs{}, nil
 		}
 
-		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, build, opts.Job)
+		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, opts.JobQuery)
 		if err != nil {
 			return nil, err
 		}
 		return []*JobLogs{{
-			JobMeta: newJobMeta(build, jobDetails),
+			JobMeta: newJobMeta(build, job),
 			Content: l.Content,
 		}}, nil
 	}
@@ -197,7 +201,7 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline, build string, opts Ex
 			continue
 		}
 
-		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, build, *job.ID)
+		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, *job.ID)
 		if err != nil {
 			return nil, err
 		}

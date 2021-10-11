@@ -24,15 +24,25 @@ import (
 )
 
 var (
-	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
+	ciFlagSet    = flag.NewFlagSet("sg ci", flag.ExitOnError)
+	ciBranchFlag = ciFlagSet.String("branch", "", "Branch name for CI interactions (defaults to current branch)")
 
 	ciLogsFlagSet  = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
 	ciLogsJobState = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
+	ciLogsJobQuery = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
 
-	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
-	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
-	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of the CI build status to check (defaults to current branch)")
+	ciStatusFlagSet  = flag.NewFlagSet("sg ci status", flag.ExitOnError)
+	ciStatusWaitFlag = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 )
+
+// get branch from flag or git
+func getCIBranch() (branch string, err error) {
+	branch = *ciBranchFlag
+	if branch == "" {
+		branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
+	}
+	return
+}
 
 var (
 	ciCommand = &ffcli.Command{
@@ -81,14 +91,11 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				branch := *ciStatusBranchFlag
-				if branch == "" {
-					var err error
-					branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
-					if err != nil {
-						return err
-					}
+				branch, err := getCIBranch()
+				if err != nil {
+					return err
 				}
+
 				// Just support main pipeline for now
 				var build *buildkite.Build
 				if !*ciStatusWaitFlag {
@@ -123,7 +130,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 				printBuildOverview(build, *ciStatusWaitFlag)
 
-				if *ciStatusBranchFlag == "" {
+				if *ciBranchFlag == "" {
 					// If we're not on a specific branch, warn if build commit is not your commit
 					commit, err := run.GitCmd("rev-parse", "HEAD")
 					if err != nil {
@@ -146,6 +153,11 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				client, err := bk.NewClient(ctx, out)
 				if err != nil {
 					return err
+				}
+
+				if *ciBranchFlag != "" {
+					out.WriteLine(output.Line("", output.StyleWarning, "'sg ci build' does not yet support the -branch flag"))
+					return errors.New("unsupported flag -branch")
 				}
 
 				branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
@@ -189,12 +201,28 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				logs, err := client.ExportLogs(ctx, "sourcegraph", "110894", bk.ExportLogsOpts{
-					// Job: "d6eb20fc-f6c9-46f1-897c-619d2d15ebc9",
-					State: *ciLogsJobState,
+
+				branch, err := getCIBranch()
+				if err != nil {
+					return err
+				}
+
+				build, err := client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				if err != nil {
+					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+				}
+
+				logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, bk.ExportLogsOpts{
+					JobQuery: *ciLogsJobQuery,
+					State:    *ciLogsJobState,
 				})
 				if err != nil {
 					return err
+				}
+
+				if len(logs) == 0 {
+					out.WriteLine(output.Line("", output.StyleSuggestion, "No logs found matching the given parameters."))
+					return nil
 				}
 
 				for _, log := range logs {
