@@ -172,20 +172,20 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 		var job *buildkite.Job
 		for _, j := range buildDetails.Jobs {
 			idMatch := (j.ID != nil && *j.ID == opts.JobQuery)
-			nameMatch := (j.Name != nil && strings.Contains(*j.Name, opts.JobQuery))
+			nameMatch := (j.Name != nil && strings.Contains(strings.ToLower(*j.Name), strings.ToLower(opts.JobQuery)))
 			if idMatch || nameMatch {
 				job = j
 				break
 			}
 		}
 		if job == nil {
-			return nil, fmt.Errorf("no job %q found in build %q", opts.JobQuery, build)
+			return nil, fmt.Errorf("no job matching query %q found in build %d", opts.JobQuery, build)
 		}
 		if !hasState(job, opts.State) {
 			return []*JobLogs{}, nil
 		}
 
-		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, opts.JobQuery)
+		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, *job.ID)
 		if err != nil {
 			return nil, err
 		}

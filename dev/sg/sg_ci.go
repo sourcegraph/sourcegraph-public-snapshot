@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -23,6 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+const (
+	ciLogsOutStdout = "stdout"
+)
+
 var (
 	ciFlagSet    = flag.NewFlagSet("sg ci", flag.ExitOnError)
 	ciBranchFlag = ciFlagSet.String("branch", "", "Branch name for CI interactions (defaults to current branch)")
@@ -30,6 +34,7 @@ var (
 	ciLogsFlagSet  = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
 	ciLogsJobState = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
 	ciLogsJobQuery = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
+	ciLogsOut      = ciLogsFlagSet.String("out", ciLogsOutStdout, "Output format, either 'stdout' or a URL pointing to a Loki instance.")
 
 	ciStatusFlagSet  = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusWaitFlag = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
@@ -225,18 +230,37 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					return nil
 				}
 
-				for _, log := range logs {
-					// out.Write(*log.Content)
-					stream, err := loki.NewStreamFromJobLogs(log)
+				switch *ciLogsOut {
+				case ciLogsOutStdout:
+					for _, log := range logs {
+						block := out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
+							*log.JobMeta.Name))
+						block.Write(*log.Content)
+						block.Close()
+					}
+					out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+
+				default:
+					lokiURL, err := url.Parse(*ciLogsOut)
 					if err != nil {
 						return err
 					}
-					b, _ := json.Marshal(stream)
-					out.Write(string(b))
-
-					if err := loki.PushStreams(ctx, []*loki.Stream{stream}); err != nil {
-						return err
+					lokiClient := loki.NewLokiClient(lokiURL)
+					out.WriteLine(output.Linef("", output.StylePending, "Pushing %d log streams to Loki instance at %q",
+						len(logs), lokiURL.Host))
+					entries := 0
+					for _, log := range logs {
+						stream, err := loki.NewStreamFromJobLogs(log)
+						if err != nil {
+							return err
+						}
+						// TODO streams should be independent, and can be pushed in parallel
+						if err := lokiClient.PushStreams(ctx, []*loki.Stream{stream}); err != nil {
+							return err
+						}
+						entries += len(*&stream.Values)
 					}
+					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pushed %d entries to Loki", entries))
 				}
 
 				return nil
