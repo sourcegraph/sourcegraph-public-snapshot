@@ -20,6 +20,9 @@
 *.a
 *.so
 
+# C
+*.dylib
+
 # Mac OS X
 .DS_Store
 
