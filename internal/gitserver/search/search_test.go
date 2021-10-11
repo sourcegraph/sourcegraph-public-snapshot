@@ -301,10 +301,7 @@ index 0000000000..7e54670557
 	mt, err := ToMatcher(protocol.NewAnd(
 		&protocol.AuthorMatches{Expr: "Camden"},
 		&protocol.DiffModifiesFile{Expr: "test"},
-		protocol.NewAnd(
-			&protocol.DiffMatches{Expr: "result"},
-			&protocol.DiffMatches{Expr: "test"},
-		),
+		&protocol.DiffMatches{Expr: "result"},
 	))
 	require.NoError(t, err)
 
@@ -313,42 +310,44 @@ index 0000000000..7e54670557
 	require.True(t, matches)
 
 	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
-	expectedFormatted := `/dev/null internal/compute/match.go
-@@ -0,0 +6,6 @@ 
-+
-+       "github.com/sourcegraph/sourcegraph/internal/search/result"
-+)
-+
-+func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
-+       matches := make([]Match, 0, len(fm.LineMatches))
-/dev/null internal/compute/match_test.go
-@@ -0,0 +5,7 @@ ... +4
-+       "regexp"
-+       "testing"
-+
+	expectedFormatted := `/dev/null internal/compute/match_test.go
+@@ -0,0 +8,3 @@ 
 +       "github.com/hexops/autogold"
 +       "github.com/sourcegraph/sourcegraph/internal/search/result"
 +)
-+
+@@ -0,0 +14,4 @@ 
++               r, _ := regexp.Compile(input)
++               result := ofFileMatches(data, r)
++               v, _ := json.MarshalIndent(result, "", "  ")
++               return string(v)
 `
 
 	require.Equal(t, expectedFormatted, formatted)
 
 	expectedRanges := result.Ranges{{
-		Start: result.Location{Offset: 115, Line: 3, Column: 60},
-		End:   result.Location{Offset: 121, Line: 3, Column: 66},
+		Start: result.Location{Offset: 33, Line: 0, Column: 33},
+		End:   result.Location{Offset: 37, Line: 0, Column: 37},
 	}, {
-		Start: result.Location{Offset: 152, Line: 6, Column: 24},
-		End:   result.Location{Offset: 158, Line: 6, Column: 30},
+		Start: result.Location{Offset: 33, Line: 0, Column: 33},
+		End:   result.Location{Offset: 37, Line: 0, Column: 37},
 	}, {
-		Start: result.Location{Offset: 288, Line: 8, Column: 33},
-		End:   result.Location{Offset: 292, Line: 8, Column: 37},
+		Start: result.Location{Offset: 155, Line: 3, Column: 60},
+		End:   result.Location{Offset: 161, Line: 3, Column: 66},
 	}, {
-		Start: result.Location{Offset: 345, Line: 11, Column: 9},
-		End:   result.Location{Offset: 349, Line: 11, Column: 13},
+		Start: result.Location{Offset: 155, Line: 3, Column: 60},
+		End:   result.Location{Offset: 161, Line: 3, Column: 66},
 	}, {
-		Start: result.Location{Offset: 453, Line: 14, Column: 60},
-		End:   result.Location{Offset: 459, Line: 14, Column: 66},
+		Start: result.Location{Offset: 246, Line: 7, Column: 16},
+		End:   result.Location{Offset: 252, Line: 7, Column: 22},
+	}, {
+		Start: result.Location{Offset: 246, Line: 7, Column: 16},
+		End:   result.Location{Offset: 252, Line: 7, Column: 22},
+	}, {
+		Start: result.Location{Offset: 322, Line: 8, Column: 43},
+		End:   result.Location{Offset: 328, Line: 8, Column: 49},
+	}, {
+		Start: result.Location{Offset: 322, Line: 8, Column: 43},
+		End:   result.Location{Offset: 328, Line: 8, Column: 49},
 	}}
 
 	require.Equal(t, expectedRanges, ranges)
