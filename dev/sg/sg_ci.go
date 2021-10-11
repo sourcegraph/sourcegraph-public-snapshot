@@ -11,6 +11,7 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
+	"github.com/gen2brain/beeep"
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
@@ -94,7 +95,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 					}
 				} else {
-					statusTicker(ctx, func() (bool, error) {
+					err := statusTicker(ctx, func() (bool, error) {
 						var err error
 						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 						if err != nil {
@@ -113,8 +114,11 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						}
 						return true, nil
 					})
+					if err != nil {
+						return err
+					}
 				}
-				printBuildOverview(build)
+				printBuildOverview(build, waitFlag)
 
 				if branchFlag == "" {
 					// If we're not on a specific branch, warn if build commit is not your commit
@@ -187,7 +191,8 @@ func allLinesPrefixed(lines []string, match string) bool {
 	return true
 }
 
-func printBuildOverview(build *buildkite.Build) {
+func printBuildOverview(build *buildkite.Build, notify bool) {
+	failed := false
 	// Print a high level overview
 	out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
 	out.Writef("Commit: %s\nStarted: %s", *build.Commit, build.StartedAt)
@@ -207,6 +212,7 @@ func printBuildOverview(build *buildkite.Build) {
 		style = output.StylePending
 		emoji = output.EmojiInfo
 	case "failed":
+		failed = true
 		emoji = output.EmojiFailure
 		fallthrough
 	default:
@@ -227,12 +233,17 @@ func printBuildOverview(build *buildkite.Build) {
 			elapsed = time.Now().Sub(job.StartedAt.Time)
 			style = output.StylePending
 		case "failed":
+			failed = true
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
 			fallthrough
 		default:
 			style = output.StyleWarning
 		}
 		out.WriteLine(output.Linef("", style, "  - %s (%s)", *job.Name, elapsed))
+	}
+
+	if notify && failed {
+		beeep.Alert(fmt.Sprintf("%s Build failed", *build.Branch), *build.WebURL, "")
 	}
 }
 
