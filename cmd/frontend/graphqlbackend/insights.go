@@ -79,11 +79,11 @@ type InsightDashboardsArgs struct {
 }
 
 type InsightsDashboardConnectionResolver interface {
-	Nodes(ctx context.Context) ([]InsightDashboardResolver, error)
+	Nodes(ctx context.Context) ([]InsightsDashboardResolver, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
 }
 
-type InsightDashboardResolver interface {
+type InsightsDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
 	Views() InsightViewConnectionResolver
@@ -107,7 +107,7 @@ type InsightViewResolver interface {
 }
 
 type InsightDashboardPayloadResolver interface {
-	Dashboard(ctx context.Context) (InsightDashboardResolver, error)
+	Dashboard(ctx context.Context) (InsightsDashboardResolver, error)
 }
 
 type AddInsightViewToDashboardArgs struct {

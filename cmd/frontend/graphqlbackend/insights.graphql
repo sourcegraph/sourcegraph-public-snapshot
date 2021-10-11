@@ -197,7 +197,7 @@ extend type Mutation {
     """
     Associate an existing insight view with this dashboard.
     """
-    addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightDashboardPayload!
+    addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
 }
 
 """
@@ -207,7 +207,7 @@ type InsightsDashboardConnection {
     """
     A list of dashboards.
     """
-    nodes: [InsightDashboard!]!
+    nodes: [InsightsDashboard!]!
 
     """
     Pagination information.
@@ -218,7 +218,7 @@ type InsightsDashboardConnection {
 """
 A dashboard of insights.
 """
-type InsightDashboard implements Node {
+type InsightsDashboard implements Node {
     """
     The Dashboard ID.
     """
@@ -262,11 +262,11 @@ type InsightView implements Node {
 """
 Response wrapper object for insight dashboard mutations.
 """
-type InsightDashboardPayload {
+type InsightsDashboardPayload {
     """
     The result dashboard after mutation.
     """
-    dashboard: InsightDashboard!
+    dashboard: InsightsDashboard!
 }
 
 """

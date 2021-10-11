@@ -21,7 +21,7 @@ import (
 )
 
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
-var _ graphqlbackend.InsightDashboardResolver = &insightDashboardResolver{}
+var _ graphqlbackend.InsightsDashboardResolver = &insightDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
 var _ graphqlbackend.InsightDashboardPayloadResolver = &insightDashboardPayloadResolver{}
@@ -67,12 +67,12 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 	return d.dashboards, d.next, d.err
 }
 
-func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightDashboardResolver, error) {
+func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
 	dashboards, _, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.InsightDashboardResolver, 0, len(dashboards))
+	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
 	for _, dashboard := range dashboards {
 		id := newRealDashboardID(int64(dashboard.ID))
 		resolvers = append(resolvers, &insightDashboardResolver{dashboard: dashboard, id: &id})
@@ -180,7 +180,7 @@ type insightDashboardPayloadResolver struct {
 	dashboard *types.Dashboard
 }
 
-func (i *insightDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightDashboardResolver, error) {
+func (i *insightDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
 	id := newRealDashboardID(int64(i.dashboard.ID))
 	return &insightDashboardResolver{dashboard: i.dashboard, id: &id}, nil
 }
