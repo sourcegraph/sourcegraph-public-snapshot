@@ -337,6 +337,10 @@ func (r *batchSpecResolver) AutoApplyEnabled() bool {
 }
 
 func (r *batchSpecResolver) State(ctx context.Context) string {
+	if !r.batchSpec.CreatedFromRaw {
+		return "COMPLETED"
+	}
+
 	validationErr := r.validateChangesetSpecs(ctx)
 	if validationErr != nil {
 		return "FAILED"

@@ -163,7 +163,7 @@ jobs:
   batchers-board:
     runs-on: ubuntu-latest
     env:
-      PROJECT_ID: MDExOlByb2plY3ROZXh0NDI1Nw== # https://github.com/orgs/sourcegraph/projects/216
+      PROJECT_ID: PN_kwDOADy5QM0WXg== # https://github.com/orgs/sourcegraph/projects/216
       GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
     steps:
     - name: Get issue if relevant

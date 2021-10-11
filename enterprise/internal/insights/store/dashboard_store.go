@@ -166,7 +166,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 		return types.Dashboard{}, errors.Wrap(err, "CreateDashboard")
 	}
 	dashboard.ID = id
-	err = tx.AssociateViewsByViewIds(ctx, dashboard, dashboard.InsightIDs)
+	err = tx.AssociateViewsByViewIds(ctx, dashboard.ID, dashboard.InsightIDs)
 	if err != nil {
 		return types.Dashboard{}, errors.Wrap(err, "AssociateViewsByViewIds")
 	}
@@ -178,13 +178,13 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 	return dashboard, nil
 }
 
-func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboard types.Dashboard, viewIds []string) error {
-	if dashboard.ID == 0 {
+func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboardId int, viewIds []string) error {
+	if dashboardId == 0 {
 		return errors.New("unable to associate views to dashboard invalid dashboard ID")
 	} else if len(viewIds) == 0 {
 		return nil
 	}
-	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, int32(dashboard.ID), pq.Array(viewIds))
+	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
