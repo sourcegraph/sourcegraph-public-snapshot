@@ -185,7 +185,7 @@ extend type Query {
     """
     Return dashboards visible to the authenticated user.
     """
-    insightDashboards(first: Int, after: String): InsightsDashboardConnection!
+    insightsDashboards(first: Int, after: String): InsightsDashboardConnection!
 }
 
 extend type Mutation {

@@ -24,7 +24,7 @@ var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionR
 var _ graphqlbackend.InsightsDashboardResolver = &insightDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
-var _ graphqlbackend.InsightDashboardPayloadResolver = &insightDashboardPayloadResolver{}
+var _ graphqlbackend.InsightDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
@@ -173,14 +173,14 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
-	return &insightDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
 }
 
-type insightDashboardPayloadResolver struct {
+type insightsDashboardPayloadResolver struct {
 	dashboard *types.Dashboard
 }
 
-func (i *insightDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
+func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
 	id := newRealDashboardID(int64(i.dashboard.ID))
 	return &insightDashboardResolver{dashboard: i.dashboard, id: &id}, nil
 }
