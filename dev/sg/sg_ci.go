@@ -21,18 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func newCIStatusFlagSet() *flag.FlagSet {
-	fs := flag.NewFlagSet("status", flag.ExitOnError)
-	fs.BoolVar(&waitFlag, "wait", false, "Wait until build is finished")
-	fs.StringVar(&branchFlag, "branch", "", "Specific branch to check")
-	return fs
-}
-
 var (
-	waitFlag   bool
-	branchFlag string
-	ciFlagSet  = flag.NewFlagSet("sg ci", flag.ExitOnError)
-	ciCommand  = &ffcli.Command{
+	ciFlagSet       = flag.NewFlagSet("sg ci", flag.ExitOnError)
+	ciStatusFlagSet = flag.NewFlagSet("sg ci status", flag.ExitOnError)
+	waitFlag        = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
+	branchFlag      = ciStatusFlagSet.String("branch", "", "Branch name of the CI build status to check (defaults to current branch)")
+	ciCommand       = &ffcli.Command{
 		Name:       "ci",
 		ShortUsage: "sg ci [preview|status|build]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
@@ -72,13 +66,13 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 		}, {
 			Name:      "status",
 			ShortHelp: "Get the status of the CI run associated with the currently checked out branch",
-			FlagSet:   newCIStatusFlagSet(),
+			FlagSet:   ciStatusFlagSet,
 			Exec: func(ctx context.Context, args []string) error {
 				client, err := bk.NewClient(ctx, out)
 				if err != nil {
 					return err
 				}
-				branch := branchFlag
+				branch := *branchFlag
 				if branch == "" {
 					var err error
 					branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
@@ -88,7 +82,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 				// Just support main pipeline for now
 				var build *buildkite.Build
-				if !waitFlag {
+				if !*waitFlag {
 					var err error
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 					if err != nil {
@@ -118,9 +112,9 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						return err
 					}
 				}
-				printBuildOverview(build, waitFlag)
+				printBuildOverview(build, *waitFlag)
 
-				if branchFlag == "" {
+				if *branchFlag == "" {
 					// If we're not on a specific branch, warn if build commit is not your commit
 					commit, err := run.GitCmd("rev-parse", "HEAD")
 					if err != nil {
@@ -220,7 +214,8 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 	}
 	out.WriteLine(output.Linef(emoji, style, "Status: %s", *build.State))
 
-	description := []string{}
+	// Inspect jobs individually.
+	description := []string{"Failed jobs:"}
 	for _, job := range build.Jobs {
 		var elapsed time.Duration
 		if job.State == nil || job.Name == nil {
@@ -236,7 +231,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 		case "failed":
 			failed = true
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
-			description = append(description, fmt.Sprintf("- ❌ %s", *job.Name))
+			description = append(description, fmt.Sprintf("- %s", *job.Name))
 			fallthrough
 		default:
 			style = output.StyleWarning
@@ -248,7 +243,7 @@ func printBuildOverview(build *buildkite.Build, notify bool) {
 		if failed {
 			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), strings.Join(description, "\n"), "")
 		} else {
-			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), *build.WebURL, "")
+			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), build.FinishedAt.Sub(build.StartedAt.Time).String(), "")
 		}
 	}
 }
