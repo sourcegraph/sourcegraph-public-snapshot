@@ -251,7 +251,7 @@ input CreateInsightsDashboardInput {
     """
     Permissions to grant to the dashboard.
     """
-    grants: InsightsPermissionGrants
+    grants: InsightsPermissionGrants!
 }
 
 """

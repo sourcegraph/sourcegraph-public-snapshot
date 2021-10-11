@@ -91,12 +91,12 @@ type InsightsDashboardResolver interface {
 }
 
 type CreateInsightsDashboardArgs struct {
-	Input *CreateInsightsDashboardInput
+	Input CreateInsightsDashboardInput
 }
 
 type CreateInsightsDashboardInput struct {
 	Title  string
-	Grants *InsightsPermissionGrants
+	Grants InsightsPermissionGrants
 }
 
 type InsightsPermissionGrants struct {

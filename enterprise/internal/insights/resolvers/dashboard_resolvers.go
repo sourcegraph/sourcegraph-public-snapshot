@@ -127,21 +127,25 @@ func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Contex
 
 func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
 	var dashboardGrants []store.DashboardGrant
-	for _, userGrant := range *args.Input.Grants.Users {
-		userID, err := graphqlbackend.UnmarshalUserID(userGrant)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal user id: %s", userGrant))
+	if args.Input.Grants.Users != nil {
+		for _, userGrant := range *args.Input.Grants.Users {
+			userID, err := graphqlbackend.UnmarshalUserID(userGrant)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal user id: %s", userGrant))
+			}
+			dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
 		}
-		dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
 	}
-	for _, orgGrant := range *args.Input.Grants.Organizations {
-		orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal org id: %s", orgGrant))
+	if args.Input.Grants.Users != nil {
+		for _, orgGrant := range *args.Input.Grants.Organizations {
+			orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal org id: %s", orgGrant))
+			}
+			dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
 		}
-		dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
 	}
-	if *args.Input.Grants.Global {
+	if args.Input.Grants.Global != nil && *args.Input.Grants.Global {
 		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
 	}
 
