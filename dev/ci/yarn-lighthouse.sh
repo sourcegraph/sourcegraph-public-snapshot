@@ -17,7 +17,7 @@ echo "--- Yarn install in root"
 # mutex is necessary since CI runs various yarn installs in parallel
 NODE_ENV='' yarn --mutex network --frozen-lockfile --network-timeout 60000
 
-yarn gulp generate
+# yarn gulp generate
 
 SOURCEGRAPH_API_URL=https://sourcegraph.com yarn workspace @sourcegraph/web serve:dev
 
