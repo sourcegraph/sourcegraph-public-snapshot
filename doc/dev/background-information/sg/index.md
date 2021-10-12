@@ -210,6 +210,12 @@ sg ci status
 sg ci status --branch my-branch
 # Block until the build has completed (it will send a system notification)
 sg ci status --wait
+
+# Pull logs of failed jobs to stdout
+sg ci logs
+# Push logs of most recent main failure to local Loki for analysis
+# You can spin up a Loki instance with 'sg run loki grafana'
+sg ci logs --branch main --out http://127.0.0.1:3100
 ```
 
 ### `sg teammate` - Get current time or open their handbook page

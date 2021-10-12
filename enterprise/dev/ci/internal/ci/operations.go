@@ -290,7 +290,7 @@ func backendIntegrationTests(candidateImageTag string) operations.Operation {
 			bk.Env("IMAGE",
 				images.DevRegistryImage("server", candidateImageTag)),
 			bk.Cmd("./dev/ci/backend-integration.sh"),
-			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*", "./*.log"))
 	}
 }
 

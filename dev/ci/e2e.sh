@@ -26,8 +26,10 @@ function cleanup() {
   fi
 
   jobs -p -r | xargs kill
-  echo "--- server logs"
-  docker logs --timestamps "$CONTAINER"
+  echo "--- dump server logs"
+  LOGFILE=$(docker inspect "$CONTAINER" --format '{{.LogPath}}')
+  cp "$LOGFILE" "$CONTAINER.log"
+  chmod 744 "$CONTAINER.log"
   echo "--- docker cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"
