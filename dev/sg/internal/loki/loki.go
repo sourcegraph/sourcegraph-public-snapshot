@@ -16,10 +16,10 @@ import (
 
 const pushEndpoint = "/loki/api/v1/push"
 
-// TODO
+// To point at a custom instance, e.g. one on Grafana Cloud, refer to:
 // https://grafana.com/orgs/sourcegraph/hosted-logs/85581#sending-logs
-// https://85581:%s@logs-prod-us-central1.grafana.net
-const lokiInstance = "http://127.0.0.1:3100"
+// The URL should have the format https://85581:$TOKEN@logs-prod-us-central1.grafana.net
+const DefaultLokiURL = "http://127.0.0.1:3100"
 
 // Stream is the Loki logs equivalent of a metric series.
 type Stream struct {
