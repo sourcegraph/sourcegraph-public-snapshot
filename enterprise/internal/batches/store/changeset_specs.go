@@ -491,6 +491,42 @@ OR
   NOT EXISTS(SELECT 1 FROM changesets WHERE current_spec_id = cspecs.id OR previous_spec_id = cspecs.id)
 );`
 
+type DeleteChangesetSpecsOpts struct {
+	BatchSpecID int64
+}
+
+// DeleteChangesetSpecs deletes the ChangesetSpecs matching the given options.
+func (s *Store) DeleteChangesetSpecs(ctx context.Context, opts DeleteChangesetSpecsOpts) (err error) {
+	ctx, endObservation := s.operations.deleteChangesetSpecs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(opts.BatchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if opts.BatchSpecID == 0 {
+		return errors.New("BatchSpecID is 0")
+	}
+
+	q := deleteChangesetSpecsQuery(&opts)
+	return s.Store.Exec(ctx, q)
+}
+
+var deleteChangesetSpecsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/changeset_specs.go:DeleteChangesetSpecs
+DELETE FROM changeset_specs
+WHERE
+  %s
+`
+
+func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
+	preds := []*sqlf.Query{}
+
+	if opts.BatchSpecID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID))
+	}
+
+	return sqlf.Sprintf(deleteChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
+}
+
 func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
 	var spec json.RawMessage
 

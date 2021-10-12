@@ -354,7 +354,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
-	t.Run("Delete", func(t *testing.T) {
+	t.Run("DeleteChangesetSpec", func(t *testing.T) {
 		for i := range changesetSpecs {
 			err := s.DeleteChangesetSpec(ctx, changesetSpecs[i].ID)
 			if err != nil {
@@ -370,6 +370,37 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
+	})
+
+	t.Run("DeleteChangesetSpecs", func(t *testing.T) {
+		t.Run("ByBatchSpecID", func(t *testing.T) {
+
+			for i := 0; i < 3; i++ {
+				spec := &btypes.ChangesetSpec{
+					BatchSpecID: int64(i + 1),
+					RepoID:      repo.ID,
+				}
+				err := s.CreateChangesetSpec(ctx, spec)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
+					BatchSpecID: spec.BatchSpecID,
+				}); err != nil {
+					t.Fatal(err)
+				}
+
+				count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{BatchSpecID: spec.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, 0; have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
