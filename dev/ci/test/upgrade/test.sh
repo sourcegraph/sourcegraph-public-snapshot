@@ -68,9 +68,7 @@ CONTAINER=sourcegraph-new
 docker_logs() {
   pushd "$root_dir"
   echo "--- dump server logs"
-  LOGFILE=$(docker inspect "$CONTAINER" --format '{{.LogPath}}')
-  cp "$LOGFILE" "$CONTAINER.log"
-  chmod 744 "$CONTAINER.log"
+  docker logs "$CONTAINER" 2>"$CONTAINER.log"
   popd
 }
 IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
