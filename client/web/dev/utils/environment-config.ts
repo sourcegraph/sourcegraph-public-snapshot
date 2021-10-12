@@ -23,6 +23,7 @@ export const environmentConfig = {
     IS_HOT_RELOAD_ENABLED: process.env.NO_HOT !== 'true',
 }
 
-const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTPS_DOMAIN } = environmentConfig
+const { SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTPS_DOMAIN, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
-export const WEB_SERVER_URL = `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`
+export const HTTPS_WEB_SERVER_URL = `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`
+export const HTTP_WEB_SERVER_URL = `http://localhost:${CLIENT_PROXY_DEVELOPMENT_PORT}`

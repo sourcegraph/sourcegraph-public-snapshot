@@ -17,7 +17,8 @@ import {
     shouldCompressResponse,
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
-    WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
+    HTTP_WEB_SERVER_URL,
     PROXY_ROUTES,
 } from '../utils'
 import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
@@ -124,10 +125,8 @@ async function startWebpackDevelopmentServer({
     )
 
     await server.start()
-    signale.info(
-        `Development HTTP server is ready at ${chalk.blue.bold(`http://localhost:${CLIENT_PROXY_DEVELOPMENT_PORT}`)}`
-    )
-    signale.success(`Development HTTPS server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    signale.info(`Development HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
+    signale.success(`Development HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     signale.await('Waiting for Webpack to compile assets')
 }
 
