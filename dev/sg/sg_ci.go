@@ -34,7 +34,8 @@ var (
 	ciLogsFlagSet  = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
 	ciLogsJobState = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
 	ciLogsJobQuery = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
-	ciLogsOut      = ciLogsFlagSet.String("out", ciLogsOutStdout, "Output format, either 'stdout' or a URL pointing to a Loki instance.")
+	ciLogsOut      = ciLogsFlagSet.String("out", ciLogsOutStdout,
+		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
 	ciStatusFlagSet  = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusWaitFlag = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
@@ -252,15 +253,17 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					for _, log := range logs {
 						stream, err := loki.NewStreamFromJobLogs(log)
 						if err != nil {
-							return err
+							return fmt.Errorf("failed to generate stream from logs for build %d job %q: %w",
+								log.JobMeta.Build, log.JobMeta.Job, err)
 						}
-						// TODO streams should be independent, and can be pushed in parallel
 						if err := lokiClient.PushStreams(ctx, []*loki.Stream{stream}); err != nil {
-							return err
+							return fmt.Errorf("failed to push stream from logs for build %d job %q: %w",
+								log.JobMeta.Build, log.JobMeta.Job, err)
 						}
 						entries += len(*&stream.Values)
 					}
-					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Pushed %d entries to Loki", entries))
+					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+						"Pushed %d entries from %d streams to Loki", entries, len(logs)))
 				}
 
 				return nil
