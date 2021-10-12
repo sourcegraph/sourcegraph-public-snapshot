@@ -26,7 +26,7 @@ import { Notifications } from '@sourcegraph/shared/src/notifications/Notificatio
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { aggregateStreamingSearchWithExtensionTransformedQuery } from '@sourcegraph/shared/src/search/stream'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -567,7 +567,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
                                                     fetchRecentFileViews={fetchRecentFileViews}
-                                                    streamSearch={aggregateStreamingSearchWithExtensionTransformedQuery}
+                                                    streamSearch={aggregateStreamingSearch}
                                                     onUserExternalServicesOrRepositoriesUpdate={
                                                         this.onUserExternalServicesOrRepositoriesUpdate
                                                     }

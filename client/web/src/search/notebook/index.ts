@@ -3,10 +3,11 @@ import { Observable } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
+import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import {
-    aggregateStreamingSearchWithExtensionTransformedQuery,
+    aggregateStreamingSearch,
     AggregateStreamingSearchResults,
     emptyAggregateResults,
 } from '@sourcegraph/shared/src/search/stream'
@@ -106,17 +107,19 @@ export class Notebook {
             case 'query':
                 this.blocks.set(block.id, {
                     ...block,
-                    output: aggregateStreamingSearchWithExtensionTransformedQuery(
-                        {
+                    output: aggregateStreamingSearch(
+                        transformSearchQuery({
                             // Removes comments
                             query: block.input.replace(/\/\/.*/g, ''),
+                            extensionHostAPIPromise: this.dependencies.extensionHostAPI,
+                        }),
+                        {
                             version: LATEST_VERSION,
                             patternType: SearchPatternType.literal,
                             caseSensitive: false,
                             versionContext: undefined,
                             trace: undefined,
-                        },
-                        this.dependencies.extensionHostAPI
+                        }
                     ).pipe(startWith(emptyAggregateResults)),
                 })
                 break
