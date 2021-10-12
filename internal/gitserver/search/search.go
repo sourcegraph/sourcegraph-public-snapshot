@@ -192,11 +192,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 				diffFetcher: diffFetcher,
 				LowerBuf:    startBuf,
 			}
-			commitMatches, highlights, err := cs.Query.Match(lc)
+			cfr, highlights, err := cs.Query.Match(lc)
 			if err != nil {
 				return err
 			}
-			if commitMatches {
+			if cfr.HasMatch() {
 				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
 				if err != nil {
 					return err

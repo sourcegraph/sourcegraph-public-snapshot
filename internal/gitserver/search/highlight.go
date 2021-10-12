@@ -31,6 +31,14 @@ func (c MatchedCommit) Merge(other MatchedCommit) MatchedCommit {
 	return c
 }
 
+func (c *MatchedCommit) FilterDiffs(fileDiffFilter map[int]struct{}) {
+	for i := range c.Diff {
+		if _, ok := fileDiffFilter[i]; !ok {
+			delete(c.Diff, i)
+		}
+	}
+}
+
 type MatchedFileDiff struct {
 	OldFile      result.Ranges
 	NewFile      result.Ranges
