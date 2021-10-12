@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
@@ -55,7 +56,9 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                            // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
-	apiHandler = deviceid.Middleware(apiHandler)
+	if envvar.SourcegraphDotComMode() {
+		apiHandler = deviceid.Middleware(apiHandler)
+	}
 
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
@@ -73,8 +76,9 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(appHandler)                      // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
-	appHandler = deviceid.Middleware(appHandler)
-
+	if envvar.SourcegraphDotComMode() {
+		appHandler = deviceid.Middleware(appHandler)
+	}
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
 	sm.Handle("/.api/", apiHandler)
