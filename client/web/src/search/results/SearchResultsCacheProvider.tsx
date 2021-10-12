@@ -1,5 +1,5 @@
 import { isEqual } from 'lodash'
-import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState, useReducer } from 'react'
+import React, { createContext, Dispatch, SetStateAction, useContext, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { throttleTime } from 'rxjs/operators'
@@ -48,17 +48,18 @@ export function useCachedSearchResults(
         }, [cachedResults?.options, cachedResults?.results, options, streamSearch])
     )
 
-    // Add a history listener that reset cached results if make new search
+    // Add a history listener that resets cached results if a new search is made
+    // with the same query (e.g. to force refresh when the search button is clicked).
     useEffect(
         () => {
-            history.listen((location, action) => {
+            const unlisten = history.listen((location, action) => {
                 if (location.pathname === '/search' && action === 'PUSH') {
                     setCachedResults(null);
                 }
+                
+                return unlisten
             })
-        },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        }, [history, setCachedResults])
     )
 
     useEffect(() => {
