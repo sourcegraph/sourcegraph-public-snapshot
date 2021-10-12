@@ -31,9 +31,9 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	meta := precise.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
-	definitionRows := gatherMonikersLocations(ctx, state, "export")
-	referenceRows := gatherMonikersLocations(ctx, state, "import")
-	implementationRows := gatherMonikersLocations(ctx, state, "implementation")
+	definitionRows := gatherMonikersLocations(ctx, state, "export", func(r Range) bool { return r.DefinitionResultID != 0 })
+	referenceRows := gatherMonikersLocations(ctx, state, "import", func(r Range) bool { return r.ReferenceResultID != 0 })
+	implementationRows := gatherMonikersLocations(ctx, state, "implementation", func(r Range) bool { return r.DefinitionResultID != 0 })
 	documentation := collectDocumentation(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
@@ -271,7 +271,7 @@ func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
 	return iRange.Start.Character-jRange.Start.Character < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, kind string) chan precise.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, kind string, filterRange func(r Range) bool) chan precise.MonikerLocations {
 	ch := make(chan precise.MonikerLocations)
 
 	go func() {
@@ -300,6 +300,13 @@ func gatherMonikersLocations(ctx context.Context, state *State, kind string) cha
 				EndCharacter:   r.End.Character,
 			}
 
+			if data, ok := state.RangeData[rangeID]; ok {
+				// TODO give the callback more info
+				if !filterRange(data) {
+					continue
+				}
+			}
+
 			monikerIDs := state.Monikers.Get(rangeID)
 			if monikerIDs == nil {
 				continue
@@ -309,6 +316,9 @@ func gatherMonikersLocations(ctx context.Context, state *State, kind string) cha
 				if moniker.Kind != kind {
 					return
 				}
+				// - export: only append this range if a definitionResult points to it
+				// - import: only append this range if a referenceResult points to it
+				// - implementation: only append this range if a definitionResult points to it
 				monikerLocations, ok := monikers[monikerID]
 				if !ok {
 					monikerLocations = precise.MonikerLocations{

@@ -10,11 +10,12 @@ import (
 // implementationsCursor stores (enough of) the state of a previous Implementations request used to
 // calculate the offset into the result set to be returned by the current request.
 type implementationsCursor struct {
-	AdjustedUploads []cursorAdjustedUpload         `json:"adjustedUploads"`
-	OrderedMonikers []precise.QualifiedMonikerData `json:"orderedMonikers"`
-	Phase           string                         `json:"phase"`
-	LocalCursor     localCursor                    `json:"localCursor"`
-	RemoteCursor    remoteCursor                   `json:"remoteCursor"`
+	AdjustedUploads               []cursorAdjustedUpload         `json:"adjustedUploads"`
+	OrderedImplementationMonikers []precise.QualifiedMonikerData `json:"orderedImplementationMonikers"`
+	OrderedExportMonikers         []precise.QualifiedMonikerData `json:"orderedExportMonikers"`
+	Phase                         string                         `json:"phase"`
+	LocalCursor                   localCursor                    `json:"localCursor"`
+	RemoteCursor                  remoteCursor                   `json:"remoteCursor"`
 }
 
 // decodeCursor is the inverse of encodeCursor. If the given encoded string is empty, then

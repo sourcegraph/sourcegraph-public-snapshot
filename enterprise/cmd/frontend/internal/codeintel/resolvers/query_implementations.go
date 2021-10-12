@@ -54,18 +54,33 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// may already be stashed in the cursor decoded above, in which case we don't need to hit
 	// the database.
 
-	if cursor.OrderedMonikers == nil {
-		if cursor.OrderedMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "implementation"); err != nil {
+	if cursor.OrderedImplementationMonikers == nil {
+		if cursor.OrderedImplementationMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "implementation"); err != nil {
 			return nil, "", err
 		}
 	}
 	traceLog(
-		log.Int("numMonikers", len(cursor.OrderedMonikers)),
-		log.String("monikers", monikersToString(cursor.OrderedMonikers)),
+		log.Int("numImplementationMonikers", len(cursor.OrderedImplementationMonikers)),
+		log.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)),
 	)
 
-	fmt.Println("monikers:")
-	for _, moniker := range cursor.OrderedMonikers {
+	fmt.Println("implementation monikers:")
+	for _, moniker := range cursor.OrderedExportMonikers {
+		fmt.Println("- ", moniker)
+	}
+
+	if cursor.OrderedExportMonikers == nil {
+		if cursor.OrderedExportMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "export"); err != nil {
+			return nil, "", err
+		}
+	}
+	traceLog(
+		log.Int("numExportMonikers", len(cursor.OrderedExportMonikers)),
+		log.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)),
+	)
+
+	fmt.Println("export monikers:")
+	for _, moniker := range cursor.OrderedExportMonikers {
 		fmt.Println("- ", moniker)
 	}
 
@@ -74,34 +89,64 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// no more local results remaining.
 	var locations []lsifstore.Location
 	if cursor.Phase == "local" {
-		localLocations, hasMore, err := r.pageLocalReferences(ctx, "implementations", adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
-		if err != nil {
-			return nil, "", err
-		}
-		locations = append(locations, localLocations...)
+		fmt.Println("local")
+		for len(locations) < limit {
+			localLocations, hasMore, err := r.pageLocalReferences(ctx, "implementations", adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
+			if err != nil {
+				return nil, "", err
+			}
+			locations = append(locations, localLocations...)
 
-		if !hasMore {
-			// No more local results, move on to phase 2
-			cursor.Phase = "remote"
+			if !hasMore {
+				cursor.Phase = "dependencies"
+				break
+			}
 		}
 	}
 
-	// Phase 2: Gather all "remote" locations via moniker search. We only do this if there are no more local
-	// results. We'll continue to request additional locations until we fill an entire page or there are no
-	// more local results remaining, just as we did above.
-	if cursor.Phase == "remote" {
+	// Phase 2: Gather all "remote" locations in dependencies via moniker search. We only do this if
+	// there are no more local results. We'll continue to request additional locations until we fill an
+	// entire page or there are no more local results remaining, just as we did above.
+	if cursor.Phase == "dependencies" {
+		fmt.Println("dependencies")
+		uploads, err := r.definitionUploads(ctx, cursor.OrderedImplementationMonikers)
+		if err != nil {
+			return nil, "", err
+		}
+		traceLog(
+			log.Int("numDefinitionUploads", len(uploads)),
+			log.String("definitionUploads", uploadIDsToString(uploads)),
+		)
+
+		// TODO figure out why this returns some references (in addition to the definition). It shouldn't.
+		definitionLocations, _, err := r.monikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
+		if err != nil {
+			return nil, "", err
+		}
+		locations = append(locations, definitionLocations...)
+
+		cursor.Phase = "dependents"
+	}
+
+	// Phase 3: Gather all "remote" locations in dependents via moniker search.
+	if cursor.Phase == "dependents" {
+		fmt.Println("dependents")
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "definitions", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "implementations", adjustedUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
 			locations = append(locations, remoteLocations...)
 
+			fmt.Println("Implementations: dependents len(remoteLocations)", len(remoteLocations), "hasMore", hasMore)
 			if !hasMore {
 				cursor.Phase = "done"
+				break
 			}
 		}
 	}
+
+	cursor.Phase = "done"
 
 	traceLog(log.Int("numLocations", len(locations)))
 	fmt.Println("Implementations: len(locations)", len(locations))
