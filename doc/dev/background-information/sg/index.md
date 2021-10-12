@@ -214,7 +214,7 @@ sg ci status --wait
 # Pull logs of failed jobs to stdout
 sg ci logs
 # Push logs of most recent main failure to local Loki for analysis
-# You can spin up a Loki instance with 'sg start loki-grafana'
+# You can spin up a Loki instance with 'sg run loki grafana'
 sg ci logs --branch main --out http://127.0.0.1:3100
 ```
 

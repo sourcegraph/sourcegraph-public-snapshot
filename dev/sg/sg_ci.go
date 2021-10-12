@@ -208,7 +208,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
 
-To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg start loki-grafana'.
+To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg run loki grafana'.
 From there, you can start exploring logs with the Grafana explore panel.
 `,
 			FlagSet: ciLogsFlagSet,

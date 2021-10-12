@@ -935,13 +935,6 @@ commandsets:
       - web-standalone-prod
       - caddy
 
-  loki-grafana:
-    checks:
-      - docker
-    commands:
-      - grafana
-      - loki
-
 tests:
   # These can be run with `sg test [name]`
   backend:
