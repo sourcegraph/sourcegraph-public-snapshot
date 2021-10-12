@@ -13,11 +13,12 @@ import {
     getCSRFTokenAndCookie,
     STATIC_ASSETS_PATH,
     STATIC_INDEX_PATH,
-    WEB_SERVER_URL,
+    HTTP_WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
     shouldCompressResponse,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
 async function startProductionServer(): Promise<void> {
     if (!SOURCEGRAPH_API_URL) {
@@ -55,8 +56,9 @@ async function startProductionServer(): Promise<void> {
     // Redirect remaining routes to index.html
     app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))
 
-    app.listen(SOURCEGRAPH_HTTPS_PORT, () => {
-        signale.success(`Production server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    app.listen(CLIENT_PROXY_DEVELOPMENT_PORT, () => {
+        signale.info(`Production HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
+        signale.success(`Production HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     })
 }
 
