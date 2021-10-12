@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -54,6 +55,7 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                            // API accepts access tokens
 	apiHandler = gziphandler.GzipHandler(apiHandler)
+	apiHandler = deviceid.Middleware(apiHandler)
 
 	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
 	executorProxyHandler := newExecutorProxyHandler()
@@ -71,6 +73,7 @@ func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook 
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(appHandler)                      // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
+	appHandler = deviceid.Middleware(appHandler)
 
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
