@@ -38,7 +38,7 @@ Write the code that will solve the issue and don't forget to add [tests](https:/
 
 Before creating a Pull Request ensure that [recommended checks](https://docs.sourcegraph.com/dev/contributing/frontend_contribution#ci-checks-to-run-locally) pass locally. We're actively working on making our CI pipeline public to automate this step.
 
-When you are satisfied, open your pull request referencing the issue that you are resolving. **Add a `sg-hacktoberfest-2021` label to your pull request** to increase its discoverability.
+When you are satisfied, open your pull request referencing the issue that you are resolving. **Add a `sg-hacktoberfest-2021` tag in the description** to increase its discoverability.
 
 **IMPORTANT:** Once you have a pull request ready to review, the `verification/cla-signed` check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@natectang`. After that, your pull request will be ready for review.
 
