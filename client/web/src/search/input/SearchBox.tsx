@@ -49,6 +49,8 @@ export interface SearchBoxProps
 
     /** Don't show search help button */
     hideHelpButton?: boolean
+
+    onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
@@ -82,7 +84,11 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                     </>
                 )}
                 <div className={classNames(styles.searchBoxFocusContainer, 'flex-shrink-past-contents')}>
-                    <LazyMonacoQueryInput {...props} className={styles.searchBoxInput} />
+                    <LazyMonacoQueryInput
+                        {...props}
+                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                        className={styles.searchBoxInput}
+                    />
                     <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
                 </div>
             </div>

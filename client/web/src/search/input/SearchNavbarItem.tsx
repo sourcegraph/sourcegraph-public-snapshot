@@ -1,5 +1,6 @@
+import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
-import React, { useCallback } from 'react'
+import React, { useCallback, useState, useEffect } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -7,6 +8,7 @@ import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
 import {
     PatternTypeProps,
@@ -16,7 +18,9 @@ import {
     parseSearchURLQuery,
 } from '..'
 import { AuthenticatedUser } from '../../auth'
+import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { VersionContext } from '../../schema/site.schema'
+import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { submitSearch } from '../helpers'
 import { useNavbarQueryState } from '../navbarSearchQueryState'
 
@@ -38,6 +42,7 @@ interface Props
     isSourcegraphDotCom: boolean
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
+    isRepositoryRelatedPage?: boolean
     setVersionContext: (versionContext: string | undefined) => Promise<void>
     availableVersionContexts: VersionContext[] | undefined
 }
@@ -50,7 +55,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // This uses the same logic as in Layout.tsx until we have a better solution
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
-
+    const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
     const { queryState, setQueryState } = useNavbarQueryState()
 
     const onSubmit = useCallback(
@@ -59,6 +64,16 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
             submitSearch({ ...props, query: queryState.query, source: 'nav' })
         },
         [props, queryState]
+    )
+
+    useEffect(() => {
+        if (isSearchPage && isFuzzyFinderVisible) {
+            setIsFuzzyFinderVisible(false)
+        }
+    }, [isSearchPage, isFuzzyFinderVisible])
+
+    const { fuzzyFinder, fuzzyFinderCaseInsensitiveFileCountThreshold } = getExperimentalFeatures(
+        props.settingsCascade.final
     )
 
     return (
@@ -74,7 +89,23 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 onSubmit={onSubmit}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
+                onHandleFuzzyFinder={setIsFuzzyFinderVisible}
             />
+            <Shortcut
+                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
+                onMatch={() => {
+                    setIsFuzzyFinderVisible(true)
+                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                    input?.focus()
+                    input?.select()
+                }}
+            />
+            {isFuzzyFinderVisible && props.isRepositoryRelatedPage && fuzzyFinder && (
+                <FuzzyFinder
+                    caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
+                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                />
+            )}
         </Form>
     )
 }

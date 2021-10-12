@@ -36,17 +36,17 @@ Yarn,@reach/utils,0.13.0,MIT,Unknown,Approved
 Yarn,@reach/utils,0.15.2,MIT,Unknown,Approved
 Yarn,@reach/utils,0.16.0,MIT,Unknown,Approved
 Yarn,@reach/visually-hidden,0.15.2,MIT,Unknown,Approved
-Yarn,@sentry/browser,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/browser,Approved
-Yarn,@sentry/core,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/core,Approved
-Yarn,@sentry/hub,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/hub,Approved
-Yarn,@sentry/minimal,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/minimal,Approved
-Yarn,@sentry/types,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/types,Approved
-Yarn,@sentry/utils,5.19.0,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/utils,Approved
+Yarn,@sentry/browser,6.13.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/browser,Approved
+Yarn,@sentry/core,6.13.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/core,Approved
+Yarn,@sentry/hub,6.13.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/hub,Approved
+Yarn,@sentry/minimal,6.13.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/minimal,Approved
+Yarn,@sentry/types,6.13.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/types,Approved
+Yarn,@sentry/utils,6.13.2,New BSD,https://github.com/getsentry/sentry-javascript/tree/master/packages/utils,Approved
 Yarn,@sindresorhus/is,3.0.0,MIT,https://sindresorhus.com,Approved
 Yarn,@slimsag/react-shortcuts,1.2.1,MIT,https://github.com/shopify/quilt/packages/react-shortcuts/README.md,Approved
 Yarn,@sourcegraph/branded,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/browser,1.0.0,Apache 2.0,Unknown,Approved
-Yarn,@sourcegraph/codeintellify,7.2.2,MIT,Unknown,Approved
+Yarn,@sourcegraph/codeintellify,7.3.0,MIT,Unknown,Approved
 Yarn,@sourcegraph/eslint-plugin-sourcegraph,1.0.0,Apache 2.0,Unknown,Approved
 Yarn,@sourcegraph/event-positions,1.0.4,MIT,Unknown,Approved
 Yarn,@sourcegraph/extension-api-classes,1.1.0,MIT,Unknown,Approved
@@ -312,7 +312,6 @@ Go,github.com/derision-test/glock,v0.0.0-20210316032053-f5b74334bb29,MIT,"",Appr
 Go,github.com/dgraph-io/ristretto,v0.0.3,Apache 2.0,"",Approved
 Go,github.com/dineshappavoo/basex,v0.0.0-20170425072625-481a6f6dc663,MIT,"",Approved
 Go,github.com/dnaeon/go-vcr,v1.2.0,MIT,"",Approved
-Go,github.com/efritz/pentimento,v0.0.0-20190429011147-ade47d831101,MIT,"",Approved
 Go,github.com/facebookgo/clock,v0.0.0-20150410010913-600d898af40a,MIT,"",Approved
 Go,github.com/facebookgo/limitgroup,v0.0.0-20150612190941-6abd8d71ec01,BSD,"",Approved
 Go,github.com/facebookgo/muster,v0.0.0-20150708232844-fd3d7953fd52,BSD,"",Approved
@@ -464,7 +463,7 @@ Go,github.com/sourcegraph/jsonx,v0.0.0-20200629203448-1a936bd500cf,MIT,"",Approv
 Go,github.com/sourcegraph/oauth2,v0.0.0-20210825125341-77c1d99ece3c,New BSD,"",Approved
 Go,github.com/sourcegraph/syntaxhighlight,v0.0.0-20170531221838-bd320f5d308e,New BSD,"",Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,"",Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20210930114328-078fa3e9d530,Apache 2.0,"",Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20211001135449-614ab2f31e14,Apache 2.0,"",Approved
 Go,github.com/src-d/gcfg,v1.4.0,New BSD,"",Approved
 Go,github.com/stripe/stripe-go,v70.15.0,MIT,"",Approved
 Go,github.com/throttled/throttled/v2,v2.7.1,New BSD,"",Approved

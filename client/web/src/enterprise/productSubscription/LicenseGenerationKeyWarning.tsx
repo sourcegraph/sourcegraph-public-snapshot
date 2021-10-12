@@ -3,7 +3,7 @@ import React from 'react'
 
 /**
  * Displays a warning in debug mode (which is on for local dev) that generated license keys aren't
- * actually valid. Local dev (in dev/start.sh) uses a test private key that does NOT correspond to
+ * actually valid. Local dev (with `sg start`) uses a test private key that does NOT correspond to
  * the license validation public key shipped with Sourcegraph instances.
  *
  * Technically it's possible to generate valid license keys in debug mode (if you manually configure

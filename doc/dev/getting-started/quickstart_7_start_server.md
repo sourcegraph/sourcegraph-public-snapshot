@@ -18,17 +18,23 @@ If you chose to run Redis and PostgreSQL **with Docker** to then we need to conf
 2. Start the databases:
 
     ```
-    sg start redis-postgres
+    sg run redis-postgres
     ```
 
 Keep this process running in a terminal window to keep the databases running. Follow the rest of the instructions in another terminal.
 
 ## Start the server
 
-Start the local development server with the following command:
+**If you are a Sourcegraph employee**: start the local development server for Sourcegraph Enterprise with the following command:
 
 ```
 sg start
+```
+
+**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](./quickstart_2_clone_repository.md)**: you want to start Sourcegraph OSS, do this:
+
+```
+sg start oss
 ```
 
 This will continuously compile your code and live reload your locally running instance of Sourcegraph.
@@ -60,4 +66,4 @@ sg start monitoring
 ```
 
 <!-- omit in toc -->
-[< Previous](quickstart_6_install_sg.md) | [Next >](quickstart_8_additional_resources.md)
+[< Previous](quickstart_6_configure_https_reverse_proxy.md) | [Next >](quickstart_8_additional_resources.md)

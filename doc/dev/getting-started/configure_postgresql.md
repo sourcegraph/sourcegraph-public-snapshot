@@ -1,6 +1,6 @@
 # Configure PostgreSQL
 
-TODO: Can this be deprecated and/or combined in favor of [quickstart step 4](quickstart_4_initialize_database.md)?
+TODO: Can this be deprecated and/or combined in favor of [quickstart step 5](quickstart_5_initialize_database.md)?
 
 ## Initialize
 

@@ -140,6 +140,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
+    const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
     const {
@@ -266,7 +267,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 keyboardShortcuts={props.keyboardShortcuts}
             />
             <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && <SurveyToast />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -290,6 +291,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isExtensionAlertAnimating={isExtensionAlertAnimating}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}

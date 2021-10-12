@@ -298,6 +298,14 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
+func APIDocsSearchIndexingEnabled() bool {
+	val := ExperimentalFeatures().ApidocsSearchIndexing
+	if val == "" {
+		return false // default to off for now until we've fixed https://github.com/sourcegraph/sourcegraph/issues/25856
+	}
+	return val == "enabled"
+}
+
 func StructuralSearchEnabled() bool {
 	val := ExperimentalFeatures().StructuralSearch
 	if val == "" {

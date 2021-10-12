@@ -21,15 +21,26 @@ func TestRepository_BlameFile(t *testing.T) {
 		"echo line2 >> f",
 		"git add f",
 		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git mv f f2",
+		"echo line3 >> f2",
+		"git add f2",
+		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
 	}
 	gitWantHunks := []*Hunk{
 		{
 			StartLine: 1, EndLine: 2, StartByte: 0, EndByte: 6, CommitID: "e6093374dcf5725d8517db0dccbbf69df65dbde0",
 			Message: "foo", Author: gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filename: "f",
 		},
 		{
 			StartLine: 2, EndLine: 3, StartByte: 6, EndByte: 12, CommitID: "fad406f4fe02c358a09df0d03ec7a36c2c8a20f1",
 			Message: "foo", Author: gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filename: "f",
+		},
+		{
+			StartLine: 3, EndLine: 4, StartByte: 12, EndByte: 18, CommitID: "311d75a2b414a77f5158a0ed73ec476f5469b286",
+			Message: "foo", Author: gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+			Filename: "f2",
 		},
 	}
 	tests := map[string]struct {
@@ -41,7 +52,7 @@ func TestRepository_BlameFile(t *testing.T) {
 	}{
 		"git cmd": {
 			repo: MakeGitRepository(t, gitCommands...),
-			path: "f",
+			path: "f2",
 			opt: &BlameOptions{
 				NewestCommit: "master",
 			},

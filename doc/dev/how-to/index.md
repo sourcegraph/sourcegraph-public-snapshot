@@ -60,5 +60,5 @@ further, you *can* develop Sourcegraph with no connectivity by setting the
 `OFFLINE` environment variable:
 
 ```bash
-OFFLINE=true dev/start.sh
+OFFLINE=true sg start
 ```
