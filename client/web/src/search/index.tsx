@@ -236,7 +236,10 @@ export interface HomePanelsProps {
 }
 
 export interface SearchStreamingProps {
-    streamSearch: (options: StreamSearchOptions) => Observable<AggregateStreamingSearchResults>
+    streamSearch: (
+        queryObservable: Observable<string>,
+        options: StreamSearchOptions
+    ) => Observable<AggregateStreamingSearchResults>
 }
 
 /**
