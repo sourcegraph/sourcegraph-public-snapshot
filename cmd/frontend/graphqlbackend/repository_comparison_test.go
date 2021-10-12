@@ -442,6 +442,8 @@ func TestDiffHunk2(t *testing.T) {
 	// https://github.com/sourcegraph/sourcegraph/pull/21068
 
 	ctx := context.Background()
+	// https://sourcegraph.com/github.com/dominikh/go-tools/-/blob/cmd/staticcheck/README.md
+	// was used to produce this test diff.
 	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
 index 4d14577..10ef458 100644
 --- cmd/staticcheck/README.md
@@ -511,6 +513,103 @@ index 4d14577..10ef458 100644
 		}
 		if body.Aborted() {
 			t.Fatal("highlighting is aborted")
+		}
+	})
+}
+
+func TestDiffHunk3(t *testing.T) {
+	// This test exists to protect against an edge case bug illustrated in
+	// https://github.com/sourcegraph/sourcegraph/pull/25866
+
+	ctx := context.Background()
+	// https://sourcegraph.com/github.com/dominikh/go-tools/-/blob/cmd/staticcheck/README.md
+	// was used to produce this test diff.
+	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
+index 4d14577..9fe9a4f 100644
+--- cmd/staticcheck/README.md
++++ cmd/staticcheck/README.md
+@@ -1,10 +1,6 @@
+ # staticcheck
+` + "-" + `
+-_staticcheck_ offers extensive analysis of Go code, covering a myriad
+-of categories. It will detect bugs, suggest code simplifications,
+-point out dead code, and more.
+` + "-" + `
+ ## Installation
++Wowza!
+` + "-" + `
+ See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.`
+
+	dr := diff.NewMultiFileDiffReader(strings.NewReader(filediff))
+	// We only read the first file diff from testDiff
+	fileDiff, err := dr.ReadFile()
+	if err != nil && err != io.EOF {
+		t.Fatalf("parsing diff failed: %s", err)
+	}
+
+	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
+
+	t.Run("Highlight", func(t *testing.T) {
+		hunk.highlighter = &dummyFileHighlighter{
+			// We don't care about the actual html formatting, just the number + order of
+			// the lines we get back after "applying" the diff to the highlighting.
+			highlightedBase: []template.HTML{
+				"# staticcheck",
+				"",
+				"_staticcheck_ offers extensive analysis of Go code, covering a myriad",
+				"of categories. It will detect bugs, suggest code simplifications,",
+				"point out dead code, and more.",
+				"",
+				"## Installation",
+				"",
+				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+			},
+			highlightedHead: []template.HTML{
+				"# staticcheck",
+				"## Installation",
+				"Wowza!",
+				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+			},
+		}
+
+		body, err := hunk.Highlight(ctx, &HighlightArgs{
+			DisableTimeout:     false,
+			HighlightLongLines: false,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if body.Aborted() {
+			t.Fatal("highlighting is aborted")
+		}
+
+		wantLines := []struct {
+			kind, html string
+		}{
+			{kind: "UNCHANGED", html: "# staticcheck"},
+			{kind: "DELETED", html: ""},
+			{kind: "DELETED", html: "_staticcheck_ offers extensive analysis of Go code, covering a myriad"},
+			{kind: "DELETED", html: "of categories. It will detect bugs, suggest code simplifications,"},
+			{kind: "DELETED", html: "point out dead code, and more."},
+			{kind: "DELETED", html: ""},
+			{kind: "UNCHANGED", html: "## Installation"},
+			{kind: "ADDED", html: "Wowza!"},
+			{kind: "DELETED", html: ""},
+			{kind: "UNCHANGED", html: "See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions."},
+		}
+
+		lines := body.Lines()
+		if have, want := len(lines), len(wantLines); have != want {
+			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		}
+		for i, n := range lines {
+			wantedLine := wantLines[i]
+			if n.Kind() != wantedLine.kind {
+				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+			}
+			if n.HTML() != wantedLine.html {
+				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			}
 		}
 	})
 }

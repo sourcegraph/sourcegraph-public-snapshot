@@ -26,9 +26,10 @@ const (
 
 	// Patches (NOT patch releases)
 
-	ImagePatch       // build a patched image
-	ImagePatchNoTest // build a patched image without testing
-	CandidatesNoTest // build all candidates without testing
+	ImagePatch          // build a patched image after testing
+	ImagePatchNoTest    // build a patched image without testing
+	CandidatesNoTest    // build all candidates without testing
+	ExecutorPatchNoTest // build executor image without testing
 
 	// Special run cases
 
@@ -49,6 +50,8 @@ func computeRunType(tag, branch string) RunType {
 		return ImagePatchNoTest
 	case branch == "docker-images-candidates-notest":
 		return CandidatesNoTest
+	case branch == "executor-patch-notest":
+		return ExecutorPatchNoTest
 
 	case branch == "bext/release":
 		return BextReleaseBranch
