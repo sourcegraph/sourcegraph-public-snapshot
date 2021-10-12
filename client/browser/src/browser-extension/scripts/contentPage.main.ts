@@ -32,6 +32,36 @@ setLinkComponent(AnchorLink)
 
 const IS_EXTENSION = true
 
+// Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
+// annoying flash/jitter when the stylesheet loads shortly thereafter).
+function loadStyleSheet(options: { id: string; path: string }): HTMLLinkElement {
+    const { id, path } = options
+
+    let styleSheet = document.querySelector<HTMLLinkElement>(`#${id}`)
+    // If does not exist, create
+    if (!styleSheet) {
+        styleSheet = document.createElement('link')
+        styleSheet.id = id
+        styleSheet.rel = 'stylesheet'
+        styleSheet.type = 'text/css'
+        styleSheet.href = browser.extension.getURL(path)
+    }
+    return styleSheet
+}
+
+// If stylesheet is not loaded yet, wait for it to load.
+async function waitForStyleSheet(styleSheet: HTMLLinkElement): Promise<void> {
+    if (!styleSheet.sheet) {
+        await new Promise(resolve => {
+            styleSheet.addEventListener('load', resolve, { once: true })
+            // If not appended yet, append to <head>
+            if (!styleSheet.parentNode) {
+                document.head.append(styleSheet)
+            }
+        })
+    }
+}
+
 /**
  * Main entry point into browser extension.
  */
@@ -75,30 +105,18 @@ async function main(): Promise<void> {
             { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
             IS_EXTENSION,
             async function onCodeHostFound() {
-                // Add style sheet and wait for it to load to avoid rendering unstyled elements (which causes an
-                // annoying flash/jitter when the stylesheet loads shortly thereafter).
-                const styleSheet = (() => {
-                    let styleSheet = document.querySelector<HTMLLinkElement>('#ext-style-sheet')
-                    // If does not exist, create
-                    if (!styleSheet) {
-                        styleSheet = document.createElement('link')
-                        styleSheet.id = 'ext-style-sheet'
-                        styleSheet.rel = 'stylesheet'
-                        styleSheet.type = 'text/css'
-                        styleSheet.href = browser.extension.getURL('css/style.bundle.css')
-                    }
-                    return styleSheet
-                })()
-                // If not loaded yet, wait for it to load
-                if (!styleSheet.sheet) {
-                    await new Promise(resolve => {
-                        styleSheet.addEventListener('load', resolve, { once: true })
-                        // If not appended yet, append to <head>
-                        if (!styleSheet.parentNode) {
-                            document.head.append(styleSheet)
-                        }
-                    })
-                }
+                const styleSheets = [
+                    {
+                        id: 'ext-style-sheet',
+                        path: 'css/style.bundle.css',
+                    },
+                    {
+                        id: 'ext-style-sheet-css-modules',
+                        path: 'css/inject.bundle.css',
+                    },
+                ]
+
+                await Promise.all(styleSheets.map(loadStyleSheet).map(waitForStyleSheet))
             }
         )
     )

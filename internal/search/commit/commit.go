@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -31,18 +30,6 @@ import (
 
 // SearchCommitDiffsInRepos searches a set of repos for matching commit diffs.
 func SearchCommitDiffsInRepos(ctx context.Context, db dbutil.DB, args *search.TextParametersForCommitParameters, resultChannel streaming.Sender) error {
-	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
-		return searchInReposNew(ctx, db, args, searchCommitsInReposParameters{
-			TraceName:     "SearchCommitDiffsInRepos",
-			ResultChannel: resultChannel,
-			CommitParams: search.CommitParameters{
-				PatternInfo: args.PatternInfo,
-				Query:       args.Query,
-				Diff:        true,
-			},
-		})
-	}
-
 	return searchInRepos(ctx, db, args, searchCommitsInReposParameters{
 		TraceName:     "SearchCommitDiffsInRepos",
 		ResultChannel: resultChannel,
@@ -59,19 +46,6 @@ func SearchCommitLogInRepos(ctx context.Context, db dbutil.DB, args *search.Text
 	var terms []string
 	if args.PatternInfo.Pattern != "" {
 		terms = append(terms, args.PatternInfo.Pattern)
-	}
-
-	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
-		return searchInReposNew(ctx, db, args, searchCommitsInReposParameters{
-			TraceName:     "searchCommitLogsInRepos",
-			ResultChannel: resultChannel,
-			CommitParams: search.CommitParameters{
-				PatternInfo:        args.PatternInfo,
-				Query:              args.Query,
-				Diff:               false,
-				ExtraMessageValues: terms,
-			},
-		})
 	}
 
 	return searchInRepos(ctx, db, args, searchCommitsInReposParameters{

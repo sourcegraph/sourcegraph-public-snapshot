@@ -215,6 +215,11 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			indexedIDs = append(indexedIDs, api.RepoID(id))
 		}
 
+		if len(repoNames) > 0 && len(indexedIDs) > 0 {
+			http.Error(w, "only allowed to specify one of repoID or repo", http.StatusBadRequest)
+			return nil
+		}
+
 		// Preload repos to support fast lookups by repo name.
 		// This does NOT support fetching by URI (unlike Repos.GetByName). Zoekt
 		// will always ask us actual repo names and not URIs, though. This way,
@@ -333,6 +338,11 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
+	if len(opt.Indexed) > 0 && len(opt.IndexedIDs) > 0 {
+		http.Error(w, "only allowed to specify one of Indexed or IndexedIDs", http.StatusBadRequest)
+		return nil
+	}
+
 	indexable, err := h.ListIndexable(r.Context())
 	if err != nil {
 		return err
@@ -343,7 +353,6 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
 			IDs:   opt.IndexedIDs,
 			Names: opt.Indexed,
-			UseOr: true,
 		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {

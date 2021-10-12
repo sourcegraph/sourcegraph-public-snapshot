@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/amplitude"
@@ -47,7 +49,10 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+func LogBackendEvent(db dbutil.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+	insertID, _ := uuid.NewRandom()
+	insertIDFinal := insertID.String()
+	eventID := int32(rand.Int())
 	return LogEvent(context.Background(), db, Event{
 		EventName:      eventName,
 		UserID:         userID,
@@ -56,8 +61,12 @@ func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument, pub
 		Source:         "BACKEND",
 		Argument:       argument,
 		PublicArgument: publicArgument,
+		UserProperties: json.RawMessage("{}"),
 		FeatureFlags:   featureFlags,
 		CohortID:       cohortID,
+		DeviceID:       &deviceID,
+		InsertID:       &insertIDFinal,
+		EventID:        &eventID,
 	})
 }
 
@@ -91,6 +100,8 @@ type bigQueryEvent struct {
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
 	PublicArgument  string  `json:"public_argument"`
+	DeviceID        *string `json:"device_id,omitempty"`
+	InsertID        *string `json:"insert_id,omitempty"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -98,6 +109,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
+
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
@@ -126,6 +138,8 @@ func publishSourcegraphDotComEvent(args Event) error {
 		FeatureFlags:    string(featureFlagJSON),
 		CohortID:        args.CohortID,
 		PublicArgument:  string(args.PublicArgument),
+		DeviceID:        args.DeviceID,
+		InsertID:        args.InsertID,
 	})
 	if err != nil {
 		return err
@@ -167,7 +181,6 @@ func publishAmplitudeEvent(args Event) error {
 	if args.UserProperties == nil {
 		return errors.New("amplitude: Missing user properties")
 	}
-
 	userProperties, err := getAmplitudeUserProperties(args)
 	if err != nil {
 		return err

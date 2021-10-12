@@ -78,7 +78,6 @@ export class EventLogger implements TelemetryService {
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
-        this.eventID++
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -126,14 +125,14 @@ export class EventLogger implements TelemetryService {
     // Insert ID is used to deduplicate events in Amplitude.
     // https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getInsertID(): string {
-        const insertID = this.getDeviceID() + Date.now().toString()
-        return insertID
+        return uuid.v4()
     }
 
     // Event ID is used to deduplicate events in Amplitude.
     // This is used in the case that multiple events with the same userID and timestamp
     // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getEventID(): number {
+        this.eventID++
         return this.eventID
     }
 
@@ -190,7 +189,7 @@ export class EventLogger implements TelemetryService {
         let deviceID = cookies.get(DEVICE_ID_KEY)
         if (!deviceID) {
             deviceID = uuid.v4()
-            cookies.set(DEVICE_ID_KEY, deviceID)
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
         this.anonymousUserID = anonymousUserID

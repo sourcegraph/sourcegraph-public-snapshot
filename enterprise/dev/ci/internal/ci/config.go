@@ -35,13 +35,12 @@ type Config struct {
 	// merge-base with origin/main.
 	ChangedFiles changed.Files
 
-	// ProfilingEnabled, if true, tells buildkite to print timing and resource utilization information
-	// for each command
-	ProfilingEnabled bool
-
 	// MustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
 	// in the branch. If empty, then no check is enforced.
 	MustIncludeCommit []string
+
+	// MessageFlags contains flags parsed from commit messages.
+	MessageFlags MessageFlags
 }
 
 // NewConfig computes configuration for the pipeline generator based on Buildkite environment
@@ -72,7 +71,7 @@ func NewConfig(bkClient *buildkite.Client, now time.Time) (Config, error) {
 	// evaluates what type of pipeline run this is
 	runType := computeRunType(tag, branch)
 
-	// special adjustments based on run type
+	// special tag adjustments based on run type
 	switch {
 	case runType.Is(TaggedRelease):
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
@@ -80,7 +79,7 @@ func NewConfig(bkClient *buildkite.Client, now time.Time) (Config, error) {
 	default:
 		tag = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
 	}
-	if runType.Is(ImagePatch, ImagePatchNoTest) {
+	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
 		// Add additional patch suffix
 		tag = tag + "_patch"
 	}
@@ -96,7 +95,8 @@ func NewConfig(bkClient *buildkite.Client, now time.Time) (Config, error) {
 		ChangedFiles:      changedFiles,
 		BuildNumber:       buildNumber,
 
-		ProfilingEnabled: strings.Contains(branch, "buildkite-enable-profiling"),
+		// get flags from commit message
+		MessageFlags: parseMessageFlags(os.Getenv("BUILDKITE_MESSAGE")),
 	}, nil
 }
 
@@ -139,6 +139,27 @@ func (c Config) ensureCommit() error {
 // as determined in `addDockerImages()`.
 func (c Config) candidateImageTag() string {
 	return images.CandidateImageTag(c.Commit, strconv.Itoa(c.BuildNumber))
+}
+
+// MessageFlags indicates flags that can be parsed out of commit messages to change
+// pipeline behaviour. Use sparingly! If you are generating a new pipeline, please use
+// RunType instead.
+type MessageFlags struct {
+	// ProfilingEnabled, if true, tells buildkite to print timing and resource utilization information
+	// for each command
+	ProfilingEnabled bool
+
+	// SkipHashCompare, if true, tells buildkite to disable skipping of steps that compare
+	// hash output.
+	SkipHashCompare bool
+}
+
+// parseMessageFlags gets MessageFlags from the given commit message.
+func parseMessageFlags(msg string) MessageFlags {
+	return MessageFlags{
+		ProfilingEnabled: strings.Contains(msg, "[buildkite-enable-profiling]"),
+		SkipHashCompare:  strings.Contains(msg, "[skip-hash-compare]"),
+	}
 }
 
 func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {

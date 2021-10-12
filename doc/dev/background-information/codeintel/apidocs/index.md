@@ -100,7 +100,7 @@ On Sourcegraph.com, only a few thousand repos have Go LSIF data (as of Sept 15, 
 
 We make it easy to limit the amount of resources going to API docs search as a feature, since it is desirable to both prevent unbounded growth issues on e.g. Sourcegraph.com and prevent any unexpected resource consumption on enterprise instances (e.g. if someone out there has a Postgres instance provisioned well today, but has hundreds of thousands of Go repositories with LSIF indexing, adding this table may increase resource usage.)
 
-In specific, a site configuration option `"apidocs.search-index-limit-factor": 1.0` enables limiting the index size. The value `1.0` is a multiple of 250 million symbols, i.e., `1.0` indicates 250 million symbols (approx 12.5k Go repos) can be in the public and private search indexes independently (500 million total), `2.0` indicates 500 million symbols (approx 50k Go repos), and so on.
+In specific, a site configuration option `"apidocs.search.index-size-limit-factor": 1.0` enables limiting the index size. The value `1.0` is a multiple of 250 million symbols, i.e., `1.0` indicates 250 million symbols (approx 12.5k Go repos) can be in the public and private search indexes independently (500 million total), `2.0` indicates 500 million symbols (approx 50k Go repos), and so on.
 
 We implement this by merely requesting an estimate number of rows in the table:
 
