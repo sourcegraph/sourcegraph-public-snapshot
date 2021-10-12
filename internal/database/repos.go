@@ -606,6 +606,11 @@ type ReposListOptions struct {
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
 
+	// MinLastChanged filters against the LastChanged field for the repository
+	// on gitserver. The value is the time of the last git fetch which changed
+	// refs stored. IE the last time any branch changed (not just HEAD).
+	MinLastChanged time.Time
+
 	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
 	// automatically or manually for different reasons, like being too big or having copyright issues.
 	IncludeBlocked bool
@@ -905,6 +910,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
+	if !opt.MinLastChanged.IsZero() {
+		where = append(where, sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged))
+	}
 	if opt.NoPrivate {
 		where = append(where, sqlf.Sprintf("NOT private"))
 	}
@@ -964,7 +972,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
