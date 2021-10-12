@@ -2,8 +2,6 @@ package executor
 
 import (
 	"context"
-	"reflect"
-	"strconv"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -261,27 +259,14 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batchesl
 		}
 
 		for _, id := range ic.ExternalIDs {
-			var sid string
-
-			switch tid := id.(type) {
-			case string:
-				sid = tid
-			case int, int8, int16, int32, int64:
-				sid = strconv.FormatInt(reflect.ValueOf(id).Int(), 10)
-			case uint, uint8, uint16, uint32, uint64:
-				sid = strconv.FormatUint(reflect.ValueOf(id).Uint(), 10)
-			case float32:
-				sid = strconv.FormatFloat(float64(tid), 'f', -1, 32)
-			case float64:
-				sid = strconv.FormatFloat(tid, 'f', -1, 64)
-			default:
-				return nil, nil, batcheslib.NewValidationError(errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id))
+			sid, err := batcheslib.ParseChangesetSpecExternalID(id)
+			if err != nil {
+				return nil, nil, err
 			}
 
 			specs = append(specs, &batcheslib.ChangesetSpec{
 				BaseRepository: repo.ID,
-
-				ExternalID: sid,
+				ExternalID:     sid,
 			})
 		}
 	}
