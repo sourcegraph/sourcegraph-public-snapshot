@@ -102,7 +102,7 @@ type CreateInsightsDashboardInput struct {
 }
 
 type UpdateInsightsDashboardArgs struct {
-	Id graphql.ID
+	Id    graphql.ID
 	Input UpdateInsightsDashboardInput
 }
 
