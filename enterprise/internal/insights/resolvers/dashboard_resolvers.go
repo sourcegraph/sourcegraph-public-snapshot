@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go/relay"
@@ -21,15 +22,15 @@ import (
 )
 
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
-var _ graphqlbackend.InsightsDashboardResolver = &insightDashboardResolver{}
+var _ graphqlbackend.InsightsDashboardResolver = &insightsDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
-var _ graphqlbackend.InsightDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
+var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
 	dashboardStore   store.DashboardStore
-	args             *graphqlbackend.InsightDashboardsArgs
+	args             *graphqlbackend.InsightsDashboardsArgs
 
 	// Cache results because they are used by multiple fields
 	once       sync.Once
@@ -75,7 +76,7 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
 	for _, dashboard := range dashboards {
 		id := newRealDashboardID(int64(dashboard.ID))
-		resolvers = append(resolvers, &insightDashboardResolver{dashboard: dashboard, id: &id})
+		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id})
 	}
 	return resolvers, nil
 }
@@ -91,20 +92,20 @@ func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqluti
 	return graphqlutil.HasNextPage(false), nil
 }
 
-type insightDashboardResolver struct {
+type insightsDashboardResolver struct {
 	dashboard *types.Dashboard
 	id        *dashboardID
 }
 
-func (i *insightDashboardResolver) Title() string {
+func (i *insightsDashboardResolver) Title() string {
 	return i.dashboard.Title
 }
 
-func (i *insightDashboardResolver) ID() graphql.ID {
+func (i *insightsDashboardResolver) ID() graphql.ID {
 	return i.id.marshal()
 }
 
-func (i *insightDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
+func (i *insightsDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
 	return &stubDashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs}
 }
 
@@ -122,6 +123,37 @@ func (d *stubDashboardInsightViewConnectionResolver) Nodes(ctx context.Context) 
 
 func (d *stubDashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	return graphqlutil.HasNextPage(false), nil
+}
+
+func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	var dashboardGrants []store.DashboardGrant
+	if args.Input.Grants.Users != nil {
+		for _, userGrant := range *args.Input.Grants.Users {
+			userID, err := graphqlbackend.UnmarshalUserID(userGrant)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal user id: %s", userGrant))
+			}
+			dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
+		}
+	}
+	if args.Input.Grants.Organizations != nil {
+		for _, orgGrant := range *args.Input.Grants.Organizations {
+			orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
+			if err != nil {
+				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal org id: %s", orgGrant))
+			}
+			dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
+		}
+	}
+	if args.Input.Grants.Global != nil && *args.Input.Grants.Global {
+		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
+	}
+
+	dashboard, err := r.dashboardStore.CreateDashboard(ctx, types.Dashboard{Title: args.Input.Title, Save: true}, dashboardGrants)
+	if err != nil {
+		return nil, err
+	}
+	return &insightsDashboardPayloadResolver{&dashboard}, nil
 }
 
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
@@ -154,7 +186,7 @@ func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
 	return true
 }
 
-func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
 	var viewID string
 	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
 	if err != nil {
@@ -182,5 +214,5 @@ type insightsDashboardPayloadResolver struct {
 
 func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
 	id := newRealDashboardID(int64(i.dashboard.ID))
-	return &insightDashboardResolver{dashboard: i.dashboard, id: &id}, nil
+	return &insightsDashboardResolver{dashboard: i.dashboard, id: &id}, nil
 }

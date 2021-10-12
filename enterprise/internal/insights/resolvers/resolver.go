@@ -63,7 +63,7 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 	}, nil
 }
 
-func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return &dashboardConnectionResolver{
 		insightsDatabase: r.insightsDatabase,
 		dashboardStore:   store.NewDashboardStore(r.insightsDatabase),
@@ -83,7 +83,11 @@ func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.In
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+func (r *disabledResolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }
 
@@ -91,6 +95,6 @@ func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *gr
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+func (r *disabledResolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }

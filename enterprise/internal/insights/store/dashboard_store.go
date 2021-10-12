@@ -156,6 +156,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 
 	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
 		dashboard.Title,
+		dashboard.Save,
 	))
 	if row.Err() != nil {
 		return types.Dashboard{}, row.Err()
@@ -223,7 +224,7 @@ VALUES %s;
 
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
-INSERT INTO dashboard (title) VALUES (%s) RETURNING id;
+INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
@@ -236,5 +237,6 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
 
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
+	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
 }

@@ -240,7 +240,7 @@ func clearDashboards(ctx context.Context, db dbutil.DB) error {
 
 const deleteAllDashboardsSql = `
 -- source: enterprise/internal/insights/discovery/discovery.go:clearDashboards
-delete from dashboard;
+delete from dashboard where save != true;
 `
 
 // migrateSeries will attempt to take an insight defined in Sourcegraph settings and migrate it to the database.
