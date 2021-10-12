@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -135,7 +135,7 @@ func (c *Client) PushStreams(ctx context.Context, streams []*Stream) error {
 		return err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		defer resp.Body.Close()
 		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(b))
 	}
