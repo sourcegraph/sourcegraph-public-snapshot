@@ -111,36 +111,49 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 				// Just support main pipeline for now
 				var build *buildkite.Build
-				if !*ciStatusWaitFlag {
-					var err error
-					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
-					if err != nil {
-						return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
-					}
-				} else {
+				build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				if err != nil {
+					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+				}
+				out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
+
+				if *ciStatusWaitFlag && build.FinishedAt == nil {
+					pending := out.Pending(output.Linef("", output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
 					err := statusTicker(ctx, func() (bool, error) {
-						var err error
+						// get the next update
 						build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 						if err != nil {
 							return false, fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 						}
+						done := 0
 						for _, job := range build.Jobs {
-							if job.State != nil && *job.State == "failed" && !job.SoftFailed {
-								// If a job has failed, return immediately, we don't have to wait until all
-								// steps are completed.
-								return true, nil
+							if job.State != nil {
+								if *job.State == "failed" && !job.SoftFailed {
+									// If a job has failed, return immediately, we don't have to wait until all
+									// steps are completed.
+									return true, nil
+								}
+								if *job.State == "passed" || job.SoftFailed {
+									done++
+								}
 							}
 						}
+						pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
+							len(build.Jobs)-done, len(build.Jobs), time.Now().Sub(build.StartedAt.Time))
+
 						if build.FinishedAt == nil {
 							// No failure yet, we can keep waiting.
 							return false, nil
 						}
 						return true, nil
 					})
+					pending.Close()
 					if err != nil {
 						return err
 					}
 				}
+
+				// build status finalized
 				printBuildOverview(build, *ciStatusWaitFlag)
 
 				if !branchFromFlag {
@@ -297,10 +310,10 @@ func allLinesPrefixed(lines []string, match string) bool {
 func printBuildOverview(build *buildkite.Build, notify bool) {
 	failed := false
 	// Print a high level overview
-	out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
-	out.Writef("Commit: %s\nStarted: %s", *build.Commit, build.StartedAt)
+	out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>\nStarted:\t%s",
+		*build.Commit, *build.Message, build.Author.Name, build.Author.Email, build.StartedAt)
 	if build.FinishedAt != nil {
-		out.Writef("Finished: %s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
+		out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
 
 	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run
@@ -379,7 +392,7 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 				return nil
 			}
 		case <-time.After(30 * time.Minute):
-			return fmt.Errorf("status polling, timeout reached")
+			return fmt.Errorf("polling timeout reached")
 		case <-ctx.Done():
 			return ctx.Err()
 		}
