@@ -2,17 +2,22 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 
+import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
+import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
     kind: ExternalServiceKind
+    // TODO: export this
+    owner: { id: Scalars['ID']; tags?: string[]; type: 'user' | 'org' }
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
@@ -26,6 +31,7 @@ interface CodeHostItemProps {
 }
 
 export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
+    owner,
     service,
     kind,
     name,
@@ -34,7 +40,17 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     navigateToAuthProvider,
     onDidRemove,
     onDidError,
+    onDidAdd,
 }) => {
+    // PAT >>>
+
+    const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
+    const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
+        isAddConnectionModalOpen,
+    ])
+
+    // <<< PAT
+
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
         () => setIsRemoveConnectionModalOpen(!isRemoveConnectionModalOpen),
@@ -51,8 +67,21 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
 
+    const connectAction = owner.type === 'user' ? toAuthProvider : toggleAddConnectionModal
+
     return (
         <div className="d-flex align-items-start">
+            {onDidAdd && isAddConnectionModalOpen && (
+                <AddCodeHostConnectionModal
+                    ownerID={owner.id}
+                    kind={kind}
+                    name={name}
+                    hintFragment={hints[kind]}
+                    onDidAdd={onDidAdd}
+                    onDidCancel={toggleAddConnectionModal}
+                    onDidError={onDidError}
+                />
+            )}
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
                     id={service.id}
@@ -101,7 +130,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button type="button" className="btn btn-success" onClick={toAuthProvider}>
+                        <button type="button" className="btn btn-success" onClick={connectAction}>
                             Connect
                         </button>
                     )
