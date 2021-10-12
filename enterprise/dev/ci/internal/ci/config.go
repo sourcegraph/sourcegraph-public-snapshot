@@ -182,7 +182,7 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 	return changedFiles, commit, nil
 }
 
-func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
+func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args []string, newCommit string, err error) {
 	diffCommand := []string{"diff", "--name-only"}
 	if commit == "" {
 		fmt.Fprintln(os.Stderr, "No commit. Comparing with main")
@@ -192,9 +192,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 		return diffCommand, commit, nil
 	}
 
-	// run a diff against the previous commits:
-	// get the latest builds for the current branch
-	// from buildkite
+	// get the latest successful build for this branch and run a diff against that commit
 	builds, _, err := bkClient.Builds.ListByPipeline("sourcegraph", "sourcegraph", &buildkite.BuildsListOptions{
 		Branch: branch,
 		State:  []string{"passed"},
@@ -203,7 +201,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 		},
 	})
 	if err != nil {
-		return nil, "", err
+		return
 	}
 
 	// if there are no previous builds diff with main
@@ -214,6 +212,10 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 
 	build := builds[0]
 
+	// diff with the previous build commit
+	// after making sure the commit is in still in that branch
+	// (the branch may have been rebased)
+
 	// fetch the current branch
 	if out, err := exec.Command("git", "fetch", "origin", branch).CombinedOutput(); err != nil {
 		return nil, "", fmt.Errorf("error while fetching the current branch, err: %w, output: %q", err, string(out))
@@ -223,8 +225,13 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 		return nil, "", fmt.Errorf("error while checking out the current branch, err: %w, output: %q", err, string(out))
 	}
 
-	// diff with the previous build commit
-	// after making sure the commit is in that branch
+	defer func() {
+		// go back on the previous commit
+		if out, er := exec.Command("git", "checkout", "-").CombinedOutput(); er != nil {
+			err = multierror.Append(err, fmt.Errorf("error while checking out the current commit, err: %w, output: %q", err, string(out)))
+		}
+	}()
+
 	var buf bytes.Buffer
 	cmd := exec.Command("git", "branch", "--contains", *build.Commit)
 	cmd.Stderr = os.Stderr
@@ -245,11 +252,6 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) ([]stri
 	if !found {
 		fmt.Fprintf(os.Stderr, "Previous build commit %q not found in current branch. Comparing with main...\n", *build.Commit)
 		return append(diffCommand, "origin/main..."+commit), commit, nil
-	}
-
-	// go back on the previous commit
-	if out, err := exec.Command("git", "checkout", "-").CombinedOutput(); err != nil {
-		return nil, "", fmt.Errorf("error while checking out the current commit, err: %w, output: %q", err, string(out))
 	}
 
 	fmt.Fprintln(os.Stderr, "Comparing with "+*build.Commit)
