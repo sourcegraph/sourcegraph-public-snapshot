@@ -48,7 +48,6 @@ func ProvidersFromConfig(
 	}()
 
 	opt := database.ExternalServicesListOptions{
-		ExcludeNamespaceUser: true,
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindGitLab,

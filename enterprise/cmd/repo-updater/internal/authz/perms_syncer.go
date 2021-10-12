@@ -298,6 +298,41 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
+	appendSpecs := func(extPerms *authz.ExternalUserPermissions, provider authz.Provider) {
+		if extPerms == nil {
+			return
+		}
+
+		for _, exact := range extPerms.Exacts {
+			repoSpecs = append(repoSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(exact),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
+		}
+		for _, includePrefix := range extPerms.IncludeContains {
+			includeContainsSpecs = append(includeContainsSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(includePrefix),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
+		}
+		for _, excludePrefix := range extPerms.ExcludeContains {
+			excludeContainsSpecs = append(excludeContainsSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(excludePrefix),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
+		}
+	}
+
+	// Use login connections to list all accessible repositories on code hosts.
 	for _, acct := range accts {
 		provider := byServiceID[acct.ServiceID]
 		if provider == nil {
@@ -338,7 +373,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
-				return errors.Wrap(err, "fetch user permissions")
+				return errors.Wrapf(err, "fetch user permissions for external account %d", acct.ID)
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
@@ -348,37 +383,66 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 		}
 
-		if extPerms == nil {
+		appendSpecs(extPerms, provider)
+	}
+
+	// Use code host connections to list all accessible repositories on code hosts.
+	svcs, err := database.ExternalServicesWith(s.reposStore).List(ctx,
+		database.ExternalServicesListOptions{
+			NamespaceUserID: userID,
+			Kinds:           []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		},
+	)
+	if err != nil {
+		return errors.Wrap(err, "list user external services")
+	}
+
+	byURN := s.providersByURNs()
+	for _, svc := range svcs {
+		provider := byURN[svc.URN()]
+		if provider == nil {
+			// We have no authz provider configured for this external service or service
 			continue
 		}
 
-		for _, exact := range extPerms.Exacts {
-			repoSpecs = append(repoSpecs,
-				api.ExternalRepoSpec{
-					ID:          string(exact),
-					ServiceType: provider.ServiceType(),
-					ServiceID:   provider.ServiceID(),
-				},
-			)
+		token, err := extsvc.ExtractToken(svc.Config, svc.Kind)
+		if err != nil {
+			return errors.Wrapf(err, "extract token from external service %d", svc.ID)
 		}
-		for _, includePrefix := range extPerms.IncludeContains {
-			includeContainsSpecs = append(includeContainsSpecs,
-				api.ExternalRepoSpec{
-					ID:          string(includePrefix),
-					ServiceType: provider.ServiceType(),
-					ServiceID:   provider.ServiceID(),
-				},
-			)
+		if token == "" {
+			return errors.Errorf("empty token from external service %d", svc.ID)
 		}
-		for _, excludePrefix := range extPerms.ExcludeContains {
-			excludeContainsSpecs = append(excludeContainsSpecs,
-				api.ExternalRepoSpec{
-					ID:          string(excludePrefix),
-					ServiceType: provider.ServiceType(),
-					ServiceID:   provider.ServiceID(),
-				},
-			)
+
+		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
+			return errors.Wrap(err, "wait for rate limiter")
 		}
+
+		extPerms, err := provider.FetchUserPermsByToken(ctx, token)
+		if err != nil {
+			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
+			unauthorized := errcode.IsUnauthorized(err)
+
+			forbidden := errcode.IsForbidden(err)
+
+			// Detect GitHub account suspension error
+			accountSuspended := errcode.IsAccountSuspended(err)
+
+			if unauthorized || accountSuspended || forbidden {
+				log15.Warn("PermsSyncer.syncUserPerms.expiredExternalService",
+					"userID", user.ID,
+					"id", svc.ID,
+					"unauthorized", unauthorized,
+					"accountSuspended", accountSuspended,
+					"forbidden", forbidden,
+				)
+
+				// We still want to continue processing other external services
+				continue
+			}
+			return errors.Wrapf(err, "fetch user permissions for external service %d", svc.ID)
+		}
+
+		appendSpecs(extPerms, provider)
 	}
 
 	// Get corresponding internal database IDs
