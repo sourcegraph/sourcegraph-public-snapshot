@@ -195,7 +195,7 @@ func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboar
 
 func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboardId int, viewIds []string) error {
 	if dashboardId == 0 {
-		return errors.New("unable to associate views to dashboard invalid dashboard ID")
+		return errors.New("unable to remove views from dashboard invalid dashboard ID")
 	} else if len(viewIds) == 0 {
 		return nil
 	}
