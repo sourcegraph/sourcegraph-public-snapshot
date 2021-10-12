@@ -45,6 +45,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const { platformContext, settingsCascade, telemetryService, authenticatedUser } = props
 
     const match = useRouteMatch()
+
     const api = useMemo(
         () => new CodeInsightsSettingBasedBackend(settingsCascade, platformContext),
         [platformContext, settingsCascade]
@@ -80,8 +81,6 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                 <DashboardsRoutes
                     authenticatedUser={authenticatedUser}
                     telemetryService={telemetryService}
-                    platformContext={platformContext}
-                    settingsCascade={settingsCascade}
                 />
 
                 <Route component={NotFoundPage} key="hardcoded-key" />

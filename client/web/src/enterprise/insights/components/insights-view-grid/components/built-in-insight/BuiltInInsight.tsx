@@ -3,12 +3,9 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useContext, useMemo, useState } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../schema/settings.schema'
 import {
     ViewCard,
     ViewLoadingContent,
@@ -24,10 +21,7 @@ import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 interface BuiltInInsightProps<D extends keyof ViewContexts>
-    extends TelemetryProps,
-        PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps<Settings>,
-        React.HTMLAttributes<HTMLElement> {
+    extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: SearchExtensionBasedInsight | LangStatsInsight
     where: D
     context: ViewContexts[D]
@@ -42,7 +36,7 @@ interface BuiltInInsightProps<D extends keyof ViewContexts>
  * main work thread instead of using Extension API.
  */
 export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
-    const { insight, telemetryService, settingsCascade, platformContext, where, context, ...otherProps } = props
+    const { insight, telemetryService, where, context, ...otherProps } = props
     const { getBuiltInInsight } = useContext(InsightsApiContext)
 
     const { data, loading } = useParallelRequests(
@@ -56,7 +50,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight({ settingsCascade, platformContext })
+    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
     return (
         <ViewCard

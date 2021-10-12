@@ -50,10 +50,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const menuReference = useRef<HTMLButtonElement | null>(null)
     const [copyURL, isCopied] = useCopyURLHandler()
 
-    if (dashboards === undefined) {
-        return (<LoadingSpinner/>)
-    }
-
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
 
     const handleSelect = (action: DashboardMenuAction): void => {
@@ -89,6 +85,10 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
 
     const handleAddInsightRequest = (): void => {
         setAddInsightsState(true)
+    }
+
+    if (dashboards === undefined) {
+        return (<LoadingSpinner/>)
     }
 
     return (

@@ -27,7 +27,7 @@ interface SmartInsightsViewGridProps
  * the insights settings (settings cascade subjects).
  */
 export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGridProps> = memo(props => {
-    const { telemetryService, insights, platformContext, settingsCascade } = props
+    const { telemetryService, insights } = props
 
     return (
         <ViewGrid viewIds={insights.map(insight => insight.id)} telemetryService={telemetryService}>
@@ -36,8 +36,6 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     key={insight.id}
                     insight={insight}
                     telemetryService={telemetryService}
-                    platformContext={platformContext}
-                    settingsCascade={settingsCascade}
                     // Set execution insight context explicitly since this grid component is used
                     // only for the dashboard (insights) page
                     where="insightsPage"

@@ -1,5 +1,5 @@
-import { camelCase } from 'lodash'
-import { Observable, of, throwError } from 'rxjs'
+import { camelCase, groupBy } from 'lodash'
+import { forkJoin, Observable, of, throwError } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
@@ -10,8 +10,9 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { InsightDashboard as InsightDashboardConfiguration, Settings } from '../../../../schema/settings.schema'
 import { getInsightsDashboards } from '../../hooks/use-dashboards/use-dashboards'
 import { getSubjectDashboardByID } from '../../hooks/use-dashboards/utils'
+import { getDeleteInsightEditOperations } from '../../hooks/use-delete-insight/delete-helpers'
 import { findInsightById } from '../../hooks/use-insight/use-insight'
-import { createSanitizedDashboard } from '../../pages/dashboards/creation/utils/dashboard-sanitizer';
+import { createSanitizedDashboard } from '../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../pages/dashboards/dashboard-page/components/add-insight-modal/hooks/get-reachable-insights'
 import {
     addDashboardToSettings,
@@ -19,9 +20,11 @@ import {
     removeDashboardFromSettings,
     updateDashboardInsightIds,
 } from '../settings-action/dashboards'
+import { applyEditOperations, SettingsOperation } from '../settings-action/edits'
 import { addInsightToSettings } from '../settings-action/insights'
 import {
-    Insight, InsightDashboard,
+    Insight,
+    InsightDashboard,
     InsightTypePrefix,
     isVirtualDashboard,
     SettingsBasedInsightDashboard,
@@ -40,7 +43,8 @@ import { getSubjectSettings, updateSubjectSettings } from './api/subject-setting
 import {
     CodeInsightsBackend,
     CreateInsightWithFiltersInputs,
-    DashboardInfo, DashboardInput,
+    DashboardInfo,
+    DashboardInput,
     ReachableInsight,
     UpdateDashboardInput,
 } from './types'
@@ -247,6 +251,44 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
             })
         )
     }
+
+    public deleteInsight(insightId: string): Observable<void[]> {
+        // For backward compatibility with old code stats insight api we have to delete
+        // this insight in a special way. See link below for more information.
+        // https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts#L33
+        const isOldCodeStatsInsight = insightId === `${InsightTypePrefix.langStats}.language`
+
+        const keyForSearchInSettings = isOldCodeStatsInsight
+            ? // Hardcoded value of id from old version of stats insight extension API
+              'codeStatsInsights.query'
+            : insightId
+
+        const deleteInsightOperations = getDeleteInsightEditOperations({
+            insightId: keyForSearchInSettings,
+            settingsCascade: this.settingCascade,
+        })
+
+        return this.persistChanges(deleteInsightOperations)
+    }
+
+    private persistChanges(operations: SettingsOperation[]): Observable<void[]> {
+        const subjectsToUpdate = groupBy(operations, operation => operation.subjectId)
+
+        const subjectUpdateRequests = Object.keys(subjectsToUpdate).map(subjectId => {
+            const editOperations = subjectsToUpdate[subjectId]
+
+            return this.getSubjectSettings(subjectId).pipe(
+                switchMap(settings => {
+                    // Modify this jsonc file according to this subject's operations
+                    const nextSubjectSettings = applyEditOperations(settings.contents, editOperations)
+
+                    return this.updateSubjectSettings(this.platformContext, subjectId, nextSubjectSettings)
+                })
+            )
+        })
+
+        return forkJoin(subjectUpdateRequests)
+    }
 }
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
@@ -279,4 +321,5 @@ export class CodeInsightsFakeBackend implements CodeInsightsBackend {
     public updateDashboard = errorMockMethod('updateDashboard')
     public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
+    public deleteInsight = errorMockMethod('deleteInsight')
 }

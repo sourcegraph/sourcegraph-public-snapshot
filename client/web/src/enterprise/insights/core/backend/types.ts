@@ -131,6 +131,8 @@ export interface CodeInsightsBackend {
 
     deleteDashboard: (dashboardSettingKey: string, dashboardOwnerId: string) => Observable<void>
 
+    deleteInsight: (insightId: string) => Observable<void[]>
+
     getInsightSubjects: () => Observable<SupportedInsightSubject[]>
 
     /**

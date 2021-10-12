@@ -2,13 +2,10 @@ import classnames from 'classnames'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { Settings } from '../../../../../../schema/settings.schema'
 import {
     ViewCard,
     ViewContent,
@@ -35,10 +32,7 @@ import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/u
 import { useInsightFilterCreation } from './hooks/use-insight-filter-creation'
 
 interface BackendInsightProps
-    extends TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps<'updateSettings'>,
-        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
+    extends TelemetryProps, React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
 }
 
@@ -46,7 +40,7 @@ interface BackendInsightProps
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
+    const { telemetryService, insight, ref, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
     const { getBackendInsight, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
@@ -85,10 +79,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     )
 
     // Handle insight delete action
-    const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
-        settingsCascade,
-        platformContext,
-    })
+    const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
 
     const { create: creteInsightWithFilters } = useInsightFilterCreation({ platformContext })
 
