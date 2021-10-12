@@ -37,7 +37,7 @@ type matcherContext struct {
 	branchRequests map[string]branchRequestMeta
 }
 
-// branchRequestMeta is bookeeping for the types of gitserver queries we'll need to make to resolve commits
+// branchRequestMeta is bookkeeping for the types of gitserver queries we'll need to make to resolve commits
 // that are contained on branches but are not their tip.
 type branchRequestMeta struct {
 	isDefaultBranch     bool
