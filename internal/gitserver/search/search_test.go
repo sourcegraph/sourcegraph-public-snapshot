@@ -3,6 +3,7 @@ package search
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -368,12 +369,22 @@ func TestFuzzQueryCNF(t *testing.T) {
 	}
 
 	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Recovered from panic in rawQueryMatches:\n  Query: %s\n  Author: %s\n", q.RawQuery.String(), a)
+			}
+		}()
 		mt, err := ToMatchTree(q.RawQuery)
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
 	}
 
 	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Recovered from panic in reducedQueryMatches:\n  Query: %s\n  Author: %s\n", q.RawQuery.String(), a)
+			}
+		}()
 		mt, err := ToMatchTree(q.ConstructedQuery())
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
