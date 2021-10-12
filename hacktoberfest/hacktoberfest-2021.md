@@ -22,7 +22,7 @@ Clone the repo: `git clone https://github.com/sourcegraph/sourcegraph/`.
 
 ## Step 3 - Set up your local development environment.
 
-Follow our [Frontend contribution guidelines](https://docs.sourcegraph.com/dev/contributing/frontend_contribution) to set up your local development environment so you can contribute to Sourcegraph's frontend code base.
+Follow our [Frontend contribution guidelines](https://docs.sourcegraph.com/dev/contributing/frontend_contribution) to set up your local development environment so you can contribute to Sourcegraph's frontend codebase.
 
 Check our [troubleshooting section](https://github.com/sourcegraph/sourcegraph/blob/main/doc/dev/index.md#troubleshooting) if you run into problems. If they persist, reach out to us in the #help channel of the [Sourcegraph Community Space](https://srcgr.ph/join-community-space) and we'll help you out.
 
@@ -40,7 +40,7 @@ Before creating a Pull Request ensure that [recommended checks](https://docs.sou
 
 When you are satisfied, open your pull request referencing the issue that you are resolving. **Add a `sg hacktoberfest 2021` label to your pull request** to increase its discoverability.
 
-**IMPORTANT:** Once you have a pull request ready to review, the 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add the user `natectang` as a reviewer. After that your pull request will be ready for review.
+**IMPORTANT:** Once you have a pull request ready to review, the `verification/cla-signed` check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@natectang`. After that, your pull request will be ready for review.
 
 ## Further Info
 
