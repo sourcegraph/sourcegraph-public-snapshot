@@ -49,10 +49,10 @@ type Event struct {
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db dbutil.DB, userID int32, deviceId, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
-	insertId, _ := uuid.NewRandom()
-	insertIdFinal := insertId.String()
-	eventId := int32(rand.Int())
+func LogBackendEvent(db dbutil.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+	insertID, _ := uuid.NewRandom()
+	insertIDFinal := insertID.String()
+	eventID := int32(rand.Int())
 	return LogEvent(context.Background(), db, Event{
 		EventName:      eventName,
 		UserID:         userID,
@@ -64,9 +64,9 @@ func LogBackendEvent(db dbutil.DB, userID int32, deviceId, eventName string, arg
 		UserProperties: json.RawMessage("{}"),
 		FeatureFlags:   featureFlags,
 		CohortID:       cohortID,
-		DeviceID:       &deviceId,
-		InsertID:       &insertIdFinal,
-		EventID:        &eventId,
+		DeviceID:       &deviceID,
+		InsertID:       &insertIDFinal,
+		EventID:        &eventID,
 	})
 }
 

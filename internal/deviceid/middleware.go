@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 )
 
-type deviceIdKey struct{}
+type deviceIDKey struct{}
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -30,16 +30,16 @@ func Middleware(next http.Handler) http.Handler {
 }
 
 func contextWithDeviceID(r *http.Request) context.Context {
-	if deviceId, ok := cookie.DeviceID(r); ok {
-		return context.WithValue(r.Context(), deviceIdKey{}, deviceId)
+	if deviceID, ok := cookie.DeviceID(r); ok {
+		return context.WithValue(r.Context(), deviceIDKey{}, deviceID)
 	}
 
 	return r.Context()
 }
 
 func FromContext(ctx context.Context) string {
-	if deviceId := ctx.Value(deviceIdKey{}); deviceId != nil {
-		return deviceId.(string)
+	if deviceID := ctx.Value(deviceIDKey{}); deviceID != nil {
+		return deviceID.(string)
 	}
 	return ""
 }
