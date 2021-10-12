@@ -208,7 +208,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
 }
 
-func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightDashboardPayloadResolver, error) {
+func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
 	var viewID string
 	err := relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
 	if err != nil {
