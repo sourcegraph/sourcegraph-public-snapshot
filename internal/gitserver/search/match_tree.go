@@ -317,13 +317,26 @@ func matchesToRanges(content []byte, matches [][]int) result.Ranges {
 	return res
 }
 
+// CommitFilterResult is a representation of whether a diff matches a query.
+// It maintains a list of the indices of the file diffs within the full diff that
+// matched query nodes that apply to file diffs such as "DiffModifiesFile" and "DiffMatches".
+// We do this because a query like `file:a b` will be translated to
+// `DiffModifiesFile{a} AND DiffMatches{b}`, which will match a diff that contains one
+// file diff that matches `DiffModifiesFile{a}` and a different file diff that matches
+// `DiffMatches{b}` when in reality, when a user writes `file:a b`, they probably
+// want content matches that occur in file `a`, not just content matches that occur
+// in a diff that modifies file `a` elsewhere.
 type CommitFilterResult struct {
+	// CommitMatched indicates whether a commit field matched (i.e. Author, Committer, etc.)
 	CommitMatched bool
 
-	// nil means all diffs match
+	// MatchedFileDiffs is the set of indices of file diffs that matched the node.
+	// We use the convention that nil means "unevaluated", which is treated as "all match"
+	// during merges, but not when calling HasMatch().
 	MatchedFileDiffs map[int]struct{}
 }
 
+// HasMatch returns whether the filter result has a match -- either a commit field match or a file diff.
 func (c CommitFilterResult) HasMatch() bool {
 	if c.CommitMatched {
 		return true
@@ -331,6 +344,9 @@ func (c CommitFilterResult) HasMatch() bool {
 	return len(c.MatchedFileDiffs) > 0
 }
 
+// Invert inverts the filter result. It inverts whether any commit fields matched, as well
+// as inverts the indices of file diffs that match. We pass `LazyCommit` in so we can get
+// the number of file diffs in the commit's diff.
 func (c *CommitFilterResult) Invert(lc *LazyCommit) {
 	c.CommitMatched = !c.CommitMatched
 	if c.MatchedFileDiffs == nil {
@@ -353,6 +369,7 @@ func (c *CommitFilterResult) Invert(lc *LazyCommit) {
 	}
 }
 
+// Union merges other into the receiver, unioning the file diff indices
 func (c *CommitFilterResult) Union(other CommitFilterResult) {
 	c.CommitMatched = c.CommitMatched || other.CommitMatched
 	if c.MatchedFileDiffs == nil || other.MatchedFileDiffs == nil {
@@ -364,6 +381,7 @@ func (c *CommitFilterResult) Union(other CommitFilterResult) {
 	}
 }
 
+// Intersect merges other into the receiver, computing the intersectino of the file diff indices
 func (c *CommitFilterResult) Intersect(other CommitFilterResult) {
 	c.CommitMatched = c.CommitMatched && other.CommitMatched
 	if c.MatchedFileDiffs == nil {
@@ -379,6 +397,8 @@ func (c *CommitFilterResult) Intersect(other CommitFilterResult) {
 	}
 }
 
+// filterResult is a helper method that constructs a CommitFilterResult for the simple
+// case of a commit field matching or failing to match.
 func filterResult(val bool) CommitFilterResult {
 	cfr := CommitFilterResult{CommitMatched: val}
 	if !val {
