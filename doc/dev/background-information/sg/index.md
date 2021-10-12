@@ -292,7 +292,7 @@ With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batche
 
 Want to hack on `sg`? Great! Here's how:
 
-1. Read through the [`sg` Vision](./VISION.md) to get an idea of what `sg` should be in the long term.
+1. Read through the [`sg` Vision](./vision.md) to get an idea of what `sg` should be in the long term.
 2. Look at the open [`sg` issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+is%3Aissue+label%3Asg)
 
 When you want to hack on `sg` it's best to be in the `dev/sg` directory and run it from there:
