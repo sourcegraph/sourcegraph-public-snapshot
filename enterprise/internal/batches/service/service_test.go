@@ -592,7 +592,7 @@ func TestService(t *testing.T) {
 			}
 
 			wantFields := &batcheslib.ChangesetSpec{}
-			if err := json.Unmarshal([]byte(spec.RawSpec), wantFields); err != nil {
+			if err := json.Unmarshal([]byte(rawSpec), wantFields); err != nil {
 				t.Fatal(err)
 			}
 
