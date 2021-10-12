@@ -28,24 +28,31 @@ const (
 )
 
 var (
-	ciFlagSet    = flag.NewFlagSet("sg ci", flag.ExitOnError)
-	ciBranchFlag = ciFlagSet.String("branch", "", "Branch name for CI interactions (defaults to current branch)")
+	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
 
-	ciLogsFlagSet  = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
-	ciLogsJobState = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
-	ciLogsJobQuery = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
-	ciLogsOut      = ciLogsFlagSet.String("out", ciLogsOutStdout,
+	ciLogsFlagSet    = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
+	ciLogsBranchFlag = ciLogsFlagSet.String("branch", "", "Branch name of build to find logs for (defaults to current branch)")
+	ciLogsJobState   = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
+	ciLogsJobQuery   = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
+	ciLogsOut        = ciLogsFlagSet.String("out", ciLogsOutStdout,
 		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 
-	ciStatusFlagSet  = flag.NewFlagSet("sg ci status", flag.ExitOnError)
-	ciStatusWaitFlag = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
+	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
+	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
+	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 )
 
 // get branch from flag or git
-func getCIBranch() (branch string, err error) {
-	branch = *ciBranchFlag
-	if branch == "" {
+func getCIBranch() (branch string, fromFlag bool, err error) {
+	fromFlag = true
+	switch {
+	case *ciLogsBranchFlag != "":
+		branch = *ciLogsBranchFlag
+	case *ciStatusBranchFlag != "":
+		branch = *ciStatusBranchFlag
+	default:
 		branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
+		fromFlag = false
 	}
 	return
 }
@@ -97,7 +104,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				branch, err := getCIBranch()
+				branch, branchFromFlag, err := getCIBranch()
 				if err != nil {
 					return err
 				}
@@ -136,7 +143,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 				printBuildOverview(build, *ciStatusWaitFlag)
 
-				if *ciBranchFlag == "" {
+				if !branchFromFlag {
 					// If we're not on a specific branch, warn if build commit is not your commit
 					commit, err := run.GitCmd("rev-parse", "HEAD")
 					if err != nil {
@@ -159,11 +166,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				client, err := bk.NewClient(ctx, out)
 				if err != nil {
 					return err
-				}
-
-				if *ciBranchFlag != "" {
-					out.WriteLine(output.Line("", output.StyleWarning, "'sg ci build' does not yet support the -branch flag"))
-					return errors.New("unsupported flag -branch")
 				}
 
 				branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
@@ -216,7 +218,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					return err
 				}
 
-				branch, err := getCIBranch()
+				branch, _, err := getCIBranch()
 				if err != nil {
 					return err
 				}
