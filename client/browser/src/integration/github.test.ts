@@ -155,7 +155,7 @@ describe('GitHub', () => {
         const [token] = await line.$x('//span[text()="CallOption"]')
         await token.hover()
         await driver.findElementWithText('User is hovering over CallOption', {
-            selector: '.hover-overlay__content > p',
+            selector: ' [data-testid="hover-overlay-content"] > p',
             fuzziness: 'contains',
             wait: {
                 timeout: 6000,
@@ -340,13 +340,13 @@ describe('GitHub', () => {
             // Retry is here to wait for listeners to be registered
             await retry(async () => {
                 await baseTokenElement.hover()
-                await driver.page.waitForSelector('.hover-overlay__content > p', { timeout: 5000 })
+                await driver.page.waitForSelector('[data-testid="hover-overlay-content"] > p', { timeout: 5000 })
 
                 try {
                     await driver.findElementWithText(
                         `User is hovering over ${tokens.base.token}, revision: ${tokens.base.commitID}`,
                         {
-                            selector: '.hover-overlay__content > p',
+                            selector: '[data-testid="hover-overlay-content"] > p',
                             fuzziness: 'contains',
                             wait: {
                                 timeout: 6000,
@@ -384,7 +384,7 @@ describe('GitHub', () => {
                 await driver.findElementWithText(
                     `User is hovering over ${tokens.head.token}, revision: ${tokens.head.commitID}`,
                     {
-                        selector: '.hover-overlay__content > p',
+                        selector: '[data-testid="hover-overlay-content"] > p',
                         fuzziness: 'contains',
                         wait: {
                             timeout: 6000,
@@ -427,13 +427,13 @@ describe('GitHub', () => {
             // Retry is here to wait for listeners to be registered
             await retry(async () => {
                 await baseTokenElement.hover()
-                await driver.page.waitForSelector('.hover-overlay__content > p', { timeout: 5000 })
+                await driver.page.waitForSelector('[data-testid="hover-overlay-content"] > p', { timeout: 5000 })
 
                 try {
                     await driver.findElementWithText(
                         `User is hovering over ${tokens.base.token}, revision: ${tokens.base.commitID}`,
                         {
-                            selector: '.hover-overlay__content > p',
+                            selector: '[data-testid="hover-overlay-content"] > p',
                             fuzziness: 'contains',
                             wait: {
                                 timeout: 6000,
@@ -471,7 +471,7 @@ describe('GitHub', () => {
                 await driver.findElementWithText(
                     `User is hovering over ${tokens.head.token}, revision: ${tokens.head.commitID}`,
                     {
-                        selector: '.hover-overlay__content > p',
+                        selector: '[data-testid="hover-overlay-content"] > p',
                         fuzziness: 'contains',
                         wait: {
                             timeout: 6000,
