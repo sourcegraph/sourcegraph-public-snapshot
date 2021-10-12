@@ -21,7 +21,7 @@ It's possible to overwrite these variables by creating `sg.config.overwrite.yaml
 sg start web-standalone
 ```
 
-For OSS version:
+For open-source version:
 
 ```sh
 sg start oss-web-standalone
@@ -33,7 +33,7 @@ sg start oss-web-standalone
 sg start web-standalone-prod
 ```
 
-For OSS version:
+For open-source version:
 
 ```sh
 sg start oss-web-standalone-prod
@@ -41,7 +41,7 @@ sg start oss-web-standalone-prod
 
 Web app should be available at `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`. Build artifacts will be served from `<rootRepoPath>/ui/assets`.
 
-Note: If you are unable to use the above commands (e.g. you can't install Caddy), you can use ```sh sg run web-standalone``` instead. This will start a development server using only Node, and will be available at `http://localhost:${CLIENT_PROXY_DEVELOPMENT_PORT}`.
+Note: If you are unable to use the above commands (e.g. you can't install Caddy), you can use ```sg run web-standalone``` instead. This will start a development server using only Node, and will be available at `http://localhost:${CLIENT_PROXY_DEVELOPMENT_PORT}`.
 
 ### API proxy
 
