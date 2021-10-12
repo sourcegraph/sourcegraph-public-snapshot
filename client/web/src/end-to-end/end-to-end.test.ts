@@ -430,7 +430,7 @@ describe('e2e test suite', () => {
     })
 
     describe('Theme switcher', () => {
-        test('changes the theme', async () => {
+        test.skip('changes the theme', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
             await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
 
