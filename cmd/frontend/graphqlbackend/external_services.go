@@ -47,17 +47,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
 	namespaceOrgID := int32(0)
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
-	allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	if args.Input.Namespace != nil {
-		if allowUserExternalServices == conf.ExternalServiceModeDisabled {
-			return nil, errors.New("allow users to add external services is not enabled")
-		}
-
 		var err error
 		switch relay.UnmarshalKind(*args.Input.Namespace) {
 		case "User":
@@ -72,15 +63,26 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, err
 		}
 
-		if namespaceUserID > 0 && namespaceUserID != actor.FromContext(ctx).UID {
-			return nil, errors.New("the namespace is not the same as the authenticated user")
+		if namespaceUserID > 0 {
+			allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if allowUserExternalServices == conf.ExternalServiceModeDisabled {
+				return nil, errors.New("allow users to add external services is not enabled")
+			}
+			if namespaceUserID != actor.FromContext(ctx).UID {
+				return nil, errors.New("the namespace is not the same as the authenticated user")
+			}
 		}
 		if namespaceOrgID > 0 && backend.CheckOrgAccess(ctx, r.db, namespaceOrgID) != nil {
 			return nil, errors.New("the authenticated user does not belong to the organization requested")
 		}
 
-	} else if !isSiteAdmin {
-		return nil, backend.ErrMustBeSiteAdmin
+	} else {
+		if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+			return nil, backend.ErrMustBeSiteAdmin
+		}
 	}
 
 	externalService := &types.ExternalService{
