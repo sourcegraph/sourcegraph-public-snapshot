@@ -9,8 +9,7 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 
-// Flaky test, issue https://github.com/sourcegraph/sourcegraph/issues/25902
-describe.skip('Search onboarding', () => {
+describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -77,6 +76,14 @@ describe.skip('Search onboarding', () => {
                         },
                         totalCount: 0,
                     },
+                },
+            }),
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    contents: JSON.stringify({
+                        'user.daysActiveCount': 1,
+                        'user.lastDayActive': new Date().toDateString(),
+                    }),
                 },
             }),
         })

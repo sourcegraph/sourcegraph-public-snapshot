@@ -2,7 +2,7 @@ env:
   VAGRANT_RUN_ENV: "CI"
 steps:
 - label: ':chromium: Sourcegraph E2E'
-  artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
+  artifact_paths: ./*.png;./*.mp4;./ffmpeg.log;./*.log
   retry:
     automatic:
       exit_status: "*"

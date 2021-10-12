@@ -246,11 +246,6 @@ const config = {
         } else {
             config.plugins.push(getMonacoWebpackPlugin())
             config.module.rules.push(getMonacoCSSRule(), getMonacoTTFRule())
-
-            Object.assign(config.entry, {
-                'editor.worker': 'monaco-editor/esm/vs/editor/editor.worker.js',
-                'json.worker': 'monaco-editor/esm/vs/language/json/json.worker',
-            })
         }
 
         if (environment.isBundleAnalyzerEnabled) {
