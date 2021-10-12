@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- Fixes an issue where src-cli would panic when importing existing changesets.
-
 ### Removed
+
+## 3.31.2
+
+### Fixed
+
+- Fixes an issue where src-cli would panic when importing existing changesets.
 
 ## 3.31.1
 
