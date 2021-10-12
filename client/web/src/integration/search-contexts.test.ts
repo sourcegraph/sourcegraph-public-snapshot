@@ -8,7 +8,7 @@ import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { RepoGroupsResult, SearchSuggestionsResult, WebGraphQlOperations } from '../graphql-operations'
+import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
@@ -17,14 +17,6 @@ import { createJsContext, siteGQLID, siteID } from './jscontext'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
-    SearchSuggestions: (): SearchSuggestionsResult => ({
-        search: {
-            suggestions: [],
-        },
-    }),
-    RepoGroups: (): RepoGroupsResult => ({
-        repoGroups: [],
-    }),
     ConvertVersionContextToSearchContext: ({ name }) => ({
         convertVersionContextToSearchContext: { id: `id${name}`, spec: name },
     }),

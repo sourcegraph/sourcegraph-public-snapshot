@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -16,7 +17,6 @@ import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
 import { MonacoEditor } from '../../components/MonacoEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '../../keyboardShortcuts/keyboardShortcuts'
 import { observeResize } from '../../util/dom'
-import { fetchSuggestions } from '../backend'
 import { QueryChangeSource, QueryState } from '../helpers'
 import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
@@ -138,7 +138,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) => fetchSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
+        (query: string) =>
+            fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
         [selectedSearchContextSpec, versionContext]
     )
 
