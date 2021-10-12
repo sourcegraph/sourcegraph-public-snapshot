@@ -24,7 +24,7 @@ CONTAINER=sourcegraph-server
 docker_logs() {
   pushd "$root_dir"
   echo "--- dump server logs"
-  docker logs "$CONTAINER" 2>"$CONTAINER.log"
+  docker logs "$CONTAINER" >"$CONTAINER.log"
   popd
 }
 
