@@ -202,7 +202,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 		}, {
 			Name:      "logs",
 			ShortHelp: "Get logs from CI builds.",
-			LongHelp: `Get logs from CI builds, and output them in stdout or push them to Loki.
+			LongHelp: `Get logs from CI builds, and output them in stdout or push them to Loki. By default only gets failed jobs - to change this, use the '--state' flag.
 
 The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
 
@@ -225,17 +225,20 @@ From there, you can start exploring logs with the Grafana explore panel.
 				if err != nil {
 					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 				}
+				out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
+					*build.WebURL))
 
-				logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, bk.ExportLogsOpts{
+				options := bk.ExportLogsOpts{
 					JobQuery: *ciLogsJobQuery,
 					State:    *ciLogsJobState,
-				})
+				}
+				logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
 				if err != nil {
 					return err
 				}
-
 				if len(logs) == 0 {
-					out.WriteLine(output.Line("", output.StyleSuggestion, "No logs found matching the given parameters."))
+					out.WriteLine(output.Line("", output.StyleSuggestion,
+						fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
 					return nil
 				}
 
