@@ -12,7 +12,9 @@ type RunType int
 
 const (
 	PullRequest RunType = iota // pull request build
-	MainBranch                 // main branch build
+
+	MainBranch // main branch build
+	MainDryRun // run everything main does, except for deploy-related steps
 
 	// Releases
 
@@ -30,10 +32,9 @@ const (
 	ImagePatchNoTest // build a patched image without testing
 	CandidatesNoTest // build all candidates without testing
 
-	// Special run cases
+	// Special test branches
 
-	MainDryRun    // run everything main does, except for deploy-related steps
-	BackendDryRun // run backend tests that are used on main
+	BackendIntegrationTests // run backend tests that are used on main
 )
 
 func computeRunType(tag, branch string) RunType {
@@ -58,7 +59,7 @@ func computeRunType(tag, branch string) RunType {
 	case strings.HasPrefix(branch, "main-dry-run/"):
 		return MainDryRun
 	case strings.HasPrefix(branch, "backend-dry-run/"):
-		return BackendDryRun
+		return BackendIntegrationTests
 
 	case branch == "main":
 		return MainBranch
@@ -101,7 +102,7 @@ func (t RunType) String() string {
 		return "Build All candidates without testing"
 	case MainDryRun:
 		return "Main dry run"
-	case BackendDryRun:
+	case BackendIntegrationTests:
 		return "Backend dry run"
 	}
 	panic("Run type does not have a full name defined")
