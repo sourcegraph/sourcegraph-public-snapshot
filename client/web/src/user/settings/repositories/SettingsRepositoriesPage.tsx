@@ -44,8 +44,10 @@ import { defaultFilters, RepositoriesList } from './RepositoriesList'
 interface Props
     extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
-    ownerID: string
-    ownerType: 'user' | 'org'
+    owner: {
+        id: string
+        type: 'user' | 'org'
+    }
     routingPrefix: string
 }
 
@@ -55,8 +57,7 @@ type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLi
  * A page displaying the repositories for this user.
  */
 export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
-    ownerID,
-    ownerType,
+    owner,
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
@@ -67,8 +68,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
 
-    const fetchRepositories = ownerType === 'user' ? listUserRepositories : listOrgRepositories
-    const fetchRepositoriesCount = ownerType === 'user' ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
+    const isUserMode = owner.type === 'user'
+    const fetchRepositories = isUserMode ? listUserRepositories : listOrgRepositories
+    const fetchRepositoriesCount = isUserMode ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
 
     const NoAddedReposBanner = (
         <Container className="text-center">
@@ -94,12 +96,12 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: ownerID,
+                namespace: owner.id,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [ownerID]
+        [owner.id]
     )
 
     const fetchCodeHostSyncDueStatus = useCallback(
@@ -122,8 +124,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
         // check if user has any manually added or affiliated repositories
         const result = await fetchRepositoriesCount({
-            id: ownerID,
-        }) // fetchUserReposCount()
+            id: owner.id,
+        })
         const repoCount = result.node.repositories.totalCount || 0
 
         if (repoCount) {
@@ -148,7 +150,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchRepositoriesCount, onUserExternalServicesOrRepositoriesUpdate, ownerID])
+    }, [fetchExternalServices, fetchRepositoriesCount, onUserExternalServicesOrRepositoriesUpdate, owner.id])
 
     const TWO_SECONDS = 2
 
@@ -209,7 +211,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const queryRepos = useCallback(
         (args: FilteredConnectionQueryArguments): Observable<NonNullable<RepositoriesResult>['repositories']> =>
-            fetchRepositories({ ...args, id: ownerID }).pipe(
+            fetchRepositories({ ...args, id: owner.id }).pipe(
                 tap(() => {
                     if (status === 'schedule-complete') {
                         setUpdateReposList(!updateReposList)
@@ -217,7 +219,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     }
                 })
             ),
-        [ownerID, status, updateReposList, fetchRepositories]
+        [owner.id, status, updateReposList, fetchRepositories]
     )
 
     const onRepoQueryUpdate = useCallback(

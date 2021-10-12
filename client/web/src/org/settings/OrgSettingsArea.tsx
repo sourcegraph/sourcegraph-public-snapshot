@@ -97,10 +97,11 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 render={routeComponentProps => (
                                     <OrgAddCodeHostsPageContainer
                                         {...routeComponentProps}
-                                        entity={{ id: props.org.id }}
+                                        owner={{ id: props.org.id, type: 'org' }}
                                         context={window.context}
                                         routingPrefix={`${props.org.url}/settings`}
-                                        onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
+                                        telemetryService={props.telemetryService}
+                                        onUserExternalServicesOrRepositoriesUpdate={() => {}}
                                     />
                                 )}
                             />
@@ -112,8 +113,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <SettingsRepositoriesPage
                                         {...routeComponentProps}
                                         {...props}
-                                        ownerID={props.org.id}
-                                        ownerType="org"
+                                        owner={{ id: props.org.id, type: 'org' }}
                                         routingPrefix={`${props.org.url}/settings`}
                                         onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                     />

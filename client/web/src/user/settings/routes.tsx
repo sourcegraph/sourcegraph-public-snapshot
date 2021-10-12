@@ -99,8 +99,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => (
             <SettingsRepositoriesPage
                 {...props}
-                ownerID={props.user.id}
-                ownerType="user"
+                owner={{ id: props.user.id, type: 'user' }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),
@@ -124,7 +123,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         path: '/code-hosts',
         render: props => (
             <UserAddCodeHostsPageContainer
-                entity={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags }}
+                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 context={window.context}
                 routingPrefix={props.user.url + '/settings'}
                 onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
