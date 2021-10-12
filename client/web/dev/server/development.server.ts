@@ -124,7 +124,10 @@ async function startWebpackDevelopmentServer({
     )
 
     await server.start()
-    signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    signale.info(
+        `Development HTTP server is ready at ${chalk.blue.bold(`http://localhost:${CLIENT_PROXY_DEVELOPMENT_PORT}`)}`
+    )
+    signale.success(`Development HTTPS server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
     signale.await('Waiting for Webpack to compile assets')
 }
 

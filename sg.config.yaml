@@ -900,25 +900,25 @@ commandsets:
     commands:
       - web-standalone
       - caddy
+    env:
+      ENTERPRISE: 1
 
-  enterprise-web-standalone:
+  oss-web-standalone:
     commands:
       - web-standalone
       - caddy
-    env:
-      ENTERPRISE: 1
 
   web-standalone-prod:
     commands:
       - web-standalone-prod
       - caddy
+    env:
+      ENTERPRISE: 1
 
-  enterprise-web-standalone-prod:
+  oss-web-standalone-prod:
     commands:
       - web-standalone-prod
       - caddy
-    env:
-      ENTERPRISE: 1
 
 tests:
   # These can be run with `sg test [name]`
