@@ -63,23 +63,17 @@ If you don't have a `$GOPATH` set (or don't know what that is), that location is
 
 Make sure that location is in your `$PATH`. (If you use `$GOPATH` then `$GOPATH/bin` needs to be in the `$PATH`)
 
-> **Note for Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
+> NOTE: **For Linux users:** A command called [sg](https://www.man7.org/linux/man-pages/man1/sg.1.html) is already available at `/usr/bin/sg`. To use the Sourcegraph `sg` CLI, you need to make sure that its location comes first in `PATH`. For example, by prepending `$GOPATH/bin`:
 >
-> ```
-> export PATH=$GOPATH/bin:$PATH
-> ```
+> `export PATH=$GOPATH/bin:$PATH`
 >
 > Instead of the more conventional:
 >
-> ```
-> export PATH=$PATH:$GOPATH/bin
-> ```
+> `export PATH=$PATH:$GOPATH/bin`
 >
 > Or you may add an alias to your `.bashrc`:
 >
-> ```
-> alias sg=$HOME/go/bin/sg
-> ```
+> `alias sg=$HOME/go/bin/sg`
 
 ### Manually building the binary
 
@@ -202,7 +196,7 @@ sg rfc search "search terms"
 sg rfc open 420
 ```
 
-### `sg ci`
+### `sg ci` - Interact with Sourcegraph's continuous integration
 
 Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
 
@@ -297,7 +291,7 @@ Want to hack on `sg`? Great! Here's how:
 
 When you want to hack on `sg` it's best to be in the `dev/sg` directory and run it from there:
 
-```
+```sh
 cd dev/sg
 go run . -config ../../sg.config.yaml start
 ```
