@@ -78,9 +78,14 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
             {externalServices?.length === 0 ? (
                 <small>
-                    <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.
-                    You can also <Link to={`${routingPrefix}/repositories/manage`}>add other public repositories</Link>{' '}
-                    from GitHub or GitLab.
+                    <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
+                    {isUserMode && (
+                        <span>
+                            You can also{' '}
+                            <Link to={`${routingPrefix}/repositories/manage`}>add other public repositories</Link> from
+                            GitHub or GitLab.
+                        </span>
+                    )}
                 </small>
             ) : (
                 <small>
@@ -296,17 +301,33 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     </div>
                 }
                 actions={
-                    <Link
-                        className="btn btn-primary"
-                        to={`${routingPrefix}/repositories/manage`}
-                        onClick={logManageRepositoriesClick}
-                    >
-                        {(hasRepos && <>Manage Repositories</>) || (
-                            <>
+                    <span>
+                        {hasRepos ? (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/repositories/manage`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                Manage Repositories
+                            </Link>
+                        ) : isUserMode ? (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/repositories/manage`}
+                                onClick={logManageRepositoriesClick}
+                            >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </>
+                            </Link>
+                        ) : (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/code-hosts`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                <AddIcon className="icon-inline" /> Connect code hosts
+                            </Link>
                         )}
-                    </Link>
+                    </span>
                 }
                 className="mb-3"
             />
