@@ -200,7 +200,15 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				return nil
 			},
 		}, {
-			Name:    "logs",
+			Name:      "logs",
+			ShortHelp: "Get logs from CI builds.",
+			LongHelp: `Get logs from CI builds, and output them in stdout or push them to Loki.
+
+The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
+
+To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg start loki-grafana'.
+From there, you can start exploring logs with the Grafana explore panel.
+`,
 			FlagSet: ciLogsFlagSet,
 			Exec: func(ctx context.Context, args []string) error {
 				client, err := bk.NewClient(ctx, out)
