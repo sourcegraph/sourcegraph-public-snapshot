@@ -63,7 +63,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			name:            "want no namespace",
 			noNamespace:     true,
 			namespaceUserID: 1,
-			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL",
+			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NULL",
 		},
 		{
 			name:      "has after ID",
