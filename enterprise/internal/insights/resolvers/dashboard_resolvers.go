@@ -197,7 +197,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
 
-	err = r.dashboardStore.AssociateViewsByViewIds(ctx, int(dashboardID.Arg), []string{viewID})
+	err = r.dashboardStore.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
 	if err != nil {
 		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
 	}

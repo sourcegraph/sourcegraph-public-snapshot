@@ -182,7 +182,7 @@ func TestAssociateViewsById(t *testing.T) {
 		if len(dashboard.InsightIDs) != 0 {
 			t.Errorf("unexpected value for insight views on dashboard before adding view")
 		}
-		err = store.AssociateViewsByViewIds(ctx, dashboard.ID, []string{view.UniqueID})
+		err = store.AddViewsToDashboard(ctx, dashboard.ID, []string{view.UniqueID})
 		if err != nil {
 			t.Errorf("failed to add view to dashboard")
 		}

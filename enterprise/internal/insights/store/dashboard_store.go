@@ -167,9 +167,9 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 		return types.Dashboard{}, errors.Wrap(err, "CreateDashboard")
 	}
 	dashboard.ID = id
-	err = tx.AssociateViewsByViewIds(ctx, dashboard.ID, dashboard.InsightIDs)
+	err = tx.AddViewsToDashboard(ctx, dashboard.ID, dashboard.InsightIDs)
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "AssociateViewsByViewIds")
+		return types.Dashboard{}, errors.Wrap(err, "AddViewsToDashboard")
 	}
 	err = tx.AddDashboardGrants(ctx, dashboard, grants)
 	if err != nil {
@@ -179,7 +179,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 	return dashboard, nil
 }
 
-func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboardId int, viewIds []string) error {
+func (s *DBDashboardStore) AddViewsToDashboard(ctx context.Context, dashboardId int, viewIds []string) error {
 	if dashboardId == 0 {
 		return errors.New("unable to associate views to dashboard invalid dashboard ID")
 	} else if len(viewIds) == 0 {
@@ -242,7 +242,7 @@ INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
--- source: enterprise/internal/insights/store/dashboard_store.go:AssociateViewsByViewIds
+-- source: enterprise/internal/insights/store/dashboard_store.go:AddViewsToDashboard
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
