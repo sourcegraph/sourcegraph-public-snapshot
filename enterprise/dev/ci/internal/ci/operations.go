@@ -282,7 +282,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateImageTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":chains: Backend integration tests",
 			// Run tests against the candidate server image
@@ -440,17 +440,17 @@ func candidateImageStepKey(app string) string {
 
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
-func buildCandidateDockerImage(app, version, tag string) operations.Operation {
+func buildCandidateDockerImage(app, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
-		localImage := "sourcegraph/" + image + ":" + version
+		localImage := "sourcegraph/" + image + ":buildkite-" + tag
 
 		cmds := []bk.StepOpt{
 			bk.Key(candidateImageStepKey(app)),
 			bk.Cmd(fmt.Sprintf(`echo "Building candidate %s image..."`, app)),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
-			bk.Env("VERSION", version),
+			bk.Env("VERSION", ":buildkite-"+tag),
 			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 

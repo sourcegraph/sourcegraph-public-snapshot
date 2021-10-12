@@ -4,6 +4,7 @@ import sinon from 'sinon'
 
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
+import codeMonitorFormStyles from './CodeMonitorForm.module.scss'
 import { FormTriggerArea } from './FormTriggerArea'
 
 const { add } = storiesOf('web/enterprise/code-monitoring/FormTrigerArea', module).addParameters({
@@ -28,6 +29,9 @@ add('Open, empty query', () => (
                 onQueryChange={sinon.fake()}
                 setTriggerCompleted={sinon.fake()}
                 startExpanded={true}
+                cardBtnClassName={codeMonitorFormStyles.cardButton}
+                cardLinkClassName={codeMonitorFormStyles.cardLink}
+                cardClassName={codeMonitorFormStyles.card}
             />
         )}
     </EnterpriseWebStory>
@@ -43,6 +47,9 @@ add('Open, partially valid query', () => (
                 onQueryChange={sinon.fake()}
                 setTriggerCompleted={sinon.fake()}
                 startExpanded={true}
+                cardBtnClassName={codeMonitorFormStyles.cardButton}
+                cardLinkClassName={codeMonitorFormStyles.cardLink}
+                cardClassName={codeMonitorFormStyles.card}
             />
         )}
     </EnterpriseWebStory>
@@ -58,6 +65,9 @@ add('Open, fully valid query', () => (
                 onQueryChange={sinon.fake()}
                 setTriggerCompleted={sinon.fake()}
                 startExpanded={true}
+                cardBtnClassName={codeMonitorFormStyles.cardButton}
+                cardLinkClassName={codeMonitorFormStyles.cardLink}
+                cardClassName={codeMonitorFormStyles.card}
             />
         )}
     </EnterpriseWebStory>

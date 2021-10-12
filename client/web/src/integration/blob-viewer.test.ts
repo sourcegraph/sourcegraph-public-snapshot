@@ -1115,7 +1115,7 @@ describe('Blob viewer', () => {
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
                     await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
-                    await driver.page.waitForSelector('.hover-overlay', { visible: true })
+                    await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
 
                 await driver.page.click('.test-go-to-code-host', { button: 'middle' })
@@ -1150,7 +1150,7 @@ describe('Blob viewer', () => {
                 await driver.page.waitForSelector('.test-log-token', { visible: true })
                 for (let index = 0; index < HOVER_THRESHOLD; index++) {
                     await driver.page.click(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
-                    await driver.page.waitForSelector('.hover-overlay', { visible: true })
+                    await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
                 }
                 await driver.page.reload()
 
