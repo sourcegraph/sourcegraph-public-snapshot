@@ -143,7 +143,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						// once started, poll for status
 						if build.StartedAt != nil {
 							pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
-								len(build.Jobs)-done, len(build.Jobs), time.Now().Sub(build.StartedAt.Time))
+								len(build.Jobs)-done, len(build.Jobs), time.Since(build.StartedAt.Time))
 						}
 
 						if build.FinishedAt == nil {
