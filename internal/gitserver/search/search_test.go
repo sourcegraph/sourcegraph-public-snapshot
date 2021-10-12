@@ -308,9 +308,9 @@ index 0000000000..7e54670557
 	))
 	require.NoError(t, err)
 
-	matches, highlights, err := mt.Match(lc)
+	cfr, highlights, err := mt.Match(lc)
 	require.NoError(t, err)
-	require.True(t, matches)
+	require.True(t, cfr.HasMatch())
 
 	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
 	expectedFormatted := `/dev/null internal/compute/match.go
@@ -362,9 +362,9 @@ func TestFuzzQueryCNF(t *testing.T) {
 				AuthorName: []byte(a),
 			},
 		}
-		matches, _, err := mt.Match(lc)
+		cfr, _, err := mt.Match(lc)
 		require.NoError(t, err)
-		return matches
+		return cfr.HasMatch()
 	}
 
 	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {

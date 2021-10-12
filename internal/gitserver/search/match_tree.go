@@ -350,7 +350,6 @@ func (c *CommitFilterResult) Invert(lc *LazyCommit) {
 			c.MatchedFileDiffs[i] = struct{}{}
 		}
 	}
-
 }
 
 func (c *CommitFilterResult) Union(other CommitFilterResult) {
