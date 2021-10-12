@@ -15,8 +15,7 @@ steps:
   - command:
       - dev/ci/yarn-build.sh client/web
       - yarn lhci autorun
-    key: lighthouse:prep
-    label: ':lighthouse: Lighthouse production build'
+    label: ':lighthouse: Lighthouse'
     env:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: 'true'
