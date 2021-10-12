@@ -190,7 +190,12 @@ extend type Query {
 
 extend type Mutation {
     """
-    Delete a dashboard. Any views that would become dangling will be deleted.
+    Create a new dashboard.
+    """
+    createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Delete a dashboard.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
 
@@ -223,6 +228,7 @@ type InsightsDashboard implements Node {
     The Dashboard ID.
     """
     id: ID!
+
     """
     The Dashboard Title.
     """
@@ -232,6 +238,38 @@ type InsightsDashboard implements Node {
     The list of associated insights to the dashboard.
     """
     views: InsightViewConnection
+}
+
+"""
+Input object for creating a new dashboard.
+"""
+input CreateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String!
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrants!
+}
+
+"""
+Input object for permissions to grant.
+"""
+input InsightsPermissionGrants {
+    """
+    Specific users to grant permissions to.
+    """
+    users: [ID!]
+    """
+    Organizations to grant permissions to.
+    """
+    organizations: [ID!]
+    """
+    Set global to true to grant global permission.
+    """
+    global: Boolean
 }
 
 """
