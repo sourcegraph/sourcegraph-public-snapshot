@@ -280,7 +280,7 @@ WHERE repo_id = %s AND user_id IS NOT NULL
 
 // ListExternalServiceUserIDsByRepoID returns the user IDs associated with a
 // given repository. These users have proven that they have read access to the
-// repository given their presence in our external_service_repos table.
+// repository given records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServiceUserIDsByRepoID(ctx context.Context, repoID api.RepoID) (userIDs []int32, err error) {
 	if database.Mocks.Repos.ListExternalServiceUserIDsByRepoID != nil {
 		return database.Mocks.Repos.ListExternalServiceUserIDsByRepoID(ctx, repoID)
@@ -317,7 +317,7 @@ AND repo.private
 // ListExternalServicePrivateRepoIDsByUserID returns the private repo IDs
 // associated with a given user. As with ListExternalServiceUserIDsByRepoID, the
 // user has already proven that they have read access to the repositories since
-// they are present in the external_service_repos table.
+// records are present in the "external_service_repos" table.
 func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, userID int32) (repoIDs []api.RepoID, err error) {
 	if database.Mocks.Repos.ListExternalServiceRepoIDsByUserID != nil {
 		return database.Mocks.Repos.ListExternalServiceRepoIDsByUserID(ctx, userID)
@@ -352,7 +352,7 @@ func (s *Store) ListExternalServicePrivateRepoIDsByUserID(ctx context.Context, u
 }
 
 // CreateExternalServiceRepo inserts a single repo and its association to an external service, respectively in the repo and
-// external_service_repos table. The associated external service must already exist.
+// "external_service_repos" table. The associated external service must already exist.
 func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
 	tr.LogFields(
