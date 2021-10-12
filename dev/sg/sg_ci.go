@@ -252,7 +252,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				default:
 					lokiURL, err := url.Parse(*ciLogsOut)
 					if err != nil {
-						return err
+						return fmt.Errorf("invalid Loki target: %w", err)
 					}
 					lokiClient := loki.NewLokiClient(lokiURL)
 					out.WriteLine(output.Linef("", output.StylePending, "Pushing %d log streams to Loki instance at %q",
