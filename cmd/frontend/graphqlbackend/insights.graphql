@@ -293,16 +293,6 @@ type InsightViewConnection {
 }
 
 """
-Stub for insight view
-"""
-type InsightView implements Node {
-    """
-    The View ID.
-    """
-    id: ID!
-}
-
-"""
 Response wrapper object for insight dashboard mutations.
 """
 type InsightsDashboardPayload {
@@ -340,4 +330,214 @@ input RemoveInsightViewFromDashboardInput {
     ID of the dashboard.
     """
     dashboardId: ID!
+}
+
+
+
+#######################
+
+#input InsightViewFiltersInput {
+#    includeRepoRegex: String
+#    excludeRepoRegex: String
+#}
+
+"""
+A custom time scope for an insight data series.
+"""
+input TimeScopeInput {
+    stepInterval: TimeIntervalStepInput
+}
+
+"""
+A time scope defined using a time interval (ex. 5 days)
+"""
+input TimeIntervalStepInput {
+    unit: TimeIntervalStepUnit!,
+    value: Int!
+}
+
+enum TimeIntervalStepUnit {
+    HOUR
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
+"""
+A custom repository scope for an insight data series.
+"""
+input RepositoryScopeInput {
+    global: Boolean
+    repositories: [String!]
+}
+
+"""
+Options for a line chart
+"""
+input LineChartOptionsInput {
+    title: String
+}
+
+input LineChartSearchInsightInput {
+    dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+    repositoryScope: RepositoryScopeInput!
+    timeScope: TimeScopeInput!
+    options: LineChartOptionsInput!
+}
+
+input LineChartSearchInsightDataSeriesInput {
+    query: String!
+    options: LineChartDataSeriesOptionsInput!
+}
+
+"""
+Options for a line chart data series
+"""
+input LineChartDataSeriesOptionsInput {
+    label: String
+    lineColor: String
+}
+
+"""
+Input for a pie chart search insight
+"""
+input PieChartSearchInsightInput {
+    query: String!
+    repositoryScope: RepositoryScopeInput!
+    options: PieChartOptionsInput!
+}
+
+"""
+Options for a pie chart
+"""
+input PieChartOptionsInput {
+    title: String
+    otherThreshold: Float!
+}
+
+type CreateInsightResult {
+    view: InsightView!
+}
+
+extend type Mutation {
+    createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
+    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+}
+
+"""
+Stub for insight view
+"""
+type InsightView implements Node {
+    """
+    The View ID.
+    """
+    id: ID!
+
+    """
+    The default filters saved on the insight. This will differ from the applied filters if they are overwritten but not saved.
+    """
+    defaultFilters: InsightViewFilters!
+
+    """
+    The filters currently applied to the insight and the data.
+    """
+    appliedFilters: InsightViewFilters!
+
+    """
+    A scope of repositories defined for this insight.
+    """
+    repositoryScope: InsightRepositoryScope!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightTimeScope!
+
+    """
+    The time series data for this insight.
+    """
+    dataSeries: [InsightsSeries!]!
+
+    """
+    Presentation options for the insight.
+    """
+    presentation: InsightPresentation!
+
+    """
+    Information on how each data series was generated
+    """
+    dataSeriesDefinitions: [InsightDataSeriesDefinition!]!
+}
+
+"""
+Defines how the data series is generated.
+"""
+union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
+
+"""
+Defines presentation options for the insight.
+"""
+union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
+
+"""
+Defines a scope of time for which the insight data is generated.
+"""
+union InsightTimeScope = InsightIntervalTimeScope
+
+
+"""
+A custom repository scope for an insight.
+"""
+type InsightRepositoryScope {
+    global: Boolean
+    repositories: [String!]
+}
+"""
+Defines a time scope using an interval of time
+"""
+type InsightIntervalTimeScope {
+    unit: TimeIntervalStepUnit!,
+    value: Int!
+}
+
+"""
+Defines an insight data series that is constructed from a Sourcegraph search query.
+"""
+type SearchInsightDataSeriesDefinition {
+    seriesId: String!
+    query: String!
+}
+
+"""
+View presentation for a line chart insight
+"""
+type LineChartInsightViewPresentation {
+    title: String!
+    seriesPresentation: [LineChartDataSeriesPresentation!]!
+}
+
+"""
+View presentation for a single insight line chart data series
+"""
+type LineChartDataSeriesPresentation {
+    seriesId: String!
+    label: String!
+    color: String!
+}
+
+"""
+View presentation for an insight pie chart.
+"""
+type PieChartInsightViewPresentation {
+    title: String!
+    otherThreshold: Float!
+}
+
+"""
+The fields and values for which the insight is filtered.
+"""
+type InsightViewFilters {
+    includeRepoRegex: String
+    excludeRepoRegex: String
 }
