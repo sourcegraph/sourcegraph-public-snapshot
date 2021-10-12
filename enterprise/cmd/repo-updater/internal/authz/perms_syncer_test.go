@@ -275,6 +275,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 					Exacts: []extsvc.RepoID{"1"},
 				}, test.fetchErr
 			}
+			p.fetchUserPermsByToken = func(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+				return &authz.ExternalUserPermissions{
+					Exacts: []extsvc.RepoID{"2"},
+				}, nil
+			}
 
 			err := s.syncUserPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
