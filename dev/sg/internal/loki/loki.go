@@ -33,7 +33,7 @@ type Stream struct {
 // StreamLabels is an identifier for a Loki log stream, denoted by a set of labels.
 //
 // NOTE: bk.JobMeta is very high-cardinality, since we create a new stream for each job.
-// Similarly to Prometheus, Loki is not designed to handle very high cadinality log streams.
+// Similarly to Prometheus, Loki is not designed to handle very high cardinality log streams.
 // However, it is important that each job gets a separate stream, because Loki does not
 // permit non-chronologically uploaded logs, so simultaneous jobs logs will collide.
 // NewStreamFromJobLogs handles this within a job by merging entries with the same timestamp.
