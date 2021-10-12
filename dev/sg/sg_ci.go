@@ -139,8 +139,12 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 								}
 							}
 						}
-						pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
-							len(build.Jobs)-done, len(build.Jobs), time.Now().Sub(build.StartedAt.Time))
+
+						// once started, poll for status
+						if build.StartedAt != nil {
+							pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
+								len(build.Jobs)-done, len(build.Jobs), time.Now().Sub(build.StartedAt.Time))
+						}
 
 						if build.FinishedAt == nil {
 							// No failure yet, we can keep waiting.
@@ -310,11 +314,12 @@ func allLinesPrefixed(lines []string, match string) bool {
 
 func printBuildOverview(build *buildkite.Build) {
 	out.WriteLine(output.Linef("", output.StyleBold, "Most recent build: %s", *build.WebURL))
-	out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>\nStarted:\t%s",
-		*build.Commit, *build.Message, build.Author.Name, build.Author.Email, build.StartedAt)
+	out.Writef("Commit:\t\t%s\nMessage:\t%s\nAuthor:\t\t%s <%s>",
+		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
 }
 
 func printBuildResults(build *buildkite.Build, notify bool) {
+	out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
