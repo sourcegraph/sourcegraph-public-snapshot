@@ -24,7 +24,7 @@ const getServiceConfig = (kind: ExternalServiceKind, token: string): string => {
 }
 
 export const AddCodeHostConnectionModal: React.FunctionComponent<{
-    userID: Scalars['ID']
+    ownerID: Scalars['ID']
     name: string
     kind: ExternalServiceKind
     onDidAdd: (service: ListExternalServiceFields) => void
@@ -32,7 +32,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
     onDidError: (error: ErrorLike) => void
 
     hintFragment?: React.ReactFragment
-}> = ({ userID, name, kind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
+}> = ({ ownerID, name, kind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
 
@@ -57,7 +57,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                     const config = getServiceConfig(kind, token)
 
                     const { webhookURL, ...newService } = await addExternalService(
-                        { input: { kind, config, displayName: name, namespace: userID } },
+                        { input: { kind, config, displayName: name, namespace: ownerID } },
                         eventLogger
                     )
 
@@ -68,7 +68,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                 handleError(error)
             }
         },
-        [userID, token, kind, name, onDidCancel, handleError, onDidAdd]
+        [ownerID, token, kind, name, onDidCancel, handleError, onDidAdd]
     )
 
     return (

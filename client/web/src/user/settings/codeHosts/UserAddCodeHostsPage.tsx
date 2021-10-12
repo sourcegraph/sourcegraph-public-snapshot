@@ -281,6 +281,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
+                                        owner={owner}
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
