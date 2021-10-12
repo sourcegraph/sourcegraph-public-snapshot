@@ -260,7 +260,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 							return fmt.Errorf("failed to push stream from logs for build %d job %q: %w",
 								log.JobMeta.Build, log.JobMeta.Job, err)
 						}
-						entries += len(*&stream.Values)
+						entries += len(stream.Values)
 					}
 					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess,
 						"Pushed %d entries from %d streams to Loki", entries, len(logs)))
