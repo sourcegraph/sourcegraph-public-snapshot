@@ -1,20 +1,12 @@
-import EmoticonIcon from 'mdi-react/EmoticonIcon'
 import React, { useEffect, useState } from 'react'
 
+import { Checkbox } from '@sourcegraph/wildcard'
+
+import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { HAS_DISMISSED_TOAST_STORAGE_KEY } from './constants'
 import { SurveyRatingRadio } from './SurveyRatingRadio'
 import { Toast } from './Toast'
-import { getDaysActiveCount } from './util'
-
-/**
- * Show a toast notification if:
- * 1. User has not recently dismissed the notification
- * 2. User has been active for 3 days OR has been 30 days since they were last shown the notification
- */
-const shouldShowToast = (): boolean =>
-    localStorage.getItem(HAS_DISMISSED_TOAST_STORAGE_KEY) !== 'true' && getDaysActiveCount() % 30 === 3
 
 interface SurveyToastProps {
     /**
@@ -24,8 +16,30 @@ interface SurveyToastProps {
 }
 
 export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVisible }) => {
-    const daysActive = getDaysActiveCount()
-    const [visible, setVisible] = useState(forceVisible || shouldShowToast())
+    const [shouldPermanentlyDismiss, setShouldPermanentlyDismiss] = useState(false)
+    const [temporarilyDismissed, setTemporarilyDismissed] = useTemporarySetting(
+        'npsSurvey.hasTemporarilyDismissed',
+        false
+    )
+    const [permanentlyDismissed, setPermanentlyDismissed] = useTemporarySetting(
+        'npsSurvey.hasPermanentlyDismissed',
+        false
+    )
+    const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
+
+    const loadingTemporarySettings =
+        temporarilyDismissed === undefined || permanentlyDismissed === undefined || daysActiveCount === undefined
+
+    /**
+     * We show a toast notification if:
+     * 1. User has not recently dismissed the notification
+     * 2. User has not permanently dismissed the notification
+     * 3. User has been active for exactly 3 days OR it has been 30 days since they were last shown the notification
+     */
+    const shouldShow =
+        !loadingTemporarySettings && !temporarilyDismissed && !permanentlyDismissed && daysActiveCount % 30 === 3
+
+    const visible = forceVisible || shouldShow
 
     useEffect(() => {
         if (visible) {
@@ -34,15 +48,18 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
     }, [visible])
 
     useEffect(() => {
-        if (daysActive % 30 === 0) {
+        if (!loadingTemporarySettings && daysActiveCount % 30 === 0) {
             // Reset toast dismissal 3 days before it will be shown
-            localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, 'false')
+            setTemporarilyDismissed(false)
         }
-    }, [daysActive])
+    }, [loadingTemporarySettings, daysActiveCount, setTemporarilyDismissed])
 
     const handleDismiss = (): void => {
-        localStorage.setItem(HAS_DISMISSED_TOAST_STORAGE_KEY, 'true')
-        setVisible(false)
+        if (shouldPermanentlyDismiss) {
+            setPermanentlyDismissed(shouldPermanentlyDismiss)
+        } else {
+            setTemporarilyDismissed(true)
+        }
     }
 
     if (!visible) {
@@ -51,7 +68,6 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
 
     return (
         <Toast
-            icon={<EmoticonIcon className="icon-inline" />}
             title="Tell us what you think"
             subtitle={
                 <span id="survey-toast-scores">How likely is it that you would recommend Sourcegraph to a friend?</span>
@@ -61,6 +77,14 @@ export const SurveyToast: React.FunctionComponent<SurveyToastProps> = ({ forceVi
                     onChange={handleDismiss}
                     openSurveyInNewTab={true}
                     ariaLabelledby="survey-toast-scores"
+                />
+            }
+            footer={
+                <Checkbox
+                    id="survey-toast-refuse"
+                    label="Don't show this again"
+                    checked={shouldPermanentlyDismiss}
+                    onChange={event => setShouldPermanentlyDismiss(event.target.checked)}
                 />
             }
             onDismiss={handleDismiss}

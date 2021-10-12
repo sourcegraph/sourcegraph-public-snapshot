@@ -184,3 +184,7 @@ type StructuralSearch struct {
 func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender) error {
 	return runStructuralSearch(ctx, &s.SearcherArgs, &s.RepoFetcher, stream)
 }
+
+func (*StructuralSearch) Name() string {
+	return "Structural"
+}

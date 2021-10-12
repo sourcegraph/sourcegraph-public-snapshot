@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -22,13 +23,15 @@ type batchSpecWorkspaceCreator struct {
 // workerutil.Worker to process queued changesets.
 func (e *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc {
 	return func(ctx context.Context, record workerutil.Record) (err error) {
+		job := record.(*btypes.BatchSpecResolutionJob)
+
 		tx, err := e.store.Transact(ctx)
 		if err != nil {
 			return err
 		}
 		defer func() { err = tx.Done(err) }()
 
-		return e.process(ctx, tx, service.NewWorkspaceResolver, record.(*btypes.BatchSpecResolutionJob))
+		return e.process(ctx, tx, service.NewWorkspaceResolver, job)
 	}
 }
 
@@ -53,7 +56,8 @@ func (r *batchSpecWorkspaceCreator) process(
 	}
 
 	resolver := newResolver(tx)
-	workspaces, unsupported, ignored, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
+	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
+	workspaces, unsupported, ignored, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
 		AllowUnsupported: job.AllowUnsupported,
 		AllowIgnored:     job.AllowIgnored,
 	})

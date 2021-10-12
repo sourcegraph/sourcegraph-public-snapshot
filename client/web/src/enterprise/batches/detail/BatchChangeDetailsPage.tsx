@@ -23,7 +23,6 @@ import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
 } from './backend'

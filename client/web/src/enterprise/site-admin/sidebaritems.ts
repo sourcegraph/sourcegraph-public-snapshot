@@ -49,8 +49,8 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/batch-changes',
         },
         {
-            label: 'Batch spec executions',
-            to: '/site-admin/batch-changes/executions',
+            label: 'Batch specs',
+            to: '/site-admin/batch-changes/specs',
             condition: props => props.batchChangesExecutionEnabled,
         },
     ],

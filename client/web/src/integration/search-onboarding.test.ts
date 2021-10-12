@@ -9,7 +9,8 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 
-describe('Search onboarding', () => {
+// Flaky test, issue https://github.com/sourcegraph/sourcegraph/issues/25902
+describe.skip('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
