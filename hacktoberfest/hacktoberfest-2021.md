@@ -52,6 +52,6 @@ Please note that maintainers will make the ultimate decision of whether or not p
 
 ## Rewards
 
-We’ll ship a Sourcegraph swag kit to the first 50 people whose PRs get merged and you'll receive a cool Sourcegraph Hacktoberfest Contributor badge to show case on your GitHub, website or social media. In addition, the top contributor will have a pair-programming session with one of our engineers, streamed live on Twitch!
+We’ll send Sourcegraph swag to the first 50 people whose PRs get merged and you'll receive a cool Sourcegraph Hacktoberfest Contributor badge to show case on your GitHub, website or social media. In addition, the top contributor will have a pair-programming session with one of our engineers, streamed live on Twitch!
 
 _Thank you for considering contributing to [Sourcegraph](https://sourcegraph.com)!_
