@@ -9,6 +9,13 @@ import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
 import { LangStatsInsightsSettings } from '../types'
 import { resolveDocumentURI } from '../utils/resolve-uri'
 
+/**
+ * Loads linguist-languages lib only once during the first call and returns
+ * the first call result after. This means we load lib only once and use it
+ * after for other calls.
+ */
+const getLinguistLanguages = once(() => import('linguist-languages'))
+
 const getLangColor = async (language: string): Promise<string> => {
     const { default: languagesMap } = await getLinguistLanguages()
 
@@ -26,8 +33,6 @@ interface InsightOptions<D extends keyof ViewContexts> {
     where: D
     context: ViewContexts[D]
 }
-
-const getLinguistLanguages = once(() => import('linguist-languages'))
 
 export async function getLangStatsInsightContent<D extends keyof ViewContexts>(
     insight: LangStatsInsightsSettings,
