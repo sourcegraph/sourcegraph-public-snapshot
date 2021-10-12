@@ -89,6 +89,8 @@ func (t RunType) String() string {
 		return "PullRequest"
 	case MainBranch:
 		return "MainBranch"
+	case MainDryRun:
+		return "Main dry run"
 	case TaggedRelease:
 		return "TaggedRelease"
 	case ReleaseBranch:
@@ -103,10 +105,8 @@ func (t RunType) String() string {
 		return "Patched Image without testing"
 	case CandidatesNoTest:
 		return "Build All candidates without testing"
-	case MainDryRun:
-		return "Main dry run"
 	case BackendIntegrationTests:
-		return "Backend dry run"
+		return "Backend integration tests"
 	}
 	panic("Run type does not have a full name defined")
 }
