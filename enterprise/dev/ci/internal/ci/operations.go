@@ -535,29 +535,45 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 	}
 }
 
-// ~6m (building executor base VM)
-// func buildExecutor(timestamp time.Time, version string) operations.Operation {
-// 	return func(pipeline *bk.Pipeline) {
-// 		cmds := []bk.StepOpt{
-// 			bk.Cmd(`echo "Building executor cloud image..."`),
-// 			bk.Env("VERSION", version),
-// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-// 			bk.Cmd("./enterprise/cmd/executor/build.sh"),
-// 		}
+// ~15m (building executor base VM)
+func buildExecutor(version string, skipHashCompare bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor")),
+			bk.Env("VERSION", version),
+		}
+		if !skipHashCompare {
+			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
+			stepOpts = append(stepOpts,
+				// Soft-fail with code 222 if nothing has changed
+				bk.SoftFail(222),
+				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/build.sh"))
 
-// 		pipeline.AddStep(":packer: :construction: executor image", cmds...)
-// 	}
-// }
+		pipeline.AddStep(":packer: :construction: executor image", stepOpts...)
+	}
+}
 
-// func publishExecutor(timestamp time.Time, version string) operations.Operation {
-// 	return func(pipeline *bk.Pipeline) {
-// 		cmds := []bk.StepOpt{
-// 			bk.Cmd(`echo "Releasing executor cloud image..."`),
-// 			bk.Env("VERSION", version),
-// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-// 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
-// 		}
+func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", version),
+		}
+		if !skipHashCompare {
+			// Publish iff not soft-failed on previous step
+			checkDependencySoftFailScript := "./enterprise/dev/ci/scripts/check-dependency-soft-fail.sh"
+			stepOpts = append(stepOpts,
+				// Soft-fail with code 222 if nothing has changed
+				bk.SoftFail(222),
+				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/release.sh"))
 
-// 		pipeline.AddStep(":packer: :truck: executor image", cmds...)
-// 	}
-// }
+		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
+	}
+}
