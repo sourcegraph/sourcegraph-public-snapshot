@@ -258,7 +258,6 @@ Foreign-key constraints:
 -------------------+--------------------------+-----------+----------+---------------------------------------------
  id                | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
  rand_id           | text                     |           | not null | 
- raw_spec          | text                     |           | not null | 
  spec              | jsonb                    |           | not null | '{}'::jsonb
  batch_spec_id     | bigint                   |           |          | 
  repo_id           | integer                  |           | not null | 
