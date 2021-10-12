@@ -99,6 +99,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
+	case BackendIntegrationTests:
+		ops.Append(
+			buildCandidateDockerImage("server", c.candidateImageTag()),
+			backendIntegrationTests(c.candidateImageTag()))
+
+		// Run default set of PR checks as well
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+
 	case BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
@@ -173,7 +181,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Slow tests
 		if c.RunType.Is(MainDryRun, MainBranch) {
-			ops.Append(addBackendIntegrationTests(c.candidateImageTag()))
+			ops.Append(backendIntegrationTests(c.candidateImageTag()))
 		}
 
 		// Core tests

@@ -40,10 +40,20 @@ const (
 
 func computeRunType(tag, branch string) RunType {
 	switch {
+	case branch == "main":
+		return MainBranch
+	case strings.HasPrefix(branch, "main-dry-run/"):
+		return MainDryRun
+
 	case strings.HasPrefix(tag, "v"):
 		return TaggedRelease
 	case lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch):
 		return ReleaseBranch
+
+	case branch == "bext/release":
+		return BextReleaseBranch
+	case os.Getenv("BEXT_NIGHTLY") == "true":
+		return BextNightly
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		return ImagePatch
@@ -54,18 +64,8 @@ func computeRunType(tag, branch string) RunType {
 	case branch == "executor-patch-notest":
 		return ExecutorPatchNoTest
 
-	case branch == "bext/release":
-		return BextReleaseBranch
-	case os.Getenv("BEXT_NIGHTLY") == "true":
-		return BextNightly
-
-	case strings.HasPrefix(branch, "main-dry-run/"):
-		return MainDryRun
-	case strings.HasPrefix(branch, "backend-dry-run/"):
+	case strings.HasPrefix(branch, "backend-integration/"):
 		return BackendIntegrationTests
-
-	case branch == "main":
-		return MainBranch
 
 	default:
 		// If no specific run type is matched, assumed to be a PR
