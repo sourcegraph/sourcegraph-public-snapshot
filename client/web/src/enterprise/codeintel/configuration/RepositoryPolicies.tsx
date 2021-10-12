@@ -1,12 +1,11 @@
 import * as H from 'history'
-import React, { FunctionComponent, useCallback } from 'react'
+import React, { FunctionComponent, useCallback, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Container } from '@sourcegraph/wildcard'
 
 import { PoliciesList } from './PoliciesList'
-import { PolicyListActions } from './PolicyListActions'
 import { ConfigTypes, CONFIG_TEXT } from './RepositoryPolicies.config'
 import { usePoliciesConfig, useDeletePolicies, updateDeletePolicyCache } from './usePoliciesConfigurations'
 
@@ -15,6 +14,9 @@ interface RepositoryPoliciesProps {
     indexingEnabled: boolean
     history: H.History
     isGlobal: boolean
+    onHandleDisplayAction: React.Dispatch<React.SetStateAction<boolean>>
+    onHandleIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
+    onHandleIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
@@ -22,14 +24,13 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
     indexingEnabled,
     history,
     isGlobal,
+    onHandleDisplayAction,
+    onHandleIsDeleting,
+    onHandleIsLoading,
 }) => {
     const { policies, loadingPolicies, policiesError } = usePoliciesConfig(isGlobal ? null : repo.id)
     const { handleDeleteConfig, isDeleting, deleteError } = useDeletePolicies()
     const configType = isGlobal ? ConfigTypes.Global : ConfigTypes.Local
-    const policyActions =
-        !isGlobal || repo.id === null ? (
-            <PolicyListActions disabled={loadingPolicies} deleting={isDeleting} history={history} />
-        ) : undefined
 
     const handleDelete = useCallback(
         async (id: string, name: string) => {
@@ -40,10 +41,23 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
             return handleDeleteConfig({
                 variables: { id },
                 update: cache => updateDeletePolicyCache(cache, id),
+            }).then(() => {
+                onHandleIsDeleting(false)
+                history.push({
+                    state: { modal: 'SUCCESS', message: `Configuration for policy ${name} has been deleted.` },
+                })
             })
         },
-        [policies, handleDeleteConfig, configType]
+        [policies, handleDeleteConfig, configType, onHandleIsDeleting, history]
     )
+
+    useEffect(() => {
+        if (!isGlobal || repo.id === null) {
+            onHandleDisplayAction(true)
+        }
+        onHandleIsDeleting(isDeleting)
+        onHandleIsLoading(loadingPolicies)
+    }, [onHandleDisplayAction, isGlobal, repo.id, onHandleIsDeleting, isDeleting, onHandleIsLoading, loadingPolicies])
 
     if (policiesError) {
         return <ErrorAlert prefix="Error fetching configuration" error={policiesError} />
@@ -63,7 +77,6 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
                     onDeletePolicy={repo.id === null || !isGlobal ? handleDelete : undefined}
                     disabled={loadingPolicies}
                     indexingEnabled={indexingEnabled}
-                    buttonFragment={policyActions}
                     history={history}
                 />
             )}

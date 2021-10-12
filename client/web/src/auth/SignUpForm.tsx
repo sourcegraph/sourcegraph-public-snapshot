@@ -23,7 +23,7 @@ import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tra
 import { enterpriseTrial, signupTerms } from '../util/features'
 
 import { OrDivider } from './OrDivider'
-import { EmailInput, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import { EmailInput, maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
 
 export interface SignUpArguments {
@@ -275,7 +275,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                             // here because this list will not be updated during this component's lifetime.
                             <div className="mb-2" key={index}>
                                 <a
-                                    href={`${provider.authenticationURL || ''}&redirect=/welcome`}
+                                    href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
                                     className="btn btn-secondary btn-block"
                                     onClick={onClickExternalAuthSignup(provider.serviceType)}
                                 >

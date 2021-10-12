@@ -108,7 +108,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelUploadsPageProps> = args => {
-    const fetchCommitGraphMetadata = () =>
+    const queryCommitGraphMetadata = () =>
         of({
             stale: boolean('staleCommitGraph', false),
             updatedAt: boolean('previouslyUpdatedCommitGraph', true) ? now() : null,
@@ -116,7 +116,7 @@ const Template: Story<CodeIntelUploadsPageProps> = args => {
 
     return (
         <EnterpriseWebStory>
-            {props => <CodeIntelUploadsPage {...props} fetchCommitGraphMetadata={fetchCommitGraphMetadata} {...args} />}
+            {props => <CodeIntelUploadsPage {...props} queryCommitGraphMetadata={queryCommitGraphMetadata} {...args} />}
         </EnterpriseWebStory>
     )
 }

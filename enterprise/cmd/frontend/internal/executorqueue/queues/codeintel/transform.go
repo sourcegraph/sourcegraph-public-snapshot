@@ -14,7 +14,7 @@ import (
 const defaultOutfile = "dump.lsif"
 const uploadRoute = "/.executors/lsif/upload"
 
-func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
+func transformRecord(index store.Index, accessToken string) (apiclient.Job, error) {
 	dockerSteps := make([]apiclient.DockerStep, 0, len(index.DockerSteps)+2)
 	for _, dockerStep := range index.DockerSteps {
 		dockerSteps = append(dockerSteps, apiclient.DockerStep{
@@ -36,12 +36,12 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 
 	frontendURL := conf.Get().ExternalURL
 
-	srcEndpoint, err := makeURL(frontendURL, config.Shared.FrontendUsername, config.Shared.FrontendPassword)
+	srcEndpoint, err := makeURL(frontendURL, accessToken)
 	if err != nil {
 		return apiclient.Job{}, err
 	}
 
-	redactedSrcEndpoint, err := makeURL(frontendURL, "USERNAME_REMOVED", "PASSWORD_REMOVED")
+	redactedSrcEndpoint, err := makeURL(frontendURL, "PASSWORD_REMOVED")
 	if err != nil {
 		return apiclient.Job{}, err
 	}
@@ -89,18 +89,17 @@ func transformRecord(index store.Index, config *Config) (apiclient.Job, error) {
 			// (in src-cli). We only pass the constructed URL to src-cli, which we trust not to
 			// ship the values to a third party, but not to trust to ensure the values are absent
 			// from the command's stdout or stderr streams.
-			config.Shared.FrontendUsername: "USERNAME_REMOVED",
-			config.Shared.FrontendPassword: "PASSWORD_REMOVED",
+			accessToken: "PASSWORD_REMOVED",
 		},
 	}, nil
 }
 
-func makeURL(base, username, password string) (string, error) {
+func makeURL(base, password string) (string, error) {
 	u, err := url.Parse(base)
 	if err != nil {
 		return "", err
 	}
 
-	u.User = url.UserPassword(username, password)
+	u.User = url.UserPassword("sourcegraph", password)
 	return u.String(), nil
 }

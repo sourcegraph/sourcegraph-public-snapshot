@@ -8,8 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func testStoreBatchSpecResolutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -143,4 +147,36 @@ func testStoreBatchSpecResolutionJobs(t *testing.T, ctx context.Context, s *Stor
 			}
 		})
 	})
+}
+
+func TestBatchSpecResolutionJobs_BatchSpecIDUnique(t *testing.T) {
+	// This test is a separate test so we can test the database constraints,
+	// because in the store tests the constraints are all deferred.
+	ctx := context.Background()
+	c := &ct.TestClock{Time: timeutil.Now()}
+
+	db := dbtest.NewDB(t, "")
+	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+
+	user := ct.CreateTestUser(t, db, true)
+
+	batchSpec := &btypes.BatchSpec{
+		UserID:          user.ID,
+		NamespaceUserID: user.ID,
+	}
+	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+		t.Fatal(err)
+	}
+
+	job1 := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	if err := s.CreateBatchSpecResolutionJob(ctx, job1); err != nil {
+		t.Fatal(err)
+	}
+
+	job2 := &btypes.BatchSpecResolutionJob{BatchSpecID: batchSpec.ID}
+	err := s.CreateBatchSpecResolutionJob(ctx, job2)
+	wantErr := ErrResolutionJobAlreadyExists{BatchSpecID: batchSpec.ID}
+	if err != wantErr {
+		t.Fatalf("wrong error. want=%s, have=%s", wantErr, err)
+	}
 }

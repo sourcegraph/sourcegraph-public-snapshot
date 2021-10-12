@@ -132,6 +132,34 @@ Running down migrations in a rollback **should NOT** be necessary if all migrati
     where `$VERSION` is the numerical prefix of the migration script corresponding to the first migration you _didn't_ just apply. In other words, it is the numerical prefix of the last migration script as of the rolled-back-to commit.
   - Restart frontend pods. On restart, they should spin up successfully.
 
+### Reverting a migration
+
+If a PR which contains a DB migration was reverted, it may still have been applied to Sourcegraph.com, k8s.sgdev.org, etc. due to their rollout schedules. In some cases, it may also have been part of a Sourcegraph release.
+
+To fix this, you should create a PR to revert the migration from the DB. Say the migration files were:
+
+- `1234_do_something.up.sql`
+- `1234_do_something.down.sql`
+
+You should then:
+
+1. Rename the files to `1234_reverted.up.sql` and `1234_reverted.down.sql`
+2. Replace the contents of those files with just:
+
+```sql
+BEGIN;
+
+-- This migration was reverted, see: <github issue link>
+
+COMMIT;
+```
+
+3. Add a new migration using `./dev/db/add_migration.sh <database> undo_something` which will consume the next sequentialm migration ID.
+4. Your new `.up.sql` migration should contain the contents of the old `1234_reverted.down.sql` and you will need to update the migration to run down migrations idempotently, i.e. using `IF EXISTS` etc. everywhere as _some instances running it may not have run the up migration_.
+5. Your new `.down.sql` should be an empty migration.
+
+For an example of how this looks: https://github.com/sourcegraph/sourcegraph/pull/25717
+
 ## Troubleshooting
 
 ### Dirty schema

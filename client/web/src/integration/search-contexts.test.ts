@@ -255,6 +255,13 @@ describe('Search contexts', () => {
             `Sucessfully converted ${versionContexts.length} version contexts into search contexts.`
         )
 
+        await driver.page.waitForFunction(
+            versionContextsCount =>
+                document.querySelectorAll('.test-converted-context').length === versionContextsCount,
+            undefined,
+            versionContexts.length
+        )
+
         // Check that individual context nodes have 'Converted' text
         const convertedContexts = await driver.page.evaluate(
             () => document.querySelectorAll('.test-converted-context').length
