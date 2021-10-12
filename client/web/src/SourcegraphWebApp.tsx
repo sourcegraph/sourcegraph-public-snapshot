@@ -26,7 +26,7 @@ import { Notifications } from '@sourcegraph/shared/src/notifications/Notificatio
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { aggregateStreamingSearchWithExtensionTransformedQuery } from '@sourcegraph/shared/src/search/stream'
+import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -49,7 +49,6 @@ import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
-import { updateUserSessionStores } from './marketing/util'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { createPlatformContext } from './platform/context'
@@ -84,6 +83,7 @@ import {
 } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -94,6 +94,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { UserSessionStores } from './UserSessionStores'
 import { globbingEnabledFromSettings } from './util/globbing'
 import { observeLocation } from './util/location'
 import {
@@ -144,6 +145,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: GraphQLClient
+
+    temporarySettingsStorage?: TemporarySettingsStorage
 
     viewerSubject: LayoutProps['viewerSubject']
 
@@ -317,12 +320,18 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
     }
 
     public componentDidMount(): void {
-        updateUserSessionStores()
-
         document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
-            .then(graphqlClient => this.setState({ graphqlClient }))
+            .then(graphqlClient => {
+                this.setState({
+                    graphqlClient,
+                    temporarySettingsStorage: new TemporarySettingsStorage(
+                        graphqlClient,
+                        window.context.isAuthenticatedUser
+                    ),
+                })
+            })
             .catch(error => {
                 console.error('Error initalizing GraphQL client', error)
             })
@@ -481,8 +490,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient } = this.state
-        if (authenticatedUser === undefined || graphqlClient === undefined) {
+        const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
+        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
 
@@ -492,7 +501,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={graphqlClient}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
+                        <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                             <SearchResultsCacheProvider>
                                 <Router history={history} key={0}>
                                     <Route
@@ -558,7 +567,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
                                                     fetchRecentFileViews={fetchRecentFileViews}
-                                                    streamSearch={aggregateStreamingSearchWithExtensionTransformedQuery}
+                                                    streamSearch={aggregateStreamingSearch}
                                                     onUserExternalServicesOrRepositoriesUpdate={
                                                         this.onUserExternalServicesOrRepositoriesUpdate
                                                     }
@@ -577,6 +586,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                     extensionsController={this.extensionsController}
                                     notificationClassNames={notificationClassNames}
                                 />
+                                <UserSessionStores />
                             </SearchResultsCacheProvider>
                         </TemporarySettingsProvider>
                     </ShortcutProvider>

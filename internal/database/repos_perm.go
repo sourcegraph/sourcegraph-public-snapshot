@@ -79,7 +79,7 @@ OR  (
 	)
 )
 OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
-	SELECT 1
+	SELECT
 	FROM external_service_repos
 	WHERE repo_id = repo.id
 	AND user_id = %s

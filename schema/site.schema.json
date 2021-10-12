@@ -712,6 +712,11 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "executors.accessToken": {
+      "description": "The shared secret between Sourcegraph and executors.",
+      "type": "string",
+      "minLength": 20
+    },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
       "type": "object",

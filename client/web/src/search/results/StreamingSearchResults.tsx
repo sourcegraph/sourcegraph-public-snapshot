@@ -145,17 +145,16 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const options: StreamSearchOptions = useMemo(
         () => ({
-            query,
             version: LATEST_VERSION,
             patternType: patternType ?? SearchPatternType.literal,
             caseSensitive,
             versionContext: resolveVersionContext(versionContext, availableVersionContexts),
             trace,
         }),
-        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext]
+        [availableVersionContexts, caseSensitive, patternType, trace, versionContext]
     )
 
-    const results = useCachedSearchResults(streamSearch, options, extensionHostAPI, telemetryService)
+    const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {

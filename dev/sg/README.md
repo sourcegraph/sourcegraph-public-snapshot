@@ -36,6 +36,8 @@
   - [`sg live` - See currently deployed version](#sg-live---see-currently-deployed-version)
   - [`sg migration` - Run or manipulate database migrations](#sg-migration---run-or-manipulate-database-migrations)
   - [`sg rfc` - List, open, or search Sourcegraph RFCs](#sg-rfc---list-or-open-sourcegraph-rfcs)
+  - [`sg ci` - Interact with Sourcegraph's continuous integration pipelines](#sg-ci)
+  - [`sg teammate [time,handbook]` - Get current time, or open their handbook page](#sg-rfc---get-current-time-or-open-their-handbook-page)
 - [Configuration](#configuration)
 - [Contributing to sg](#contributing-to-sg)
 
@@ -211,6 +213,35 @@ sg rfc search "search terms"
 
 # Open a specific RFC
 sg rfc open 420
+```
+
+### `sg ci`
+
+Interact with Sourcegraph's [continuous integration](https://docs.sourcegraph.com/dev/background-information/continuous_integration) pipelines on [Buildkite](https://buildkite.com/sourcegraph).
+
+```bash
+# Preview what a CI run for your current changes will look like
+sg ci preview
+
+# Check on the status of your changes on the current branch in the Buildkite pipeline
+sg ci status
+# Check on the status of a specific branch instead
+sg ci status --branch my-branch
+# Block until the build has completed (it will send a system notification)
+sg ci status --wait
+```
+
+### `sg teammate` - Get current time or open their handbook page
+
+```bash
+# Get the current time of a team mate based on their slack handle (case insensitive).
+sg teammate time @dax
+sg teammate time dax
+# or their full name (case insensitive)
+sg teammate time thorsten ball
+
+# Open their handbook bio
+sg teammate handbook asdine
 ```
 
 ## Configuration

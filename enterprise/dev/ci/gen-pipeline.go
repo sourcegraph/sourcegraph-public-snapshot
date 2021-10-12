@@ -47,12 +47,19 @@ func previewPipeline(w io.Writer, c ci.Config, bk *buildkite.Pipeline) {
 	for _, f := range c.ChangedFiles {
 		fmt.Fprintf(w, "\t%s\n", f)
 	}
+
 	fmt.Fprintln(w, "Detected changes:")
-	fmt.Fprintf(w, "\tAffects Client: %t\n", c.ChangedFiles.AffectsClient())
-	fmt.Fprintf(w, "\tAffects Go: %t\n", c.ChangedFiles.AffectsGo())
-	fmt.Fprintf(w, "\tAffects Dockerfiles: %t\n", c.ChangedFiles.AffectsDockerfiles())
-	fmt.Fprintf(w, "\tAffects GraphQL: %t\n", c.ChangedFiles.AffectsGraphQL())
-	fmt.Fprintf(w, "\tAffects SG: %t\n", c.ChangedFiles.AffectsSg())
+	for affects, doesAffects := range map[string]bool{
+		"Go":          c.ChangedFiles.AffectsGo(),
+		"Client":      c.ChangedFiles.AffectsClient(),
+		"Docs":        c.ChangedFiles.AffectsDocs(),
+		"Dockerfiles": c.ChangedFiles.AffectsDockerfiles(),
+		"GraphQL":     c.ChangedFiles.AffectsGraphQL(),
+		"SG":          c.ChangedFiles.AffectsSg(),
+	} {
+		fmt.Fprintf(w, "\tAffects %s: %t\n", affects, doesAffects)
+	}
+
 	fmt.Fprintf(w, "Computed Build Steps:\n")
 	for _, raw := range bk.Steps {
 		if step, ok := raw.(*buildkite.Step); ok {

@@ -20,6 +20,9 @@
 *.a
 *.so
 
+# C
+*.dylib
+
 # Mac OS X
 .DS_Store
 
@@ -144,3 +147,6 @@ sg.config.overwrite.yaml
 # Generated sitemaps are not committed, they're hosted in a GCS bucket.
 sitemap/
 sitemap_query.db
+
+# Lighthouse CI reports
+.lighthouseci/

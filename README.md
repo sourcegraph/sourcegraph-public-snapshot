@@ -37,13 +37,15 @@ The fastest way to run Sourcegraph self-hosted is with the Docker container. See
 
 ### Sourcegraph OSS
 
+1. [Install dependencies](doc/dev/getting-started/quickstart_1_install_dependencies.md)
 1. Clone this repository
-1. [Ensure Docker is running](doc/dev/getting-started/quickstart_2_start_docker.md)
-1. [Initialize the PostgreSQL database](doc/dev/getting-started/quickstart_3_initialize_database.md)
-1. [Configure the HTTPS reverse proxy](doc/dev/getting-started/quickstart_5_configure_https_reverse_proxy.md)
-1. [Start the development server](doc/dev/getting-started/quickstart_6_start_server.md)
+1. [Install `sg`](doc/dev/getting-started/quickstart_3_install_sg.md)
+1. [Ensure Docker is running](doc/dev/getting-started/quickstart_4_start_docker.md)
+1. [Initialize the PostgreSQL database](doc/dev/getting-started/quickstart_5_initialize_database.md)
+1. [Configure the HTTPS reverse proxy](doc/dev/getting-started/quickstart_6_configure_https_reverse_proxy.md)
+1. [Start the development server](doc/dev/getting-started/quickstart_7_start_server.md)
    ```sh
-   ./dev/start.sh
+   sg start oss
    ```
 
 Sourcegraph should now be running at https://sourcegraph.test:3443.

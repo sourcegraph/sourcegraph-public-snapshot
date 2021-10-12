@@ -44,9 +44,6 @@ type EndpointOptions struct {
 	// URL is the target request URL.
 	URL string
 
-	// Username is the basic-auth username to include with all requests.
-	Username string
-
 	// Password is the basic-auth password to include with all requests.
 	Password string
 }
@@ -224,7 +221,6 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Request, error) {
 	u, err := makeURL(
 		c.options.EndpointOptions.URL,
-		c.options.EndpointOptions.Username,
 		c.options.EndpointOptions.Password,
 		c.options.PathPrefix,
 		path,
@@ -236,13 +232,13 @@ func (c *Client) makeRequest(method, path string, payload interface{}) (*http.Re
 	return MakeJSONRequest(method, u, payload)
 }
 
-func makeURL(base, username, password string, path ...string) (*url.URL, error) {
+func makeURL(base, password string, path ...string) (*url.URL, error) {
 	u, err := makeRelativeURL(base, path...)
 	if err != nil {
 		return nil, err
 	}
 
-	u.User = url.UserPassword(username, password)
+	u.User = url.UserPassword("sourcegraph", password)
 	return u, nil
 }
 

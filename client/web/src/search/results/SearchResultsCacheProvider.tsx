@@ -5,6 +5,7 @@ import { useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { throttleTime } from 'rxjs/operators'
 
+import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -14,6 +15,7 @@ import { SearchStreamingProps } from '..'
 
 interface CachedResults {
     results: AggregateStreamingSearchResults | undefined
+    query: string
     options: StreamSearchOptions
 }
 
@@ -32,6 +34,7 @@ const SearchResultsCacheContext = createContext<[CachedResults | null, Dispatch<
  */
 export function useCachedSearchResults(
     streamSearch: SearchStreamingProps['streamSearch'],
+    query: string,
     options: StreamSearchOptions,
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>,
     telemetryService: TelemetryService
@@ -40,22 +43,35 @@ export function useCachedSearchResults(
 
     const history = useHistory()
 
+    const transformedQuery = useMemo(() => transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI }), [
+        query,
+        extensionHostAPI,
+    ])
+
     const results = useObservable(
         useMemo(() => {
-            // If options have not changed, return cached value
-            if (isEqual(options, cachedResults?.options)) {
+            // If query and options have not changed, return cached value
+            if (query === cachedResults?.query && isEqual(options, cachedResults?.options)) {
                 return of(cachedResults?.results)
             }
 
-            return streamSearch(options, extensionHostAPI).pipe(
+            return streamSearch(transformedQuery, options).pipe(
                 throttleTime(500, undefined, { leading: true, trailing: true })
             )
-        }, [cachedResults?.options, cachedResults?.results, extensionHostAPI, options, streamSearch])
+        }, [
+            query,
+            cachedResults?.query,
+            cachedResults?.options,
+            cachedResults?.results,
+            options,
+            streamSearch,
+            transformedQuery,
+        ])
     )
 
     useEffect(() => {
         if (results?.state === 'complete') {
-            setCachedResults({ results, options })
+            setCachedResults({ results, query, options })
         }
         // Only update cached results if the results change
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,14 +79,14 @@ export function useCachedSearchResults(
 
     useEffect(() => {
         // In case of back/forward navigation, log if the cache is being used.
-        const cacheExists = isEqual(options, cachedResults?.options)
+        const cacheExists = query === cachedResults?.query && isEqual(options, cachedResults?.options)
 
         if (history.action === 'POP') {
             telemetryService.log('SearchResultsCacheRetrieved', { cacheHit: cacheExists }, { cacheHit: cacheExists })
         }
-        // Only log when options have changed
+        // Only log when query or options have changed
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [options])
+    }, [query, options])
 
     return results
 }

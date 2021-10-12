@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/lib/pq"
 
 	"github.com/keegancsmith/sqlf"
@@ -78,6 +79,14 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	return scanDashboard(s.Query(ctx, q))
 }
 
+func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int64) error {
+	err := s.Exec(ctx, sqlf.Sprintf(deleteDashboardSql, id))
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete dashboard with id: %s", id)
+	}
+	return nil
+}
+
 func dashboardPermissionsQuery(args DashboardQueryArgs) *sqlf.Query {
 	permsPreds := make([]*sqlf.Query, 0, 2)
 	if len(args.OrgID) > 0 {
@@ -120,6 +129,7 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 }
 
 const getDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboards
 SELECT db.id, db.title, t.uuid_array as insight_view_unique_ids
 FROM dashboard db
          JOIN dashboard_grants dg ON db.id = dg.dashboard_id
@@ -132,6 +142,101 @@ ORDER BY db.id
 %S;
 `
 
+const deleteDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:DeleteDashboard
+update dashboard set deleted_at = NOW() where id = %s;
+`
+
+func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.Dashboard{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
+		dashboard.Title,
+		dashboard.Save,
+	))
+	if row.Err() != nil {
+		return types.Dashboard{}, row.Err()
+	}
+	var id int
+	err = row.Scan(&id)
+	if err != nil {
+		return types.Dashboard{}, errors.Wrap(err, "CreateDashboard")
+	}
+	dashboard.ID = id
+	err = tx.AssociateViewsByViewIds(ctx, dashboard.ID, dashboard.InsightIDs)
+	if err != nil {
+		return types.Dashboard{}, errors.Wrap(err, "AssociateViewsByViewIds")
+	}
+	err = tx.AddDashboardGrants(ctx, dashboard, grants)
+	if err != nil {
+		return types.Dashboard{}, errors.Wrap(err, "AddDashboardGrants")
+	}
+
+	return dashboard, nil
+}
+
+func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboardId int, viewIds []string) error {
+	if dashboardId == 0 {
+		return errors.New("unable to associate views to dashboard invalid dashboard ID")
+	} else if len(viewIds) == 0 {
+		return nil
+	}
+	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) error {
+	if dashboard.ID == 0 {
+		return errors.New("unable to grant dashboard permissions invalid dashboard id")
+	} else if len(grants) == 0 {
+		return nil
+	}
+
+	values := make([]*sqlf.Query, 0, len(grants))
+	for _, grant := range grants {
+		grantQuery, err := grant.toQuery(dashboard.ID)
+		if err != nil {
+			return err
+		}
+		values = append(values, grantQuery)
+	}
+	q := sqlf.Sprintf(addDashboardGrantsSql, sqlf.Join(values, ",\n"))
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const addDashboardGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
+VALUES %s;
+`
+
+const insertDashboardSql = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
+INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
+`
+
+const insertDashboardInsightViewConnectionsByViewIds = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:AssociateViewsByViewIds
+INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
+    SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
+    FROM insight_view
+    WHERE unique_id = ANY(%s)
+);`
+
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
+	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
+	DeleteDashboard(ctx context.Context, id int64) error
 }

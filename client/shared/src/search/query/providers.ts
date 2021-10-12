@@ -51,17 +51,29 @@ function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
     if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
         return `repo:${tokenAtColumn.value.value} type:repo count:${MAX_SUGGESTION_COUNT}`
     }
-    if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value && !hasAndOrOperators) {
+
+    // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
+    // for each filter which filters from the surrounding expression apply to it. For example, if we have a query: `repo:x file:y z OR repo:xx file:yy`
+    // and we want to get suggestions for the `file:yy` filter. We would only want to include file suggestions from the `xx` repo and not the `x` repo, because it
+    // is a part of a different expression.
+    if (hasAndOrOperators) {
+        return ''
+    }
+    if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value) {
         const repoQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.repo))
         return `${repoQueryPart} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`
     }
-    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value && !hasAndOrOperators) {
+    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value) {
         const repoQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.repo))
         const fileQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.file))
         return `${repoQueryPart} ${fileQueryPart} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
     }
 
     return ''
+}
+
+function getTokenAtColumn(tokens: Token[], column: number): Token | null {
+    return tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column) ?? null
 }
 
 /**
@@ -107,16 +119,15 @@ export function getProviders(
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
             provideCompletionItems: (textModel, position, context, cancellationToken) => {
-                const value = textModel.getValue()
-
-                const scanned = scanSearchQuery(value, options.interpretComments ?? false, options.patternType)
+                const scanned = scanSearchQuery(
+                    textModel.getValue(),
+                    options.interpretComments ?? false,
+                    options.patternType
+                )
                 if (scanned.type === 'error') {
                     return null
                 }
-
-                const tokenAtColumn = scanned.term.find(
-                    ({ range }) => range.start + 1 <= position.column && range.end + 1 >= position.column
-                )
+                const tokenAtColumn = getTokenAtColumn(scanned.term, position.column)
                 if (!tokenAtColumn) {
                     return null
                 }

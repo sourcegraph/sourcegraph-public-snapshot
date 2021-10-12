@@ -45,3 +45,7 @@ func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
 	c.Env = env
 	return InRoot(c)
 }
+
+func TrimResult(s string, err error) (string, error) {
+	return strings.TrimSpace(s), err
+}

@@ -16,12 +16,14 @@ expect.addSnapshotSerializer({
 
 const toSuccess = (result: ScanResult<Token[]>): Token[] => (result as ScanSuccess<Token[]>).term
 
+const getToken = (query: string, tokenIndex: number): Token => toSuccess(scanSearchQuery(query))[tokenIndex]
+
 describe('getCompletionItems()', () => {
     test('returns only static filter type completions when the token matches a known filter', async () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('re'))[0],
+                    getToken('re', 0),
                     { column: 3 },
                     of([
                         {
@@ -81,7 +83,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('reposi'))[0],
+                    getToken('reposi', 0),
                     { column: 7 },
                     of([
                         {
@@ -141,7 +143,7 @@ describe('getCompletionItems()', () => {
 
     test('returns suggestions for an empty query', async () => {
         expect(
-            (await getCompletionItems(toSuccess(scanSearchQuery(''))[0], { column: 1 }, NEVER, false))?.suggestions.map(
+            (await getCompletionItems(getToken('', 0), { column: 1 }, NEVER, false))?.suggestions.map(
                 ({ label }) => label
             )
         ).toStrictEqual([
@@ -183,7 +185,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('a '))[1],
+                    getToken('a ', 1),
                     { column: 3 },
                     of([
                         {
@@ -232,9 +234,9 @@ describe('getCompletionItems()', () => {
 
     test('returns static filter type completions for case-insensitive query', async () => {
         expect(
-            (
-                await getCompletionItems(toSuccess(scanSearchQuery('rE'))[0], { column: 3 }, of([]), false)
-            )?.suggestions.map(({ label }) => label)
+            (await getCompletionItems(getToken('rE', 0), { column: 3 }, of([]), false))?.suggestions.map(
+                ({ label }) => label
+            )
         ).toStrictEqual([
             'after',
             'archived',
@@ -272,9 +274,9 @@ describe('getCompletionItems()', () => {
 
     test('returns completions for filters with discrete values', async () => {
         expect(
-            (
-                await getCompletionItems(toSuccess(scanSearchQuery('case:y'))[0], { column: 7 }, NEVER, false)
-            )?.suggestions.map(({ label }) => label)
+            (await getCompletionItems(getToken('case:y', 0), { column: 7 }, NEVER, false))?.suggestions.map(
+                ({ label }) => label
+            )
         ).toStrictEqual(['yes', 'no'])
     })
 
@@ -282,7 +284,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('lang:'))[0],
+                    getToken('lang:', 0),
                     {
                         column: 6,
                     },
@@ -297,7 +299,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('select:'))[0],
+                    getToken('select:', 0),
                     {
                         column: 8,
                     },
@@ -312,7 +314,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('file:c'))[0],
+                    getToken('file:c', 0),
                     { column: 7 },
                     of([
                         {
@@ -331,7 +333,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('jsonrpc'))[0],
+                    getToken('jsonrpc', 0),
                     { column: 8 },
                     of([
                         {
@@ -359,7 +361,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('f:^jsonrpc'))[0],
+                    getToken('f:^jsonrpc', 0),
                     { column: 11 },
                     of([
                         {
@@ -378,7 +380,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('main.go'))[0],
+                    getToken('main.go', 0),
                     { column: 7 },
                     of([
                         {
@@ -399,7 +401,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('f:'))[0],
+                    getToken('f:', 0),
                     { column: 2 },
                     of([
                         {
@@ -418,7 +420,7 @@ describe('getCompletionItems()', () => {
         expect(
             (
                 await getCompletionItems(
-                    toSuccess(scanSearchQuery('repo:'))[0],
+                    getToken('repo:', 0),
                     { column: 5 },
                     of([
                         {
@@ -442,9 +444,9 @@ describe('getCompletionItems()', () => {
 
     test('Sourcegraph.com GH repo completions', async () => {
         expect(
-            (
-                await getCompletionItems(toSuccess(scanSearchQuery('repo:'))[0], { column: 5 }, of([]), false, true)
-            )?.suggestions.map(({ insertText }) => insertText)
+            (await getCompletionItems(getToken('repo:', 0), { column: 5 }, of([]), false, true))?.suggestions.map(
+                ({ insertText }) => insertText
+            )
         ).toMatchInlineSnapshot(`
             [
               "^github\\\\.com/\${1:ORGANIZATION}/.* ",

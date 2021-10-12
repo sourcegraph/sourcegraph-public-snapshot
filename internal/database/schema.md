@@ -101,6 +101,7 @@ Indexes:
  updated_at        | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
+    "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
 Foreign-key constraints:
     "batch_spec_resolution_jobs_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE
 
@@ -176,6 +177,7 @@ Referenced by:
  user_id           | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
+ created_from_raw  | boolean                  |           | not null | false
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
