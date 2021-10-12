@@ -558,6 +558,67 @@ func TestRepos_List_cloned(t *testing.T) {
 	}
 }
 
+func TestRepos_List_LastChanged(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	repos := Repos(db)
+
+	// Insert a repo which should never be returned since we always specify
+	// OnlyCloned.
+	if err := repos.Upsert(ctx, InsertRepoOp{Name: "not-on-gitserver"}); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+	old := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-time.Hour),
+	})[0]
+	new := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now,
+	})[0]
+
+	tests := []struct {
+		Name           string
+		MinLastChanged time.Time
+		Want           types.Repos
+	}{{
+		Name: "not specified",
+		Want: types.Repos{old, new},
+	}, {
+		Name:           "old",
+		MinLastChanged: now.Add(-24 * time.Hour),
+		Want:           types.Repos{old, new},
+	}, {
+		Name:           "new",
+		MinLastChanged: now.Add(-time.Minute),
+		Want:           types.Repos{new},
+	}, {
+		Name:           "none",
+		MinLastChanged: now.Add(time.Minute),
+	}}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			got, err := repos.List(ctx, ReposListOptions{
+				OnlyCloned:     true,
+				MinLastChanged: test.MinLastChanged,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.Want, got)
+		})
+	}
+}
+
 func TestRepos_List_ids(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

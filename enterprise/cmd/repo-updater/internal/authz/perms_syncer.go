@@ -309,7 +309,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
-		extIDs, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
+		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(err)
@@ -348,42 +348,36 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 		}
 
-		if extIDs == nil {
+		if extPerms == nil {
 			continue
 		}
 
-		if len(extIDs.Exacts) > 0 {
-			for _, exact := range extIDs.Exacts {
-				repoSpecs = append(repoSpecs,
-					api.ExternalRepoSpec{
-						ID:          string(exact),
-						ServiceType: provider.ServiceType(),
-						ServiceID:   provider.ServiceID(),
-					},
-				)
-			}
+		for _, exact := range extPerms.Exacts {
+			repoSpecs = append(repoSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(exact),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
 		}
-		if len(extIDs.IncludeContains) > 0 {
-			for _, includePrefix := range extIDs.IncludeContains {
-				includeContainsSpecs = append(includeContainsSpecs,
-					api.ExternalRepoSpec{
-						ID:          string(includePrefix),
-						ServiceType: provider.ServiceType(),
-						ServiceID:   provider.ServiceID(),
-					},
-				)
-			}
+		for _, includePrefix := range extPerms.IncludeContains {
+			includeContainsSpecs = append(includeContainsSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(includePrefix),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
 		}
-		if len(extIDs.ExcludeContains) > 0 {
-			for _, excludePrefix := range extIDs.ExcludeContains {
-				excludeContainsSpecs = append(excludeContainsSpecs,
-					api.ExternalRepoSpec{
-						ID:          string(excludePrefix),
-						ServiceType: provider.ServiceType(),
-						ServiceID:   provider.ServiceID(),
-					},
-				)
-			}
+		for _, excludePrefix := range extPerms.ExcludeContains {
+			excludeContainsSpecs = append(excludeContainsSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(excludePrefix),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
 		}
 	}
 
@@ -431,7 +425,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	log15.Debug("PermsSyncer.syncUserPerms.synced",
 		"userID", user.ID,
 		"count", p.IDs.GetCardinality(),
-		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches)
+		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
+	)
 	return nil
 }
 
