@@ -17,10 +17,10 @@ function cluster_capture_state() {
 
   pushd "$root_dir"
   # Get specifics of pods
-  kubectl describe pods >'describe_pods.log'
+  kubectl describe pods >'describe_pods.log' 2>&1
 
   # Get logs for some deployments
-  kubectl logs deployment/sourcegraph-frontend --all-containers >"frontend_logs.log"
+  kubectl logs deployment/sourcegraph-frontend --all-containers >"frontend_logs.log" 2>&1
   popd
 }
 
