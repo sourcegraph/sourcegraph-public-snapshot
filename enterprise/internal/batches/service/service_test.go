@@ -592,7 +592,7 @@ func TestService(t *testing.T) {
 			}
 
 			wantFields := &batcheslib.ChangesetSpec{}
-			if err := json.Unmarshal([]byte(spec.RawSpec), wantFields); err != nil {
+			if err := json.Unmarshal([]byte(rawSpec), wantFields); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1242,6 +1242,21 @@ func TestService(t *testing.T) {
 			return spec
 		}
 
+		createBatchSpecWithWorkspacesAndChangesetSpecs := func(t *testing.T) *btypes.BatchSpec {
+			t.Helper()
+
+			spec := createBatchSpecWithWorkspaces(t)
+
+			for _, r := range rs {
+				ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+					BatchSpec: spec.ID,
+					Repo:      r.ID,
+				})
+			}
+
+			return spec
+		}
+
 		t.Run("success", func(t *testing.T) {
 			spec := createBatchSpecWithWorkspaces(t)
 
@@ -1331,6 +1346,34 @@ func TestService(t *testing.T) {
 			if err != store.ErrNoResults {
 				t.Fatalf("unexpected error: %s", err)
 			}
+		})
+
+		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
+			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
+				t.Helper()
+				specs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{
+					BatchSpecID: batchSpecID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(specs) != 0 {
+					t.Fatalf("wrong number of changeset specs attached to batch spec %d: %d", batchSpecID, len(specs))
+				}
+			}
+
+			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
+
+			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec:         ct.TestRawBatchSpecYAML,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assertNoChangesetSpecs(t, newSpec.ID)
+			assertNoChangesetSpecs(t, spec.ID)
 		})
 	})
 

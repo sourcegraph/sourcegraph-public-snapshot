@@ -16,11 +16,13 @@ import (
 type InsightsResolver interface {
 	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
-	InsightsDashboards(ctx context.Context, args *InsightDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
 
 	// Mutations
+	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
-	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightDashboardPayloadResolver, error)
+	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
+	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 }
 
 type InsightsArgs struct {
@@ -73,7 +75,7 @@ type InsightDirtyQueryResolver interface {
 	Count(ctx context.Context) int32
 }
 
-type InsightDashboardsArgs struct {
+type InsightsDashboardsArgs struct {
 	First *int32
 	After *string
 }
@@ -87,6 +89,21 @@ type InsightsDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
 	Views() InsightViewConnectionResolver
+}
+
+type CreateInsightsDashboardArgs struct {
+	Input CreateInsightsDashboardInput
+}
+
+type CreateInsightsDashboardInput struct {
+	Title  string
+	Grants InsightsPermissionGrants
+}
+
+type InsightsPermissionGrants struct {
+	Users         *[]graphql.ID
+	Organizations *[]graphql.ID
+	Global        *bool
 }
 
 type DeleteInsightsDashboardArgs struct {
@@ -106,7 +123,7 @@ type InsightViewResolver interface {
 	VeryUniqueResolver() bool
 }
 
-type InsightDashboardPayloadResolver interface {
+type InsightsDashboardPayloadResolver interface {
 	Dashboard(ctx context.Context) (InsightsDashboardResolver, error)
 }
 
@@ -115,6 +132,15 @@ type AddInsightViewToDashboardArgs struct {
 }
 
 type AddInsightViewToDashboardInput struct {
+	InsightViewID graphql.ID
+	DashboardID   graphql.ID
+}
+
+type RemoveInsightViewFromDashboardArgs struct {
+	Input RemoveInsightViewFromDashboardInput
+}
+
+type RemoveInsightViewFromDashboardInput struct {
 	InsightViewID graphql.ID
 	DashboardID   graphql.ID
 }

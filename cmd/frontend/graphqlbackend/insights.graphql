@@ -190,7 +190,12 @@ extend type Query {
 
 extend type Mutation {
     """
-    Delete a dashboard. Any views that would become dangling will be deleted.
+    Create a new dashboard.
+    """
+    createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Delete a dashboard.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
 
@@ -198,6 +203,11 @@ extend type Mutation {
     Associate an existing insight view with this dashboard.
     """
     addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Remove an insight view from a dashboard.
+    """
+    removeInsightViewFromDashboard(input: RemoveInsightViewFromDashboardInput!): InsightsDashboardPayload!
 }
 
 """
@@ -223,6 +233,7 @@ type InsightsDashboard implements Node {
     The Dashboard ID.
     """
     id: ID!
+
     """
     The Dashboard Title.
     """
@@ -232,6 +243,38 @@ type InsightsDashboard implements Node {
     The list of associated insights to the dashboard.
     """
     views: InsightViewConnection
+}
+
+"""
+Input object for creating a new dashboard.
+"""
+input CreateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String!
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrants!
+}
+
+"""
+Input object for permissions to grant.
+"""
+input InsightsPermissionGrants {
+    """
+    Specific users to grant permissions to.
+    """
+    users: [ID!]
+    """
+    Organizations to grant permissions to.
+    """
+    organizations: [ID!]
+    """
+    Set global to true to grant global permission.
+    """
+    global: Boolean
 }
 
 """
@@ -275,6 +318,21 @@ Input object for adding insight view to dashboard.
 input AddInsightViewToDashboardInput {
     """
     ID of the insight view to attach to the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input RemoveInsightViewFromDashboardInput {
+    """
+    ID of the insight view to remove from the dashboard
     """
     insightViewId: ID!
 

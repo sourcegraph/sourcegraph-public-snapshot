@@ -53,6 +53,10 @@ type batchSpecResolver struct {
 	workspaces     []*btypes.BatchSpecWorkspace
 	workspacesErr  error
 
+	executionJobsOnce sync.Once
+	executionJobs     []*btypes.BatchSpecWorkspaceExecutionJob
+	executionJobsErr  error
+
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
@@ -336,17 +340,82 @@ func (r *batchSpecResolver) AutoApplyEnabled() bool {
 	return false
 }
 
-func (r *batchSpecResolver) State(ctx context.Context) string {
+func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	if !r.batchSpec.CreatedFromRaw {
-		return "COMPLETED"
+		return "COMPLETED", nil
 	}
 
 	validationErr := r.validateChangesetSpecs(ctx)
 	if validationErr != nil {
-		return "FAILED"
+		return "FAILED", nil
 	}
-	// TODO(ssbc): not implemented
-	return "PROCESSING"
+
+	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+	if err != nil {
+		return "", err
+	}
+	if len(workspaces) == 0 {
+		return "PENDING", nil
+	}
+
+	var ids []int64
+	for _, ws := range workspaces {
+		ids = append(ids, ws.ID)
+	}
+
+	jobs, err := r.computeExecutionJobs(ctx, ids)
+	if err != nil {
+		return "", err
+	}
+	if len(jobs) == 0 {
+		return "PENDING", nil
+	}
+
+	var (
+		processing bool
+		failed     bool
+		canceled   bool
+
+		canceling   bool
+		allFinished bool
+	)
+
+	for _, j := range jobs {
+		switch j.State {
+		case btypes.BatchSpecWorkspaceExecutionJobStateProcessing:
+			if j.Cancel {
+				canceling = true
+			} else {
+				processing = true
+			}
+
+			allFinished = false
+		case btypes.BatchSpecWorkspaceExecutionJobStateCompleted:
+			allFinished = true
+		case btypes.BatchSpecWorkspaceExecutionJobStateFailed:
+			if j.Cancel {
+				canceled = true
+			} else {
+				failed = true
+			}
+			allFinished = true
+		}
+	}
+
+	switch {
+	case canceling:
+		return "CANCELING", nil
+	case canceled && allFinished:
+		return "CANCELED", nil
+	case processing:
+		return "PROCESSING", nil
+	case allFinished && !failed:
+		return "COMPLETED", nil
+	case allFinished && failed:
+		return "FAILED", nil
+	default:
+		return "QUEUED", nil
+	}
 }
 
 func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -513,4 +582,13 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 		r.workspaces, _, r.workspacesErr = r.store.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: r.batchSpec.ID})
 	})
 	return r.workspaces, r.workspacesErr
+}
+
+func (r *batchSpecResolver) computeExecutionJobs(ctx context.Context, workspaceIDs []int64) ([]*btypes.BatchSpecWorkspaceExecutionJob, error) {
+	r.executionJobsOnce.Do(func() {
+		opts := store.ListBatchSpecWorkspaceExecutionJobsOpts{BatchSpecWorkspaceIDs: workspaceIDs}
+
+		r.executionJobs, r.executionJobsErr = r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, opts)
+	})
+	return r.executionJobs, r.workspacesErr
 }
