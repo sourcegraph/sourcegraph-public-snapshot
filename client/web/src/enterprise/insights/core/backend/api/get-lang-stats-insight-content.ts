@@ -1,5 +1,4 @@
-import linguistLanguages from 'linguist-languages'
-import { escapeRegExp, partition, sum } from 'lodash'
+import { escapeRegExp, once, partition, sum } from 'lodash'
 import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
 import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
@@ -10,13 +9,25 @@ import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
 import { LangStatsInsightsSettings } from '../types'
 import { resolveDocumentURI } from '../utils/resolve-uri'
 
-const isLinguistLanguage = (language: string): language is keyof typeof linguistLanguages =>
-    Object.prototype.hasOwnProperty.call(linguistLanguages, language)
+const getLangColor = async (language: string): Promise<string> => {
+    const { default: languagesMap } = await getLinguistLanguages()
+
+    const isLinguistLanguage = (language: string): language is keyof typeof languagesMap =>
+        Object.prototype.hasOwnProperty.call(languagesMap, language)
+
+    if (isLinguistLanguage(language)) {
+        return languagesMap[language].color ?? 'gray'
+    }
+
+    return 'gray'
+}
 
 interface InsightOptions<D extends keyof ViewContexts> {
     where: D
     context: ViewContexts[D]
 }
+
+const getLinguistLanguages = once(() => import('linguist-languages'))
 
 export async function getLangStatsInsightContent<D extends keyof ViewContexts>(
     insight: LangStatsInsightsSettings,
@@ -75,22 +86,21 @@ async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieCh
     linkURL.searchParams.set('q', query)
 
     const [notOther, other] = partition(stats.languages, language => language.totalLines / totalLines >= otherThreshold)
+    const data = await Promise.all(
+        [...notOther, { name: 'Other', totalLines: sum(other.map(language => language.totalLines)) }].map(
+            async language => ({
+                ...language,
+                fill: await getLangColor(language.name),
+                linkURL: linkURL.href,
+            })
+        )
+    )
 
     return {
         chart: 'pie' as const,
         pies: [
             {
-                data: [
-                    ...notOther,
-                    {
-                        name: 'Other',
-                        totalLines: sum(other.map(language => language.totalLines)),
-                    },
-                ].map(language => ({
-                    ...language,
-                    fill: (isLinguistLanguage(language.name) && linguistLanguages[language.name].color) || 'gray',
-                    linkURL: linkURL.href,
-                })),
+                data,
                 dataKey: 'totalLines',
                 nameKey: 'name',
                 fillKey: 'fill',
