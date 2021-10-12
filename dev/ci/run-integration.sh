@@ -32,7 +32,7 @@ function cleanup() {
 
   jobs -p -r | xargs kill
   echo "--- dump server logs"
-  docker logs "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
+  docker logs "$CONTAINER" >"$root_dir/server.log" 2>&1
   echo "--- docker cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"
