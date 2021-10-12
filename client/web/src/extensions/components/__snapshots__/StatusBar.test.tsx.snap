@@ -4,33 +4,33 @@ exports[`StatusBar renders correctly 1`] = `
 <body>
   <div>
     <div
-      class="status-bar border-top percy-hide"
+      class="statusBar border-top percy-hide"
     >
       <div
-        class="status-bar__items d-flex align-items-center px-2"
+        class="d-flex align-items-center px-2 items"
       >
         <a
-          class="status-bar__item h-100 d-flex align-items-center px-1 status-bar__item--noop text-decoration-none"
+          class="h-100 d-flex align-items-center px-1 item text-decoration-none itemNoop"
           href=""
           role="button"
           tabindex="-1"
         >
           <small
-            class="status-bar__text"
+            class="text"
           >
             Coverage: 96%
           </small>
         </a>
         <a
           aria-label="Code owners: @felixbecker, @beyang"
-          class="status-bar__item h-100 d-flex align-items-center px-1 status-bar__item--noop text-decoration-none"
+          class="h-100 d-flex align-items-center px-1 item text-decoration-none itemNoop"
           data-tooltip="Code owners: @felixbecker, @beyang"
           href=""
           role="button"
           tabindex="-1"
         >
           <small
-            class="status-bar__text"
+            class="text"
           >
             2 code owners
           </small>
