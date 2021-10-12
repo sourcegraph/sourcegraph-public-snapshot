@@ -259,8 +259,8 @@ func (r *NodeResolver) ToBatchSpecWorkspace() (BatchSpecWorkspaceResolver, bool)
 	return n, ok
 }
 
-func (r *NodeResolver) ToInsightDashboard() (InsightDashboardResolver, bool) {
-	n, ok := r.Node.(InsightDashboardResolver)
+func (r *NodeResolver) ToInsightsDashboard() (InsightsDashboardResolver, bool) {
+	n, ok := r.Node.(InsightsDashboardResolver)
 	return n, ok
 }
 

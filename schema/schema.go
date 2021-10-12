@@ -53,12 +53,6 @@ type AWSKMSEncryptionKey struct {
 	Region          string `json:"region,omitempty"`
 	Type            string `json:"type"`
 }
-type AdditionalProperties struct {
-	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
-	Format string `json:"format,omitempty"`
-	// Value description: The value of the output, which can be a template string.
-	Value string `json:"value"`
-}
 
 // ApiRatelimit description: Configuration for API rate limiting
 type ApiRatelimit struct {
@@ -347,6 +341,26 @@ type BitbucketServerRateLimit struct {
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
 }
+type BranchChangesetSpec struct {
+	// BaseRef description: The full name of the Git ref in the base repository that this changeset is based on (and is proposing to be merged into). This ref must exist on the base repository.
+	BaseRef string `json:"baseRef"`
+	// BaseRepository description: The GraphQL ID of the repository that this changeset spec is proposing to change.
+	BaseRepository string `json:"baseRepository"`
+	// BaseRev description: The base revision this changeset is based on. It is the latest commit in baseRef at the time when the changeset spec was created.
+	BaseRev string `json:"baseRev"`
+	// Body description: The body (description) of the changeset on the code host.
+	Body string `json:"body"`
+	// Commits description: The Git commits with the proposed changes. These commits are pushed to the head ref.
+	Commits []*GitCommitDescription `json:"commits"`
+	// HeadRef description: The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.
+	HeadRef string `json:"headRef"`
+	// HeadRepository description: The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.
+	HeadRepository string `json:"headRepository"`
+	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
+	Published interface{} `json:"published,omitempty"`
+	// Title description: The title of the changeset on the code host.
+	Title string `json:"title"`
+}
 type BrandAssets struct {
 	// Logo description: The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG
 	Logo string `json:"logo,omitempty"`
@@ -524,6 +538,12 @@ type ExcludedGitoliteRepo struct {
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
+}
+type ExistingChangesetSpec struct {
+	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
+	BaseRepository string `json:"baseRepository"`
+	// ExternalID description: The ID that uniquely identifies the existing changeset on the code host
+	ExternalID string `json:"externalID"`
 }
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
@@ -1127,6 +1147,12 @@ type OtherExternalServiceConnection struct {
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
 }
+type OutputVariable struct {
+	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
+	Format string `json:"format,omitempty"`
+	// Value description: The value of the output, which can be a template string.
+	Value string `json:"value"`
+}
 type Overrides struct {
 	// Key description: The key that we want to override for example a username
 	Key string `json:"key,omitempty"`
@@ -1615,7 +1641,7 @@ type Step struct {
 	// If description: A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.
 	If interface{} `json:"if,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
-	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
+	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
 }
@@ -1632,7 +1658,15 @@ type TlsExternal struct {
 // TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 type TransformChanges struct {
 	// Group description: A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.
-	Group []interface{} `json:"group,omitempty"`
+	Group []*TransformChangesGroup `json:"group,omitempty"`
+}
+type TransformChangesGroup struct {
+	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
+	Branch string `json:"branch"`
+	// Directory description: The directory path (relative to the repository root) of the changes to include in this group.
+	Directory string `json:"directory"`
+	// Repository description: Only apply this transformation in the repository with this name (as it is known to Sourcegraph).
+	Repository string `json:"repository,omitempty"`
 }
 type UpdateIntervalRule struct {
 	// Interval description: An integer representing the number of minutes to wait until the next update

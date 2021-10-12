@@ -83,6 +83,7 @@ import {
 } from './search/backend'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { TemporarySettingsProvider } from './settings/temporary/TemporarySettingsProvider'
+import { TemporarySettingsStorage } from './settings/temporary/TemporarySettingsStorage'
 import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -144,6 +145,8 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     /** GraphQL client initialized asynchronously to restore persisted cache. */
     graphqlClient?: GraphQLClient
+
+    temporarySettingsStorage?: TemporarySettingsStorage
 
     viewerSubject: LayoutProps['viewerSubject']
 
@@ -320,7 +323,15 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         document.documentElement.classList.add('theme')
 
         getWebGraphQLClient()
-            .then(graphqlClient => this.setState({ graphqlClient }))
+            .then(graphqlClient => {
+                this.setState({
+                    graphqlClient,
+                    temporarySettingsStorage: new TemporarySettingsStorage(
+                        graphqlClient,
+                        window.context.isAuthenticatedUser
+                    ),
+                })
+            })
             .catch(error => {
                 console.error('Error initalizing GraphQL client', error)
             })
@@ -479,8 +490,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
 
-        const { authenticatedUser, graphqlClient } = this.state
-        if (authenticatedUser === undefined || graphqlClient === undefined) {
+        const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
+        if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
             return null
         }
 
@@ -490,7 +501,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             <ApolloProvider client={graphqlClient}>
                 <ErrorBoundary location={null}>
                     <ShortcutProvider>
-                        <TemporarySettingsProvider isAuthenticatedUser={window.context?.isAuthenticatedUser}>
+                        <TemporarySettingsProvider temporarySettingsStorage={temporarySettingsStorage}>
                             <SearchResultsCacheProvider>
                                 <Router history={history} key={0}>
                                     <Route
