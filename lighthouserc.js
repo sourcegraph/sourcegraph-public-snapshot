@@ -3,8 +3,12 @@
 const config = {
   ci: {
     collect: {
-      // Note: We override this URL in CI through ./dev/ci/yarn-lighthouse.sh
-      url: 'http://localhost:3443/',
+      url: [
+        'http://localhost:3443',
+        'http://localhost:3443/search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js',
+        'http://localhost:3443/github.com/sourcegraph/lighthouse-ci-test-repository',
+        'http://localhost:3443/github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js',
+      ],
       startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
       settings: {
         preset: 'desktop',

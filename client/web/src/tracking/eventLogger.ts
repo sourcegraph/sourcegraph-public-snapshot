@@ -189,7 +189,7 @@ export class EventLogger implements TelemetryService {
         let deviceID = cookies.get(DEVICE_ID_KEY)
         if (!deviceID) {
             deviceID = uuid.v4()
-            cookies.set(DEVICE_ID_KEY, deviceID)
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
         this.anonymousUserID = anonymousUserID

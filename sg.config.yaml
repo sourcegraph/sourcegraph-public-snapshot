@@ -333,27 +333,10 @@ commands:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
-  enterprise-web-standalone:
-    cmd: yarn workspace @sourcegraph/web serve:dev
-    install: yarn --no-progress
-    env:
-      ENTERPRISE: 1
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
   web-standalone-prod:
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
-  enterprise-web-standalone-prod:
-    cmd: yarn workspace @sourcegraph/web serve:prod
-    install: yarn workspace @sourcegraph/web run build
-    env:
-      ENTERPRISE: 1
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -911,6 +894,30 @@ commandsets:
       # For the alerting integration with frontend
       - enterprise-frontend
       - enterprise-web
+      - caddy
+
+  web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+    env:
+      ENTERPRISE: 1
+
+  oss-web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+
+  web-standalone-prod:
+    commands:
+      - web-standalone-prod
+      - caddy
+    env:
+      ENTERPRISE: 1
+
+  oss-web-standalone-prod:
+    commands:
+      - web-standalone-prod
       - caddy
 
 tests:

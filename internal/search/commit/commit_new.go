@@ -192,6 +192,7 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 		matchBody       string
 		matchHighlights []result.HighlightedRange
 		diffPreview     *result.HighlightedString
+		messagePreview  *result.HighlightedString
 	)
 
 	if diff {
@@ -204,6 +205,10 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 	} else {
 		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
 		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
+		messagePreview = &result.HighlightedString{
+			Value:      in.Message.Content,
+			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
+		}
 	}
 
 	return &result.CommitMatch{
@@ -222,12 +227,9 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 			Message: gitapi.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
-		Repo: repo,
-		MessagePreview: &result.HighlightedString{
-			Value:      in.Message.Content,
-			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
-		},
-		DiffPreview: diffPreview,
+		Repo:           repo,
+		MessagePreview: messagePreview,
+		DiffPreview:    diffPreview,
 		Body: result.HighlightedString{
 			Value:      matchBody,
 			Highlights: matchHighlights,

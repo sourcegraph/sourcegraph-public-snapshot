@@ -185,14 +185,24 @@ extend type Query {
     """
     Return dashboards visible to the authenticated user.
     """
-    insightDashboards(first: Int, after: String): InsightsDashboardConnection!
+    insightsDashboards(first: Int, after: String): InsightsDashboardConnection!
 }
 
 extend type Mutation {
     """
-    Delete a dashboard. Any views that would become dangling will be deleted.
+    Create a new dashboard.
+    """
+    createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Delete a dashboard.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
+
+    """
+    Associate an existing insight view with this dashboard.
+    """
+    addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
 }
 
 """
@@ -202,7 +212,7 @@ type InsightsDashboardConnection {
     """
     A list of dashboards.
     """
-    nodes: [InsightDashboard!]!
+    nodes: [InsightsDashboard!]!
 
     """
     Pagination information.
@@ -213,11 +223,12 @@ type InsightsDashboardConnection {
 """
 A dashboard of insights.
 """
-type InsightDashboard implements Node {
+type InsightsDashboard implements Node {
     """
     The Dashboard ID.
     """
     id: ID!
+
     """
     The Dashboard Title.
     """
@@ -227,6 +238,38 @@ type InsightDashboard implements Node {
     The list of associated insights to the dashboard.
     """
     views: InsightViewConnection
+}
+
+"""
+Input object for creating a new dashboard.
+"""
+input CreateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String!
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrants!
+}
+
+"""
+Input object for permissions to grant.
+"""
+input InsightsPermissionGrants {
+    """
+    Specific users to grant permissions to.
+    """
+    users: [ID!]
+    """
+    Organizations to grant permissions to.
+    """
+    organizations: [ID!]
+    """
+    Set global to true to grant global permission.
+    """
+    global: Boolean
 }
 
 """
@@ -252,4 +295,29 @@ type InsightView implements Node {
     The View ID.
     """
     id: ID!
+}
+
+"""
+Response wrapper object for insight dashboard mutations.
+"""
+type InsightsDashboardPayload {
+    """
+    The result dashboard after mutation.
+    """
+    dashboard: InsightsDashboard!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input AddInsightViewToDashboardInput {
+    """
+    ID of the insight view to attach to the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
 }

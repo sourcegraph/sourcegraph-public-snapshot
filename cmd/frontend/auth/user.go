@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -124,7 +125,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		}
 
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupSucceeded", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignupSucceded", "error", logErr)
 		}
 
@@ -132,7 +133,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 	}()
 	if err != nil {
 		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
+		if logErr := usagestats.LogBackendEvent(db, actor.FromContext(ctx).UID, deviceid.FromContext(ctx), "ExternalAuthSignupFailed", serviceTypeArg, serviceTypeArg, featureflag.FromContext(ctx), nil); logErr != nil {
 			log15.Warn("Failed to log event ExternalAuthSignUpFailed", "error", logErr)
 		}
 		return 0, safeErrMsg, err

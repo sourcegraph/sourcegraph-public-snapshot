@@ -526,6 +526,9 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 
 	hunkLines := strings.Split(string(r.hunk.Body), "\n")
 
+	// TODO: Clean up trailing newline logic:
+	// https://github.com/sourcegraph/sourcegraph/issues/20704
+
 	// Remove final empty line on files that end with a newline, as most code hosts do.
 	if hunkLines[len(hunkLines)-1] == "" {
 		hunkLines = hunkLines[:len(hunkLines)-1]
@@ -541,9 +544,11 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 
 	// Now do the same thing for trailing "-" lines. But only if they're not
 	// followed by an "unchanged" line.
+	// See https://github.com/sourcegraph/sourcegraph/pull/20673
 	var lastMinus = -1
 	for i, hunkLine := range hunkLines {
-		if hunkLine == " " {
+		// An "unchanged" line should start with an empty space.
+		if hunkLine[0:1] == " " {
 			lastMinus = -1
 		} else if hunkLine == "-" {
 			lastMinus = i
