@@ -172,6 +172,10 @@ func (svc *Service) EnsureDockerImages(ctx context.Context, spec *batcheslib.Bat
 	return images, nil
 }
 
+func (svc *Service) HasDockerImages(spec *batcheslib.BatchSpec) bool {
+	return len(spec.Steps) > 0
+}
+
 func (svc *Service) EnsureImage(ctx context.Context, name string) (docker.Image, error) {
 	img := svc.imageCache.Get(name)
 

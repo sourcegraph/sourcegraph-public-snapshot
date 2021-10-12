@@ -248,22 +248,26 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	}
 	opts.ui.ResolvingNamespaceSuccess(namespace)
 
-	opts.ui.PreparingContainerImages()
-	images, err := svc.EnsureDockerImages(ctx, batchSpec, opts.ui.PreparingContainerImagesProgress)
-	if err != nil {
-		return err
-	}
-	opts.ui.PreparingContainerImagesSuccess()
+	var workspaceCreator workspace.Creator
 
-	opts.ui.DeterminingWorkspaceCreatorType()
-	workspaceCreator := workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
-	if workspaceCreator.Type() == workspace.CreatorTypeVolume {
-		_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
+	if svc.HasDockerImages(batchSpec) {
+		opts.ui.PreparingContainerImages()
+		images, err := svc.EnsureDockerImages(ctx, batchSpec, opts.ui.PreparingContainerImagesProgress)
 		if err != nil {
 			return err
 		}
+		opts.ui.PreparingContainerImagesSuccess()
+
+		opts.ui.DeterminingWorkspaceCreatorType()
+		workspaceCreator = workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
+		if workspaceCreator.Type() == workspace.CreatorTypeVolume {
+			_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
+			if err != nil {
+				return err
+			}
+		}
+		opts.ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
 	}
-	opts.ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
 
 	opts.ui.ResolvingRepositories()
 	repos, err := svc.ResolveRepositories(ctx, batchSpec)
