@@ -338,6 +338,7 @@ func (c *CommitFilterResult) Invert(lc *LazyCommit) {
 		return
 	} else if len(c.MatchedFileDiffs) == 0 {
 		c.MatchedFileDiffs = nil
+		return
 	}
 	diff, err := lc.Diff() // error already checked
 	if err != nil {

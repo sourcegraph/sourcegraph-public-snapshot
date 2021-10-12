@@ -301,8 +301,8 @@ index 0000000000..7e54670557
 
 	mt, err := ToMatchTree(protocol.NewAnd(
 		&protocol.AuthorMatches{Expr: "Camden"},
-		&protocol.DiffModifiesFile{Expr: "test"},
-		protocol.NewAnd(
+		&protocol.DiffModifiesFile{Expr: "match"},
+		protocol.NewOr(
 			&protocol.DiffMatches{Expr: "result"},
 			&protocol.DiffMatches{Expr: "test"},
 		),
@@ -336,14 +336,17 @@ index 0000000000..7e54670557
 	require.Equal(t, expectedFormatted, formatted)
 
 	expectedRanges := result.Ranges{{
+		Start: result.Location{Offset: 27, Line: 0, Column: 27},
+		End:   result.Location{Offset: 32, Line: 0, Column: 32},
+	}, {
 		Start: result.Location{Offset: 115, Line: 3, Column: 60},
 		End:   result.Location{Offset: 121, Line: 3, Column: 66},
 	}, {
 		Start: result.Location{Offset: 152, Line: 6, Column: 24},
 		End:   result.Location{Offset: 158, Line: 6, Column: 30},
 	}, {
-		Start: result.Location{Offset: 288, Line: 8, Column: 33},
-		End:   result.Location{Offset: 292, Line: 8, Column: 37},
+		Start: result.Location{Offset: 282, Line: 8, Column: 27},
+		End:   result.Location{Offset: 287, Line: 8, Column: 32},
 	}, {
 		Start: result.Location{Offset: 345, Line: 11, Column: 9},
 		End:   result.Location{Offset: 349, Line: 11, Column: 13},
