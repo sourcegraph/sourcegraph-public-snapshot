@@ -11,7 +11,6 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 
-import { getDaysActiveCount } from '../../marketing/util'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isMacPlatform } from '../../util'
@@ -335,9 +334,11 @@ export const useSearchOnboardingTour = ({
     const tour = useTourWithSteps({ setQueryState })
     // True when the user has manually cancelled the tour
     const [hasCancelledTour, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
+    const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
 
-    const shouldShowTour = useMemo(() => showOnboardingTour && getDaysActiveCount() === 1 && !hasCancelledTour, [
+    const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
         showOnboardingTour,
+        daysActiveCount,
         hasCancelledTour,
     ])
 

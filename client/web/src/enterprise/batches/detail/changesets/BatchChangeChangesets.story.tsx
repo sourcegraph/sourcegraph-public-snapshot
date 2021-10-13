@@ -1,6 +1,7 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { addHours } from 'date-fns'
+import { noop } from 'lodash'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -107,6 +108,7 @@ add('List of changesets', () => (
         {props => (
             <BatchChangeChangesets
                 {...props}
+                refetchBatchChange={noop}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                 extensionsController={undefined as any}
@@ -123,6 +125,7 @@ add('List of expanded changesets', () => (
         {props => (
             <BatchChangeChangesets
                 {...props}
+                refetchBatchChange={noop}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                 extensionsController={undefined as any}

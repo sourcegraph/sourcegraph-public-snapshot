@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -216,7 +217,17 @@ func reposContainingPath(ctx context.Context, args *search.TextParameters, repos
 	newArgs.Repos = repos
 	newArgs.Query = q
 	newArgs.UseFullDeadline = true
-	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, &newArgs)
+
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &newArgs, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		return nil, err
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    newArgs.SearcherURLs,
+		PatternInfo:     newArgs.PatternInfo,
+		UseFullDeadline: newArgs.UseFullDeadline,
+	}
+	matches, _, err := unindexed.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, newArgs.Mode != search.SearcherOnly)
 	if err != nil {
 		return nil, err
 	}

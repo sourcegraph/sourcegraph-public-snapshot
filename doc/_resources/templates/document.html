@@ -14,7 +14,6 @@
   {{ end }}
   {{ if and .Content.Path hasRootURL }}
   {{ with .Content.Path }}
-  <base href="{{ . | absURL}}">
   <link rel="canonical" href="{{ . | absURL}}" itemprop="url" />
   <meta name="url" content="{{ . | absURL}}" />
   <meta name="twitter:url" content="{{ .| absURL}}" />

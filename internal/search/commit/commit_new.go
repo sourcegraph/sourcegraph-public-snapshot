@@ -22,40 +22,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
-func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.TextParametersForCommitParameters, params searchCommitsInReposParameters) error {
+type CommitSearch struct {
+	Query gitprotocol.Node
+	Repos []*search.RepositoryRevisions
+	Diff  bool
+	Limit int
+}
+
+func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range textParams.Repos {
+	for _, repoRev := range j.Repos {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			continue
 		}
 
-		rr := repoRev
-		query := params.CommitParams.Query
-		diff := params.CommitParams.Diff
-		limit := int(textParams.PatternInfo.FileMatchLimit)
-
 		args := &protocol.SearchRequest{
-			Repo:        rr.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(rr.Revs),
-			Query:       gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(query, query.IsCaseSensitive(), diff)...)),
-			IncludeDiff: diff,
-			Limit:       limit,
+			Repo:        repoRev.Repo.Name,
+			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
+			Query:       j.Query,
+			IncludeDiff: j.Diff,
+			Limit:       j.Limit,
 		}
 
 		onMatches := func(in []protocol.CommitMatch) {
 			res := make([]result.Match, 0, len(in))
 			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(rr.Repo, diff, protocolMatch))
+				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
 			}
-			params.ResultChannel.Send(streaming.SearchEvent{
+			stream.Send(streaming.SearchEvent{
 				Results: res,
 			})
 		}
 
 		g.Go(func() error {
 			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-			params.ResultChannel.Send(streaming.SearchEvent{
+			stream.Send(streaming.SearchEvent{
 				Stats: streaming.Stats{
 					IsLimitHit: limitHit,
 				},
@@ -63,8 +65,59 @@ func searchInReposNew(ctx context.Context, db dbutil.DB, textParams *search.Text
 			return err
 		})
 	}
-
 	return g.Wait()
+}
+
+func (j CommitSearch) Name() string {
+	if j.Diff {
+		return "Diff"
+	}
+	return "Commit"
+}
+
+func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err error) {
+	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
+		if err != nil {
+			return n
+		}
+
+		var expr *string
+		switch v := n.(type) {
+		case *protocol.AuthorMatches:
+			expr = &v.Expr
+		case *protocol.CommitterMatches:
+			expr = &v.Expr
+		default:
+			return n
+		}
+
+		var expanded []string
+		expanded, err = expandUsernamesToEmails(ctx, db, []string{*expr})
+		if err != nil {
+			return n
+		}
+
+		*expr = "(" + strings.Join(expanded, ")|(") + ")"
+		return n
+	})
+	return err
+}
+
+func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*CommitSearch, error) {
+	resultType := "commit"
+	if diff {
+		resultType = "diff"
+	}
+	if err := CheckSearchLimits(q, len(repos), resultType); err != nil {
+		return nil, err
+	}
+
+	return &CommitSearch{
+		Query: gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...),
+		Repos: repos,
+		Diff:  diff,
+		Limit: limit,
+	}, nil
 }
 
 func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
@@ -168,6 +221,7 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 		matchBody       string
 		matchHighlights []result.HighlightedRange
 		diffPreview     *result.HighlightedString
+		messagePreview  *result.HighlightedString
 	)
 
 	if diff {
@@ -180,6 +234,10 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 	} else {
 		matchBody = "```COMMIT_EDITMSG\n" + in.Message.Content + "\n```"
 		matchHighlights = searchRangesToHighlights(matchBody, in.Message.MatchedRanges.Add(result.Location{Line: 1, Offset: len("```COMMIT_EDITMSG\n")}))
+		messagePreview = &result.HighlightedString{
+			Value:      in.Message.Content,
+			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
+		}
 	}
 
 	return &result.CommitMatch{
@@ -198,12 +256,9 @@ func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.Comm
 			Message: gitapi.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
-		Repo: repo,
-		MessagePreview: &result.HighlightedString{
-			Value:      in.Message.Content,
-			Highlights: searchRangesToHighlights(in.Message.Content, in.Message.MatchedRanges),
-		},
-		DiffPreview: diffPreview,
+		Repo:           repo,
+		MessagePreview: messagePreview,
+		DiffPreview:    diffPreview,
 		Body: result.HighlightedString{
 			Value:      matchBody,
 			Highlights: matchHighlights,

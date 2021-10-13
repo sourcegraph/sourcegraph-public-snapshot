@@ -5940,7 +5940,7 @@ Query: `sum(increase(src_codeintel_background_repositories_scanned_total{job=~"^
 
 <p class="subtitle">Lsif upload records scanned every 5m</p>
 
-Number of upload recrods considered for data retention scanning every 5m
+Number of upload records considered for data retention scanning every 5m
 
 This panel has no related alerts.
 
@@ -5957,6 +5957,27 @@ Query: `sum(increase(src_codeintel_background_upload_records_scanned_total{job=~
 
 <br />
 
+#### worker: codeintel_background_commits_scanned_total
+
+<p class="subtitle">Lsif upload commits scanned every 5m</p>
+
+Number of commits considered for data retention scanning every 5m
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100502` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(increase(src_codeintel_background_commits_scanned_total{job=~"^worker.*"}[5m]))`
+
+</details>
+
+<br />
+
 #### worker: codeintel_background_upload_records_expired_total
 
 <p class="subtitle">Lsif upload records expired every 5m</p>
@@ -5965,7 +5986,7 @@ Number of upload records found to be expired every 5m
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100502` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/worker/worker?viewPanel=100503` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code-intel team](https://about.sourcegraph.com/handbook/engineering/code-intelligence).*</sub>
 

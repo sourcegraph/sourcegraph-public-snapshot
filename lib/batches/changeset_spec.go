@@ -50,7 +50,7 @@ func ParseChangesetSpecExternalID(id interface{}) (string, error) {
 	case float64:
 		sid = strconv.FormatFloat(tid, 'f', -1, 64)
 	default:
-		return "", errors.Errorf("cannot convert value of type %T into a valid external ID: expected string or int", id)
+		return "", NewValidationError(errors.Newf("cannot convert value of type %T into a valid external ID: expected string or int", id))
 	}
 
 	return sid, nil

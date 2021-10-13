@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import compression from 'compression'
 import historyApiFallback from 'connect-history-api-fallback'
 import express, { RequestHandler } from 'express'
 import { createProxyMiddleware } from 'http-proxy-middleware'
@@ -11,10 +12,13 @@ import {
     environmentConfig,
     getCSRFTokenAndCookie,
     STATIC_ASSETS_PATH,
-    WEB_SERVER_URL,
+    STATIC_INDEX_PATH,
+    HTTP_WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
+    shouldCompressResponse,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
 async function startProductionServer(): Promise<void> {
     if (!SOURCEGRAPH_API_URL) {
@@ -27,13 +31,13 @@ async function startProductionServer(): Promise<void> {
 
     const app = express()
 
+    // Compress all HTTP responses
+    app.use(compression({ filter: shouldCompressResponse }))
     // Serve index.html in place of any 404 responses.
     app.use(historyApiFallback() as RequestHandler)
     // Attach `CSRF_COOKIE_NAME` cookie to every response to avoid "CSRF token is invalid" API error.
     app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
 
-    // Serve index.html.
-    app.use(express.static(STATIC_ASSETS_PATH))
     // Serve build artifacts.
     app.use('/.assets', express.static(STATIC_ASSETS_PATH))
 
@@ -49,8 +53,12 @@ async function startProductionServer(): Promise<void> {
         )
     )
 
-    app.listen(SOURCEGRAPH_HTTPS_PORT, () => {
-        signale.success(`Production server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    // Redirect remaining routes to index.html
+    app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))
+
+    app.listen(CLIENT_PROXY_DEVELOPMENT_PORT, () => {
+        signale.info(`Production HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
+        signale.success(`Production HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     })
 }
 
