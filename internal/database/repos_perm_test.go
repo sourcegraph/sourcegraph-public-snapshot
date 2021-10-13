@@ -74,7 +74,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := authzQuery(false, true, int32(0), authz.Read)
+		want := authzQuery(false, true, true, int32(0), authz.Read)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -94,14 +94,14 @@ func TestAuthzQueryConds(t *testing.T) {
 			setup: func(t *testing.T) context.Context {
 				return actor.WithInternalActor(context.Background())
 			},
-			wantQuery: authzQuery(true, false, int32(0), authz.Read),
+			wantQuery: authzQuery(true, false, true, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider and not allow by default",
 			setup: func(t *testing.T) context.Context {
 				return context.Background()
 			},
-			wantQuery: authzQuery(false, false, int32(0), authz.Read),
+			wantQuery: authzQuery(false, false, true, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider but allow by default",
@@ -109,7 +109,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				return context.Background()
 			},
 			authzAllowByDefault: true,
-			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
+			wantQuery:           authzQuery(true, false, true, int32(0), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin",
@@ -122,7 +122,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: authzQuery(true, false, int32(1), authz.Read),
+			wantQuery: authzQuery(true, false, true, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
@@ -137,7 +137,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, true, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -150,7 +150,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: authzQuery(false, false, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, true, int32(1), authz.Read),
 		},
 	}
 
@@ -248,6 +248,92 @@ VALUES (%s, %s, NULLIF(%s, 0), '')
 		t.Fatal(err)
 	}
 	wantRepos := []*types.Repo{alicePublicRepo, alicePrivateRepo}
+	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
+		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestRepos_orgMemberCanViewOrgCode(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+
+	// Add a single user who is a member of an org
+	user, err := Users(db).Create(ctx, NewUser{
+		Email:                 "alice@example.com",
+		Username:              "alice",
+		Password:              "alice",
+		EmailVerificationCode: "alice",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = Users(db).SetIsSiteAdmin(ctx, user.ID, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	displayName := "Acme Corp"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = OrgMembers(db).Create(ctx, org.ID, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Add both a public and private repo
+	internalCtx := actor.WithInternalActor(ctx)
+	privateRepo := mustCreate(internalCtx, t, db,
+		&types.Repo{
+			Name:    "private_repo",
+			Private: true,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          "private_repo",
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "https://github.com/",
+			},
+		},
+	)[0]
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	orgExternalService := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		NamespaceOrgID: org.ID,
+	}
+	err = ExternalServices(db).Create(ctx, confGet, orgExternalService)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Set it up so that org added the repo via an external service
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, org_id, clone_url)
+VALUES (%s, %s, %s, '')
+`, orgExternalService.ID, privateRepo.ID, org.ID)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// User should be able to see both public and private repos of the org
+	userCtx := actor.WithActor(ctx, &actor.Actor{UID: user.ID})
+	repos, err := Repos(db).List(userCtx, ReposListOptions{
+		OrgID: org.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantRepos := []*types.Repo{privateRepo}
 	if diff := cmp.Diff(wantRepos, repos, cmpopts.IgnoreFields(types.Repo{}, "Sources")); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
