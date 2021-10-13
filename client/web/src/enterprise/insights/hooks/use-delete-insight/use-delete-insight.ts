@@ -2,7 +2,7 @@ import { useCallback, useContext, useState } from 'react'
 
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { InsightsApiContext } from '../../core/backend/api-provider';
+import { InsightsApiContext } from '../../core/backend/api-provider'
 import { Insight } from '../../core/types'
 
 export interface UseDeleteInsightAPI {

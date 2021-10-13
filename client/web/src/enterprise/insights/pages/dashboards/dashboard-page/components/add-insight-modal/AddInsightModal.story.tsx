@@ -112,14 +112,5 @@ const SETTINGS_CASCADE: SettingsCascadeOrError<Settings> = {
 add('AddInsightModal', () => {
     const [open, setOpen] = useState<boolean>(true)
 
-    return (
-        <>
-            {open && (
-                <AddInsightModal
-                    dashboard={dashboard}
-                    onClose={() => setOpen(false)}
-                />
-            )}
-        </>
-    )
+    return <>{open && <AddInsightModal dashboard={dashboard} onClose={() => setOpen(false)} />}</>
 })

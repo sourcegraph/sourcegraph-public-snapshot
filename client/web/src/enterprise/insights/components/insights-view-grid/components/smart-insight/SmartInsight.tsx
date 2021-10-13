@@ -25,13 +25,7 @@ export function SmartInsight<D extends keyof ViewContexts>(props: SmartInsightPr
     const { insight, telemetryService, where, context, ...otherProps } = props
 
     if (isSearchBasedInsight(insight) && isSearchBackendBasedInsight(insight)) {
-        return (
-            <BackendInsight
-                insight={insight}
-                telemetryService={telemetryService}
-                {...otherProps}
-            />
-        )
+        return <BackendInsight insight={insight} telemetryService={telemetryService} {...otherProps} />
     }
 
     // Search based extension and lang stats insight are handled by built-in fetchers

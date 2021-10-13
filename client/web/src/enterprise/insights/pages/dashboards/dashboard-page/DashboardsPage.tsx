@@ -72,10 +72,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     className="mb-3"
                 />
 
-                <DashboardsContent
-                    telemetryService={telemetryService}
-                    dashboardID={dashboardID}
-                />
+                <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
         </div>
     )

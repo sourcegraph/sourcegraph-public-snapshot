@@ -1,4 +1,4 @@
-import { isEqual } from 'lodash';
+import { isEqual } from 'lodash'
 import React, { memo } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'

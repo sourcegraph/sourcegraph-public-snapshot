@@ -5,7 +5,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
@@ -28,10 +28,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const { getReachableInsights, updateDashboardInsightIds } = useContext(InsightsApiContext)
 
     const insights = useObservable(
-        useMemo(
-            () => getReachableInsights(dashboard.owner.id),
-            [dashboard.owner.id, getReachableInsights]
-        )
+        useMemo(() => getReachableInsights(dashboard.owner.id), [dashboard.owner.id, getReachableInsights])
     )
 
     const initialValues = useMemo<AddInsightFormValues>(
@@ -49,7 +46,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
             await updateDashboardInsightIds({
                 insightIds,
                 dashboardSettingKey: dashboard.settingsKey,
-                dashboardOwnerId: dashboard.owner.id
+                dashboardOwnerId: dashboard.owner.id,
             }).toPromise()
 
             onClose()
@@ -61,7 +58,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     if (insights === undefined) {
         return (
             <Dialog className={styles.modal} aria-label="Add insights to dashboard modal">
-                <LoadingSpinner/>
+                <LoadingSpinner />
             </Dialog>
         )
     }

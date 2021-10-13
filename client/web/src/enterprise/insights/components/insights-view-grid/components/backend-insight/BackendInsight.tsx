@@ -30,7 +30,8 @@ import { DrillDownInsightCreationFormValues } from './components/drill-down-filt
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
 
 interface BackendInsightProps
-    extends TelemetryProps, React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
+    extends TelemetryProps,
+        React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
 }
 
@@ -41,7 +42,9 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { telemetryService, insight, ref, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
-    const { getBackendInsight, createInsightWithNewFilters, updateInsightDrillDownFilters } = useContext(InsightsApiContext)
+    const { getBackendInsight, createInsightWithNewFilters, updateInsightDrillDownFilters } = useContext(
+        InsightsApiContext
+    )
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -81,7 +84,6 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
 
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
         try {
-
             await updateInsightDrillDownFilters(insight, filters).toPromise()
 
             setOriginalInsightFilters(filters)

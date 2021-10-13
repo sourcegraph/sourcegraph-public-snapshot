@@ -1,7 +1,10 @@
-import { Settings } from '../../../../../../../../../../schema/settings.schema'
+import { useCallback, useContext } from 'react'
+
 import { useField, useFieldAPI } from '../../../../../../../../components/form/hooks/useField'
 import { Form, FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../../../components/form/hooks/useForm'
-import { useInsightTitleValidator } from '../../../../../../../../components/form/hooks/useInsightTitleValidator'
+import { AsyncValidator } from '../../../../../../../../components/form/hooks/utils/use-async-validation'
+import { createRequiredValidator } from '../../../../../../../../components/form/validators'
+import { InsightsApiContext } from '../../../../../../../../core/backend/api-provider'
 import { InsightTypePrefix } from '../../../../../../../../core/types'
 import { isUserSubject, SupportedInsightSubject } from '../../../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries, InsightStep } from '../../../../types'
@@ -13,12 +16,9 @@ import {
     seriesRequired,
 } from '../../validators'
 
-export interface UseInsightCreationFormProps {
-    /**
-     * Final (merged) settings cascade  objects
-     */
-    settings?: Settings | null
+const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 
+export interface UseInsightCreationFormProps {
     /**
      * List of all supportable insight subjects
      */
@@ -61,7 +61,9 @@ export interface InsightCreationForm {
  * Hooks absorbs all insight creation form logic (field state managements, validations, fields dependencies)
  */
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
-    const { subjects = [], initialValue = {}, touched, settings, onSubmit, onChange } = props
+    const { subjects = [], initialValue = {}, touched, onSubmit, onChange } = props
+
+    const { findInsightByName } = useContext(InsightsApiContext)
 
     // Calculate initial value for visibility settings
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
@@ -92,12 +94,27 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
 
     const isAllReposMode = allReposMode.input.value
 
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useInsightTitleValidator({ settings, insightType: InsightTypePrefix.search })
+    const asyncTitleValidator = useCallback<AsyncValidator<string>>(
+        async title => {
+            if (!title || title.trim() === '' || title === initialValue?.title) {
+                return
+            }
+
+            const possibleInsight = await findInsightByName(title, InsightTypePrefix.search).toPromise()
+
+            if (possibleInsight) {
+                return 'An insight with this name already exists. Please set a different name for the new insight.'
+            }
+
+            return
+        },
+        [findInsightByName, initialValue?.title]
+    )
+
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
-        validators: { sync: titleValidator },
+        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
     })
 
     const repositories = useField({

@@ -5,14 +5,14 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { InsightDashboard as InsightDashboardConfiguration } from '../../../../schema/settings.schema';
-import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
+import { InsightDashboard as InsightDashboardConfiguration } from '../../../../schema/settings.schema'
+import { ExtensionInsight, Insight, InsightDashboard, InsightTypePrefix, SettingsBasedInsightDashboard } from '../types'
 import {
     SearchBackendBasedInsight,
     SearchBasedBackendFilters,
-    SearchBasedInsightSeries
+    SearchBasedInsightSeries,
 } from '../types/insight/search-insight'
-import { SupportedInsightSubject } from '../types/subjects';
+import { SupportedInsightSubject } from '../types/subjects'
 
 import { RepositorySuggestion } from './requests/fetch-repository-suggestions'
 
@@ -77,8 +77,8 @@ export type ReachableInsight = Insight & {
 
 export interface DashboardInfo {
     dashboardSettingKey: string
-    dashboardOwnerId: string,
-    insightIds: string[],
+    dashboardOwnerId: string
+    insightIds: string[]
 }
 
 export interface CreateInsightWithFiltersInputs {
@@ -98,7 +98,19 @@ export interface DashboardInput {
     visibility: string
 }
 
+export interface InsightCreateRequest {
+    insight: Insight
+    subjectId: string
+    dashboard: InsightDashboard | null
+}
+
+export interface UpdateInsightRequest {
+    oldInsight: Insight
+    newInsight: Insight
+}
+
 export interface CodeInsightsBackend {
+    // Dashboards
 
     /**
      * Returns all accessible code insights dashboards for the current user.
@@ -106,12 +118,31 @@ export interface CodeInsightsBackend {
      */
     getDashboards: () => Observable<InsightDashboard[]>
 
-    getDashboard: (dashboardId:string) => Observable<SettingsBasedInsightDashboard | null>
-
-    createDashboard: (input: DashboardInput) => Observable<void>
-    updateDashboard: (input: UpdateDashboardInput) => Observable<void>
+    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
 
     findDashboardByName: (name: string) => Observable<InsightDashboardConfiguration | null>
+
+    createDashboard: (input: DashboardInput) => Observable<void>
+
+    updateDashboard: (input: UpdateDashboardInput) => Observable<void>
+
+    updateDashboardInsightIds: (options: DashboardInfo) => Observable<void>
+
+    deleteDashboard: (dashboardSettingKey: string, dashboardOwnerId: string) => Observable<void>
+
+    // Insights
+
+    /**
+     * Return all accessible for user insights that are filtered by ids param.
+     * If ids is empty list return all insights.
+     *
+     * @param ids - list of insight ids
+     */
+    getInsights: (ids?: string[]) => Observable<Insight[]>
+
+    getInsightById: (id: string) => Observable<Insight | null>
+
+    findInsightByName: (name: string, type: InsightTypePrefix) => Observable<Insight | null>
 
     /**
      * Returns all reachable subject's insights by owner id.
@@ -121,15 +152,16 @@ export interface CodeInsightsBackend {
      */
     getReachableInsights: (ownerId: string) => Observable<ReachableInsight[]>
 
-    getInsights: (ids: string[]) => Observable<Insight[]>
+    createInsight: (event: InsightCreateRequest) => Observable<void>
 
-    updateInsightDrillDownFilters: (insight: SearchBackendBasedInsight, filters: SearchBasedBackendFilters) => Observable<void>
+    updateInsight: (event: UpdateInsightRequest) => Observable<void[]>
+
+    updateInsightDrillDownFilters: (
+        insight: SearchBackendBasedInsight,
+        filters: SearchBasedBackendFilters
+    ) => Observable<void>
 
     createInsightWithNewFilters: (options: CreateInsightWithFiltersInputs) => Observable<void>
-
-    updateDashboardInsightIds: (options: DashboardInfo) => Observable<void>
-
-    deleteDashboard: (dashboardSettingKey: string, dashboardOwnerId: string) => Observable<void>
 
     deleteInsight: (insightId: string) => Observable<void[]>
 

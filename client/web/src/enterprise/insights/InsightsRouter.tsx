@@ -12,8 +12,8 @@ import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
 import { lazyComponent } from '../../util/lazyComponent'
 
-import { InsightsApiContext } from './core/backend/api-provider';
-import { CodeInsightsSettingBasedBackend } from './core/backend/create-insights-api';
+import { InsightsApiContext } from './core/backend/api-provider'
+import { CodeInsightsSettingBasedBackend } from './core/backend/create-insights-api'
 import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
 import { CreationRoutes } from './pages/insights/creation/CreationRoutes'
@@ -46,14 +46,11 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
     const match = useRouteMatch()
 
-    const api = useMemo(
-        () => {
-            console.log('recreate api context')
+    const api = useMemo(() => {
+        console.log('recreate api context')
 
-            return new CodeInsightsSettingBasedBackend(settingsCascade, platformContext)
-        },
-        [platformContext, settingsCascade]
-    )
+        return new CodeInsightsSettingBasedBackend(settingsCascade, platformContext)
+    }, [platformContext, settingsCascade])
 
     return (
         <InsightsApiContext.Provider value={api}>
@@ -82,10 +79,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                     )}
                 />
 
-                <DashboardsRoutes
-                    authenticatedUser={authenticatedUser}
-                    telemetryService={telemetryService}
-                />
+                <DashboardsRoutes authenticatedUser={authenticatedUser} telemetryService={telemetryService} />
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>

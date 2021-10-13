@@ -9,11 +9,12 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 
 import { InsightDashboard as InsightDashboardConfiguration, Settings } from '../../../../schema/settings.schema'
 import { getInsightsDashboards } from '../../hooks/use-dashboards/use-dashboards'
-import { getSubjectDashboardByID } from '../../hooks/use-dashboards/utils'
+import { getInsightIdsFromSettings, getSubjectDashboardByID } from '../../hooks/use-dashboards/utils'
 import { getDeleteInsightEditOperations } from '../../hooks/use-delete-insight/delete-helpers'
 import { findInsightById } from '../../hooks/use-insight/use-insight'
 import { createSanitizedDashboard } from '../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../pages/dashboards/dashboard-page/components/add-insight-modal/hooks/get-reachable-insights'
+import { findDashboardByUrlId } from '../../pages/dashboards/dashboard-page/components/dashboards-content/utils/find-dashboard-by-url-id'
 import {
     addDashboardToSettings,
     addInsightToDashboard,
@@ -25,6 +26,7 @@ import { addInsightToSettings } from '../settings-action/insights'
 import {
     Insight,
     InsightDashboard,
+    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightTypePrefix,
     isVirtualDashboard,
     SettingsBasedInsightDashboard,
@@ -45,9 +47,28 @@ import {
     CreateInsightWithFiltersInputs,
     DashboardInfo,
     DashboardInput,
+    InsightCreateRequest,
     ReachableInsight,
     UpdateDashboardInput,
+    UpdateInsightRequest,
 } from './types'
+import { usePersistEditOperations } from '../../hooks/use-persist-edit-operations'
+import { getUpdatedSubjectSettings } from '../../pages/insights/edit-insight/hooks/use-update-settings-subjects/get-updated-subject-settings'
+
+const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
+    const dashboardSettingKey =
+        !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
+            ? dashboard.settingsKey
+            : undefined
+
+    const transforms = [
+        (settings: string) => addInsightToSettings(settings, insight),
+        (settings: string) =>
+            dashboardSettingKey ? addInsightToDashboard(settings, dashboardSettingKey, insight.id) : settings,
+    ]
+
+    return transforms.reduce((settings, transformer) => transformer(settings), settings)
+}
 
 export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
     constructor(private settingCascade: SettingsCascadeOrError<Settings>, private platformContext: PlatformContext) {}
@@ -75,6 +96,23 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         return of(getInsightsDashboards(subjects, final))
     }
 
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
+        this.getDashboards().pipe(
+            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? '') ?? null))
+        )
+
+    public createInsight = (event: InsightCreateRequest): Observable<void> => {
+        const { insight, subjectId, dashboard } = event
+
+        return this.getSubjectSettings(subjectId).pipe(
+            switchMap(settings => {
+                const updatedSettings = addInsight(settings.contents, insight, dashboard)
+
+                return this.updateSubjectSettings(this.platformContext, subjectId, updatedSettings)
+            })
+        )
+    }
+
     public updateDashboardInsightIds = (options: DashboardInfo): Observable<void> => {
         const { dashboardOwnerId, dashboardSettingKey, insightIds } = options
 
@@ -99,8 +137,37 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
     public getReachableInsights = (ownerId: string): Observable<ReachableInsight[]> =>
         of(getReachableInsights({ settingsCascade: this.settingCascade, ownerId }))
 
-    public getInsights = (ids: string[]): Observable<Insight[]> =>
-        of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
+    public getInsights = (ids?: string[]): Observable<Insight[]> => {
+        if (ids) {
+            // Return filtered by ids list of insights
+            return of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
+        }
+
+        // Return all insights
+        const { final } = this.settingCascade
+        const normalizedFinalSettings = !final || isErrorLike(final) ? {} : final
+        const insightIds = getInsightIdsFromSettings(normalizedFinalSettings)
+
+        return of(insightIds.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
+    }
+
+    public getInsightById = (insightId: string): Observable<Insight | null> =>
+        this.getInsights([insightId]).pipe(
+            switchMap(result => {
+                const firstMatch = result[0]
+
+                return of(firstMatch ?? null)
+            })
+        )
+
+    public updateInsight = (event: UpdateInsightRequest): Observable<void[]> => {
+        const editOperations = getUpdatedSubjectSettings({
+            ...event,
+            settingsCascade: this.settingCascade,
+        })
+
+        return this.persistChanges(editOperations)
+    }
 
     public updateInsightDrillDownFilters = (
         insight: SearchBackendBasedInsight,
@@ -243,7 +310,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
                 const editedSettings = addDashboardToSettings(settings.contents, dashboard)
 
                 return this.updateSubjectSettings(this.platformContext, input.visibility, editedSettings)
-            }),
+            })
         )
 
     public deleteInsight = (insightId: string): Observable<void[]> => {
@@ -263,6 +330,25 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         })
 
         return this.persistChanges(deleteInsightOperations)
+    }
+
+    public findInsightByName(title: string, type: InsightTypePrefix): Observable<Insight | null> {
+        return of(this.settingCascade).pipe(
+            switchMap(settingCascade => {
+                const finalSettings = !isErrorLike(settingCascade.final) ? settingCascade.final ?? {} : {}
+                const normalizedSettingsKeys = Object.keys(finalSettings)
+                const normalizedInsightAllReposKeys = Object.keys(
+                    finalSettings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
+                )
+
+                const existingInsightNames = new Set(
+                    [...normalizedSettingsKeys, ...normalizedInsightAllReposKeys]
+                        // According to our convention about insights name <insight type>.insight.<insight name>
+                        .filter(key => key.startsWith(`${type}`))
+                        .map(key => camelCase(key.split(`${type}.`).pop()))
+                )
+            })
+        )
     }
 
     private persistChanges = (operations: SettingsOperation[]): Observable<void[]> => {
@@ -316,4 +402,6 @@ export class CodeInsightsFakeBackend implements CodeInsightsBackend {
     public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
     public deleteInsight = errorMockMethod('deleteInsight')
+    public getDashboardById = errorMockMethod('getDashboardById')
+    public createInsight = errorMockMethod('createInsight')
 }

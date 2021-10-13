@@ -1,11 +1,11 @@
 import classnames from 'classnames'
-import { camelCase } from 'lodash';
+import { camelCase } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { Link } from 'react-router-dom'
 
-import { asError } from '@sourcegraph/shared/src/util/errors';
+import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
@@ -15,11 +15,13 @@ import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
-import { FORM_ERROR } from '../../../components/form/hooks/useForm';
+import { FORM_ERROR } from '../../../components/form/hooks/useForm'
 import { InsightsApiContext } from '../../../core/backend/api-provider'
+import { isVirtualDashboard } from '../../../core/types'
+import { isSettingsBasedInsightsDashboard } from '../../../core/types/dashboard/real-dashboard'
 import {
     DashboardCreationFields,
-    InsightsDashboardCreationContent
+    InsightsDashboardCreationContent,
 } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
@@ -36,19 +38,19 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const { dashboardId, authenticatedUser } = props
 
     const history = useHistory()
-    const { getDashboard, getInsightSubjects, updateDashboard } = useContext(InsightsApiContext)
+    const { getDashboardById, getInsightSubjects, updateDashboard } = useContext(InsightsApiContext)
 
     // Load edit dashboard information
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
-    const dashboard = useObservable(useMemo(() => getDashboard(dashboardId), [getDashboard, dashboardId]))
+    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
 
     // Loading state
-    if (!subjects || dashboard === undefined) {
+    if (subjects === undefined || dashboard === undefined) {
         return <LoadingSpinner />
     }
 
     // In case if we got null that means we couldn't find this dashboard
-    if (dashboard === null) {
+    if (dashboard === null || isVirtualDashboard(dashboard) || !isSettingsBasedInsightsDashboard(dashboard)) {
         return (
             <HeroPage
                 icon={MapSearchIcon}
@@ -65,11 +67,9 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     }
 
     // Convert dashboard info to initial form values
-    const dashboardInitialValues = dashboard
-        ? { name: dashboard.title, visibility: dashboard.owner.id }
-        : undefined
+    const dashboardInitialValues = dashboard ? { name: dashboard.title, visibility: dashboard.owner.id } : undefined
 
-    const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<void| unknown> => {
+    const handleSubmit = async (dashboardValues: DashboardCreationFields): Promise<void | unknown> => {
         if (!dashboard) {
             return
         }
@@ -77,7 +77,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         try {
             await updateDashboard({
                 previousDashboard: dashboard,
-                nextDashboardInput: dashboardValues
+                nextDashboardInput: dashboardValues,
             }).toPromise()
 
             history.push(`/insights/dashboards/${camelCase(dashboardValues.name.trim())}`)

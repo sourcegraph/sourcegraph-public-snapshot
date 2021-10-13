@@ -1,6 +1,6 @@
 import React, { ReactNode, useCallback, useContext } from 'react'
 
-import { asError } from '@sourcegraph/shared/src/util/errors';
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
@@ -8,10 +8,10 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation';
-import { createRequiredValidator } from '../../../../../components/form/validators';
+import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
+import { createRequiredValidator } from '../../../../../components/form/validators'
 import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
-import { InsightsApiContext } from '../../../../../core/backend/api-provider';
+import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import {
     isGlobalSubject,
     isOrganizationSubject,
@@ -64,29 +64,32 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
         onSubmit,
     })
 
-    const asyncNameValidator = useCallback<AsyncValidator<string>>(async name => {
-        // Pass empty value and initial value (for edit page original name is acceptable)
-        if (!name || name === '' || name === initialValues?.name) {
-            return
-        }
+    const asyncNameValidator = useCallback<AsyncValidator<string>>(
+        async name => {
+            // Pass empty value and initial value (for edit page original name is acceptable)
+            if (!name || name === '' || name === initialValues?.name) {
+                return
+            }
 
-        try {
-            const possibleDashboard = await findDashboardByName(name).toPromise()
+            try {
+                const possibleDashboard = await findDashboardByName(name).toPromise()
 
-            return possibleDashboard !== null
-                ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
-                : undefined
-        } catch (error) {
-            return asError(error).message || 'Unknown Error'
-        }
-    }, [findDashboardByName, initialValues?.name])
+                return possibleDashboard !== null
+                    ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
+                    : undefined
+            } catch (error) {
+                return asError(error).message || 'Unknown Error'
+            }
+        },
+        [findDashboardByName, initialValues?.name]
+    )
 
     const name = useField({
         name: 'name',
         formApi: formAPI,
         validators: {
             sync: DASHBOARD_TITLE_SYNC_VALIDATOR,
-            async: asyncNameValidator
+            async: asyncNameValidator,
         },
     })
 

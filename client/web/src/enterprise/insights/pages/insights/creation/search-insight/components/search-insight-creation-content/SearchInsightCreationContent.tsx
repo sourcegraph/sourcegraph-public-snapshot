@@ -2,8 +2,6 @@ import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
@@ -18,8 +16,6 @@ import styles from './SearchInsightCreationContent.module.scss'
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
     mode?: 'creation' | 'edit'
-    /** Final settings cascade. Used for title field validation. */
-    settings?: Settings | null
 
     /** List of all supportable insight subjects */
     subjects?: SupportedInsightSubject[]
@@ -42,7 +38,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const {
         mode = 'creation',
         subjects = [],
-        settings,
         initialValue,
         className,
         dataTestId,
@@ -63,7 +58,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         stepValue,
         allReposMode,
     } = useInsightCreationForm({
-        settings,
         subjects,
         initialValue,
         touched: isEditMode,

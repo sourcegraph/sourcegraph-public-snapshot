@@ -24,7 +24,7 @@ const EMPTY_EXTENSION_LIST: ViewProviderResult[] = []
  * Enterprise version. For Sourcegraph OSS see `./src/insights/sections` components.
  */
 export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionViewsDirectorySectionProps> = props => {
-    const { settingsCascade, extensionsController, uri, className = '' } = props
+    const { extensionsController, uri, className = '' } = props
 
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { directory: true })
 
@@ -101,8 +101,6 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
                     key={insight.id}
                     insight={insight}
                     telemetryService={props.telemetryService}
-                    platformContext={props.platformContext}
-                    settingsCascade={settingsCascade}
                     where="directory"
                     context={directoryPageContext}
                 />

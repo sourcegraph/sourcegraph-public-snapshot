@@ -1,13 +1,13 @@
 import React, { useContext, useMemo } from 'react'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner';
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
-import { InsightsApiContext } from '../../../../../../../core/backend/api-provider';
+import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
 import { InsightDashboard } from '../../../../../../../core/types'
-import { SupportedInsightSubject } from '../../../../../../../core/types/subjects';
+import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
@@ -29,24 +29,17 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
     const { getInsights } = useContext(InsightsApiContext)
     const insightIds = useDistinctValue(dashboardInsightIds)
 
-    const insights = useObservable(
-        useMemo(() => getInsights(insightIds), [getInsights, insightIds])
-    )
+    const insights = useObservable(useMemo(() => getInsights(insightIds), [getInsights, insightIds]))
 
     if (insights === undefined) {
-        return (
-            <LoadingSpinner/>
-        )
+        return <LoadingSpinner />
     }
 
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
             <div>
                 {insights.length > 0 ? (
-                    <SmartInsightsViewGrid
-                        insights={insights}
-                        telemetryService={telemetryService}
-                    />
+                    <SmartInsightsViewGrid insights={insights} telemetryService={telemetryService} />
                 ) : (
                     <EmptyInsightDashboard
                         subjects={subjects}

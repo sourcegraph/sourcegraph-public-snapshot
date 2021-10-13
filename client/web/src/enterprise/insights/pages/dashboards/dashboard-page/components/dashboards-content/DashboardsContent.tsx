@@ -3,12 +3,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner';
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { InsightsApiContext } from '../../../../../core/backend/api-provider';
+import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
@@ -23,7 +23,7 @@ import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
 import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
-export interface DashboardsContentProps extends TelemetryProps{
+export interface DashboardsContentProps extends TelemetryProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -86,7 +86,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     }
 
     if (dashboards === undefined) {
-        return (<LoadingSpinner/>)
+        return <LoadingSpinner />
     }
 
     const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
@@ -126,17 +126,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             )}
 
             {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
-                <AddInsightModal
-                    dashboard={currentDashboard}
-                    onClose={() => setAddInsightsState(false)}
-                />
+                <AddInsightModal dashboard={currentDashboard} onClose={() => setAddInsightsState(false)} />
             )}
 
             {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
-                <DeleteDashboardModal
-                    dashboard={currentDashboard}
-                    onClose={() => setDeleteDashboardActive(false)}
-                />
+                <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
         </div>
     )

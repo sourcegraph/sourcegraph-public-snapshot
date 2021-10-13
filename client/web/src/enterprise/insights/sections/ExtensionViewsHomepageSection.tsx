@@ -23,7 +23,7 @@ const EMPTY_EXTENSION_LIST: ViewProviderResult[] = []
  * Enterprise version. For Sourcegraph OSS see `./enterprise/insights/sections` components.
  */
 export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionViewsHomepageSectionProps> = props => {
-    const { telemetryService, platformContext, settingsCascade, extensionsController, className = '' } = props
+    const { telemetryService, extensionsController, className = '' } = props
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { homepage: true })
 
     // Read insights from the setting cascade
@@ -62,8 +62,6 @@ export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionVie
                     key={insight.id}
                     insight={insight}
                     telemetryService={telemetryService}
-                    platformContext={platformContext}
-                    settingsCascade={settingsCascade}
                     where="homepage"
                     context={{}}
                 />

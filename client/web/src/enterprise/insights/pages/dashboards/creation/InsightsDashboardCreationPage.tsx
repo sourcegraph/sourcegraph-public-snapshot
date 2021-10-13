@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
@@ -35,9 +35,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
-
         try {
-
             await createDashboard(values).toPromise()
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
@@ -54,7 +52,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     // Loading state
     if (subjects === undefined) {
-        return (<LoadingSpinner />)
+        return <LoadingSpinner />
     }
 
     return (
@@ -75,10 +73,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             </span>
 
             <Container className="mt-4">
-                <InsightsDashboardCreationContent
-                    subjects={subjects}
-                    onSubmit={handleSubmit}
-                >
+                <InsightsDashboardCreationContent subjects={subjects} onSubmit={handleSubmit}>
                     {formAPI => (
                         <>
                             <Button

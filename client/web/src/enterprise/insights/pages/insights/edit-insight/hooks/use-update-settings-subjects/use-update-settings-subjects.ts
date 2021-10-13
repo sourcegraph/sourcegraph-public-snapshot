@@ -9,7 +9,7 @@ import { getUpdatedSubjectSettings } from './get-updated-subject-settings'
 
 interface UseUpdateSettingsSubjectProps extends PlatformContextProps<'updateSettings'> {}
 
-interface UpdateSettingSubjectsInputs extends SettingsCascadeProps<Settings> {
+interface UpdateSettingSubjectsInputs {
     oldInsight: Insight
     newInsight: Insight
 }

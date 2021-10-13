@@ -1,12 +1,12 @@
 import classnames from 'classnames'
-import React from 'react'
+import React, { useCallback, useContext } from 'react'
 import { noop } from 'rxjs'
-
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { useField } from '../../../../../../components/form/hooks/useField'
 import { FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../components/form/hooks/useForm'
-import { useInsightTitleValidator } from '../../../../../../components/form/hooks/useInsightTitleValidator'
+import { AsyncValidator } from '../../../../../../components/form/hooks/utils/use-async-validation'
+import { createRequiredValidator } from '../../../../../../components/form/validators'
+import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
 import { InsightTypePrefix } from '../../../../../../core/types'
 import { isUserSubject, SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { LangStatsCreationFormFields } from '../../types'
@@ -23,6 +23,8 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
     visibility: 'personal',
 }
 
+const titleRequiredValidator = createRequiredValidator('Title is a required field.')
+
 export interface LangStatsInsightCreationContentProps {
     /**
      * This component might be used in two different modes for creation and
@@ -30,27 +32,28 @@ export interface LangStatsInsightCreationContentProps {
      * validation on form fields immediately.
      */
     mode?: 'creation' | 'edit'
-    /** Final settings cascade. Used for title field validation. */
-    settings?: Settings | null
 
     subjects?: SupportedInsightSubject[]
 
     /** Initial value for all form fields. */
     initialValues?: Partial<LangStatsCreationFormFields>
+
     /** Custom class name for root form element. */
     className?: string
+
     /** Submit handler for form element. */
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    /** Cancel handler. */
-    onCancel?: () => void
+
     /** Change handlers is called every time when user changed any field within the form. */
     onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
+
+    /** Cancel handler. */
+    onCancel?: () => void
 }
 
 export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
-        settings,
         subjects = [],
         initialValues = {},
         className,
@@ -58,6 +61,8 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         onCancel = noop,
         onChange = noop,
     } = props
+
+    const { findInsightByName } = useContext(InsightsApiContext)
 
     const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
         initialValues: {
@@ -71,9 +76,6 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
         touched: mode === 'edit',
     })
 
-    // We can't have two or more insights with the same name, since we rely on name as on id of insights.
-    const titleValidator = useInsightTitleValidator({ settings, insightType: InsightTypePrefix.langStats })
-
     const repository = useField({
         name: 'repository',
         formApi: formAPI,
@@ -82,10 +84,28 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
             async: repositoryFieldAsyncValidator,
         },
     })
+
+    const asyncTitleValidator = useCallback<AsyncValidator<string>>(
+        async title => {
+            if (!title || title.trim() === '' || title === initialValues?.title) {
+                return
+            }
+
+            const possibleInsight = await findInsightByName(title, InsightTypePrefix.langStats).toPromise()
+
+            if (possibleInsight) {
+                return 'An insight with this name already exists. Please set a different name for the new insight.'
+            }
+
+            return
+        },
+        [findInsightByName, initialValues?.title]
+    )
+
     const title = useField({
         name: 'title',
         formApi: formAPI,
-        validators: { sync: titleValidator },
+        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
     })
 
     const threshold = useField({
