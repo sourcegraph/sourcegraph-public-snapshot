@@ -1092,6 +1092,21 @@ Stores metadata about a code intel index job.
 
 **root**: The working directory of the indexer image relative to the repository root.
 
+# Table "public.lsif_last_index_scan"
+```
+       Column       |           Type           | Collation | Nullable | Default 
+--------------------+--------------------------+-----------+----------+---------
+ repository_id      | integer                  |           | not null | 
+ last_index_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_index_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time repository was checked for auto-indexing job scheduling.
+
+**last_index_scan_at**: The last time uploads of this repository were considered for auto-indexing job scheduling.
+
 # Table "public.lsif_last_retention_scan"
 ```
          Column         |           Type           | Collation | Nullable | Default 
