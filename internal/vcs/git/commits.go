@@ -269,7 +269,14 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 	if err != nil {
 		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
+
+	// Ignore anything after the first line. See https://github.com/sourcegraph/sourcegraph/issues/25974
+	i := bytes.Index(out, []byte("\n"))
+	if i > -1 {
+		out = out[:i]
+	}
 	out = bytes.TrimSpace(out)
+
 	n, err := strconv.ParseUint(string(out), 10, 64)
 	return uint(n), err
 }
