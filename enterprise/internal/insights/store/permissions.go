@@ -117,7 +117,7 @@ func scanDashboardGrants(rows *sql.Rows, queryErr error) (_ []*DashboardGrant, e
 		results = append(results, &temp)
 	}
 
-	return results, nil;
+	return results, nil
 }
 
 func (i DashboardGrant) IsValid() bool {
