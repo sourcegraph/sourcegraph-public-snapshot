@@ -7,6 +7,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
 import { InsightsApiContext } from '../../../../../../../core/backend/api-provider';
 import { InsightDashboard } from '../../../../../../../core/types'
+import { SupportedInsightSubject } from '../../../../../../../core/types/subjects';
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
@@ -16,11 +17,12 @@ const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
+    subjects?: SupportedInsightSubject[]
     onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, dashboard, onAddInsightRequest } = props
+    const { telemetryService, dashboard, subjects, onAddInsightRequest } = props
 
     const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
 
@@ -47,6 +49,7 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                     />
                 ) : (
                     <EmptyInsightDashboard
+                        subjects={subjects}
                         dashboard={dashboard}
                         onAddInsight={onAddInsightRequest}
                     />

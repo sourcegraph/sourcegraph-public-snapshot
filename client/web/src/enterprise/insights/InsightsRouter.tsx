@@ -47,7 +47,11 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const match = useRouteMatch()
 
     const api = useMemo(
-        () => new CodeInsightsSettingBasedBackend(settingsCascade, platformContext),
+        () => {
+            console.log('recreate api context')
+
+            return new CodeInsightsSettingBasedBackend(settingsCascade, platformContext)
+        },
         [platformContext, settingsCascade]
     )
 

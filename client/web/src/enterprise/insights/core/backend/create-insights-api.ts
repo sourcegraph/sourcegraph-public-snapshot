@@ -69,14 +69,13 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
     public getResolvedSearchRepositories = getResolvedSearchRepositories
 
     // NEW API
-
-    public getDashboards(): Observable<InsightDashboard[]> {
+    public getDashboards = (): Observable<InsightDashboard[]> => {
         const { subjects, final } = this.settingCascade
 
         return of(getInsightsDashboards(subjects, final))
     }
 
-    public updateDashboardInsightIds(options: DashboardInfo): Observable<void> {
+    public updateDashboardInsightIds = (options: DashboardInfo): Observable<void> => {
         const { dashboardOwnerId, dashboardSettingKey, insightIds } = options
 
         return this.getSubjectSettings(dashboardOwnerId).pipe(
@@ -88,39 +87,35 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         )
     }
 
-    public deleteDashboard(dashboardSettingKey: string, dashboardOwnerId: string): Observable<void> {
-        return this.getSubjectSettings(dashboardOwnerId).pipe(
+    public deleteDashboard = (dashboardSettingKey: string, dashboardOwnerId: string): Observable<void> =>
+        this.getSubjectSettings(dashboardOwnerId).pipe(
             switchMap(settings => {
                 const updatedSettings = removeDashboardFromSettings(settings.contents, dashboardSettingKey)
 
-                return updateSubjectSettings(this.platformContext, dashboardOwnerId, updatedSettings)
+                return this.updateSubjectSettings(this.platformContext, dashboardOwnerId, updatedSettings)
             })
         )
-    }
 
-    public getReachableInsights(ownerId: string): Observable<ReachableInsight[]> {
-        return of(getReachableInsights({ settingsCascade: this.settingCascade, ownerId }))
-    }
+    public getReachableInsights = (ownerId: string): Observable<ReachableInsight[]> =>
+        of(getReachableInsights({ settingsCascade: this.settingCascade, ownerId }))
 
-    public getInsights(ids: string[]): Observable<Insight[]> {
-        return of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
-    }
+    public getInsights = (ids: string[]): Observable<Insight[]> =>
+        of(ids.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
 
-    public updateInsightDrillDownFilters(
+    public updateInsightDrillDownFilters = (
         insight: SearchBackendBasedInsight,
         filters: SearchBasedBackendFilters
-    ): Observable<void> {
-        return this.getSubjectSettings(insight.visibility).pipe(
+    ): Observable<void> =>
+        this.getSubjectSettings(insight.visibility).pipe(
             switchMap(settings => {
                 const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
                 const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
 
-                return updateSubjectSettings(this.platformContext, insight.visibility, editedSettings)
+                return this.updateSubjectSettings(this.platformContext, insight.visibility, editedSettings)
             })
         )
-    }
 
-    public createInsightWithNewFilters(inputs: CreateInsightWithFiltersInputs): Observable<void> {
+    public createInsightWithNewFilters = (inputs: CreateInsightWithFiltersInputs): Observable<void> => {
         const { dashboard, insightName, originalInsight, filters } = inputs
 
         // Get id of insight setting subject (owner of it insight)
@@ -154,7 +149,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         )
     }
 
-    public getInsightSubjects(): Observable<SupportedInsightSubject[]> {
+    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => {
         if (!this.settingCascade.subjects) {
             return of([])
         }
@@ -166,7 +161,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         )
     }
 
-    public getDashboard(dashboardId: string): Observable<SettingsBasedInsightDashboard | null> {
+    public getDashboard = (dashboardId: string): Observable<SettingsBasedInsightDashboard | null> => {
         const subjects = this.settingCascade.subjects
         const configureSubject = subjects?.find(
             ({ settings }) => settings && !isErrorLike(settings) && !!settings['insights.dashboards']?.[dashboardId]
@@ -181,7 +176,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         return of(getSubjectDashboardByID(subject, settings, dashboardId))
     }
 
-    public updateDashboard(input: UpdateDashboardInput): Observable<void> {
+    public updateDashboard = (input: UpdateDashboardInput): Observable<void> => {
         const { previousDashboard, nextDashboardInput } = input
 
         return of(null).pipe(
@@ -231,7 +226,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         )
     }
 
-    public findDashboardByName(name: string): Observable<InsightDashboardConfiguration | null> {
+    public findDashboardByName = (name: string): Observable<InsightDashboardConfiguration | null> => {
         if (isErrorLike(this.settingCascade.final) || !this.settingCascade.final) {
             return of(null)
         }
@@ -241,18 +236,17 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         return of(dashboards[camelCase(name)] ?? null)
     }
 
-    public createDashboard(input: DashboardInput): Observable<void> {
-        return this.getSubjectSettings(input.visibility).pipe(
+    public createDashboard = (input: DashboardInput): Observable<void> =>
+        this.getSubjectSettings(input.visibility).pipe(
             switchMap(settings => {
                 const dashboard = createSanitizedDashboard(input)
                 const editedSettings = addDashboardToSettings(settings.contents, dashboard)
 
                 return this.updateSubjectSettings(this.platformContext, input.visibility, editedSettings)
-            })
+            }),
         )
-    }
 
-    public deleteInsight(insightId: string): Observable<void[]> {
+    public deleteInsight = (insightId: string): Observable<void[]> => {
         // For backward compatibility with old code stats insight api we have to delete
         // this insight in a special way. See link below for more information.
         // https://github.com/sourcegraph/sourcegraph-code-stats-insights/blob/master/src/code-stats-insights.ts#L33
@@ -271,7 +265,7 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         return this.persistChanges(deleteInsightOperations)
     }
 
-    private persistChanges(operations: SettingsOperation[]): Observable<void[]> {
+    private persistChanges = (operations: SettingsOperation[]): Observable<void[]> => {
         const subjectsToUpdate = groupBy(operations, operation => operation.subjectId)
 
         const subjectUpdateRequests = Object.keys(subjectsToUpdate).map(subjectId => {

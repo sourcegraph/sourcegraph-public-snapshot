@@ -1,26 +1,22 @@
-import { isEqual } from 'lodash'
+import { isEqual } from 'lodash';
 import React, { memo } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Settings } from '../../../../schema/settings.schema'
 import { ViewGrid } from '../../../../views'
 import { Insight } from '../../core/types'
 
 import { SmartInsight } from './components/smart-insight/SmartInsight'
 
-interface SmartInsightsViewGridProps
-    extends TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps<'updateSettings'> {
+interface SmartInsightsViewGridProps extends TelemetryProps {
     /**
      * List of built-in insights such as backend insight, FE search and code-stats
      * insights.
      */
     insights: Insight[]
 }
+
+const INSIGHT_PAGE_CONTEXT = {}
 
 /**
  * Renders grid of smart (stateful) insight card. These cards can independently extract and update
@@ -39,7 +35,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<SmartInsightsViewGri
                     // Set execution insight context explicitly since this grid component is used
                     // only for the dashboard (insights) page
                     where="insightsPage"
-                    context={{}}
+                    context={INSIGHT_PAGE_CONTEXT}
                 />
             ))}
         </ViewGrid>
@@ -59,8 +55,8 @@ function equalSmartGridProps(
     previousProps: SmartInsightsViewGridProps,
     nextProps: SmartInsightsViewGridProps
 ): boolean {
-    const { insights: previousInsights, settingsCascade: previousSettingCascade, ...otherPrepProps } = previousProps
-    const { insights: nextInsights, settingsCascade, ...otherNextProps } = nextProps
+    const { insights: previousInsights, ...otherPrepProps } = previousProps
+    const { insights: nextInsights, ...otherNextProps } = nextProps
 
     if (!isEqual(otherPrepProps, otherNextProps)) {
         return false

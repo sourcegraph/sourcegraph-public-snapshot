@@ -40,7 +40,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const history = useHistory()
 
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
-    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards])) // useDashboards(settingsCascade)
+    const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -49,8 +49,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleDashboardSelect = useDashboardSelectHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
     const [copyURL, isCopied] = useCopyURLHandler()
-
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -91,6 +89,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         return (<LoadingSpinner/>)
     }
 
+    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
+
     return (
         <div>
             <section className="d-flex flex-wrap align-items-center">
@@ -117,6 +117,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             {currentDashboard ? (
                 <DashboardInsights
                     dashboard={currentDashboard}
+                    subjects={subjects}
                     telemetryService={telemetryService}
                     onAddInsightRequest={handleAddInsightRequest}
                 />

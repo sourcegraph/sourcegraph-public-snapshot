@@ -72,7 +72,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                     ...cachedInsight,
                     filters: debouncedFilters,
                 }),
-            [cachedInsight, debouncedFilters, getBackendInsight]
+            [cachedInsight, debouncedFilters]
         )
     )
 
