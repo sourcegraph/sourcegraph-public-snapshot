@@ -17,6 +17,7 @@ import {
 } from '@sourcegraph/web/src/components/FilteredConnection'
 import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifUploadFields, LsifUploadConnectionFields } from '../../../graphql-operations'
@@ -37,7 +38,7 @@ import {
 } from './useLsifUpload'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
-    isSiteAdmin: boolean
+    authenticatedUser: AuthenticatedUser | null
     queryLisfUploadFields?: typeof defaultQueryLisfUploadFields
     queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
     now?: () => Date
@@ -57,7 +58,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     match: {
         params: { id },
     },
-    isSiteAdmin,
+    authenticatedUser,
     queryLisfUploadFields = defaultQueryLisfUploadFields,
     queryLsifUploadsList = defaultQueryLsifUploadsList,
     telemetryService,
@@ -195,7 +196,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                         )}
                     </Container>
 
-                    {isSiteAdmin && (
+                    {authenticatedUser?.siteAdmin && (
                         <Container className="mt-2">
                             <CodeIntelDeleteUpload
                                 state={uploadOrError.state}

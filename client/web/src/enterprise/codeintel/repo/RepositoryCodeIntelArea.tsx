@@ -22,7 +22,7 @@ import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
-    isSiteAdmin: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export interface CodeIntelAreaRoute extends RouteDescriptor<CodeIntelAreaRouteContext> {}
@@ -143,34 +143,24 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeIntelAreaPageProps> = ({
     match,
     useBreadcrumb,
-    authenticatedUser,
     ...props
 }) => {
     useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
 
-    const propsWithSiteAdmin = { ...props, isSiteAdmin: authenticatedUser?.siteAdmin || false }
-
     return (
         <div className="container d-flex mt-3">
-            <CodeIntelSidebar
-                className="flex-0 mr-3"
-                codeIntelSidebarGroups={sidebarRoutes}
-                match={match}
-                {...propsWithSiteAdmin}
-            />
+            <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} match={match} {...props} />
 
             <div className="flex-bounded">
                 <Switch>
                     {routes.map(
                         ({ path, render, exact, condition = () => true }) =>
-                            condition(propsWithSiteAdmin) && (
+                            condition(props) && (
                                 <Route
                                     path={match.url + path}
                                     exact={exact}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    render={routeComponentProps =>
-                                        render({ ...propsWithSiteAdmin, ...routeComponentProps })
-                                    }
+                                    render={routeComponentProps => render({ ...props, ...routeComponentProps })}
                                 />
                             )
                     )}

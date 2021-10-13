@@ -7,6 +7,8 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
+
 import { CodeIntelConfigurationPageHeader } from './CodeIntelConfigurationPageHeader'
 import { FlashMessage } from './FlashMessage'
 import { PolicyListActions } from './PolicyListActions'
@@ -14,7 +16,7 @@ import { RepositoryConfiguration } from './RepositoryConfiguration'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
 export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
-    isSiteAdmin: boolean
+    authenticatedUser: AuthenticatedUser | null
     repo?: { id: string }
     indexingEnabled?: boolean
     isLightTheme: boolean
@@ -23,7 +25,7 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
 }
 
 export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
-    isSiteAdmin,
+    authenticatedUser,
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     isLightTheme,
@@ -51,7 +53,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     }.`}
                     className="mb-3"
                 />
-                {displayActions && isSiteAdmin && (
+                {displayActions && authenticatedUser?.siteAdmin && (
                     <>
                         sdf <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />
                     </>
@@ -64,7 +66,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 
             {repo ? (
                 <RepositoryConfiguration
-                    isSiteAdmin={isSiteAdmin}
+                    authenticatedUser={authenticatedUser}
                     repo={repo}
                     indexingEnabled={indexingEnabled}
                     isLightTheme={isLightTheme}
@@ -76,7 +78,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 />
             ) : (
                 <RepositoryPolicies
-                    isSiteAdmin={isSiteAdmin}
+                    authenticatedUser={authenticatedUser}
                     repo={repo}
                     isGlobal={true}
                     indexingEnabled={indexingEnabled}

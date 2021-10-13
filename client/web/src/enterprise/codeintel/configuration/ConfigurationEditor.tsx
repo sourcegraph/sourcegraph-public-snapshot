@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 
+import { AuthenticatedUser } from '../../../auth'
 import { SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
@@ -20,13 +21,13 @@ import {
 
 export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     repoId: string
-    isSiteAdmin: boolean
+    authenticatedUser: AuthenticatedUser | null
     history: H.History
 }
 
 export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
     repoId,
-    isSiteAdmin,
+    authenticatedUser,
     isLightTheme,
     telemetryService,
     history,
@@ -84,15 +85,15 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                 <DynamicallyImportedMonacoSettingsEditor
                     value={configuration}
                     jsonSchema={allConfigSchema}
-                    canEdit={isSiteAdmin}
-                    readOnly={!isSiteAdmin}
+                    canEdit={authenticatedUser?.siteAdmin}
+                    readOnly={!authenticatedUser?.siteAdmin}
                     onSave={save}
                     saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
                     history={history}
                     telemetryService={telemetryService}
-                    customSaveToolbar={isSiteAdmin ? customToolbar : undefined}
+                    customSaveToolbar={authenticatedUser?.siteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}
                     onEditor={setEditor}
                 />
