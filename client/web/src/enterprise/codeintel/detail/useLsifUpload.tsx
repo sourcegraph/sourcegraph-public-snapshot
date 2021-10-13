@@ -2,13 +2,14 @@ import { ApolloError, MutationFunctionOptions, FetchResult, ApolloClient, useMut
 import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import {
     LsifUploadFields,
     LsifUploadResult,
-    LsifUploadVariables,
     LSIFUploadState,
     LsifUploadsForRepoResult,
     LsifUploadsForRepoVariables,
@@ -68,11 +69,17 @@ const LSIF_UPLOAD_FIELDS = gql`
     ${lsifUploadFieldsFragment}
 `
 
-export const queryLisfUploadFields = (id: string, client: ApolloClient<object>): Observable<LsifUploadFields | null> =>
-    from(
-        client.query<LsifUploadResult, LsifUploadVariables>({
+const LSIF_UPLOAD_POLL_INTERVAL = 5000
+
+export const queryLisfUploadFields = (
+    id: string,
+    client: ApolloClient<object>
+): Observable<LsifUploadFields | ErrorLike | null | undefined> =>
+    fromObservableQuery(
+        client.watchQuery<LsifUploadResult>({
             query: getDocumentNode(LSIF_UPLOAD_FIELDS),
             variables: { id },
+            pollInterval: LSIF_UPLOAD_POLL_INTERVAL,
         })
     ).pipe(
         map(({ data }) => data),

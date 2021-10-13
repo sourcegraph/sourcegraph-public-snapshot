@@ -36,6 +36,7 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ### Development
 
+- [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
 - [Developing the web clients](background-information/web/index.md)
   - [Developing the web app](background-information/web/web_app.md)
   - [Developing the code host integrations](background-information/web/code_host_integrations.md)

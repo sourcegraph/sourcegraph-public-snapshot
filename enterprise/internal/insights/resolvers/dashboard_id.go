@@ -44,7 +44,7 @@ func (id dashboardID) isReal() bool {
 	return strings.EqualFold(id.IdType, "custom")
 }
 
-func unmarshal(id graphql.ID) (dashboardID, error) {
+func unmarshalDashboardID(id graphql.ID) (dashboardID, error) {
 	var dbid dashboardID
 	err := relay.UnmarshalSpec(id, &dbid)
 	if err != nil {

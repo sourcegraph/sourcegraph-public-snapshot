@@ -15,7 +15,7 @@ createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=templ
 
 You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
 
-This can also be spun up using [`sg run redis-postgres`](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md), with the following `sg.config.override.yaml`:
+This can also be spun up using [`sg run redis-postgres`](../background-information/sg/index.md), with the following `sg.config.override.yaml`:
 
 ```yaml
 env:
@@ -23,6 +23,7 @@ env:
     PGPASSWORD: sourcegraph
     PGUSER: sourcegraph
 ```
+
 ## Without Docker
 
 You need a fresh Postgres database and a database user that has full ownership of that database.

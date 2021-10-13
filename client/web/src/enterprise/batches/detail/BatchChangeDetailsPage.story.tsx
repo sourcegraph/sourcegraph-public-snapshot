@@ -12,8 +12,6 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
     BatchChangeByNamespaceResult,
     BatchChangeFields,
-    BulkOperationState,
-    BulkOperationType,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
@@ -25,12 +23,12 @@ import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
+    BULK_OPERATIONS,
 } from './backend'
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
-import { MOCK_BATCH_CHANGE } from './BatchChangeDetailsPage.mock'
+import { MOCK_BATCH_CHANGE, MOCK_BULK_OPERATIONS } from './BatchChangeDetailsPage.mock'
 
 const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -184,92 +182,6 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
         },
     })
 
-const queryBulkOperations: typeof _queryBulkOperations = () =>
-    of({
-        totalCount: 3,
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
-        },
-        nodes: [
-            {
-                __typename: 'BulkOperation',
-                id: 'id1',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.PROCESSING,
-                errors: [],
-                progress: 0.25,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: null,
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                __typename: 'BulkOperation',
-                id: 'id2',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.COMPLETED,
-                errors: [],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                __typename: 'BulkOperation',
-                id: 'id3',
-                type: BulkOperationType.DETACH,
-                state: BulkOperationState.COMPLETED,
-                errors: [],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 25,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                __typename: 'BulkOperation',
-                id: 'id4',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.FAILED,
-                errors: [
-                    {
-                        changeset: {
-                            __typename: 'ExternalChangeset',
-                            externalURL: {
-                                url: 'https://test.test/my/pr',
-                            },
-                            repository: {
-                                name: 'sourcegraph/sourcegraph',
-                                url: '/github.com/sourcegraph/sourcegraph',
-                            },
-                            title: 'Changeset title on code host',
-                        },
-                        error: 'Failed to create comment, cannot comment on a PR that is awesome.',
-                    },
-                ],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-        ],
-    })
-
 const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
     of([
         {
@@ -379,6 +291,14 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                 result: { data },
                 nMatches: Number.POSITIVE_INFINITY,
             },
+            {
+                request: {
+                    query: getDocumentNode(BULK_OPERATIONS),
+                    variables: MATCH_ANY_PARAMETERS,
+                },
+                result: { data: MOCK_BULK_OPERATIONS },
+                nMatches: Number.POSITIVE_INFINITY,
+            },
         ])
 
         return (
@@ -393,7 +313,6 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                             queryChangesetCountsOverTime={queryChangesetCountsOverTime}
                             queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                             deleteBatchChange={deleteBatchChange}
-                            queryBulkOperations={queryBulkOperations}
                             queryAllChangesetIDs={queryAllChangesetIDs}
                             extensionsController={{} as any}
                             platformContext={{} as any}

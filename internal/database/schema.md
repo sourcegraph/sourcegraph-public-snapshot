@@ -177,6 +177,7 @@ Referenced by:
  user_id           | integer                  |           |          | 
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
+ created_from_raw  | boolean                  |           | not null | false
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -257,7 +258,6 @@ Foreign-key constraints:
 -------------------+--------------------------+-----------+----------+---------------------------------------------
  id                | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
  rand_id           | text                     |           | not null | 
- raw_spec          | text                     |           | not null | 
  spec              | jsonb                    |           | not null | '{}'::jsonb
  batch_spec_id     | bigint                   |           |          | 
  repo_id           | integer                  |           | not null | 

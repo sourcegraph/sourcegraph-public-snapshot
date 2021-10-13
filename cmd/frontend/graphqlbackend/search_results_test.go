@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -46,6 +47,11 @@ func assertEqual(t *testing.T, got, want interface{}) {
 }
 
 func TestSearchResults(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		// #25936: Some unit tests rely on external services that break
+		// in CI but not locally. They should be removed or improved.
+		t.Skip("TestSeachResults only works in local dev and is not reliable in CI")
+	}
 	db := new(dbtesting.MockDB)
 
 	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}

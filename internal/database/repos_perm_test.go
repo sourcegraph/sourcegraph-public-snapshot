@@ -204,7 +204,7 @@ func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePrivateRepo := mustCreate(internalCtx, t, db,
 		&types.Repo{
@@ -215,7 +215,7 @@ func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 
 	confGet := func() *conf.Unified {
@@ -332,7 +332,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -349,7 +349,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -365,7 +365,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -382,7 +382,7 @@ func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -434,7 +434,7 @@ VALUES (%s, %s, '')
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	cindyPrivateRepo.Sources = map[string]*types.SourceInfo{
 		cindyExternalService.URN(): {ID: cindyExternalService.URN()},
@@ -591,7 +591,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -608,7 +608,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	alicePrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -624,7 +624,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPublicRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {
@@ -641,7 +641,7 @@ func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 				ServiceID:   "https://github.com/",
 			},
-		}, types.CloneStatusNotCloned,
+		},
 	)[0]
 	bobPrivateRepo.Sources = map[string]*types.SourceInfo{
 		siteLevelGitHubService.URN(): {

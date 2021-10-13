@@ -3,6 +3,7 @@ package search
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -300,17 +301,17 @@ index 0000000000..7e54670557
 
 	mt, err := ToMatchTree(protocol.NewAnd(
 		&protocol.AuthorMatches{Expr: "Camden"},
-		&protocol.DiffModifiesFile{Expr: "test"},
-		protocol.NewAnd(
+		&protocol.DiffModifiesFile{Expr: "match"},
+		protocol.NewOr(
 			&protocol.DiffMatches{Expr: "result"},
 			&protocol.DiffMatches{Expr: "test"},
 		),
 	))
 	require.NoError(t, err)
 
-	matches, highlights, err := mt.Match(lc)
+	mergedResult, highlights, err := mt.Match(lc)
 	require.NoError(t, err)
-	require.True(t, matches)
+	require.True(t, mergedResult.Satisfies())
 
 	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
 	expectedFormatted := `/dev/null internal/compute/match.go
@@ -335,14 +336,17 @@ index 0000000000..7e54670557
 	require.Equal(t, expectedFormatted, formatted)
 
 	expectedRanges := result.Ranges{{
+		Start: result.Location{Offset: 27, Line: 0, Column: 27},
+		End:   result.Location{Offset: 32, Line: 0, Column: 32},
+	}, {
 		Start: result.Location{Offset: 115, Line: 3, Column: 60},
 		End:   result.Location{Offset: 121, Line: 3, Column: 66},
 	}, {
 		Start: result.Location{Offset: 152, Line: 6, Column: 24},
 		End:   result.Location{Offset: 158, Line: 6, Column: 30},
 	}, {
-		Start: result.Location{Offset: 288, Line: 8, Column: 33},
-		End:   result.Location{Offset: 292, Line: 8, Column: 37},
+		Start: result.Location{Offset: 282, Line: 8, Column: 27},
+		End:   result.Location{Offset: 287, Line: 8, Column: 32},
 	}, {
 		Start: result.Location{Offset: 345, Line: 11, Column: 9},
 		End:   result.Location{Offset: 349, Line: 11, Column: 13},
@@ -362,18 +366,28 @@ func TestFuzzQueryCNF(t *testing.T) {
 				AuthorName: []byte(a),
 			},
 		}
-		matches, _, err := mt.Match(lc)
+		mergedResult, _, err := mt.Match(lc)
 		require.NoError(t, err)
-		return matches
+		return mergedResult.Satisfies()
 	}
 
 	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Recovered from panic in rawQueryMatches:\n  Query: %s\n  Author: %s\n", q.RawQuery.String(), a)
+			}
+		}()
 		mt, err := ToMatchTree(q.RawQuery)
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
 	}
 
 	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+		defer func() {
+			if r := recover(); r != nil {
+				fmt.Printf("Recovered from panic in reducedQueryMatches:\n  Query: %s\n  Author: %s\n", q.RawQuery.String(), a)
+			}
+		}()
 		mt, err := ToMatchTree(q.ConstructedQuery())
 		require.NoError(t, err)
 		return matchTreeMatches(mt, a)
