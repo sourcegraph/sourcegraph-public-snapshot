@@ -61,15 +61,15 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			{
 				ID:                policyID,
 				Type:              "GIT_TREE",
-				Pattern:           "ef/*",
+				Pattern:           "xy/*",
 				RetentionDuration: &testDuration,
 			},
 		}
 
 		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. branch es/* does not match this filter
-			"deadbeef07": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef09": {PolicyMatch{Name: "ef/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			// N.B. branch zw/* does not match this filter
+			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			"deadbeef09": {PolicyMatch{Name: "xy/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
 
@@ -78,17 +78,17 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			{
 				ID:                        policyID,
 				Type:                      "GIT_TREE",
-				Pattern:                   "ef/*",
+				Pattern:                   "xy/*",
 				RetentionDuration:         &testDuration,
 				RetainIntermediateCommits: true,
 			},
 		}
 
 		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. branch es/* does not match this filter
-			"deadbeef07": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef08": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef09": {PolicyMatch{Name: "ef/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			// N.B. branch zw/* does not match this filter
+			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			"deadbeef08": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			"deadbeef09": {PolicyMatch{Name: "xy/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
 

@@ -55,15 +55,15 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			{
 				ID:                policyID,
 				Type:              "GIT_TREE",
-				Pattern:           "ef/*",
+				Pattern:           "xy/*",
 				IndexCommitMaxAge: &testDuration,
 			},
 		}
 
 		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. branch es/* does not match this filter
-			// N.B. ef/feature-y does not fall within policy duration
-			"deadbeef07": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			// N.B. branch zw/* does not match this filter
+			// N.B. xy/feature-y does not fall within policy duration
+			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
 
@@ -72,17 +72,17 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			{
 				ID:                       policyID,
 				Type:                     "GIT_TREE",
-				Pattern:                  "ef/*",
+				Pattern:                  "xy/*",
 				IndexCommitMaxAge:        &testDuration,
 				IndexIntermediateCommits: true,
 			},
 		}
 
 		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
-			// N.B. branch es/* does not match this filter
-			// N.B. ef/feature-y does not fall within policy duration
-			"deadbeef07": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
-			"deadbeef08": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			// N.B. branch zw/* does not match this filter
+			// N.B. xy/feature-y does not fall within policy duration
+			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
+			"deadbeef08": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
 
@@ -97,7 +97,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 
 		policies := []dbstore.ConfigurationPolicy{
 			{
-				ID:                       policyID,
+				ID:                       policyID1,
 				Type:                     "GIT_TREE",
 				Pattern:                  "develop",
 				IndexCommitMaxAge:        &testDuration1,
@@ -140,8 +140,8 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			// N.B. deadbeef05 too old to match policy 1
 			// N.B. deadbeef06 and deadbeef09 are too old for any matching policy
 			"deadbeef05": {PolicyMatch{Name: "develop", PolicyID: &policyID2, PolicyDuration: &testDuration2}},
-			"deadbeef07": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID2, PolicyDuration: &testDuration2}},
-			"deadbeef08": {PolicyMatch{Name: "ef/feature-x", PolicyID: &policyID2, PolicyDuration: &testDuration2}},
+			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID2, PolicyDuration: &testDuration2}},
+			"deadbeef08": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID2, PolicyDuration: &testDuration2}},
 		})
 	})
 

@@ -14,14 +14,14 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	//                                             /                                   /
 	//  09               08 ---- 07              06              05 ------ 04 ------ 03 ------ 01
 	//   \                        \               \               \         \                   \
-	//    ef/feature-y            ef/feature-x    es/feature-z     v1.2.2    v1.2.3              develop
+	//    xy/feature-y            xy/feature-x    zw/feature-z     v1.2.2    v1.2.3              develop
 
 	var branchHeads = map[string]string{
 		"develop":      "deadbeef01",
 		"feat/blank":   "deadbeef02",
-		"ef/feature-x": "deadbeef07",
-		"es/feature-z": "deadbeef06",
-		"ef/feature-y": "deadbeef09",
+		"xy/feature-x": "deadbeef07",
+		"zw/feature-z": "deadbeef06",
+		"xy/feature-y": "deadbeef09",
 	}
 
 	var tagHeads = map[string]string{
@@ -33,18 +33,18 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	var branchMembers = map[string][]string{
 		"develop":      {"deadbeef01", "deadbeef03", "deadbeef04", "deadbeef05"},
 		"feat/blank":   {"deadbeef02"},
-		"ef/feature-x": {"deadbeef07", "deadbeef08"},
-		"ef/feature-y": {"deadbeef09"},
-		"es/feature-z": {"deadbeef06"},
+		"xy/feature-x": {"deadbeef07", "deadbeef08"},
+		"xy/feature-y": {"deadbeef09"},
+		"zw/feature-z": {"deadbeef06"},
 	}
 
 	var createdAt = map[string]time.Time{
 		"deadbeef01": now.Add(-time.Hour * 5),
 		"deadbeef02": now.Add(-time.Hour * 5),
 		"deadbeef03": now.Add(-time.Hour * 5),
+		"deadbeef04": now.Add(-time.Hour * 5),
 		"deadbeef07": now.Add(-time.Hour * 5),
 		"deadbeef08": now.Add(-time.Hour * 5),
-		"deadbeef04": now.Add(-time.Hour * 5),
 		"deadbeef05": now.Add(-time.Hour * 12),
 		"deadbeef06": now.Add(-time.Hour * 15),
 		"deadbeef09": now.Add(-time.Hour * 15),
