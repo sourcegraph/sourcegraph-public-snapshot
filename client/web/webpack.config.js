@@ -1,7 +1,6 @@
 // @ts-check
 
 const path = require('path')
-const zlib = require('zlib')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
@@ -163,15 +162,16 @@ const config = {
       new CompressionPlugin({
         filename: '[path][base].br',
         algorithm: 'brotliCompress',
-        test: /\.(js|css|html|svg)$/,
+        test: /\.(js|css|svg)$/,
         compressionOptions: {
-          params: {
-            [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
-          },
+          /** Maximum compression level for Brotli */
+          level: 11,
         },
+        /**
+         * We get little/no benefits from compressing files that are already under this size.
+         * We can fall back to dynamic gzip for these.
+         */
         threshold: 10240,
-        minRatio: 0.8,
-        deleteOriginalAssets: false,
       }),
   ].filter(Boolean),
   resolve: {
