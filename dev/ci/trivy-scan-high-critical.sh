@@ -16,6 +16,10 @@ export GITHUB_TOKEN="${GH_TOKEN}"
 # inside of CI's logs
 set -x
 
+# This is the special exit code that we tell trivy to use
+# if finds a vulnerability
+VULNERABILITY_EXIT_CODE=27
+
 trivy_scan() {
   local templateFile="$1"
   local outputFile="$2"
@@ -24,7 +28,7 @@ trivy_scan() {
   TRIVY_ARGS=(
     # fail the step if there is a vulnerability
     "--exit-code"
-    "1"
+    "${VULNERABILITY_EXIT_CODE}"
 
     # ignore issues that we can't fix
     "--ignore-unfixed"
@@ -37,11 +41,11 @@ trivy_scan() {
     "--format"
     "template"
 
-    # use the custom "trivy-html" that we have in this folder
+    # use the custom "trivy-html" template that we have in this folder
     "--template"
     "@${templateFile}"
 
-    # dump the HTML output to a file named "ANNOTATION_FILE"
+    # dump the HTML output to a file named "outputFile"
     "--output"
     "${outputFile}"
 
@@ -52,17 +56,42 @@ trivy_scan() {
   trivy image "${TRIVY_ARGS[@]}"
 }
 
-ARTIFACT_FILE="${IMAGE}-security-report.html"
-if ! trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${OUTPUT}/${ARTIFACT_FILE}" "${IMAGE}"; then
+upload_annotation() {
+  local path="$1"
+  local imageName="$2"
 
-  pushd "${OUTPUT}"
-  buildkite-agent artifact upload "${ARTIFACT_FILE}"
+  local folder
+  folder="$(dirname "${path}")"
+  local file
+  file="$(basename "${path}")"
 
-  cat <<EOF | buildkite-agent annotate --style error --context "Docker image security scan" --append
-- **${IMAGE}** high/critical CVE(s): [${ARTIFACT_FILE}](artifact://${ARTIFACT_FILE})
+  pushd "${folder}"
+
+  buildkite-agent artifact upload "${file}"
+
+  cat <<EOF | buildkite-agent annotate --style warning --context "Docker image security scan" --append
+- **${imageName}** high/critical CVE(s): [${file}](artifact://${file})
 EOF
+
   popd
 
   echo "High or critical severity CVEs were discovered in ${IMAGE}. Please read the buildkite annotation for more info."
-  exit 1
-fi
+}
+
+ARTIFACT_FILE="${OUTPUT}/${IMAGE}-security-report.html"
+trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${ARTIFACT_FILE}" "${IMAGE}" || exitCode="$?"
+case $exitCode in
+0)
+  # no vulnerabilities were found
+  exit 0
+  ;;
+VULNERABILITY_EXIT_CODE)
+  # we found vulnerabilities - upload the annotation but don't fail the build
+  upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
+  exit 0
+  ;;
+*)
+  # some other kind of error occurred
+  exit $exitCode
+  ;;
+esac
