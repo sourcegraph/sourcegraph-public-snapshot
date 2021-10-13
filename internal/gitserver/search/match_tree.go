@@ -381,7 +381,7 @@ func (c *CommitFilterResult) Union(other CommitFilterResult) {
 	}
 }
 
-// Intersect merges other into the receiver, computing the intersectino of the file diff indices
+// Intersect merges other into the receiver, computing the intersection of the file diff indices
 func (c *CommitFilterResult) Intersect(other CommitFilterResult) {
 	c.CommitMatched = c.CommitMatched && other.CommitMatched
 	if c.MatchedFileDiffs == nil {
