@@ -189,7 +189,7 @@ func startExec(ctx context.Context, args []string) error {
 		env[k] = v
 	}
 
-	return run.Commands(ctx, env, cmds...)
+	return run.Commands(ctx, env, *verboseFlag, cmds...)
 }
 
 // logLevelOverrides builds a map of commands -> log level that should be overridden in the environment.
