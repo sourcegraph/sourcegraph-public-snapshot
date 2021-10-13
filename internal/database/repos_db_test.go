@@ -452,6 +452,94 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 	}
 }
 
+func TestRepos_ListRepoNames_orgID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create a user
+	user, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: user.ID,
+	})
+
+	// Create an org
+	displayName := "Acme Corp"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:            extsvc.KindGitHub,
+		DisplayName:     "Github - Test",
+		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+		NamespaceOrgID: org.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices(db).Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	err = Repos(db).Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
+	}
+
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OrgID: org.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+}
+
 func TestRepos_List_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -554,6 +642,67 @@ func TestRepos_List_cloned(t *testing.T) {
 				t.Fatal(err)
 			}
 			assertJSONEqual(t, test.want, repos)
+		})
+	}
+}
+
+func TestRepos_List_LastChanged(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	repos := Repos(db)
+
+	// Insert a repo which should never be returned since we always specify
+	// OnlyCloned.
+	if err := repos.Upsert(ctx, InsertRepoOp{Name: "not-on-gitserver"}); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+	old := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-time.Hour),
+	})[0]
+	new := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now,
+	})[0]
+
+	tests := []struct {
+		Name           string
+		MinLastChanged time.Time
+		Want           types.Repos
+	}{{
+		Name: "not specified",
+		Want: types.Repos{old, new},
+	}, {
+		Name:           "old",
+		MinLastChanged: now.Add(-24 * time.Hour),
+		Want:           types.Repos{old, new},
+	}, {
+		Name:           "new",
+		MinLastChanged: now.Add(-time.Minute),
+		Want:           types.Repos{new},
+	}, {
+		Name:           "none",
+		MinLastChanged: now.Add(time.Minute),
+	}}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			got, err := repos.List(ctx, ReposListOptions{
+				OnlyCloned:     true,
+				MinLastChanged: test.MinLastChanged,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			assertJSONEqual(t, test.Want, got)
 		})
 	}
 }

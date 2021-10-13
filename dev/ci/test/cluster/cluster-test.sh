@@ -18,12 +18,9 @@ function cluster_capture_state() {
   pushd "$root_dir"
   # Get specifics of pods
   kubectl describe pods >'describe_pods.log'
-  chmod 744 'describe_pods.log'
 
   # Get logs for some deployments
-  FRONTEND_LOGS="frontend_logs.log"
-  kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
-  chmod 744 $FRONTEND_LOGS
+  kubectl logs deployment/sourcegraph-frontend --all-containers >"frontend_logs.log"
   popd
 }
 

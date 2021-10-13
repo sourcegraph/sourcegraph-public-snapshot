@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "references": [
+    { "path": "client/build-config" },
     { "path": "client/shared" },
     { "path": "client/shared/src/testing" },
     { "path": "client/branded" },

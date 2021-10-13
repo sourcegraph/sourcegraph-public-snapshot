@@ -4,7 +4,7 @@
     width: 100%;
     display: grid;
     grid-template-columns: auto 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     height: min-content;
     padding-top: 0.5rem;
 
@@ -15,11 +15,11 @@
 
     &__sidebar {
         grid-column: 1;
-        grid-row: 1 / span 2;
+        grid-row: 1 / span 3;
 
         @media (--md-breakpoint-down) {
             grid-column: 1;
-            grid-row: 2;
+            grid-row: 3;
             display: none;
 
             &--show {
@@ -45,11 +45,11 @@
         overflow-y: visible;
         overflow-x: hidden;
         grid-column: 2;
-        grid-row: 2;
+        grid-row: 3;
 
         @media (--md-breakpoint-down) {
             grid-column: 1;
-            grid-row: 3;
+            grid-row: 4;
             padding-left: 1rem;
         }
     }
