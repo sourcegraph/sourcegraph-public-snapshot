@@ -375,6 +375,13 @@ type BulkOperationConnection struct {
 	PageInfo   PageInfo
 }
 
+type GitRef struct {
+	Name        string
+	DisplayName string
+	AbbrevName  string
+	Target      GitTarget
+}
+
 type BatchSpecWorkspace struct {
 	Typename string `json:"__typename"`
 	ID       string
@@ -384,14 +391,15 @@ type BatchSpecWorkspace struct {
 
 	ChangesetSpecs []ChangesetSpec
 
-	Path               string
-	SearchResultPaths  []string
-	Steps              []BatchSpecWorkspaceStep
+	Branch            GitRef
+	Path              string
+	SearchResultPaths []string
+	Steps             []BatchSpecWorkspaceStep
+
 	CachedResultFound  bool
 	OnlyFetchWorkspace bool
-
-	Ignored     bool
-	Unsupported bool
+	Ignored            bool
+	Unsupported        bool
 
 	State          string
 	StartedAt      graphqlbackend.DateTime

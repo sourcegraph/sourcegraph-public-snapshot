@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
@@ -12,6 +13,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
@@ -31,6 +33,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
 
 	userID := ct.CreateTestUser(t, db, true).ID
+	adminCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
 
 	spec := &btypes.BatchSpec{UserID: userID, NamespaceUserID: userID}
 	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
@@ -38,13 +41,16 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 	specID := marshalBatchSpecRandID(spec.RandID)
 
+	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
+	mockBackendCommits(t, testRev)
+
 	workspace := &btypes.BatchSpecWorkspace{
 		ID:               0,
 		BatchSpecID:      spec.ID,
 		ChangesetSpecIDs: []int64{},
 		RepoID:           repo.ID,
 		Branch:           "refs/heads/main",
-		Commit:           "d34db33f",
+		Commit:           string(testRev),
 		Path:             "a/b/c",
 		Steps: []batches.Step{
 			{
@@ -57,10 +63,11 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 		Unsupported:        true,
 		Ignored:            true,
 	}
+
 	if err := bstore.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
 		t.Fatal(err)
 	}
-	apiID := marshalBatchSpecWorkspaceID(workspace.ID)
+	apiID := string(marshalBatchSpecWorkspaceID(workspace.ID))
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -69,7 +76,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 
 	want := apitest.BatchSpecWorkspace{
 		Typename: "BatchSpecWorkspace",
-		ID:       string(apiID),
+		ID:       apiID,
 
 		Repository: apitest.Repository{
 			Name: string(repo.Name),
@@ -79,10 +86,18 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 			ID: string(specID),
 		},
 
-		State: "PENDING",
+		SearchResultPaths: []string{
+			"a/b/c.go",
+		},
+		Branch: apitest.GitRef{
+			DisplayName: "main",
+			Target:      apitest.GitTarget{OID: string(testRev)},
+		},
+		Path: "a/b/c",
 
-		Unsupported: true,
-		Ignored:     true,
+		OnlyFetchWorkspace: false,
+		Unsupported:        true,
+		Ignored:            true,
 
 		Steps: []apitest.BatchSpecWorkspaceStep{
 			{
@@ -90,15 +105,24 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 				Container: workspace.Steps[0].Container,
 			},
 		},
+
+		State: "PENDING",
 	}
 
-	input := map[string]interface{}{"batchSpecWorkspace": apiID}
+	queryAndAssertBatchSpecWorkspace(t, adminCtx, s, apiID, want)
+}
+
+func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpecWorkspace) {
+	t.Helper()
+
+	input := map[string]interface{}{"batchSpecWorkspace": id}
 
 	var response struct{ Node apitest.BatchSpecWorkspace }
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecWorkspaceNode)
+
+	apitest.MustExec(ctx, t, s, input, &response, queryBatchSpecWorkspaceNode)
 
 	if diff := cmp.Diff(want, response.Node); diff != "" {
-		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		t.Fatalf("unexpected batch spec workspace (-want +got):\n%s", diff)
 	}
 }
 
@@ -118,14 +142,25 @@ query($batchSpecWorkspace: ID!) {
         id
       }
 
-      state
+      searchResultPaths
+      branch {
+        displayName
+        target {
+          oid
+        }
+      }
+
+      path
+      onlyFetchWorkspace
       unsupported
       ignored
 
       steps {
-	    run
-	    container
+        run
+        container
       }
+
+      state
     }
   }
 }
