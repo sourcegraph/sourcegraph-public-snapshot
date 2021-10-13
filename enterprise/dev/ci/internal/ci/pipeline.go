@@ -173,11 +173,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-		// Currently disabled due to timeouts - see https://github.com/sourcegraph/sourcegraph/issues/25487
-		// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
-		// if c.RunType.Is(MainDryRun, MainBranch) {
-		// 	ops.Append(buildExecutor(c.Version, skipHashCompare))
-		// }
+
+		// Executor VM image
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
+		if c.RunType.Is(MainDryRun, MainBranch) {
+			ops.Append(buildExecutor(c.Version, skipHashCompare))
+		}
 
 		// Slow tests
 		if c.RunType.Is(MainDryRun, MainBranch) {
@@ -200,10 +201,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
-		// Currently disabled due to timeouts - see https://github.com/sourcegraph/sourcegraph/issues/25487
-		// if c.RunType.Is(MainBranch) {
-		// 	ops.Append(publishExecutor(c.Version, skipHashCompare))
-		// }
+		// Executor VM image
+		if c.RunType.Is(MainBranch, ReleaseBranch) {
+			ops.Append(publishExecutor(c.Version, skipHashCompare))
+		}
 
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
