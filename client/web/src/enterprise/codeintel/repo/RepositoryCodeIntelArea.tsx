@@ -169,10 +169,7 @@ export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeInte
                                     exact={exact}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                     render={routeComponentProps =>
-                                        render({
-                                            ...propsWithSiteAdmin,
-                                            ...routeComponentProps,
-                                        })
+                                        render({ ...propsWithSiteAdmin, ...routeComponentProps })
                                     }
                                 />
                             )
