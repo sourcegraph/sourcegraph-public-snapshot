@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd "$(dirname "${BASH_SOURCE[0]}")"/../..
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 set -euo pipefail
 
 OUTPUT=$(mktemp -d -t trivy_XXXX)
@@ -78,19 +78,19 @@ EOF
 }
 
 ARTIFACT_FILE="${OUTPUT}/${IMAGE}-security-report.html"
-trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${ARTIFACT_FILE}" "${IMAGE}" || exitCode="$?"
+trivy_scan "./dev/ci/trivy/trivy-artifact-html.tpl" "${ARTIFACT_FILE}" "${IMAGE}" || exitCode="$?"
 case "${exitCode:-"0"}" in
-  0)
-    # no vulnerabilities were found
-    exit 0
-    ;;
-  "${VULNERABILITY_EXIT_CODE}")
-    # we found vulnerabilities - upload the annotation
-    upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
-    exit "${VULNERABILITY_EXIT_CODE}"
-    ;;
-  *)
-    # some other kind of error occurred
-    exit $exitCode
-    ;;
+0)
+  # no vulnerabilities were found
+  exit 0
+  ;;
+"${VULNERABILITY_EXIT_CODE}")
+  # we found vulnerabilities - upload the annotation
+  upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
+  exit "${VULNERABILITY_EXIT_CODE}"
+  ;;
+*)
+  # some other kind of error occurred
+  exit $exitCode
+  ;;
 esac
