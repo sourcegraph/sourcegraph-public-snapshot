@@ -101,7 +101,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case BackendIntegrationTests:
 		ops.Append(
-			buildCandidateDockerImage("server", c.candidateImageTag()),
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
 			backendIntegrationTests(c.candidateImageTag()))
 
 		// Run default set of PR checks as well
@@ -137,7 +137,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(patchImage, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 		})
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
@@ -148,7 +148,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
 		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(app, c.candidateImageTag()),
+			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
 			wait,
 			publishFinalDockerImage(c, app, false),
 		})
@@ -156,7 +156,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.candidateImageTag()))
+				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
 	case ExecutorPatchNoTest:
@@ -171,7 +171,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Slow image builds
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(buildCandidateDockerImage(dockerImage, c.candidateImageTag()))
+			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 		// Currently disabled due to timeouts - see https://github.com/sourcegraph/sourcegraph/issues/25487
 		// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
