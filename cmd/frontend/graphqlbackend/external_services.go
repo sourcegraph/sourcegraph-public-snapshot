@@ -46,6 +46,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
+	namespaceOrgID := int32(0)
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 	allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
 	if err != nil {
@@ -57,20 +58,36 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, errors.New("allow users to add external services is not enabled")
 		}
 
-		var err error
 		switch relay.UnmarshalKind(*args.Input.Namespace) {
 		case "User":
-			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+			err := relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+			if err != nil {
+				return nil, err
+			}
+
+			if namespaceUserID != actor.FromContext(ctx).UID {
+				return nil, errors.New("the namespace is not same as the authenticated user")
+			}
+		case "Organization":
+			ok, err := EnterpriseResolvers.licenseResolver.EnterpriseLicenseHasFeature(ctx,
+				&EnterpriseLicenseHasFeatureArgs{
+					Feature: "cloud",
+				},
+			)
+			if err != nil {
+				return nil, err
+			} else if !ok {
+				return nil, errors.New("adding organization external services is not allowed")
+			}
+
+			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceOrgID)
+			if err != nil {
+				return nil, err
+			}
+
+			// TODO: check org membership
 		default:
-			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
-		}
-
-		if err != nil {
-			return nil, err
-		}
-
-		if namespaceUserID != actor.FromContext(ctx).UID {
-			return nil, errors.New("the namespace is not same as the authenticated user")
+			return nil, errors.Errorf("invalid namespace %q", *args.Input.Namespace)
 		}
 
 	} else if !isSiteAdmin {
