@@ -151,6 +151,9 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
+	if dashboardID.isVirtualized() {
+		return nil, errors.New("unable to update a virtualized dashboard")
+	}
 	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, int(dashboardID.Arg), args.Input.Title, dashboardGrants)
 	if err != nil {
 		return nil, err
