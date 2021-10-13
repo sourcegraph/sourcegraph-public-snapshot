@@ -241,6 +241,7 @@ type operations struct {
 	getBatchSpecWorkspaceExecutionJob     *observation.Operation
 	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
 	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJobs *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation

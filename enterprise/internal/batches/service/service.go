@@ -60,6 +60,7 @@ type operations struct {
 	createBatchSpecFromRaw               *observation.Operation
 	enqueueBatchSpecResolution           *observation.Operation
 	executeBatchSpec                     *observation.Operation
+	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
 	createChangesetSpec                  *observation.Operation
 	getBatchChangeMatchingBatchSpec      *observation.Operation
@@ -107,6 +108,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecFromRaw:               op("CreateBatchSpecFromRaw"),
 			enqueueBatchSpecResolution:           op("EnqueueBatchSpecResolution"),
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
+			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
 			getBatchChangeMatchingBatchSpec:      op("GetBatchChangeMatchingBatchSpec"),
@@ -387,7 +389,9 @@ type ExecuteBatchSpecOpts struct {
 // It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
 // successfully.
 func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
@@ -427,6 +431,33 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
+}
+
+type CancelBatchSpecOpts struct {
+	BatchSpecRandID string
+}
+
+// CancelBatchSpec cancels all BatchSpecWorkspaceExecutionJobs associated with
+// the BatchSpec.
+func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.cancelBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	return batchSpec, nil
+	// return s.store.CancelBatchSpecWorkspaceExecutionJob(ctx,
 }
 
 type ReplaceBatchSpecInputOpts struct {
