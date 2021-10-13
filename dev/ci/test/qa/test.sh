@@ -23,7 +23,7 @@ CONTAINER=sourcegraph-server
 
 docker_logs() {
   echo "--- dump server logs"
-  docker logs "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
+  docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
 }
 
 if [[ $VAGRANT_RUN_ENV = "CI" ]]; then

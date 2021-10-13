@@ -69,7 +69,7 @@ echo "--- start candidate"
 CONTAINER=sourcegraph-new
 docker_logs() {
   echo "--- dump server logs"
-  docker logs "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
+  docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
 }
 IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
