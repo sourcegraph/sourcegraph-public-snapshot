@@ -91,11 +91,11 @@ type CommitBefore struct {
 }
 
 func (c *CommitBefore) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	authorDate, err := lc.AuthorDate()
+	committerDate, err := lc.CommitterDate()
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
 	}
-	return filterResult(authorDate.Before(c.Time)), MatchedCommit{}, nil
+	return filterResult(committerDate.Before(c.Time)), MatchedCommit{}, nil
 }
 
 // CommitAfter is a predicate that matches if the commit is after the given date
@@ -104,11 +104,11 @@ type CommitAfter struct {
 }
 
 func (c *CommitAfter) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	authorDate, err := lc.AuthorDate()
+	committerDate, err := lc.CommitterDate()
 	if err != nil {
 		return filterResult(false), MatchedCommit{}, err
 	}
-	return filterResult(authorDate.After(c.Time)), MatchedCommit{}, nil
+	return filterResult(committerDate.After(c.Time)), MatchedCommit{}, nil
 }
 
 // MessageMatches is a predicate that matches if the commit message matches
