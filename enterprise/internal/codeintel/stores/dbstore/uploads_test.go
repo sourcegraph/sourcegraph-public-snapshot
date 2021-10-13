@@ -963,8 +963,8 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	// Make new repository visible
 	addToSearchContext(t, db, 54)
 
-	// 95 minutes later, only new repository is visible
-	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
+	// 100 minutes later, only new repository is visible
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*100)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
