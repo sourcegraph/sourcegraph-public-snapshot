@@ -113,7 +113,7 @@ export interface RepositoryCodeIntelAreaPageProps
         TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
-    authenticatedUser: AuthenticatedUser
+    authenticatedUser: AuthenticatedUser | null
 }
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
@@ -148,7 +148,7 @@ export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeInte
 }) => {
     useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
 
-    const propsWithSiteAdmin = { ...props, isSiteAdmin: authenticatedUser.siteAdmin }
+    const propsWithSiteAdmin = { ...props, isSiteAdmin: authenticatedUser?.siteAdmin || false }
 
     return (
         <div className="container d-flex mt-3">
