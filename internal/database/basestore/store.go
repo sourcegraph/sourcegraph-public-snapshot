@@ -3,6 +3,9 @@ package basestore
 import (
 	"context"
 	"database/sql"
+	"flag"
+	"fmt"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -85,7 +88,8 @@ func (s *Store) With(other ShareableStore) *Store {
 
 // Query performs QueryContext on the underlying connection.
 func (s *Store) Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error) {
-	return s.handle.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := s.handle.db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return rows, s.wrapError(query, err)
 }
 
 // QueryRow performs QueryRowContext on the underlying connection.
@@ -102,7 +106,8 @@ func (s *Store) Exec(ctx context.Context, query *sqlf.Query) error {
 // ExecResult performs a query without returning any rows, but includes the
 // result of the execution.
 func (s *Store) ExecResult(ctx context.Context, query *sqlf.Query) (sql.Result, error) {
-	return s.handle.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	res, err := s.handle.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	return res, s.wrapError(query, err)
 }
 
 // InTransaction returns true if the underlying database handle is in a transaction.
@@ -129,4 +134,30 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 // is returned unchanged.
 func (s *Store) Done(err error) error {
 	return s.handle.Done(err)
+}
+
+// if the code is run from within a test, wrapError wraps the given error
+// with query information such as the SQL query and its arguments.
+// If not, it returns the error as is.
+func (s *Store) wrapError(query *sqlf.Query, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	// if we are not in tests, return the error as is
+	if flag.Lookup("test.v") == nil {
+		return err
+	}
+
+	// in tests, return a wrapped error that includes the query information
+	var b strings.Builder
+
+	for i, arg := range query.Args() {
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		fmt.Fprintf(&b, "%v", arg)
+	}
+
+	return fmt.Errorf("query error: %w\n----- Args: %#v\n----- SQL Query:\n%s\n-----\n", err, b.String(), query.Query(sqlf.PostgresBindVar))
 }

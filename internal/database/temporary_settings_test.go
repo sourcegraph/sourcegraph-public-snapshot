@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -99,7 +100,7 @@ func testInsertWithInvalidData(t *testing.T) {
 	require.NoError(t, err)
 
 	err = temporarySettingsStore.OverwriteTemporarySettings(ctx, user.ID, contents)
-	require.EqualError(t, err, "ERROR: invalid input syntax for type json (SQLSTATE 22P02)")
+	require.EqualError(t, errors.Unwrap(err), "ERROR: invalid input syntax for type json (SQLSTATE 22P02)")
 }
 
 func testEdit(t *testing.T) {
