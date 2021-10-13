@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
+	bk "github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
@@ -45,14 +46,25 @@ type Config struct {
 
 // NewConfig computes configuration for the pipeline generator based on Buildkite environment
 // variables.
-func NewConfig(bkClient *buildkite.Client, now time.Time) (Config, error) {
+func NewConfig(now time.Time) (Config, error) {
 	var (
 		commit = os.Getenv("BUILDKITE_COMMIT")
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
+		token  = os.Getenv("BUILDKITE_API_TOKEN")
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 	)
+
+	var bkClient *bk.Client
+	if token != "" {
+		bkConfig, err := bk.NewTokenConfig(token, false)
+		if err != nil {
+			panic(err)
+		}
+
+		bkClient = bk.NewClient(bkConfig.Client())
+	}
 
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
@@ -192,6 +204,12 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 		return diffCommand, commit, nil
 	}
 
+	if bkClient == nil {
+		// if there is no builkite API client, run a diff with main
+		fmt.Fprintf(os.Stderr, "BUILDKITE_API_TOKEN env var not found, comparing with main...")
+		return append(diffCommand, "origin/main..."+commit), commit, nil
+	}
+
 	// get the latest successful build for this branch and run a diff against that commit
 	builds, _, err := bkClient.Builds.ListByPipeline("sourcegraph", "sourcegraph", &buildkite.BuildsListOptions{
 		Branch: branch,
@@ -206,7 +224,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 
 	// if there are no previous builds diff with main
 	if len(builds) == 0 || builds[0].State == nil || *(builds[0].State) != "passed" {
-		fmt.Fprintln(os.Stderr, "No previous passing build. Comparing with main")
+		fmt.Fprintln(os.Stderr, "No previous passing build. Comparing with main...")
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 

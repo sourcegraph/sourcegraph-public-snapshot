@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	bk "github.com/buildkite/go-buildkite/v3/buildkite"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
@@ -25,19 +23,8 @@ func init() {
 
 func main() {
 	flag.Parse()
-	token := os.Getenv("BUILDKITE_API_TOKEN")
-	if token == "" {
-		panic("BUILDKITE_API_TOKEN is required")
-	}
 
-	bkConfig, err := bk.NewTokenConfig(token, false)
-	if err != nil {
-		panic(err)
-	}
-
-	client := bk.NewClient(bkConfig.Client())
-
-	config, err := ci.NewConfig(client, time.Now())
+	config, err := ci.NewConfig(time.Now())
 	if err != nil {
 		panic(err)
 	}
