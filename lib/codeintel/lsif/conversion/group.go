@@ -31,9 +31,9 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	meta := precise.MetaData{NumResultChunks: numResultChunks}
 	documents := serializeBundleDocuments(ctx, state)
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
-	definitionRows := gatherMonikersLocations(ctx, state, "export", func(r Range) bool { return r.DefinitionResultID != 0 })
-	referenceRows := gatherMonikersLocations(ctx, state, "import", func(r Range) bool { return r.ReferenceResultID != 0 })
-	implementationRows := gatherMonikersLocations(ctx, state, "implementation", func(r Range) bool { return r.DefinitionResultID != 0 })
+	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, "export", func(r Range) int { return r.DefinitionResultID })
+	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, "import", func(r Range) int { return r.ReferenceResultID })
+	implementationRows := gatherMonikersLocations(ctx, state, state.ImplementationData, "implementation", func(r Range) int { return r.ImplementationResultID })
 	documentation := collectDocumentation(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
@@ -271,84 +271,83 @@ func (s sortableDocumentIDRangeIDs) Less(i, j int) bool {
 	return iRange.Start.Character-jRange.Start.Character < 0
 }
 
-func gatherMonikersLocations(ctx context.Context, state *State, kind string, filterRange func(r Range) bool) chan precise.MonikerLocations {
+func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*datastructures.DefaultIDSetMap, kind string, getResultID func(r Range) int) chan precise.MonikerLocations {
+	monikers := datastructures.NewDefaultIDSetMap()
+	for rangeID, r := range state.RangeData {
+		if resultID := getResultID(r); resultID != 0 {
+			monikers.SetUnion(resultID, state.Monikers.Get(rangeID))
+		}
+	}
+
+	idsBySchemeByIdentifier := map[string]map[string][]int{}
+	for id := range data {
+		monikerIDs := monikers.Get(id)
+		if monikerIDs == nil {
+			continue
+		}
+
+		monikerIDs.Each(func(monikerID int) {
+			moniker := state.MonikerData[monikerID]
+			idsByIdentifier, ok := idsBySchemeByIdentifier[moniker.Scheme]
+			if !ok {
+				idsByIdentifier = map[string][]int{}
+				idsBySchemeByIdentifier[moniker.Scheme] = idsByIdentifier
+			}
+			idsByIdentifier[moniker.Identifier] = append(idsByIdentifier[moniker.Identifier], id)
+		})
+	}
+
 	ch := make(chan precise.MonikerLocations)
 
 	go func() {
 		defer close(ch)
 
-		rangeToUri := map[int]string{}
-		state.Contains.Each(func(documentID int, ranges *datastructures.IDSet) {
-			ranges.Each(func(rangeId int) {
-				rangeToUri[rangeId] = state.DocumentData[documentID]
-			})
-		})
+		for scheme, idsByIdentifier := range idsBySchemeByIdentifier {
+			for identifier, ids := range idsByIdentifier {
+				var locations []precise.LocationData
+				for _, id := range ids {
+					data[id].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+						uri := state.DocumentData[documentID]
+						if strings.HasPrefix(uri, "..") {
+							return
+						}
 
-		monikers := map[int]precise.MonikerLocations{}
-		for rangeID, r := range state.RangeData {
-			uri := rangeToUri[rangeID]
+						rangeIDs.Each(func(id int) {
+							r := state.RangeData[id]
 
-			if strings.HasPrefix(uri, "..") {
-				continue
-			}
+							locations = append(locations, precise.LocationData{
+								URI:            uri,
+								StartLine:      r.Start.Line,
+								StartCharacter: r.Start.Character,
+								EndLine:        r.End.Line,
+								EndCharacter:   r.End.Character,
+							})
+						})
+					})
+				}
 
-			location := precise.LocationData{
-				URI:            rangeToUri[rangeID],
-				StartLine:      r.Start.Line,
-				StartCharacter: r.Start.Character,
-				EndLine:        r.End.Line,
-				EndCharacter:   r.End.Character,
-			}
-
-			if data, ok := state.RangeData[rangeID]; ok {
-				// TODO give the callback more info
-				if !filterRange(data) {
+				if len(locations) == 0 {
 					continue
 				}
-			}
 
-			monikerIDs := state.Monikers.Get(rangeID)
-			if monikerIDs == nil {
-				continue
-			}
-			monikerIDs.Each(func(monikerID int) {
-				moniker := state.MonikerData[monikerID]
-				if moniker.Kind != kind {
+				// Sort locations by containing document path then by offset within the text
+				// document (in reading order). This provides us with an obvious and deterministic
+				// ordering of a result set over multiple API requests.
+
+				sort.Sort(sortableLocations(locations))
+
+				data := precise.MonikerLocations{
+					Kind:       kind,
+					Scheme:     scheme,
+					Identifier: identifier,
+					Locations:  locations,
+				}
+
+				select {
+				case ch <- data:
+				case <-ctx.Done():
 					return
 				}
-				// - export: only append this range if a definitionResult points to it
-				// - import: only append this range if a referenceResult points to it
-				// - implementation: only append this range if a definitionResult points to it
-				monikerLocations, ok := monikers[monikerID]
-				if !ok {
-					monikerLocations = precise.MonikerLocations{
-						Kind:       moniker.Kind,
-						Scheme:     moniker.Scheme,
-						Identifier: moniker.Identifier,
-						Locations:  []precise.LocationData{location},
-					}
-				} else {
-					monikerLocations.Locations = append(monikerLocations.Locations, location)
-				}
-				monikers[monikerID] = monikerLocations
-			})
-		}
-
-		for _, moniker := range monikers {
-			if len(moniker.Locations) == 0 {
-				continue
-			}
-
-			// Sort locations by containing document path then by offset within the text
-			// document (in reading order). This provides us with an obvious and deterministic
-			// ordering of a result set over multiple API requests.
-
-			sort.Sort(sortableLocations(moniker.Locations))
-
-			select {
-			case ch <- moniker:
-			case <-ctx.Done():
-				return
 			}
 		}
 	}()
