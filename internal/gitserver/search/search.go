@@ -196,7 +196,7 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 			if err != nil {
 				return err
 			}
-			if mergedResult.HasMatch() {
+			if mergedResult.Satisfies() {
 				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
 				if err != nil {
 					return err

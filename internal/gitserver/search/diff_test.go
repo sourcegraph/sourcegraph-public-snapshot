@@ -31,7 +31,7 @@ func TestDiffSearch(t *testing.T) {
 
 	mergedResult, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
 	require.NoError(t, err)
-	require.True(t, mergedResult.HasMatch())
+	require.True(t, mergedResult.Satisfies())
 
 	expectedHighlights := MatchedCommit{
 		Diff: map[int]MatchedFileDiff{
@@ -102,7 +102,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, mergedResult.HasMatch())
+				require.True(b, mergedResult.Satisfies())
 			}
 		})
 
@@ -113,7 +113,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 			for i := 0; i < b.N; i++ {
 				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, mergedResult.HasMatch())
+				require.True(b, mergedResult.Satisfies())
 			}
 		})
 	})
@@ -131,7 +131,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 				for i := 0; i < b.N; i++ {
 					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.HasMatch())
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 
@@ -142,7 +142,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 				for i := 0; i < b.N; i++ {
 					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.HasMatch())
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 		})
@@ -155,7 +155,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 				for i := 0; i < b.N; i++ {
 					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.HasMatch())
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 
@@ -166,7 +166,7 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 
 				for i := 0; i < b.N; i++ {
 					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, mergedResult.HasMatch())
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 		})
