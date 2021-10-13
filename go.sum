@@ -1864,6 +1864,10 @@ github.com/umpox/httpgzip v0.0.0-20211013132437-678143236cac h1:CU/dLKXa3T+nqbfL
 github.com/umpox/httpgzip v0.0.0-20211013132437-678143236cac/go.mod h1:LgMYFWyh+9WEXuLBrpcO/nsKOLR3CV9h+hBLRteknTQ=
 github.com/umpox/httpgzip v0.0.0-20211013133023-4680dd1f74dd h1:Sj8HHMPDltGIe3NP8djRb0MzHwQNE85wRRELExLxSDs=
 github.com/umpox/httpgzip v0.0.0-20211013133023-4680dd1f74dd/go.mod h1:LgMYFWyh+9WEXuLBrpcO/nsKOLR3CV9h+hBLRteknTQ=
+github.com/umpox/httpgzip v0.0.0-20211013143404-387b6fea55c2 h1:UEJsAssdHePqhsR394/994CBsrMolpzWSttxsMaHBl4=
+github.com/umpox/httpgzip v0.0.0-20211013143404-387b6fea55c2/go.mod h1:LgMYFWyh+9WEXuLBrpcO/nsKOLR3CV9h+hBLRteknTQ=
+github.com/umpox/httpgzip v0.0.0-20211013143915-7600ab96a047 h1:AvsIgK0QaCN1P2EM+eiDpCy4P+6QSeaNg2MgGb1zEl0=
+github.com/umpox/httpgzip v0.0.0-20211013143915-7600ab96a047/go.mod h1:LgMYFWyh+9WEXuLBrpcO/nsKOLR3CV9h+hBLRteknTQ=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
 github.com/urfave/cli v1.22.1 h1:+mkCCcOFKPnCmVYVcURKps1Xe+3zP90gSYGNfRkjoIY=
 github.com/urfave/cli v1.22.1/go.mod h1:Gos4lmkARVdJ6EkW0WaNv/tZAAMe9V7XWyB60NtXRu0=

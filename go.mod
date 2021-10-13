@@ -341,7 +341,7 @@ replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
-	github.com/shurcooL/httpgzip => github.com/umpox/httpgzip v0.0.0-20211013133023-4680dd1f74dd
+	github.com/shurcooL/httpgzip => github.com/umpox/httpgzip v0.0.0-20211013143915-7600ab96a047
 )
 
 // Status unclear replace directives

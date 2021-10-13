@@ -3,8 +3,6 @@
 
 package assets
 
-import (
-	"github.com/shurcooL/httpgzip"
-)
+import "net/http"
 
-var Assets = httpgzip.Dir("./ui/assets")
+var Assets = http.Dir("./ui/assets")
