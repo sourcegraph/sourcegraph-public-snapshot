@@ -169,9 +169,17 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return errors.Wrap(err, fmt.Sprintf("command failed with stderr %q", stderrBuf.String()))
+		return tryInterpretErrorWithStderr(err, stderrBuf.String())
 	}
 	return nil
+}
+
+func tryInterpretErrorWithStderr(err error, stderr string) error {
+	if strings.Contains(stderr, "does not have any commits yet") {
+		// Ignore no commits error error
+		return nil
+	}
+	return errors.Wrap(err, fmt.Sprintf("command failed with stderr %q", stderr))
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
