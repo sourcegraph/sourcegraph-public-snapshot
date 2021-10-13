@@ -463,7 +463,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	repoFilters, minusRepoFilters := q.Repositories()
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
-
 	}
 	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 
@@ -1496,18 +1495,31 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
 
-		// Get all private repos that are accessible by the current actor.
-		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		userID := int32(0)
+		if envvar.SourcegraphDotComMode() {
+			if a := actor.FromContext(ctx); a != nil {
+				userID = a.UID
+			}
+		}
+
+		// Get all private repos for the the current actor. On sourcegraph.com, those are
+		// only the repos directly added by the user. Otherwise it's all repos the user has
+		// access to on all connected code hosts / external services.
+		userPrivateRepos, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
 			OnlyForks:    args.RepoOptions.OnlyForks,
 			NoForks:      args.RepoOptions.NoForks,
 			OnlyArchived: args.RepoOptions.OnlyArchived,
 			NoArchived:   args.RepoOptions.NoArchived,
-		}); err != nil {
-			tr.LazyPrintf("error resolving private repos: %v", err)
+		})
+
+		if err != nil {
+			log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
+			tr.LazyPrintf("error resolving user private repos: %v", err)
 		} else {
-			argsIndexed.UserPrivateRepos = res
+			argsIndexed.UserPrivateRepos = userPrivateRepos
 		}
 
 		wg := waitGroup(true)
@@ -1605,22 +1617,27 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
-		if args.ResultTypes.Has(result.TypeCommit) {
-			j, err := commit.NewSearchJob(args.Query, args.Repos, false, int(args.PatternInfo.FileMatchLimit))
+		addCommitSearch := func(diff bool) {
+			j, err := commit.NewSearchJob(args.Query, args.Repos, diff, int(args.PatternInfo.FileMatchLimit))
 			if err != nil {
 				agg.Error(err)
-			} else {
-				jobs = append(jobs, j)
+				return
 			}
+
+			if err := j.ExpandUsernames(ctx, r.db); err != nil {
+				agg.Error(err)
+				return
+			}
+
+			jobs = append(jobs, j)
+		}
+
+		if args.ResultTypes.Has(result.TypeCommit) {
+			addCommitSearch(false)
 		}
 
 		if args.ResultTypes.Has(result.TypeDiff) {
-			j, err := commit.NewSearchJob(args.Query, args.Repos, true, int(args.PatternInfo.FileMatchLimit))
-			if err != nil {
-				agg.Error(err)
-			} else {
-				jobs = append(jobs, j)
-			}
+			addCommitSearch(true)
 		}
 	} else {
 		if args.ResultTypes.Has(result.TypeDiff) {

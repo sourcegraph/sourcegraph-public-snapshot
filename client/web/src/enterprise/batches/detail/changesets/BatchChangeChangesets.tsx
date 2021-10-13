@@ -45,6 +45,7 @@ interface Props extends ThemeProps, PlatformContextProps, TelemetryProps, Extens
 
     hideFilters?: boolean
     onlyArchived?: boolean
+    refetchBatchChange: () => void
 
     /** For testing only. */
     queryChangesets?: typeof _queryChangesets
@@ -80,6 +81,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
     queryExternalChangesetWithFileDiffs,
     expandByDefault,
     onlyArchived,
+    refetchBatchChange,
 }) => {
     // You might look at this destructuring statement and wonder why this isn't
     // just a single context consumer object. The reason is because making it a
@@ -110,6 +112,13 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
         },
         [deselectAll, setChangesetFilters]
     )
+
+    // After selecting and performing a bulk action, deselect all changesets and refetch
+    // the batch change to get the actively-running bulk operations.
+    const onSubmitBulkAction = useCallback(() => {
+        deselectAll()
+        refetchBatchChange()
+    }, [deselectAll, refetchBatchChange])
 
     const [queryArguments, setQueryArguments] = useState<Omit<AllChangesetIDsVariables, 'after'>>()
 
@@ -220,7 +229,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<Props> = ({
             {showSelectRow && queryArguments && (
                 <ChangesetSelectRow
                     batchChangeID={batchChangeID}
-                    onSubmit={deselectAll}
+                    onSubmit={onSubmitBulkAction}
                     queryAllChangesetIDs={queryAllChangesetIDs}
                     queryArguments={queryArguments}
                 />
