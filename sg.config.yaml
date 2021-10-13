@@ -15,11 +15,11 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  GO111MODULE: 'on'
+  GO111MODULE: "on"
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ':3082'
+  SRC_HTTP_ADDR: ":3082"
 
   GITHUB_BASE_URL: http://127.0.0.1:3180
   # I don't think we even need to set these?
@@ -35,7 +35,7 @@ env:
   JAEGER_SERVER_URL: http://localhost:16686
   ZOEKT_HOST: localhost:3070
 
-  SRC_PROF_HTTP: ''
+  SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
     [
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
@@ -78,7 +78,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: '--max_old_space_size=4096'
+  NODE_OPTIONS: "--max_old_space_size=4096"
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -142,9 +142,9 @@ commands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
+      EXTSVC_CONFIG_FILE: "../dev-private/enterprise/dev/external-services-config.json"
+      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
@@ -435,8 +435,8 @@ commands:
       - enterprise/internal
       - lib/codeintel
 
-  executor-template: &executor_template
-    # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
+  executor-template:
+    &executor_template # TMPDIR is set here so it's not set in the `install` process, which would trip up `go build`.
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
@@ -711,11 +711,11 @@ checks:
 
   redis:
     cmd: (command -v redis-cli && redis-cli -p 6379 PING) || docker-compose -f dev/redis-postgres.yml exec -T redis redis-cli PING
-    failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'
+    failMessage: "Failed to connect to Redis on port 6379. Please make sure Redis is running."
 
   postgres:
     cmd: (command -v psql && psql -c 'SELECT 1;') || docker-compose -f dev/redis-postgres.yml exec -T postgresql psql -U ${PGUSER} -c 'select 1;'
-    failMessage: 'Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect.'
+    failMessage: "Failed to connect to Postgres database. Make sure environment variables are setup correctly so that psql can connect."
 
 defaultCommandset: enterprise
 commandsets:
@@ -772,6 +772,9 @@ commandsets:
     <<: *enterprise_set
     env:
       SOURCEGRAPHDOTCOM_MODE: true
+      EXTSVC_CONFIG_ALLOW_EDITS: true
+      SITE_CONFIG_ALLOW_EDITS: true
+      GLOBAL_SETTINGS_ALLOW_EDITS: true
 
   enterprise-codeintel:
     requiresDevPrivate: true
@@ -946,9 +949,9 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: 'http://localhost:3080'
-      EMAIL: 'joe@sourcegraph.com'
-      PASSWORD: '12345'
+      BASE_URL: "http://localhost:3080"
+      EMAIL: "joe@sourcegraph.com"
+      PASSWORD: "12345"
 
   web-integration:
     cmd: yarn test-integration

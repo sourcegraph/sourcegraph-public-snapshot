@@ -12,12 +12,12 @@ import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
 import { SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
+import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
@@ -27,7 +27,7 @@ type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 export interface UserAddCodeHostsPageProps
     extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'>,
         TelemetryProps {
-    owner: { id: Scalars['ID']; tags?: string[]; type: 'user' | 'org' }
+    owner: Owner
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -255,8 +255,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 headingElement="h2"
                 path={[{ text: 'Code host connections' }]}
                 description={
-                    <>
-                        Connect with your code hosts. Then,{' '}
+                    <span className="text-muted">
+                        Connect with {owner.name ? owner.name + "'s" : 'your'} code hosts. Then,{' '}
                         <Link
                             to={`${routingPrefix}/repositories/manage`}
                             onClick={logAddRepositoriesClicked('description')}
@@ -264,7 +264,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             add repositories
                         </Link>{' '}
                         to search with Sourcegraph.
-                    </>
+                    </span>
                 }
                 className="mb-3"
             />

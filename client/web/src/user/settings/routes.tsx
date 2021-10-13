@@ -99,7 +99,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => (
             <SettingsRepositoriesPage
                 {...props}
-                owner={{ id: props.user.id, type: 'user' }}
+                owner={{ id: props.user.id, type: 'user', tags: props.authenticatedUser.tags }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),
@@ -111,8 +111,7 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
         render: props => (
             <UserSettingsManageRepositoriesPage
                 {...props}
-                ownerID={props.authenticatedUser.id}
-                ownerType="user"
+                owner={{ id: props.authenticatedUser.id, tags: props.authenticatedUser.tags, type: 'user' }}
                 routingPrefix={props.user.url + '/settings'}
             />
         ),

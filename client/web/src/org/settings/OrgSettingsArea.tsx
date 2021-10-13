@@ -97,7 +97,11 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                 render={routeComponentProps => (
                                     <OrgAddCodeHostsPageContainer
                                         {...routeComponentProps}
-                                        owner={{ id: props.org.id, type: 'org' }}
+                                        owner={{
+                                            id: props.org.id,
+                                            type: 'org',
+                                            name: props.org.displayName || props.org.name,
+                                        }}
                                         context={window.context}
                                         routingPrefix={`${props.org.url}/settings`}
                                         telemetryService={props.telemetryService}
@@ -113,7 +117,11 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <SettingsRepositoriesPage
                                         {...routeComponentProps}
                                         {...props}
-                                        owner={{ id: props.org.id, type: 'org' }}
+                                        owner={{
+                                            id: props.org.id,
+                                            type: 'org',
+                                            name: props.org.displayName || props.org.name,
+                                        }}
                                         routingPrefix={`${props.org.url}/settings`}
                                         onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                     />
@@ -127,8 +135,11 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <UserSettingsManageRepositoriesPage
                                         {...routeComponentProps}
                                         {...props}
-                                        ownerID={props.org.id}
-                                        ownerType="org"
+                                        owner={{
+                                            id: props.org.id,
+                                            type: 'org',
+                                            name: props.org.displayName || props.org.name,
+                                        }}
                                         routingPrefix={`${props.org.url}/settings`}
                                         onSyncedPublicRepositoriesUpdate={() => {}}
                                     />

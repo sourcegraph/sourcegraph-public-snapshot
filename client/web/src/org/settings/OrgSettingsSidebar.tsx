@@ -34,7 +34,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
             <SidebarGroup>
                 <SidebarGroupHeader label="Organization" />
                 <SidebarNavItem to={match.url} exact={true}>
-                    Organization Settings
+                    Settings
                 </SidebarNavItem>
                 <SidebarNavItem to={`${match.url}/profile`} exact={true}>
                     Profile

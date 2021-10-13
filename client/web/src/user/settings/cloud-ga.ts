@@ -1,11 +1,18 @@
 import { AuthenticatedUser } from '../../auth'
-import { UserAreaUserFields } from '../../graphql-operations'
+import { UserAreaUserFields, Scalars } from '../../graphql-operations'
 
 type Scopes = string[] | null
 
 export interface UserProps {
     user: Pick<UserAreaUserFields, 'id' | 'tags' | 'builtinAuth'>
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'tags'>
+}
+
+export interface Owner {
+    id: Scalars['ID']
+    type: 'user' | 'org'
+    tags?: string[]
+    name?: string
 }
 
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>

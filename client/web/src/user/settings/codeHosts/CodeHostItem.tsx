@@ -2,12 +2,12 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { CircleDashedIcon } from '../../../components/CircleDashedIcon'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { Owner } from '../cloud-ga'
 
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { hints } from './modalHints'
@@ -16,7 +16,7 @@ import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
     kind: ExternalServiceKind
-    owner: { id: Scalars['ID']; tags?: string[]; type: 'user' | 'org' }
+    owner: Owner
     name: string
     icon: React.ComponentType<{ className?: string }>
     navigateToAuthProvider: (kind: ExternalServiceKind) => void
@@ -79,9 +79,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
             )}
             {service && isRemoveConnectionModalOpen && (
                 <RemoveCodeHostConnectionModal
-                    id={service.id}
-                    kind={kind}
-                    name={name}
+                    serviceID={service.id}
+                    serviceName={name}
+                    serviceKind={kind}
+                    orgName={owner.name}
                     repoCount={service.repoCount}
                     onDidRemove={onDidRemove}
                     onDidCancel={toggleRemoveConnectionModal}

@@ -35,15 +35,14 @@ import {
 } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { externalServiceUserModeFromTags } from '../cloud-ga'
+import { externalServiceUserModeFromTags, Owner } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
 interface Props
     extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
-    ownerID: string
-    ownerType: 'user' | 'org'
+    owner: Owner
     routingPrefix: string
 }
 
@@ -137,8 +136,7 @@ const displayAffiliateRepoProblems = (
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
-    ownerID,
-    ownerType,
+    owner,
     routingPrefix,
     telemetryService,
     onSyncedPublicRepositoriesUpdate,
@@ -148,7 +146,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [telemetryService])
 
     const history = useHistory()
-    const isOrgMode = ownerType === 'org'
+    const isOrgMode = owner.type === 'org'
 
     const listRepositories = isOrgMode ? listOrgRepositories : listUserRepositories
 
@@ -186,33 +184,33 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: ownerID,
+                namespace: owner.id,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [ownerID]
+        [owner.id]
     )
 
     const fetchAffiliatedRepos = useCallback(
         async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
             listAffiliatedRepositories({
-                namespace: ownerID,
+                namespace: owner.id,
                 codeHost: null,
                 query: null,
             })
                 .toPromise()
                 .then(({ affiliatedRepositories: { nodes } }) => nodes),
 
-        [ownerID]
+        [owner.id]
     )
 
     const fetchSelectedRepositories = useCallback(
         async (): Promise<NonNullable<RepositoriesResult>['repositories']['nodes']> =>
-            listRepositories({ id: ownerID, first: 2000 })
+            listRepositories({ id: owner.id, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
-        [ownerID, listRepositories]
+        [owner.id, listRepositories]
     )
 
     const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
@@ -385,7 +383,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // fetch public repos for the "other public repositories" textarea
     const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
-        const result = await queryUserPublicRepositories(ownerID).toPromise()
+        const result = await queryUserPublicRepositories(owner.id).toPromise()
 
         if (!result) {
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
@@ -398,7 +396,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
-    }, [ownerID])
+    }, [owner.id])
 
     useEffect(() => {
         if (!isOrgMode) {
@@ -474,7 +472,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             if (!isOrgMode) {
                 try {
-                    await setUserPublicRepositories(ownerID, publicRepos).toPromise()
+                    await setUserPublicRepositories(owner.id, publicRepos).toPromise()
                 } catch (error) {
                     setOtherPublicRepoError(asError(error))
                     setFetchingRepos(undefined)
@@ -527,7 +525,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             isOrgMode,
             history,
             routingPrefix,
-            ownerID,
+            owner.id,
             codeHosts.hosts,
         ]
     )
@@ -604,7 +602,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     aria-label="select code host type"
                     onChange={event => setCodeHostFilter(event.target.value)}
                 >
-                    <option key="any" value="" label="Any" />
+                    <option key="all" value="" label="All" />
                     {codeHosts.hosts.map(value => (
                         <option key={value.id} value={value.id} label={value.displayName} />
                     ))}
@@ -750,23 +748,24 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Manage Repositories <Badge status="beta" className="ml-2" />
             </h2>
             <p className="text-muted">
-                Choose which repositories to sync with Sourcegraph to search all your code in one place.
+                Choose repositories to sync with Sourcegraph.
                 <Link
                     to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     {' '}
-                    Learn more
+                    Learn more about who can see code on Sourcegraph
                 </Link>
+                .
             </p>
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
                         <div>
-                            <h3>Your repositories</h3>
+                            <h3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</h3>
                             <p className="text-muted">
-                                Repositories you own or collaborate on from your{' '}
+                                Repositories that can be synced through{' '}
                                 <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                             </p>
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (

@@ -38,16 +38,14 @@ import {
 } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { Owner } from '../cloud-ga'
 
 import { defaultFilters, RepositoriesList } from './RepositoriesList'
 
 interface Props
     extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
-    owner: {
-        id: string
-        type: 'user' | 'org'
-    }
+    owner: Owner
     routingPrefix: string
 }
 
@@ -74,24 +72,24 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const NoAddedReposBanner = (
         <Container className="text-center">
-            <h4>You have not added any repositories to Sourcegraph.</h4>
+            <h4>{owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph</h4>
 
             {externalServices?.length === 0 ? (
-                <small>
+                <span className="text-muted">
                     <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
                     {isUserMode && (
                         <span>
                             You can also{' '}
-                            <Link to={`${routingPrefix}/repositories/manage`}>add other public repositories</Link> from
-                            GitHub or GitLab.
+                            <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link>{' '}
+                            from GitHub.com or GitLab.com.
                         </span>
                     )}
-                </small>
+                </span>
             ) : (
-                <small>
-                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching your
-                    code with Sourcegraph.
-                </small>
+                <span className="text-muted">
+                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching code
+                    with Sourcegraph.
+                </span>
             )}
         </Container>
     )
@@ -277,8 +275,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             />
             {status === 'scheduled' && (
                 <div className="alert alert-info">
-                    <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories list may not be
-                    up-to-date and will refresh once the sync is finished.
+                    <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories may not be
+                    up-to-date and will refresh once sync is finished.
                 </div>
             )}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
@@ -296,8 +294,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 ]}
                 description={
                     <div className="text-muted">
-                        All repositories synced with Sourcegraph from your{' '}
-                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
+                        All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
+                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts. </Link>
                     </div>
                 }
                 actions={
@@ -318,13 +316,21 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
                             </Link>
-                        ) : (
+                        ) : !externalServices ? (
                             <Link
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/code-hosts`}
                                 onClick={logManageRepositoriesClick}
                             >
                                 <AddIcon className="icon-inline" /> Connect code hosts
+                            </Link>
+                        ) : (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/repositories/manage`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                Manage Repositories
                             </Link>
                         )}
                     </span>

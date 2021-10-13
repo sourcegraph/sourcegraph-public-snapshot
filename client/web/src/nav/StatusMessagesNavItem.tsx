@@ -335,7 +335,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={status.message}
                             message={status.message}
-                            messageHint="Your repositories may not be up to date."
+                            messageHint="Your repositories may not be up-to-date."
                             linkTo={links.viewRepositories}
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
@@ -372,7 +372,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={status.message}
                             message={status.message}
-                            messageHint="Your repositories may not be up to date."
+                            messageHint="Your repositories may not be up-to-date."
                             linkTo={links.viewRepositories}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
@@ -384,7 +384,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={status.message}
                             message={status.message}
-                            messageHint="Your repositories are up to date, but search speed may be slower than usual."
+                            messageHint="Your repositories are up-to-date, but search speed may be slower than usual."
                             linkTo={links.viewRepositories}
                             linkText="Troubleshoot"
                             linkOnClick={this.toggleIsOpen}
@@ -441,7 +441,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         return (
             <CloudCheckIconRefresh
                 className="icon-inline-md"
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
+                data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
             />
         )
     }
