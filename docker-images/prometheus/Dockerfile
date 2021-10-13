@@ -1,7 +1,7 @@
 # sourcegraph/prometheus - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.12:99212_2021-06-14_51f6e1e@sha256:0b98031f67bda9b088421f137a1d7d959b44ad360175cfac59c4d6ccd19a4e57 AS monitoring_builder
+FROM sourcegraph/alpine-3.12:111381_2021-10-11_a9d84a0@sha256:574a1679d102ff1ddc420bce5703f68911ad64d979c35c792a297dfaaf9fb50e AS monitoring_builder
 RUN mkdir -p '/generated/prometheus'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator

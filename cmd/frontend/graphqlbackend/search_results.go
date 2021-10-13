@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -449,7 +450,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
+				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -1604,22 +1605,27 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
-		if args.ResultTypes.Has(result.TypeCommit) {
-			j, err := commit.NewSearchJob(args.Query, args.Repos, false, int(args.PatternInfo.FileMatchLimit))
+		addCommitSearch := func(diff bool) {
+			j, err := commit.NewSearchJob(args.Query, args.Repos, diff, int(args.PatternInfo.FileMatchLimit))
 			if err != nil {
 				agg.Error(err)
-			} else {
-				jobs = append(jobs, j)
+				return
 			}
+
+			if err := j.ExpandUsernames(ctx, r.db); err != nil {
+				agg.Error(err)
+				return
+			}
+
+			jobs = append(jobs, j)
+		}
+
+		if args.ResultTypes.Has(result.TypeCommit) {
+			addCommitSearch(false)
 		}
 
 		if args.ResultTypes.Has(result.TypeDiff) {
-			j, err := commit.NewSearchJob(args.Query, args.Repos, true, int(args.PatternInfo.FileMatchLimit))
-			if err != nil {
-				agg.Error(err)
-			} else {
-				jobs = append(jobs, j)
-			}
+			addCommitSearch(true)
 		}
 	} else {
 		if args.ResultTypes.Has(result.TypeDiff) {

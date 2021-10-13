@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"strings"
@@ -15,20 +16,51 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+const (
+	ciLogsOutStdout = "stdout"
+)
+
 var (
-	ciFlagSet       = flag.NewFlagSet("sg ci", flag.ExitOnError)
-	ciStatusFlagSet = flag.NewFlagSet("sg ci status", flag.ExitOnError)
-	waitFlag        = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
-	branchFlag      = ciStatusFlagSet.String("branch", "", "Branch name of the CI build status to check (defaults to current branch)")
-	ciCommand       = &ffcli.Command{
+	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
+
+	ciLogsFlagSet    = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
+	ciLogsBranchFlag = ciLogsFlagSet.String("branch", "", "Branch name of build to find logs for (defaults to current branch)")
+	ciLogsJobState   = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
+	ciLogsJobQuery   = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
+	ciLogsOut        = ciLogsFlagSet.String("out", ciLogsOutStdout,
+		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+
+	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
+	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
+	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
+)
+
+// get branch from flag or git
+func getCIBranch() (branch string, fromFlag bool, err error) {
+	fromFlag = true
+	switch {
+	case *ciLogsBranchFlag != "":
+		branch = *ciLogsBranchFlag
+	case *ciStatusBranchFlag != "":
+		branch = *ciStatusBranchFlag
+	default:
+		branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
+		fromFlag = false
+	}
+	return
+}
+
+var (
+	ciCommand = &ffcli.Command{
 		Name:       "ci",
-		ShortUsage: "sg ci [preview|status|build]",
+		ShortUsage: "sg ci [preview|status|build|logs]",
 		ShortHelp:  "Interact with Sourcegraph's continuous integration pipelines",
 		LongHelp: `Interact with Sourcegraph's continuous integration pipelines on Buildkite.
 
@@ -72,17 +104,14 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				branch := *branchFlag
-				if branch == "" {
-					var err error
-					branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
-					if err != nil {
-						return err
-					}
+				branch, branchFromFlag, err := getCIBranch()
+				if err != nil {
+					return err
 				}
+
 				// Just support main pipeline for now
 				var build *buildkite.Build
-				if !*waitFlag {
+				if !*ciStatusWaitFlag {
 					var err error
 					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 					if err != nil {
@@ -112,9 +141,9 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 						return err
 					}
 				}
-				printBuildOverview(build, *waitFlag)
+				printBuildOverview(build, *ciStatusWaitFlag)
 
-				if *branchFlag == "" {
+				if !branchFromFlag {
 					// If we're not on a specific branch, warn if build commit is not your commit
 					commit, err := run.GitCmd("rev-parse", "HEAD")
 					if err != nil {
@@ -170,6 +199,86 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					return fmt.Errorf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
 				}
 				out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
+				return nil
+			},
+		}, {
+			Name:      "logs",
+			ShortHelp: "Get logs from CI builds.",
+			LongHelp: `Get logs from CI builds, and output them in stdout or push them to Loki. By default only gets failed jobs - to change this, use the '--state' flag.
+
+The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
+
+To send logs to a Loki instance, you can provide '--out=http://127.0.0.1:3100' after spinning up an instance with 'sg run loki grafana'.
+From there, you can start exploring logs with the Grafana explore panel.
+`,
+			FlagSet: ciLogsFlagSet,
+			Exec: func(ctx context.Context, args []string) error {
+				client, err := bk.NewClient(ctx, out)
+				if err != nil {
+					return err
+				}
+
+				branch, _, err := getCIBranch()
+				if err != nil {
+					return err
+				}
+
+				build, err := client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				if err != nil {
+					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
+				}
+				out.WriteLine(output.Linef("", output.StylePending, "Fetching logs for %s ...",
+					*build.WebURL))
+
+				options := bk.ExportLogsOpts{
+					JobQuery: *ciLogsJobQuery,
+					State:    *ciLogsJobState,
+				}
+				logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
+				if err != nil {
+					return err
+				}
+				if len(logs) == 0 {
+					out.WriteLine(output.Line("", output.StyleSuggestion,
+						fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
+					return nil
+				}
+
+				switch *ciLogsOut {
+				case ciLogsOutStdout:
+					for _, log := range logs {
+						block := out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
+							*log.JobMeta.Name))
+						block.Write(*log.Content)
+						block.Close()
+					}
+					out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+
+				default:
+					lokiURL, err := url.Parse(*ciLogsOut)
+					if err != nil {
+						return fmt.Errorf("invalid Loki target: %w", err)
+					}
+					lokiClient := loki.NewLokiClient(lokiURL)
+					out.WriteLine(output.Linef("", output.StylePending, "Pushing %d log streams to Loki instance at %q",
+						len(logs), lokiURL.Host))
+					entries := 0
+					for _, log := range logs {
+						stream, err := loki.NewStreamFromJobLogs(log)
+						if err != nil {
+							return fmt.Errorf("failed to generate stream from logs for build %d job %q: %w",
+								log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						if err := lokiClient.PushStreams(ctx, []*loki.Stream{stream}); err != nil {
+							return fmt.Errorf("failed to push stream from logs for build %d job %q: %w",
+								log.JobMeta.Build, log.JobMeta.Job, err)
+						}
+						entries += len(stream.Values)
+					}
+					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess,
+						"Pushed %d entries from %d streams to Loki", entries, len(logs)))
+				}
+
 				return nil
 			},
 		}},
