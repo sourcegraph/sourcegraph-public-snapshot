@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 const (
@@ -56,12 +57,8 @@ func (r *Resolver) NodeResolvers() map[string]gql.NodeByIDFunc {
 	}
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for uploads
 func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (gql.LSIFUploadResolver, error) {
-	// 🚨 SECURITY: Only site admins may see LSIF upload data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	uploadID, err := unmarshalLSIFUploadGQLID(id)
 	if err != nil {
 		return nil, err
@@ -79,21 +76,14 @@ func (r *Resolver) LSIFUploadByID(ctx context.Context, id graphql.ID) (gql.LSIFU
 	return NewUploadResolver(r.resolver, upload, prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for uploads
 func (r *Resolver) LSIFUploads(ctx context.Context, args *gql.LSIFUploadsQueryArgs) (gql.LSIFUploadConnectionResolver, error) {
 	// Delegate behavior to LSIFUploadsByRepo with no specified repository identifier
 	return r.LSIFUploadsByRepo(ctx, &gql.LSIFRepositoryUploadsQueryArgs{LSIFUploadsQueryArgs: args})
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for uploads
 func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFRepositoryUploadsQueryArgs) (gql.LSIFUploadConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may see LSIF upload data
-	// if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-	// 	return nil, err
-	// }
-
-	if err := checkCurrentUserCanViewRepository(ctx, args.RepositoryID); err != nil {
-		return nil, err
-	}
-
 	opts, err := makeGetUploadsOptions(ctx, args)
 	if err != nil {
 		return nil, err
@@ -106,27 +96,9 @@ func (r *Resolver) LSIFUploadsByRepo(ctx context.Context, args *gql.LSIFReposito
 	return NewUploadConnectionResolver(r.resolver, r.resolver.UploadConnectionResolver(opts), prefetcher, r.locationResolver), nil
 }
 
-func checkCurrentUserCanViewRepository(ctx context.Context, id graphql.ID) error {
-	//if repositoryID is zero then be site admin
-	repoID, err := resolveRepositoryID(ctx, id)
-	if err != nil {
-		return err
-	}
-	if repoID == 0 {
-		return backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global)
-	}
-
-	// TODO: check for visibility into repo
-	if _, err := backend.Repos.Get(ctx, api.RepoID(repoID)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
+// 🚨 SECURITY: Only site admins may modify code intelligence upload data
 func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may modify LSIF data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -144,14 +116,10 @@ func (r *Resolver) DeleteLSIFUpload(ctx context.Context, args *struct{ ID graphq
 
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
+// 🚨 SECURITY: dbstore layer handles authz for indexes
 func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIndexResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may see LSIF index data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	indexID, err := unmarshalLSIFIndexGQLID(id)
@@ -171,6 +139,7 @@ func (r *Resolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (gql.LSIFIn
 	return NewIndexResolver(r.resolver, index, prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for indexes
 func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
@@ -180,17 +149,10 @@ func (r *Resolver) LSIFIndexes(ctx context.Context, args *gql.LSIFIndexesQueryAr
 	return r.LSIFIndexesByRepo(ctx, &gql.LSIFRepositoryIndexesQueryArgs{LSIFIndexesQueryArgs: args})
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for indexes
 func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFRepositoryIndexesQueryArgs) (gql.LSIFIndexConnectionResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may see LSIF index data
-	// if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-	// 	return nil, err
-	// }
-	if err := checkCurrentUserCanViewRepository(ctx, args.RepositoryID); err != nil {
-		return nil, err
 	}
 
 	opts, err := makeGetIndexesOptions(ctx, args)
@@ -205,14 +167,13 @@ func (r *Resolver) LSIFIndexesByRepo(ctx context.Context, args *gql.LSIFReposito
 	return NewIndexConnectionResolver(r.resolver, r.resolver.IndexConnectionResolver(opts), prefetcher, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence index data
 func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*gql.EmptyResponse, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may modify LSIF data
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	indexID, err := unmarshalLSIFIndexGQLID(args.ID)
@@ -227,6 +188,7 @@ func (r *Resolver) DeleteLSIFIndex(ctx context.Context, args *struct{ ID graphql
 	return &gql.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceCommitGraphResolver, error) {
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
 	if err != nil {
@@ -236,14 +198,13 @@ func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (gql.CodeInte
 	return r.resolver.CommitGraph(ctx, int(repositoryID))
 }
 
+// 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.QueueAutoIndexJobsForRepoArgs) ([]gql.LSIFIndexResolver, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may queue indexing jobs
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	repositoryID, err := gql.UnmarshalRepositoryID(args.Repository)
@@ -277,6 +238,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *gql.Queu
 	return resolvers, nil
 }
 
+// 🚨 SECURITY: dbstore layer handles authz for upload query paths
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDataArgs) (gql.GitBlobLSIFDataResolver, error) {
 	resolver, err := r.resolver.QueryResolver(ctx, args)
 	if err != nil || resolver == nil {
@@ -286,12 +248,10 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 	return NewQueryResolver(resolver, r.locationResolver), nil
 }
 
+// 🚨 SECURITY: Ensure that global policies can be seen by anybody but repository policies
+// are restricted to site-admin and to those for which the repository is visible. We do this
+// with a post-fetch auth check.
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	configurationPolicyID, err := unmarshalConfigurationPolicyGQLID(id)
 	if err != nil {
 		return nil, err
@@ -302,23 +262,32 @@ func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (
 		return nil, err
 	}
 
+	if configurationPolicy.RepositoryID != nil {
+		// Ensure repository is visible to user
+		if ok, err := checkRepositoryVisibility(ctx, *configurationPolicy.RepositoryID); err != nil || !ok {
+			return nil, err
+		}
+	}
+
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
+// 🚨 SECURITY: Ensure that global policies can be seen by anybody but repository policies
+// are restricted to site-admin and to those for which the repository is visible. We do this
+// with a pre-query auth-check on the repository identifier (when supplied).
 func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *gql.CodeIntelligenceConfigurationPoliciesArgs) ([]gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
-	}
-
 	opts := store.GetConfigurationPoliciesOptions{}
 	if args.Repository != nil {
 		id64, err := unmarshalRepositoryID(*args.Repository)
 		if err != nil {
 			return nil, err
 		}
-
 		opts.RepositoryID = int(id64)
+
+		// Ensure repository is visible to user
+		if ok, err := checkRepositoryVisibility(ctx, opts.RepositoryID); err != nil || !ok {
+			return nil, err
+		}
 	}
 
 	policies, err := r.resolver.GetConfigurationPolicies(ctx, opts)
@@ -334,9 +303,27 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 	return resolvers, nil
 }
 
+// TODO - move, document
+func checkRepositoryVisibility(ctx context.Context, repositoryID int) (bool, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err == nil {
+		// site-admin
+		return true, nil
+	}
+
+	if _, err := backend.Repos.Get(ctx, api.RepoID(repositoryID)); err != nil {
+		if errcode.IsNotFound(err) {
+			err = nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
+}
+
+// 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.CreateCodeIntelligenceConfigurationPolicyArgs) (gql.CodeIntelligenceConfigurationPolicyResolver, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -374,18 +361,9 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
-func toDuration(hours *int32) *time.Duration {
-	if hours == nil {
-		return nil
-	}
-
-	v := time.Duration(*hours) * time.Hour
-	return &v
-}
-
+// 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -416,9 +394,9 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return &gql.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.DeleteCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
@@ -434,14 +412,10 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return &gql.EmptyResponse{}, nil
 }
 
+// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.IndexConfigurationResolver, error) {
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	repositoryID, err := gql.UnmarshalRepositoryID(id)
@@ -452,14 +426,13 @@ func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (gql.I
 	return NewIndexConfigurationResolver(r.resolver, int(repositoryID)), nil
 }
 
+// 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *gql.UpdateRepositoryIndexConfigurationArgs) (*gql.EmptyResponse, error) {
+	if err := checkCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
 	if !autoIndexingEnabled() {
 		return nil, errAutoIndexingNotEnabled
-	}
-
-	// 🚨 SECURITY: Only site admins may configure code intelligence
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
-		return nil, err
 	}
 
 	repositoryID, err := unmarshalLSIFIndexGQLID(args.Repository)
@@ -550,4 +523,18 @@ func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
 	}
 
 	return int(repoID), nil
+}
+
+// checkCurrentUserIsSiteAdmin returns true if the current user is a site-admin.
+func checkCurrentUserIsSiteAdmin(ctx context.Context) error {
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global)
+}
+
+func toDuration(hours *int32) *time.Duration {
+	if hours == nil {
+		return nil
+	}
+
+	v := time.Duration(*hours) * time.Hour
+	return &v
 }
