@@ -3,12 +3,6 @@
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 set -euo pipefail
 
-OUTPUT=$(mktemp -d -t trivy_XXXX)
-cleanup() {
-  rm -rf "$OUTPUT"
-}
-trap cleanup EXIT
-
 export GITHUB_TOKEN="${GH_TOKEN}"
 
 # do not move this "set -x" above the GITHUB_TOKEN
@@ -59,25 +53,17 @@ upload_annotation() {
   local path="$1"
   local imageName="$2"
 
-  local folder
-  folder="$(dirname "${path}")"
   local file
   file="$(basename "${path}")"
-
-  pushd "${folder}"
-
-  buildkite-agent artifact upload "${file}"
 
   cat <<EOF | buildkite-agent annotate --style warning --context "Docker image security scan" --append
 - **${imageName}** high/critical CVE(s): [${file}](artifact://${file})
 EOF
 
-  popd
-
   echo "High or critical severity CVEs were discovered in ${IMAGE}. Please read the buildkite annotation for more info."
 }
 
-ARTIFACT_FILE="${OUTPUT}/${IMAGE}-security-report.html"
+ARTIFACT_FILE="$(pwd)/${IMAGE}-security-report.html"
 trivy_scan "./dev/ci/trivy/trivy-artifact-html.tpl" "${ARTIFACT_FILE}" "${IMAGE}" || exitCode="$?"
 case "${exitCode:-"0"}" in
 0)

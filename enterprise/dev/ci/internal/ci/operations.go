@@ -508,6 +508,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 
 			bk.Env("IMAGE", app),
 			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
+			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
 
 			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
