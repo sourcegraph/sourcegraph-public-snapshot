@@ -8,7 +8,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '0b81b624c24f5fc4d53fd10651eb84d67072e74e',
-                        committer: {
+                        author: {
                             date: '2009-09-04T05:00:34Z',
                         },
                     },
@@ -23,7 +23,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '03956c5dde9dcb22a53e7d3f259a0e98dd50704b',
-                        committer: {
+                        author: {
                             date: '2011-09-05T19:10:27Z',
                         },
                     },
@@ -38,7 +38,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '948698c42a2a05b1ebebf3cda5945b0764426f57',
-                        committer: {
+                        author: {
                             date: '2013-09-04T22:25:47Z',
                         },
                     },
@@ -53,7 +53,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: 'db37595dc3a4ceb7953dd89b2122a974ff70b311',
-                        committer: {
+                        author: {
                             date: '2015-09-05T18:20:08Z',
                         },
                     },
@@ -68,7 +68,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '4472874fb5fddb44d402f4fdf064149b68dce68c',
-                        committer: {
+                        author: {
                             date: '2017-09-05T16:16:25Z',
                         },
                     },
@@ -83,7 +83,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '6f34ec9377091a1665d554a54bc58812813c7c1a',
-                        committer: {
+                        author: {
                             date: '2019-07-09T19:59:43Z',
                         },
                     },
@@ -98,7 +98,7 @@ export const SEARCH_INSIGHT_COMMITS_MOCK: Record<string, BulkSearchCommits> = {
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '6f34ec9377091a1665d554a54bc58812813c7c1a',
-                        committer: {
+                        author: {
                             date: '2019-07-09T19:59:43Z',
                         },
                     },
@@ -214,7 +214,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '2a1cd8a30c72780ad884159161d0ec828cfe69a3',
-                        committer: {
+                        author: {
                             date: '2020-05-30T19:48:57Z',
                         },
                     },
@@ -229,7 +229,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '68afed3a2812a197096720c80df928eba0ea0703',
-                        committer: {
+                        author: {
                             date: '2020-07-31T20:36:59Z',
                         },
                     },
@@ -244,7 +244,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: 'f62cb0864d367cfd09fb6f755807e6c25b44e6dd',
-                        committer: {
+                        author: {
                             date: '2020-09-30T20:22:52Z',
                         },
                     },
@@ -259,7 +259,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: 'ccede06037725365c3391e36b9d90c85eb00b71a',
-                        committer: {
+                        author: {
                             date: '2020-11-30T20:27:10Z',
                         },
                     },
@@ -274,7 +274,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: 'b29a72431e10adac2267cd4e5097f11d517e9139',
-                        committer: {
+                        author: {
                             date: '2021-01-30T00:52:56Z',
                         },
                     },
@@ -289,7 +289,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '4e565e36dc880f75c12982e2aba41f2445eeb4e1',
-                        committer: {
+                        author: {
                             date: '2021-03-31T20:47:08Z',
                         },
                     },
@@ -304,7 +304,7 @@ export const INSIGHT_TYPES_MIGRATION_COMMITS: Record<string, BulkSearchCommits> 
                     __typename: 'CommitSearchResult',
                     commit: {
                         oid: '1c2601a76662f6a0700b614a4a68406335075c29',
-                        committer: {
+                        author: {
                             date: '2021-05-31T17:05:12Z',
                         },
                     },
