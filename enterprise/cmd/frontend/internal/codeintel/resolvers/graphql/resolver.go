@@ -291,8 +291,8 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if args.Type != gql.GitObjectTypeCommit && args.Type != gql.GitObjectTypeTag && args.Type != gql.GitObjectTypeTree {
-		return nil, errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", args.Type)
+	if err := validateConfigurationPolicy(args.CodeIntelConfigurationPolicy); err != nil {
+		return nil, err
 	}
 
 	var repositoryID *int
@@ -331,8 +331,8 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if args.Type != gql.GitObjectTypeCommit && args.Type != gql.GitObjectTypeTag && args.Type != gql.GitObjectTypeTree {
-		return nil, errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", args.Type)
+	if err := validateConfigurationPolicy(args.CodeIntelConfigurationPolicy); err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalConfigurationPolicyGQLID(args.ID)
@@ -492,6 +492,31 @@ func resolveRepositoryID(ctx context.Context, id graphql.ID) (int, error) {
 // checkCurrentUserIsSiteAdmin returns true if the current user is a site-admin.
 func checkCurrentUserIsSiteAdmin(ctx context.Context) error {
 	return backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global)
+}
+
+func validateConfigurationPolicy(policy gql.CodeIntelConfigurationPolicy) error {
+	switch policy.Type {
+	case gql.GitObjectTypeCommit:
+	case gql.GitObjectTypeTag:
+	case gql.GitObjectTypeTree:
+	default:
+		return errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", policy.Type)
+	}
+
+	if policy.Name == "" {
+		return errors.Errorf("no name supplied")
+	}
+	if policy.Pattern == "" {
+		return errors.Errorf("no pattern supplied")
+	}
+	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
+		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
+	}
+	if policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
+		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
+	}
+
+	return nil
 }
 
 func toDuration(hours *int32) *time.Duration {
