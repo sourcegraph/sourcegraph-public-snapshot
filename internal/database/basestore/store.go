@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"os"
 	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -146,7 +146,7 @@ func (s *Store) wrapError(query *sqlf.Query, err error) error {
 	}
 
 	// if we are not in tests, return the error as is
-	if flag.Lookup("test.v") == nil && os.Getenv("CI") != "true" {
+	if flag.Lookup("test.v") == nil {
 		return err
 	}
 
@@ -160,5 +160,5 @@ func (s *Store) wrapError(query *sqlf.Query, err error) error {
 		fmt.Fprintf(&b, "%v", arg)
 	}
 
-	return fmt.Errorf("query error: %w\n----- Args: %#v\n----- SQL Query:\n%s\n-----\n", err, b.String(), query.Query(sqlf.PostgresBindVar))
+	return errors.Wrap(err, fmt.Sprintf("SQL Error\n----- Args: %#v\n----- SQL Query:\n%s\n-----\n", b.String(), query.Query(sqlf.PostgresBindVar)))
 }
