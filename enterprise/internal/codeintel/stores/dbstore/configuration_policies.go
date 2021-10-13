@@ -121,6 +121,8 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if err != nil {
 		return nil, err
 	}
+	// Global policies are visible to anyone
+	// Repository-specific policies must check repository permissions
 	conds = append(conds, sqlf.Sprintf("(p.repository_id IS NULL OR (%s))", authzConds))
 
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
@@ -185,6 +187,8 @@ SELECT
 	p.index_intermediate_commits
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
+-- Global policies are visible to anyone
+-- Repository-specific policies must check repository permissions
 WHERE p.id = %s AND (p.repository_id IS NULL OR (%s))
 `
 
