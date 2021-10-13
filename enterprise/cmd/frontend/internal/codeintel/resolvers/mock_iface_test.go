@@ -3165,10 +3165,6 @@ type MockEnqueuerDBStore struct {
 	// GetIndexesByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetIndexesByIDs.
 	GetIndexesByIDsFunc *EnqueuerDBStoreGetIndexesByIDsFunc
-	// GetRepositoriesWithIndexConfigurationFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetRepositoriesWithIndexConfiguration.
-	GetRepositoriesWithIndexConfigurationFunc *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *EnqueuerDBStoreHandleFunc
@@ -3205,11 +3201,6 @@ func NewMockEnqueuerDBStore() *MockEnqueuerDBStore {
 		},
 		GetIndexesByIDsFunc: &EnqueuerDBStoreGetIndexesByIDsFunc{
 			defaultHook: func(context.Context, ...int) ([]dbstore.Index, error) {
-				return nil, nil
-			},
-		},
-		GetRepositoriesWithIndexConfigurationFunc: &EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc{
-			defaultHook: func(context.Context) ([]int, error) {
 				return nil, nil
 			},
 		},
@@ -3252,9 +3243,6 @@ func NewMockEnqueuerDBStoreFrom(i EnqueuerDBStore) *MockEnqueuerDBStore {
 		},
 		GetIndexesByIDsFunc: &EnqueuerDBStoreGetIndexesByIDsFunc{
 			defaultHook: i.GetIndexesByIDs,
-		},
-		GetRepositoriesWithIndexConfigurationFunc: &EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc{
-			defaultHook: i.GetRepositoriesWithIndexConfiguration,
 		},
 		HandleFunc: &EnqueuerDBStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -3716,118 +3704,6 @@ func (c EnqueuerDBStoreGetIndexesByIDsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnqueuerDBStoreGetIndexesByIDsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc describes the
-// behavior when the GetRepositoriesWithIndexConfiguration method of the
-// parent MockEnqueuerDBStore instance is invoked.
-type EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc struct {
-	defaultHook func(context.Context) ([]int, error)
-	hooks       []func(context.Context) ([]int, error)
-	history     []EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRepositoriesWithIndexConfiguration delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockEnqueuerDBStore) GetRepositoriesWithIndexConfiguration(v0 context.Context) ([]int, error) {
-	r0, r1 := m.GetRepositoriesWithIndexConfigurationFunc.nextHook()(v0)
-	m.GetRepositoriesWithIndexConfigurationFunc.appendCall(EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetRepositoriesWithIndexConfiguration method of the parent
-// MockEnqueuerDBStore instance is invoked and the hook queue is empty.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepositoriesWithIndexConfiguration method of the parent
-// MockEnqueuerDBStore instance invokes the hook at the front of the queue
-// and discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) PushHook(hook func(context.Context) ([]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context) ([]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) nextHook() func(context.Context) ([]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) appendCall(r0 EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall objects
-// describing the invocations of this function.
-func (f *EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFunc) History() []EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall {
-	f.mutex.Lock()
-	history := make([]EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall is an object
-// that describes an invocation of method
-// GetRepositoriesWithIndexConfiguration on an instance of
-// MockEnqueuerDBStore.
-type EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c EnqueuerDBStoreGetRepositoriesWithIndexConfigurationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

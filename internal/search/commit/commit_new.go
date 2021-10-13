@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -72,6 +73,34 @@ func (j CommitSearch) Name() string {
 		return "Diff"
 	}
 	return "Commit"
+}
+
+func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err error) {
+	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
+		if err != nil {
+			return n
+		}
+
+		var expr *string
+		switch v := n.(type) {
+		case *protocol.AuthorMatches:
+			expr = &v.Expr
+		case *protocol.CommitterMatches:
+			expr = &v.Expr
+		default:
+			return n
+		}
+
+		var expanded []string
+		expanded, err = expandUsernamesToEmails(ctx, db, []string{*expr})
+		if err != nil {
+			return n
+		}
+
+		*expr = "(" + strings.Join(expanded, ")|(") + ")"
+		return n
+	})
+	return err
 }
 
 func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*CommitSearch, error) {

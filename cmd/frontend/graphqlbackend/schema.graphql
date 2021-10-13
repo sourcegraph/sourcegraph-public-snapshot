@@ -438,10 +438,6 @@ type Mutation {
         """
         publicArgument: String
         """
-        User properties for Amplitude analytics. Used on Sourcegraph Cloud only. Avoid including any PII.
-        """
-        userProperties: String
-        """
         Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
         """
         deviceID: String

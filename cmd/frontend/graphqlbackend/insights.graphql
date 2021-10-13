@@ -203,6 +203,11 @@ extend type Mutation {
     Associate an existing insight view with this dashboard.
     """
     addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Remove an insight view from a dashboard.
+    """
+    removeInsightViewFromDashboard(input: RemoveInsightViewFromDashboardInput!): InsightsDashboardPayload!
 }
 
 """
@@ -313,6 +318,21 @@ Input object for adding insight view to dashboard.
 input AddInsightViewToDashboardInput {
     """
     ID of the insight view to attach to the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input RemoveInsightViewFromDashboardInput {
+    """
+    ID of the insight view to remove from the dashboard
     """
     insightViewId: ID!
 

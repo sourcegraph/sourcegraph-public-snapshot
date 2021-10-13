@@ -2,7 +2,7 @@ env:
   VAGRANT_RUN_ENV: "CI"
 steps:
 - label: ':chromium: Sourcegraph E2E'
-  artifact_paths: ./*.png;./*.mp4;./ffmpeg.log
+  artifact_paths: ./*.png;./*.mp4;./ffmpeg.log;./*.log
   retry:
     automatic:
       exit_status: "*"
@@ -39,10 +39,11 @@ steps:
   agents:
     queue: 'baremetal'
 
-- label: ":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA"
-  commands:
-    - dev/ci/test/cluster/cluster-test.sh
-  artifact_paths: ./*.png;./*.mp4;./*.log
-  concurrency: 1
-  concurrency_group: "cluster-test"
-  timeout_in_minutes: 30
+# Flaky deployment. https://github.com/sourcegraph/sourcegraph/issues/25977
+# - label: ":k8s: Sourcegraph Cluster (deploy-sourcegraph) QA"
+#   commands:
+#     - dev/ci/test/cluster/cluster-test.sh
+#   artifact_paths: ./*.png;./*.mp4;./*.log
+#   concurrency: 1
+#   concurrency_group: "cluster-test"
+#   timeout_in_minutes: 30

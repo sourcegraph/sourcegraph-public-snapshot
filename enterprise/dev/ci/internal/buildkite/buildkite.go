@@ -8,6 +8,7 @@ package buildkite
 
 import (
 	"io"
+	"strings"
 
 	"github.com/ghodss/yaml"
 )
@@ -202,9 +203,9 @@ func DisableManualRetry(reason string) StepOpt {
 	}
 }
 
-func ArtifactPaths(paths string) StepOpt {
+func ArtifactPaths(paths ...string) StepOpt {
 	return func(step *Step) {
-		step.ArtifactPaths = paths
+		step.ArtifactPaths = strings.Join(paths, ",")
 	}
 }
 
