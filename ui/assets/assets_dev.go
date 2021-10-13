@@ -4,7 +4,7 @@
 package assets
 
 import (
-	"github.com/lpar/gzipped/v2"
+	"github.com/shurcooL/httpgzip"
 )
 
-var Assets = gzipped.Dir("./ui/assets")
+var Assets = httpgzip.Dir("./ui/assets")

@@ -244,6 +244,7 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/karlseguin/typed v1.1.7 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
+	github.com/kevinpollet/nego v0.0.0-20211010160919-a65cd48cee43 // indirect
 	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
@@ -340,7 +341,7 @@ replace (
 	// Pending: https://github.com/ghodss/yaml/pull/65
 	github.com/ghodss/yaml => github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
-	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1
+	github.com/shurcooL/httpgzip => github.com/umpox/httpgzip v0.0.0-20211013133023-4680dd1f74dd
 )
 
 // Status unclear replace directives
