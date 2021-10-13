@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     container: sourcegraph/lsif-go
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@5a4ac9002d0be2fb38bd78e4b4dbde5606d7042f # renovate: tag=v2
       - name: Generate LSIF data
         run: lsif-go
       - name: Upload LSIF data
