@@ -18,4 +18,5 @@ jobs:
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
+                  team/delivery=@sourcegraph/delivery
                   team/security=@dan-mckean
