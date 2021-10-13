@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -145,7 +146,7 @@ func (s *Store) wrapError(query *sqlf.Query, err error) error {
 	}
 
 	// if we are not in tests, return the error as is
-	if flag.Lookup("test.v") == nil {
+	if flag.Lookup("test.v") == nil && os.Getenv("CI") != "true" {
 		return err
 	}
 
