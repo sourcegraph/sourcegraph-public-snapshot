@@ -2145,6 +2145,9 @@ type MockLSIFStore struct {
 	// WriteDocumentsFunc is an instance of a mock function object
 	// controlling the behavior of the method WriteDocuments.
 	WriteDocumentsFunc *LSIFStoreWriteDocumentsFunc
+	// WriteImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method WriteImplementations.
+	WriteImplementationsFunc *LSIFStoreWriteImplementationsFunc
 	// WriteMetaFunc is an instance of a mock function object controlling
 	// the behavior of the method WriteMeta.
 	WriteMetaFunc *LSIFStoreWriteMetaFunc
@@ -2200,6 +2203,11 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return nil
 			},
 		},
+		WriteImplementationsFunc: &LSIFStoreWriteImplementationsFunc{
+			defaultHook: func(context.Context, int, chan precise.MonikerLocations) error {
+				return nil
+			},
+		},
 		WriteMetaFunc: &LSIFStoreWriteMetaFunc{
 			defaultHook: func(context.Context, int, precise.MetaData) error {
 				return nil
@@ -2245,6 +2253,9 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 		},
 		WriteDocumentsFunc: &LSIFStoreWriteDocumentsFunc{
 			defaultHook: i.WriteDocuments,
+		},
+		WriteImplementationsFunc: &LSIFStoreWriteImplementationsFunc{
+			defaultHook: i.WriteImplementations,
 		},
 		WriteMetaFunc: &LSIFStoreWriteMetaFunc{
 			defaultHook: i.WriteMeta,
@@ -3150,6 +3161,117 @@ func (c LSIFStoreWriteDocumentsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c LSIFStoreWriteDocumentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LSIFStoreWriteImplementationsFunc describes the behavior when the
+// WriteImplementations method of the parent MockLSIFStore instance is
+// invoked.
+type LSIFStoreWriteImplementationsFunc struct {
+	defaultHook func(context.Context, int, chan precise.MonikerLocations) error
+	hooks       []func(context.Context, int, chan precise.MonikerLocations) error
+	history     []LSIFStoreWriteImplementationsFuncCall
+	mutex       sync.Mutex
+}
+
+// WriteImplementations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) WriteImplementations(v0 context.Context, v1 int, v2 chan precise.MonikerLocations) error {
+	r0 := m.WriteImplementationsFunc.nextHook()(v0, v1, v2)
+	m.WriteImplementationsFunc.appendCall(LSIFStoreWriteImplementationsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WriteImplementations
+// method of the parent MockLSIFStore instance is invoked and the hook queue
+// is empty.
+func (f *LSIFStoreWriteImplementationsFunc) SetDefaultHook(hook func(context.Context, int, chan precise.MonikerLocations) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WriteImplementations method of the parent MockLSIFStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *LSIFStoreWriteImplementationsFunc) PushHook(hook func(context.Context, int, chan precise.MonikerLocations) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreWriteImplementationsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, chan precise.MonikerLocations) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreWriteImplementationsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, chan precise.MonikerLocations) error {
+		return r0
+	})
+}
+
+func (f *LSIFStoreWriteImplementationsFunc) nextHook() func(context.Context, int, chan precise.MonikerLocations) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreWriteImplementationsFunc) appendCall(r0 LSIFStoreWriteImplementationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreWriteImplementationsFuncCall
+// objects describing the invocations of this function.
+func (f *LSIFStoreWriteImplementationsFunc) History() []LSIFStoreWriteImplementationsFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreWriteImplementationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreWriteImplementationsFuncCall is an object that describes an
+// invocation of method WriteImplementations on an instance of
+// MockLSIFStore.
+type LSIFStoreWriteImplementationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 chan precise.MonikerLocations
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreWriteImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreWriteImplementationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
