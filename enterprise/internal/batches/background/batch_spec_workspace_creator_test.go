@@ -20,7 +20,7 @@ import (
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 
-	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 2)
+	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
 
 	user := ct.CreateTestUser(t, db, true)
 
@@ -69,6 +69,12 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 				OnlyFetchWorkspace: true,
 			},
 		},
+		unsupported: map[*types.Repo]struct{}{
+			repos[2]: {},
+		},
+		ignored: map[*types.Repo]struct{}{
+			repos[3]: {},
+		},
 	}
 
 	creator := &batchSpecWorkspaceCreator{store: s}
@@ -114,6 +120,22 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 			Path:               "d/e",
 			Steps:              []batcheslib.Step{},
 			OnlyFetchWorkspace: true,
+		},
+		{
+			RepoID:           repos[2].ID,
+			BatchSpecID:      batchSpec.ID,
+			ChangesetSpecIDs: []int64{},
+			FileMatches:      []string{},
+			Steps:            []batcheslib.Step{},
+			Unsupported:      true,
+		},
+		{
+			RepoID:           repos[3].ID,
+			BatchSpecID:      batchSpec.ID,
+			ChangesetSpecIDs: []int64{},
+			FileMatches:      []string{},
+			Steps:            []batcheslib.Step{},
+			Ignored:          true,
 		},
 	}
 

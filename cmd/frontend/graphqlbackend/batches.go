@@ -897,6 +897,7 @@ type BatchSpecWorkspaceResolver interface {
 	OnlyFetchWorkspace() bool
 
 	Ignored() bool
+	Unsupported() bool
 
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
 	PlaceInQueue() *int32

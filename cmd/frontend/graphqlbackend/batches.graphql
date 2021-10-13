@@ -2509,11 +2509,6 @@ type BatchSpecWorkspaceResolution {
     ): BatchSpecWorkspaceConnection!
 
     """
-    The list of repos that are unsupported.
-    """
-    unsupported: RepositoryConnection!
-
-    """
     Returns the workspaces where most recently a step completed that yielded a diff.
     """
     recentlyCompleted(first: Int = 50, after: String): BatchSpecWorkspaceConnection!
@@ -2664,10 +2659,14 @@ type BatchSpecWorkspace implements Node {
     """
     If true, this workspace has been skipped, because some rule forced this.
     For now, the only one is a .batchignore file existing in the repository.
-
-    TODO: Not yet implemented.
     """
     ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
 
     """
     Whether we found a task cache result.

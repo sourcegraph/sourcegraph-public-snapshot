@@ -115,8 +115,11 @@ func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlback
 }
 
 func (r *batchSpecWorkspaceResolver) Ignored() bool {
-	// TODO(ssbc): not implemented
-	return false
+	return r.workspace.Ignored
+}
+
+func (r *batchSpecWorkspaceResolver) Unsupported() bool {
+	return r.workspace.Unsupported
 }
 
 func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
@@ -160,7 +163,7 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 
 func (r *batchSpecWorkspaceResolver) State() string {
 	if r.execution == nil {
-		return "QUEUED"
+		return "PENDING"
 	}
 	return r.execution.State.ToGraphQL()
 }

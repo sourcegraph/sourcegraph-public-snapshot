@@ -83,5 +83,37 @@ func (r *batchSpecWorkspaceCreator) process(
 		})
 	}
 
+	for repo := range unsupported {
+		ws = append(ws, &btypes.BatchSpecWorkspace{
+			BatchSpecID:      spec.ID,
+			ChangesetSpecIDs: []int64{},
+
+			RepoID:      repo.ID,
+			Unsupported: true,
+
+			// TODO: These are all not-nullable, so we have to set some values
+			Branch:      "",
+			Commit:      "",
+			Path:        "",
+			FileMatches: []string{},
+		})
+	}
+
+	for repo := range ignored {
+		ws = append(ws, &btypes.BatchSpecWorkspace{
+			BatchSpecID:      spec.ID,
+			ChangesetSpecIDs: []int64{},
+
+			RepoID:  repo.ID,
+			Ignored: true,
+
+			// TODO: These are all not-nullable, so we have to set some values
+			Branch:      "",
+			Commit:      "",
+			Path:        "",
+			FileMatches: []string{},
+		})
+	}
+
 	return tx.CreateBatchSpecWorkspace(ctx, ws...)
 }
