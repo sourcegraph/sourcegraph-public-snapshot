@@ -66,17 +66,17 @@ EOF
 ARTIFACT_FILE="$(pwd)/${IMAGE}-security-report.html"
 trivy_scan "./dev/ci/trivy/trivy-artifact-html.tpl" "${ARTIFACT_FILE}" "${IMAGE}" || exitCode="$?"
 case "${exitCode:-"0"}" in
-0)
-  # no vulnerabilities were found
-  exit 0
-  ;;
-"${VULNERABILITY_EXIT_CODE}")
-  # we found vulnerabilities - upload the annotation
-  upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
-  exit "${VULNERABILITY_EXIT_CODE}"
-  ;;
-*)
-  # some other kind of error occurred
-  exit $exitCode
-  ;;
+  0)
+    # no vulnerabilities were found
+    exit 0
+    ;;
+  "${VULNERABILITY_EXIT_CODE}")
+    # we found vulnerabilities - upload the annotation
+    upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
+    exit "${VULNERABILITY_EXIT_CODE}"
+    ;;
+  *)
+    # some other kind of error occurred
+    exit $exitCode
+    ;;
 esac
