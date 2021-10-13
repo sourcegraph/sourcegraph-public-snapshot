@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
@@ -56,16 +57,17 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                 className="mb-2"
                                 path={[
                                     {
+                                        icon: MagnifyIcon,
+                                        to: '/search',
+                                    },
+                                    {
+                                        icon: SourceRepositoryMultipleIcon,
+                                        to: '/contexts',
+                                        text: 'Contexts',
+                                    },
+                                    {
                                         text: (
                                             <div className="d-flex align-items-center">
-                                                <Link
-                                                    className="d-flex"
-                                                    to="/contexts"
-                                                    aria-label="Back to contexts list"
-                                                    title="Back to contexts list"
-                                                >
-                                                    <ChevronLeftIcon />
-                                                </Link>
                                                 <span>{searchContextOrError.spec}</span>
                                                 {!searchContextOrError.public && (
                                                     <div

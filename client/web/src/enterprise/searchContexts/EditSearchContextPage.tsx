@@ -1,3 +1,5 @@
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
@@ -17,6 +19,7 @@ import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
@@ -71,17 +74,31 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
         <div className="w-100">
             <Page>
                 <div className="container col-8">
-                    <PageTitle title="Edit search context" />
+                    <PageTitle title="Edit context" />
+                    <PageHeader
+                        className="mb-3"
+                        path={[
+                            {
+                                icon: MagnifyIcon,
+                                to: '/search',
+                            },
+                            {
+                                icon: SourceRepositoryMultipleIcon,
+                                to: '/contexts',
+                                text: 'Contexts',
+                            },
+                            {
+                                text: 'Edit context',
+                            },
+                        ]}
+                    />
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
                             <LoadingSpinner />
                         </div>
                     )}
                     {searchContextOrError && searchContextOrError !== LOADING && !isErrorLike(searchContextOrError) && (
-                        <>
-                            <h1 className="mb-4">Edit search context</h1>
-                            <SearchContextForm {...props} searchContext={searchContextOrError} onSubmit={onSubmit} />
-                        </>
+                        <SearchContextForm {...props} searchContext={searchContextOrError} onSubmit={onSubmit} />
                     )}
                     {isErrorLike(searchContextOrError) && (
                         <div className="alert alert-danger">

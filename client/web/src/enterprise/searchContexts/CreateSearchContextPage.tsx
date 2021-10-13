@@ -1,3 +1,5 @@
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -47,9 +49,20 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
         <div className="w-100">
             <Page>
                 <div className="container col-8">
-                    <PageTitle title="Create a new search context" />
+                    <PageTitle title="Create context" />
                     <PageHeader
-                        path={[{ text: 'Create a new search context' }]}
+                        path={[
+                            {
+                                icon: MagnifyIcon,
+                                to: '/search',
+                            },
+                            {
+                                icon: SourceRepositoryMultipleIcon,
+                                to: '/contexts',
+                                text: 'Contexts',
+                            },
+                            { text: 'Create context' },
+                        ]}
                         description={
                             <span className="text-muted">
                                 A search context represents a group of repositories at specified branches or revisions
