@@ -60,7 +60,7 @@ export function useCachedSearchResults(
             })
             
             return unlisten
-        }, [history, setCachedResults])
+        }, [history, setCachedResults]
     )
 
     useEffect(() => {
