@@ -5,6 +5,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
+import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -12,6 +13,9 @@ import { CaseSensitivityProps, ParsedSearchQueryProps, PatternTypeProps, SearchC
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 
 import styles from './DidYouMean.module.scss'
+
+// Only consider queries that have at most this many terms
+const MAX_TERMS = 4
 
 interface DidYouMeanProps
     extends Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
@@ -21,6 +25,23 @@ interface DidYouMeanProps
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {}
 
 const normalizedLanguages = new Map(ALL_LANGUAGES.map(lang => [lang.toLowerCase(), lang]))
+
+function isPattern(token: Token): token is Pattern {
+    return token.type === 'pattern'
+}
+
+function matchesLanguage(token: Pattern): { success: false } | { success: true; language: string; token: Pattern } {
+    const normalizedSearchTerm = token.value.toLowerCase()
+    if (normalizedLanguages.has(normalizedSearchTerm)) {
+        return {
+            success: true,
+            language: normalizedLanguages.get(normalizedSearchTerm)!,
+            token,
+        }
+    }
+
+    return { success: false }
+}
 
 interface Suggestion {
     query: string
@@ -35,11 +56,9 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
         return result
     }
 
-    const terms = scanResult.term.filter(term => {
+    // This is used later to reconstruct the query
+    const tokensWithoutContext = scanResult.term.filter(term => {
         switch (term.type) {
-            case 'comment':
-            case 'whitespace':
-                return false
             case 'filter':
                 if (term.field.value === 'context') {
                     return false
@@ -50,24 +69,53 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
         }
     })
 
-    const nTerms = terms.length
-    // Query must contain 2 - 3 patterns
-    if (nTerms === 1 || nTerms > 3 || !terms.every(term => term.type === 'pattern')) {
+    // This is used to analyse the query
+    const tokensWithoutWhitespace = tokensWithoutContext.filter(term => {
+        switch (term.type) {
+            case 'comment':
+            case 'whitespace':
+                return false
+            default:
+                return true
+        }
+    })
+
+    // Only consider queries that don't contain filters
+    if (
+        tokensWithoutWhitespace.length < 2 ||
+        tokensWithoutWhitespace.length > MAX_TERMS ||
+        !tokensWithoutWhitespace.every(isPattern)
+    ) {
         return result
     }
-    if (terms[0].type === 'pattern') {
-        const normalizedSearchTerm = terms[0].value.toLowerCase()
-        if (normalizedLanguages.has(normalizedSearchTerm)) {
-            const queryTail = stringHuman(terms.slice(1))
-            result.push({
-                query: `lang:${terms[0].value} ${queryTail}`,
-                text: (
-                    <span>
-                        Search in <em>{normalizedLanguages.get(normalizedSearchTerm)}</em> files
-                    </span>
-                ),
-            })
-        }
+
+    let matchResult = matchesLanguage(tokensWithoutWhitespace[0])
+    if (!matchResult.success) {
+        matchResult = matchesLanguage(tokensWithoutWhitespace[tokensWithoutWhitespace.length - 1])
+    }
+
+    if (matchResult.success) {
+        const { token: matchedToken, language } = matchResult
+        const updatedQuery: Token[] = tokensWithoutContext.map(
+            (token: Token): Token =>
+                token === matchedToken
+                    ? {
+                          type: 'filter',
+                          field: createLiteral('lang', { start: 0, end: 0 }),
+                          value: createLiteral(token.value, { start: 0, end: 0 }),
+                          negated: false,
+                          range: { start: 0, end: 0 },
+                      }
+                    : token
+        )
+        result.push({
+            query: stringHuman(updatedQuery),
+            text: (
+                <span>
+                    Search in <em>{language}</em> files
+                </span>
+            ),
+        })
     }
     return result
 }
