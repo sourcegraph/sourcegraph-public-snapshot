@@ -166,7 +166,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                 </p>
                             </div>
                             <div className="d-flex align-items-center">
-                                <div className="bg-3 rounded-circle p-2">
+                                <div className="bg-3 rounded-circle p-2 d-flex">
                                     <LockIcon className="icon-inline" />
                                 </div>
                                 <div className="m-0 ml-3">
@@ -213,9 +213,11 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                     </li>
                                     <li>
                                         Enter the <strong>URL</strong> of your Sourcegraph instance in the second input
-                                        field, labeled as "Sourcegraph self-hosted".
+                                        field, labeled as <q>Sourcegraph self-hosted</q>.
                                     </li>
-                                    <li>Make sure the status shows "Looks good!".</li>
+                                    <li>
+                                        Make sure the status shows <q>Looks good!</q>.
+                                    </li>
                                 </ol>
                             </div>
                         </div>
@@ -227,7 +229,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                 <div className="container">
                     <h2 className="mb-4">Additional resources</h2>
                     <div className="d-flex w-100 align-items-center">
-                        <div className="bg-3 rounded-circle p-2">
+                        <div className="bg-3 rounded-circle p-2  d-flex">
                             <BookOpenPageVariantIcon className="icon-inline" />
                         </div>
                         <p className="m-0 ml-3">
