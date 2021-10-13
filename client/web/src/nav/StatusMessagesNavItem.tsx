@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
@@ -26,6 +26,7 @@ import { ErrorAlert } from '../components/alerts'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'
+import { eventLogger } from '../tracking/eventLogger'
 
 function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
     return requestGraphQL<StatusMessagesResult>(
@@ -116,43 +117,56 @@ const getMessageColor = (entryType: EntryType): string => {
     return ''
 }
 
-const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
-    <div key={props.message} className="status-messages-nav-item__entry">
-        <h4 className="d-flex align-items-center mb-0">
-            {entryIcon(props.entryType)}
-            {props.title ? props.title : 'Your repositories'}
-        </h4>
-        {props.entryType === 'not-active' ? (
-            <div className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--inactive border-0">
-                <p className="text-muted status-messages-nav-item__entry-message">{props.message}</p>
-                <Link className="text-primary" to={props.linkTo} onClick={props.linkOnClick}>
-                    {props.linkText}
-                </Link>
-            </div>
-        ) : (
-            <div
-                className={classNames(
-                    'status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active',
-                    `status-messages-nav-item__entry--border-${props.entryType}`
-                )}
-            >
-                <p className={classNames('status-messages-nav-item__entry-message', getMessageColor(props.entryType))}>
-                    {props.message}
-                </p>
-                {props.messageHint && (
-                    <>
-                        <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
-                        <br />
-                    </>
-                )}
-                <Link className="text-primary" to={props.linkTo} onClick={props.linkOnClick}>
-                    {props.linkText}
-                </Link>
-            </div>
-        )}
-        {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
-    </div>
-)
+const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
+    const onLinkClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
+        const payload = { notificationType: props.entryType }
+        eventLogger.log('UserNotificationsLinkClicked', payload, payload)
+        props.linkOnClick(event)
+    }
+
+    return (
+        <div key={props.message} className="status-messages-nav-item__entry">
+            <h4 className="d-flex align-items-center mb-0">
+                {entryIcon(props.entryType)}
+                {props.title ? props.title : 'Your repositories'}
+            </h4>
+            {props.entryType === 'not-active' ? (
+                <div className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--inactive border-0">
+                    <p className="text-muted status-messages-nav-item__entry-message">{props.message}</p>
+                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
+                        {props.linkText}
+                    </Link>
+                </div>
+            ) : (
+                <div
+                    className={classNames(
+                        'status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active',
+                        `status-messages-nav-item__entry--border-${props.entryType}`
+                    )}
+                >
+                    <p
+                        className={classNames(
+                            'status-messages-nav-item__entry-message',
+                            getMessageColor(props.entryType)
+                        )}
+                    >
+                        {props.message}
+                    </p>
+                    {props.messageHint && (
+                        <>
+                            <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
+                            <br />
+                        </>
+                    )}
+                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
+                        {props.linkText}
+                    </Link>
+                </div>
+            )}
+            {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
+        </div>
+    )
+}
 
 interface User {
     id: string
@@ -167,8 +181,8 @@ interface Props {
 }
 
 enum ExternalServiceNoActivityReasons {
-    NO_CODEHOSTS = 'NO_CODEHOSTS',
-    NO_REPOS = 'NO_REPOS',
+    NoCodehosts = 'NoCodehosts',
+    NoRepos = 'NoRepos',
 }
 
 type ExternalServiceNoActivityReason = keyof typeof ExternalServiceNoActivityReasons
@@ -195,9 +209,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
-    private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
+    private toggleIsOpen = (): void => {
+        this.setState(previousState => ({ isOpen: !previousState.isOpen }))
+    }
 
     public componentDidMount(): void {
+        let first = true
         this.subscriptions.add(
             queryExternalServices({
                 namespace: this.props.user.id,
@@ -208,14 +225,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     switchMap(({ nodes: services }) => {
                         if (!this.props.user.isSiteAdmin) {
                             if (services.length === 0) {
-                                return of(ExternalServiceNoActivityReasons.NO_CODEHOSTS)
+                                return of(ExternalServiceNoActivityReasons.NoCodehosts)
                             }
 
                             if (
                                 !services.some(service => service.repoCount !== 0) &&
                                 services.every(service => service.lastSyncError === null && service.warning === null)
                             ) {
-                                return of(ExternalServiceNoActivityReasons.NO_REPOS)
+                                return of(ExternalServiceNoActivityReasons.NoRepos)
                             }
                         }
 
@@ -229,6 +246,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 )
                 .subscribe(messagesOrError => {
                     this.setState({ messagesOrError })
+
+                    if (first) {
+                        this.trackUserNotificationsEvent('loaded')
+                        first = false
+                    }
                 })
         )
     }
@@ -275,7 +297,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
         // no code hosts or no repos
         if (isNoActivityReason(noActivityOrStatus)) {
-            if (noActivityOrStatus === ExternalServiceNoActivityReasons.NO_REPOS) {
+            if (noActivityOrStatus === ExternalServiceNoActivityReasons.NoRepos) {
                 return (
                     <StatusMessagesNavItemEntry
                         key={noActivityOrStatus}
@@ -390,7 +412,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip={
                         this.state.isOpen
                             ? undefined
-                            : this.state.messagesOrError === 'NO_CODEHOSTS'
+                            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
                             ? 'No code host connections'
                             : 'No repositories'
                     }
@@ -424,7 +446,31 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         )
     }
 
+    private getOpenedNotificationsPayload(messagesOrError: MessageOrError): { status: string[] } {
+        const messageTypes =
+            typeof messagesOrError === 'string'
+                ? [messagesOrError]
+                : isErrorLike(messagesOrError)
+                ? ['error']
+                : messagesOrError.map(message => message.type)
+
+        return { status: messageTypes.length === 0 ? ['success'] : messageTypes }
+    }
+
+    private trackUserNotificationsEvent(eventName: string): void {
+        if (window.context.sourcegraphDotComMode && this.state.messagesOrError) {
+            const payload = this.getOpenedNotificationsPayload(this.state.messagesOrError)
+            eventLogger.log(`UserNotifications${upperFirst(eventName)}`, payload, payload)
+        }
+    }
+
     public render(): JSX.Element | null {
+        const { isOpen } = this.state
+
+        if (isOpen) {
+            this.trackUserNotificationsEvent('opened')
+        }
+
         return (
             <ButtonDropdown
                 isOpen={this.state.isOpen}

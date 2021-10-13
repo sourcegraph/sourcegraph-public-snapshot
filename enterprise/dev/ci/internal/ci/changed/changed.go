@@ -1,6 +1,7 @@
 package changed
 
 import (
+	"path/filepath"
 	"strings"
 )
 
@@ -62,8 +63,11 @@ func (f Files) AffectsGraphQL() bool {
 // AffectsClient returns whether files that affect client code were changed.
 // Used to detect if we need to run Puppeteer or Chromatic tests.
 func (f Files) AffectsClient() bool {
+	isRootClientFile := func(p string) bool {
+		return filepath.Dir(p) == "." && contains(clientRootFiles, p)
+	}
 	for _, p := range f {
-		if !strings.HasSuffix(p, ".md") && (strings.HasPrefix(p, "client/") || isAllowedRootFile(p)) {
+		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
 			return true
 		}
 	}

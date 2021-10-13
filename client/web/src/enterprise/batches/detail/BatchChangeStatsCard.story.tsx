@@ -15,6 +15,7 @@ add('All states', () => (
             <BatchChangeStatsCard
                 {...props}
                 stats={{
+                    __typename: 'ChangesetsStats',
                     closed: 10,
                     deleted: 10,
                     merged: 10,
@@ -24,7 +25,7 @@ add('All states', () => (
                     archived: 18,
                     unpublished: 55,
                 }}
-                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' }}
                 closedAt={null}
             />
         )}
@@ -36,6 +37,7 @@ add('Batch change closed', () => (
             <BatchChangeStatsCard
                 {...props}
                 stats={{
+                    __typename: 'ChangesetsStats',
                     closed: 10,
                     deleted: 10,
                     merged: 10,
@@ -45,7 +47,7 @@ add('Batch change closed', () => (
                     total: 100,
                     unpublished: 60,
                 }}
-                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' }}
                 closedAt={new Date().toISOString()}
             />
         )}
@@ -57,6 +59,7 @@ add('Batch change done', () => (
             <BatchChangeStatsCard
                 {...props}
                 stats={{
+                    __typename: 'ChangesetsStats',
                     deleted: 10,
                     closed: 10,
                     merged: 80,
@@ -66,7 +69,7 @@ add('Batch change done', () => (
                     total: 100,
                     unpublished: 0,
                 }}
-                diff={{ added: 1000, changed: 2000, deleted: 1000 }}
+                diff={{ added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' }}
                 closedAt={null}
             />
         )}

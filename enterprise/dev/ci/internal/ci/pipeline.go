@@ -36,7 +36,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"FORCE_COLOR":                      "3",
 		"ENTERPRISE":                       "1",
 		// Add debug flags for scripts to consume
-		"CI_DEBUG_PROFILE": strconv.FormatBool(c.ProfilingEnabled),
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
@@ -72,7 +72,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	})
 
 	// Toggle profiling of each step
-	if c.ProfilingEnabled {
+	if c.MessageFlags.ProfilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
 			var prefixed []string
@@ -97,6 +97,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(triggerAsync(buildOptions))
 		}
 
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+
+	case BackendIntegrationTests:
+		ops.Append(
+			buildCandidateDockerImage("server", c.candidateImageTag()),
+			backendIntegrationTests(c.candidateImageTag()))
+
+		// Run default set of PR checks as well
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
 	case BextReleaseBranch:
@@ -129,7 +137,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(patchImage, c.candidateImageTag()),
 		})
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
@@ -140,7 +148,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
 		app := c.Branch[27:]
 		ops = operations.NewSet([]operations.Operation{
-			buildCandidateDockerImage(app, c.Version, c.candidateImageTag()),
+			buildCandidateDockerImage(app, c.candidateImageTag()),
 			wait,
 			publishFinalDockerImage(c, app, false),
 		})
@@ -148,8 +156,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case CandidatesNoTest:
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(
-				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+				buildCandidateDockerImage(dockerImage, c.candidateImageTag()))
 		}
+
+	case ExecutorPatchNoTest:
+		ops = operations.NewSet([]operations.Operation{
+			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+		})
 
 	default:
 		// Slow async pipeline
@@ -157,18 +171,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Slow image builds
 		for _, dockerImage := range images.SourcegraphDockerImages {
-			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+			ops.Append(buildCandidateDockerImage(dockerImage, c.candidateImageTag()))
 		}
-		// TODO: Disabled because it tends to time out when multiple main builds
-		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
-		// for details.
+		// Currently disabled due to timeouts - see https://github.com/sourcegraph/sourcegraph/issues/25487
+		// skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		// if c.RunType.Is(MainDryRun, MainBranch) {
-		// 	ops.Append(buildExecutor(c.Time, c.Version))
+		// 	ops.Append(buildExecutor(c.Version, skipHashCompare))
 		// }
 
 		// Slow tests
-		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
-			ops.Append(addBackendIntegrationTests(c.candidateImageTag()))
+		if c.RunType.Is(MainDryRun, MainBranch) {
+			ops.Append(backendIntegrationTests(c.candidateImageTag()))
 		}
 
 		// Core tests
@@ -187,11 +200,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
-		// TODO: Disabled because it tends to time out when multiple main builds
-		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
-		// for details.
+		// Currently disabled due to timeouts - see https://github.com/sourcegraph/sourcegraph/issues/25487
 		// if c.RunType.Is(MainBranch) {
-		// 	ops.Append(publishExecutor(c.Time, c.Version))
+		// 	ops.Append(publishExecutor(c.Version, skipHashCompare))
 		// }
 
 		// Propagate changes elsewhere

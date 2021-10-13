@@ -33,9 +33,6 @@ import {
     ChangesetScheduleEstimateVariables,
     CreateChangesetCommentsResult,
     CreateChangesetCommentsVariables,
-    BatchChangeBulkOperationsResult,
-    BatchChangeBulkOperationsVariables,
-    BulkOperationConnectionFields,
     AllChangesetIDsResult,
     AllChangesetIDsVariables,
     ChangesetIDConnectionFields,
@@ -51,6 +48,7 @@ import {
 
 const changesetsStatsFragment = gql`
     fragment ChangesetsStatsFields on ChangesetsStats {
+        __typename
         total
         closed
         deleted
@@ -64,6 +62,7 @@ const changesetsStatsFragment = gql`
 
 const bulkOperationFragment = gql`
     fragment BulkOperationFields on BulkOperation {
+        __typename
         id
         type
         state
@@ -131,6 +130,7 @@ const batchChangeFragment = gql`
         }
 
         bulkOperations(first: 0) {
+            __typename
             totalCount
         }
 
@@ -148,6 +148,7 @@ const batchChangeFragment = gql`
     }
 
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
+        __typename
         totalCount
         nodes {
             ...ActiveBulkOperationFields
@@ -159,6 +160,7 @@ const batchChangeFragment = gql`
     ${diffStatFields}
 
     fragment ActiveBulkOperationFields on BulkOperation {
+        __typename
         id
         state
     }
@@ -196,6 +198,15 @@ export const fetchBatchChangeByNamespace = (
             return batchChange
         })
     )
+
+export const BATCH_CHANGE_BY_NAMESPACE = gql`
+    query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!, $createdAfter: DateTime!) {
+        batchChange(namespace: $namespaceID, name: $batchChange) {
+            ...BatchChangeFields
+        }
+    }
+    ${batchChangeFragment}
+`
 
 export const hiddenExternalChangesetFieldsFragment = gql`
     fragment HiddenExternalChangesetFields on HiddenExternalChangeset {
@@ -724,48 +735,32 @@ export async function publishChangesets(
     dataOrThrowErrors(result)
 }
 
-export const queryBulkOperations = (
-    args: BatchChangeBulkOperationsVariables
-): Observable<BulkOperationConnectionFields> =>
-    requestGraphQL<BatchChangeBulkOperationsResult, BatchChangeBulkOperationsVariables>(
-        gql`
-            query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        bulkOperations(first: $first, after: $after) {
-                            ...BulkOperationConnectionFields
-                        }
-                    }
+export const BULK_OPERATIONS = gql`
+    query BatchChangeBulkOperations($batchChange: ID!, $first: Int, $after: String) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                bulkOperations(first: $first, after: $after) {
+                    ...BulkOperationConnectionFields
                 }
             }
+        }
+    }
 
-            fragment BulkOperationConnectionFields on BulkOperationConnection {
-                totalCount
-                pageInfo {
-                    hasNextPage
-                    endCursor
-                }
-                nodes {
-                    ...BulkOperationFields
-                }
-            }
+    fragment BulkOperationConnectionFields on BulkOperationConnection {
+        __typename
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+        nodes {
+            ...BulkOperationFields
+        }
+    }
 
-            ${bulkOperationFragment}
-        `,
-        args
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Batch change with ID ${args.batchChange} does not exist`)
-            }
-            if (node.__typename !== 'BatchChange') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
-            }
-            return node.bulkOperations
-        })
-    )
+    ${bulkOperationFragment}
+`
 
 export const queryAllChangesetIDs = ({
     batchChange,

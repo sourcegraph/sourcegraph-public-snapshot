@@ -1,6 +1,7 @@
 import { boolean } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import { addHours } from 'date-fns'
+import { noop } from 'lodash'
 import React from 'react'
 import { of } from 'rxjs'
 
@@ -38,6 +39,7 @@ const nodes: ChangesetFields[] = [
                 url: 'http://test.test/pr/123',
             },
             diffStat: {
+                __typename: 'DiffStat',
                 added: 10,
                 changed: 20,
                 deleted: 8,
@@ -106,6 +108,7 @@ add('List of changesets', () => (
         {props => (
             <BatchChangeChangesets
                 {...props}
+                refetchBatchChange={noop}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                 extensionsController={undefined as any}
@@ -122,6 +125,7 @@ add('List of expanded changesets', () => (
         {props => (
             <BatchChangeChangesets
                 {...props}
+                refetchBatchChange={noop}
                 queryChangesets={queryChangesets}
                 queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
                 extensionsController={undefined as any}

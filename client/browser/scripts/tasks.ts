@@ -118,6 +118,7 @@ export function copyIntegrationAssets(): void {
     shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
     shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/inject.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     // Copy to the ui/assets directory so that these files can be served by
     // the webapp.

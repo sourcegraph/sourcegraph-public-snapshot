@@ -14,7 +14,11 @@ const { add } = storiesOf('web/batches/details/BulkOperationsAlerts', module).ad
 
 add('Processing', () => {
     const bulkOperations = useMemo(
-        () => ({ totalCount: 1, nodes: [{ id: '132', state: BulkOperationState.PROCESSING }] }),
+        () => ({
+            __typename: 'BulkOperationConnection' as const,
+            totalCount: 1,
+            nodes: [{ id: '132', state: BulkOperationState.PROCESSING, __typename: 'BulkOperation' as const }],
+        }),
         []
     )
     return (
@@ -25,7 +29,11 @@ add('Processing', () => {
 })
 add('Failed', () => {
     const bulkOperations = useMemo(
-        () => ({ totalCount: 1, nodes: [{ id: '132', state: BulkOperationState.FAILED }] }),
+        () => ({
+            __typename: 'BulkOperationConnection' as const,
+            totalCount: 1,
+            nodes: [{ id: '132', state: BulkOperationState.FAILED, __typename: 'BulkOperation' as const }],
+        }),
         []
     )
     return (
@@ -36,7 +44,11 @@ add('Failed', () => {
 })
 add('Completed', () => {
     const bulkOperations = useMemo(
-        () => ({ totalCount: 1, nodes: [{ id: '132', state: BulkOperationState.COMPLETED }] }),
+        () => ({
+            __typename: 'BulkOperationConnection' as const,
+            totalCount: 1,
+            nodes: [{ id: '132', state: BulkOperationState.COMPLETED, __typename: 'BulkOperation' as const }],
+        }),
         []
     )
     return (

@@ -4,11 +4,14 @@ import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import {
+    BatchChangeByNamespaceResult,
     BatchChangeFields,
-    BulkOperationState,
-    BulkOperationType,
     ChangesetCheckState,
     ChangesetReviewState,
     ChangesetSpecType,
@@ -17,14 +20,15 @@ import {
 import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import {
-    fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
+    BATCH_CHANGE_BY_NAMESPACE,
+    BULK_OPERATIONS,
 } from './backend'
 import { BatchChangeDetailsPage } from './BatchChangeDetailsPage'
+import { MOCK_BATCH_CHANGE, MOCK_BULK_OPERATIONS } from './BatchChangeDetailsPage.mock'
 
 const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     .addDecorator(story => <div className="p-3 container">{story()}</div>)
@@ -35,58 +39,6 @@ const { add } = storiesOf('web/batches/details/BatchChangeDetailsPage', module)
     })
 
 const now = new Date()
-
-const batchChangeDefaults: BatchChangeFields = {
-    __typename: 'BatchChange',
-    changesetsStats: {
-        closed: 1,
-        deleted: 1,
-        draft: 1,
-        merged: 2,
-        open: 2,
-        archived: 5,
-        total: 18,
-        unpublished: 4,
-    },
-    createdAt: subDays(now, 5).toISOString(),
-    initialApplier: {
-        url: '/users/alice',
-        username: 'alice',
-    },
-    id: 'specid',
-    url: '/users/alice/batch-changes/awesome-batch-change',
-    namespace: {
-        namespaceName: 'alice',
-        url: '/users/alice',
-    },
-    viewerCanAdminister: true,
-    closedAt: null,
-    description: '## What this batch change does\n\nTruly awesome things for example.',
-    name: 'awesome-batch-changes',
-    updatedAt: subDays(now, 5).toISOString(),
-    lastAppliedAt: subDays(now, 5).toISOString(),
-    lastApplier: {
-        url: '/users/bob',
-        username: 'bob',
-    },
-    currentSpec: {
-        originalInput: 'name: awesome-batch-changes\ndescription: somestring',
-        supersedingBatchSpec: null,
-    },
-    bulkOperations: {
-        totalCount: 3,
-    },
-    activeBulkOperations: {
-        totalCount: 1,
-        nodes: [
-            {
-                id: 'testid-123',
-                state: BulkOperationState.PROCESSING,
-            },
-        ],
-    },
-    diffStat: { added: 1000, changed: 2000, deleted: 1000 },
-}
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
@@ -141,6 +93,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 body: 'body',
                 checkState: ChangesetCheckState.PASSED,
                 diffStat: {
+                    __typename: 'DiffStat',
                     added: 10,
                     changed: 9,
                     deleted: 1,
@@ -178,6 +131,7 @@ const queryChangesets: typeof _queryChangesets = () =>
                 body: 'body',
                 checkState: null,
                 diffStat: {
+                    __typename: 'DiffStat',
                     added: 10,
                     changed: 9,
                     deleted: 1,
@@ -226,88 +180,6 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
                 },
             },
         },
-    })
-
-const queryBulkOperations: typeof _queryBulkOperations = () =>
-    of({
-        totalCount: 3,
-        pageInfo: {
-            endCursor: null,
-            hasNextPage: false,
-        },
-        nodes: [
-            {
-                id: 'id1',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.PROCESSING,
-                errors: [],
-                progress: 0.25,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: null,
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                id: 'id2',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.COMPLETED,
-                errors: [],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                id: 'id3',
-                type: BulkOperationType.DETACH,
-                state: BulkOperationState.COMPLETED,
-                errors: [],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 25,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-            {
-                id: 'id4',
-                type: BulkOperationType.COMMENT,
-                state: BulkOperationState.FAILED,
-                errors: [
-                    {
-                        changeset: {
-                            __typename: 'ExternalChangeset',
-                            externalURL: {
-                                url: 'https://test.test/my/pr',
-                            },
-                            repository: {
-                                name: 'sourcegraph/sourcegraph',
-                                url: '/github.com/sourcegraph/sourcegraph',
-                            },
-                            title: 'Changeset title on code host',
-                        },
-                        error: 'Failed to create comment, cannot comment on a PR that is awesome.',
-                    },
-                ],
-                progress: 1,
-                createdAt: subDays(now, 5).toISOString(),
-                finishedAt: subDays(now, 4).toISOString(),
-                changesetCount: 100,
-                initiator: {
-                    url: '/users/alice',
-                    username: 'alice',
-                },
-            },
-        ],
     })
 
 const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
@@ -392,9 +264,9 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
         const isClosed = boolean('isClosed', false)
         const batchChange: BatchChangeFields = useMemo(
             () => ({
-                ...batchChangeDefaults,
+                ...MOCK_BATCH_CHANGE,
                 currentSpec: {
-                    originalInput: batchChangeDefaults.currentSpec.originalInput,
+                    ...MOCK_BATCH_CHANGE.currentSpec,
                     supersedingBatchSpec: supersedingBatchSpec
                         ? {
                               createdAt: subDays(new Date(), 1).toISOString(),
@@ -408,24 +280,44 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
             [supersedingBatchSpec, viewerCanAdminister, isClosed]
         )
 
-        const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
+        const data: BatchChangeByNamespaceResult = { batchChange }
+
+        const mocks = new WildcardMockLink([
+            {
+                request: {
+                    query: getDocumentNode(BATCH_CHANGE_BY_NAMESPACE),
+                    variables: MATCH_ANY_PARAMETERS,
+                },
+                result: { data },
+                nMatches: Number.POSITIVE_INFINITY,
+            },
+            {
+                request: {
+                    query: getDocumentNode(BULK_OPERATIONS),
+                    variables: MATCH_ANY_PARAMETERS,
+                },
+                result: { data: MOCK_BULK_OPERATIONS },
+                nMatches: Number.POSITIVE_INFINITY,
+            },
+        ])
+
         return (
             <EnterpriseWebStory initialEntries={[url]}>
                 {props => (
-                    <BatchChangeDetailsPage
-                        {...props}
-                        namespaceID="namespace123"
-                        batchChangeName="awesome-batch-change"
-                        fetchBatchChangeByNamespace={fetchBatchChange}
-                        queryChangesets={queryChangesets}
-                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                        deleteBatchChange={deleteBatchChange}
-                        queryBulkOperations={queryBulkOperations}
-                        queryAllChangesetIDs={queryAllChangesetIDs}
-                        extensionsController={{} as any}
-                        platformContext={{} as any}
-                    />
+                    <MockedTestProvider link={mocks}>
+                        <BatchChangeDetailsPage
+                            {...props}
+                            namespaceID="namespace123"
+                            batchChangeName="awesome-batch-change"
+                            queryChangesets={queryChangesets}
+                            queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                            queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                            deleteBatchChange={deleteBatchChange}
+                            queryAllChangesetIDs={queryAllChangesetIDs}
+                            extensionsController={{} as any}
+                            platformContext={{} as any}
+                        />
+                    </MockedTestProvider>
                 )}
             </EnterpriseWebStory>
         )
@@ -433,9 +325,16 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
 }
 
 add('Empty changesets', () => {
-    const batchChange: BatchChangeFields = useMemo(() => batchChangeDefaults, [])
-
-    const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
+    const mocks = new WildcardMockLink([
+        {
+            request: {
+                query: getDocumentNode(BATCH_CHANGE_BY_NAMESPACE),
+                variables: MATCH_ANY_PARAMETERS,
+            },
+            result: { data: { batchChange: MOCK_BATCH_CHANGE } },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
 
     const queryEmptyChangesets = useCallback(
         () =>
@@ -452,18 +351,19 @@ add('Empty changesets', () => {
     return (
         <EnterpriseWebStory>
             {props => (
-                <BatchChangeDetailsPage
-                    {...props}
-                    namespaceID="namespace123"
-                    batchChangeName="awesome-batch-change"
-                    fetchBatchChangeByNamespace={fetchBatchChange}
-                    queryChangesets={queryEmptyChangesets}
-                    queryChangesetCountsOverTime={queryChangesetCountsOverTime}
-                    queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
-                    deleteBatchChange={deleteBatchChange}
-                    extensionsController={{} as any}
-                    platformContext={{} as any}
-                />
+                <MockedTestProvider link={mocks}>
+                    <BatchChangeDetailsPage
+                        {...props}
+                        namespaceID="namespace123"
+                        batchChangeName="awesome-batch-change"
+                        queryChangesets={queryEmptyChangesets}
+                        queryChangesetCountsOverTime={queryChangesetCountsOverTime}
+                        queryExternalChangesetWithFileDiffs={queryEmptyExternalChangesetWithFileDiffs}
+                        deleteBatchChange={deleteBatchChange}
+                        extensionsController={{} as any}
+                        platformContext={{} as any}
+                    />
+                </MockedTestProvider>
             )}
         </EnterpriseWebStory>
     )

@@ -87,9 +87,9 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
-        path: '/batch-changes/executions',
+        path: '/batch-changes/specs',
         exact: true,
-        render: lazyComponent(() => import('../batches/settings/BatchSpecExecutionsPage'), 'BatchSpecExecutionsPage'),
+        render: lazyComponent(() => import('../batches/settings/BatchSpecsPage'), 'BatchSpecsPage'),
         condition: ({ batchChangesEnabled, batchChangesExecutionEnabled }) =>
             batchChangesEnabled && batchChangesExecutionEnabled,
     },

@@ -1,6 +1,8 @@
+import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -22,7 +24,8 @@ export interface SearchNotebookProps
     extends SearchStreamingProps,
         ThemeProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'> {
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
+        ExtensionsControllerProps<'extHostAPI'> {
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
@@ -33,9 +36,13 @@ export interface SearchNotebookProps
 export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
+    extensionsController,
     ...props
 }) => {
-    const notebook = useMemo(() => new Notebook(props.blocks), [props.blocks])
+    const notebook = useMemo(() => new Notebook(props.blocks, { extensionHostAPI: extensionsController.extHostAPI }), [
+        props.blocks,
+        extensionsController.extHostAPI,
+    ])
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
@@ -205,7 +212,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
     // Register dummy onCompletionSelected handler to prevent console errors
     useEffect(() => {
-        const disposable = Monaco.editor.registerCommand('completionItemSelected', () => {})
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
         return () => disposable.dispose()
     }, [])
 

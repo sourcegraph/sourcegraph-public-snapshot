@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/graph-gophers/graphql-go"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -19,6 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
+	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
 )
 
 func TestBatchSpecResolver(t *testing.T) {
@@ -143,6 +149,8 @@ func TestBatchSpecResolver(t *testing.T) {
 			TotalCount: 1,
 			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
 		},
+
+		State: "COMPLETED",
 	}
 
 	input := map[string]interface{}{"batchSpec": apiID}
@@ -245,6 +253,185 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 }
 
+func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ctx := context.Background()
+	db := dbtest.NewDB(t, "")
+
+	admin := ct.CreateTestUser(t, db, true)
+	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+
+	rs, _ := ct.CreateTestRepos(t, ctx, db, 3)
+
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	svc := service.New(bstore)
+	spec, err := svc.CreateBatchSpecFromRaw(adminCtx, service.CreateBatchSpecFromRawOpts{
+		RawSpec:         ct.TestRawBatchSpecYAML,
+		NamespaceUserID: admin.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var unmarshaled interface{}
+	err = yaml.UnmarshalValidate(schema.BatchSpecJSON, []byte(spec.RawSpec), &unmarshaled)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	apiID := string(marshalBatchSpecRandID(spec.RandID))
+	adminAPIID := string(graphqlbackend.MarshalUserID(admin.ID))
+
+	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", admin.Username, apiID)
+	codeHosts := apitest.BatchChangesCodeHostsConnection{
+		TotalCount: 1,
+		Nodes: []apitest.BatchChangesCodeHost{
+			{ExternalServiceKind: "GITHUB", ExternalServiceURL: "https://github.com/"},
+		},
+	}
+	want := apitest.BatchSpec{
+		Typename: "BatchSpec",
+		ID:       apiID,
+
+		OriginalInput: spec.RawSpec,
+		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+
+		ApplyURL:            &applyUrl,
+		Namespace:           apitest.UserOrg{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
+		Creator:             &apitest.User{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
+		ViewerCanAdminister: true,
+
+		AllCodeHosts:          codeHosts,
+		OnlyWithoutCredential: codeHosts,
+
+		CreatedAt: graphqlbackend.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
+		ExpiresAt: &graphqlbackend.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+
+		ChangesetSpecs: apitest.ChangesetSpecConnection{
+			Nodes: []apitest.ChangesetSpec{},
+		},
+
+		State: "PENDING",
+	}
+
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// Now enqueue jobs
+	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
+	for _, repo := range rs {
+		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
+		if err := bstore.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+			t.Fatal(err)
+		}
+
+		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
+		if err := bstore.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+		jobs = append(jobs, job)
+	}
+
+	want.State = "QUEUED"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 1/3 jobs processing
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	want.State = "PROCESSING"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 3/3 processing
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	// Expect same state
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 1/3 jobs complete, 2/3 processing
+	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	// Expect same state
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 3/3 jobs complete
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	want.State = "COMPLETED"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 1/3 jobs is failed, 2/3 completed
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	want.State = "FAILED"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 1/3 jobs is failed, 2/3 still processing
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	want.State = "PROCESSING"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 3/3 jobs canceling and processing
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobCancel(t, ctx, bstore, jobs[0])
+	setJobCancel(t, ctx, bstore, jobs[1])
+	setJobCancel(t, ctx, bstore, jobs[2])
+
+	want.State = "CANCELING"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// 3/3 canceling and failed
+	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+
+	want.State = "CANCELED"
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+}
+
+func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
+	t.Helper()
+
+	input := map[string]interface{}{"batchSpec": id}
+
+	var response struct{ Node apitest.BatchSpec }
+
+	apitest.MustExec(ctx, t, s, input, &response, queryBatchSpecNode)
+
+	if diff := cmp.Diff(want, response.Node); diff != "" {
+		t.Fatalf("unexpected batch spec (-want +got):\n%s", diff)
+	}
+}
+
+func setJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, state btypes.BatchSpecWorkspaceExecutionJobState) {
+	t.Helper()
+
+	job.State = state
+
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
+	if err != nil {
+		t.Fatalf("failed to set job state: %s", err)
+	}
+}
+
+func setJobCancel(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+
+	job.Cancel = true
+
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET cancel = true WHERE id = %s", job.ID))
+	if err != nil {
+		t.Fatalf("failed to set job state: %s", err)
+	}
+}
+
 const queryBatchSpecNode = `
 fragment u on User { id, databaseID, siteAdmin }
 fragment o on Org  { id, name }
@@ -323,6 +510,8 @@ query($batchSpec: ID!) {
           }
         }
 	  }
+
+      state
     }
   }
 }

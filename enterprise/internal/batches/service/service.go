@@ -253,6 +253,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceUserID = opts.NamespaceUserID
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
+	spec.CreatedFromRaw = true
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -469,6 +470,12 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// Delete ChangesetSpecs that are associated with BatchSpec.
+	err = tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
@@ -483,6 +490,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
 	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
 	newSpec.UserID = batchSpec.UserID
+	newSpec.CreatedFromRaw = true
 
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
