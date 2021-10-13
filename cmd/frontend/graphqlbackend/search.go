@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -344,7 +345,16 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args.Repos = resolved.RepoRevs
 
-	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, &args)
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		return nil, err
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	fileMatches, _, err := unindexed.SearchFilesInReposBatch(ctx, zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		return nil, err
 	}
