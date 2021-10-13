@@ -487,6 +487,37 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	}
 }
 
+// Ask trivy, a security scanning tool, to scan the candidate image
+// specified by "app" and "tag".
+func trivyScanCandidateImage(app, tag string) operations.Operation {
+	image := images.DevRegistryImage(app, tag)
+
+	// This is the special exit code that we tell trivy to use
+	// if it finds a vulnerability. This is also used to soft-fail
+	// this step.
+	vulnerabilityExitCode := 27
+
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.DependsOn(candidateImageStepKey(app)),
+
+			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+
+			// have trivy use a shorter name in its output
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
+
+			bk.Env("IMAGE", app),
+			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
+			bk.ArtifactPaths("./*-security-report.html"),
+			bk.SoftFail(vulnerabilityExitCode),
+
+			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
+		}
+
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
+	}
+}
+
 // Tag and push final Docker image for the service defined by `app`
 // after the e2e tests pass.
 //

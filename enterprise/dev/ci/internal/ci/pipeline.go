@@ -139,6 +139,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 		})
+
+		// Trivy security scans
+		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
 		// Publish images
@@ -172,6 +175,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Slow image builds
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
+		}
+
+		// Trivy security scans
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
 		}
 
 		// Executor VM image
