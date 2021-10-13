@@ -4,7 +4,7 @@ import { RouteComponentProps } from 'react-router-dom'
 import { SidebarGroupHeader, SidebarGroup, SidebarNavItem } from '../../../components/Sidebar'
 import { NavGroupDescriptor } from '../../../util/contributions'
 
-export interface CodeIntelSideBarGroup extends NavGroupDescriptor<{}> {}
+export interface CodeIntelSideBarGroup extends NavGroupDescriptor {}
 
 export type CodeIntelSideBarGroups = readonly CodeIntelSideBarGroup[]
 
@@ -19,8 +19,7 @@ export const CodeIntelSidebar: React.FunctionComponent<Props> = ({
     codeIntelSidebarGroups,
     className,
     repo,
-}: // authenticatedUser,
-Props) => (
+}: Props) => (
     <div className={className}>
         {codeIntelSidebarGroups.map(
             ({ header, items, condition = () => true }, index) =>
