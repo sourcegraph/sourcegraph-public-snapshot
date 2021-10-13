@@ -147,17 +147,14 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 		}
 		dashboardGrants = &parsedGrants
 	}
-
 	dashboardID, err := unmarshalDashboardID(args.Id)
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
-
 	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, int(dashboardID.Arg), args.Input.Title, dashboardGrants)
 	if err != nil {
 		return nil, err
 	}
-
 	return &insightsDashboardPayloadResolver{&dashboard}, nil
 }
 
@@ -184,7 +181,6 @@ func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) (
 	if inputGrants.Global != nil && *inputGrants.Global {
 		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
 	}
-
 	return dashboardGrants, nil
 }
 

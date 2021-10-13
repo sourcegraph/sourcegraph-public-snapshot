@@ -202,13 +202,11 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, id int, title *s
 		if err != nil {
 			return types.Dashboard{}, errors.Wrap(err, "removing existing dashboard grants")
 		}
-
 		err = tx.AddDashboardGrants(ctx, id, *grants)
 		if err != nil {
 			return types.Dashboard{}, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
-
 	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: id})
 	if err != nil {
 		return types.Dashboard{}, errors.Wrap(err, "GetDashboards")
