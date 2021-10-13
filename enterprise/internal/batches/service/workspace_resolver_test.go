@@ -304,6 +304,43 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		wantIgnored = []api.RepoID{rs[0].ID}
 		resolveWorkspacesAndCompare(t, s, opts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
 	})
+
+	t.Run("workspaces without steps", func(t *testing.T) {
+		conditionalSteps := []batcheslib.Step{
+			// Step should only execute in rs[1]
+			{Run: "echo 1", If: fmt.Sprintf(`${{ eq repository.name %q }}`, rs[1].Name)},
+		}
+		batchSpec := &batcheslib.BatchSpec{
+			On: []batcheslib.OnQueryOrRepository{
+				{Repository: string(rs[0].Name)},
+				{Repository: string(rs[1].Name)},
+			},
+			Steps: conditionalSteps,
+		}
+
+		mockResolveRevision(t, map[string]api.CommitID{
+			defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
+			defaultBranches[rs[1].Name].branch: defaultBranches[rs[1].Name].commit,
+		})
+
+		mockBatchIgnores(t, map[api.CommitID]bool{
+			defaultBranches[rs[0].Name].commit: false,
+			defaultBranches[rs[1].Name].commit: false,
+		})
+
+		searchMatches := []streamhttp.EventMatch{}
+
+		// We want both workspaces, but only one of them has steps
+		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
+		ws0.Steps = []batcheslib.Step{}
+		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
+		ws1.Steps = conditionalSteps
+
+		want := []*RepoWorkspace{ws0, ws1}
+		wantIgnored := []api.RepoID{}
+		wantUnsupported := []api.RepoID{}
+		resolveWorkspacesAndCompare(t, s, defaultOpts, searchMatches, batchSpec, want, wantIgnored, wantUnsupported)
+	})
 }
 
 func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, opts ResolveWorkspacesForBatchSpecOpts, matches []streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace, wantIgnored, wantUnsupported []api.RepoID) {

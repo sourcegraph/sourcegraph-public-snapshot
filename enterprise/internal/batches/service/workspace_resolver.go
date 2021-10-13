@@ -656,11 +656,6 @@ func findWorkspaces(
 			return nil, err
 		}
 
-		// If the workspace doesn't have any steps we don't need to include it.
-		if len(steps) == 0 {
-			continue
-		}
-
 		for _, path := range workspace.Paths {
 			fetchWorkspace := workspace.OnlyFetchWorkspace
 			if path == "" {
