@@ -3,6 +3,8 @@
 
 package assets
 
-import "net/http"
+import (
+	"github.com/lpar/gzipped/v2"
+)
 
-var Assets = http.Dir("./ui/assets")
+var Assets = gzipped.Dir("./ui/assets")

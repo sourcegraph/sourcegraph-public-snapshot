@@ -247,6 +247,7 @@ require (
 	github.com/klauspost/compress v1.13.4 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
+	github.com/lpar/gzipped/v2 v2.0.2 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.0.0-20201208211235-fe770d50d911 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect

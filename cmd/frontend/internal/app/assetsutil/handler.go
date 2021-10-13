@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/shurcooL/httpgzip"
+	"github.com/lpar/gzipped/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -19,7 +19,8 @@ import (
 func Mount(mux *http.ServeMux) {
 	const urlPathPrefix = "/.assets"
 
-	fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{DisableDirListing: true})
+	fs := gzipped.FileServer(assets.Assets)
+	// fs := httpgzip.FileServer(assets.Assets, httpgzip.FileServerOptions{DisableDirListing: true})
 	mux.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under
 		// circumstances that couldn't be reproduced
