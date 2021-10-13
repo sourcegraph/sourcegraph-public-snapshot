@@ -116,6 +116,8 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 		conds = append(conds, sqlf.Sprintf("indexing_enabled"))
 	}
 
+	// TODO - need authz stuff here
+
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {
 		return nil, err
@@ -151,6 +153,8 @@ func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ Confi
 		log.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	// TODO - need authz stuff here
 
 	return scanFirstConfigurationPolicy(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPolicyByIDQuery, id)))
 }
