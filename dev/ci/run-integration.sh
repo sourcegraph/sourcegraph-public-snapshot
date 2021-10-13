@@ -30,8 +30,8 @@ function cleanup() {
   fi
 
   jobs -p -r | xargs kill
-  echo "--- server logs"
-  docker logs --timestamps "$CONTAINER"
+  echo "--- dump server logs"
+  docker logs "$CONTAINER" 2>"$CONTAINER.log"
   echo "--- docker cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"
@@ -40,7 +40,7 @@ function cleanup() {
     # This command will fail, so our last step will be expanded. We don't want
     # to expand "docker cleanup" so we add in a dummy section.
     echo "--- integration test failed"
-    echo "See integration test section for test runner logs."
+    echo "See integration test section for test runner logs, and uploaded artefacts for server logs."
   fi
 }
 trap cleanup EXIT
@@ -60,7 +60,7 @@ done"
 # shellcheck disable=SC2181
 if [ $? -ne 0 ]; then
   echo "^^^ +++"
-  echo "$URL was not accessible within 120s. Here's the output of docker inspect and docker logs:"
+  echo "$URL was not accessible within 120s."
   docker inspect "$CONTAINER"
   exit 1
 fi

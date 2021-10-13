@@ -147,7 +147,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
 
         this.disposables.push(registerRedactedHover(monaco))
 
-        setDiagnosticsOptions(monaco, this.props)
+        setDiagnosticsOptions(monaco, this.props.jsonSchema)
 
         // Only listen to 1 event each to avoid receiving events from other Monaco editors on the
         // same page (if there are multiple).
@@ -260,7 +260,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     }
 }
 
-function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: any): void {
+function setDiagnosticsOptions(editor: typeof monaco, jsonSchema: JSONSchema | undefined): void {
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
         allowComments: true,

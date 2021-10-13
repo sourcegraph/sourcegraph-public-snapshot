@@ -78,6 +78,14 @@ describe('Search onboarding', () => {
                     },
                 },
             }),
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    contents: JSON.stringify({
+                        'user.daysActiveCount': 1,
+                        'user.lastDayActive': new Date().toDateString(),
+                    }),
+                },
+            }),
         })
         testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
     })

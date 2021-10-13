@@ -156,6 +156,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 
 	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
 		dashboard.Title,
+		dashboard.Save,
 	))
 	if row.Err() != nil {
 		return types.Dashboard{}, row.Err()
@@ -166,9 +167,9 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 		return types.Dashboard{}, errors.Wrap(err, "CreateDashboard")
 	}
 	dashboard.ID = id
-	err = tx.AssociateViewsByViewIds(ctx, dashboard, dashboard.InsightIDs)
+	err = tx.AddViewsToDashboard(ctx, dashboard.ID, dashboard.InsightIDs)
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "AssociateViewsByViewIds")
+		return types.Dashboard{}, errors.Wrap(err, "AddViewsToDashboard")
 	}
 	err = tx.AddDashboardGrants(ctx, dashboard, grants)
 	if err != nil {
@@ -178,13 +179,27 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 	return dashboard, nil
 }
 
-func (s *DBDashboardStore) AssociateViewsByViewIds(ctx context.Context, dashboard types.Dashboard, viewIds []string) error {
-	if dashboard.ID == 0 {
+func (s *DBDashboardStore) AddViewsToDashboard(ctx context.Context, dashboardId int, viewIds []string) error {
+	if dashboardId == 0 {
 		return errors.New("unable to associate views to dashboard invalid dashboard ID")
 	} else if len(viewIds) == 0 {
 		return nil
 	}
-	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, int32(dashboard.ID), pq.Array(viewIds))
+	q := sqlf.Sprintf(insertDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboardId int, viewIds []string) error {
+	if dashboardId == 0 {
+		return errors.New("unable to remove views from dashboard invalid dashboard ID")
+	} else if len(viewIds) == 0 {
+		return nil
+	}
+	q := sqlf.Sprintf(removeDashboardInsightViewConnectionsByViewIds, dashboardId, pq.Array(viewIds))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -223,18 +238,27 @@ VALUES %s;
 
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
-INSERT INTO dashboard (title) VALUES (%s) RETURNING id;
+INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
 `
 
 const insertDashboardInsightViewConnectionsByViewIds = `
--- source: enterprise/internal/insights/store/dashboard_store.go:AssociateViewsByViewIds
+-- source: enterprise/internal/insights/store/dashboard_store.go:AddViewsToDashboard
 INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
     WHERE unique_id = ANY(%s)
 );`
 
+const removeDashboardInsightViewConnectionsByViewIds = `
+-- source: enterprise/internal/insights/store/dashboard_store.go:RemoveViewsFromDashboard
+DELETE
+FROM dashboard_insight_view
+WHERE dashboard_id = %s
+  AND insight_view_id IN (SELECT id FROM insight_view WHERE unique_id = ANY(%s));
+`
+
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
+	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
 }
