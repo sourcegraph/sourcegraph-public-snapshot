@@ -7,7 +7,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
