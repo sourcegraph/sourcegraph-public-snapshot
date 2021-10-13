@@ -10,11 +10,11 @@ type State struct {
 	LSIFVersion            string
 	ProjectRoot            string
 	DocumentData           map[int]string
-	RangeData              map[int]Range
+	RangeData              map[int]Range // (range | resultSet) -> Range
 	ResultSetData          map[int]ResultSet
-	DefinitionData         map[int]*datastructures.DefaultIDSetMap
-	ReferenceData          map[int]*datastructures.DefaultIDSetMap
-	ImplementationData     map[int]*datastructures.DefaultIDSetMap
+	DefinitionData         map[int]*datastructures.DefaultIDSetMap // definitionResult -> document -> range
+	ReferenceData          map[int]*datastructures.DefaultIDSetMap // referenceResult -> document -> range
+	ImplementationData     map[int]*datastructures.DefaultIDSetMap // implementationResult -> document -> range
 	HoverData              map[int]string
 	MonikerData            map[int]Moniker
 	PackageInformationData map[int]PackageInformation
