@@ -20,7 +20,7 @@ export const SelfHostedCtaLink: React.FunctionComponent<SelfHostedCtaLinkProps> 
     const linkProps = { rel: 'noopener noreferrer' }
 
     const gettingStartedCTAOnClick = (): void => {
-        telemetryService.log('InstallSourcegraphCTAClicked', { page })
+        telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
     }
 
     return (

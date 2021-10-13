@@ -19,7 +19,7 @@ All interactions with the Sourcegraph open source project are governed by the
 2. Clone the repo: `git clone https://github.com/sourcegraph/sourcegraph/`.
 3. [Setup your development environment](https://docs.sourcegraph.com/dev/contributing) to run the project locally.
 4. Before creating a Pull Request ensure that [recommended checks](https://docs.sourcegraph.com/dev/contributing) pass locally. We're actively working on making our CI pipeline public to automate this step.
-5. **IMPORTANT:** Once you have a pull request ready to review, the 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add the user `natectang` as a reviewer. After that your pull request will be ready for review.
+5. **IMPORTANT:** Once you have a pull request ready to review, the 'verification/cla-signed' check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@natectang`. After that your pull request will be ready for review.
 6. If one or more people ask for the same issue, it will be assigned to the first person who asked.
 7. If you have any questions, please [refer to the docs first](https://docs.sourcegraph.com/). If you don’t find any relevant information, mention the issue author.
 8. Issue author will try to provide guidance. Sourcegraph always works in async mode. We will try to answer as soon as possible, but please keep time zones differences in mind.

@@ -296,6 +296,60 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 	return refDescriptions, nil
 }
 
+// CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
+// their committer date. This set of commits is determined by listing `{branchName} ^HEAD`, which is interpreted
+// as: all commits on {branchName} not also on the tip of the default branch. If the supplied branch name is the
+// default branch, then this method instead returns all commits reachable from HEAD.
+func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	ctx, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("branchName", branchName),
+		log.Bool("isDefaultBranch", isDefaultBranch),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	args := []string{"log", "--pretty=format:%H:%cI"}
+	if maxAge != nil {
+		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
+	}
+	if isDefaultBranch {
+		args = append(args, "HEAD")
+	} else {
+		args = append(args, branchName, "^HEAD")
+	}
+
+	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseCommitsUniqueToBranch(strings.Split(out, "\n"))
+}
+
+func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
+	commitDates := make(map[string]time.Time, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
+		}
+
+		duration, err := time.Parse(time.RFC3339, parts[1])
+		if err != nil {
+			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
+		}
+
+		commitDates[parts[0]] = duration
+	}
+
+	return commitDates, nil
+}
+
 // BranchesContaining returns a map from branch names to branch tip hashes for each brach
 // containing the given commit.
 func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
