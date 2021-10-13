@@ -205,7 +205,7 @@ func DisableManualRetry(reason string) StepOpt {
 
 func ArtifactPaths(paths ...string) StepOpt {
 	return func(step *Step) {
-		step.ArtifactPaths = strings.Join(paths, ",")
+		step.ArtifactPaths = strings.Join(paths, ";")
 	}
 }
 
