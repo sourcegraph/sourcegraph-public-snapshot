@@ -125,7 +125,6 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 				PolicyMatch{Name: "develop", PolicyID: &policyID2, PolicyDuration: &testDuration2},
 			},
 			"deadbeef02": {
-				PolicyMatch{Name: "develop", PolicyID: &policyID1, PolicyDuration: &testDuration1},
 				PolicyMatch{Name: "feat/blank", PolicyID: &policyID2, PolicyDuration: &testDuration2},
 				PolicyMatch{Name: "feat/blank", PolicyID: &policyID3, PolicyDuration: &testDuration3},
 			},

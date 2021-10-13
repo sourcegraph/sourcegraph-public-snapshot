@@ -10,11 +10,11 @@ import (
 func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Time) *MockGitserverClient {
 	// Test repository:
 	//
-	//                                              v2.2.2                                        feat/blank
-	//                                             /                                             /
-	//  09               08 ---- 07              06              05 ------ 04 ------ 03 ------ 02 ------ 01
-	//   \                        \               \               \         \                             \
-	//    ef/feature-y            ef/feature-x    es/feature-z     v1.2.2    v1.2.3                        develop
+	//                                              v2.2.2                              02 -- feat/blank
+	//                                             /                                   /
+	//  09               08 ---- 07              06              05 ------ 04 ------ 03 ------ 01
+	//   \                        \               \               \         \                   \
+	//    ef/feature-y            ef/feature-x    es/feature-z     v1.2.2    v1.2.3              develop
 
 	var branchHeads = map[string]string{
 		"develop":      "deadbeef01",
@@ -31,7 +31,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	}
 
 	var branchMembers = map[string][]string{
-		"develop":      {"deadbeef01", "deadbeef02", "deadbeef03", "deadbeef04", "deadbeef05"},
+		"develop":      {"deadbeef01", "deadbeef03", "deadbeef04", "deadbeef05"},
 		"feat/blank":   {"deadbeef02"},
 		"ef/feature-x": {"deadbeef07", "deadbeef08"},
 		"ef/feature-y": {"deadbeef09"},
