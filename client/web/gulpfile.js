@@ -117,15 +117,8 @@ async function webpackDevelopmentServer() {
     // Disable default DevServer compression. We need more fine grained compression to support streaming search.
     compress: false,
     onBeforeSetupMiddleware: developmentServer => {
-      developmentServer.app.use(
-        '/.assets',
-        expressStaticGzip(STATIC_ASSETS_PATH, {
-          enableBrotli: true,
-          orderPreference: ['br'],
-          index: false,
-          serveStatic: developmentServer.static,
-        })
-      )
+      // Re-enable gzip compression using our own `compression` filter.
+      developmentServer.app.use(compression({ filter: shouldCompressResponse }))
     },
     client: {
       overlay: false,
