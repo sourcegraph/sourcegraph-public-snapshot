@@ -13,6 +13,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -355,6 +356,78 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 		if reloadedJob.AccessTokenID != 12345 {
 			t.Fatalf("wrong access token ID: %d", reloadedJob.AccessTokenID)
+		}
+	})
+
+	t.Run("CreateBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
+		var batchSpecID int64 = 987654
+
+		workspaces := []*btypes.BatchSpecWorkspace{
+			// Normal workspace
+			{
+				BatchSpecID: batchSpecID,
+				RepoID:      1,
+				Branch:      "refs/heads/main",
+				Commit:      "d34db33f",
+				Path:        "",
+				Steps: []batches.Step{{
+					Run:       "echo lol",
+					Container: "alpine:3",
+				}},
+				FileMatches: []string{
+					"a/b/c.go",
+				},
+			},
+			// Ignored
+			{
+				BatchSpecID: batchSpecID,
+				RepoID:      2,
+				Steps:       []batches.Step{},
+				FileMatches: []string{},
+				Ignored:     true,
+			},
+			// Unsupported
+			{
+				BatchSpecID: batchSpecID,
+				RepoID:      3,
+				Steps:       []batches.Step{},
+				FileMatches: []string{},
+				Unsupported: true,
+			},
+			// No steps
+			{
+				BatchSpecID: batchSpecID,
+				RepoID:      4,
+				Branch:      "refs/heads/main",
+				Commit:      "h0rs3s",
+				Path:        "a/b/c",
+				Steps:       []batches.Step{},
+				FileMatches: []string{},
+			},
+		}
+
+		if err := s.CreateBatchSpecWorkspace(ctx, workspaces...); err != nil {
+			t.Fatal(err)
+		}
+		ids := make([]int64, len(workspaces))
+		for i, w := range workspaces {
+			ids[i] = w.ID
+		}
+
+		err := s.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpecID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+			BatchSpecWorkspaceIDs: ids,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if have, want := len(jobs), 1; have != want {
+			t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", want, have)
 		}
 	})
 }

@@ -55,6 +55,9 @@ FROM
 	batch_spec_workspaces
 WHERE
 	batch_spec_id = %s
+AND NOT ignored
+AND NOT unsupported
+AND jsonb_array_length(steps) > 0
 `
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
