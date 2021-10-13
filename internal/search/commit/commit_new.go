@@ -210,7 +210,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 		newPred = &gitprotocol.DiffModifiesFile{Expr: search.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
-	if parameter.Negated {
+	if parameter.Negated && newPred != nil {
 		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
