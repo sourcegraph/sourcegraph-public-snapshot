@@ -54,6 +54,11 @@ const (
 	// FeatureBackupAndRestore is whether builtin backup and restore on this Sourcegraph instance
 	// has been purchased.
 	FeatureBackupAndRestore Feature = "backup-and-restore"
+
+	// FeatureCloud is whether functionality that is built for Sourcegraph cloud is
+	// available on this Sourcegraph instance. This feature is intended to be only
+	// included by licenses generated for sourcegraph.com and dev environment.
+	FeatureCloud Feature = "cloud"
 )
 
 // planFeatures defines the features that are enabled for each plan.

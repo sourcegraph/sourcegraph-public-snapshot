@@ -116,4 +116,18 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureBackupAndRestore, license(plan(enterprise)), false)
 		check(t, FeatureBackupAndRestore, license(plan(enterprise), string(FeatureBackupAndRestore)), true)
 	})
+
+	t.Run(string(FeatureCloud), func(t *testing.T) {
+		check(t, FeatureCloud, nil, false)
+
+		check(t, FeatureCloud, license("starter"), false)
+		check(t, FeatureCloud, license(plan(oldEnterpriseStarter)), false)
+		check(t, FeatureCloud, license(plan(oldEnterprise)), false)
+		check(t, FeatureCloud, license(plan(team)), false)
+		check(t, FeatureCloud, license(plan(enterprise)), false)
+		check(t, FeatureCloud, license(), false)
+
+		check(t, FeatureCloud, license(string(FeatureCloud)), true)
+		check(t, FeatureCloud, license(plan(enterprise), string(FeatureCloud)), true)
+	})
 }
