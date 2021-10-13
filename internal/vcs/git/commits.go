@@ -283,7 +283,7 @@ func FirstEverCommit(ctx context.Context, repo api.RepoName) (*gitapi.Commit, er
 	args := []string{"rev-list", "--max-count=1", "--max-parents=0", "HEAD"}
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
-	out, err := cmd.CombinedOutput(ctx)
+	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
 	}
