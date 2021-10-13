@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os/exec"
 	"strings"
@@ -129,6 +130,8 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	if err != nil {
 		return err
 	}
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
 		return err
@@ -165,7 +168,10 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		return scanner.Err()
 	}
 
-	return cmd.Wait()
+	if err := cmd.Wait(); err != nil {
+		return errors.Wrap(err, fmt.Sprintf("command failed with stderr %q", stderrBuf.String()))
+	}
+	return nil
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
