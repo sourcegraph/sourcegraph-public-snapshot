@@ -152,6 +152,8 @@ Foreign-key constraints:
  steps                | jsonb                    |           |          | '[]'::jsonb
  created_at           | timestamp with time zone |           | not null | now()
  updated_at           | timestamp with time zone |           | not null | now()
+ ignored              | boolean                  |           | not null | false
+ unsupported          | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
