@@ -57,6 +57,8 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				},
 			},
 			OnlyFetchWorkspace: true,
+			Unsupported:        true,
+			Ignored:            true,
 		}
 
 		if i == cap(workspaces)-1 {

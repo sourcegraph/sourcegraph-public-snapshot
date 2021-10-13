@@ -21,6 +21,9 @@ type BatchSpecWorkspace struct {
 	FileMatches        []string
 	OnlyFetchWorkspace bool
 
+	Unsupported bool
+	Ignored     bool
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

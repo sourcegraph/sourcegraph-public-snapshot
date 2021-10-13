@@ -30,6 +30,8 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"file_matches",
 	"only_fetch_workspace",
 	"steps",
+	"unsupported",
+	"ignored",
 
 	"created_at",
 	"updated_at",
@@ -50,6 +52,8 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.file_matches",
 	"batch_spec_workspaces.only_fetch_workspace",
 	"batch_spec_workspaces.steps",
+	"batch_spec_workspaces.unsupported",
+	"batch_spec_workspaces.ignored",
 
 	"batch_spec_workspaces.created_at",
 	"batch_spec_workspaces.updated_at",
@@ -106,6 +110,8 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				pq.Array(wj.FileMatches),
 				wj.OnlyFetchWorkspace,
 				marshaledSteps,
+				wj.Unsupported,
+				wj.Ignored,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
@@ -254,6 +260,8 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 		pq.Array(&wj.FileMatches),
 		&wj.OnlyFetchWorkspace,
 		&steps,
+		&wj.Unsupported,
+		&wj.Ignored,
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {
