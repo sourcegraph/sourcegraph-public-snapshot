@@ -57,8 +57,9 @@ export function useCachedSearchResults(
                     setCachedResults(null);
                 }
                 
-                return unlisten
             })
+            
+            return unlisten
         }, [history, setCachedResults])
     )
 
