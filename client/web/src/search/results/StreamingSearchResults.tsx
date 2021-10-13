@@ -36,6 +36,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
+import { DidYouMean } from './DidYouMean'
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
@@ -294,6 +295,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         showTrace={!!trace}
                     />
                 }
+            />
+
+            <DidYouMean
+                telemetryService={props.telemetryService}
+                parsedSearchQuery={props.parsedSearchQuery}
+                patternType={props.patternType}
+                caseSensitive={props.caseSensitive}
+                versionContext={props.versionContext}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 
             <div className={styles.streamingSearchResultsContainer}>

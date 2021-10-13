@@ -20,6 +20,7 @@ trap cleanup EXIT
 # ==========================
 
 # Run and initialize an old Sourcegraph release
+echo "--- start sourcegraph $MINIMUM_UPGRADEABLE_VERSION"
 IMAGE=sourcegraph/server:$MINIMUM_UPGRADEABLE_VERSION ./dev/run-server-image.sh -d --name sourcegraph-old
 sleep 15
 pushd internal/cmd/init-sg
@@ -64,24 +65,23 @@ if [[ $MINIMUM_UPGRADEABLE_VERSION =~ $regex ]]; then
 fi
 
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
+echo "--- start candidate"
 CONTAINER=sourcegraph-new
 docker_logs() {
-  pushd "$root_dir"
   echo "--- dump server logs"
-  docker logs "$CONTAINER" 2>"$CONTAINER.log"
-  popd
+  docker logs --timestamps "$CONTAINER" >"$root_dir/$CONTAINER.log" 2>&1
 }
 IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name $CONTAINER
 trap docker_logs exit
 sleep 15
 
 # Run tests
-echo "TEST: Checking Sourcegraph instance is accessible"
+echo "--- TEST: Checking Sourcegraph instance is accessible"
 curl -f http://localhost:7080
 curl -f http://localhost:7080/healthz
-echo "TEST: Running tests"
-echo "TEST: Downloading Puppeteer"
+echo "--- TEST: Downloading Puppeteer"
 yarn --cwd client/shared run download-puppeteer-browser
+echo "--- TEST: Running tests"
 pushd client/web
 yarn run test:regression:core
 popd

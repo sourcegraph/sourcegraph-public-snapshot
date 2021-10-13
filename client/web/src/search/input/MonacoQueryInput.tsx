@@ -161,12 +161,9 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
 
     // Register onCompletionSelected handler
     useEffect(() => {
-        if (!editor || !onCompletionItemSelected) {
-            return
-        }
-
-        Monaco.editor.registerCommand('completionItemSelected', onCompletionItemSelected)
-    }, [editor, onCompletionItemSelected])
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', onCompletionItemSelected ?? noop)
+        return () => disposable.dispose()
+    }, [onCompletionItemSelected])
 
     // Disable default Monaco keybindings
     useEffect(() => {

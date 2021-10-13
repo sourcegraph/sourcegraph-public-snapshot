@@ -20,30 +20,14 @@ import (
 
 func TestUser(t *testing.T) {
 	t.Run("by username", func(t *testing.T) {
-		checkUserByUsername := func(t *testing.T) {
-			t.Helper()
-			RunTests(t, []*Test{
-				{
-					Schema: mustParseGraphQLSchema(t),
-					Query: `
-				{
-					user(username: "alice") {
-						username
-					}
-				}
-			`,
-					ExpectedResult: `
-				{
-					"user": {
-						"username": "alice"
-					}
-				}
-			`,
-				},
-			})
-		}
-
 		resetMocks()
+		database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+			var want int32
+			if want = 1; id != want {
+				t.Errorf("got %q, want %q", id, want)
+			}
+			return &types.User{ID: 1, Username: "alice"}, nil
+		}
 		database.Mocks.Users.GetByUsername = func(_ context.Context, username string) (*types.User, error) {
 			if want := "alice"; username != want {
 				t.Errorf("got %q, want %q", username, want)
@@ -56,11 +40,124 @@ func TestUser(t *testing.T) {
 			envvar.MockSourcegraphDotComMode(true)
 			defer envvar.MockSourcegraphDotComMode(orig) // reset
 
+			database.Mocks.Users.GetByCurrentAuthUser = func(_ context.Context) (*types.User, error) {
+				return &types.User{ID: 1, Username: "alice"}, nil
+			}
+
+			checkUserByUsername := func(t *testing.T) {
+				t.Helper()
+				RunTests(t, []*Test{
+					{
+						Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+						Schema:  mustParseGraphQLSchema(t),
+						Query: `
+							{
+								user(username: "alice") {
+									username
+								}
+							}
+						`,
+						ExpectedResult: `
+							{
+								"user": {
+									"username": "alice"
+								}
+							}
+						`,
+					},
+				})
+			}
 			checkUserByUsername(t)
 		})
 
 		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
+			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+				return &types.User{ID: 1, Username: "alice"}, nil
+			}
+			checkUserByUsername := func(t *testing.T) {
+				t.Helper()
+				RunTests(t, []*Test{
+					{
+						Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+						Schema:  mustParseGraphQLSchema(t),
+						Query: `
+							{
+								user(username: "alice") {
+									username
+								}
+							}
+						`,
+						ExpectedResult: `
+							{
+								"user": {
+									"username": "alice"
+								}
+							}
+						`,
+					},
+				})
+			}
 			checkUserByUsername(t)
+
+		})
+
+		t.Run("not allowed on Sourcegraph.com if unauthenticated", func(t *testing.T) {
+			orig := envvar.SourcegraphDotComMode()
+			envvar.MockSourcegraphDotComMode(true)
+			defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+			checkUserByUsernameError := func(t *testing.T, wantErr string) {
+				t.Helper()
+				RunTests(t, []*Test{
+					{
+						Schema: mustParseGraphQLSchema(t),
+						Query: `
+							{
+								user(username: "alice") {
+									username
+								}
+							}
+						`,
+						ExpectedResult: `{"user": null}`,
+						ExpectedErrors: []*gqlerrors.QueryError{
+							{
+								Path:          []interface{}{"user"},
+								Message:       wantErr,
+								ResolverError: errors.New(wantErr),
+							},
+						},
+					},
+				})
+			}
+			checkUserByUsernameError(t, "must be authenticated as the authorized user or as an admin (must be site admin)")
+
+		})
+
+		t.Run("not allowed on non-Sourcegraph.com if unauthenticated", func(t *testing.T) {
+			checkUserByUsernameError := func(t *testing.T, wantErr string) {
+				t.Helper()
+				RunTests(t, []*Test{
+					{
+						Schema: mustParseGraphQLSchema(t),
+						Query: `
+                                {
+                                        user(username: "alice") {
+                                                username
+                                        }
+                                }
+                        `,
+						ExpectedResult: `{"user": null}`,
+						ExpectedErrors: []*gqlerrors.QueryError{
+							{
+								Path:          []interface{}{"user"},
+								Message:       wantErr,
+								ResolverError: errors.New(wantErr),
+							},
+						},
+					},
+				})
+			}
+			checkUserByUsernameError(t, "must be authenticated as the authorized user or as an admin (must be site admin)")
 		})
 	})
 

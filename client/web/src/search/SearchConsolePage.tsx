@@ -1,7 +1,8 @@
 import * as H from 'history'
+import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { BehaviorSubject, noop } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -119,6 +120,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         })
         return () => disposable.dispose()
     }, [editorInstance, triggerSearch])
+
+    // Register dummy onCompletionSelected handler to prevent console errors
+    useEffect(() => {
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
+        return () => disposable.dispose()
+    }, [])
 
     return (
         <div className="w-100 p-2">

@@ -8,6 +8,9 @@ import { MarketingBlock } from '@sourcegraph/web/src/components/MarketingBlock'
 export interface SelfHostedCtaProps extends TelemetryProps {
     className?: string
     contentClassName?: string
+    // the name of the page the CTA will be posted. DO NOT include full URLs
+    // here, because this will be logged to our analytics systems. We do not
+    // want to expose private repo names or search queries to our analytics.
     page: string
 }
 
@@ -21,15 +24,15 @@ export const SelfHostedCta: React.FunctionComponent<SelfHostedCtaProps> = ({
     const linkProps = { rel: 'noopener noreferrer' }
 
     const gettingStartedCTAOnClick = (): void => {
-        telemetryService.log('InstallSourcegraphCTAClicked', { page })
+        telemetryService.log('InstallSourcegraphCTAClicked', { page }, { page })
     }
 
     const selfVsCloudDocumentsLinkOnClick = (): void => {
-        telemetryService.log('SelfVsCloudDocsLink', { page })
+        telemetryService.log('SelfVsCloudDocsLink', { page }, { page })
     }
 
     const helpGettingStartedCTAOnClick = (): void => {
-        telemetryService.log('HelpGettingStartedCTA', { page })
+        telemetryService.log('HelpGettingStartedCTA', { page }, { page })
     }
 
     return (
