@@ -197,8 +197,6 @@ func (e *uploadExpirer) handleUploads(
 	uploads []dbstore.Upload,
 	now time.Time,
 ) (err error) {
-	e.metrics.numUploadsScanned.Inc()
-
 	// Categorize each upload as protected or expired
 	protectedUploadIDs := make([]int, 0, len(uploads))
 	expiredUploadIDs := make([]int, 0, len(uploads))
@@ -250,6 +248,8 @@ func (e *uploadExpirer) isUploadProtectedByPolicy(
 	upload dbstore.Upload,
 	now time.Time,
 ) (bool, error) {
+	e.metrics.numUploadsScanned.Inc()
+
 	var token *string
 
 	for first := true; first || token != nil; first = false {
@@ -268,6 +268,8 @@ func (e *uploadExpirer) isUploadProtectedByPolicy(
 			return false, errors.Wrap(err, "dbstore.CommitsVisibleToUpload")
 		}
 		token = nextToken
+
+		e.metrics.numCommitsScanned.Add(float64(len(commits)))
 
 		if ok, err := isUploadCommitProtectedByPolicy(
 			ctx,
