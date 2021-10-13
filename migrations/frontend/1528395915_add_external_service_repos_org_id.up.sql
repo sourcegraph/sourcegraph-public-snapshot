@@ -1,5 +1,0 @@
-BEGIN;
-
-ALTER TABLE external_service_repos ADD COLUMN org_id INTEGER REFERENCES orgs(id) ON DELETE CASCADE;
-
-COMMIT;
