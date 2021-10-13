@@ -221,7 +221,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
-                        parent={{ path: '/search', content: 'Code Search', icon: MagnifyIcon }}
+                        toggleItem={{ path: '/search', content: 'Code Search', icon: MagnifyIcon }}
                         items={[
                             {
                                 path: '/contexts',

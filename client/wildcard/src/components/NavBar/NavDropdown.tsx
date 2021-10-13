@@ -19,15 +19,15 @@ interface NavDropdownItem {
 }
 
 interface NavDropdownProps {
-    parent: NavDropdownItem
+    toggleItem: NavDropdownItem
     items: NavDropdownItem[]
 }
 
-export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ parent, items }) => {
+export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, items }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggle = (): void => setIsDropdownOpen(!isDropdownOpen)
 
-    const allItems = useMemo(() => [parent].concat(items), [parent, items])
+    const allItems = useMemo(() => [toggleItem].concat(items), [toggleItem, items])
 
     const location = useLocation()
     const isItemSelected = useMemo(() => allItems.some(item => location.pathname.startsWith(item.path)), [
@@ -35,11 +35,11 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ parent,
         location.pathname,
     ])
 
-    // We render the bigger screen version together with the smaller screen version and then use CSS @media
-    // queries to toggle between them.
+    // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
+    // and then use CSS @media queries to toggle between them.
     return (
         <>
-            {/* Nav items for bigger screens */}
+            {/* Dropdown nav item for bigger screens */}
             <NavItem className={styles.hideSmDown}>
                 <ButtonDropdown isOpen={isDropdownOpen} toggle={toggle}>
                     <DropdownToggle
@@ -51,9 +51,9 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ parent,
                         nav={true}
                     >
                         <span className={navItemStyles.linkContent}>
-                            <parent.icon className={classNames('icon-inline', navItemStyles.icon)} />
+                            <toggleItem.icon className={classNames('icon-inline', navItemStyles.icon)} />
                             <span className={classNames(navItemStyles.text, navItemStyles.iconIncluded)}>
-                                {parent.content}
+                                {toggleItem.content}
                             </span>
                             {isDropdownOpen ? (
                                 <ChevronUpIcon className={classNames('icon-inline', navItemStyles.icon)} />
@@ -76,13 +76,13 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ parent,
                     </DropdownMenu>
                 </ButtonDropdown>
             </NavItem>
-            {/* Nav items for small screens */}
-            <NavItem icon={parent.icon} className={styles.hideSmUp}>
-                <NavLink to={parent.path}>{parent.content}</NavLink>
+            {/* All nav items for smaller screens */}
+            <NavItem icon={toggleItem.icon} className={styles.hideSmUp}>
+                <NavLink to={toggleItem.path}>{toggleItem.content}</NavLink>
             </NavItem>
             {items.map(item => (
                 <NavItem key={item.path} icon={item.icon} className={styles.hideSmUp}>
-                    {/* Indent non-parent items to indicate a hierarchical structure */}
+                    {/* Indent non-toggle items to indicate a hierarchical structure */}
                     <NavLink to={item.path} className="pl-2">
                         {item.content}
                     </NavLink>
