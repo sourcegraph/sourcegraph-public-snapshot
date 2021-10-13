@@ -141,7 +141,7 @@ export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
         if (suggestions.length > 0) {
             telemetryService.log('SearchDidYouMeanDisplayed')
         }
-    }, [suggestions])
+    }, [suggestions, telemetryService])
 
     if (suggestions.length > 0) {
         return (
