@@ -1154,7 +1154,13 @@ func TestService(t *testing.T) {
 
 			var workspaceIDs []int64
 			for _, repo := range rs {
-				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Steps: []batcheslib.Step{
+						{Run: "echo hello", Container: "alpine:3"},
+					},
+				}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
 				}
