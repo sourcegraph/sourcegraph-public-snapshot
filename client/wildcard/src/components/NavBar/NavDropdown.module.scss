@@ -1,0 +1,24 @@
+@import '../../global-styles/breakpoints';
+
+.hide-sm-down {
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
+.hide-sm-up {
+    display: none;
+    @media (--sm-breakpoint-down) {
+        display: block;
+    }
+}
+
+.dropdown-toggle {
+    display: flex;
+    align-items: center;
+    padding: 0;
+
+    &:hover {
+        color: var(--body-color) !important;
+    }
+}
