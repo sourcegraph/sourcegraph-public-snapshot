@@ -179,7 +179,7 @@ func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
 	// As a special case we also support the experimental p4-fusion client which is
 	// not run as a subcommand of git.
 	if cmd.Args[0] != "git" && cmd.Args[0] != "p4-fusion" {
-		panic("Only git commands are supported")
+		panic("Only git or p4-fusion commands are supported")
 	}
 
 	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
