@@ -265,18 +265,12 @@ func CommitCount(ctx context.Context, repo api.RepoName, opt CommitsOptions) (ui
 		// This doesn't include --follow flag because rev-list doesn't support it, so the number may be slightly off.
 		cmd.Args = append(cmd.Args, "--", opt.Path)
 	}
-	out, err := cmd.CombinedOutput(ctx)
+	out, err := cmd.Output(ctx)
 	if err != nil {
 		return 0, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 
-	// Ignore anything after the first line like git warning output. See https://github.com/sourcegraph/sourcegraph/issues/25974
-	i := bytes.Index(out, []byte("\n"))
-	if i > -1 {
-		out = out[:i]
-	}
 	out = bytes.TrimSpace(out)
-
 	n, err := strconv.ParseUint(string(out), 10, 64)
 	return uint(n), err
 }
