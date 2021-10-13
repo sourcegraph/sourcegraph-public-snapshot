@@ -16,7 +16,6 @@ import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
     kind: ExternalServiceKind
-    // TODO: export this
     owner: { id: Scalars['ID']; tags?: string[]; type: 'user' | 'org' }
     name: string
     icon: React.ComponentType<{ className?: string }>
@@ -42,14 +41,10 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidError,
     onDidAdd,
 }) => {
-    // PAT >>>
-
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
         isAddConnectionModalOpen,
     ])
-
-    // <<< PAT
 
     const [isRemoveConnectionModalOpen, setIsRemoveConnectionModalOpen] = useState(false)
     const toggleRemoveConnectionModal = useCallback(
