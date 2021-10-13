@@ -268,7 +268,17 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 	var cmd *exec.Cmd
 	if s.UseFusionClient {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
-		cmd = exec.CommandContext(ctx, "p4-fusion", "--path", depot+"...", "--user", username, "--src", tmpPath, "--networkThreads", "64", "--printBatch", "10", "--port", host, "--lookAhead", "2000", "--retries", "10", "--refresh", "100", "--bare", "true")
+		cmd = exec.CommandContext(ctx, "p4-fusion",
+			"--path", depot+"...",
+			"--user", username,
+			"--src", tmpPath,
+			"--networkThreads", "64",
+			"--printBatch", "10",
+			"--port", host,
+			"--lookAhead", "2000",
+			"--retries", "10",
+			"--refresh", "100",
+			"--bare", "true")
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -301,7 +311,18 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100 --autoresume true
 		root, _ := filepath.Split(string(dir))
 		log15.Info("Fetching", "root", root)
-		cmd = exec.CommandContext(ctx, "p4-fusion", "--path", depot+"...", "--user", username, "--src", root+".git", "--networkThreads", "64", "--printBatch", "10", "--port", host, "--lookAhead", "2000", "--retries", "10", "--refresh", "100", "--autoResume", "true", "--bare", "true")
+		cmd = exec.CommandContext(ctx, "p4-fusion",
+			"--path", depot+"...",
+			"--user", username,
+			"--src", root+".git",
+			"--networkThreads", "64",
+			"--printBatch", "10",
+			"--port", host,
+			"--lookAhead", "2000",
+			"--retries", "10",
+			"--refresh", "100",
+			"--autoResume", "true",
+			"--bare", "true")
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
