@@ -22,7 +22,7 @@ import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
-    authenticatedUser: AuthenticatedUser
+    isSiteAdmin: boolean
 }
 
 export interface CodeIntelAreaRoute extends RouteDescriptor<CodeIntelAreaRouteContext> {}
@@ -87,13 +87,11 @@ export const routes: readonly CodeIntelAreaRoute[] = [
         path: '/configuration',
         exact: true,
         render: props => <CodeIntelConfigurationPage {...props} />,
-        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: '/configuration/:id',
         exact: true,
         render: props => <CodeIntelConfigurationPolicyPage {...props} />,
-        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
 ]
 
@@ -134,7 +132,6 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
             {
                 to: '/configuration',
                 label: 'Configuration',
-                condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
             },
         ],
     },
@@ -146,27 +143,41 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeIntelAreaPageProps> = ({
     match,
     useBreadcrumb,
+    authenticatedUser,
     ...props
 }) => {
     useBreadcrumb(useMemo(() => ({ key: 'code-intelligence', element: 'Code Intelligence' }), []))
 
+    const propsWithSiteAdmin = { ...props, isSiteAdmin: authenticatedUser.siteAdmin }
+
     return (
         <div className="container d-flex mt-3">
-            <CodeIntelSidebar className="flex-0 mr-3" codeIntelSidebarGroups={sidebarRoutes} match={match} {...props} />
+            <CodeIntelSidebar
+                className="flex-0 mr-3"
+                codeIntelSidebarGroups={sidebarRoutes}
+                match={match}
+                {...propsWithSiteAdmin}
+            />
 
             <div className="flex-bounded">
                 <Switch>
                     {routes.map(
                         ({ path, render, exact, condition = () => true }) =>
-                            condition(props) && (
+                            condition(propsWithSiteAdmin) && (
                                 <Route
                                     path={match.url + path}
                                     exact={exact}
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    render={routeComponentProps => render({ ...props, ...routeComponentProps })}
+                                    render={routeComponentProps =>
+                                        render({
+                                            ...propsWithSiteAdmin,
+                                            ...routeComponentProps,
+                                        })
+                                    }
                                 />
                             )
                     )}
+
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>

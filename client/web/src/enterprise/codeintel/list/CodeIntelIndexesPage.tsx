@@ -7,7 +7,6 @@ import { Subject } from 'rxjs'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -27,8 +26,8 @@ import {
 } from './useLsifIndexList'
 
 export interface CodeIntelIndexesPageProps extends RouteComponentProps<{}>, TelemetryProps {
+    isSiteAdmin: boolean
     repo?: { id: string }
-    authenticatedUser: AuthenticatedUser
     queryLsifIndexListByRepository?: typeof defaultQueryLsifIndexListByRepository
     queryLsifIndexList?: typeof defaultQueryLsifIndexList
     now?: () => Date
@@ -75,8 +74,8 @@ const filters: FilteredConnectionFilter[] = [
 ]
 
 export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
+    isSiteAdmin,
     repo,
-    authenticatedUser,
     queryLsifIndexListByRepository = defaultQueryLsifIndexListByRepository,
     queryLsifIndexList = defaultQueryLsifIndexList,
     now,
@@ -110,7 +109,7 @@ export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> 
                 className="mb-3"
             />
 
-            {repo && authenticatedUser.siteAdmin && (
+            {repo && isSiteAdmin && (
                 <Container className="mb-2">
                     <EnqueueForm repoId={repo.id} querySubject={querySubject} />
                 </Container>

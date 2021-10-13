@@ -14,6 +14,7 @@ interface RepositoryPoliciesProps {
     indexingEnabled: boolean
     history: H.History
     isGlobal: boolean
+    isSiteAdmin: boolean
     onHandleDisplayAction: React.Dispatch<React.SetStateAction<boolean>>
     onHandleIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
     onHandleIsLoading: React.Dispatch<React.SetStateAction<boolean>>
@@ -24,6 +25,7 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
     indexingEnabled,
     history,
     isGlobal,
+    isSiteAdmin,
     onHandleDisplayAction,
     onHandleIsDeleting,
     onHandleIsLoading,
@@ -66,15 +68,13 @@ export const RepositoryPolicies: FunctionComponent<RepositoryPoliciesProps> = ({
     return (
         <Container>
             <h3>{CONFIG_TEXT[configType].title}</h3>
-
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
-
             {loadingPolicies ? (
                 <LoadingSpinner className="icon-inline" />
             ) : (
                 <PoliciesList
                     policies={policies}
-                    onDeletePolicy={repo.id === null || !isGlobal ? handleDelete : undefined}
+                    onDeletePolicy={(repo.id === null || !isGlobal) && isSiteAdmin ? handleDelete : undefined}
                     disabled={loadingPolicies}
                     indexingEnabled={indexingEnabled}
                     history={history}

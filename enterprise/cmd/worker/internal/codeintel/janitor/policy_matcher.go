@@ -162,7 +162,7 @@ type policyMatcher func(policy dbstore.ConfigurationPolicy) bool
 
 // isUploadProtectedByPolicy returns true if the given matcher returns true when invoked with
 // any of the given commit values. The first found passing commit will be marked as protected
-// in teh given repository expiration state object. This function short-circuits and marks at
+// in the given repository expiration state object. This function short-circuits and marks at
 // most one commit as protected per invocation.
 func isUploadProtectedByPolicy(repositoryState *repositoryExpirationState, commits []string, matcher commitMatcher) (bool, error) {
 	for _, commit := range commits {

@@ -121,7 +121,7 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if err != nil {
 		return nil, err
 	}
-	conds = append(conds, authzConds)
+	conds = append(conds, sqlf.Sprintf("(p.repository_id IS NULL OR (%s))", authzConds))
 
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {
@@ -133,7 +133,7 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 }
 
 const getConfigurationPoliciesQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetSomething
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
 SELECT
 	p.id,
 	p.repository_id,
@@ -185,7 +185,7 @@ SELECT
 	p.index_intermediate_commits
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
-WHERE p.id = %s AND %s
+WHERE p.id = %s AND (p.repository_id IS NULL OR (%s))
 `
 
 // CreateConfigurationPolicy creates a configuration policy with the given fields (ignoring ID). The hydrated

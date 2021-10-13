@@ -10,7 +10,6 @@ import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
 import { LsifIndexFields } from '../../../graphql-operations'
@@ -23,7 +22,7 @@ import { CodeIntelIndexTimeline } from './CodeIntelIndexTimeline'
 import { queryLisfIndex as defaultQueryLsifIndex, useDeleteLsifIndex } from './useLsifIndex'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
-    authenticatedUser: AuthenticatedUser
+    isSiteAdmin: boolean
     queryLisfIndex?: typeof defaultQueryLsifIndex
     now?: () => Date
 }
@@ -37,7 +36,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
     match: {
         params: { id },
     },
-    authenticatedUser,
+    isSiteAdmin,
     queryLisfIndex = defaultQueryLsifIndex,
     telemetryService,
     now,
@@ -140,7 +139,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         />
                     </Container>
 
-                    {authenticatedUser.siteAdmin && (
+                    {isSiteAdmin && (
                         <Container className="mt-2">
                             <CodeIntelDeleteIndex deleteIndex={deleteIndex} deletionOrError={deletionOrError} />
                         </Container>

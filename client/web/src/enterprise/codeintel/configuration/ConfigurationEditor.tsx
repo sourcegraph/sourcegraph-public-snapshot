@@ -20,11 +20,13 @@ import {
 
 export interface ConfigurationEditorProps extends ThemeProps, TelemetryProps {
     repoId: string
+    isSiteAdmin: boolean
     history: H.History
 }
 
 export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = ({
     repoId,
+    isSiteAdmin,
     isLightTheme,
     telemetryService,
     history,
@@ -82,14 +84,15 @@ export const ConfigurationEditor: FunctionComponent<ConfigurationEditorProps> = 
                 <DynamicallyImportedMonacoSettingsEditor
                     value={configuration}
                     jsonSchema={allConfigSchema}
-                    canEdit={true}
+                    canEdit={isSiteAdmin}
+                    readOnly={!isSiteAdmin}
                     onSave={save}
                     saving={isUpdating}
                     height={600}
                     isLightTheme={isLightTheme}
                     history={history}
                     telemetryService={telemetryService}
-                    customSaveToolbar={customToolbar}
+                    customSaveToolbar={isSiteAdmin ? customToolbar : undefined}
                     onDirtyChange={setDirty}
                     onEditor={setEditor}
                 />

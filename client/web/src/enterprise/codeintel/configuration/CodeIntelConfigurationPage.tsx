@@ -14,6 +14,7 @@ import { RepositoryConfiguration } from './RepositoryConfiguration'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
 export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
+    isSiteAdmin: boolean
     repo?: { id: string }
     indexingEnabled?: boolean
     isLightTheme: boolean
@@ -22,6 +23,7 @@ export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>
 }
 
 export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
+    isSiteAdmin,
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     isLightTheme,
@@ -58,6 +60,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 
             {repo ? (
                 <RepositoryConfiguration
+                    isSiteAdmin={isSiteAdmin}
                     repo={repo}
                     indexingEnabled={indexingEnabled}
                     isLightTheme={isLightTheme}
@@ -69,6 +72,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 />
             ) : (
                 <RepositoryPolicies
+                    isSiteAdmin={isSiteAdmin}
                     repo={repo}
                     isGlobal={true}
                     indexingEnabled={indexingEnabled}
