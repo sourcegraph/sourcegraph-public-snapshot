@@ -256,7 +256,7 @@ func (o *Operator) Match(commit *LazyCommit) (CommitFilterResult, MatchedCommit,
 			}
 			resultMatches = resultMatches.Merge(matches)
 		}
-		resultMatches.FilterDiffs(mergedCFR.MatchedFileDiffs)
+		resultMatches.ConstrainToMatched(mergedCFR.MatchedFileDiffs)
 		return mergedCFR, resultMatches, nil
 	case protocol.Or:
 		resultMatches := MatchedCommit{}
@@ -273,7 +273,7 @@ func (o *Operator) Match(commit *LazyCommit) (CommitFilterResult, MatchedCommit,
 				resultMatches = resultMatches.Merge(matches)
 			}
 		}
-		resultMatches.FilterDiffs(mergedCFR.MatchedFileDiffs)
+		resultMatches.ConstrainToMatched(mergedCFR.MatchedFileDiffs)
 		return mergedCFR, resultMatches, nil
 	default:
 		panic("invalid operator kind")

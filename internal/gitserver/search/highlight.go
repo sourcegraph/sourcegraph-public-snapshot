@@ -31,9 +31,11 @@ func (c MatchedCommit) Merge(other MatchedCommit) MatchedCommit {
 	return c
 }
 
-func (c *MatchedCommit) FilterDiffs(fileDiffFilter map[int]struct{}) {
+// ConstrainToMatched constrains a MatchedCommit by deleting any match ranges for file
+// diffs not included in the provided matchedFileDiffs.
+func (c *MatchedCommit) ConstrainToMatched(matchedFileDiffs map[int]struct{}) {
 	for i := range c.Diff {
-		if _, ok := fileDiffFilter[i]; !ok {
+		if _, ok := matchedFileDiffs[i]; !ok {
 			delete(c.Diff, i)
 		}
 	}
