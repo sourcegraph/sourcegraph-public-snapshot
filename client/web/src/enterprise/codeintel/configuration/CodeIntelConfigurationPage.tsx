@@ -55,7 +55,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                 />
                 {displayActions && authenticatedUser?.siteAdmin && (
                     <>
-                        sdf <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />
+                       <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />
                     </>
                 )}
             </CodeIntelConfigurationPageHeader>
