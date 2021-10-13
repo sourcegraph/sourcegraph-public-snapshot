@@ -203,7 +203,7 @@ async function determineCommitsToSearch(dates: Date[], repo: string): Promise<Se
         const commit = firstCommit.commit
 
         // Sanity check
-        const commitDate = commit.committer && new Date(commit.committer.date)
+        const commitDate = commit.author && new Date(commit.author.date)
 
         if (!commitDate) {
             throw new Error(`Expected commit to have committer: \`${commit.oid}\``)

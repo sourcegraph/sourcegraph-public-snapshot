@@ -48,7 +48,7 @@ const bulkSearchCommitsFragment = gql`
                     __typename
                     commit {
                         oid
-                        committer {
+                        author {
                             date
                         }
                     }
