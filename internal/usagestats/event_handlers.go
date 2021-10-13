@@ -178,10 +178,11 @@ func publishAmplitudeEvent(args Event) error {
 	if args.InsertID == nil {
 		return errors.New("amplitude: Missing insert ID")
 	}
-	if args.UserProperties == nil {
-		return errors.New("amplitude: Missing user properties")
-	}
-	userProperties, err := getAmplitudeUserProperties(args)
+
+	userProperties, err := json.Marshal(amplitude.UserProperties{
+		AnonymousUserID: args.UserCookieID,
+		FeatureFlags:    args.FeatureFlags,
+	})
 	if err != nil {
 		return err
 	}
@@ -205,41 +206,6 @@ func publishAmplitudeEvent(args Event) error {
 
 	return amplitude.Publish(amplitudeEvent)
 
-}
-
-func getAmplitudeUserProperties(args Event) (json.RawMessage, error) {
-	firstSourceURL := ""
-	if args.FirstSourceURL != nil {
-		firstSourceURL = *args.FirstSourceURL
-	}
-	referrer := ""
-	if args.Referrer != nil {
-		referrer = *args.Referrer
-	}
-	var userPropertiesFromFrontend amplitude.FrontendUserProperties
-	err := json.Unmarshal(args.UserProperties, &userPropertiesFromFrontend)
-	if err != nil {
-		return nil, err
-	}
-	userProperties, err := json.Marshal(amplitude.UserProperties{
-		AnonymousUserID:         args.UserCookieID,
-		FirstSourceURL:          firstSourceURL,
-		Referrer:                referrer,
-		CohortID:                args.CohortID,
-		FeatureFlags:            args.FeatureFlags,
-		HasCloudAccount:         args.UserID != 0,
-		NumberOfReposAdded:      userPropertiesFromFrontend.NumberOfReposAdded,
-		HasAddedRepos:           userPropertiesFromFrontend.HasAddedRepos,
-		NumberPublicReposAdded:  userPropertiesFromFrontend.NumberPublicReposAdded,
-		NumberPrivateReposAdded: userPropertiesFromFrontend.NumberPrivateReposAdded,
-		HasActiveCodeHost:       userPropertiesFromFrontend.HasActiveCodeHost,
-		IsSourcegraphTeammate:   userPropertiesFromFrontend.IsSourcegraphTeammate,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return userProperties, nil
 }
 
 // logLocalEvent logs users events.
