@@ -116,8 +116,6 @@ add('AddInsightModal', () => {
         <>
             {open && (
                 <AddInsightModal
-                    platformContext={{} as any}
-                    settingsCascade={SETTINGS_CASCADE}
                     dashboard={dashboard}
                     onClose={() => setOpen(false)}
                 />

@@ -4,8 +4,6 @@ import classnames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
 import { LoadingSpinner } from '@sourcegraph/wildcard'

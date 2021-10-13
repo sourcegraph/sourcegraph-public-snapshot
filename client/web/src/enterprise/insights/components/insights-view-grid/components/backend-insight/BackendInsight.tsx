@@ -15,7 +15,6 @@ import {
 } from '../../../../../../views'
 import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
-import { addInsightToSettings } from '../../../../core/settings-action/insights'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
@@ -29,7 +28,6 @@ import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
-import { useInsightFilterCreation } from './hooks/use-insight-filter-creation'
 
 interface BackendInsightProps
     extends TelemetryProps, React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
@@ -43,7 +41,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { telemetryService, insight, ref, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
-    const { getBackendInsight, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { getBackendInsight, createInsightWithNewFilters, updateInsightDrillDownFilters } = useContext(InsightsApiContext)
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -81,22 +79,14 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     // Handle insight delete action
     const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
 
-    const { create: creteInsightWithFilters } = useInsightFilterCreation({ platformContext })
-
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
-        const subjectId = insight.visibility
-
         try {
-            const settings = await getSubjectSettings(subjectId).toPromise()
-            const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
-            const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
 
-            await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
-
-            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
+            await updateInsightDrillDownFilters(insight, filters).toPromise()
 
             setOriginalInsightFilters(filters)
             setIsFiltersOpen(false)
+            telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
@@ -114,12 +104,12 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         }
 
         try {
-            await creteInsightWithFilters({
+            await createInsightWithNewFilters({
                 insightName,
                 filters,
                 dashboard,
                 originalInsight: insight,
-            })
+            }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
             setOriginalInsightFilters(filters)
@@ -147,7 +137,6 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             actions={
                 <DrillDownFiltersAction
                     isOpen={isFiltersOpen}
-                    settings={settingsCascade.final ?? {}}
                     popoverTargetRef={insightCardReference}
                     initialFiltersValue={filters}
                     originalFiltersValue={originalInsightFilters}
