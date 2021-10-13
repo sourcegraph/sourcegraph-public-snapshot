@@ -51,7 +51,11 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     }.`}
                     className="mb-3"
                 />
-                {displayActions && <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />}
+                {displayActions && isSiteAdmin && (
+                    <>
+                        sdf <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />
+                    </>
+                )}
             </CodeIntelConfigurationPageHeader>
 
             {history.location.state && (
