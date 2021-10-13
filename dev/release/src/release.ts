@@ -401,7 +401,7 @@ cc @${config.captainGitHubUsername}
                             `comby -in-place 'latestReleaseDockerComposeOrPureDocker = newBuild(":[1]")' "latestReleaseDockerComposeOrPureDocker = newBuild(\\"${release.version}\\")" cmd/frontend/internal/app/updatecheck/handler.go`,
 
                             // Support current release as the "previous release" going forward
-                            `comby -in-place 'env["MINIMUM_UPGRADEABLE_VERSION"] = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`,
+                            `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'env["MINIMUM_UPGRADEABLE_VERSION"] = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`,
 
                             // Add a stub to add upgrade guide entries
                             notPatchRelease

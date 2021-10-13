@@ -144,8 +144,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
-		// Publish images
-		ops.Append(publishFinalDockerImage(c, patchImage, false))
+		// Publish images after everything is done
+		ops.Append(wait,
+			publishFinalDockerImage(c, patchImage, false))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -188,22 +189,25 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(buildExecutor(c.Version, skipHashCompare))
 		}
 
-		// Slow tests
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			ops.Append(backendIntegrationTests(c.candidateImageTag()))
-		}
-
 		// Core tests
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 		}))
 
-		// Trigger e2e late so that it can leverage candidate images
-		ops.Append(triggerE2EandQA(e2eAndQAOptions{
-			candidateImage: c.candidateImageTag(),
-			buildOptions:   buildOptions,
-			async:          c.RunType.Is(MainBranch),
-		}))
+		// Various integration tests
+		ops.Append(
+			backendIntegrationTests(c.candidateImageTag()),
+			codeIntelQA(c.candidateImageTag()))
+
+		// All operations before this point are required
+		ops.Append(wait)
+
+		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
+		const minimumUpgradeableVersion = "3.32.0"
+		ops.Append(
+			serverE2E(c.candidateImageTag()),
+			serverQA(c.candidateImageTag()),
+			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
