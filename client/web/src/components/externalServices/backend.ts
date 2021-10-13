@@ -39,6 +39,7 @@ export const externalServiceFragment = gql`
         nextSyncAt
         updatedAt
         createdAt
+        grantedScopes
         namespace {
             id
             namespaceName
