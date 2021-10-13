@@ -298,6 +298,7 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
             />
 
             <DidYouMean
+                telemetryService={props.telemetryService}
                 parsedSearchQuery={props.parsedSearchQuery}
                 patternType={props.patternType}
                 caseSensitive={props.caseSensitive}

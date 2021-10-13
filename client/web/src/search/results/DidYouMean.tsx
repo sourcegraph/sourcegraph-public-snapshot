@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useMemo } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -7,6 +7,7 @@ import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { CaseSensitivityProps, ParsedSearchQueryProps, PatternTypeProps, SearchContextProps } from '..'
@@ -16,13 +17,6 @@ import styles from './DidYouMean.module.scss'
 
 // Only consider queries that have at most this many terms
 const MAX_TERMS = 4
-
-interface DidYouMeanProps
-    extends Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<VersionContextProps, 'versionContext'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'> {}
 
 const normalizedLanguages = new Map(ALL_LANGUAGES.map(lang => [lang.toLowerCase(), lang]))
 
@@ -44,6 +38,7 @@ function matchesLanguage(token: Pattern): { success: false } | { success: true; 
 }
 
 interface Suggestion {
+    type: 'languageFilter'
     query: string
     text: React.ReactElement
 }
@@ -109,6 +104,7 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
                     : token
         )
         result.push({
+            type: 'languageFilter',
             query: stringHuman(updatedQuery),
             text: (
                 <span>
@@ -120,14 +116,33 @@ function getQuerySuggestions(query: string, patternType: SearchPatternType): Sug
     return result
 }
 
+interface DidYouMeanProps
+    extends Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
+        Pick<PatternTypeProps, 'patternType'>,
+        Pick<CaseSensitivityProps, 'caseSensitive'>,
+        Pick<VersionContextProps, 'versionContext'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        TelemetryProps {}
+
 export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
+    telemetryService,
     parsedSearchQuery,
     patternType,
     caseSensitive,
     versionContext,
     selectedSearchContextSpec,
 }) => {
-    const suggestions = getQuerySuggestions(parsedSearchQuery, patternType)
+    const suggestions = useMemo(() => getQuerySuggestions(parsedSearchQuery, patternType), [
+        parsedSearchQuery,
+        patternType,
+    ])
+
+    useEffect(() => {
+        if (suggestions.length > 0) {
+            telemetryService.log('SearchDidYouMeanDisplayed')
+        }
+    }, [suggestions])
+
     if (suggestions.length > 0) {
         return (
             <div className={styles.root}>
@@ -143,7 +158,12 @@ export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
                         )
                         return (
                             <li key={suggestion.query}>
-                                <Link to={{ pathname: '/search', search: builtURLQuery }}>
+                                <Link
+                                    onClick={() =>
+                                        telemetryService.log('SearchDidYouMeanClicked', { type: suggestion.type })
+                                    }
+                                    to={{ pathname: '/search', search: builtURLQuery }}
+                                >
                                     <span className={styles.suggestion}>
                                         <SyntaxHighlightedSearchQuery query={suggestion.query} />
                                     </span>
