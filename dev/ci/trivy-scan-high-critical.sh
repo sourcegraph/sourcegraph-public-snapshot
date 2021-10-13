@@ -79,7 +79,7 @@ EOF
 
 ARTIFACT_FILE="${OUTPUT}/${IMAGE}-security-report.html"
 trivy_scan "./dev/ci/trivy-artifact-html.tpl" "${ARTIFACT_FILE}" "${IMAGE}" || exitCode="$?"
-case $exitCode in
+case "${exitCode:-"0"}" in
 0)
   # no vulnerabilities were found
   exit 0
