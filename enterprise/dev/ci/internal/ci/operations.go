@@ -505,11 +505,9 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
 
 			bk.Env("IMAGE", app),
-
-			bk.Cmd("./dev/ci/trivy-upload-all.sh"),
-
 			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
 			bk.SoftFail(vulnerabilityExitCode),
+
 			bk.Cmd("./dev/ci/trivy-scan-high-critical.sh"),
 		}
 
