@@ -29,9 +29,9 @@ func TestDiffSearch(t *testing.T) {
 	matchTree, err := ToMatchTree(query)
 	require.NoError(t, err)
 
-	cfr, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
+	mergedResult, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
 	require.NoError(t, err)
-	require.True(t, cfr.HasMatch())
+	require.True(t, mergedResult.HasMatch())
 
 	expectedHighlights := MatchedCommit{
 		Diff: map[int]MatchedFileDiff{
@@ -101,8 +101,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
-				cfr, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, cfr.HasMatch())
+				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+				require.True(b, mergedResult.HasMatch())
 			}
 		})
 
@@ -112,8 +112,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
-				cfr, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, cfr.HasMatch())
+				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+				require.True(b, mergedResult.HasMatch())
 			}
 		})
 	})
@@ -130,8 +130,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					cfr, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, cfr.HasMatch())
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.HasMatch())
 				}
 			})
 
@@ -141,8 +141,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					cfr, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, cfr.HasMatch())
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.HasMatch())
 				}
 			})
 		})
@@ -154,8 +154,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					cfr, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, cfr.HasMatch())
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.HasMatch())
 				}
 			})
 
@@ -165,8 +165,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					cfr, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, cfr.HasMatch())
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.HasMatch())
 				}
 			})
 		})
