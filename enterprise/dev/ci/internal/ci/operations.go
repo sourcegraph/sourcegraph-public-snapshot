@@ -490,6 +490,11 @@ func buildCandidateDockerImage(app, tag string) operations.Operation {
 func trivyScanCandidateImage(app, tag string) operations.Operation {
 	image := images.DevRegistryImage(app, tag)
 
+	// This is the special exit code that we tell trivy to use
+	// if it finds a vulnerability. This is also used to soft-fail
+	// this step.
+	vulnerabilityExitCode := 27
+
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{
 			bk.DependsOn(candidateImageStepKey(app)),
@@ -502,6 +507,9 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Env("IMAGE", app),
 
 			bk.Cmd("./dev/ci/trivy-upload-all.sh"),
+
+			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
+			bk.SoftFail(vulnerabilityExitCode),
 			bk.Cmd("./dev/ci/trivy-scan-high-critical.sh"),
 		}
 

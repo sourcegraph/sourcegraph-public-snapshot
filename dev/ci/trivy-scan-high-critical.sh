@@ -18,7 +18,6 @@ set -x
 
 # This is the special exit code that we tell trivy to use
 # if finds a vulnerability
-VULNERABILITY_EXIT_CODE=27
 
 trivy_scan() {
   local templateFile="$1"
@@ -85,10 +84,10 @@ case $exitCode in
   # no vulnerabilities were found
   exit 0
   ;;
-VULNERABILITY_EXIT_CODE)
-  # we found vulnerabilities - upload the annotation but don't fail the build
+"${VULNERABILITY_EXIT_CODE}")
+  # we found vulnerabilities - upload the annotation
   upload_annotation "${ARTIFACT_FILE}" "${IMAGE}"
-  exit 0
+  exit "${VULNERABILITY_EXIT_CODE}"
   ;;
 *)
   # some other kind of error occurred
