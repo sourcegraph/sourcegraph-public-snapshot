@@ -141,7 +141,8 @@ If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a k
 1. The CI pipeline will create an annotation that contains links to reports that describe the vulnerabilities
 2. The Trivy scanning step will [soft fail](https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes). Note that soft failures **do not fail builds or block deployments**. They simply highlight the failing step for further analysis.
 
-__Note__: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
+> NOTE: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
+
 ## GitHub Actions
 
 ### Third-Party Licenses
