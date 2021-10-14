@@ -43,7 +43,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		addCheck,
 	})
 
-	if runAll || changedFiles.AffectsClient() {
+	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
+		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Append(
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
@@ -55,7 +56,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		)
 	}
 
-	if runAll || changedFiles.AffectsGo() {
+	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
+		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Append(
 			addGoTests,
 		)
