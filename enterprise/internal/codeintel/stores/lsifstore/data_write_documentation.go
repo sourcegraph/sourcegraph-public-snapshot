@@ -614,7 +614,7 @@ func lexemes(s string) []string {
 		lexemes       []string
 		currentLexeme []rune
 	)
-	for _, r := range []rune(s) {
+	for _, r := range s {
 		if unicode.IsDigit(r) || unicode.IsNumber(r) || unicode.IsLetter(r) {
 			currentLexeme = append(currentLexeme, r)
 			continue
