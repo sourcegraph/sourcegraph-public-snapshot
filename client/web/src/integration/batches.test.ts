@@ -157,14 +157,13 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
     },
 })
 
-const ExternalChangesetFileDiffs: (
-    variables: ExternalChangesetFileDiffsVariables
-) => ExternalChangesetFileDiffsResult = () => ({
-    node: {
-        __typename: 'ExternalChangeset',
-        diff: mockDiff,
-    },
-})
+const ExternalChangesetFileDiffs: (variables: ExternalChangesetFileDiffsVariables) => ExternalChangesetFileDiffsResult =
+    () => ({
+        node: {
+            __typename: 'ExternalChangeset',
+            diff: mockDiff,
+        },
+    })
 
 const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => BatchChangeChangesetsResult = () => ({
     node: {
@@ -247,6 +246,20 @@ function mockCommonGraphQLResponses(
         }),
         UserAreaUserProfile: () => ({
             user: {
+                __typename: 'User',
+                id: 'user123',
+                username: 'alice',
+                displayName: 'alice',
+                url: namespaceURL,
+                settingsURL: `${namespaceURL}/settings`,
+                avatarURL: '',
+                viewerCanAdminister: true,
+                builtinAuth: true,
+                tags: [],
+            },
+        }),
+        UserSettingsAreaUserProfile: () => ({
+            node: {
                 __typename: 'User',
                 id: 'user123',
                 username: 'alice',

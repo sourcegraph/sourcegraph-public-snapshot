@@ -48,6 +48,9 @@ describe('User profile page', () => {
             UserAreaUserProfile: () => ({
                 user: USER,
             }),
+            UserSettingsAreaUserProfile: () => ({
+                node: USER,
+            }),
             UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
