@@ -3,6 +3,7 @@ package command
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -199,6 +200,9 @@ func (l *Logger) syncLogEntry(handle *entryHandle, entryID int, old workerutil.E
 				"lastWrite", lastWrite,
 				"error", err,
 			)
+
+			// TODO - maybe shouldn't always retry
+			fmt.Printf("> %v\n", err)
 		} else {
 			old = current
 		}
