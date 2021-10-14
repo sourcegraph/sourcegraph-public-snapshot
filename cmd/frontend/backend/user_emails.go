@@ -29,7 +29,7 @@ type userEmails struct{}
 // of other people whom they want to annoy.
 func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bool, reason string, err error) {
 	if conf.EmailVerificationRequired() {
-		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: userID,
 		})
 		if err != nil {
@@ -121,7 +121,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 		emailAlreadyExistsAndIsVerified = true
 	}
 
-	if err := database.GlobalUserEmails.Add(ctx, userID, email, code); err != nil {
+	if err := database.UserEmails(db).Add(ctx, userID, email, code); err != nil {
 		return err
 	}
 
@@ -134,7 +134,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
-		} else if err = database.GlobalUserEmails.SetLastVerification(ctx, userID, email, *code); err != nil {
+		} else if err = database.UserEmails(db).SetLastVerification(ctx, userID, email, *code); err != nil {
 			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
@@ -194,13 +194,13 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 
 // SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
 // The change is the information we want to provide the user about the change
-func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
-	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(ctx, id)
+func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, db dbutil.DB, id int32, change string) error {
+	email, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, id)
 	if err != nil {
 		log15.Warn("Failed to get user email", "error", err)
 		return err
 	}
-	usr, err := database.GlobalUsers.GetByID(ctx, id)
+	usr, err := database.Users(db).GetByID(ctx, id)
 	if err != nil {
 		log15.Warn("Failed to get user from database", "error", err)
 		return err

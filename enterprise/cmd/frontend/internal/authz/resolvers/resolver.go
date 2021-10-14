@@ -108,7 +108,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 	cfg := globals.PermissionsUserMapping()
 	switch cfg.BindID {
 	case "email":
-		emails, err := database.GlobalUserEmails.GetVerifiedEmails(ctx, bindIDs...)
+		emails, err := database.UserEmailsWith(r.store).GetVerifiedEmails(ctx, bindIDs...)
 		if err != nil {
 			return nil, err
 		}
