@@ -34,10 +34,6 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 			}
 			return nil, err
 		}
-		// 🚨 SECURITY: Only the user and admins are allowed to access the user's information.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, user.ID); err != nil {
-			return nil, err
-		}
 		return NewUserResolver(r.db, user), nil
 
 	case args.Email != nil:
@@ -245,6 +241,11 @@ func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// organisations.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
 	orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err

@@ -43,7 +43,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		addCheck,
 	})
 
-	if runAll || changedFiles.AffectsClient() {
+	if runAll || changedFiles.AffectsClient() || changedFiles.AffectsGraphQL() {
+		// If there are any Graphql changes, they are impacting the client as well.
 		ops.Append(
 			clientIntegrationTests,
 			clientChromaticTests(opts.ChromaticShouldAutoAccept),
@@ -55,7 +56,8 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		)
 	}
 
-	if runAll || changedFiles.AffectsGo() {
+	if runAll || changedFiles.AffectsGo() || changedFiles.AffectsGraphQL() {
+		// If there are any Graphql changes, they are impacting the backend as well.
 		ops.Append(
 			addGoTests,
 		)
@@ -262,8 +264,7 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -484,6 +485,37 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		)
 
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: %s", app), cmds...)
+	}
+}
+
+// Ask trivy, a security scanning tool, to scan the candidate image
+// specified by "app" and "tag".
+func trivyScanCandidateImage(app, tag string) operations.Operation {
+	image := images.DevRegistryImage(app, tag)
+
+	// This is the special exit code that we tell trivy to use
+	// if it finds a vulnerability. This is also used to soft-fail
+	// this step.
+	vulnerabilityExitCode := 27
+
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.DependsOn(candidateImageStepKey(app)),
+
+			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+
+			// have trivy use a shorter name in its output
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
+
+			bk.Env("IMAGE", app),
+			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
+			bk.ArtifactPaths("./*-security-report.html"),
+			bk.SoftFail(vulnerabilityExitCode),
+
+			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
+		}
+
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
 	}
 }
 

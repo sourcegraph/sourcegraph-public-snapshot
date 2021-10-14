@@ -1,7 +1,6 @@
 import React from 'react'
 
 import '../SourcegraphWebApp.scss'
-import '../enterprise.scss'
 import { KEYBOARD_SHORTCUTS } from '../keyboardShortcuts/keyboardShortcuts'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 

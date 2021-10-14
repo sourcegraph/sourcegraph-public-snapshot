@@ -217,6 +217,11 @@ type BatchSpec struct {
 	SupersedingBatchSpec *BatchSpec
 	AppliesToBatchChange BatchChange
 
+	State               string
+	WorkspaceResolution BatchSpecWorkspaceResolution
+}
+
+type BatchSpecWorkspaceResolution struct {
 	State string
 }
 
