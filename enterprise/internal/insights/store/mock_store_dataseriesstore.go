@@ -17,6 +17,9 @@ type MockDataSeriesStore struct {
 	// GetDataSeriesFunc is an instance of a mock function object
 	// controlling the behavior of the method GetDataSeries.
 	GetDataSeriesFunc *DataSeriesStoreGetDataSeriesFunc
+	// SetSeriesEnabledFunc is an instance of a mock function object
+	// controlling the behavior of the method SetSeriesEnabled.
+	SetSeriesEnabledFunc *DataSeriesStoreSetSeriesEnabledFunc
 	// StampBackfillFunc is an instance of a mock function object
 	// controlling the behavior of the method StampBackfill.
 	StampBackfillFunc *DataSeriesStoreStampBackfillFunc
@@ -36,6 +39,11 @@ func NewMockDataSeriesStore() *MockDataSeriesStore {
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: func(context.Context, GetDataSeriesArgs) ([]types.InsightSeries, error) {
 				return nil, nil
+			},
+		},
+		SetSeriesEnabledFunc: &DataSeriesStoreSetSeriesEnabledFunc{
+			defaultHook: func(context.Context, string, bool) error {
+				return nil
 			},
 		},
 		StampBackfillFunc: &DataSeriesStoreStampBackfillFunc{
@@ -63,6 +71,9 @@ func NewMockDataSeriesStoreFrom(i DataSeriesStore) *MockDataSeriesStore {
 	return &MockDataSeriesStore{
 		GetDataSeriesFunc: &DataSeriesStoreGetDataSeriesFunc{
 			defaultHook: i.GetDataSeries,
+		},
+		SetSeriesEnabledFunc: &DataSeriesStoreSetSeriesEnabledFunc{
+			defaultHook: i.SetSeriesEnabled,
 		},
 		StampBackfillFunc: &DataSeriesStoreStampBackfillFunc{
 			defaultHook: i.StampBackfill,
@@ -184,6 +195,118 @@ func (c DataSeriesStoreGetDataSeriesFuncCall) Args() []interface{} {
 // invocation.
 func (c DataSeriesStoreGetDataSeriesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DataSeriesStoreSetSeriesEnabledFunc describes the behavior when the
+// SetSeriesEnabled method of the parent MockDataSeriesStore instance is
+// invoked.
+type DataSeriesStoreSetSeriesEnabledFunc struct {
+	defaultHook func(context.Context, string, bool) error
+	hooks       []func(context.Context, string, bool) error
+	history     []DataSeriesStoreSetSeriesEnabledFuncCall
+	mutex       sync.Mutex
+}
+
+// SetSeriesEnabled delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDataSeriesStore) SetSeriesEnabled(v0 context.Context, v1 string, v2 bool) error {
+	r0 := m.SetSeriesEnabledFunc.nextHook()(v0, v1, v2)
+	m.SetSeriesEnabledFunc.appendCall(DataSeriesStoreSetSeriesEnabledFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetSeriesEnabled
+// method of the parent MockDataSeriesStore instance is invoked and the hook
+// queue is empty.
+func (f *DataSeriesStoreSetSeriesEnabledFunc) SetDefaultHook(hook func(context.Context, string, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetSeriesEnabled method of the parent MockDataSeriesStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DataSeriesStoreSetSeriesEnabledFunc) PushHook(hook func(context.Context, string, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DataSeriesStoreSetSeriesEnabledFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DataSeriesStoreSetSeriesEnabledFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, bool) error {
+		return r0
+	})
+}
+
+func (f *DataSeriesStoreSetSeriesEnabledFunc) nextHook() func(context.Context, string, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DataSeriesStoreSetSeriesEnabledFunc) appendCall(r0 DataSeriesStoreSetSeriesEnabledFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DataSeriesStoreSetSeriesEnabledFuncCall
+// objects describing the invocations of this function.
+func (f *DataSeriesStoreSetSeriesEnabledFunc) History() []DataSeriesStoreSetSeriesEnabledFuncCall {
+	f.mutex.Lock()
+	history := make([]DataSeriesStoreSetSeriesEnabledFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DataSeriesStoreSetSeriesEnabledFuncCall is an object that describes an
+// invocation of method SetSeriesEnabled on an instance of
+// MockDataSeriesStore.
+type DataSeriesStoreSetSeriesEnabledFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DataSeriesStoreSetSeriesEnabledFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DataSeriesStoreSetSeriesEnabledFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DataSeriesStoreStampBackfillFunc describes the behavior when the
