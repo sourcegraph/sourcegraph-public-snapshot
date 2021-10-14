@@ -126,6 +126,23 @@ The term _secret_ refers to authentication credentials like passwords, API keys,
 - use an environment variable name with one of the following suffixes to ensure it gets redacted in the logs: `*_PASSWORD, *_SECRET, *_TOKEN, *_ACCESS_KEY, *_SECRET_KEY, *_CREDENTIALS`
 - while environment variables can be assigned when declaring steps, they should never be used for secrets, because they won't get redacted, even if they match one of the above patterns.
 
+### Vulnerability Scanning
+
+Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
+
+Trivy will perform scans upon commits to the following branches:
+
+1. `main` 
+2. branches prefixed by `main-dry-run/`
+3. branches prefixed by `docker-images-patch/$IMAGE` (where only a single image is built)
+
+If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
+
+1. The CI pipeline will create an annotation that contains links to reports that describe the vulnerabilities
+2. The Trivy scanning step will [soft fail](https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes). Note that soft failures **do not fail builds or block deployments**. They simply highlight the failing step for further analysis.
+
+> NOTE: Our vulnerability management process (including this workflow) is under active development and in its early stages. All of the above is subject to change. See [https://github.com/sourcegraph/sourcegraph/pull/25756](https://github.com/sourcegraph/sourcegraph/pull/25756) for more context.
+
 ## GitHub Actions
 
 ### Third-Party Licenses
