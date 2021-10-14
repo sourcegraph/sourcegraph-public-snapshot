@@ -282,5 +282,5 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 // Node: os.Stdout cannot be used for logging, as it is read by
 // builkite to generate the pipeline.
 func debugLog(format string, a ...interface{}) {
-	debugLog(format, a...)
+	fmt.Fprintf(os.Stderr, format, a...)
 }
