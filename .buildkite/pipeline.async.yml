@@ -13,7 +13,7 @@ steps:
     label: ':storybook::codecov: Storybook coverage'
   - command:
       - NODE_OPTIONS="--max_old_space_size=4096" dev/ci/yarn-build.sh client/web
-      - yarn lhci autorun
+      - NODE_OPTIONS="--max_old_space_size=4096" yarn lhci autorun
     label: ':lighthouse: Lighthouse'
     env:
       NODE_ENV: production
