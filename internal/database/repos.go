@@ -61,6 +61,28 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
+type IRepoStore interface {
+	With(basestore.ShareableStore) IRepoStore
+	Transact(context.Context) (IRepoStore, error)
+	Get(context.Context, api.RepoID) (*types.Repo, error)
+	GetByName(context.Context, api.RepoName) (*types.Repo, error)
+	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
+	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+	Count(context.Context, ReposListOptions) (int, error)
+	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
+	List(context.Context, ReposListOptions) ([]*types.Repo, error)
+	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
+	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
+	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.RepoName, error)
+	Create(context.Context, ...*types.Repo) error
+	Delete(context.Context, ...api.RepoID) error
+	ListEnabledNames(context.Context) ([]string, error)
+	ExternalServices(context.Context, api.RepoID) ([]*types.ExternalService, error)
+	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
+}
+
+var _ IRepoStore = (*RepoStore)(nil)
+
 // RepoStore handles access to the repo table
 type RepoStore struct {
 	*basestore.Store
@@ -79,11 +101,11 @@ func ReposWith(other basestore.ShareableStore) *RepoStore {
 	return &RepoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *RepoStore) With(other basestore.ShareableStore) *RepoStore {
+func (s *RepoStore) With(other basestore.ShareableStore) IRepoStore {
 	return &RepoStore{Store: s.Store.With(other)}
 }
 
-func (s *RepoStore) Transact(ctx context.Context) (*RepoStore, error) {
+func (s *RepoStore) Transact(ctx context.Context) (IRepoStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &RepoStore{Store: txBase}, err
 }
