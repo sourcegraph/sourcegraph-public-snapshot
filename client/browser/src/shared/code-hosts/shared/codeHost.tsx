@@ -464,7 +464,7 @@ function initCodeIntelligence({
                     hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
-        pinningEnabled: typeof codeHost.pinningEnabled === 'boolean' ? codeHost.pinningEnabled : true,
+        pinningEnabled: codeHost.pinningEnabled ?? true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
