@@ -5,6 +5,7 @@ import { SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
 import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
 import { determineCodeHost, CodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
+import { RepoURLParseError } from './errors'
 import { logger } from './util/logger'
 
 function inject(codeHost: CodeHost, assetsURL: string, sourcegraphURL: string, isExtension: boolean): Subscription {
@@ -53,12 +54,18 @@ export async function injectCodeIntelligence(
     if (overrideSourcegraphURL) {
         return inject(codeHost, assetsURL, overrideSourcegraphURL, isExtension)
     }
+    logger.info(`Detected: codehost="${codeHost.type}"`)
 
-    const { rawRepoName } = codeHost.getContext?.() || {}
-    logger.info(`Detected: codehost="${codeHost.type}" repository="${rawRepoName ?? ''}"`)
-
-    if (rawRepoName) {
-        await SourcegraphUrlService.use(rawRepoName)
+    try {
+        const { rawRepoName } = codeHost.getContext?.() || {}
+        logger.info(`Detected repository="${rawRepoName ?? ''}"`)
+        if (rawRepoName) {
+            await SourcegraphUrlService.use(rawRepoName)
+        }
+    } catch (error) {
+        if (!(error instanceof RepoURLParseError)) {
+            throw error
+        }
     }
 
     return SourcegraphUrlService.observe(isExtension).subscribe(sourcegraphURL =>

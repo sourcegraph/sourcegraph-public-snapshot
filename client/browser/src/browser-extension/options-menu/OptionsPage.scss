@@ -63,7 +63,8 @@
         color: var(--link-color);
         font-weight: normal;
 
-        &:focus, &:active {
+        &:focus,
+        &:active {
             outline: none;
             box-shadow: none;
         }
