@@ -39,7 +39,11 @@ async function startProductionServer(): Promise<void> {
 
     app.use(
         '/.assets',
-        expressStaticGzip(STATIC_ASSETS_PATH, { enableBrotli: true, orderPreference: ['br'], index: false })
+        expressStaticGzip(STATIC_ASSETS_PATH, {
+            enableBrotli: true,
+            orderPreference: ['br', 'gz'],
+            index: false,
+        })
     )
 
     // Proxy API requests to the `process.env.SOURCEGRAPH_API_URL`.

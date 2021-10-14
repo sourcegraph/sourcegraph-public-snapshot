@@ -160,6 +160,16 @@ const config = {
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
     isProduction &&
       new CompressionPlugin({
+        filename: '[path][base].gz',
+        algorithm: 'gzip',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Gzip */
+          level: 9,
+        },
+      }),
+    isProduction &&
+      new CompressionPlugin({
         filename: '[path][base].br',
         algorithm: 'brotliCompress',
         test: /\.(js|css|svg)$/,
