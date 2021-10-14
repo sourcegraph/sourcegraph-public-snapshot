@@ -65,7 +65,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	)
 
 	fmt.Println("implementation monikers:")
-	for _, moniker := range cursor.OrderedExportMonikers {
+	for _, moniker := range cursor.OrderedImplementationMonikers {
 		fmt.Println("- ", moniker)
 	}
 

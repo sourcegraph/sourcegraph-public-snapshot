@@ -33,7 +33,7 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, "export", func(r Range) int { return r.DefinitionResultID })
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, "import", func(r Range) int { return r.ReferenceResultID })
-	implementationRows := gatherMonikersLocations(ctx, state, state.ImplementationData, "implementation", func(r Range) int { return r.ImplementationResultID })
+	implementationRows := gatherMonikersLocations(ctx, state, state.DefinitionData, "implementation", func(r Range) int { return r.DefinitionResultID })
 	documentation := collectDocumentation(ctx, state)
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
@@ -288,6 +288,9 @@ func gatherMonikersLocations(ctx context.Context, state *State, data map[int]*da
 
 		monikerIDs.Each(func(monikerID int) {
 			moniker := state.MonikerData[monikerID]
+			if moniker.Kind != kind {
+				return
+			}
 			idsByIdentifier, ok := idsBySchemeByIdentifier[moniker.Scheme]
 			if !ok {
 				idsByIdentifier = map[string][]int{}
