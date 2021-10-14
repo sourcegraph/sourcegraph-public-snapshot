@@ -806,7 +806,6 @@ func (s *RepoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 
 func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, from, where []*sqlf.Query
-	var includeUserAddedRepos = true
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
@@ -975,7 +974,6 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	} else if opt.OrgID != 0 {
 		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id INNER JOIN external_services ON external_services.id = external_service_repos.external_service_id"))
 		where = append(where, sqlf.Sprintf("external_services.namespace_org_id = %d", opt.OrgID))
-		includeUserAddedRepos = false
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
 		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
@@ -1019,7 +1017,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthQueryCondsWithOptions(ctx, s.Handle().DB(), includeUserAddedRepos)
+	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
 	}

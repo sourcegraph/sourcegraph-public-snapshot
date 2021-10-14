@@ -74,7 +74,7 @@ func TestAuthzQueryConds(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := authzQuery(false, true, true, int32(0), authz.Read)
+		want := authzQuery(false, true, int32(0), authz.Read)
 		if diff := cmp.Diff(want, got, cmpOpts); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
@@ -94,14 +94,14 @@ func TestAuthzQueryConds(t *testing.T) {
 			setup: func(t *testing.T) context.Context {
 				return actor.WithInternalActor(context.Background())
 			},
-			wantQuery: authzQuery(true, false, true, int32(0), authz.Read),
+			wantQuery: authzQuery(true, false, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider and not allow by default",
 			setup: func(t *testing.T) context.Context {
 				return context.Background()
 			},
-			wantQuery: authzQuery(false, false, true, int32(0), authz.Read),
+			wantQuery: authzQuery(false, false, int32(0), authz.Read),
 		},
 		{
 			name: "no authz provider but allow by default",
@@ -109,7 +109,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				return context.Background()
 			},
 			authzAllowByDefault: true,
-			wantQuery:           authzQuery(true, false, true, int32(0), authz.Read),
+			wantQuery:           authzQuery(true, false, int32(0), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin",
@@ -122,7 +122,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: authzQuery(true, false, true, int32(1), authz.Read),
+			wantQuery: authzQuery(true, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is a site admin and AuthzEnforceForSiteAdmins is set",
@@ -137,7 +137,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: authzQuery(false, false, true, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 		{
 			name: "authenticated user is not a site admin",
@@ -150,7 +150,7 @@ func TestAuthzQueryConds(t *testing.T) {
 				})
 				return actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			},
-			wantQuery: authzQuery(false, false, true, int32(1), authz.Read),
+			wantQuery: authzQuery(false, false, int32(1), authz.Read),
 		},
 	}
 
