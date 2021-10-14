@@ -9,13 +9,11 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type command struct {
@@ -75,11 +73,7 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 		stderr.Close()
 	}()
 
-	handle := logger.Log(&workerutil.ExecutionLogEntry{
-		Key:       command.Key,
-		Command:   command.Command,
-		StartTime: time.Now(),
-	})
+	handle := logger.Log(command.Key, command.Command)
 	defer handle.Close()
 
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)

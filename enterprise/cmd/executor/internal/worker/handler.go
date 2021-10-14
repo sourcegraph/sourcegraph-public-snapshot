@@ -238,11 +238,7 @@ func scriptNameFromJobStep(job executor.Job, i int) string {
 // writeFiles writes to the filesystem the content in the given map. This function is logged as a fake
 // step and prints the size of each file as it's being written.
 func writeFiles(workspaceFileContentsByPath map[string][]byte, logger *command.Logger) (err error) {
-	handle := logger.Log(&workerutil.ExecutionLogEntry{
-		Key:       "setup.fs",
-		Command:   nil,
-		StartTime: time.Now(),
-	})
+	handle := logger.Log("setup.fs", nil)
 	defer func() {
 		if err == nil {
 			handle.Finalize(0)

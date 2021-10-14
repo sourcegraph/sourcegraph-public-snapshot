@@ -30,8 +30,10 @@ type entryHandle struct {
 
 	done chan struct{}
 
-	mu  sync.Mutex
-	buf *bytes.Buffer
+	mu         sync.Mutex
+	buf        *bytes.Buffer
+	exitCode   *int
+	durationMs *int
 }
 
 func (h *entryHandle) Write(p []byte) (n int, err error) {
@@ -40,28 +42,35 @@ func (h *entryHandle) Write(p []byte) (n int, err error) {
 	return h.buf.Write(p)
 }
 
-func (h *entryHandle) Read() string {
+func (h *entryHandle) Finalize(exitCode int) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return h.buf.String()
+
+	durationMs := int(time.Since(h.logEntry.StartTime) / time.Millisecond)
+	h.exitCode = &exitCode
+	h.durationMs = &durationMs
 }
 
-func (h *entryHandle) Finalize(exitCode int) {
-	durationMs := int(time.Since(h.logEntry.StartTime) / time.Millisecond)
-	h.logEntry.ExitCode = &exitCode
-	h.logEntry.DurationMs = &durationMs
+func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
+	logEntry := h.currentLogEntry()
+	redact(&logEntry, h.replacer)
+	return logEntry
+}
+
+func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	logEntry := h.logEntry
+	logEntry.ExitCode = h.exitCode
+	logEntry.Out = h.buf.String()
+	logEntry.DurationMs = h.durationMs
+	return logEntry
 }
 
 func (h *entryHandle) Close() error {
 	close(h.done)
 	return nil
-}
-
-func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
-	logEntry := h.logEntry
-	logEntry.Out = h.Read()
-	redact(&logEntry, h.replacer)
-	return logEntry
 }
 
 // Logger tracks command invocations and stores the command's output and
@@ -116,8 +125,14 @@ func (l *Logger) Flush() {
 }
 
 // Log redacts secrets from the given log entry and stores it.
-func (l *Logger) Log(logEntry *workerutil.ExecutionLogEntry) *entryHandle {
-	handle := &entryHandle{logEntry: *logEntry, replacer: l.replacer, buf: &bytes.Buffer{}, done: make(chan struct{})}
+func (l *Logger) Log(key string, command []string) *entryHandle {
+	logEntry := workerutil.ExecutionLogEntry{
+		Key:       key,
+		Command:   command,
+		StartTime: time.Now(),
+	}
+
+	handle := &entryHandle{logEntry: logEntry, replacer: l.replacer, buf: &bytes.Buffer{}, done: make(chan struct{})}
 	l.handles <- handle
 	return handle
 }
