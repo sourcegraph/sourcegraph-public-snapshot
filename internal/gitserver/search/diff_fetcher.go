@@ -6,7 +6,6 @@ import (
 	"context"
 	"io"
 	"os/exec"
-	"sync"
 
 	"github.com/cockroachdb/errors"
 )
@@ -14,10 +13,11 @@ import (
 // DiffFetcher is a handle to the stdin and stdout of a git diff-tree subprocess
 // started with StartDiffFetcher
 type DiffFetcher struct {
-	stdin   io.WriteCloser
-	stderr  *safeBuffer
+	stdin   io.Writer
+	stderr  io.Reader
 	scanner *bufio.Scanner
 	cancel  context.CancelFunc
+	cmd     *exec.Cmd
 }
 
 // StartDiffFetcher starts a git diff-tree subprocess that waits, listening on stdin
@@ -34,14 +34,23 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 	)
 	cmd.Dir = dir
 
-	stdoutReader, stdoutWriter := io.Pipe()
-	cmd.Stdout = stdoutWriter
+	stdoutReader, err := cmd.StdoutPipe()
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 
-	stdinReader, stdinWriter := io.Pipe()
-	cmd.Stdin = stdinReader
+	stdinWriter, err := cmd.StdinPipe()
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 
-	var stderrBuf safeBuffer
-	cmd.Stderr = &stderrBuf
+	stderrReader, err := cmd.StderrPipe()
+	if err != nil {
+		cancel()
+		return nil, err
+	}
 
 	if err := cmd.Start(); err != nil {
 		cancel()
@@ -67,13 +76,15 @@ func StartDiffFetcher(dir string) (*DiffFetcher, error) {
 	return &DiffFetcher{
 		stdin:   stdinWriter,
 		scanner: scanner,
-		stderr:  &stderrBuf,
+		stderr:  stderrReader,
 		cancel:  cancel,
+		cmd:     cmd,
 	}, nil
 }
 
 func (d *DiffFetcher) Stop() {
 	d.cancel()
+	d.cmd.Wait()
 }
 
 // Fetch fetches a diff from the git diff-tree subprocess, writing to its stdin
@@ -92,25 +103,8 @@ func (d *DiffFetcher) Fetch(hash []byte) ([]byte, error) {
 		return d.scanner.Bytes(), nil
 	} else if err := d.scanner.Err(); err != nil {
 		return nil, err
-	} else if d.stderr.String() != "" {
-		return nil, errors.Errorf("git subprocess stderr: %s", d.stderr.String())
+	} else if stderr, _ := io.ReadAll(d.stderr); len(stderr) > 0 {
+		return nil, errors.Errorf("git subprocess stderr: %s", string(stderr))
 	}
 	return nil, errors.New("expected scan to succeed")
-}
-
-type safeBuffer struct {
-	buf bytes.Buffer
-	sync.Mutex
-}
-
-func (s *safeBuffer) Write(p []byte) (n int, err error) {
-	s.Lock()
-	defer s.Unlock()
-	return s.buf.Write(p)
-}
-
-func (s *safeBuffer) String() string {
-	s.Lock()
-	defer s.Unlock()
-	return s.buf.String()
 }

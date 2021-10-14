@@ -51,13 +51,13 @@ func (s *Store) HasRepository(ctx context.Context, repositoryID int) (_ bool, er
 	}})
 	defer endObservation(1, observation.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(hasRepositoryQuery, repositoryID)))
-	return count > 0, err
+	_, found, err := basestore.ScanFirstInt(s.Store.Query(ctx, sqlf.Sprintf(hasRepositoryQuery, repositoryID)))
+	return found, err
 }
 
 const hasRepositoryQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/commits.go:HasRepository
-SELECT COUNT(*) FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
+SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `
 
 // HasCommit determines if the given commit is known for the given repository.

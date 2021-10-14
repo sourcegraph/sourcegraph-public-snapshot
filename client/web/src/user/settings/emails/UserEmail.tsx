@@ -17,7 +17,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     user: string
-    email: NonNullable<UserEmailsResult['node']>['emails'][number]
+    email: (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
     onError: (error: ErrorLike) => void
 
     onDidRemove?: (email: string) => void

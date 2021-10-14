@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -26,6 +27,7 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
+	"batch_spec_workspace_execution_jobs.access_token_id",
 
 	"batch_spec_workspace_execution_jobs.state",
 	"batch_spec_workspace_execution_jobs.failure_message",
@@ -40,6 +42,29 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
+}
+
+const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
+INSERT INTO
+	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
+SELECT
+	id
+FROM
+	batch_spec_workspaces
+WHERE
+	batch_spec_id = %s
+`
+
+// CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(batchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID)
+	return s.Exec(ctx, q)
 }
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
@@ -144,9 +169,10 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
 // listing batch spec workspace execution jobs.
 type ListBatchSpecWorkspaceExecutionJobsOpts struct {
-	Cancel         *bool
-	State          btypes.BatchSpecWorkspaceExecutionJobState
-	WorkerHostname string
+	Cancel                *bool
+	State                 btypes.BatchSpecWorkspaceExecutionJobState
+	WorkerHostname        string
+	BatchSpecWorkspaceIDs []int64
 }
 
 // ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
@@ -189,6 +215,10 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 
 	if opts.Cancel != nil {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+	}
+
+	if len(opts.BatchSpecWorkspaceIDs) != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.BatchSpecWorkspaceIDs)))
 	}
 
 	if len(preds) == 0 {
@@ -268,6 +298,27 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(id int64) *sqlf.Query 
 	)
 }
 
+// SetBatchSpecWorkspaceExecutionJobAccessToken sets the access_token_id column to the given ID.
+func (s *Store) SetBatchSpecWorkspaceExecutionJobAccessToken(ctx context.Context, jobID, tokenID int64) (err error) {
+	ctx, endObservation := s.operations.setBatchSpecWorkspaceExecutionJobAccessToken.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(jobID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(setSpecWorkspaceExecutionJobAccessTokenFmtstr, tokenID, jobID)
+	return s.Exec(ctx, q)
+}
+
+var setSpecWorkspaceExecutionJobAccessTokenFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:SetSpecWorkspaceExecutionJobAccessToken
+UPDATE
+	batch_spec_workspace_execution_jobs
+SET
+	access_token_id = %s
+WHERE
+	id = %s
+`
+
 func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
@@ -275,6 +326,7 @@ func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 	if err := s.Scan(
 		&wj.ID,
 		&wj.BatchSpecWorkspaceID,
+		&dbutil.NullInt64{N: &wj.AccessTokenID},
 		&wj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &wj.StartedAt},

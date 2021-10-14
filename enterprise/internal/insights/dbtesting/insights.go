@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 // TimescaleDB returns a handle to the Code Insights TimescaleDB instance.
@@ -26,7 +26,7 @@ func TimescaleDB(t testing.TB) (db *sql.DB, cleanup func()) {
 		username = user.Username
 	}
 
-	timescaleDSN := dbutil.PostgresDSN("codeinsights", username, os.Getenv)
+	timescaleDSN := postgresdsn.New("codeinsights", username, os.Getenv)
 	initConn, err := dbconn.NewRaw(timescaleDSN)
 	if err != nil {
 		t.Log("")

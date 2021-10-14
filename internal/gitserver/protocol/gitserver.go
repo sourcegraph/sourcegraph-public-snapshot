@@ -6,12 +6,13 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type SearchRequest struct {
 	Repo        api.RepoName
 	Revisions   []RevisionSpecifier
-	Query       SearchQuery
+	Query       Node
 	IncludeDiff bool
 	Limit       int
 }
@@ -62,8 +63,8 @@ type CommitMatch struct {
 	Refs       []string       `json:",omitempty"`
 	SourceRefs []string       `json:",omitempty"`
 
-	Message HighlightedString `json:",omitempty"`
-	Diff    HighlightedString `json:",omitempty"`
+	Message result.MatchedString `json:",omitempty"`
+	Diff    result.MatchedString `json:",omitempty"`
 }
 
 type Signature struct {

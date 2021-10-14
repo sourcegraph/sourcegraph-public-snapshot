@@ -11,9 +11,11 @@ import { isErrorLike } from '../util/errors'
 import { sanitizeClass } from '../util/strings'
 
 import { toNativeEvent } from './helpers'
+import hoverOverlayStyle from './HoverOverlay.module.scss'
 import type { HoverContext, HoverOverlayBaseProps, GetAlertClassName } from './HoverOverlay.types'
 import { HoverOverlayAlerts, HoverOverlayAlertsProps } from './HoverOverlayAlerts'
 import { HoverOverlayContents } from './HoverOverlayContents'
+import style from './HoverOverlayContents.module.scss'
 import { useLogTelemetryEvent } from './useLogTelemetryEvent'
 
 const LOADING = 'loading' as const
@@ -97,16 +99,18 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
     return (
         <div
             // needed for dynamic styling
+            data-testid="hover-overlay"
             // eslint-disable-next-line react/forbid-dom-props
             style={getOverlayStyle(overlayPosition)}
-            className={classNames('hover-overlay', className)}
+            className={classNames(hoverOverlayStyle.hoverOverlay, className)}
             ref={hoverRef}
         >
             <div
+                data-testid="hover-overlay-contents"
                 className={classNames(
-                    'hover-overlay__contents',
-                    hoverOrError === LOADING && 'hover-overlay__contents--loading',
-                    showCloseButton && 'hover-overlay__contents--with-close-button'
+                    style.hoverOverlayContents,
+                    hoverOrError === LOADING && style.hoverOverlayContentsLoading,
+                    showCloseButton && style.hoverOverlayContentsWithCloseButton
                 )}
             >
                 {showCloseButton && (
@@ -114,9 +118,9 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                         type="button"
                         onClick={onCloseButtonClick ? transformMouseEvent(onCloseButtonClick) : undefined}
                         className={classNames(
-                            'hover-overlay__close-button',
+                            hoverOverlayStyle.closeButton,
                             closeButtonClassName,
-                            hoverOrError === LOADING && 'hover-overlay__close-button--loading'
+                            hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
                         )}
                     >
                         <CloseIcon className={iconClassName} />
@@ -146,13 +150,13 @@ export const HoverOverlay: React.FunctionComponent<HoverOverlayProps> = props =>
                 actionsOrError !== LOADING &&
                 !isErrorLike(actionsOrError) &&
                 actionsOrError.length > 0 && (
-                    <div className="hover-overlay__actions">
+                    <div className={classNames(hoverOverlayStyle.actions)}>
                         {actionsOrError.map((action, index) => (
                             <ActionItem
                                 key={index}
                                 {...action}
                                 className={classNames(
-                                    'hover-overlay__action',
+                                    hoverOverlayStyle.action,
                                     actionItemClassName,
                                     `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
                                 )}

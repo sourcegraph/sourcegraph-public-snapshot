@@ -1,5 +1,4 @@
 import AddIcon from 'mdi-react/AddIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
 
@@ -83,23 +82,18 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                             <OrgAvatar org={org.name} className="d-inline-flex mr-1" /> {org.name}
                         </SidebarNavItem>
                     ))}
-                    {!siteAdminViewingOtherUser && (
-                        <div className="user-settings-sidebar__new-org-btn-wrapper">
-                            {!window.context.sourcegraphDotComMode ? (
+                    {!siteAdminViewingOtherUser &&
+                        (window.context.sourcegraphDotComMode ? (
+                            <SidebarNavItem to={`${props.match.path}/about-organizations`}>
+                                About organizations
+                            </SidebarNavItem>
+                        ) : (
+                            <div className="user-settings-sidebar__new-org-btn-wrapper">
                                 <Link to="/organizations/new" className="btn btn-outline-secondary btn-sm">
                                     <AddIcon className="icon-inline" /> New organization
                                 </Link>
-                            ) : (
-                                <a
-                                    href="https://docs.sourcegraph.com/code_search/explanations/sourcegraph_cloud"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Learn More <ExternalLinkIcon className="icon-inline" />
-                                </a>
-                            )}
-                        </div>
-                    )}
+                            </div>
+                        ))}
                 </SidebarGroup>
             )}
             <SidebarGroup>

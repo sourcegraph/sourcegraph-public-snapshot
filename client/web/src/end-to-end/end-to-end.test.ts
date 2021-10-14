@@ -430,7 +430,8 @@ describe('e2e test suite', () => {
     })
 
     describe('Theme switcher', () => {
-        test('changes the theme', async () => {
+        // Issue to fix: https://github.com/sourcegraph/sourcegraph/issues/25949
+        test.skip('changes the theme', async () => {
             await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
             await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
 
@@ -820,7 +821,7 @@ describe('e2e test suite', () => {
                     await driver.page.waitForSelector('[data-tab-content="symbols"]')
                     await driver.page.click('[data-tab-content="symbols"]')
                     await driver.page.waitForSelector('.test-symbol-name', { visible: true })
-                    await driver.page.click(`.filtered-connection__nodes li:nth-child(${index + 1}) a`)
+                    await driver.page.click(`[data-testid="filtered-connection-nodes"] li:nth-child(${index + 1}) a`)
 
                     await driver.page.waitForSelector('.test-blob .selected .line')
                     const selectedLineNumber = await driver.page.evaluate(() => {

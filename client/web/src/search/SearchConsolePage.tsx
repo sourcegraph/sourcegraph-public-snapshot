@@ -1,7 +1,8 @@
 import * as H from 'history'
+import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { BehaviorSubject, noop } from 'rxjs'
+import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -52,7 +53,11 @@ const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
 }
 
 export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> = props => {
-    const { globbing, streamSearch } = props
+    const {
+        globbing,
+        streamSearch,
+        extensionsController: { extHostAPI: extensionHostAPI },
+    } = props
 
     const searchQuery = useMemo(() => new BehaviorSubject<string>(parseSearchURLQuery(props.location.search) ?? ''), [
         props.location.search,
@@ -78,8 +83,9 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                 caseSensitive: false,
                 versionContext: undefined,
                 trace: undefined,
+                extensionHostAPI,
             }).pipe(debounceTime(500))
-        }, [patternType, props.location.search, streamSearch])
+        }, [patternType, props.location.search, streamSearch, extensionHostAPI])
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
@@ -114,6 +120,12 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         })
         return () => disposable.dispose()
     }, [editorInstance, triggerSearch])
+
+    // Register dummy onCompletionSelected handler to prevent console errors
+    useEffect(() => {
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
+        return () => disposable.dispose()
+    }, [])
 
     return (
         <div className="w-100 p-2">

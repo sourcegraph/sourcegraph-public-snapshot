@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -167,7 +168,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
 		http.Error(w, message, statusCode)
 
-		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 			log15.Warn("Failed to log event SignUpFailed", "error", err)
 		}
 
@@ -201,7 +202,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 		log15.Warn("Failed to log event SignUpSucceeded", "error", err)
 	}
 }
@@ -278,7 +279,6 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 
 func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *database.SecurityEventName) {
 	var anonymousID string
-
 	event := &database.SecurityEvent{
 		Name:            *name,
 		URL:             r.URL.Path,
@@ -290,8 +290,7 @@ func logSignInEvent(r *http.Request, db dbutil.DB, usr *types.User, name *databa
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-
-	usagestats.LogBackendEvent(db, usr.ID, string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
+	usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.FromContext(r.Context()), nil)
 	database.SecurityEventLogs(db).LogEvent(r.Context(), event)
 }
 

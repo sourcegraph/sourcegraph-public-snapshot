@@ -3,9 +3,15 @@ package usagestats
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"time"
 
+	"github.com/cockroachdb/errors"
+	"github.com/google/uuid"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/amplitude"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -17,6 +23,7 @@ import (
 
 // pubSubDotComEventsTopicID is the topic ID of the topic that forwards messages to Sourcegraph.com events' pub/sub subscribers.
 var pubSubDotComEventsTopicID = env.Get("PUBSUB_DOTCOM_EVENTS_TOPIC_ID", "", "Pub/sub dotcom events topic ID is the pub/sub topic id where Sourcegraph.com events are published.")
+var amplitudeAPIToken = env.Get("AMPLITUDE_API_TOKEN", "", "The API token for the Amplitude project to send data to.")
 
 // Event represents a request to log telemetry.
 type Event struct {
@@ -35,10 +42,17 @@ type Event struct {
 	Referrer       *string
 	Argument       json.RawMessage
 	PublicArgument json.RawMessage
+	UserProperties json.RawMessage
+	DeviceID       *string
+	InsertID       *string
+	EventID        *int32
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
-func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+func LogBackendEvent(db dbutil.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
+	insertID, _ := uuid.NewRandom()
+	insertIDFinal := insertID.String()
+	eventID := int32(rand.Int())
 	return LogEvent(context.Background(), db, Event{
 		EventName:      eventName,
 		UserID:         userID,
@@ -47,8 +61,12 @@ func LogBackendEvent(db dbutil.DB, userID int32, eventName string, argument, pub
 		Source:         "BACKEND",
 		Argument:       argument,
 		PublicArgument: publicArgument,
+		UserProperties: json.RawMessage("{}"),
 		FeatureFlags:   featureFlags,
 		CohortID:       cohortID,
+		DeviceID:       &deviceID,
+		InsertID:       &insertIDFinal,
+		EventID:        &eventID,
 	})
 }
 
@@ -59,6 +77,10 @@ func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
 	}
 	if envvar.SourcegraphDotComMode() {
 		err := publishSourcegraphDotComEvent(args)
+		if err != nil {
+			return err
+		}
+		err = publishAmplitudeEvent(args)
 		if err != nil {
 			return err
 		}
@@ -78,6 +100,8 @@ type bigQueryEvent struct {
 	CohortID        *string `json:"cohort_id,omitempty"`
 	Referrer        string  `json:"referrer,omitempty"`
 	PublicArgument  string  `json:"public_argument"`
+	DeviceID        *string `json:"device_id,omitempty"`
+	InsertID        *string `json:"insert_id,omitempty"`
 }
 
 // publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
@@ -85,6 +109,7 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
+
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
@@ -100,7 +125,8 @@ func publishSourcegraphDotComEvent(args Event) error {
 	if err != nil {
 		return err
 	}
-	event, err := json.Marshal(bigQueryEvent{
+
+	pubsubEvent, err := json.Marshal(bigQueryEvent{
 		EventName:       args.EventName,
 		UserID:          int(args.UserID),
 		AnonymousUserID: args.UserCookieID,
@@ -112,11 +138,74 @@ func publishSourcegraphDotComEvent(args Event) error {
 		FeatureFlags:    string(featureFlagJSON),
 		CohortID:        args.CohortID,
 		PublicArgument:  string(args.PublicArgument),
+		DeviceID:        args.DeviceID,
+		InsertID:        args.InsertID,
 	})
 	if err != nil {
 		return err
 	}
-	return pubsub.Publish(pubSubDotComEventsTopicID, string(event))
+
+	return pubsub.Publish(pubSubDotComEventsTopicID, string(pubsubEvent))
+}
+
+func publishAmplitudeEvent(args Event) error {
+	if !envvar.SourcegraphDotComMode() {
+		return nil
+	}
+	if amplitudeAPIToken == "" {
+		return nil
+	}
+
+	if _, ok := amplitude.DenyList[args.EventName]; ok {
+		return nil
+	}
+
+	// For anonymous users, do not assign a user ID.
+	// Amplitude does not want User IDs for anonymous users
+	// so it can perform merging for users who sign up based on device ID.
+	var userID string
+	if args.UserID != 0 {
+		// Minimum length for an Amplitude user ID is 5 characters.
+		userID = fmt.Sprintf("%06d", args.UserID)
+	}
+
+	if args.DeviceID == nil {
+		return errors.New("amplitude: Missing device ID")
+	}
+	if args.EventID == nil {
+		return errors.New("amplitude: Missing event ID")
+	}
+	if args.InsertID == nil {
+		return errors.New("amplitude: Missing insert ID")
+	}
+
+	userProperties, err := json.Marshal(amplitude.UserProperties{
+		AnonymousUserID: args.UserCookieID,
+		FeatureFlags:    args.FeatureFlags,
+	})
+	if err != nil {
+		return err
+	}
+
+	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
+		APIKey: amplitudeAPIToken,
+		Events: []amplitude.AmplitudeEvent{{
+			UserID:          userID,
+			DeviceID:        *args.DeviceID,
+			InsertID:        *args.InsertID,
+			EventID:         *args.EventID,
+			EventType:       args.EventName,
+			EventProperties: args.PublicArgument,
+			UserProperties:  userProperties,
+			Time:            time.Now().Unix(),
+		}},
+	})
+	if err != nil {
+		return err
+	}
+
+	return amplitude.Publish(amplitudeEvent)
+
 }
 
 // logLocalEvent logs users events.

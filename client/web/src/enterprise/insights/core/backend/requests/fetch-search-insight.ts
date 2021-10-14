@@ -45,6 +45,7 @@ const bulkSearchCommitsFragment = gql`
         results {
             results {
                 ... on CommitSearchResult {
+                    __typename
                     commit {
                         oid
                         committer {

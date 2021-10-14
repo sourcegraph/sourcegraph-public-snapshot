@@ -23,6 +23,9 @@ type Resolver struct {
 	insightsStore        store.Interface
 	workerBaseStore      *basestore.Store
 	insightMetadataStore store.InsightMetadataStore
+	dashboardStore       *store.DBDashboardStore
+	insightsDatabase     dbutil.DB
+	postgresDatabase     dbutil.DB
 }
 
 // New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
@@ -37,6 +40,9 @@ func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolv
 		insightsStore:        store.NewWithClock(timescale, store.NewInsightPermissionStore(postgres), clock),
 		workerBaseStore:      basestore.NewWithDB(postgres, sql.TxOptions{}),
 		insightMetadataStore: store.NewInsightStore(timescale),
+		dashboardStore:       store.NewDashboardStore(timescale),
+		insightsDatabase:     timescale,
+		postgresDatabase:     postgres,
 	}
 }
 
@@ -57,6 +63,14 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 	}, nil
 }
 
+func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+	return &dashboardConnectionResolver{
+		insightsDatabase: r.insightsDatabase,
+		dashboardStore:   store.NewDashboardStore(r.insightsDatabase),
+		args:             args,
+	}, nil
+}
+
 type disabledResolver struct {
 	reason string
 }
@@ -66,5 +80,25 @@ func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
 }
 
 func (r *disabledResolver) Insights(ctx context.Context, args *graphqlbackend.InsightsArgs) (graphqlbackend.InsightConnectionResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }

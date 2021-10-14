@@ -286,7 +286,6 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                     className="container"
                   >
                     <FilteredConnection
-                      className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
                       emptyElement={
@@ -317,12 +316,12 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                       pluralNoun="code monitors"
                       queryConnection={[Function]}
                       useURLQuery={true}
+                      withCenteredSummary={true}
                     >
-                      <ConnectionContainer
-                        className="filtered-connection__centered-summary"
-                      >
+                      <ConnectionContainer>
                         <div
-                          className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
+                          className="normal noncompact"
+                          data-testid="filtered-connection"
                         >
                           <ConnectionNodes
                             connection={
@@ -625,18 +624,21 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                             onShowMore={[Function]}
                             pluralNoun="code monitors"
                             query=""
+                            withCenteredSummary={true}
                           >
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               />
                             </SummaryContainer>
                             <ConnectionList
                               as="ul"
                             >
                               <ul
-                                className="filtered-connection__nodes"
-                                data-testid="nodes"
+                                className="normal"
+                                data-testid="filtered-connection-nodes"
                               >
                                 <CodeMonitorNode
                                   isSiteAdminUser={false}
@@ -674,7 +676,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -706,7 +708,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -733,11 +735,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo0"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo0"
                                           >
                                             Edit
@@ -783,7 +785,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -815,7 +817,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -842,11 +844,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo1"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo1"
                                           >
                                             Edit
@@ -892,7 +894,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -924,7 +926,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -951,11 +953,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo2"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo2"
                                           >
                                             Edit
@@ -1001,7 +1003,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1033,7 +1035,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1060,11 +1062,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo3"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo3"
                                           >
                                             Edit
@@ -1110,7 +1112,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1142,7 +1144,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1169,11 +1171,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo4"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo4"
                                           >
                                             Edit
@@ -1219,7 +1221,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1251,7 +1253,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1278,11 +1280,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo5"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo5"
                                           >
                                             Edit
@@ -1328,7 +1330,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1360,7 +1362,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1387,11 +1389,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo6"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo6"
                                           >
                                             Edit
@@ -1437,7 +1439,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1469,7 +1471,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1496,11 +1498,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo7"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo7"
                                           >
                                             Edit
@@ -1546,7 +1548,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1578,7 +1580,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1605,11 +1607,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo9"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo9"
                                           >
                                             Edit
@@ -1655,7 +1657,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -1687,7 +1689,7 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -1714,11 +1716,11 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo10"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo10"
                                           >
                                             Edit
@@ -1730,11 +1732,14 @@ exports[`CodeMonitoringListPage Code monitoring page with 10 results 1`] = `
                                 </CodeMonitorNode>
                               </ul>
                             </ConnectionList>
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               >
                                 <ConnectionSummary
+                                  centered={true}
                                   connection={
                                     Object {
                                       "nodes": Array [
@@ -2338,7 +2343,6 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                     className="container"
                   >
                     <FilteredConnection
-                      className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
                       emptyElement={
@@ -2369,12 +2373,12 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                       pluralNoun="code monitors"
                       queryConnection={[Function]}
                       useURLQuery={true}
+                      withCenteredSummary={true}
                     >
-                      <ConnectionContainer
-                        className="filtered-connection__centered-summary"
-                      >
+                      <ConnectionContainer>
                         <div
-                          className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
+                          className="normal noncompact"
+                          data-testid="filtered-connection"
                         >
                           <ConnectionNodes
                             connection={
@@ -2495,18 +2499,21 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                             onShowMore={[Function]}
                             pluralNoun="code monitors"
                             query=""
+                            withCenteredSummary={true}
                           >
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               />
                             </SummaryContainer>
                             <ConnectionList
                               as="ul"
                             >
                               <ul
-                                className="filtered-connection__nodes"
-                                data-testid="nodes"
+                                className="normal"
+                                data-testid="filtered-connection-nodes"
                               >
                                 <CodeMonitorNode
                                   isSiteAdminUser={false}
@@ -2544,7 +2551,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -2576,7 +2583,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -2603,11 +2610,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo0"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo0"
                                           >
                                             Edit
@@ -2653,7 +2660,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -2685,7 +2692,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -2712,11 +2719,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo1"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo1"
                                           >
                                             Edit
@@ -2762,7 +2769,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -2794,7 +2801,7 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -2821,11 +2828,11 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo2"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo2"
                                           >
                                             Edit
@@ -2837,11 +2844,14 @@ exports[`CodeMonitoringListPage Code monitoring page with less than 10 results 1
                                 </CodeMonitorNode>
                               </ul>
                             </ConnectionList>
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               >
                                 <ConnectionSummary
+                                  centered={true}
                                   connection={
                                     Object {
                                       "nodes": Array [
@@ -3263,7 +3273,6 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                     className="container"
                   >
                     <FilteredConnection
-                      className="filtered-connection__centered-summary"
                       cursorPaging={true}
                       defaultFirst={10}
                       emptyElement={
@@ -3294,12 +3303,12 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                       pluralNoun="code monitors"
                       queryConnection={[Function]}
                       useURLQuery={true}
+                      withCenteredSummary={true}
                     >
-                      <ConnectionContainer
-                        className="filtered-connection__centered-summary"
-                      >
+                      <ConnectionContainer>
                         <div
-                          className="filtered-connection test-filtered-connection filtered-connection--noncompact filtered-connection__centered-summary"
+                          className="normal noncompact"
+                          data-testid="filtered-connection"
                         >
                           <ConnectionNodes
                             connection={
@@ -3654,18 +3663,21 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                             onShowMore={[Function]}
                             pluralNoun="code monitors"
                             query=""
+                            withCenteredSummary={true}
                           >
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               />
                             </SummaryContainer>
                             <ConnectionList
                               as="ul"
                             >
                               <ul
-                                className="filtered-connection__nodes"
-                                data-testid="nodes"
+                                className="normal"
+                                data-testid="filtered-connection-nodes"
                               >
                                 <CodeMonitorNode
                                   isSiteAdminUser={false}
@@ -3703,7 +3715,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -3735,7 +3747,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -3762,11 +3774,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo0"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo0"
                                           >
                                             Edit
@@ -3812,7 +3824,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -3844,7 +3856,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -3871,11 +3883,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo1"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo1"
                                           >
                                             Edit
@@ -3921,7 +3933,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -3953,7 +3965,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -3980,11 +3992,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo2"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo2"
                                           >
                                             Edit
@@ -4030,7 +4042,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4062,7 +4074,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4089,11 +4101,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo3"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo3"
                                           >
                                             Edit
@@ -4139,7 +4151,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4171,7 +4183,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4198,11 +4210,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo4"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo4"
                                           >
                                             Edit
@@ -4248,7 +4260,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4280,7 +4292,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4307,11 +4319,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo5"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo5"
                                           >
                                             Edit
@@ -4357,7 +4369,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4389,7 +4401,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4416,11 +4428,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo6"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo6"
                                           >
                                             Edit
@@ -4466,7 +4478,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4498,7 +4510,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4525,11 +4537,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo7"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo7"
                                           >
                                             Edit
@@ -4575,7 +4587,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4607,7 +4619,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4634,11 +4646,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo9"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo9"
                                           >
                                             Edit
@@ -4684,7 +4696,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4716,7 +4728,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4743,11 +4755,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo10"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo10"
                                           >
                                             Edit
@@ -4793,7 +4805,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4825,7 +4837,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4852,11 +4864,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo11"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo11"
                                           >
                                             Edit
@@ -4902,7 +4914,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   toggleCodeMonitorEnabled={[Function]}
                                 >
                                   <div
-                                    className="code-monitoring-node"
+                                    className="codeMonitoringNode"
                                   >
                                     <div
                                       className="d-flex justify-content-between align-items-center"
@@ -4934,7 +4946,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                         className="d-flex"
                                       >
                                         <div
-                                          className="code-monitoring-node__toggle-wrapper test-toggle-monitor-enabled"
+                                          className="test-toggle-monitor-enabled toggleWrapper"
                                         >
                                           <Toggle
                                             className="mr-3"
@@ -4961,11 +4973,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                           </Toggle>
                                         </div>
                                         <AnchorLink
-                                          className="btn btn-link code-monitoring-node__edit-button"
+                                          className="btn btn-link editButton"
                                           to="/code-monitoring/foo12"
                                         >
                                           <a
-                                            className="btn btn-link code-monitoring-node__edit-button"
+                                            className="btn btn-link editButton"
                                             href="/code-monitoring/foo12"
                                           >
                                             Edit
@@ -4977,11 +4989,14 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                 </CodeMonitorNode>
                               </ul>
                             </ConnectionList>
-                            <SummaryContainer>
+                            <SummaryContainer
+                              centered={true}
+                            >
                               <div
-                                className="filtered-connection__summary-container"
+                                className="normal centered"
                               >
                                 <ConnectionSummary
+                                  centered={true}
                                   connection={
                                     Object {
                                       "nodes": Array [
@@ -5324,7 +5339,7 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   pluralNoun="code monitors"
                                 >
                                   <p
-                                    className="filtered-connection__summary"
+                                    className="centered normal"
                                     data-testid="summary"
                                   >
                                     <small>
@@ -5340,10 +5355,11 @@ exports[`CodeMonitoringListPage Code monitoring page with more than 10 results 1
                                   </p>
                                 </ConnectionSummary>
                                 <ShowMoreButton
+                                  centered={true}
                                   onClick={[Function]}
                                 >
                                   <button
-                                    className="btn btn-sm filtered-connection__show-more btn-link"
+                                    className="btn btn-sm normal noncompact centered btn-link"
                                     onClick={[Function]}
                                     type="button"
                                   >

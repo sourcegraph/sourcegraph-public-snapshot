@@ -104,6 +104,7 @@ interface Props
 
     minimalNavLinks?: boolean
     isSearchAutoFocusRequired?: boolean
+    isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
 
     /** For testing only. Used because reactstrap's Popover is incompatible with react-test-renderer. */
@@ -123,6 +124,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
     history,
     minimalNavLinks,
     isSourcegraphDotCom,
+    isRepositoryRelatedPage,
     codeInsightsEnabled,
     searchContextsEnabled,
     ...props
@@ -200,6 +202,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             caseSensitive={caseSensitive}
             isSourcegraphDotCom={isSourcegraphDotCom}
             searchContextsEnabled={searchContextsEnabled}
+            isRepositoryRelatedPage={isRepositoryRelatedPage}
         />
     )
 

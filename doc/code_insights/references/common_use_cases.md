@@ -8,12 +8,12 @@ For all use cases, you can also explore your insight by [filtering repositories 
 
 ## Migration tracking 
 
-**How many repos yet contain a config or docs file in a specific directory?**
+**How many repos yet contain a config or docs file in a specific directory**
 ```sgquery
 select:repo file:docs/*/new_config_file archived:no fork:no
 ```
 
-**How is the switchover from files containing “blacklist/whitelist” to “denylist/allowlist" going?**
+**How the switch from files containing “blacklist/whitelist” to “denylist/allowlist" is progressing**
 ```sgquery
 // series 1, decreasing
 select:file blacklist OR whitelist archived:no fork:no 
@@ -33,17 +33,17 @@ Note these queries differ only by `-file:` exclusion vs `file:` inclusion – b
 
 ## Adoption tracking
 
-**How many repos or teams are using a new API your team built?**
+**How many repos or teams are using a new API your team built**
 ```sgquery
 select:repo ourApiLibrary.load archived:no fork:no
 ```
 
-**Are more organizations using yarn and should we support that at a company level?**
+**Are more groups or teams using yarn**
 ```sgquery
 select:repo file:yarn.lock archived:no fork:no
 ```
 
-**Which databases are we calling or writing to most often?**
+**Which databases we are calling or writing to most often**
 ```sgquery
 // redis
 redis\.set\(.*\) patternType=regexp archived:no fork:no 
@@ -51,14 +51,14 @@ redis\.set\(.*\) patternType=regexp archived:no fork:no
 graphql\(.*\) patternType=regexp archived:no fork:no
 ```
 
-**Are a growing number of repos importing a large/expensive package?**
+**Understand if a growing number of repos import a large/expensive package**
 ```sgquery
 select:repo import\slargePkg\s patternType=regexp archived:no fork:no
 ```
 
 ## Deprecation tracking
 
-**Have we removed all instances of a deprecated CSS class or icon?**
+**The removal of all deprecated CSS class or icon instances**
 ```sgquery
 2018logo.png archived:no fork:no
 ```
@@ -66,7 +66,7 @@ select:repo import\slargePkg\s patternType=regexp archived:no fork:no
 theme-redesign archived:no fork:no
 ```
 
-**How are we progressing on deprecating tooling that we’re moving off of?**
+**The progress of deprecating tooling you're moving off of**
 ```sgquery
 slowEventLib.log archived:no fork:no
 ```
@@ -75,7 +75,7 @@ Or you can count how many removals (below) rather than how many remain (above):
 slowEventLib.log type:diff select:commit.diff.removed archived:no fork:no
 ```
 
-**Are we deprecating a structural code pattern in favor of a safer pattern?** 
+**Deprecating a structural code pattern in favor of a safer pattern** 
 
 Example: do all our tries have catches? This tracks how many do not: 
 ```sgquery
@@ -84,28 +84,28 @@ try {:[_]} catch (:[e]) { } finally {:[_]} lang:java patternType:structural arch
 
 ## Code hygiene and health 
 
-**How many TODOs do we have in a specific part of the codebase (or all of it)?** 
+**How many TODOs are in a specific part of the codebase (or all of it)** 
 ```sgquery
 TODO archived:no fork:no
 ```
 
-**How many linter override rules do we have?**
+**How many linter override rules exist**
 ```sgquery
 file:^\.eslintignore .\n patternType:regexp archived:no fork:no
 ```
 (This counts the number of lines, which are file paths to ignore, in .eslintignore files)
 
-**How frequently do we have commits with “revert” in the commit message?**
+**How frequently are there commits with “revert” in the commit message**
 ```sgquery
 type:commit revert archived:no fork:no
 ```
 
-**How many times are we using deprecated calls?**
+**How many times are deprecated calls used**
 ```sgquery
 lang:java @deprecated archived:no fork:no
 ```
 
-**How many repos have CODEOWNERS files?** 
+**How many repos have CODEOWNERS files** 
 ```sgquery
 \\ how many do:
 file:CODEOWNERS select:repo archived:no fork:no
@@ -115,24 +115,24 @@ file:CODEOWNERS select:repo archived:no fork:no
 
 ## Security vulnerabilities
 
-**Has a vulnerable open source library been fully removed, or how quickly is the deprecation progressing?**
+**Confirm that a vulnerable open source library has been fully removed, or the speed of the deprecation**
 ```sgquery
 vulnerableLib@14.3.9 archived:no fork:no
 ```
 
-**How quickly do we notice and remove API keys when they are committed?** 
+**How quickly we notice and remove API keys when they are committed** 
 ```sgquery
 regexMatchingAPIKey patternType:regexp archived:no fork:no
 ```
 
-**How often are we merging permissions changes?**
+**How often we are merging permissions changes**
 ```sgquery
 type:commit perms|permissions patternType:regexp archived:no fork:no
 ```
 
 ## Version tracking (packages or languages)
 
-**Which package version are parts of the codebase using; what should we align on?**
+**Which package version do parts of the codebase use**
 ```sgquery
 // for version 13
 nvm install 13 archived:no fork:no
@@ -141,7 +141,7 @@ nvm install 14 archived:no fork:no
 // ... so on
 ```
 
-**Which language versions are in use most? How are we tracking on migrating them?**  
+**Which language versions are in use most and how we are tracking on updating them**  
 ```sgquery
 // python 2.7
 #!/usr/bin/env python2.7 archived:no fork:no
@@ -150,39 +150,39 @@ nvm install 14 archived:no fork:no
 ```
 
 ## Codebase Topline Metrics
-> Note that some of these may be "extreme" and perform slower than an average insight. 
+> Note that some of these may be very large result sets and perform slower than an average insight. 
 
-**What is our codebase size in LOC (and is it growing/shrinking)?** 
+**Codebase size in LOC (and is it growing/shrinking)** 
 ```sgquery 
 .\n patternType:regex archived:no fork:no
 ```
 
-**What is our codebase size for a specific language?**
+**Codebase size for a specific language**
 ```sgquery 
 .\n lang:TypeScript patternType:regex archived:no fork:no
 ```
 
-**Do we have more Typescript or more Go files?** 
+**Are there more Typescript or more Go files** 
 ```sgquery 
 select:file lang:TypeScript archived:no fork:no
 // vs Go files
 select:file lang:Go archived:no fork:no
 ```
 
-**What number of iOS app screens are in the entire app?**
+**What number of iOS app screens are in the entire app**
 ```sgquery
 struct : view$ patternType:regexp lang:swift archived:no fork:no
 ```
 
 ## Understanding Code by Team
 
-**Which teams or repos adopted our new events API fastest?** 
+**Which teams or repos adopted our new events API fastest** 
 ```sgquery
 newEventAPI.call archived:no fork:no
 ```
 And then [filter by repositories](../how-tos/filtering_an_insight.md) in real time. 
 
-**Which teams have the most usage of an API we’re having problems with?**
+**Which teams have the most usage of a problematic API**
 ```sgquery
 // series 1
 problemAPI file:teamOneFilePath archived:no fork:no

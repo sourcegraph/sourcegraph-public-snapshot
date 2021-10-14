@@ -903,6 +903,58 @@ func TestHardDeleteUploadByID(t *testing.T) {
 	}
 }
 
+func TestSelectRepositoriesForIndexScan(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+
+	now := timeutil.Now()
+	insertRepo(t, db, 50, "r0")
+	insertRepo(t, db, 51, "r1")
+	insertRepo(t, db, 52, "r2")
+	insertRepo(t, db, 53, "r3")
+
+	// Can return nulls
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 2, now); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 20 minutes later, first two repositories are still on cooldown
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 30 minutes later, all repositories are still on cooldown
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// 90 minutes later, all repositories are visible
+	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Make newly visible repository
+	insertRepo(t, db, 54, "r4")
+
+	// 95 minutes later, only new repository is visible
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+}
+
 func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -920,51 +972,44 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 	)
 
 	now := timeutil.Now()
-	t1 := now.Add(time.Hour * 1)
-	t2 := now.Add(time.Hour * 2)
-	t3 := now.Add(time.Hour * 3)
 
-	for repositoryID, now := range map[int]time.Time{
-		50: t1,
-		51: t2,
-		52: t3,
-	} {
+	for _, repositoryID := range []int{50, 51, 52, 53, 54} {
 		// Only call this to insert a record into the lsif_dirty_repositories table
 		if err := store.MarkRepositoryAsDirty(context.Background(), repositoryID); err != nil {
 			t.Fatalf("unexpected error marking repository as dirty`: %s", err)
 		}
 
 		// Only call this to update the updated_at field in the lsif_dirty_repositories table
-		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitserver.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 5, now); err != nil {
+		if err := store.CalculateVisibleUploads(context.Background(), repositoryID, gitserver.ParseCommitGraph(nil), nil, time.Hour, time.Hour, 1, now); err != nil {
 			t.Fatalf("unexpected error updating commit graph: %s", err)
 		}
 	}
 
 	// Can return nulls
-	if repositoriesLastUpdated, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 2, now); err != nil {
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff(map[int]*time.Time{50: &t1, 51: &t2}, repositoriesLastUpdated); diff != "" {
+	} else if diff := cmp.Diff([]int{50, 51}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 20 minutes later, first two repositories are still on cooldown
-	if repositoriesLastUpdated, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*20)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff(map[int]*time.Time{52: &t3, 53: nil}, repositoriesLastUpdated); diff != "" {
+	} else if diff := cmp.Diff([]int{52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 30 minutes later, all repositories are still on cooldown
-	if repositoriesLastUpdated, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*30)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff(map[int]*time.Time{}, repositoriesLastUpdated); diff != "" {
+	} else if diff := cmp.Diff([]int(nil), repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
 	// 90 minutes later, all repositories are visible
-	if repositoriesLastUpdated, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
+	if repositories, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*90)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff(map[int]*time.Time{50: &t1, 51: &t2, 52: &t3, 53: nil}, repositoriesLastUpdated); diff != "" {
+	} else if diff := cmp.Diff([]int{50, 51, 52, 53}, repositories); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
@@ -976,7 +1021,7 @@ func TestSelectRepositoriesForRetentionScan(t *testing.T) {
 	// 95 minutes later, only new repository is visible
 	if repositoryIDs, err := store.selectRepositoriesForRetentionScan(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for retention scan: %s", err)
-	} else if diff := cmp.Diff(map[int]*time.Time{54: nil}, repositoryIDs); diff != "" {
+	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 }

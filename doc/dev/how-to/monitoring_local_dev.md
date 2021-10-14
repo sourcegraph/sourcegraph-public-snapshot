@@ -10,7 +10,8 @@ The [developing observability page](../background-information/observability/inde
 
 ### With all services
 
-The monitoring stack is included in the `./dev/start.sh` and `./enterprise/dev/start.sh` scripts.
+The monitoring stack is not included in `sg start` (or `sg start oss` and `sg start enterprise`) scripts.
+It needs to be started separately with `sg start monitoring`.
 Learn more about these in the [general development getting started guide](../getting-started/index.md).
 
 ### Without all services
@@ -19,8 +20,8 @@ For convenience, there are a number of ways to spin up Sourcegraph's monitoring 
 
 You can follow the instructions below for spinning up individual monitoring components, or use one of the following:
 
-- `sg run-set monitoring`: Spin up just monitoring components
-- `sg run-set monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../admin/observability/alerting.md#setting-up-alerting).
+- `sg start monitoring`: Spin up just monitoring components
+- `sg start monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../admin/observability/alerting.md#setting-up-alerting).
 
 #### Grafana
 
@@ -79,7 +80,7 @@ One way to do this is to [start up Prometheus alongside all Sourcegraph services
 You can alternatively spin up just the frontend separately:
 
 ```sh
-./dev/start.sh --only frontend
+sg run enterprise-frontend # or: sg run frontend
 ```
 
 This should be sufficient to access the frontend API and the admin console (`/site-admin`), which is where most of the integration is.

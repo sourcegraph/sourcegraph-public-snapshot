@@ -12,7 +12,9 @@ type RunType int
 
 const (
 	PullRequest RunType = iota // pull request build
-	MainBranch                 // main branch build
+
+	MainBranch // main branch build
+	MainDryRun // run everything main does, except for deploy-related steps
 
 	// Releases
 
@@ -26,42 +28,44 @@ const (
 
 	// Patches (NOT patch releases)
 
-	ImagePatch       // build a patched image
-	ImagePatchNoTest // build a patched image without testing
-	CandidatesNoTest // build all candidates without testing
+	ImagePatch          // build a patched image after testing
+	ImagePatchNoTest    // build a patched image without testing
+	CandidatesNoTest    // build all candidates without testing
+	ExecutorPatchNoTest // build executor image without testing
 
-	// Special run cases
+	// Special test branches
 
-	MainDryRun    // run everything main does, except for deploy-related steps
-	BackendDryRun // ???
+	BackendIntegrationTests // run backend tests that are used on main
 )
 
 func computeRunType(tag, branch string) RunType {
 	switch {
+	case branch == "main":
+		return MainBranch
+	case strings.HasPrefix(branch, "main-dry-run/"):
+		return MainDryRun
+
 	case strings.HasPrefix(tag, "v"):
 		return TaggedRelease
 	case lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch):
 		return ReleaseBranch
-
-	case strings.HasPrefix(branch, "docker-images-patch/"):
-		return ImagePatch
-	case strings.HasPrefix(branch, "docker-images-patch-notest/"):
-		return ImagePatch
-	case branch == "docker-images-candidates-notest":
-		return CandidatesNoTest
 
 	case branch == "bext/release":
 		return BextReleaseBranch
 	case os.Getenv("BEXT_NIGHTLY") == "true":
 		return BextNightly
 
-	case strings.HasPrefix(branch, "main-dry-run/"):
-		return MainDryRun
-	case strings.HasPrefix(branch, "backend-dry-run/"):
-		return BackendDryRun
+	case strings.HasPrefix(branch, "docker-images-patch/"):
+		return ImagePatch
+	case strings.HasPrefix(branch, "docker-images-patch-notest/"):
+		return ImagePatchNoTest
+	case branch == "docker-images-candidates-notest":
+		return CandidatesNoTest
+	case branch == "executor-patch-notest":
+		return ExecutorPatchNoTest
 
-	case branch == "main":
-		return MainBranch
+	case strings.HasPrefix(branch, "backend-integration/"):
+		return BackendIntegrationTests
 
 	default:
 		// If no specific run type is matched, assumed to be a PR
@@ -77,4 +81,32 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 		}
 	}
 	return false
+}
+
+func (t RunType) String() string {
+	switch t {
+	case PullRequest:
+		return "PullRequest"
+	case MainBranch:
+		return "MainBranch"
+	case MainDryRun:
+		return "Main dry run"
+	case TaggedRelease:
+		return "TaggedRelease"
+	case ReleaseBranch:
+		return "ReleaseBranch"
+	case BextReleaseBranch:
+		return "Browser Extension Release Build"
+	case BextNightly:
+		return "Browser Extension Release Build"
+	case ImagePatch:
+		return "Patched Image"
+	case ImagePatchNoTest:
+		return "Patched Image without testing"
+	case CandidatesNoTest:
+		return "Build All candidates without testing"
+	case BackendIntegrationTests:
+		return "Backend integration tests"
+	}
+	panic("Run type does not have a full name defined")
 }

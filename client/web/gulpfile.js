@@ -6,6 +6,8 @@ require('ts-node').register({
   project: path.resolve(__dirname, './dev/tsconfig.json'),
 })
 
+const chalk = require('chalk')
+const compression = require('compression')
 const log = require('fancy-log')
 const gulp = require('gulp')
 const { createProxyMiddleware } = require('http-proxy-middleware')
@@ -29,7 +31,7 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR } = require('./dev/utils')
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
 const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
 const webpackConfig = require('./webpack.config')
 
@@ -106,9 +108,12 @@ async function webpackDevelopmentServer() {
     hot: !process.env.NO_HOT,
     host: DEV_SERVER_LISTEN_ADDR.host,
     port: DEV_SERVER_LISTEN_ADDR.port,
-    // Disable compression on the dev server because gzip buffers the full
-    // response before sending it, which makes streaming search not stream.
+    // Disable default DevServer compression. We need more fine grained compression to support streaming search.
     compress: false,
+    onBeforeSetupMiddleware: developmentServer => {
+      // Re-enable gzip compression using our own `compression` filter.
+      developmentServer.app.use(compression({ filter: shouldCompressResponse }))
+    },
     client: {
       overlay: false,
       webSocketTransport: 'ws',
@@ -133,7 +138,45 @@ async function webpackDevelopmentServer() {
     webpackConfig.plugins.push(new DevServerPlugin(options))
   }
 
-  const server = new WebpackDevServer(options, createWebpackCompiler(webpackConfig))
+  const compiler = createWebpackCompiler(webpackConfig)
+  let compilationDoneOnce = false
+  compiler.hooks.done.tap('Print external URL', stats => {
+    stats = stats.toJson()
+    if (stats.errors !== undefined && stats.errors.length > 0) {
+      // show errors
+      return
+    }
+    if (compilationDoneOnce) {
+      return
+    }
+    compilationDoneOnce = true
+
+    const url = `https://${sockHost}:${sockPort}`
+    const banner = '==============================================='
+    const emptyLine = ' '.repeat(banner.length)
+    const lineLength = banner.length
+    /**
+     * @param {string} content
+     */
+    const paddedLine = content => {
+      const spaceRequired = lineLength - content.length
+      const half = spaceRequired / 2
+      let line = `${' '.repeat(half)}${content}${' '.repeat(half)}`
+      if (line.length < lineLength) {
+        line += ' '
+      }
+      return line
+    }
+    console.log(chalk.bgYellowBright.black(banner))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(paddedLine('✱ Sourcegraph is really ready now!')))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(paddedLine(`Click here: ${url}`)))
+    console.log(chalk.bgYellowBright.black(emptyLine))
+    console.log(chalk.bgYellowBright.black(banner))
+  })
+
+  const server = new WebpackDevServer(options, compiler)
   signale.await('Waiting for Webpack to compile assets')
   await server.start()
 }

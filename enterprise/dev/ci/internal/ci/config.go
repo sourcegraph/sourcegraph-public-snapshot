@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 )
 
 // Config is the set of configuration parameters that determine the structure of the CI build. These
@@ -30,15 +31,14 @@ type Config struct {
 
 	// ChangedFiles is the list of files that have changed since the
 	// merge-base with origin/main.
-	ChangedFiles ChangedFiles
-
-	// ProfilingEnabled, if true, tells buildkite to print timing and resource utilization information
-	// for each command
-	ProfilingEnabled bool
+	ChangedFiles changed.Files
 
 	// MustIncludeCommit, if non-empty, is a list of commits at least one of which must be present
 	// in the branch. If empty, then no check is enforced.
 	MustIncludeCommit []string
+
+	// MessageFlags contains flags parsed from commit messages.
+	MessageFlags MessageFlags
 }
 
 // NewConfig computes configuration for the pipeline generator based on Buildkite environment
@@ -79,7 +79,7 @@ func NewConfig(now time.Time) Config {
 	// evaluates what type of pipeline run this is
 	runType := computeRunType(tag, branch)
 
-	// special adjustments based on run type
+	// special tag adjustments based on run type
 	switch {
 	case runType.Is(TaggedRelease):
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
@@ -87,7 +87,7 @@ func NewConfig(now time.Time) Config {
 	default:
 		tag = fmt.Sprintf("%05d_%s_%.7s", buildNumber, now.Format("2006-01-02"), commit)
 	}
-	if runType.Is(ImagePatch, ImagePatchNoTest) {
+	if runType.Is(ImagePatch, ImagePatchNoTest, ExecutorPatchNoTest) {
 		// Add additional patch suffix
 		tag = tag + "_patch"
 	}
@@ -103,9 +103,9 @@ func NewConfig(now time.Time) Config {
 		ChangedFiles:      changedFiles,
 		BuildNumber:       buildNumber,
 
-		ProfilingEnabled: strings.Contains(branch, "buildkite-enable-profiling"),
+		// get flags from commit message
+		MessageFlags: parseMessageFlags(os.Getenv("BUILDKITE_MESSAGE")),
 	}
-
 }
 
 func (c Config) shortCommit() string {
@@ -147,4 +147,25 @@ func (c Config) ensureCommit() error {
 // as determined in `addDockerImages()`.
 func (c Config) candidateImageTag() string {
 	return images.CandidateImageTag(c.Commit, strconv.Itoa(c.BuildNumber))
+}
+
+// MessageFlags indicates flags that can be parsed out of commit messages to change
+// pipeline behaviour. Use sparingly! If you are generating a new pipeline, please use
+// RunType instead.
+type MessageFlags struct {
+	// ProfilingEnabled, if true, tells buildkite to print timing and resource utilization information
+	// for each command
+	ProfilingEnabled bool
+
+	// SkipHashCompare, if true, tells buildkite to disable skipping of steps that compare
+	// hash output.
+	SkipHashCompare bool
+}
+
+// parseMessageFlags gets MessageFlags from the given commit message.
+func parseMessageFlags(msg string) MessageFlags {
+	return MessageFlags{
+		ProfilingEnabled: strings.Contains(msg, "[buildkite-enable-profiling]"),
+		SkipHashCompare:  strings.Contains(msg, "[skip-hash-compare]"),
+	}
 }

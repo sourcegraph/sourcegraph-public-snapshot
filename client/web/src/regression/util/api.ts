@@ -66,8 +66,8 @@ export function waitForRepo(
     {
         logStatusMessages,
         shouldNotExist = false,
-        retryPeriod = 2000, // 2 seconds
-        timeout = 60000, // 1 minute
+        retryPeriod = 5000, // 5 seconds
+        timeout = 300000, // 5 minutes
         indexed: mustBeIndexed = false,
     }: WaitForRepoOptions = {}
 ): Observable<void> {

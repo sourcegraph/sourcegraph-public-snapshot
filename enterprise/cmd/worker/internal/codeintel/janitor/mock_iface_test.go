@@ -132,7 +132,7 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		SelectRepositoriesForRetentionScanFunc: &DBStoreSelectRepositoriesForRetentionScanFunc{
-			defaultHook: func(context.Context, time.Duration, int) (map[int]*time.Time, error) {
+			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
 				return nil, nil
 			},
 		},
@@ -1444,15 +1444,15 @@ func (c DBStoreRefreshCommitResolvabilityFuncCall) Results() []interface{} {
 // the SelectRepositoriesForRetentionScan method of the parent MockDBStore
 // instance is invoked.
 type DBStoreSelectRepositoriesForRetentionScanFunc struct {
-	defaultHook func(context.Context, time.Duration, int) (map[int]*time.Time, error)
-	hooks       []func(context.Context, time.Duration, int) (map[int]*time.Time, error)
+	defaultHook func(context.Context, time.Duration, int) ([]int, error)
+	hooks       []func(context.Context, time.Duration, int) ([]int, error)
 	history     []DBStoreSelectRepositoriesForRetentionScanFuncCall
 	mutex       sync.Mutex
 }
 
 // SelectRepositoriesForRetentionScan delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) SelectRepositoriesForRetentionScan(v0 context.Context, v1 time.Duration, v2 int) (map[int]*time.Time, error) {
+func (m *MockDBStore) SelectRepositoriesForRetentionScan(v0 context.Context, v1 time.Duration, v2 int) ([]int, error) {
 	r0, r1 := m.SelectRepositoriesForRetentionScanFunc.nextHook()(v0, v1, v2)
 	m.SelectRepositoriesForRetentionScanFunc.appendCall(DBStoreSelectRepositoriesForRetentionScanFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1461,7 +1461,7 @@ func (m *MockDBStore) SelectRepositoriesForRetentionScan(v0 context.Context, v1 
 // SetDefaultHook sets function that is called when the
 // SelectRepositoriesForRetentionScan method of the parent MockDBStore
 // instance is invoked and the hook queue is empty.
-func (f *DBStoreSelectRepositoriesForRetentionScanFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) (map[int]*time.Time, error)) {
+func (f *DBStoreSelectRepositoriesForRetentionScanFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) ([]int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1470,7 +1470,7 @@ func (f *DBStoreSelectRepositoriesForRetentionScanFunc) SetDefaultHook(hook func
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *DBStoreSelectRepositoriesForRetentionScanFunc) PushHook(hook func(context.Context, time.Duration, int) (map[int]*time.Time, error)) {
+func (f *DBStoreSelectRepositoriesForRetentionScanFunc) PushHook(hook func(context.Context, time.Duration, int) ([]int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1478,21 +1478,21 @@ func (f *DBStoreSelectRepositoriesForRetentionScanFunc) PushHook(hook func(conte
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreSelectRepositoriesForRetentionScanFunc) SetDefaultReturn(r0 map[int]*time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Duration, int) (map[int]*time.Time, error) {
+func (f *DBStoreSelectRepositoriesForRetentionScanFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int) ([]int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreSelectRepositoriesForRetentionScanFunc) PushReturn(r0 map[int]*time.Time, r1 error) {
-	f.PushHook(func(context.Context, time.Duration, int) (map[int]*time.Time, error) {
+func (f *DBStoreSelectRepositoriesForRetentionScanFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, int) ([]int, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreSelectRepositoriesForRetentionScanFunc) nextHook() func(context.Context, time.Duration, int) (map[int]*time.Time, error) {
+func (f *DBStoreSelectRepositoriesForRetentionScanFunc) nextHook() func(context.Context, time.Duration, int) ([]int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1538,7 +1538,7 @@ type DBStoreSelectRepositoriesForRetentionScanFuncCall struct {
 	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 map[int]*time.Time
+	Result0 []int
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

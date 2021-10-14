@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 var (
@@ -28,29 +29,29 @@ func TestDiffSearch(t *testing.T) {
 	matchTree, err := ToMatchTree(query)
 	require.NoError(t, err)
 
-	matched, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
+	mergedResult, highlights, err := matchTree.Match(&LazyCommit{diff: fileDiffs})
 	require.NoError(t, err)
-	require.True(t, matched)
+	require.True(t, mergedResult.Satisfies())
 
-	expectedHighlights := &CommitHighlights{
-		Diff: map[int]FileDiffHighlight{
+	expectedHighlights := MatchedCommit{
+		Diff: map[int]MatchedFileDiff{
 			1: {
-				HunkHighlights: map[int]HunkHighlight{
+				MatchedHunks: map[int]MatchedHunk{
 					0: {
-						LineHighlights: map[int]protocol.Ranges{
+						MatchedLines: map[int]result.Ranges{
 							3: {{
-								Start: protocol.Location{Offset: 9, Column: 9},
-								End:   protocol.Location{Offset: 14, Column: 14},
+								Start: result.Location{Offset: 9, Column: 9},
+								End:   result.Location{Offset: 14, Column: 14},
 							}, {
-								Start: protocol.Location{Offset: 24, Column: 24},
-								End:   protocol.Location{Offset: 29, Column: 29},
+								Start: result.Location{Offset: 24, Column: 24},
+								End:   result.Location{Offset: 29, Column: 29},
 							}},
 							4: {{
-								Start: protocol.Location{Offset: 9, Column: 9},
-								End:   protocol.Location{Offset: 14, Column: 14},
+								Start: result.Location{Offset: 9, Column: 9},
+								End:   result.Location{Offset: 14, Column: 14},
 							}, {
-								Start: protocol.Location{Offset: 43, Column: 43},
-								End:   protocol.Location{Offset: 48, Column: 48},
+								Start: result.Location{Offset: 43, Column: 43},
+								End:   result.Location{Offset: 48, Column: 48},
 							}},
 						},
 					},
@@ -69,18 +70,18 @@ func TestDiffSearch(t *testing.T) {
  import { PuppeteerAdapter } from './polly/PuppeteerAdapter'
 `
 
-	expectedRanges := protocol.Ranges{{
-		Start: protocol.Location{Line: 3, Column: 10, Offset: 200},
-		End:   protocol.Location{Line: 3, Column: 15, Offset: 205},
+	expectedRanges := result.Ranges{{
+		Start: result.Location{Line: 3, Column: 10, Offset: 200},
+		End:   result.Location{Line: 3, Column: 15, Offset: 205},
 	}, {
-		Start: protocol.Location{Line: 3, Column: 25, Offset: 215},
-		End:   protocol.Location{Line: 3, Column: 30, Offset: 220},
+		Start: result.Location{Line: 3, Column: 25, Offset: 215},
+		End:   result.Location{Line: 3, Column: 30, Offset: 220},
 	}, {
-		Start: protocol.Location{Line: 4, Column: 10, Offset: 239},
-		End:   protocol.Location{Line: 4, Column: 15, Offset: 244},
+		Start: result.Location{Line: 4, Column: 10, Offset: 239},
+		End:   result.Location{Line: 4, Column: 15, Offset: 244},
 	}, {
-		Start: protocol.Location{Line: 4, Column: 44, Offset: 273},
-		End:   protocol.Location{Line: 4, Column: 49, Offset: 278},
+		Start: result.Location{Line: 4, Column: 44, Offset: 273},
+		End:   result.Location{Line: 4, Column: 49, Offset: 278},
 	}}
 
 	require.Equal(t, expectedFormatted, formatted)
@@ -100,8 +101,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
-				matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, matched)
+				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+				require.True(b, mergedResult.Satisfies())
 			}
 		})
 
@@ -111,8 +112,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 			require.NoError(b, err)
 
 			for i := 0; i < b.N; i++ {
-				matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-				require.True(b, matched)
+				mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+				require.True(b, mergedResult.Satisfies())
 			}
 		})
 	})
@@ -129,8 +130,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, matched)
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 
@@ -140,8 +141,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, matched)
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 		})
@@ -153,8 +154,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, matched)
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 
@@ -164,8 +165,8 @@ func BenchmarkDiffSearchCaseInsensitiveOptimization(b *testing.B) {
 				require.NoError(b, err)
 
 				for i := 0; i < b.N; i++ {
-					matched, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
-					require.True(b, matched)
+					mergedResult, _, _ := matchTree.Match(&LazyCommit{diff: fileDiffs})
+					require.True(b, mergedResult.Satisfies())
 				}
 			})
 		})

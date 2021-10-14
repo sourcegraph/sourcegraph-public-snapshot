@@ -333,7 +333,7 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 			repoMap[path] = true
 		}
 	}
-	wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
+	if err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 		for _, match := range matches {
 			switch m := match.(type) {
 			case *streamhttp.EventRepoMatch:
@@ -349,7 +349,9 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
 			}
 		}
-	})
+	}); err != nil {
+		return nil, err
+	}
 
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
 	// the repositories or not.
@@ -404,7 +406,11 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 			// TODO: Evaluate skipped for values we care about.
 		},
 	}
-	return dec.ReadAll(resp.Body)
+	decErr := dec.ReadAll(resp.Body)
+	if decErr != nil {
+		return decErr
+	}
+	return err
 }
 
 func repoToRepoRevisionWithDefaultBranch(ctx context.Context, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {

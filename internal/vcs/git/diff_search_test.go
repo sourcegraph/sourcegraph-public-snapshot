@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 func TestRepository_RawLogDiffSearch(t *testing.T) {
@@ -58,10 +59,10 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			Diff:  true,
 		},
 		want: []*LogCommitSearchResult{{
-			Commit: Commit{
+			Commit: gitapi.Commit{
 				ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "branch1",
 				Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 			},
@@ -69,10 +70,10 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			SourceRefs: []string{"refs/heads/branch2"},
 			Diff:       &RawDiff{Raw: "diff --git f f\nindex d8649da..1193ff4 100644\n--- f\n+++ f\n@@ -1,1 +1,1 @@\n-root\n+branch1\n"},
 		}, {
-			Commit: Commit{
+			Commit: gitapi.Commit{
 				ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "root",
 			},
 			Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
@@ -87,10 +88,10 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			Args:  []string{"--glob=refs/tags/*"},
 		},
 		want: []*LogCommitSearchResult{{
-			Commit: Commit{
+			Commit: gitapi.Commit{
 				ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "root",
 			},
 			Refs:       []string{"refs/heads/master", "refs/tags/mytag"},
@@ -104,20 +105,20 @@ func TestRepository_RawLogDiffSearch(t *testing.T) {
 			Args:  []string{"--grep=branch1|root", "--extended-regexp"},
 		},
 		want: []*LogCommitSearchResult{{
-			Commit: Commit{
+			Commit: gitapi.Commit{
 				ID:        "b9b2349a02271ca96e82c70f384812f9c62c26ab",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+				Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
 				Message:   "branch1",
 				Parents:   []api.CommitID{"ce72ece27fd5c8180cfbc1c412021d32fd1cda0d"},
 			},
 			Refs:       []string{"refs/heads/branch1"},
 			SourceRefs: []string{"refs/heads/branch2"},
 		}, {
-			Commit: Commit{
+			Commit: gitapi.Commit{
 				ID:        "ce72ece27fd5c8180cfbc1c412021d32fd1cda0d",
-				Author:    Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
-				Committer: &Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Author:    gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
+				Committer: &gitapi.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
 				Message:   "root",
 			},
 			Refs:       []string{"refs/heads/master", "refs/tags/mytag"},

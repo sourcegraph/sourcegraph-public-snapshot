@@ -262,7 +262,7 @@ func shortGitCommandTimeout(args []string) time.Duration {
 		// example a search over all repos in an organization may have several
 		// large repos. All of those repos will be competing for IO => we need
 		// a larger timeout.
-		return longGitCommandTimeout
+		return conf.GitLongCommandTimeout()
 
 	case "ls-remote":
 		return 30 * time.Second
@@ -290,11 +290,6 @@ func shortGitCommandSlow(args []string) time.Duration {
 		return 2500 * time.Millisecond
 	}
 }
-
-// This is a timeout for long git commands like clone or remote update.
-// that may take a while for large repos. These types of commands should
-// be run in the background.
-var longGitCommandTimeout = time.Hour
 
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
@@ -793,7 +788,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	// cancel the git commands partway through if the request terminates.
 	ctx, cancel1 := s.serverContext()
 	defer cancel1()
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
 	if !repoCloned(dir) && !s.skipCloneForTests {
@@ -908,7 +903,13 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	ctx := r.Context()
+	tr, ctx := trace.New(r.Context(), "search", "")
+	tr.LogFields(
+		otlog.String("query", args.Query.String()),
+		otlog.Int("limit", args.Limit),
+	)
+	defer tr.Finish()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -966,6 +967,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	}
 
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -984,25 +986,19 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 			return err
 		}
 
-		var conversionErr error
-		err = search.Search(ctx, dir.Path(), args.Revisions, mt, func(match *search.LazyCommit, highlights *search.CommitHighlights) bool {
-			res, err := search.CreateCommitMatch(match, highlights, args.IncludeDiff)
-			if err != nil {
-				conversionErr = err
-				return false
-			}
+		searcher := &search.CommitSearcher{
+			RepoDir:     dir.Path(),
+			Revisions:   args.Revisions,
+			Query:       mt,
+			IncludeDiff: args.IncludeDiff,
+		}
 
+		return searcher.Search(ctx, func(match *protocol.CommitMatch) {
 			select {
 			case <-done:
-				return false
-			case resultChan <- res:
-				return true
+			case resultChan <- match:
 			}
 		})
-		if err != nil {
-			return err
-		}
-		return conversionErr
 	})
 
 	// Write matching commits to the stream, flushing occasionally
@@ -1054,11 +1050,11 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 // 2) the number of messsage matches if there are any
 // 3) one, to represent matching the commit, but nothing inside it
 func matchCount(cm *protocol.CommitMatch) int {
-	if len(cm.Diff.Highlights) > 0 {
-		return len(cm.Diff.Highlights)
+	if len(cm.Diff.MatchedRanges) > 0 {
+		return len(cm.Diff.MatchedRanges)
 	}
-	if len(cm.Message.Highlights) > 0 {
-		return len(cm.Message.Highlights)
+	if len(cm.Message.MatchedRanges) > 0 {
+		return len(cm.Message.MatchedRanges)
 	}
 	return 1
 }
@@ -1449,11 +1445,28 @@ func (s *Server) setLastError(ctx context.Context, name api.RepoName, error stri
 	return database.GitserverRepos(s.DB).SetLastError(ctx, name, error, s.Hostname)
 }
 
-func (s *Server) setLastFetched(ctx context.Context, name api.RepoName, lastFetched time.Time) error {
+func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
 	if s.DB == nil {
 		return nil
 	}
-	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, lastFetched, s.Hostname)
+
+	dir := s.dir(name)
+
+	lastFetched, err := repoLastFetched(dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get last fetched for %s", name)
+	}
+
+	lastChanged, err := repoLastChanged(dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to get last changed for %s", name)
+	}
+
+	return database.GitserverRepos(s.DB).SetLastFetched(ctx, name, database.GitserverFetchData{
+		LastFetched: lastFetched,
+		LastChanged: lastChanged,
+		ShardID:     s.Hostname,
+	})
 }
 
 // setLastErrorNonFatal is the same as setLastError but only logs errors
@@ -1620,7 +1633,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
-	ctx, cancel2 := context.WithTimeout(ctx, longGitCommandTimeout)
+	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
 
 	dstPath := string(dir)
@@ -1695,11 +1708,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return errors.Wrapf(err, "failed to update last changed time")
 	}
 
-	// Update the DB with the last fetched time
-	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-		return errors.Wrap(err, "update last fetched time")
-	}
-
 	// Set gitattributes
 	if err := setGitAttributes(tmp); err != nil {
 		return err
@@ -1718,6 +1726,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	}
 	if err := renameAndSync(tmpPath, dstPath); err != nil {
 		return err
+	}
+
+	// Successfully updated, best-effort updating of db fetch state based on
+	// disk state.
+	if err := s.setLastFetched(ctx, repo); err != nil {
+		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
 	log15.Info("repo cloned", "repo", repo)
@@ -1996,9 +2010,10 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 		log15.Warn("Failed to update last changed time", "repo", repo, "error", err)
 	}
 
-	// Update the DB with the last fetched time
-	if err := s.setLastFetched(ctx, repo, time.Now()); err != nil {
-		return errors.Wrap(err, "update last fetched time")
+	// Successfully updated, best-effort updating of db fetch state based on
+	// disk state.
+	if err := s.setLastFetched(ctx, repo); err != nil {
+		log15.Warn("failed setting last fetch in DB", "repo", repo, "error", err)
 	}
 
 	return nil

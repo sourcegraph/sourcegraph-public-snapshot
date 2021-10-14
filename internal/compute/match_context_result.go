@@ -70,6 +70,11 @@ func fromRegexpMatches(matches [][]int, namedGroups []string, lineValue string, 
 		for j := 0; j < len(m); j += 2 {
 			start := m[j]
 			end := m[j+1]
+			if start == -1 || end == -1 {
+				// The entire regexp matched, but a capture
+				// group inside it did not. Ignore this entry.
+				continue
+			}
 			value := lineValue[start:end]
 			range_ := newRange(lineNumber, lineNumber, start, end)
 

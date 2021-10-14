@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 const numRoutines = 5
@@ -49,9 +50,9 @@ func TestCachedLocationResolver(t *testing.T) {
 	}
 
 	var commitCalls uint32
-	git.Mocks.GetCommit = func(commitID api.CommitID) (*git.Commit, error) {
+	git.Mocks.GetCommit = func(commitID api.CommitID) (*gitapi.Commit, error) {
 		atomic.AddUint32(&commitCalls, 1)
-		return &git.Commit{ID: commitID}, nil
+		return &gitapi.Commit{ID: commitID}, nil
 	}
 
 	cachedResolver := NewCachedLocationResolver(db)
@@ -252,8 +253,8 @@ func TestResolveLocations(t *testing.T) {
 		return api.CommitID(spec), nil
 	}
 
-	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*git.Commit, error) {
-		return &git.Commit{ID: commitID}, nil
+	backend.Mocks.Repos.GetCommit = func(v0 context.Context, repo *types.Repo, commitID api.CommitID) (*gitapi.Commit, error) {
+		return &gitapi.Commit{ID: commitID}, nil
 	}
 
 	r1 := lsifstore.Range{Start: lsifstore.Position{Line: 11, Character: 12}, End: lsifstore.Position{Line: 13, Character: 14}}

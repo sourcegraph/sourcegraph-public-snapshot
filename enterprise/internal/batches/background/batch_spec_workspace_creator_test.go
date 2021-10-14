@@ -76,7 +76,7 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 		t.Fatalf("proces failed: %s", err)
 	}
 
-	have, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+	have, _, err := s.ListBatchSpecWorkspaces(context.Background(), store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
 	if err != nil {
 		t.Fatalf("listing workspaces failed: %s", err)
 	}
