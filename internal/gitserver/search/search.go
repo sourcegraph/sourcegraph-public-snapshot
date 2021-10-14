@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"os/exec"
 	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -179,7 +179,8 @@ func tryInterpretErrorWithStderr(err error, stderr string) error {
 		// Ignore no commits error error
 		return nil
 	}
-	return errors.Wrap(err, fmt.Sprintf("command failed with stderr %q", stderr))
+	log15.Warn("git search command exited with non-zero status and stderr content: %q", stderr)
+	return err
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
