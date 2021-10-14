@@ -407,6 +407,7 @@ WITH e AS(
 )
 SELECT * FROM e
 UNION
+	-- Fallback union for when there is a conflict in the upsert CTE. We only scan the first item.
     SELECT id FROM lsif_data_docs_search_lang_names_$SUFFIX WHERE tsv = %s
 `
 
@@ -419,7 +420,8 @@ WITH e AS(
 )
 SELECT * FROM e
 UNION
-    SELECT id FROM lsif_data_docs_search_repo_names_$SUFFIX WHERE tsv = %s
+	-- Fallback union for when there is a conflict in the upsert CTE. We only scan the first item.
+	SELECT id FROM lsif_data_docs_search_repo_names_$SUFFIX WHERE tsv = %s
 `
 
 const writeDocumentationSearchTags = `
@@ -431,7 +433,8 @@ WITH e AS(
 )
 SELECT * FROM e
 UNION
-    SELECT id FROM lsif_data_docs_search_tags_$SUFFIX WHERE tsv = %s
+	-- Fallback union for when there is a conflict in the upsert CTE. We only scan the first item.
+	SELECT id FROM lsif_data_docs_search_tags_$SUFFIX WHERE tsv = %s
 `
 
 const writeDocumentationSearchInsertQuery = `
