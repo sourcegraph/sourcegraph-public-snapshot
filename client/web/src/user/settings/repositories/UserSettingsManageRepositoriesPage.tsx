@@ -146,9 +146,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [telemetryService])
 
     const history = useHistory()
-    const isOrgMode = owner.type === 'org'
+    const isOrgOwner = owner.type === 'org'
 
-    const listRepositories = isOrgMode ? listOrgRepositories : listUserRepositories
+    const listRepositories = isOrgOwner ? listOrgRepositories : listUserRepositories
 
     // if we should tweak UI messaging and copy
     const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags() === 'all'
@@ -399,10 +399,10 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     }, [owner.id])
 
     useEffect(() => {
-        if (!isOrgMode) {
+        if (!isOrgOwner) {
             fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
         }
-    }, [fetchAndSetPublicRepos, isOrgMode])
+    }, [fetchAndSetPublicRepos, isOrgOwner])
 
     // select repos by code host and query
     useEffect(() => {
@@ -470,7 +470,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setFetchingRepos('loading')
             onSyncedPublicRepositoriesUpdate(publicRepos.length)
 
-            if (!isOrgMode) {
+            if (!isOrgOwner) {
                 try {
                     await setUserPublicRepositories(owner.id, publicRepos).toPromise()
                 } catch (error) {
@@ -522,7 +522,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             selectionState.radio,
             selectionState.repos,
             onSyncedPublicRepositoriesUpdate,
-            isOrgMode,
+            isOrgOwner,
             history,
             routingPrefix,
             owner.id,
@@ -818,7 +818,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             }
                         </div>
                     </li>
-                    {window.context.sourcegraphDotComMode && !isOrgMode && (
+                    {window.context.sourcegraphDotComMode && !isOrgOwner && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
                             <div>
                                 <h3>Other public repositories</h3>

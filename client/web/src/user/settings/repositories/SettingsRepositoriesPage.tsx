@@ -66,9 +66,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
 
-    const isUserMode = owner.type === 'user'
-    const fetchRepositories = isUserMode ? listUserRepositories : listOrgRepositories
-    const fetchRepositoriesCount = isUserMode ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
+    const isUserOwner = owner.type === 'user'
+    const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
+    const fetchRepositoriesCount = isUserOwner ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
 
     const NoAddedReposBanner = (
         <Container className="text-center">
@@ -77,7 +77,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             {externalServices?.length === 0 ? (
                 <span className="text-muted">
                     <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
-                    {isUserMode && (
+                    {isUserOwner && (
                         <span>
                             You can also{' '}
                             <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link>{' '}
@@ -261,9 +261,9 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 return namespaceStartIndex !== -1 ? name.slice(0, namespaceStartIndex - 1) : name
             })
 
-            return `Syncing ${names.join(', ')} code host${names.length > 1 ? 's' : ''}.`
+            return `Syncing with ${names.join(', ')}.`
         }
-        return 'Syncing code hosts.'
+        return 'Syncing.'
     }
 
     return (
@@ -308,7 +308,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             >
                                 Manage Repositories
                             </Link>
-                        ) : isUserMode ? (
+                        ) : isUserOwner ? (
                             <Link
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/repositories/manage`}

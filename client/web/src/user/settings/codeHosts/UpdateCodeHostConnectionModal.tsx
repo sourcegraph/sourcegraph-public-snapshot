@@ -2,37 +2,35 @@ import Dialog from '@reach/dialog'
 import ShieldCheckIcon from 'mdi-react/ShieldCheckIcon'
 import React, { useState, useCallback } from 'react'
 
-import { Form } from '@sourcegraph/branded/src/components/Form'
-import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
-
-import { addExternalService } from '../../../components/externalServices/backend'
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { Form } from '../../../../../branded/src/components/Form'
+import { asError, ErrorLike } from '../../../../../shared/src/util/errors'
+import { updateExternalService } from '../../../components/externalServices/backend'
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { eventLogger } from '../../../tracking/eventLogger'
 
 interface CodeHostConfig {
     url: string
     token: string
 }
 
-const getServiceConfig = (kind: ExternalServiceKind, token: string): string => {
-    const { defaultConfig } = defaultExternalServices[kind]
-    const config = JSON.parse(defaultConfig) as CodeHostConfig
-    config.token = token
-    return JSON.stringify(config, null, 2)
+const updateConfigToken = (config: string, token: string): string => {
+    const updatedConfig = JSON.parse(config) as CodeHostConfig
+    updatedConfig.token = token
+    return JSON.stringify(updatedConfig, null, 2)
 }
 
-export const AddCodeHostConnectionModal: React.FunctionComponent<{
-    ownerID: Scalars['ID']
+export const UpdateCodeHostConnectionModal: React.FunctionComponent<{
+    serviceID: Scalars['ID']
+    serviceConfig: string
     serviceName: string
-    serviceKind: ExternalServiceKind
-    onDidAdd: (service: ListExternalServiceFields) => void
+    orgName: string
+    kind: ExternalServiceKind
+    onDidUpdate: (service: ListExternalServiceFields) => void
     onDidCancel: () => void
     onDidError: (error: ErrorLike) => void
 
     hintFragment?: React.ReactFragment
-}> = ({ ownerID, serviceName, serviceKind, hintFragment, onDidAdd, onDidCancel, onDidError }) => {
+}> = ({ serviceID, serviceConfig, serviceName, hintFragment, onDidUpdate, onDidCancel, onDidError }) => {
     const [token, setToken] = useState<string>('')
     const [isLoading, setIsLoading] = useState(false)
 
@@ -54,32 +52,31 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
 
             try {
                 if (token) {
-                    const config = getServiceConfig(serviceKind, token)
+                    const config = updateConfigToken(serviceConfig, token)
 
-                    const { webhookURL, ...newService } = await addExternalService(
-                        { input: { kind: serviceKind, config, displayName: serviceName, namespace: ownerID } },
-                        eventLogger
-                    )
+                    const { webhookURL, ...newService } = await updateExternalService({
+                        input: { id: serviceID, config },
+                    })
 
-                    onDidAdd(newService)
+                    onDidUpdate(newService)
                     onDidCancel()
                 }
             } catch (error) {
                 handleError(error)
             }
         },
-        [ownerID, token, serviceKind, serviceName, onDidCancel, handleError, onDidAdd]
+        [serviceConfig, serviceID, token, onDidCancel, handleError, onDidUpdate]
     )
 
     return (
         <Dialog
-            className="modal-body modal-body--top-third user-code-hosts-page__modal--plain p-4 rounded border"
-            aria-labelledby={`heading--connect-with-${serviceName}`}
+            className="modal-body modal-body--top-third p-4 rounded border"
+            aria-labelledby={`heading--update-${serviceName}-code-host`}
             onDismiss={onDidCancel}
         >
             <div className="web-content">
-                <h3 id={`heading--connect-with-${serviceName}`} className="mb-4">
-                    Connect with {serviceName}
+                <h3 id={`heading--update-${serviceName}-code-host`} className="mb-4">
+                    Update {serviceName} token
                 </h3>
                 <Form onSubmit={onTokenSubmit}>
                     <div className="form-group mb-4">
@@ -94,12 +91,10 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                                 className="form-control pr-4"
                                 autoComplete="off"
                             />
-                            <small>
-                                <ShieldCheckIcon
-                                    className="icon-inline user-code-hosts-page__icon--inside text-muted"
-                                    data-tooltip="Data will be encrypted and will not be visible again."
-                                />
-                            </small>
+                            <ShieldCheckIcon
+                                className="icon-inline user-code-hosts-page__icon--inside text-muted"
+                                data-tooltip="Data will be encrypted and will not be visible again."
+                            />
                         </div>
 
                         <p className="mt-1">{hintFragment}</p>
@@ -113,7 +108,7 @@ export const AddCodeHostConnectionModal: React.FunctionComponent<{
                             className="btn btn-primary"
                             loading={isLoading}
                             disabled={!token || isLoading}
-                            label="Add code host connection"
+                            label="Update token"
                             alwaysShowLabel={true}
                         />
                     </div>

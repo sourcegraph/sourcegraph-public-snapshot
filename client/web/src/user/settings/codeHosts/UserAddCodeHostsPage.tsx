@@ -71,6 +71,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
+    const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
+    const toggleUpdateModal = useCallback(() => {
+        setIssUpdateModalOpen(!isUpdateModalOpen)
+    }, [isUpdateModalOpen])
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
@@ -106,6 +110,15 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
     }, [owner.id, onUserExternalServicesOrRepositoriesUpdate])
+
+    const handleServiceUpsert = useCallback(
+        (service: ListExternalServiceFields): void => {
+            if (isServicesByKind(statusOrError)) {
+                setStatusOrError({ ...statusOrError, [service.kind]: service })
+            }
+        },
+        [statusOrError]
+    )
 
     const removeService = (kind: ExternalServiceKind) => (): void => {
         if (
@@ -296,6 +309,9 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                                         isTokenUpdateRequired={isTokenUpdateRequired[kind]}
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
+                                        isUpdateModalOpen={isUpdateModalOpen}
+                                        toggleUpdateModal={toggleUpdateModal}
+                                        onDidUpsert={handleServiceUpsert}
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}

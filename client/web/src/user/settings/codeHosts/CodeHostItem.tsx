@@ -12,6 +12,7 @@ import { Owner } from '../cloud-ga'
 import { AddCodeHostConnectionModal } from './AddCodeHostConnectionModal'
 import { hints } from './modalHints'
 import { RemoveCodeHostConnectionModal } from './RemoveCodeHostConnectionModal'
+import { UpdateCodeHostConnectionModal } from './UpdateCodeHostConnectionModal'
 import { ifNotNavigated } from './UserAddCodeHostsPage'
 
 interface CodeHostItemProps {
@@ -23,7 +24,9 @@ interface CodeHostItemProps {
     isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
-
+    isUpdateModalOpen: boolean
+    toggleUpdateModal: () => void
+    onDidUpsert: (service: ListExternalServiceFields) => void
     onDidAdd?: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
@@ -40,6 +43,9 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
     onDidRemove,
     onDidError,
     onDidAdd,
+    isUpdateModalOpen,
+    toggleUpdateModal,
+    onDidUpsert,
 }) => {
     const [isAddConnectionModalOpen, setIsAddConnectionModalOpen] = useState(false)
     const toggleAddConnectionModal = useCallback(() => setIsAddConnectionModalOpen(!isAddConnectionModalOpen), [
@@ -62,15 +68,17 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
         navigateToAuthProvider(kind)
     }, [kind, navigateToAuthProvider])
 
-    const connectAction = owner.type === 'user' ? toAuthProvider : toggleAddConnectionModal
+    const isUserOwner = owner.type === 'user'
+    const connectAction = isUserOwner ? toAuthProvider : toggleAddConnectionModal
+    const updateAction = isUserOwner ? toAuthProvider : toggleUpdateModal
 
     return (
         <div className="d-flex align-items-start">
             {onDidAdd && isAddConnectionModalOpen && (
                 <AddCodeHostConnectionModal
                     ownerID={owner.id}
-                    kind={kind}
-                    name={name}
+                    serviceKind={kind}
+                    serviceName={name}
                     hintFragment={hints[kind]}
                     onDidAdd={onDidAdd}
                     onDidCancel={toggleAddConnectionModal}
@@ -82,10 +90,23 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     serviceID={service.id}
                     serviceName={name}
                     serviceKind={kind}
-                    orgName={owner.name}
+                    orgName={owner.name || 'organization'}
                     repoCount={service.repoCount}
                     onDidRemove={onDidRemove}
                     onDidCancel={toggleRemoveConnectionModal}
+                    onDidError={onDidError}
+                />
+            )}
+            {service && isUpdateModalOpen && (
+                <UpdateCodeHostConnectionModal
+                    serviceID={service.id}
+                    serviceConfig={service.config}
+                    serviceName={service.displayName}
+                    orgName={owner.name || 'organization'}
+                    kind={kind}
+                    hintFragment={hints[kind]}
+                    onDidCancel={toggleUpdateModal}
+                    onDidUpdate={onDidUpsert}
                     onDidError={onDidError}
                 />
             )}
@@ -142,7 +163,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button type="button" className="btn btn-merged" onClick={toAuthProvider}>
+                        <button type="button" className="btn btn-merged" onClick={updateAction}>
                             Update
                         </button>
                     ))

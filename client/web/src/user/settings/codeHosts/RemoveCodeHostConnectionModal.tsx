@@ -8,9 +8,6 @@ import { deleteExternalService } from '../../../components/externalServices/back
 import { LoaderButton } from '../../../components/LoaderButton'
 import { Scalars, ExternalServiceKind } from '../../../graphql-operations'
 
-// There are 231 repositories synced to Sourcegraph by Acmecorp from GitHub.
-// If the connection with GitHub is removed, these repositories will no longer be synced and members of Acmecorp will no longer be able to search across these repositories on Sourcegraph.
-
 const getWarningMessage = (serviceName: string, orgName: string, repoCount: number | undefined): string => {
     const membersWillNoLongerSearchAcross = `will no longer be synced and members of ${orgName} will no longer be able to search across`
     const willNotBeSynced = `${membersWillNoLongerSearchAcross} these repositories on Sourcegraph.`
