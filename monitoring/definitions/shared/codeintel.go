@@ -293,14 +293,14 @@ func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName
 		Rows: []monitoring.Row{
 			{
 				Standard.Count("wait")(ObservableConstructorOptions{
-					MetricNameRoot:        "executor_run_lock_wait_total",
+					MetricNameRoot:        "executor_run_lock_wait",
 					MetricDescriptionRoot: "milliseconds",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of milliseconds spent waiting for the run lock every 5m
 				`).Observable(),
 
 				Standard.Count("held")(ObservableConstructorOptions{
-					MetricNameRoot:        "executor_run_lock_held_total",
+					MetricNameRoot:        "executor_run_lock_held",
 					MetricDescriptionRoot: "milliseconds",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of milliseconds spent holding for the run lock every 5m

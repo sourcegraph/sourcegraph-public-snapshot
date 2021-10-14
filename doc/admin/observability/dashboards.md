@@ -11837,7 +11837,7 @@ Query: `sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}"
 
 ### Executor: Run lock contention
 
-#### executor: executor_run_lock_wait_total_total
+#### executor: executor_run_lock_wait_total
 
 <p class="subtitle">Milliseconds wait every 5m</p>
 
@@ -11852,13 +11852,13 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100200`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_run_lock_wait_total_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
+Query: `sum(increase(src_executor_run_lock_wait_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
 <br />
 
-#### executor: executor_run_lock_held_total_total
+#### executor: executor_run_lock_held_total
 
 <p class="subtitle">Milliseconds held every 5m</p>
 
@@ -11873,7 +11873,7 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100201`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_executor_run_lock_held_total_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
+Query: `sum(increase(src_executor_run_lock_held_total{job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m]))`
 
 </details>
 
