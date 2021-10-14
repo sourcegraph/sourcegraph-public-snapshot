@@ -598,8 +598,9 @@ func textSearchVector(s string) string {
 	//
 	//     lexeme1:1 lexeme2:2 lexeme3:3
 	//
-	var pairs []string
-	for i, lexeme := range lexemes(s) {
+	lexemes := lexemes(s)
+	pairs := make([]string, 0, len(lexemes))
+	for i, lexeme := range lexemes {
 		pairs = append(pairs, fmt.Sprintf("%s:%v", lexeme, i+1))
 	}
 	return strings.Join(pairs, " ")
