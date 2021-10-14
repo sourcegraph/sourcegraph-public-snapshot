@@ -22,13 +22,20 @@ import { NamespaceProps } from '../../namespaces'
 import { PatternTypeProps, OnboardingTourProps } from '../../search'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { RouteDescriptor } from '../../util/contributions'
-import { EditUserProfilePageGQLFragment } from '../settings/profile/UserSettingsProfilePage'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 
 import { UserAreaHeader, UserAreaHeaderNavItem } from './UserAreaHeader'
 
-/** GraphQL fragment for the User fields needed by UserArea. */
+/**
+ * GraphQL fragment for the User fields needed by UserArea.
+ *
+ * These fields must be publicly available on the User, as there are features
+ * that require ordinary users to access pages within the user area for another
+ * user, most notably Batch Changes. User area components that wish to access
+ * privileged fields must do so in another query, as is done in
+ * UserSettingsArea.
+ */
 export const UserAreaGQLFragment = gql`
     fragment UserAreaUserFields on User {
         __typename
@@ -39,24 +46,9 @@ export const UserAreaGQLFragment = gql`
         settingsURL
         avatarURL
         viewerCanAdminister
-        siteAdmin @include(if: $siteAdmin)
         builtinAuth
-        createdAt
-        emails @include(if: $siteAdmin) {
-            email
-            verified
-        }
-        organizations {
-            nodes {
-                id
-                displayName
-                name
-            }
-        }
         tags @include(if: $siteAdmin)
-        ...EditUserProfilePage
     }
-    ${EditUserProfilePageGQLFragment}
 `
 
 export const USER_AREA_USER_PROFILE = gql`

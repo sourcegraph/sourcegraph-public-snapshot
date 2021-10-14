@@ -336,3 +336,139 @@ func TestUpdateUser(t *testing.T) {
 		})
 	})
 }
+
+func TestUser_Organizations(t *testing.T) {
+	resetMocks()
+
+	// Set up a mock set of users, consisting of two regular users and one site
+	// admin.
+	getUserByID := func(_ context.Context, id int32) (*types.User, error) {
+		knownUsers := map[int32]*types.User{
+			1: {ID: 1, Username: "alice"},
+			2: {ID: 2, Username: "bob"},
+			3: {ID: 3, Username: "carol", SiteAdmin: true},
+		}
+
+		if user := knownUsers[id]; user != nil {
+			return user, nil
+		}
+
+		t.Errorf("unknown mock user: got ID %q", id)
+		return nil, errors.New("unreachable")
+	}
+
+	database.Mocks.Users.GetByID = getUserByID
+
+	database.Mocks.Users.GetByUsername = func(_ context.Context, username string) (*types.User, error) {
+		if want := "alice"; username != want {
+			t.Errorf("got %q, want %q", username, want)
+		}
+		return &types.User{ID: 1, Username: "alice"}, nil
+	}
+
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return getUserByID(ctx, actor.FromContext(ctx).UID)
+	}
+
+	database.Mocks.Orgs.GetByUserID = func(_ context.Context, userID int32) ([]*types.Org, error) {
+		if want := int32(1); userID != want {
+			t.Errorf("got %q, want %q", userID, want)
+		}
+		return []*types.Org{
+			{
+				ID:   1,
+				Name: "org",
+			},
+		}, nil
+	}
+
+	expectOrgFailure := func(t *testing.T, actorUID int32) {
+		t.Helper()
+		wantErr := "must be authenticated as the authorized user or as an admin (must be site admin)"
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),
+				Schema:  mustParseGraphQLSchema(t),
+				Query: `
+					{
+						user(username: "alice") {
+							username
+							organizations {
+								totalCount
+							}
+						}
+					}
+				`,
+				ExpectedResult: `{"user": null}`,
+				ExpectedErrors: []*gqlerrors.QueryError{
+					{
+						Path:          []interface{}{"user", "organizations"},
+						Message:       wantErr,
+						ResolverError: errors.New(wantErr),
+					},
+				}},
+		})
+	}
+
+	expectOrgSuccess := func(t *testing.T, actorUID int32) {
+		t.Helper()
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),
+				Schema:  mustParseGraphQLSchema(t),
+				Query: `
+					{
+						user(username: "alice") {
+							username
+							organizations {
+								totalCount
+							}
+						}
+					}
+				`,
+				ExpectedResult: `
+					{
+						"user": {
+							"username": "alice",
+							"organizations": {
+								"totalCount": 1
+							}
+						}
+					}
+				`,
+			},
+		})
+	}
+
+	t.Run("on Sourcegraph.com", func(t *testing.T) {
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(orig) })
+
+		t.Run("same user", func(t *testing.T) {
+			expectOrgSuccess(t, 1)
+		})
+
+		t.Run("different user", func(t *testing.T) {
+			expectOrgFailure(t, 2)
+		})
+
+		t.Run("site admin", func(t *testing.T) {
+			expectOrgSuccess(t, 3)
+		})
+	})
+
+	t.Run("on non-Sourcegraph.com", func(t *testing.T) {
+		t.Run("same user", func(t *testing.T) {
+			expectOrgSuccess(t, 1)
+		})
+
+		t.Run("different user", func(t *testing.T) {
+			expectOrgFailure(t, 2)
+		})
+
+		t.Run("site admin", func(t *testing.T) {
+			expectOrgSuccess(t, 3)
+		})
+	})
+}

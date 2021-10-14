@@ -152,7 +152,7 @@ const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
     __typename: 'CodeIntelligenceConfigurationPolicy',
     id: '',
     name: '',
-    type: GitObjectType.GIT_COMMIT,
+    type: GitObjectType.GIT_UNKNOWN,
     pattern: '',
     protected: false,
     retentionEnabled: false,
