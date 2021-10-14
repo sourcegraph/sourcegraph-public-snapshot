@@ -283,16 +283,16 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 }
 
 type ListOrgRepositoriesArgs struct {
-	First             *int32
-	Query             *string
-	After             *string
-	Cloned            bool
-	NotCloned         bool
-	Indexed           bool
-	NotIndexed        bool
+	First              *int32
+	Query              *string
+	After              *string
+	Cloned             bool
+	NotCloned          bool
+	Indexed            bool
+	NotIndexed         bool
 	ExternalServiceIDs *[]*graphql.ID
-	OrderBy           *string
-	Descending        bool
+	OrderBy            *string
+	Descending         bool
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {

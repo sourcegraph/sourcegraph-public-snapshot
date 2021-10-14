@@ -305,9 +305,9 @@ func TestRepos_orgMemberCanViewOrgCode(t *testing.T) {
 		return &conf.Unified{}
 	}
 	orgExternalService := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "GITHUB #1",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
 		NamespaceOrgID: org.ID,
 	}
 	err = ExternalServices(db).Create(ctx, confGet, orgExternalService)

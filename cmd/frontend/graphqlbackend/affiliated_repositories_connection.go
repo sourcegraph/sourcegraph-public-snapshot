@@ -45,7 +45,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 		if a.codeHost == 0 {
 			svcs, err = database.ExternalServices(a.db).List(ctx, database.ExternalServicesListOptions{
 				NamespaceUserID: a.userID,
-				NamespaceOrgID: a.orgID,
+				NamespaceOrgID:  a.orgID,
 			})
 			if err != nil {
 				a.err = err

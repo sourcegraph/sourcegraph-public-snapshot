@@ -484,11 +484,11 @@ func TestRepos_ListRepoNames_orgID(t *testing.T) {
 
 	// Create an external service
 	service := types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - Test",
-		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
-		CreatedAt:       now,
-		UpdatedAt:       now,
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "Github - Test",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 		NamespaceOrgID: org.ID,
 	}
 	confGet := func() *conf.Unified {
