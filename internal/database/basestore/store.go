@@ -153,11 +153,20 @@ func (s *Store) wrapError(query *sqlf.Query, err error) error {
 	// in tests, return a wrapped error that includes the query information
 	var b strings.Builder
 
-	for i, arg := range query.Args() {
+	args := query.Args()
+	if len(args) > 50 {
+		args = args[:50]
+	}
+
+	for i, arg := range args {
 		if i > 0 {
 			b.WriteString(", ")
 		}
 		fmt.Fprintf(&b, "%v", arg)
+	}
+
+	if len(args) < len(query.Args()) {
+		fmt.Fprintf(&b, ", ... (%d other arguments)", len(query.Args())-len(args))
 	}
 
 	return errors.Wrap(err, fmt.Sprintf("SQL Error\n----- Args: %#v\n----- SQL Query:\n%s\n-----\n", b.String(), query.Query(sqlf.PostgresBindVar)))
