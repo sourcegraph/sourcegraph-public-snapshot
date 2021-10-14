@@ -1616,7 +1616,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
 		addCommitSearch := func(diff bool) {
 			j, err := commit.NewSearchJob(args.Query, args.Repos, diff, int(args.PatternInfo.FileMatchLimit))
 			if err != nil {
