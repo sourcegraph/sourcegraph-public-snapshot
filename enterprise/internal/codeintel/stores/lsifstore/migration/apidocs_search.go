@@ -20,13 +20,13 @@ import (
 )
 
 // APIDocsSearchMigrationID is the primary key of the migration record handled by an instance of
-// apiDocsSearchMigrator. This populates the new lsif_data_documentation_search_* tables using data
+// apiDocsSearchMigrator. This populates the new lsif_data_docs_search_* tables using data
 // decoded from other tables. This is associated with the out-of-band migration record inserted in
 // migrations/frontend/1528395874_oob_lsif_data_documentation_search.up.sql.
 const APIDocsSearchMigrationID = 12
 
 // NewAPIDocsSearchMigrator creates a new Migrator instance that reads records from the lsif_data_documentation_pages
-// table, decodes the GOB payloads, and populates the new lsif_data_documentation_search_* tables with
+// table, decodes the GOB payloads, and populates the new lsif_data_docs_search_* tables with
 // the information needed to search API docs.
 func NewAPIDocsSearchMigrator(
 	store *lsifstore.Store,
@@ -119,7 +119,7 @@ LIMIT %s
 `
 
 // processUpload indexes all of the API documentation for the given dump ID by decoding the information
-// in lsif_data_documentation_pages and inserting into the new lsif_data_documentation_search_* tables.
+// in lsif_data_documentation_pages and inserting into the new lsif_data_docs_search_* tables.
 func (m *apiDocsSearchMigrator) processUpload(ctx context.Context, uploadID int) error {
 	upload, exists, err := m.dbStore.GetUploadByID(ctx, uploadID)
 	if err != nil {
