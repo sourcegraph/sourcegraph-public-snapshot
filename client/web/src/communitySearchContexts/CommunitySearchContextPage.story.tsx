@@ -130,7 +130,6 @@ const commonProps = () =>
         communitySearchContextMetadata: temporal,
         globbing: false,
         showOnboardingTour: false,
-        showQueryBuilder: false,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
         hasUserAddedRepositories: false,

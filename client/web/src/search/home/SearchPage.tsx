@@ -15,7 +15,6 @@ import {
     CaseSensitivityProps,
     OnboardingTourProps,
     HomePanelsProps,
-    ShowQueryBuilderProps,
     ParsedSearchQueryProps,
     SearchContextInputProps,
 } from '..'
@@ -49,7 +48,6 @@ export interface SearchPageProps
         SearchContextInputProps,
         OnboardingTourProps,
         HomePanelsProps,
-        ShowQueryBuilderProps,
         CodeInsightsProps,
         FeatureFlagProps {
     authenticatedUser: AuthenticatedUser | null
