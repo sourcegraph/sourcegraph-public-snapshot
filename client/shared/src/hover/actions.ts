@@ -83,8 +83,9 @@ export const getHoverActionItems = (
         switchMap(extensionHostAPI =>
             wrapRemoteObservable(extensionHostAPI.getContributions({ extraContext: context }))
         ),
-        first(),
-        map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover))
+        map(contributions => getContributedActionItems(contributions, ContributableMenu.Hover)),
+        // Only emit when hover actions change
+        distinctUntilChanged((a, b) => isEqual(a, b))
     )
 
 /**

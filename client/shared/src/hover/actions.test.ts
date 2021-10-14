@@ -576,7 +576,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
         it('shows goToDefinition (non-preloaded) when the definition had an error', () =>
@@ -591,7 +593,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION]))
 
         it('hides goToDefinition when the definition was not found', () =>
@@ -606,7 +610,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([]))
 
         it('shows goToDefinition.preloaded when goToDefinition.url is available', () =>
@@ -621,7 +627,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION]))
 
         it('shows findReferences when the definition exists', () =>
@@ -636,7 +644,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_PRELOADED_ACTION, FIND_REFERENCES_ACTION]))
 
         it('hides findReferences when the definition might exist (and is still loading)', () =>
@@ -651,7 +661,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
         it('shows findReferences when the definition had an error', () =>
@@ -666,7 +678,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([GO_TO_DEFINITION_ACTION, FIND_REFERENCES_ACTION]))
 
         it('does not show findReferences when the definition was not found', () =>
@@ -681,7 +695,9 @@ describe('registerHoverContributions()', () => {
                         hoverPosition: FIXTURE_PARAMS,
                     },
                     extensionHostAPI
-                ).toPromise()
+                )
+                    .pipe(first())
+                    .toPromise()
             ).resolves.toEqual([]))
     })
 
