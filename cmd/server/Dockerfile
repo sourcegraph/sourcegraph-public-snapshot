@@ -50,7 +50,7 @@ RUN apk update && apk add --no-cache --verbose \
 
 # This is installed separately due to the upstream edge repo requirement
 RUN apk update && apk add --no-cache --verbose \
-    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
+    'python3>=3.9.5' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.14/main
 
 # IMPORTANT: If you update the syntect_server version below, you MUST confirm
 # the ENV variables from its Dockerfile (https://github.com/sourcegraph/syntect_server/blob/master/Dockerfile)
