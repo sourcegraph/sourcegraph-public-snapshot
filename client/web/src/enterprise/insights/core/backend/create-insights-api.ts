@@ -15,6 +15,7 @@ import { findInsightById } from '../../hooks/use-insight/use-insight'
 import { createSanitizedDashboard } from '../../pages/dashboards/creation/utils/dashboard-sanitizer'
 import { getReachableInsights } from '../../pages/dashboards/dashboard-page/components/add-insight-modal/hooks/get-reachable-insights'
 import { findDashboardByUrlId } from '../../pages/dashboards/dashboard-page/components/dashboards-content/utils/find-dashboard-by-url-id'
+import { getUpdatedSubjectSettings } from '../../pages/insights/edit-insight/hooks/use-update-settings-subjects/get-updated-subject-settings'
 import {
     addDashboardToSettings,
     addInsightToDashboard,
@@ -26,7 +27,6 @@ import { addInsightToSettings } from '../settings-action/insights'
 import {
     Insight,
     InsightDashboard,
-    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightTypePrefix,
     isVirtualDashboard,
     SettingsBasedInsightDashboard,
@@ -52,8 +52,6 @@ import {
     UpdateDashboardInput,
     UpdateInsightRequest,
 } from './types'
-import { usePersistEditOperations } from '../../hooks/use-persist-edit-operations'
-import { getUpdatedSubjectSettings } from '../../pages/insights/edit-insight/hooks/use-update-settings-subjects/get-updated-subject-settings'
 
 const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
     const dashboardSettingKey =
@@ -186,7 +184,9 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
         const { dashboard, insightName, originalInsight, filters } = inputs
 
         // Get id of insight setting subject (owner of it insight)
-        const subjectId = isVirtualDashboard(dashboard) ? originalInsight.visibility : dashboard.owner.id
+        const subjectId = isVirtualDashboard(dashboard)
+            ? originalInsight.visibility
+            : dashboard.owner.id
 
         // Create new insight by name and last valid filters value
         const newInsight: SearchBackendBasedInsight = {
@@ -333,20 +333,12 @@ export class CodeInsightsSettingBasedBackend implements CodeInsightsBackend {
     }
 
     public findInsightByName(title: string, type: InsightTypePrefix): Observable<Insight | null> {
-        return of(this.settingCascade).pipe(
-            switchMap(settingCascade => {
-                const finalSettings = !isErrorLike(settingCascade.final) ? settingCascade.final ?? {} : {}
-                const normalizedSettingsKeys = Object.keys(finalSettings)
-                const normalizedInsightAllReposKeys = Object.keys(
-                    finalSettings?.[INSIGHTS_ALL_REPOS_SETTINGS_KEY] ?? {}
-                )
 
-                const existingInsightNames = new Set(
-                    [...normalizedSettingsKeys, ...normalizedInsightAllReposKeys]
-                        // According to our convention about insights name <insight type>.insight.<insight name>
-                        .filter(key => key.startsWith(`${type}`))
-                        .map(key => camelCase(key.split(`${type}.`).pop()))
-                )
+        return this.getInsights().pipe(
+            switchMap(insights => {
+                const possibleInsight = insights.find(insight => insight.title === title)
+
+                return of(possibleInsight ?? null)
             })
         )
     }
@@ -404,4 +396,9 @@ export class CodeInsightsFakeBackend implements CodeInsightsBackend {
     public deleteInsight = errorMockMethod('deleteInsight')
     public getDashboardById = errorMockMethod('getDashboardById')
     public createInsight = errorMockMethod('createInsight')
+    public getInsightById = errorMockMethod('getInsightById')
+    public findInsightByName = errorMockMethod('findInsightByName')
+    public updateInsight = errorMockMethod('updateInsight')
+
+    public isCodeInsightsEnabled = errorMockMethod('isCodeInsightsEnabled')
 }

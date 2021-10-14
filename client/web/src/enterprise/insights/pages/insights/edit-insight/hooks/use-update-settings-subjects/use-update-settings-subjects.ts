@@ -1,7 +1,5 @@
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../../../../../schema/settings.schema'
 import { Insight } from '../../../../../core/types'
 import { usePersistEditOperations } from '../../../../../hooks/use-persist-edit-operations'
 

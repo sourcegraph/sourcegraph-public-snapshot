@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react'
-import { EMPTY, from } from 'rxjs'
+import React, { useContext, useMemo } from 'react'
+import { from } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -10,44 +10,70 @@ import { ExtensionViewsSectionCommonProps } from '../../../insights/sections/typ
 import { isCodeInsightsEnabled } from '../../../insights/utils/is-code-insights-enabled'
 import { StaticView, ViewGrid } from '../../../views'
 import { SmartInsight } from '../components/insights-view-grid/components/smart-insight/SmartInsight'
-import { useAllInsights } from '../hooks/use-insight/use-insight'
+import { InsightsApiContext } from '../core/backend/api-provider';
+import { CodeInsightsSettingBasedBackend } from '../core/backend/create-insights-api';
+import { Insight } from '../core/types';
 
 export interface ExtensionViewsHomepageSectionProps extends ExtensionViewsSectionCommonProps {
     where: 'homepage'
 }
 
 const EMPTY_EXTENSION_LIST: ViewProviderResult[] = []
+const EMPTY_INSIGHT_LIST: Insight[] = []
 
 /**
  * Renders extension views section for the home (search) page. Note that this component is used only for
  * Enterprise version. For Sourcegraph OSS see `./enterprise/insights/sections` components.
  */
 export const ExtensionViewsHomepageSection: React.FunctionComponent<ExtensionViewsHomepageSectionProps> = props => {
-    const { telemetryService, extensionsController, className = '' } = props
+    const { platformContext, telemetryService, extensionsController, settingsCascade, className = '' } = props
+
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { homepage: true })
 
+    const api = useMemo(() => {
+        console.log('recreate api context')
+
+        return new CodeInsightsSettingBasedBackend(settingsCascade, platformContext)
+    }, [platformContext, settingsCascade])
+
+    if (!showCodeInsights) {
+        return null
+    }
+
+    return (
+        <InsightsApiContext.Provider value={api}>
+
+            <ExtensionViewsHomepageSectionContent
+                settingsCascade={settingsCascade}
+                platformContext={platformContext}
+                telemetryService={telemetryService}
+                extensionsController={extensionsController}
+                className={className}/>
+        </InsightsApiContext.Provider>
+
+    )
+}
+
+const ExtensionViewsHomepageSectionContent: React.FunctionComponent<ExtensionViewsSectionCommonProps> = props => {
+    const { extensionsController, telemetryService, className } = props
+    const { getInsights } = useContext(InsightsApiContext)
+
     // Read insights from the setting cascade
-    const insights = useAllInsights({ settingsCascade })
+    const insights = useObservable(useMemo(() => getInsights(), [getInsights])) ?? EMPTY_INSIGHT_LIST
 
     // Pull extension views by Extension API.
     const extensionViews =
         useObservable(
             useMemo(
                 () =>
-                    showCodeInsights
-                        ? from(extensionsController.extHostAPI).pipe(
-                              switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getHomepageViews({})))
-                          )
-                        : EMPTY,
-                [showCodeInsights, extensionsController]
+                    from(extensionsController.extHostAPI).pipe(
+                        switchMap(extensionHostAPI => wrapRemoteObservable(extensionHostAPI.getHomepageViews({})))
+                    ),
+                [extensionsController]
             )
         ) ?? EMPTY_EXTENSION_LIST
 
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
-
-    if (!showCodeInsights) {
-        return null
-    }
 
     return (
         <ViewGrid viewIds={allViewIds} telemetryService={telemetryService} className={className}>

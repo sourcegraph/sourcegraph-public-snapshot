@@ -60,9 +60,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
                 <Route path={`${match.url}/create`}>
                     <CreationRoutes
-                        platformContext={platformContext}
                         authenticatedUser={authenticatedUser}
-                        settingsCascade={settingsCascade}
                         telemetryService={telemetryService}
                     />
                 </Route>
@@ -71,9 +69,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                     path={`${match.url}/edit/:insightID`}
                     render={(props: RouteComponentProps<{ insightID: string }>) => (
                         <EditInsightLazyPage
-                            platformContext={platformContext}
                             authenticatedUser={authenticatedUser}
-                            settingsCascade={settingsCascade}
                             insightID={props.match.params.insightID}
                         />
                     )}

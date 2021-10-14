@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useContext, useMemo } from 'react'
 import { EMPTY, from } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
@@ -10,7 +10,9 @@ import { ExtensionViewsSectionCommonProps } from '../../../insights/sections/typ
 import { isCodeInsightsEnabled } from '../../../insights/utils/is-code-insights-enabled'
 import { StaticView, ViewGrid } from '../../../views'
 import { SmartInsight } from '../components/insights-view-grid/components/smart-insight/SmartInsight'
-import { useAllInsights } from '../hooks/use-insight/use-insight'
+import { InsightsApiContext } from '../core/backend/api-provider';
+import { CodeInsightsSettingBasedBackend } from '../core/backend/create-insights-api';
+import { Insight } from '../core/types';
 
 export interface ExtensionViewsDirectorySectionProps extends ExtensionViewsSectionCommonProps {
     where: 'directory'
@@ -24,9 +26,41 @@ const EMPTY_EXTENSION_LIST: ViewProviderResult[] = []
  * Enterprise version. For Sourcegraph OSS see `./src/insights/sections` components.
  */
 export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionViewsDirectorySectionProps> = props => {
-    const { extensionsController, uri, className = '' } = props
+    const { platformContext, settingsCascade, extensionsController, uri, telemetryService, className = '' } = props
 
     const showCodeInsights = isCodeInsightsEnabled(settingsCascade, { directory: true })
+
+    const api = useMemo(() => {
+        console.log('recreate api context')
+
+        return new CodeInsightsSettingBasedBackend(settingsCascade, platformContext)
+    }, [platformContext, settingsCascade])
+
+    if (!showCodeInsights) {
+        return null
+    }
+
+    return (
+        <InsightsApiContext.Provider value={api}>
+            <ExtensionViewsDirectorySectionContent
+                where='directory'
+                uri={uri}
+                extensionsController={extensionsController}
+                platformContext={platformContext}
+                settingsCascade={settingsCascade}
+                telemetryService={telemetryService}
+                className={className}
+            />
+        </InsightsApiContext.Provider>
+    )
+}
+
+const EMPTY_INSIGHT_LIST: Insight[] = []
+
+const ExtensionViewsDirectorySectionContent: React.FunctionComponent<ExtensionViewsDirectorySectionProps> = props => {
+    const { extensionsController, uri, className } = props
+
+    const { getInsights } = useContext(InsightsApiContext)
 
     const workspaceUri = useObservable(
         useMemo(
@@ -56,35 +90,39 @@ export const ExtensionViewsDirectorySection: React.FunctionComponent<ExtensionVi
     )
 
     // Read code insights views from the settings cascade
-    const insights = useAllInsights({ settingsCascade })
+    const insights = useObservable(useMemo(
+        () => getInsights(),
+        [getInsights]
+        )
+    ) ?? EMPTY_INSIGHT_LIST
 
     // Pull extension views with Extension API
     const extensionViews =
         useObservable(
             useMemo(
                 () =>
-                    showCodeInsights && workspaceUri
-                        ? from(props.extensionsController.extHostAPI).pipe(
-                              switchMap(extensionHostAPI =>
-                                  wrapRemoteObservable(
-                                      extensionHostAPI.getDirectoryViews({
-                                          viewer: {
-                                              type: 'DirectoryViewer',
-                                              directory: { uri },
-                                          },
-                                          workspace: { uri: workspaceUri },
-                                      })
-                                  )
-                              )
-                          )
+                    workspaceUri
+                        ? from(extensionsController.extHostAPI).pipe(
+                            switchMap(extensionHostAPI =>
+                                wrapRemoteObservable(
+                                    extensionHostAPI.getDirectoryViews({
+                                        viewer: {
+                                            type: 'DirectoryViewer',
+                                            directory: { uri },
+                                        },
+                                        workspace: { uri: workspaceUri },
+                                    })
+                                )
+                            )
+                        )
                         : EMPTY,
-                [showCodeInsights, workspaceUri, uri, props.extensionsController]
+                [workspaceUri, uri, extensionsController]
             )
         ) ?? EMPTY_EXTENSION_LIST
 
     const allViewIds = useMemo(() => [...extensionViews, ...insights].map(view => view.id), [extensionViews, insights])
 
-    if (!showCodeInsights || !directoryPageContext) {
+    if (!directoryPageContext) {
         return null
     }
 
