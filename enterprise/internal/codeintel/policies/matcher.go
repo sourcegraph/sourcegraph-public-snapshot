@@ -154,7 +154,7 @@ func (m *Matcher) resolveBranchReference(context matcherContext, commit string, 
 		})
 
 		// If we include intermediate commits for this policy, we need to query the
-		// set of comits that belong to any branch matching this policy's pattern.
+		// set of commits that belong to any branch matching this policy's pattern.
 		// We store this information in the branchRequests map so that we perform a
 		// query for each matching branch only once later.
 		if policyDuration, includeIntermediateCommits := m.extractor(policy); includeIntermediateCommits {
