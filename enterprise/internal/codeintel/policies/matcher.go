@@ -149,7 +149,7 @@ func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refD
 
 // matchBranchHeads determines if the given commit (described by the branch-type ref given description) matches any branch-type
 // policies. For each match, a commit/policy pair will be added to the given context. This method also adds matches for the tip
-// of the default branch (if configured to do so), and adds bookkeeping metdata to the context's branchRequests field when a
+// of the default branch (if configured to do so), and adds bookkeeping metadata to the context's branchRequests field when a
 // matching policy's intermediate commits should be checked.
 func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
 	if refDescription.IsDefaultBranch && m.includeTipOfDefaultBranch {
