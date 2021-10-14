@@ -45,7 +45,7 @@ var Repos = &repos{
 }
 
 type repos struct {
-	store database.IRepoStore
+	store database.RepoStore
 	cache *dbcache.IndexableReposLister
 }
 
