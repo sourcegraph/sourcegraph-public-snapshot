@@ -27,7 +27,7 @@ type userEmails struct{}
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason string, err error) {
+func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bool, reason string, err error) {
 	if conf.EmailVerificationRequired() {
 		emails, err := database.GlobalUserEmails.ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: userID,
@@ -73,7 +73,7 @@ func checkEmailAbuse(ctx context.Context, userID int32) (abused bool, reason str
 		// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
 		// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
 		// the name).
-		if ok, err := database.GlobalUsers.CheckAndDecrementInviteQuota(ctx, userID); err != nil {
+		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, userID); err != nil {
 			return false, "", err
 		} else if !ok {
 			return true, "email address quota exceeded (contact support to increase the quota)", nil
@@ -93,7 +93,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
-		abused, reason, err := checkEmailAbuse(ctx, userID)
+		abused, reason, err := checkEmailAbuse(ctx, db, userID)
 		if err != nil {
 			return err
 		} else if abused {
@@ -115,7 +115,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 	// user that another user has already verified it, to avoid needlessly leaking the existence
 	// of emails.
 	var emailAlreadyExistsAndIsVerified bool
-	if _, err := database.GlobalUsers.GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
+	if _, err := database.Users(db).GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
 		return err
 	} else if err == nil {
 		emailAlreadyExistsAndIsVerified = true
@@ -126,7 +126,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 	}
 
 	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
-		usr, err := database.GlobalUsers.GetByID(ctx, userID)
+		usr, err := database.Users(db).GetByID(ctx, userID)
 		if err != nil {
 			return err
 		}
