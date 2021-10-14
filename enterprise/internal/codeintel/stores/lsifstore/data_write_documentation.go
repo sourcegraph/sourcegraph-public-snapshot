@@ -596,7 +596,7 @@ func truncate(s string, limitBytes int) string {
 func textSearchVector(s string) string {
 	// We need to emit a string in the Postgres tsvector format, roughly:
 	//
-	//     lexeme1:1 lexeme2: 2 lexeme3: 3
+	//     lexeme1:1 lexeme2:2 lexeme3:3
 	//
 	var pairs []string
 	for i, lexeme := range lexemes(s) {
