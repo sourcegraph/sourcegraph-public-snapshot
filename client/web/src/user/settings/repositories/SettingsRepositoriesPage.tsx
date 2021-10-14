@@ -65,6 +65,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
+    const [shouldDisplayContextBanner, setShouldDisplayContextBanner] = useState(false)
 
     const isUserOwner = owner.type === 'user'
     const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
@@ -157,6 +158,27 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
 
     const TWO_SECONDS = 2
 
+    const queryRepos = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<NonNullable<RepositoriesResult>['repositories']> =>
+            fetchRepositories({ ...args, id: owner.id }).pipe(
+                tap(() => {
+                    if (status === 'schedule-complete') {
+                        setUpdateReposList(!updateReposList)
+                        setStatus(undefined)
+                    }
+
+                    // if (repos.nodes.length !== 0) {
+                    //     if (status === 'schedule-complete') {
+                    //         setShouldDisplayContextBanner(true)
+                    //     }
+                    // } else {
+                    //     setShouldDisplayContextBanner(false)
+                    // }
+                })
+            ),
+        [owner.id, status, updateReposList, fetchRepositories]
+    )
+
     useObservable(
         useMemo(() => {
             if (externalServices && externalServices.length !== 0) {
@@ -167,7 +189,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     repeatUntil(
                         result => {
                             const isScheduledToSync = result.data?.codeHostSyncDue === true
-                            // if all existing code hosts were just added
+                            // if all existing code hosts were just added -
                             // created and updated timestamps are the same
                             const areCodeHostsJustAdded = externalServices.every(
                                 ({ updatedAt, createdAt, repoCount }) => updatedAt === createdAt && repoCount === 0
@@ -212,19 +234,6 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         init().catch(error => setStatus(asError(error)))
     }, [init, status])
 
-    const queryRepos = useCallback(
-        (args: FilteredConnectionQueryArguments): Observable<NonNullable<RepositoriesResult>['repositories']> =>
-            fetchRepositories({ ...args, id: owner.id }).pipe(
-                tap(() => {
-                    if (status === 'schedule-complete') {
-                        setUpdateReposList(!updateReposList)
-                        setStatus(undefined)
-                    }
-                })
-            ),
-        [owner.id, status, updateReposList, fetchRepositories]
-    )
-
     const onRepoQueryUpdate = useCallback(
         (value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined, query: string): void => {
             if (value as Connection<SiteAdminRepositoryFields>) {
@@ -266,6 +275,22 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         return 'Syncing.'
     }
 
+    const getSearchContextBanner = (orgName: string): JSX.Element => (
+        <div className="alert alert-success my-3" role="alert" key="add-repos">
+            <h4 className="align-middle mb-1">Added repositories</h4>
+            <p className="align-middle mb-0">
+                Search across all repositories added by {orgName} with{' '}
+                <code className="user-code-hosts-page__code--inline">
+                    <Link className="alert-link" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
+                        context:
+                    </Link>
+                    @{orgName}
+                </code>
+                .
+            </p>
+        </div>
+    )
+
     return (
         <div className="user-settings-repos">
             <SelfHostedCtaLink
@@ -279,6 +304,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     up-to-date and will refresh once sync is finished.
                 </div>
             )}
+            {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
             <PageTitle title="Your repositories" />
             <PageHeader
