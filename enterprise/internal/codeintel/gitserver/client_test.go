@@ -208,6 +208,42 @@ func TestParseRefDescriptions(t *testing.T) {
 	}
 }
 
+func TestParseCommitsUniqueToBranch(t *testing.T) {
+	mustParseDate := func(s string) time.Time {
+		date, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			t.Fatalf("unexpected error parsing date string: %s", err)
+		}
+
+		return date
+	}
+
+	commits, err := parseCommitsUniqueToBranch([]string{
+		"c165bfff52e9d4f87891bba497e3b70fea144d89:2020-08-04T08:23:30-05:00",
+		"f73ee8ed601efea74f3b734eeb073307e1615606:2020-04-16T16:06:21-04:00",
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347:2020-04-16T16:20:26-04:00",
+		"7886287b8758d1baf19cf7b8253856128369a2a7:2020-04-16T16:55:58-04:00",
+		"b69f89473bbcc04dc52cafaf6baa504e34791f5a:2020-04-20T12:10:49-04:00",
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e:2020-04-20T12:37:36-04:00",
+		"5bc35c78fb5fb388891ca944cd12d85fd6dede95:2020-05-05T12:53:18-05:00",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error parsing commits: %s", err)
+	}
+
+	expectedCommits := map[string]time.Time{
+		"c165bfff52e9d4f87891bba497e3b70fea144d89": mustParseDate("2020-08-04T08:23:30-05:00"),
+		"f73ee8ed601efea74f3b734eeb073307e1615606": mustParseDate("2020-04-16T16:06:21-04:00"),
+		"6057f7ed8d331c82030c713b650fc8fd2c0c2347": mustParseDate("2020-04-16T16:20:26-04:00"),
+		"7886287b8758d1baf19cf7b8253856128369a2a7": mustParseDate("2020-04-16T16:55:58-04:00"),
+		"b69f89473bbcc04dc52cafaf6baa504e34791f5a": mustParseDate("2020-04-20T12:10:49-04:00"),
+		"172b7fcf8b8c49b37b231693433586c2bfd1619e": mustParseDate("2020-04-20T12:37:36-04:00"),
+		"5bc35c78fb5fb388891ca944cd12d85fd6dede95": mustParseDate("2020-05-05T12:53:18-05:00"),
+	}
+	if diff := cmp.Diff(expectedCommits, commits); diff != "" {
+		t.Errorf("unexpected commits (-want +got):\n%s", diff)
+	}
+}
 func TestParseBranchesContaining(t *testing.T) {
 	names := parseBranchesContaining([]string{
 		"refs/tags/v0.7.0",

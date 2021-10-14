@@ -71,6 +71,13 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     *
+     * @param eventLabel: the event name.
+     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * sent to our analytics systems. This may contain private info such as repository names or search queries.
+     * @param publicArgument: event properties that include only public information. Do NOT
+     * include any private information, such as full URLs that may contain private repo names or
+     * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (window.context?.userAgentIsBot || !eventLabel) {
@@ -152,14 +159,6 @@ export class EventLogger implements TelemetryService {
         }
     }
 
-    public getUserProperties(): string {
-        const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
-        if (userProps) {
-            return userProps
-        }
-
-        return JSON.stringify({})
-    }
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with

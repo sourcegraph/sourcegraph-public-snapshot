@@ -20,8 +20,8 @@ For convenience, there are a number of ways to spin up Sourcegraph's monitoring 
 
 You can follow the instructions below for spinning up individual monitoring components, or use one of the following:
 
-- `sg run-set monitoring`: Spin up just monitoring components
-- `sg run-set monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../admin/observability/alerting.md#setting-up-alerting).
+- `sg start monitoring`: Spin up just monitoring components
+- `sg start monitoring-alerts`: Spin up frontend components as well as some monitoring components to test out the [alerting integration](../../admin/observability/alerting.md#setting-up-alerting).
 
 #### Grafana
 

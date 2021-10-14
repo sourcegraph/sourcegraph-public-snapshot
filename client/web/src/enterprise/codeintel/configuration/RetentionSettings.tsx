@@ -46,7 +46,7 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
                     title="Enabled"
                     value={policy.retainIntermediateCommits}
                     onToggle={value => setPolicy({ ...policy, retainIntermediateCommits: value })}
-                    disabled={!policy.retentionEnabled}
+                    disabled={policy.protected || !policy.retentionEnabled}
                 />
                 <label htmlFor="retain-intermediate-commits" className="ml-2">
                     Retain intermediate commits

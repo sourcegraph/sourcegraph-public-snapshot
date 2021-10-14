@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command) error {
+func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cmds ...Command) error {
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -51,7 +51,7 @@ func Commands(ctx context.Context, globalEnv map[string]string, cmds ...Command)
 			defer wg.Done()
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
-				if err = runWatch(ctx, cmd, root, globalEnv, ch); err != nil {
+				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose); err != nil {
 					if err != ctx.Err() {
 						if cmd.ContinueWatchOnExit {
 							printCmdError(stdout.Out, cmd.Name, err)
@@ -171,7 +171,15 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	}
 }
 
-func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}) error {
+func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[string]string, reload <-chan struct{}, verbose bool) error {
+	printDebug := func(f string, args ...interface{}) {
+		if !verbose {
+			return
+		}
+		message := fmt.Sprintf(f, args...)
+		stdout.Out.WriteLine(output.Linef("", output.StylePending, "%s[DEBUG] %s: %s %s", output.StyleBold, cmd.Name, output.StyleReset, message))
+	}
+
 	startedOnce := false
 
 	var (
@@ -226,8 +234,10 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 
 		if cmd.CheckBinary == "" || md5changed {
 			for _, cancel := range cancelFuncs {
+				printDebug("Canceling previous process and waiting for it to exit...")
 				cancel() // Stop command
 				<-errs   // Wait for exit
+				printDebug("Previous command exited")
 			}
 			cancelFuncs = nil
 

@@ -375,6 +375,7 @@
     "mdi-react": "^7.3.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.24.0",
+    "monaco-yaml": "^3.2.1",
     "nice-ticks": "^1.0.1",
     "open-color": "^1.8.0",
     "path-browserify": "^1.0.1",

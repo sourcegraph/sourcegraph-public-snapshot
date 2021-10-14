@@ -91,6 +91,10 @@ func (r *disabledResolver) CreateInsightsDashboard(ctx context.Context, args *gr
 	return nil, errors.New(r.reason)
 }
 
+func (r *disabledResolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
 func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	return nil, errors.New(r.reason)
 }

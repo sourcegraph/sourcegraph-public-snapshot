@@ -50,7 +50,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         className="search-results-info-bar__divider"
       />
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
@@ -156,7 +156,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="search-results-info-bar__divider"
       />
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none create-code-monitor-button"
@@ -183,7 +183,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </a>
       </li>
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
@@ -289,7 +289,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         className="search-results-info-bar__divider"
       />
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <div
           className="menu-nav-item btn-group"
@@ -400,7 +400,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </div>
       </li>
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <div
           className="menu-nav-item btn-group"
@@ -584,7 +584,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         className="search-results-info-bar__divider"
       />
       <li
-        className="mr-2"
+        className="nav-item mr-2"
         data-tooltip="Code monitors only support type:diff or type:commit searches."
       >
         <a
@@ -614,7 +614,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         </a>
       </li>
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
@@ -720,7 +720,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         className="search-results-info-bar__divider"
       />
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <div
           className="menu-nav-item btn-group"
@@ -831,7 +831,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         </div>
       </li>
       <li
-        className="mr-2"
+        className="nav-item mr-2"
       >
         <div
           className="menu-nav-item btn-group"

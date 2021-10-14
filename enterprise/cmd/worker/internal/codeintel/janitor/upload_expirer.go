@@ -247,9 +247,9 @@ func (e *uploadExpirer) isUploadProtectedByPolicy(
 		}
 		token = nextToken
 
-		for _, commit := range commits {
-			e.metrics.numCommitsScanned.Inc()
+		e.metrics.numCommitsScanned.Add(float64(len(commits)))
 
+		for _, commit := range commits {
 			if policyMatches, ok := commitMap[commit]; ok {
 				for _, policyMatch := range policyMatches {
 					if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
