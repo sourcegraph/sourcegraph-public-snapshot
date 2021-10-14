@@ -207,6 +207,11 @@ func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboa
 	return nil
 }
 
+func (s *DBDashboardStore) IsViewOnDashboard(ctx context.Context, dashboardId int, viewId string) (bool, error) {
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(isViewOnDashboardSql, dashboardId, viewId)))
+	return count != 0, err
+}
+
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) error {
 	if dashboard.ID == 0 {
 		return errors.New("unable to grant dashboard permissions invalid dashboard id")
@@ -230,12 +235,6 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboard typ
 	return nil
 }
 
-const addDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
-INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
-VALUES %s;
-`
-
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
 INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
@@ -256,6 +255,21 @@ FROM dashboard_insight_view
 WHERE dashboard_id = %s
   AND insight_view_id IN (SELECT id FROM insight_view WHERE unique_id = ANY(%s));
 `
+
+const isViewOnDashboardSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+SELECT COUNT(*)
+FROM dashboard_insight_view div
+	INNER JOIN insight_view iv ON div.insight_view_id = iv.id
+WHERE div.dashboard_id = %s AND iv.unique_id = %s
+`
+
+const addDashboardGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
+VALUES %s;
+`
+
 
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
