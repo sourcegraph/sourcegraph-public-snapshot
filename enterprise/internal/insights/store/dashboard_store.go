@@ -298,7 +298,9 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
     WHERE unique_id = ANY(%s)
-);`
+)
+ON CONFLICT DO NOTHING;
+`
 
 const updateDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
