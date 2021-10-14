@@ -610,7 +610,6 @@ func textSearchVector(s string) string {
 // numbers, and letters. All other unicode runes, such as punctuation, are considered their own
 // individual lexemes - and spaces are removed and considered boundaries.
 func lexemes(s string) []string {
-	// Split the string into lexemes, each will be 	var lexemes []string
 	var (
 		lexemes       []string
 		currentLexeme []rune
