@@ -13,11 +13,11 @@ steps:
       - bash <(curl -s https://codecov.io/bash) -c -F typescript -F storybook
     label: ':storybook::codecov: Storybook coverage'
   # Issue to fix: https://github.com/sourcegraph/sourcegraph/issues/25910
-  - command:
-      - dev/ci/yarn-build.sh client/web
-      # - yarn lhci autorun
-    label: ':lighthouse: Lighthouse'
-    env:
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: 'true'
-      SOURCEGRAPH_API_URL: https://sourcegraph.com
+  # - command:
+  #     - dev/ci/yarn-build.sh client/web
+  #     - yarn lhci autorun
+  #   label: ':lighthouse: Lighthouse'
+  #   env:
+  #     NODE_ENV: production
+  #     WEBPACK_SERVE_INDEX: 'true'
+  #     SOURCEGRAPH_API_URL: https://sourcegraph.com
