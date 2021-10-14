@@ -160,7 +160,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		})
 	})
 
-	t.Run("CancelBatchSpecWorkspaceExecutionJob", func(t *testing.T) {
+	t.Run("CancelBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
 		t.Run("single job by ID", func(t *testing.T) {
 			opts := CancelBatchSpecWorkspaceExecutionJobsOpts{IDs: []int64{jobs[0].ID}}
 
@@ -212,7 +212,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				}
 			})
 
-			t.Run("Already completed", func(t *testing.T) {
+			t.Run("already completed", func(t *testing.T) {
 				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = %s", jobs[0].ID)); err != nil {
 					t.Fatal(err)
 				}
@@ -224,10 +224,23 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatalf("unexpected records returned: %d", len(records))
 				}
 			})
+
+			t.Run("still queued", func(t *testing.T) {
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued' WHERE id = %s", jobs[0].ID)); err != nil {
+					t.Fatal(err)
+				}
+				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(records) != 1 {
+					t.Fatalf("unexpected records returned: %d", len(records))
+				}
+			})
 		})
 
 		t.Run("multiple jobs by BatchSpecID", func(t *testing.T) {
-			spec := &btypes.BatchSpec{}
+			spec := &btypes.BatchSpec{UserID: 1234, NamespaceUserID: 4567}
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
@@ -308,6 +321,24 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				}
 				if len(records) != 0 {
 					t.Fatalf("unexpected records returned: %d", len(records))
+				}
+			})
+
+			t.Run("subset processing, subset completed", func(t *testing.T) {
+				completed := specJobIDs[1:]
+				processing := specJobIDs[0:1]
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = ANY(%s)", pq.Array(processing))); err != nil {
+					t.Fatal(err)
+				}
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = ANY(%s)", pq.Array(completed))); err != nil {
+					t.Fatal(err)
+				}
+				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if have, want := len(records), len(processing); have != want {
+					t.Fatalf("wrong number of canceled records. have=%d, want=%d", have, want)
 				}
 			})
 		})

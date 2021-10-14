@@ -245,7 +245,11 @@ type CancelBatchSpecWorkspaceExecutionJobsOpts struct {
 	IDs         []int64
 }
 
-// CancelBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
+// CancelBatchSpecWorkspaceExecutionJobs cancels the matching
+// BatchSpecWorkspaceExecutionJobs.
+//
+// The returned list of records may not match the list of the given IDs, if
+// some of the records were already canceled, completed, failed, errored, etc.
 func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts CancelBatchSpecWorkspaceExecutionJobsOpts) (jobs []*btypes.BatchSpecWorkspaceExecutionJob, err error) {
 	ctx, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
@@ -276,14 +280,16 @@ var cancelBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CancelBatchSpecWorkspaceExecutionJobs
 WITH candidates AS (
 	SELECT
-		id
+		batch_spec_workspace_execution_jobs.id
 	FROM
 		batch_spec_workspace_execution_jobs
+	%s  -- joins
 	WHERE
 		%s -- preds
 		AND
 		-- It must be queued or processing, we cannot cancel jobs that have already completed.
-		state IN (%s, %s)
+		batch_spec_workspace_execution_jobs.state IN (%s, %s)
+	ORDER BY id
 	FOR UPDATE
 )
 UPDATE
@@ -302,18 +308,21 @@ RETURNING %s
 
 func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
+	var joins []*sqlf.Query
 
 	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("id = ANY (%s)", pq.Array(opts.IDs)))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
 
 	if opts.BatchSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_id = %s", opts.BatchSpecID))
+		joins = append(joins, sqlf.Sprintf("JOIN batch_spec_workspaces ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %s", opts.BatchSpecID))
 	}
 
 	return sqlf.Sprintf(
 		cancelBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		preds,
+		sqlf.Join(joins, "\n"),
+		sqlf.Join(preds, "\n AND "),
 		btypes.BatchSpecWorkspaceExecutionJobStateQueued,
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
