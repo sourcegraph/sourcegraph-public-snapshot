@@ -398,6 +398,9 @@ type InsightSeriesMetadataPayload {
     series: InsightSeriesMetadata!
 }
 
+"""
+Input object for update insight series mutation.
+"""
 input UpdateInsightSeriesInput {
     """
     Unique ID for the series.
