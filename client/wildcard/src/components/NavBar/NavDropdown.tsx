@@ -14,7 +14,7 @@ import { NavItem, NavLink } from '.'
 
 interface NavDropdownItem {
     icon: React.ComponentType<{ className?: string }>
-    content: JSX.Element | string
+    content: React.ReactNode | string
     path: string
 }
 
