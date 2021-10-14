@@ -364,10 +364,20 @@ func (s *Server) Handler() http.Handler {
 	gitAdapter := &adapters.Git{
 		ReposDir: s.ReposDir,
 	}
-	mux.HandleFunc("/commands/get-object", s.handleGetObject(domain.GetObjectService{
+	getObjectService := domain.GetObjectService{
 		RevParse:      gitAdapter.RevParse,
 		GetObjectType: gitAdapter.GetObjectType,
-	}))
+	}
+	getObjectFunc := domain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*domain.GitObject, error) {
+		// Tracing is server concern, so add it here. Once generics lands we should be
+		// able to create some simple wrappers
+		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
+		span.SetTag("objectName", objectName)
+		defer span.Finish()
+		return getObjectService.GetObject(ctx, repo, objectName)
+	})
+
+	mux.HandleFunc("/commands/get-object", s.handleGetObject(getObjectFunc))
 
 	return mux
 }

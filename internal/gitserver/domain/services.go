@@ -32,20 +32,17 @@ type GitObject struct {
 	Type ObjectType
 }
 
+type GetObjectFunc func(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error)
+
 // GetObjectService will get an information about a git object
+// TODO: Do we really need a service? Could we not just have a function that returns a GetObjectFunc given
+// RevParse and GetObjectType funcs?
 type GetObjectService struct {
 	RevParse      func(ctx context.Context, repo api.RepoName, rev string) (string, error)
 	GetObjectType func(ctx context.Context, repo api.RepoName, objectID string) (ObjectType, error)
 }
 
 func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error) {
-	// TODO: Maybe we can have a general wrapper around the service. Tracing
-	// shouldn't be something the domain package is concerned by.
-
-	//span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
-	//span.SetTag("objectName", objectName)
-	//defer span.Finish()
-
 	if err := checkSpecArgSafety(objectName); err != nil {
 		return nil, err
 	}
