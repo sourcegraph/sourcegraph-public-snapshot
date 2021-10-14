@@ -51,6 +51,11 @@ func (h *entryHandle) Finalize(exitCode int) {
 	h.durationMs = &durationMs
 }
 
+func (h *entryHandle) Close() error {
+	close(h.done)
+	return nil
+}
+
 func (h *entryHandle) CurrentLogEntry() workerutil.ExecutionLogEntry {
 	logEntry := h.currentLogEntry()
 	redact(&logEntry, h.replacer)
@@ -66,11 +71,6 @@ func (h *entryHandle) currentLogEntry() workerutil.ExecutionLogEntry {
 	logEntry.Out = h.buf.String()
 	logEntry.DurationMs = h.durationMs
 	return logEntry
-}
-
-func (h *entryHandle) Close() error {
-	close(h.done)
-	return nil
 }
 
 // Logger tracks command invocations and stores the command's output and

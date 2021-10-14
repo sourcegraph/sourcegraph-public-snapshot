@@ -101,16 +101,12 @@ func callWithInstrumentedLock(operations *Operations, f func() error) error {
 	lockRequestedAt := time.Now()
 	igniteRunLock.Lock()
 	lockAcquiredAt := time.Now()
-	lockWaitDuration := lockAcquiredAt.Sub(lockRequestedAt)
-
 	err := f()
-
-	igniteRunLock.Unlock()
 	lockReleasedAt := time.Now()
-	lockHeldDuration := lockReleasedAt.Sub(lockAcquiredAt)
+	igniteRunLock.Unlock()
 
-	operations.RunLockWaitTotal.Add(float64(lockWaitDuration / time.Millisecond))
-	operations.RunLockHeldTotal.Add(float64(lockHeldDuration / time.Millisecond))
+	operations.RunLockWaitTotal.Add(float64(lockAcquiredAt.Sub(lockRequestedAt) / time.Millisecond))
+	operations.RunLockHeldTotal.Add(float64(lockReleasedAt.Sub(lockAcquiredAt) / time.Millisecond))
 	return err
 }
 

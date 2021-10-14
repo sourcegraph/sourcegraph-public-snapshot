@@ -77,7 +77,6 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 	defer handle.Close()
 
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
-
 	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
 	handle.Finalize(exitCode)
 	if err != nil {
