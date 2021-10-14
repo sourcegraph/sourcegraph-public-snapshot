@@ -28,9 +28,7 @@ type DiffFetcher struct {
 // for comimt hashes to generate patches for.
 func NewDiffFetcher(dir string) (*DiffFetcher, error) {
 
-	return &DiffFetcher{
-		dir: dir,
-	}, nil
+	return &DiffFetcher{dir: dir}, nil
 }
 
 func (d *DiffFetcher) Stop() {
