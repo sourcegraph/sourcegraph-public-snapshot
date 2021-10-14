@@ -702,6 +702,17 @@ func (s *RepoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 		tr.SetError(err)
 		tr.Finish()
 	}()
+
+	if Mocks.Repos.List != nil {
+		results, err := Mocks.Repos.List(ctx, opt)
+		for _, r := range results {
+			cb(&types.RepoName{
+				ID:   r.ID,
+				Name: r.Name,
+			})
+		}
+		return err
+	}
 	s.ensureStore()
 
 	opt.Select = minimalColumns(repoColumns)
@@ -741,10 +752,6 @@ func (s *RepoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 
 // ListRepoNames returns a list of repositories names and ids.
 func (s *RepoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	if Mocks.Repos.ListRepoNames != nil {
-		return Mocks.Repos.ListRepoNames(ctx, opt)
-	}
-
 	return results, s.StreamRepoNames(ctx, opt, func(r *types.RepoName) {
 		results = append(results, *r)
 	})
