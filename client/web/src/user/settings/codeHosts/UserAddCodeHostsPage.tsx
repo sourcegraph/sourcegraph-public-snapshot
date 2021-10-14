@@ -149,20 +149,30 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
-            <div className="alert alert-success mb-4" role="alert" key="add-repos">
-                Connected with {services.join(', ')}. Next,{' '}
-                <Link
-                    className="alert-link"
-                    to={`${routingPrefix}/repositories/manage`}
-                    onClick={logAddRepositoriesClicked('banner')}
-                >
-                    add your repositories →
-                </Link>
+            <div className="alert alert-success my-3" role="alert" key="add-repos">
+                <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
+                <p className="align-middle mb-0">
+                    Next,{' '}
+                    <Link
+                        className="alert-link"
+                        to={`${routingPrefix}/repositories/manage`}
+                        onClick={logAddRepositoriesClicked('banner')}
+                    >
+                        add repositories
+                    </Link>{' '}
+                    to search Sourcegraph.
+                </p>
             </div>
         ) : null
 
+    interface serviceProblem {
+        id: string
+        displayName: string
+        problem: string
+    }
+
     const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
-        const servicesWithProblems = []
+        const servicesWithProblems: serviceProblem[] = []
         const notYetSyncedServiceNames = []
 
         // check if services are fetched
@@ -170,9 +180,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const services = Object.values(status).filter(isDefined)
 
             for (const service of services) {
+                const problem = service.warning || service.lastSyncError
                 // if service has warnings or errors
-                if (service.warning || service.lastSyncError) {
-                    servicesWithProblems.push(service)
+                if (problem) {
+                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
                     continue
                 }
 
@@ -214,13 +225,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
-    const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): JSX.Element => (
-        <div className="alert alert-danger my-4" key={id}>
-            <strong className="align-middle">Could not connect to {displayName}.</strong>
-            <span className="align-middle">
-                {' '}
-                Please remove {displayName} code host connection and try again to restore the connection.
-            </span>
+    const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
+        <div className="alert alert-danger my-3" key={service.id}>
+            <h4 className="align-middle mb-1">Could not connect with {service.displayName}.</h4>
+            <p className="align-middle mb-0">{service.problem}. Try connecting again.</p>
         </div>
     )
 
