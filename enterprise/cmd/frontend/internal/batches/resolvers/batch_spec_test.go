@@ -544,7 +544,7 @@ query($batchSpec: ID!) {
 
       state
       workspaceResolution {
-	    state
+        state
       }
     }
   }

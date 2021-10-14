@@ -217,7 +217,7 @@ type BatchSpec struct {
 	SupersedingBatchSpec *BatchSpec
 	AppliesToBatchChange BatchChange
 
-	State string
+	State               string
 	WorkspaceResolution BatchSpecWorkspaceResolution
 }
 

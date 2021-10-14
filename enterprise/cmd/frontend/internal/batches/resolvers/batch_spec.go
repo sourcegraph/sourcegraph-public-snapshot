@@ -60,9 +60,9 @@ type batchSpecResolver struct {
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
-	computeStateOnce sync.Once
-	state            string
-	computeStateErr  error
+	stateOnce sync.Once
+	state     string
+	stateErr  error
 
 	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 	shouldActAsCampaignSpec bool
@@ -538,8 +538,8 @@ func (r *batchSpecResolver) computeExecutionJobs(ctx context.Context, workspaceI
 }
 
 func (r *batchSpecResolver) computeState(ctx context.Context) (string, error) {
-	r.computeStateOnce.Do(func() {
-		r.state, r.computeStateErr = func() (string, error) {
+	r.stateOnce.Do(func() {
+		r.state, r.stateErr = func() (string, error) {
 			if !r.batchSpec.CreatedFromRaw {
 				return "COMPLETED", nil
 			}
@@ -617,5 +617,5 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (string, error) {
 			}
 		}()
 	})
-	return r.state, r.computeStateErr
+	return r.state, r.stateErr
 }
