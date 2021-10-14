@@ -149,16 +149,17 @@ type RemoveInsightViewFromDashboardInput struct {
 }
 
 type UpdateInsightSeriesArgs struct {
-	SeriesId string
-	Input    UpdateInsightSeriesInput
+	Input UpdateInsightSeriesInput
 }
 
 type UpdateInsightSeriesInput struct {
+	SeriesId           string
 	DesiredActiveState *bool
 }
 
 type InsightSeriesMetadataResolver interface {
 	SeriesId(ctx context.Context) (string, error)
+	Query(ctx context.Context) (string, error)
 	Enabled(ctx context.Context) (bool, error)
 }
 
