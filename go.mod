@@ -79,6 +79,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/golang-lru v0.5.4
 	github.com/hexops/autogold v1.3.0
+	github.com/hexops/valast v1.4.0
 	github.com/honeycombio/libhoney-go v1.15.4
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac
 	github.com/jackc/pgconn v1.10.0
@@ -231,7 +232,6 @@ require (
 	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
 	github.com/hashicorp/go-retryablehttp v0.6.4 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
-	github.com/hexops/valast v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

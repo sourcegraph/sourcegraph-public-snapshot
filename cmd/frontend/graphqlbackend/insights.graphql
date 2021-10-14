@@ -195,6 +195,11 @@ extend type Mutation {
     createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
 
     """
+    Edit an existing dashboard.
+    """
+    updateInsightsDashboard(id: ID!, input: UpdateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
     Delete a dashboard.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
@@ -257,6 +262,20 @@ input CreateInsightsDashboardInput {
     Permissions to grant to the dashboard.
     """
     grants: InsightsPermissionGrants!
+}
+
+"""
+Input object for updating a dashboard.
+"""
+input UpdateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrants
 }
 
 """
