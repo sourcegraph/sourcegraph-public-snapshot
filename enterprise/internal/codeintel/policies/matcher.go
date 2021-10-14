@@ -61,7 +61,7 @@ func NewMatcher(
 // CommitsDescribedByPolicy returns a map from commits within the given repository to a set of policy matches
 // with respect to the given policies.
 //
-// If includeTipOfDefaultBranch is true, the there will exist a match for the tip default branch with a nil
+// If includeTipOfDefaultBranch is true, then there will exist a match for the tip default branch with a nil
 // policy identifier, even if no policies are supplied. This is set to true for data retention but not for
 // auto-indexing.
 //
