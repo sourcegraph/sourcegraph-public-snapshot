@@ -10,8 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
-// TODO: This is our domain package, we don't want it importing anything
-
 // OID is a Git OID (40-char hex-encoded).
 type OID [20]byte
 
@@ -34,13 +32,10 @@ type GitObject struct {
 	Type ObjectType
 }
 
+// GetObjectService will get an information about a git object
 type GetObjectService struct {
-	RevParser interface {
-		RevParse(ctx context.Context, repo api.RepoName, rev string) (string, error)
-	}
-	ObjectTyper interface {
-		GetObjectType(ctx context.Context, repo api.RepoName, objectID string) (ObjectType, error)
-	}
+	RevParse      func(ctx context.Context, repo api.RepoName, rev string) (string, error)
+	GetObjectType func(ctx context.Context, repo api.RepoName, objectID string) (ObjectType, error)
 }
 
 func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error) {
@@ -55,7 +50,7 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 		return nil, err
 	}
 
-	sha, err := s.RevParser.RevParse(ctx, repo, objectName)
+	sha, err := s.RevParse(ctx, repo, objectName)
 	if err != nil {
 		if IsRepoNotExist(err) {
 			return nil, err
@@ -82,7 +77,7 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 		return nil, errors.Wrap(err, "decoding oid")
 	}
 
-	objectType, err := s.ObjectTyper.GetObjectType(ctx, repo, oid.String())
+	objectType, err := s.GetObjectType(ctx, repo, oid.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "getting object type")
 	}
