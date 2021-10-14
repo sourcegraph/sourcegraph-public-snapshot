@@ -58,17 +58,19 @@ func NewResolver(
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	gitserverClient GitserverClient,
+	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, indexEnqueuer, hunkCache, observationContext)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, observationContext)
 }
 
 func newResolver(
 	dbStore DBStore,
 	lsifStore LSIFStore,
 	gitserverClient GitserverClient,
+	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
 	hunkCache HunkCache,
 	observationContext *observation.Context,
@@ -77,7 +79,7 @@ func newResolver(
 		dbStore:         dbStore,
 		lsifStore:       lsifStore,
 		gitserverClient: gitserverClient,
-		policyMatcher:   policies.NewMatcher(gitserverClient, policies.NoopExtractor, false, false),
+		policyMatcher:   policyMatcher,
 		indexEnqueuer:   indexEnqueuer,
 		hunkCache:       hunkCache,
 		operations:      newOperations(observationContext),
