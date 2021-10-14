@@ -35,6 +35,7 @@ type operations struct {
 	writeDocumentationPages       *observation.Operation
 	writeDocumentationPathInfo    *observation.Operation
 	writeDocumentationMappings    *observation.Operation
+	writeDocumentationSearch      *observation.Operation
 
 	locations           *observation.Operation
 	locationsWithinFile *observation.Operation
@@ -93,6 +94,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeDocumentationPages:       op("WriteDocumentationPages"),
 		writeDocumentationPathInfo:    op("WriteDocumentationPathInfo"),
 		writeDocumentationMappings:    op("WriteDocumentationMappings"),
+		writeDocumentationSearch:      op("WriteDocumentationSearch"),
 
 		locations:           subOp("locations"),
 		locationsWithinFile: subOp("locationsWithinFile"),

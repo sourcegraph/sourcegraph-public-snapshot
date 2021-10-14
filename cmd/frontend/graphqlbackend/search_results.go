@@ -28,11 +28,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -448,7 +450,7 @@ func LogSearchLatency(ctx context.Context, db dbutil.DB, si *run.SearchInputs, d
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			featureFlags := featureflag.FromContext(ctx)
 			go func() {
-				err := usagestats.LogBackendEvent(db, a.UID, eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
+				err := usagestats.LogBackendEvent(db, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureFlags, nil)
 				if err != nil {
 					log15.Warn("Could not log search latency", "err", err)
 				}
@@ -461,7 +463,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	repoFilters, minusRepoFilters := q.Repositories()
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
-
 	}
 	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 
@@ -1494,18 +1495,31 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	if args.Mode == search.ZoektGlobalSearch {
 		argsIndexed := *args
 
-		// Get all private repos that are accessible by the current actor.
-		if res, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		userID := int32(0)
+		if envvar.SourcegraphDotComMode() {
+			if a := actor.FromContext(ctx); a != nil {
+				userID = a.UID
+			}
+		}
+
+		// Get all private repos for the the current actor. On sourcegraph.com, those are
+		// only the repos directly added by the user. Otherwise it's all repos the user has
+		// access to on all connected code hosts / external services.
+		userPrivateRepos, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
 			OnlyForks:    args.RepoOptions.OnlyForks,
 			NoForks:      args.RepoOptions.NoForks,
 			OnlyArchived: args.RepoOptions.OnlyArchived,
 			NoArchived:   args.RepoOptions.NoArchived,
-		}); err != nil {
-			tr.LazyPrintf("error resolving private repos: %v", err)
+		})
+
+		if err != nil {
+			log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
+			tr.LazyPrintf("error resolving user private repos: %v", err)
 		} else {
-			argsIndexed.UserPrivateRepos = res
+			argsIndexed.UserPrivateRepos = userPrivateRepos
 		}
 
 		wg := waitGroup(true)
@@ -1602,28 +1616,66 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	if args.ResultTypes.Has(result.TypeDiff) {
-		wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoDiffSearch(ctx, args)
-		})
+	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
+		addCommitSearch := func(diff bool) {
+			j, err := commit.NewSearchJob(args.Query, args.Repos, diff, int(args.PatternInfo.FileMatchLimit))
+			if err != nil {
+				agg.Error(err)
+				return
+			}
+
+			if err := j.ExpandUsernames(ctx, r.db); err != nil {
+				agg.Error(err)
+				return
+			}
+
+			jobs = append(jobs, j)
+		}
+
+		if args.ResultTypes.Has(result.TypeCommit) {
+			addCommitSearch(false)
+		}
+
+		if args.ResultTypes.Has(result.TypeDiff) {
+			addCommitSearch(true)
+		}
+	} else {
+		if args.ResultTypes.Has(result.TypeDiff) {
+			wg := waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoDiffSearch(ctx, args)
+			})
+		}
+
+		if args.ResultTypes.Has(result.TypeCommit) {
+			wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+			wg.Add(1)
+			goroutine.Go(func() {
+				defer wg.Done()
+				_ = agg.DoCommitSearch(ctx, args)
+			})
+
+		}
 	}
 
-	if args.ResultTypes.Has(result.TypeCommit) {
-		wg := waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
-		wg.Add(1)
-		goroutine.Go(func() {
-			defer wg.Done()
-			_ = agg.DoCommitSearch(ctx, args)
-		})
-
+	wgForJob := func(job run.Job) *sync.WaitGroup {
+		switch job.Name() {
+		case "Diff":
+			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
+		case "Commit":
+			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		case "Structural":
+			return waitGroup(true)
+		default:
+			panic("unknown job name " + job.Name())
+		}
 	}
 
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
-		wg := waitGroup(true)
+		wg := wgForJob(job)
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()

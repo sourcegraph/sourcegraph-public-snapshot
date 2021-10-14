@@ -12,6 +12,10 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/inconshreveable/log15"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
@@ -26,7 +30,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 func main() {
@@ -37,7 +43,9 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-var initFunctions = map[string]func(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services) error{
+type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
+
+var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
 	"licensing":      licensing.Init,
 	"executor":       executor.Init,
@@ -60,8 +68,14 @@ func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Ru
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()
 
+	observationContext := &observation.Context{
+		Logger:     log15.Root(),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
+	}
+
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices); err != nil {
+		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}

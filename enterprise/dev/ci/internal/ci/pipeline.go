@@ -36,7 +36,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"FORCE_COLOR":                      "3",
 		"ENTERPRISE":                       "1",
 		// Add debug flags for scripts to consume
-		"CI_DEBUG_PROFILE": strconv.FormatBool(c.ProfilingEnabled),
+		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=4096",
 	}
@@ -72,7 +72,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	})
 
 	// Toggle profiling of each step
-	if c.ProfilingEnabled {
+	if c.MessageFlags.ProfilingEnabled {
 		bk.AfterEveryStepOpts = append(bk.AfterEveryStepOpts, func(s *bk.Step) {
 			// wrap "time -v" around each command for CPU/RAM utilization information
 			var prefixed []string
@@ -97,6 +97,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(triggerAsync(buildOptions))
 		}
 
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+
+	case BackendIntegrationTests:
+		ops.Append(
+			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			backendIntegrationTests(c.candidateImageTag()))
+
+		// Run default set of PR checks as well
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
 	case BextReleaseBranch:
@@ -131,6 +139,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag()),
 		})
+
+		// Trivy security scans
+		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
 		// Publish images
@@ -151,6 +162,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
 
+	case ExecutorPatchNoTest:
+		ops = operations.NewSet([]operations.Operation{
+			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+		})
+
 	default:
 		// Slow async pipeline
 		ops.Append(triggerAsync(buildOptions))
@@ -159,16 +176,21 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(buildCandidateDockerImage(dockerImage, c.Version, c.candidateImageTag()))
 		}
-		// TODO: Disabled because it tends to time out when multiple main builds
-		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
-		// for details.
-		// if c.RunType.Is(MainDryRun, MainBranch) {
-		// 	ops.Append(buildExecutor(c.Time, c.Version))
-		// }
+
+		// Trivy security scans
+		for _, dockerImage := range images.SourcegraphDockerImages {
+			ops.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		}
+
+		// Executor VM image
+		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
+		if c.RunType.Is(MainDryRun, MainBranch) {
+			ops.Append(buildExecutor(c.Version, skipHashCompare))
+		}
 
 		// Slow tests
-		if c.RunType.Is(BackendDryRun, MainDryRun, MainBranch) {
-			ops.Append(addBackendIntegrationTests(c.candidateImageTag()))
+		if c.RunType.Is(MainDryRun, MainBranch) {
+			ops.Append(backendIntegrationTests(c.candidateImageTag()))
 		}
 
 		// Core tests
@@ -187,12 +209,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		for _, dockerImage := range images.SourcegraphDockerImages {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
-		// TODO: Disabled because it tends to time out when multiple main builds
-		// are running at the same time. See https://github.com/sourcegraph/sourcegraph/issues/25487
-		// for details.
-		// if c.RunType.Is(MainBranch) {
-		// 	ops.Append(publishExecutor(c.Time, c.Version))
-		// }
+		// Executor VM image
+		if c.RunType.Is(MainBranch, ReleaseBranch) {
+			ops.Append(publishExecutor(c.Version, skipHashCompare))
+		}
 
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {

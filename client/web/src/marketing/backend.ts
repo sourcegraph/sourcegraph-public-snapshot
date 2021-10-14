@@ -13,28 +13,8 @@ import {
     FetchSurveyResponsesVariables,
     RequestTrialResult,
     RequestTrialVariables,
-    SubmitSurveyResult,
-    SubmitSurveyVariables,
     UserActivePeriod,
 } from '../graphql-operations'
-
-import { SurveyResponse } from './SurveyPage'
-
-/**
- * Submits a user satisfaction survey.
- */
-export function submitSurvey(input: SurveyResponse): Observable<void> {
-    return requestGraphQL<SubmitSurveyResult, SubmitSurveyVariables>(
-        gql`
-            mutation SubmitSurvey($input: SurveySubmissionInput!) {
-                submitSurvey(input: $input) {
-                    alwaysNil
-                }
-            }
-        `,
-        { input }
-    ).pipe(map(dataOrThrowErrors), mapTo(undefined))
-}
 
 /**
  * Fetches survey responses.

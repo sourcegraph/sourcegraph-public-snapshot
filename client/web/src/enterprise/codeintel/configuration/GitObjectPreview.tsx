@@ -1,4 +1,5 @@
 import { ApolloError } from '@apollo/client'
+import classNames from 'classnames'
 import React, { FunctionComponent } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
@@ -6,6 +7,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { GitObjectType } from '../../../graphql-operations'
 
+import styles from './GitObjectPreview.module.scss'
 import { useSearchGitBranches, useSearchGitTags, useSearchRepoName, GitObjectPreviewResult } from './useSearchGit'
 
 export interface GitObjectPreviewWrapperProps {
@@ -86,7 +88,7 @@ interface GitObjectPreviewProps {
 }
 
 const GitPreview: FunctionComponent<GitObjectPreviewProps> = ({ typeText, preview, previewError, previewLoading }) => (
-    <>
+    <div className={styles.wrapper}>
         {GitObjectHeader}
         <small>
             {preview.preview.length === 0 ? (
@@ -102,12 +104,12 @@ const GitPreview: FunctionComponent<GitObjectPreviewProps> = ({ typeText, previe
         {previewError && <ErrorAlert prefix="Error fetching matching repository objects" error={previewError} />}
 
         {previewLoading ? (
-            <LoadingSpinner />
+            <LoadingSpinner className={styles.loading} />
         ) : (
             <>
-                {preview.preview.length !== 0 && (
-                    <div className="mt-2 p-2">
-                        <div className="bg-dark text-light p-2">
+                {preview.preview.length !== 0 ? (
+                    <div className="mt-2 pt-2">
+                        <div className={classNames('bg-dark text-light p-2', styles.container)}>
                             {preview.preview.map(tag => (
                                 <p key={tag.revlike} className="text-monospace p-0 m-0">
                                     <span className="search-filter-keyword">repo:</span>
@@ -122,8 +124,14 @@ const GitPreview: FunctionComponent<GitObjectPreviewProps> = ({ typeText, previe
                             <p className="pt-2">...and {preview.totalCount - preview.preview.length} other matches</p>
                         )}
                     </div>
+                ) : (
+                    <div className="mt-2 pt-2">
+                        <div className={styles.empty}>
+                            <p className="text-monospace">N/A</p>
+                        </div>
+                    </div>
                 )}
             </>
         )}
-    </>
+    </div>
 )

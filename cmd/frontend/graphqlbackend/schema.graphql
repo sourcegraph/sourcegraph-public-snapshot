@@ -438,10 +438,6 @@ type Mutation {
         """
         publicArgument: String
         """
-        User properties for Amplitude analytics. Used on Sourcegraph Cloud only. Avoid including any PII.
-        """
-        userProperties: String
-        """
         Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
         """
         deviceID: String
@@ -4217,6 +4213,13 @@ type Hunk {
     The commit that contains the hunk.
     """
     commit: GitCommit!
+    """
+    The original filename at the commit. Use this filename if you're reading the
+    text contents of the file at the `commit` field of this hunk. The file may
+    have been renamed after the commit so name of file where this hunk got computed
+    may not exist.
+    """
+    filename: String!
 }
 
 """

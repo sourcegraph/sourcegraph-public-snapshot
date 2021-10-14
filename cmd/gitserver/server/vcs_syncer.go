@@ -4,15 +4,16 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 // VCSSyncer describes whether and how to sync content from a VCS remote to
@@ -131,6 +132,9 @@ type PerforceDepotSyncer struct {
 	// Client configures the client to use with p4 and enables use of a client spec to
 	// find the list of interesting files in p4.
 	Client string
+
+	// UseFusionClient, if true, will use the p4-fusion cliet for faster cloning.
+	UseFusionClient bool
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -261,11 +265,26 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 		return nil, errors.Wrap(err, "ping with trust")
 	}
 
-	// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
-	args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
-	args = append(args, depot+"@all", tmpPath)
-
-	cmd := exec.CommandContext(ctx, "git", args...)
+	var cmd *exec.Cmd
+	if s.UseFusionClient {
+		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
+		cmd = exec.CommandContext(ctx, "p4-fusion",
+			"--path", depot+"...",
+			"--user", username,
+			"--src", tmpPath,
+			"--networkThreads", "64",
+			"--printBatch", "10",
+			"--port", host,
+			"--lookAhead", "2000",
+			"--retries", "10",
+			"--refresh", "100",
+			"--bare", "true")
+	} else {
+		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
+		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
+		args = append(args, depot+"@all", tmpPath)
+		cmd = exec.CommandContext(ctx, "git", args...)
+	}
 	cmd.Env = s.p4CommandEnv(host, username, password)
 
 	return cmd, nil
@@ -273,7 +292,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
 func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
-	username, password, host, _, err := decomposePerforceRemoteURL(remoteURL)
+	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")
 	}
@@ -286,23 +305,46 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	// Example: git p4 sync --max-changes 1000
 	args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 
-	cmd := exec.CommandContext(ctx, "git", args...)
+	var cmd *exec.Cmd
+	if s.UseFusionClient {
+		// Fetching is done by adding the extra "autoResume param"
+		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100 --autoresume true
+		root, _ := filepath.Split(string(dir))
+		log15.Info("Fetching", "root", root)
+		cmd = exec.CommandContext(ctx, "p4-fusion",
+			"--path", depot+"...",
+			"--user", username,
+			"--src", root+".git",
+			"--networkThreads", "64",
+			"--printBatch", "10",
+			"--port", host,
+			"--lookAhead", "2000",
+			"--retries", "10",
+			"--refresh", "100",
+			"--autoResume", "true",
+			"--bare", "true")
+	} else {
+		cmd = exec.CommandContext(ctx, "git", args...)
+	}
 	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd)
+
 	if output, err := runWith(ctx, cmd, false, nil); err != nil {
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
-	// Force update "master" to "refs/remotes/p4/master" where changes are synced into
-	cmd = exec.CommandContext(ctx, "git", "branch", "-f", "master", "refs/remotes/p4/master")
-	cmd.Env = append(os.Environ(),
-		"P4PORT="+host,
-		"P4USER="+username,
-		"P4PASSWD="+password,
-	)
-	dir.Set(cmd)
-	if output, err := runWith(ctx, cmd, false, nil); err != nil {
-		return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
+	if !s.UseFusionClient {
+		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
+		cmd = exec.CommandContext(ctx, "git", "branch", "-f", "master", "refs/remotes/p4/master")
+		cmd.Env = append(os.Environ(),
+			"P4PORT="+host,
+			"P4USER="+username,
+			"P4PASSWD="+password,
+		)
+		dir.Set(cmd)
+		if output, err := runWith(ctx, cmd, false, nil); err != nil {
+			return errors.Wrapf(err, "failed to force update branch with output %q", string(output))
+		}
 	}
 
 	return nil

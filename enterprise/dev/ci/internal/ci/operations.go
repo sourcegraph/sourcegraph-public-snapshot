@@ -93,7 +93,7 @@ func addDocs(pipeline *bk.Pipeline) {
 
 // Adds the static check test step.
 func addCheck(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":white_check_mark: Misc Linters",
+	pipeline.AddStep(":clipboard: Misc Linters",
 		bk.Cmd("./dev/check/all.sh"))
 }
 
@@ -262,8 +262,7 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -282,7 +281,7 @@ func addDockerfileLint(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateImageTag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":chains: Backend integration tests",
 			// Run tests against the candidate server image
@@ -290,7 +289,7 @@ func addBackendIntegrationTests(candidateImageTag string) operations.Operation {
 			bk.Env("IMAGE",
 				images.DevRegistryImage("server", candidateImageTag)),
 			bk.Cmd("./dev/ci/backend-integration.sh"),
-			bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+			bk.ArtifactPaths("./*.log"))
 	}
 }
 
@@ -440,6 +439,8 @@ func candidateImageStepKey(app string) string {
 
 // Build a candidate docker image that will re-tagged with the final
 // tags once the e2e tests pass.
+//
+// Version is the actual version of the code, and
 func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
@@ -485,6 +486,37 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 	}
 }
 
+// Ask trivy, a security scanning tool, to scan the candidate image
+// specified by "app" and "tag".
+func trivyScanCandidateImage(app, tag string) operations.Operation {
+	image := images.DevRegistryImage(app, tag)
+
+	// This is the special exit code that we tell trivy to use
+	// if it finds a vulnerability. This is also used to soft-fail
+	// this step.
+	vulnerabilityExitCode := 27
+
+	return func(pipeline *bk.Pipeline) {
+		cmds := []bk.StepOpt{
+			bk.DependsOn(candidateImageStepKey(app)),
+
+			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
+
+			// have trivy use a shorter name in its output
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", image, app)),
+
+			bk.Env("IMAGE", app),
+			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
+			bk.ArtifactPaths("./*-security-report.html"),
+			bk.SoftFail(vulnerabilityExitCode),
+
+			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
+		}
+
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
+	}
+}
+
 // Tag and push final Docker image for the service defined by `app`
 // after the e2e tests pass.
 //
@@ -527,7 +559,7 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 		candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
 		cmd := fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(images, " "))
 
-		pipeline.AddStep(fmt.Sprintf(":docker: :white_check_mark: %s", app),
+		pipeline.AddStep(fmt.Sprintf(":docker: :truck: %s", app),
 			// This step just pulls a prebuild image and pushes it to some registries. The
 			// only possible failure here is a registry flake, so we retry a few times.
 			bk.AutomaticRetry(3),
@@ -535,29 +567,45 @@ func publishFinalDockerImage(c Config, app string, insiders bool) operations.Ope
 	}
 }
 
-// ~6m (building executor base VM)
-// func buildExecutor(timestamp time.Time, version string) operations.Operation {
-// 	return func(pipeline *bk.Pipeline) {
-// 		cmds := []bk.StepOpt{
-// 			bk.Cmd(`echo "Building executor cloud image..."`),
-// 			bk.Env("VERSION", version),
-// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-// 			bk.Cmd("./enterprise/cmd/executor/build.sh"),
-// 		}
+// ~15m (building executor base VM)
+func buildExecutor(version string, skipHashCompare bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor")),
+			bk.Env("VERSION", version),
+		}
+		if !skipHashCompare {
+			compareHashScript := "./enterprise/dev/ci/scripts/compare-hash.sh"
+			stepOpts = append(stepOpts,
+				// Soft-fail with code 222 if nothing has changed
+				bk.SoftFail(222),
+				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/build.sh"))
 
-// 		pipeline.AddStep(":packer: :construction: executor image", cmds...)
-// 	}
-// }
+		pipeline.AddStep(":packer: :construction: executor image", stepOpts...)
+	}
+}
 
-// func publishExecutor(timestamp time.Time, version string) operations.Operation {
-// 	return func(pipeline *bk.Pipeline) {
-// 		cmds := []bk.StepOpt{
-// 			bk.Cmd(`echo "Releasing executor cloud image..."`),
-// 			bk.Env("VERSION", version),
-// 			bk.Env("BUILD_TIMESTAMP", strconv.Itoa(int(timestamp.UTC().Unix()))),
-// 			bk.Cmd("./enterprise/cmd/executor/release.sh"),
-// 		}
+func publishExecutor(version string, skipHashCompare bool) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", version),
+		}
+		if !skipHashCompare {
+			// Publish iff not soft-failed on previous step
+			checkDependencySoftFailScript := "./enterprise/dev/ci/scripts/check-dependency-soft-fail.sh"
+			stepOpts = append(stepOpts,
+				// Soft-fail with code 222 if nothing has changed
+				bk.SoftFail(222),
+				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/release.sh"))
 
-// 		pipeline.AddStep(":packer: :white_check_mark: executor image", cmds...)
-// 	}
-// }
+		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
+	}
+}

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -499,8 +500,8 @@ func capFirst(s string) string {
 func alertForError(err error) *searchAlert {
 	var (
 		alert *searchAlert
-		rErr  *run.RepoLimitError
-		tErr  *run.TimeLimitError
+		rErr  *commit.RepoLimitError
+		tErr  *commit.TimeLimitError
 		mErr  *missingRepoRevsError
 	)
 

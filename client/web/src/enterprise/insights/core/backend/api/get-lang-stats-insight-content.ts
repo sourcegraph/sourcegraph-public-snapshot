@@ -55,7 +55,7 @@ async function getInsightContent(inputs: GetInsightContentInputs): Promise<PieCh
     } = inputs
 
     const pathRegexp = path ? `file:^${escapeRegExp(path)}/` : ''
-    const query = `repo:^${escapeRegExp(repo)} ${pathRegexp}`
+    const query = `repo:^${escapeRegExp(repo)}$ ${pathRegexp}`
 
     const stats = await defer(() => fetchLangStatsInsight(query))
         .pipe(
