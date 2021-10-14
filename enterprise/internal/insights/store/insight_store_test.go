@@ -593,6 +593,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			LastSnapshotAt:        now,
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
+			Enabled:               true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -632,6 +633,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 			LastSnapshotAt:        now,
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
+			Enabled:               true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -673,6 +675,7 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 		LastSnapshotAt:        now,
 		NextSnapshotAfter:     now,
 		RecordingIntervalDays: 4,
+		Enabled:               true,
 	}
 	created, err := store.CreateSeries(ctx, series)
 	if err != nil {
