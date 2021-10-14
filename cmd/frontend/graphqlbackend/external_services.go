@@ -27,7 +27,8 @@ import (
 )
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
-var syncExternalServiceTimeout = 15 * time.Second
+
+const syncExternalServiceTimeout = 15 * time.Second
 
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
