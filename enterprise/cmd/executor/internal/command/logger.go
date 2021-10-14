@@ -45,6 +45,12 @@ func (h *entryHandle) Read() string {
 	return h.buf.String()
 }
 
+func (h *entryHandle) Finalize(exitCode int) {
+	durationMs := int(time.Since(h.logEntry.StartTime) / time.Millisecond)
+	h.logEntry.ExitCode = &exitCode
+	h.logEntry.DurationMs = &durationMs
+}
+
 func (h *entryHandle) Close() error {
 	close(h.done)
 	return nil
@@ -120,7 +126,6 @@ func (l *Logger) writeEntries() {
 
 	var wg sync.WaitGroup
 	for handle := range l.handles {
-
 		initialLogEntry := handle.CurrentLogEntry()
 		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.recordID, initialLogEntry)
 		if err != nil {

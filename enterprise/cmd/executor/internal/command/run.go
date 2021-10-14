@@ -75,21 +75,17 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 		stderr.Close()
 	}()
 
-	startTime := time.Now()
 	handle := logger.Log(&workerutil.ExecutionLogEntry{
 		Key:       command.Key,
 		Command:   command.Command,
-		StartTime: startTime,
+		StartTime: time.Now(),
 	})
 	defer handle.Close()
 
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
+
 	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
-
-	handle.logEntry.ExitCode = &exitCode
-	duration := int(time.Since(startTime) / time.Millisecond)
-	handle.logEntry.DurationMs = &duration
-
+	handle.Finalize(exitCode)
 	if err != nil {
 		return err
 	}
