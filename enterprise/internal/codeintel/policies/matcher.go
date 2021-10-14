@@ -29,21 +29,6 @@ type PolicyMatch struct {
 	PolicyDuration *time.Duration
 }
 
-type matcherContext struct {
-	repositoryID   int
-	policies       []dbstore.ConfigurationPolicy
-	patterns       map[string]glob.Glob
-	commitMap      map[string][]PolicyMatch
-	branchRequests map[string]branchRequestMeta
-}
-
-// branchRequestMeta is bookkeeping for the types of gitserver queries we'll need to make to resolve commits
-// that are contained on branches but are not their tip.
-type branchRequestMeta struct {
-	isDefaultBranch     bool
-	policyDurationByIDs map[int]*time.Duration
-}
-
 func NewMatcher(
 	gitserverClient GitserverClient,
 	extractor Extractor,
@@ -97,30 +82,58 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 		for _, refDescription := range refDescriptions {
 			switch refDescription.Type {
 			case gitserver.RefTypeTag:
-				// Resolve tagged commits
-				m.resolveTagReference(context, commit, refDescription, now)
+				// Match tagged commits
+				m.matchTaggedCommits(context, commit, refDescription, now)
 
 			case gitserver.RefTypeBranch:
-				// Resolve tips of branches
-				m.resolveBranchReference(context, commit, refDescription, now)
+				// Match tips of branches
+				m.matchBranchHeads(context, commit, refDescription, now)
 			}
 		}
 	}
 
-	// Resolve commits on branches but not at tip
-	if err := m.resolveBranchMembership(ctx, context, now); err != nil {
+	// Match commits on branches but not at tip
+	if err := m.matchCommitsOnBranch(ctx, context, now); err != nil {
 		return nil, err
 	}
 
-	// Resolve comments via rev-parse
-	if err := m.resolveCommitPolicies(ctx, context, now); err != nil {
+	// Match comments via rev-parse
+	if err := m.matchCommitPolicies(ctx, context, now); err != nil {
 		return nil, err
 	}
 
 	return context.commitMap, nil
 }
 
-func (m *Matcher) resolveTagReference(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
+type matcherContext struct {
+	// repositoryID is the repository identifier used in requests to gitserver.
+	repositoryID int
+
+	// policies is the full set (global and repository-specific) policies that apply to the given repository.
+	policies []dbstore.ConfigurationPolicy
+
+	// patterns holds a compiled glob of the pattern from each non-commit type policy.
+	patterns map[string]glob.Glob
+
+	// commitMap stores matching policies for each commit in the given repository.
+	commitMap map[string][]PolicyMatch
+
+	// branchRequests holds metadata about the additional requests we need to make to gitserver to determine
+	// the set of commits that are an ancestor of a branch head (but not an ancestor of the default branch).
+	// These commits are "contained" within in the intermediate commits composing a logical branch in the git
+	// graph. As multiple policies can match the same branch, we store it in a map to ensure that we make only
+	// one request per branch.
+	branchRequests map[string]branchRequestMeta
+}
+
+type branchRequestMeta struct {
+	isDefaultBranch     bool
+	policyDurationByIDs map[int]*time.Duration
+}
+
+// matchTaggedCommits determines if the given commit (described by the tag-type ref given description) matches any tag-type
+// policies. For each match, a commit/policy pair will be added to the given context.
+func (m *Matcher) matchTaggedCommits(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
 	visitor := func(policy dbstore.ConfigurationPolicy) {
 		policyDuration, _ := m.extractor(policy)
 
@@ -134,9 +147,13 @@ func (m *Matcher) resolveTagReference(context matcherContext, commit string, ref
 	m.forEachMatchingPolicy(context, refDescription, dbstore.GitObjectTypeTag, visitor, now)
 }
 
-func (m *Matcher) resolveBranchReference(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
-	// Add fake match for tip of default branch
+// matchBranchHeads determines if the given commit (described by the branch-type ref given description) matches any branch-type
+// policies. For each match, a commit/policy pair will be added to the given context. This method also adds matches for the tip
+// of the default branch (if configured to do so), and adds bookkeeping metdata to the context's branchRequests field when a
+// matching policy's intermediate commits should be checked.
+func (m *Matcher) matchBranchHeads(context matcherContext, commit string, refDescription gitserver.RefDescription, now time.Time) {
 	if refDescription.IsDefaultBranch && m.includeTipOfDefaultBranch {
+		// Add a match with no associated policy for the tip of the default branch
 		context.commitMap[commit] = append(context.commitMap[commit], PolicyMatch{
 			Name:           refDescription.Name,
 			PolicyID:       nil,
@@ -153,10 +170,7 @@ func (m *Matcher) resolveBranchReference(context matcherContext, commit string, 
 			PolicyDuration: policyDuration,
 		})
 
-		// If we include intermediate commits for this policy, we need to query the
-		// set of commits that belong to any branch matching this policy's pattern.
-		// We store this information in the branchRequests map so that we perform a
-		// query for each matching branch only once later.
+		// Build requests to be made in batch via the matchCommitsOnBranch method
 		if policyDuration, includeIntermediateCommits := m.extractor(policy); includeIntermediateCommits {
 			meta, ok := context.branchRequests[refDescription.Name]
 			if !ok {
@@ -172,7 +186,11 @@ func (m *Matcher) resolveBranchReference(context matcherContext, commit string, 
 	m.forEachMatchingPolicy(context, refDescription, dbstore.GitObjectTypeTree, visitor, now)
 }
 
-func (m *Matcher) resolveBranchMembership(ctx context.Context, context matcherContext, now time.Time) error {
+// matchCommitsOnBranch makes a request for commits belonging to any branch matching a branch-type
+// policy that also includes intermediate commits. This method uses the requests queued by the
+// matchBranchHeads method. A commit/policy pair will be added to the given context for each commit
+// of appropriate age existing on a matched branch.
+func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherContext, now time.Time) error {
 	for branchName, branchRequestMeta := range context.branchRequests {
 		maxCommitAge := getMaxAge(branchRequestMeta.policyDurationByIDs, now)
 
@@ -216,7 +234,9 @@ func (m *Matcher) resolveBranchMembership(ctx context.Context, context matcherCo
 	return nil
 }
 
-func (m *Matcher) resolveCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
+// matchCommitPolicies compares the each commit-type policy pattern as a rev-like against the target
+// repository in gitserver. For each match, a commit/policy pair will be added to the given context.
+func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
 		if policy.Type == dbstore.GitObjectTypeCommit {
 			commitDate, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
