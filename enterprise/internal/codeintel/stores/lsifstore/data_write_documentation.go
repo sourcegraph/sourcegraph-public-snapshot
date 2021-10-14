@@ -273,8 +273,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	// Upsert the language name.
 	langNameID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(writeDocumentationSearchLangNames, "$SUFFIX", tableSuffix),
-		languageOrIndexerName,                            // lang_name
-		textSearchVector(languageOrIndexerName),          // tsv
+		languageOrIndexerName,                   // lang_name
+		textSearchVector(languageOrIndexerName), // tsv
 		textSearchVector(languageOrIndexerName), // union tsv query
 	)))
 	if err != nil {
@@ -290,7 +290,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		upload.RepositoryName,                            // repo_name
 		textSearchVector(upload.RepositoryName),          // tsv
 		textSearchVector(reverse(upload.RepositoryName)), // reverse_tsv
-		textSearchVector(upload.RepositoryName), // union tsv query
+		textSearchVector(upload.RepositoryName),          // union tsv query
 	)))
 	if err != nil {
 		return errors.Wrap(err, "upserting repo name")
@@ -310,7 +310,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			tags := strings.Join(tagsSlice, " ")
 			tagsID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 				strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
-				tags, // tags
+				tags,                   // tags
 				textSearchVector(tags), // tsv
 				textSearchVector(tags), // union tsv query
 			)))
@@ -327,13 +327,13 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			err = s.Exec(ctx, sqlf.Sprintf(
 				strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
 				upload.RepositoryID, // repo_id
-				upload.ID,   // dump_id
-				upload.Root, // dump_root
-				node.PathID, // path_id
+				upload.ID,           // dump_id
+				upload.Root,         // dump_root
+				node.PathID,         // path_id
 				detail,              // detail
-				langNameID, // lang_name_id
-				repoNameID, // repo_name_id
-				tagsID, // tags_id
+				langNameID,          // lang_name_id
+				repoNameID,          // repo_name_id
+				tagsID,              // tags_id
 
 				node.Documentation.SearchKey,                            // search_key
 				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
@@ -611,7 +611,7 @@ func textSearchVector(s string) string {
 func lexemes(s string) []string {
 	// Split the string into lexemes, each will be 	var lexemes []string
 	var (
-		lexemes []string
+		lexemes       []string
 		currentLexeme []rune
 	)
 	for _, r := range []rune(s) {
