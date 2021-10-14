@@ -81,3 +81,14 @@ type Dashboard struct {
 	InsightIDs []string // shallow references
 	Save       bool     // temporarily save dashboards from being cleared during setting migration
 }
+
+type InsightSeriesStatus struct {
+	SeriesId   string
+	Query      string
+	Enabled    bool
+	Errored    int
+	Processing int
+	Queued     int
+	Failed     int
+	Completed  int
+}

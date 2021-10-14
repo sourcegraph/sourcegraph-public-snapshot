@@ -27,6 +27,7 @@ type InsightsResolver interface {
 
 	// Admin Management Mutations
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
+	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
 }
 
 type InsightsArgs struct {
@@ -176,4 +177,15 @@ type InsightSeriesMetadataResolver interface {
 
 type InsightSeriesMetadataPayloadResolver interface {
 	Series(ctx context.Context) InsightSeriesMetadataResolver
+}
+
+type InsightSeriesQueryStatusResolver interface {
+	SeriesId(ctx context.Context) (string, error)
+	Query(ctx context.Context) (string, error)
+	Enabled(ctx context.Context) (bool, error)
+	Errored(ctx context.Context) (int32, error)
+	Completed(ctx context.Context) (int32, error)
+	Processing(ctx context.Context) (int32, error)
+	Failed(ctx context.Context) (int32, error)
+	Queued(ctx context.Context) (int32, error)
 }
