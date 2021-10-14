@@ -262,8 +262,7 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"),
-		bk.ArtifactPaths("$HOME/.sourcegraph-dev/logs/**/*"))
+		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
