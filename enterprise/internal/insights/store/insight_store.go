@@ -417,6 +417,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		return types.InsightSeries{}, err
 	}
 	series.ID = id
+	series.Enabled = true
 	return series, nil
 }
 
