@@ -47,15 +47,6 @@ func formatFirecrackerCommand(spec CommandSpec, name, repoDir string, options Op
 	}
 }
 
-// We've recently seen issues with concurent VM creation. It's likely we
-// can do better here and run an empty VM at application startup, but I
-// want to do this quick and dirty to see if we can raise our concurrency
-// without other issues.
-//
-// https://github.com/weaveworks/ignite/issues/559
-// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
-var igniteRunLock sync.Mutex
-
 // setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
 // machine instance. If a startup script path (an executable file on the host) is supplied,
 // it will be mounted into the new virtual machine instance and executed.
@@ -75,11 +66,9 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 		),
 		Operation: operations.SetupFirecrackerStart,
 	}
-	igniteRunLock.Lock()
-	err := errors.Wrap(runner.RunCommand(ctx, startCommand, logger), "failed to start firecracker vm")
-	igniteRunLock.Unlock()
-	if err != nil {
-		return err
+
+	if err := callWithInstrumentedLock(operations, func() error { return runner.RunCommand(ctx, startCommand, logger) }); err != nil {
+		return errors.Wrap(err, "failed to start firecracker vm")
 	}
 
 	if options.FirecrackerOptions.VMStartupScriptPath != "" {
@@ -94,6 +83,34 @@ func setupFirecracker(ctx context.Context, runner commandRunner, logger *Logger,
 	}
 
 	return nil
+}
+
+// We've recently seen issues with concurent VM creation. It's likely we
+// can do better here and run an empty VM at application startup, but I
+// want to do this quick and dirty to see if we can raise our concurrency
+// without other issues.
+//
+// https://github.com/weaveworks/ignite/issues/559
+// Following up in https://github.com/sourcegraph/sourcegraph/issues/21377.
+var igniteRunLock sync.Mutex
+
+// callWithInstrumentedLock calls f while holding the igniteRunLock. The duration of the wait
+// and active portions of this method are emitted as prometheus metrics.
+func callWithInstrumentedLock(operations *Operations, f func() error) error {
+	lockRequestedAt := time.Now()
+	igniteRunLock.Lock()
+	lockAcquiredAt := time.Now()
+	lockWaitDuration := lockAcquiredAt.Sub(lockRequestedAt)
+
+	err := f()
+
+	igniteRunLock.Unlock()
+	lockReleasedAt := time.Now()
+	lockHeldDuration := lockReleasedAt.Sub(lockAcquiredAt)
+
+	operations.RunLockWaitTotal.Add(float64(lockWaitDuration / time.Millisecond))
+	operations.RunLockHeldTotal.Add(float64(lockHeldDuration / time.Millisecond))
+	return err
 }
 
 // teardownFirecracker issues a stop and a remove request for the Firecracker VM with
