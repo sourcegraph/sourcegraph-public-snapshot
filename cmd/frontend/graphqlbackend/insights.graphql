@@ -414,6 +414,9 @@ input UpdateInsightSeriesInput {
 }
 
 extend type Query {
+    """
+    Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
+    """
     insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
 }
 
