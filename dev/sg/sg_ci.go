@@ -266,7 +266,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 				switch *ciLogsOut {
 				case ciLogsOutStdout:
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
-					bkTimestamp := regexp.MustCompile(`_bk;t=\d{13}`)
+					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
 					for _, log := range logs {
 						block := out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
 							*log.JobMeta.Name))
