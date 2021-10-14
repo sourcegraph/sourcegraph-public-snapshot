@@ -24,9 +24,9 @@ interface CodeHostItemProps {
     isTokenUpdateRequired: boolean | undefined
     // optional service object fields when the code host connection is active
     service?: ListExternalServiceFields
-    isUpdateModalOpen: boolean
-    toggleUpdateModal: () => void
-    onDidUpsert: (service: ListExternalServiceFields) => void
+    isUpdateModalOpen?: boolean
+    toggleUpdateModal?: () => void
+    onDidUpsert?: (service: ListExternalServiceFields) => void
     onDidAdd?: (service: ListExternalServiceFields) => void
     onDidRemove: () => void
     onDidError: (error: ErrorLike) => void
@@ -97,7 +97,7 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                     onDidError={onDidError}
                 />
             )}
-            {service && isUpdateModalOpen && (
+            {service && toggleUpdateModal && onDidUpsert && isUpdateModalOpen && (
                 <UpdateCodeHostConnectionModal
                     serviceID={service.id}
                     serviceConfig={service.config}
