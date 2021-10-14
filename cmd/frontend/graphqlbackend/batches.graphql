@@ -2611,10 +2611,6 @@ enum BatchSpecWorkspaceState {
     """
     PROCESSING
     """
-    An error occured while executing. Will be retried eventually.
-    """
-    ERRORED
-    """
     A fatal error occured while executing. No retries will be made.
     """
     FAILED
@@ -3189,14 +3185,14 @@ The possible states of a batch spec.
 """
 enum BatchSpecState {
     """
+    The spec is not yet enqueued for processing.
+    """
+    PENDING
+
+    """
     This spec is being processed.
     """
     PROCESSING
-
-    """
-    This spec errored while processing.
-    """
-    ERRORED
 
     """
     This spec failed to be processed.

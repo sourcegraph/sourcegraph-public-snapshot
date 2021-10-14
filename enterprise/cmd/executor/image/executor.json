@@ -21,7 +21,7 @@
       "disk_type": "pd-ssd",
       "image_name": "{{user `name`}}",
       "tags": ["packer"],
-      "account_file": "/workspace/builder-sa-key.json"
+      "account_file": "builder-sa-key.json"
     },
     {
       "name": "aws",
@@ -45,7 +45,7 @@
   "provisioners": [
     {
       "type": "file",
-      "sources": ["/workspace/builder-sa-key.json"],
+      "sources": ["builder-sa-key.json"],
       "destination": "/tmp/"
     },
     {

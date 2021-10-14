@@ -12,10 +12,11 @@ jobs:
           with:
              recipients: |
                   team/extensibility=@joelkw @muratsu
-                  team/frontend-platform=@alicjasuska @umpox @valerybugakov @5h1ru @pdubroy
+                  team/frontend-platform=@umpox @valerybugakov @5h1ru @pdubroy @taylorsperry
                   team/cloud=@tsenart
                   team/search=@lguychard
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
+                  team/delivery=@davejrt @ggilmore @dan-mckean @caugustus-sourcegraph @stephanx
                   team/security=@dan-mckean

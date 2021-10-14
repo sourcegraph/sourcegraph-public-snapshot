@@ -12,6 +12,7 @@
 
 ## Development
 
+- [`sg` - the Sourcegraph developer tool](./sg/index.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)

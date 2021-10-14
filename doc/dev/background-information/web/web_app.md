@@ -10,7 +10,7 @@ Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/
 
 ### Prerequisites
 
-The `sg` CLI tool is required for key local development commands. Check out the `sg` [README](https://github.com/sourcegraph/sourcegraph/blob/main/dev/sg/README.md).
+The `sg` CLI tool is required for key local development commands. Check out [the `sg` documentation](../sg/index.md).
 
 To install it, [see the instructions](../../getting-started/quickstart_3_install_sg.md).
 
@@ -19,13 +19,13 @@ To install it, [see the instructions](../../getting-started/quickstart_3_install
 1. Start the web server and point it to any deployed API instance. See more info in the web app [README](https://github.com/sourcegraph/sourcegraph/blob/main/client/web/README.md).
 
     ```sh
-    sg run web-standalone
+    sg start web-standalone
     ```
 
-    For the enterprise version:
+    For the open-source version:
 
     ```sh
-    sg run enterprise-web-standalone
+    sg start oss-web-standalone
     ```
 
 2. Start all backend services with the frontend server.

@@ -716,6 +716,54 @@ const hardDeleteUploadByIDQuery = `
 DELETE FROM lsif_uploads WHERE id IN (%s)
 `
 
+// SelectRepositoriesForIndexScan returns a set of repository identifiers that should be considered
+// for indexing jobs. Repositories that were returned previously from this call within the  given
+// process delay are not returned.
+func (s *Store) SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	return s.selectRepositoriesForIndexScan(ctx, processDelay, limit, timeutil.Now())
+}
+
+func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int, now time.Time) (_ []int, err error) {
+	ctx, endObservation := s.operations.selectRepositoriesForIndexScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInts(s.Query(ctx, sqlf.Sprintf(
+		selectRepositoriesForIndexScanQuery,
+		now,
+		int(processDelay/time.Second),
+		limit,
+		now,
+		now,
+	)))
+}
+
+const selectRepositoriesForIndexScanQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
+WITH candidate_repositories AS (
+	SELECT r.id AS id
+	FROM repo r
+	WHERE r.deleted_at IS NULL
+),
+repositories AS (
+	SELECT cr.id
+	FROM candidate_repositories cr
+	LEFT JOIN lsif_last_index_scan lrs ON lrs.repository_id = cr.id
+
+	-- Ignore records that have been checked recently. Note this condition is
+	-- true for a null last_index_scan_at (which has never been checked).
+	WHERE (%s - lrs.last_index_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+	ORDER BY
+		lrs.last_index_scan_at NULLS FIRST,
+		cr.id -- tie breaker
+	LIMIT %s
+)
+INSERT INTO lsif_last_index_scan (repository_id, last_index_scan_at)
+SELECT r.id, %s::timestamp FROM repositories r
+ON CONFLICT (repository_id) DO UPDATE
+SET last_index_scan_at = %s
+RETURNING repository_id
+`
+
 // SelectRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence
 // data and a fresh associated commit graph. Repositories that were returned previously from this call
 // within the  given process delay are not returned.

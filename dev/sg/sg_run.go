@@ -47,7 +47,7 @@ func runExec(ctx context.Context, args []string) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return run.Commands(ctx, globalConf.Env, cmds...)
+	return run.Commands(ctx, globalConf.Env, *verboseFlag, cmds...)
 }
 func constructRunCmdLongHelp() string {
 	var out strings.Builder
