@@ -85,10 +85,9 @@ func NewRunner(dir string, logger *Logger, options Options, operations *Operatio
 }
 
 type dockerRunner struct {
-	dir        string
-	logger     *Logger
-	options    Options
-	operations *Operations
+	dir     string
+	logger  *Logger
+	options Options
 }
 
 var _ Runner = &dockerRunner{}
