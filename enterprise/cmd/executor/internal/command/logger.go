@@ -126,13 +126,17 @@ func (l *Logger) Flush() {
 
 // Log redacts secrets from the given log entry and stores it.
 func (l *Logger) Log(key string, command []string) *entryHandle {
-	logEntry := workerutil.ExecutionLogEntry{
-		Key:       key,
-		Command:   command,
-		StartTime: time.Now(),
+	handle := &entryHandle{
+		logEntry: workerutil.ExecutionLogEntry{
+			Key:       key,
+			Command:   command,
+			StartTime: time.Now(),
+		},
+		replacer: l.replacer,
+		buf:      &bytes.Buffer{},
+		done:     make(chan struct{}),
 	}
 
-	handle := &entryHandle{logEntry: logEntry, replacer: l.replacer, buf: &bytes.Buffer{}, done: make(chan struct{})}
 	l.handles <- handle
 	return handle
 }
