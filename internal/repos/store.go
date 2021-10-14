@@ -36,7 +36,7 @@ type Store struct {
 	// Used for tracing calls to store methods. Uses opentracing.GlobalTracer() by default.
 	Tracer trace.Tracer
 	// RepoStore is a database.RepoStore using the same database handle.
-	RepoStore database.IRepoStore
+	RepoStore database.RepoStore
 	// ExternalServiceStore is a database.ExternalServiceStore using the same database handle.
 	ExternalServiceStore *database.ExternalServiceStore
 
