@@ -60,7 +60,7 @@ func NewConfig(now time.Time) (Config, error) {
 	if token != "" {
 		bkConfig, err := bk.NewTokenConfig(token, false)
 		if err != nil {
-			panic(err)
+			return Config{}, err
 		}
 
 		bkClient = bk.NewClient(bkConfig.Client())
@@ -182,7 +182,7 @@ func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]strin
 		return nil, commit, err
 	}
 
-	fmt.Fprintf(os.Stderr, "Running git %s\n", strings.Join(diffCommand, " "))
+	debugLog("Running git %s\n", strings.Join(diffCommand, " "))
 	cmd := exec.Command("git", diffCommand...)
 	cmd.Stderr = os.Stderr
 	if output, err := cmd.Output(); err != nil {
@@ -206,7 +206,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 
 	if bkClient == nil {
 		// if there is no builkite API client, run a diff with main
-		fmt.Fprintf(os.Stderr, "BUILDKITE_API_TOKEN env var not found, comparing with main...")
+		debugLog("BUILDKITE_API_TOKEN env var not found, comparing with main...")
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 
@@ -257,7 +257,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 	if err := cmd.Run(); err != nil {
 		return nil, "", err
 	}
-	fmt.Fprintf(os.Stderr, "Previous build commit %q found in the following branches: %v\n", *build.Commit, buf.String())
+	debugLog("Previous build commit %q found in the following branches: %v\n", *build.Commit, buf.String())
 
 	var found bool
 	for _, b := range strings.Split(buf.String(), "\n") {
@@ -268,7 +268,7 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 	}
 
 	if !found {
-		fmt.Fprintf(os.Stderr, "Previous build commit %q not found in current branch. Comparing with main...\n", *build.Commit)
+		debugLog("Previous build commit %q not found in current branch. Comparing with main...\n", *build.Commit)
 		return append(diffCommand, "origin/main..."+commit), commit, nil
 	}
 
@@ -276,4 +276,11 @@ func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args [
 	diffCommand = append(diffCommand, *build.Commit+"..."+branch)
 
 	return diffCommand, commit, nil
+}
+
+// debugLog logs on os.Stderr using fmt.Fprintf.
+// Node: os.Stdout cannot be used for logging, as it is read by
+// builkite to generate the pipeline.
+func debugLog(format string, a ...interface{}) {
+	debugLog(format, a...)
 }
