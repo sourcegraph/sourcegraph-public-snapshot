@@ -157,13 +157,14 @@ const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => 
     },
 })
 
-const ExternalChangesetFileDiffs: (variables: ExternalChangesetFileDiffsVariables) => ExternalChangesetFileDiffsResult =
-    () => ({
-        node: {
-            __typename: 'ExternalChangeset',
-            diff: mockDiff,
-        },
-    })
+const ExternalChangesetFileDiffs: (
+    variables: ExternalChangesetFileDiffsVariables
+) => ExternalChangesetFileDiffsResult = () => ({
+    node: {
+        __typename: 'ExternalChangeset',
+        diff: mockDiff,
+    },
+})
 
 const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => BatchChangeChangesetsResult = () => ({
     node: {
