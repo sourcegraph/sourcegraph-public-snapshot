@@ -7,8 +7,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -37,12 +40,14 @@ type Resolver interface {
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
 	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
+	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
 }
 
 type resolver struct {
 	dbStore         DBStore
 	lsifStore       LSIFStore
 	gitserverClient GitserverClient
+	policyMatcher   *policies.Matcher
 	indexEnqueuer   IndexEnqueuer
 	hunkCache       HunkCache
 	operations      *operations
@@ -72,6 +77,7 @@ func newResolver(
 		dbStore:         dbStore,
 		lsifStore:       lsifStore,
 		gitserverClient: gitserverClient,
+		policyMatcher:   policies.NewMatcher(gitserverClient, policies.NoopExtractor, false, false),
 		indexEnqueuer:   indexEnqueuer,
 		hunkCache:       hunkCache,
 		operations:      newOperations(observationContext),
@@ -218,4 +224,23 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	}
 
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
+}
+
+func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {
+	policyMatches, err := r.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, []dbstore.ConfigurationPolicy{{Type: gitObjectType, Pattern: pattern}}, timeutil.Now())
+	if err != nil {
+		return nil, err
+	}
+
+	namesByCommit := make(map[string][]string, len(policyMatches))
+	for commit, policyMatches := range policyMatches {
+		names := make([]string, 0, len(policyMatches))
+		for _, policyMatch := range policyMatches {
+			names = append(names, policyMatch.Name)
+		}
+
+		namesByCommit[commit] = names
+	}
+
+	return namesByCommit, nil
 }
