@@ -456,8 +456,9 @@ func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts)
 		return nil, err
 	}
 
-	return batchSpec, nil
-	// return s.store.CancelBatchSpecWorkspaceExecutionJob(ctx,
+	cancelOpts := store.CancelBatchSpecWorkspaceExecutionJobsOpts{BatchSpecID: batchSpec.ID}
+	_, err = s.store.CancelBatchSpecWorkspaceExecutionJobs(ctx, cancelOpts)
+	return batchSpec, err
 }
 
 type ReplaceBatchSpecInputOpts struct {

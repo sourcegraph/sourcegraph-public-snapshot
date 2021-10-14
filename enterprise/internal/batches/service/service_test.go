@@ -11,6 +11,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -1249,16 +1250,19 @@ func TestService(t *testing.T) {
 
 				job := &btypes.BatchSpecWorkspaceExecutionJob{
 					BatchSpecWorkspaceID: ws.ID,
-					State:                btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 				}
 				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
 					t.Fatal(err)
 				}
+
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+
 				jobIDs = append(jobIDs, job.ID)
 			}
 
-			// Execute BatchSpec by creating execution jobs
-			if _, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
+			if _, err := svc.CancelBatchSpec(ctx, CancelBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1273,50 +1277,14 @@ func TestService(t *testing.T) {
 				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", len(rs), len(jobs))
 			}
 
-		})
-		t.Run("resolution not completed", func(t *testing.T) {
-			spec := testBatchSpec(admin.ID)
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
-				t.Fatal(err)
+			var canceled int
+			for _, j := range jobs {
+				if j.Cancel {
+					canceled += 1
+				}
 			}
-
-			job := &btypes.BatchSpecResolutionJob{
-				State:       btypes.BatchSpecResolutionJobStateQueued,
-				BatchSpecID: spec.ID,
-			}
-
-			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
-				t.Fatal(err)
-			}
-
-			// Execute BatchSpec by creating execution jobs
-			_, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
-			if !errors.Is(err, ErrBatchSpecResolutionIncomplete) {
-				t.Fatalf("error has wrong type: %T", err)
-			}
-		})
-
-		t.Run("resolution failed", func(t *testing.T) {
-			spec := testBatchSpec(admin.ID)
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
-				t.Fatal(err)
-			}
-
-			failureMessage := "cat ate the homework"
-			job := &btypes.BatchSpecResolutionJob{
-				State:          btypes.BatchSpecResolutionJobStateFailed,
-				FailureMessage: &failureMessage,
-				BatchSpecID:    spec.ID,
-			}
-
-			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
-				t.Fatal(err)
-			}
-
-			// Execute BatchSpec by creating execution jobs
-			_, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
-			if !errors.HasType(err, ErrBatchSpecResolutionErrored{}) {
-				t.Fatalf("error has wrong type: %T", err)
+			if canceled != len(jobs) {
+				t.Fatalf("not all jobs were canceled. jobs=%d, canceled=%d", len(jobs), canceled)
 			}
 		})
 	})
