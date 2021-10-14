@@ -208,7 +208,7 @@ func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboa
 }
 
 func (s *DBDashboardStore) IsViewOnDashboard(ctx context.Context, dashboardId int, viewId string) (bool, error) {
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(isViewOnDashboardSql, dashboardId, viewId)))
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getViewFromDashboardByViewId, dashboardId, viewId)))
 	return count != 0, err
 }
 
@@ -256,8 +256,8 @@ WHERE dashboard_id = %s
   AND insight_view_id IN (SELECT id FROM insight_view WHERE unique_id = ANY(%s));
 `
 
-const isViewOnDashboardSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+const getViewFromDashboardByViewId = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetViewFromDashboardByViewId
 SELECT COUNT(*)
 FROM dashboard_insight_view div
 	INNER JOIN insight_view iv ON div.insight_view_id = iv.id
