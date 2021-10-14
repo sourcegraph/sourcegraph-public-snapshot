@@ -234,6 +234,7 @@ func TestCreateSeries(t *testing.T) {
 			LastSnapshotAt:        now,
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
+			Enabled:               true,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
