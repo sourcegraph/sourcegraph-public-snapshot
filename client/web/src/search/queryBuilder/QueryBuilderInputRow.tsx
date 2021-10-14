@@ -3,6 +3,7 @@ import * as React from 'react'
 import { InfoDropdown } from '../input/InfoDropdown'
 
 import { QueryBuilderState } from './QueryBuilder'
+import styles from './QueryBuilderInputRow.module.scss'
 
 /** An example demonstrating the capabilities of the search field. */
 export interface QueryFieldExample {
@@ -39,15 +40,15 @@ interface Props {
 export const QueryBuilderInputRow: React.FunctionComponent<Props> = props => {
     const placeholder = props.isSourcegraphDotCom ? props.dotComPlaceholder || props.placeholder : props.placeholder
     return (
-        <div className="query-builder-input-row">
-            <label className="query-builder-input-row__label" htmlFor={`query-builder__${props.shortName}`}>
+        <div className={styles.queryBuilderInputRow}>
+            <label className={styles.label} htmlFor={`query-builder__${props.shortName}`}>
                 {props.title}:
             </label>
-            <div className="query-builder-input-row__input">
+            <div className={styles.input}>
                 <input
                     data-testid={`test-${props.shortName}`}
                     id={`query-builder-${props.shortName}`}
-                    className="form-control query-builder__input"
+                    className="form-control"
                     spellCheck={false}
                     autoCapitalize="off"
                     autoComplete="off"

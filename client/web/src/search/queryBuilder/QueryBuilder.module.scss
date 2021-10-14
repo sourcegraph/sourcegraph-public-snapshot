@@ -1,0 +1,61 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.query-builder {
+    border-radius: 0.25rem;
+    width: 100%;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    position: relative;
+
+    h3,
+    label {
+        letter-spacing: 0.015rem;
+    }
+}
+
+.header,
+.row {
+    display: flex;
+    width: 100%;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+
+    &-example {
+        flex: 0 0 13rem;
+    }
+}
+
+.section {
+    border: 1px solid var(--input-border-color);
+    border-radius: 0.125rem;
+    padding: 0.5rem;
+}
+
+.header {
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+
+    &-input {
+        flex: 2 0 16rem;
+    }
+}
+
+.row {
+    flex-wrap: wrap;
+
+    &-label {
+        flex: 0 0 8rem;
+        display: flex;
+        align-items: center;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    &-input {
+        flex: 1 1 auto;
+    }
+}
+
+.docs-link {
+    padding-top: 1.5rem;
+}

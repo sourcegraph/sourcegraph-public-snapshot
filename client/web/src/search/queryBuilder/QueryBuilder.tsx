@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import * as React from 'react'
 
@@ -5,6 +6,7 @@ import { PatternTypeProps } from '..'
 import { SearchPatternType } from '../../graphql-operations'
 import { InfoDropdown } from '../input/InfoDropdown'
 
+import styles from './QueryBuilder.module.scss'
 import { QueryBuilderInputRow } from './QueryBuilderInputRow'
 
 export interface QueryBuilderProps extends Pick<PatternTypeProps, 'patternType'> {
@@ -133,19 +135,19 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
     public render(): JSX.Element | null {
         const documentationUrlPrefix = this.props.isSourcegraphDotCom ? 'https://docs.sourcegraph.com' : '/help'
         return (
-            <div className="query-builder">
-                <div className="query-builder__header">
-                    <h3 className="query-builder__header-input">Match:</h3>
+            <div className={styles.queryBuilder}>
+                <div className={styles.header}>
+                    <h3 className={styles.headerInput}>Match:</h3>
                 </div>
-                <div className="query-builder__section query-builder__section--blue">
-                    <div className="query-builder__row">
-                        <label className="query-builder__row-label" htmlFor="query-builder__type">
+                <div className={classNames(styles.section)}>
+                    <div className={styles.row}>
+                        <label className={styles.rowLabel} htmlFor="query-builder__type">
                             Type:
                         </label>
-                        <div className="query-builder__row-input">
+                        <div className={styles.rowInput}>
                             <select
                                 id="query-builder__type"
-                                className="form-control query-builder__input"
+                                className="form-control"
                                 onChange={this.onTypeChange}
                                 value={this.state.typeOfSearch}
                             >
@@ -268,16 +270,12 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
                         description="Match lines containing this exact string. Punctuation and special characters will be matched literally."
                         examples={[{ description: 'Search for `open(`', value: 'open(' }]}
                     />
-                    <div className="query-builder__row">
-                        <label className="query-builder__row-label" htmlFor="query-builder-case">
+                    <div className={styles.row}>
+                        <label className={styles.rowLabel} htmlFor="query-builder-case">
                             Case sensitive:
                         </label>
-                        <div className="query-builder__row-input">
-                            <select
-                                id="query-builder-case"
-                                className="form-control query-builder__input"
-                                onChange={this.onCaseChange}
-                            >
+                        <div className={styles.rowInput}>
+                            <select id="query-builder-case" className="form-control" onChange={this.onCaseChange}>
                                 <option value="no" defaultChecked={true}>
                                     No
                                 </option>
@@ -290,10 +288,10 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
                         />
                     </div>
                 </div>
-                <div className="query-builder__header">
-                    <h3 className="query-builder__header-input">Search scope:</h3>
+                <div className={styles.header}>
+                    <h3 className={styles.headerInput}>Search scope:</h3>
                 </div>
-                <div className="query-builder__section query-builder__section--purple">
+                <div className={classNames(styles.section)}>
                     <QueryBuilderInputRow
                         onInputChange={this.fieldsChanged}
                         placeholder="myorg/myrepo"
@@ -360,7 +358,7 @@ export class QueryBuilder extends React.Component<QueryBuilderProps, QueryBuilde
                         ]}
                     />
                 </div>
-                <div className="query-builder__docs-link">
+                <div className={styles.docsLink}>
                     <a target="blank" href={`${documentationUrlPrefix}/code_search/reference/queries`}>
                         View all search options in docs <ExternalLinkIcon className="icon-inline small" />
                     </a>

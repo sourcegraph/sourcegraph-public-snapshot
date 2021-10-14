@@ -1,0 +1,19 @@
+.query-builder-input-row {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.label {
+    flex: 0 0 8rem;
+    display: flex;
+    align-items: center;
+    margin: 0;
+    font-weight: 600;
+}
+
+.input {
+    flex: 1 1 auto;
+}
