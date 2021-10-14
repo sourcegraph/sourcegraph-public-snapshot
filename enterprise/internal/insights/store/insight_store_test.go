@@ -253,6 +253,7 @@ func TestCreateSeries(t *testing.T) {
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
 			CreatedAt:             now,
+			Enabled:               true,
 		}
 
 		log15.Info("values", "want", want, "got", got)
