@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/cockroachdb/errors"
@@ -71,6 +74,15 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	}, nil
 }
 
+func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend.UpdateInsightSeriesArgs) (graphqlbackend.InsightSeriesMetadataPayloadResolver, error) {
+	actr := actor.FromContext(ctx)
+	if err := backend.CheckUserIsSiteAdmin(ctx, r.postgresDatabase, actr.UID); err != nil {
+		return nil, err
+	}
+
+	r.data
+}
+
 type disabledResolver struct {
 	reason string
 }
@@ -100,5 +112,9 @@ func (r *disabledResolver) AddInsightViewToDashboard(ctx context.Context, args *
 }
 
 func (r *disabledResolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend.UpdateInsightSeriesArgs) (graphqlbackend.InsightSeriesMetadataPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }

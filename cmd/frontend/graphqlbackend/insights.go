@@ -23,6 +23,9 @@ type InsightsResolver interface {
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
 	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
+
+	// Admin Management Mutations
+	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 }
 
 type InsightsArgs struct {
@@ -143,4 +146,22 @@ type RemoveInsightViewFromDashboardArgs struct {
 type RemoveInsightViewFromDashboardInput struct {
 	InsightViewID graphql.ID
 	DashboardID   graphql.ID
+}
+
+type UpdateInsightSeriesArgs struct {
+	SeriesId string
+	Input    UpdateInsightSeriesInput
+}
+
+type UpdateInsightSeriesInput struct {
+	DesiredActiveState *bool
+}
+
+type InsightSeriesMetadataResolver interface {
+	SeriesId(ctx context.Context) (string, error)
+	Enabled(ctx context.Context) (bool, error)
+}
+
+type InsightSeriesMetadataPayloadResolver interface {
+	Series(ctx context.Context) InsightSeriesMetadataResolver
 }

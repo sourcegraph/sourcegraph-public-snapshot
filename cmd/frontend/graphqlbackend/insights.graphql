@@ -341,3 +341,26 @@ input RemoveInsightViewFromDashboardInput {
     """
     dashboardId: ID!
 }
+
+type InsightSeriesMetadata {
+    seriesId: String!
+    enabled: Boolean!
+}
+
+extend type Mutation {
+    updateInsightSeries(args: UpdateInsightSeriesInputArgs!): InsightSeriesMetadataPayload
+}
+
+type InsightSeriesMetadataPayload {
+    series: InsightSeriesMetadata!
+}
+
+input UpdateInsightSeriesInputArgs {
+    seriesId: String!
+    input: UpdateInsightSeriesInput!
+}
+
+
+input UpdateInsightSeriesInput {
+    desiredActiveState: Boolean
+}

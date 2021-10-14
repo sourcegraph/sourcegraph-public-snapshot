@@ -468,6 +468,23 @@ func (s *InsightStore) StampBackfill(ctx context.Context, series types.InsightSe
 	return series, nil
 }
 
+func (s *InsightStore) SetSeriesStatus(ctx context.Context, seriesId string, enabled bool) error {
+	var arg *sqlf.Query
+	if enabled {
+		arg = sqlf.Sprintf("null")
+	} else {
+		arg = sqlf.Sprintf("%s", s.Now())
+	}
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
+}
+
+const setSeriesStatusSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
+UPDATE insight_series
+SET deleted_at = %s
+WHERE series_id = %s;
+`
+
 const stampBackfillSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:StampRecording
 UPDATE insight_series
