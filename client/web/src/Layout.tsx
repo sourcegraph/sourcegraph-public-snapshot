@@ -299,7 +299,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 <Suspense
                     fallback={
                         <div className="flex flex-1">
-                            <LoadingSpinner className="icon-inline m-2" />
+                            <LoadingSpinner className="icon-inline m-2" /> Yay
                         </div>
                     }
                 >
