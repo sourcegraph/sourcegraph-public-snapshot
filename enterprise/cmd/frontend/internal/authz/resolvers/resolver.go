@@ -81,7 +81,7 @@ func (r *Resolver) SetRepositoryPermissionsForUsers(ctx context.Context, args *g
 		return nil, err
 	}
 	// Make sure the repo ID is valid.
-	if _, err = database.GlobalRepos.Get(ctx, repoID); err != nil {
+	if _, err = database.Repos(r.store.Handle().DB()).Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 
@@ -296,7 +296,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 		return nil, err
 	}
 	// Make sure the repo ID is valid.
-	if _, err = database.GlobalRepos.Get(ctx, repoID); err != nil {
+	if _, err = database.Repos(r.store.Handle().DB()).Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 
@@ -353,7 +353,7 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 		return nil, err
 	}
 	// Make sure the repo ID is valid and not soft-deleted.
-	if _, err = database.GlobalRepos.Get(ctx, repoID); err != nil {
+	if _, err = database.Repos(r.store.Handle().DB()).Get(ctx, repoID); err != nil {
 		return nil, err
 	}
 

@@ -102,9 +102,9 @@ func getTotalUsersCount(ctx context.Context) (_ int, err error) {
 	return database.GlobalUsers.Count(ctx, &database.UsersListOptions{})
 }
 
-func getTotalReposCount(ctx context.Context) (_ int, err error) {
+func getTotalReposCount(ctx context.Context, db dbutil.DB) (_ int, err error) {
 	defer recordOperation("getTotalReposCount")(&err)
-	return database.GlobalRepos.Count(ctx, database.ReposListOptions{})
+	return database.Repos(db).Count(ctx, database.ReposListOptions{})
 }
 
 func getUsersActiveTodayCount(ctx context.Context) (_ int, err error) {
@@ -367,7 +367,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 			logFunc("telemetry: updatecheck.getUsersActiveToday failed", "error", err)
 		}
 		r.UniqueUsers = int32(count)
-		totalRepos, err := getTotalReposCount(ctx)
+		totalRepos, err := getTotalReposCount(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getTotalReposCount failed", "error", err)
 		}
