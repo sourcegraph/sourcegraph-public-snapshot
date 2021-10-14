@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -62,9 +63,13 @@ func constructRunCmdLongHelp() string {
 		fmt.Fprintf(&out, "\n")
 		fmt.Fprintf(&out, "AVAILABLE COMMANDS IN %s%s%s\n", output.StyleBold, *configFlag, output.StyleReset)
 
+		var names []string
 		for name := range globalConf.Commands {
-			fmt.Fprintf(&out, "  %s\n", name)
+			names = append(names, name)
 		}
+		sort.Strings(names)
+		fmt.Fprint(&out, strings.Join(names, "\n"))
+
 	}
 
 	return out.String()

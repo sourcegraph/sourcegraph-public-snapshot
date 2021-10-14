@@ -106,7 +106,10 @@ func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 
-	n, err := w.Write(output)
+	cleanedOutput := strings.ReplaceAll(string(output), "$", `\$`)
+	cleanedOutput = strings.ReplaceAll(cleanedOutput, "`", "\\`")
+
+	n, err := w.Write([]byte(cleanedOutput))
 	return int64(n), err
 }
 
