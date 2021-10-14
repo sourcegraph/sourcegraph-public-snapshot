@@ -628,14 +628,14 @@ func alertForInvalidRevision(revision string) *searchAlert {
 func alertForRepoGroupsDeprecation() *searchAlert {
 	return &searchAlert{
 		title:       "Repogroups are deprecated",
-		description: "Repogroups are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate repogroups to search contexts in our blog post: http://example.com",
+		description: "Repogroups are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate repogroups to search contexts in our blog post: https://about.sourcegraph.com/blog/introducing-search-contexts.",
 	}
 }
 
 func alertForVersionContextsDeprecation() *searchAlert {
 	return &searchAlert{
 		title:       "Version contexts are deprecated",
-		description: "Version contexts are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate version contexts to search contexts in our blog post: http://example.com",
+		description: "Version contexts are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate version contexts to search contexts in our blog post: https://about.sourcegraph.com/blog/introducing-search-contexts.",
 	}
 }
 
