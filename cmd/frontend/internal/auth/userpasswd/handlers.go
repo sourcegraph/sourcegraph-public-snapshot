@@ -179,7 +179,7 @@ func handleSignUp(db dbutil.DB, w http.ResponseWriter, r *http.Request, failIfNe
 		return
 	}
 
-	if err = database.GlobalAuthz.GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = database.Authz(db).GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,

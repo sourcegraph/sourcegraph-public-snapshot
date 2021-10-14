@@ -37,7 +37,6 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	database.Authz = func(db dbutil.DB) database.AuthzStore {
 		return edb.NewAuthzStore(db, clock)
 	}
-	database.GlobalAuthz = database.Authz(db)
 
 	extsvcStore := database.ExternalServices(db)
 
