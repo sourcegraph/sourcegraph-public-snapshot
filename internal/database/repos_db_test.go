@@ -479,6 +479,9 @@ func TestRepos_ListRepoNames_orgID(t *testing.T) {
 	// Create an org
 	displayName := "Acme Corp"
 	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Now()
 

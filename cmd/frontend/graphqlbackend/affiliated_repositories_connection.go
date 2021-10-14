@@ -2,10 +2,11 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"

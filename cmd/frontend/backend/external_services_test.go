@@ -2,10 +2,11 @@ package backend
 
 import (
 	"context"
+	"testing"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
