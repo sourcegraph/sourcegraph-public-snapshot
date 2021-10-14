@@ -2,8 +2,6 @@ package command
 
 import (
 	"context"
-	"fmt"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -74,9 +72,7 @@ type ResourceOptions struct {
 // NewRunner creates a new runner with the given options.
 func NewRunner(dir string, logger *Logger, options Options, operations *Operations) Runner {
 	if !options.FirecrackerOptions.Enabled {
-		return &dockerRunner{dir: dir, logger: logger, options: options,
-			// Temporary
-			operations: operations}
+		return &dockerRunner{dir: dir, logger: logger, options: options}
 	}
 
 	return &firecrackerRunner{
@@ -98,14 +94,7 @@ type dockerRunner struct {
 var _ Runner = &dockerRunner{}
 
 func (r *dockerRunner) Setup(ctx context.Context) error {
-	return callWithInstrumentedLock(r.operations, func() error {
-		fmt.Printf("WAITING\n")
-		time.Sleep(time.Second * 10)
-		fmt.Printf("DONE WAITING\n")
-		return nil
-	})
-
-	// return nil
+	return nil
 }
 
 func (r *dockerRunner) Teardown(ctx context.Context) error {
