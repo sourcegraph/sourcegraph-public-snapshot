@@ -6,7 +6,6 @@ import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
 
-import { CLOUD_SOURCEGRAPH_URL } from '../../../shared/util/context'
 import { LINK_PROPS, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../constants'
 
 import { InfoText } from './InfoText'

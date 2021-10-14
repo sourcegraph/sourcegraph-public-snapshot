@@ -111,7 +111,4 @@ async function main(): Promise<void> {
     subscriptions.unsubscribe()
 }
 
-main().catch(error => {
-    logger.error('Could not inject code intelligence.\n', error)
-    // TODO: hook into not working icon
-})
+main().catch(console.error)

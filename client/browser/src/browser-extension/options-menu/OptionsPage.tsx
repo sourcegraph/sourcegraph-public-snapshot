@@ -184,7 +184,7 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
                     {...LINK_PROPS}
                 >
                     <small>How do we keep your code private?</small>
-                    <OpenInNewIcon className="icon-inline mx-2" />
+                    <OpenInNewIcon className="options-page__open-new-icon mx-2" />
                 </a>
                 <p className="mb-0">
                     <button

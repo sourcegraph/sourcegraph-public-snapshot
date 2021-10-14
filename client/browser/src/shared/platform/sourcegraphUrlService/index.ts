@@ -1,5 +1,5 @@
 import { Observable, of, from, merge, BehaviorSubject } from 'rxjs'
-import { map, first, defaultIfEmpty, distinctUntilChanged, tap } from 'rxjs/operators'
+import { map, first, defaultIfEmpty, distinctUntilChanged, tap, catchError } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -7,6 +7,7 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { background } from '../../../browser-extension/web-extension-api/runtime'
 import { observeStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
+import { logger } from '../../code-hosts/shared/util/logger'
 import { CLOUD_SOURCEGRAPH_URL, isCloudSourcegraphUrl } from '../../util/context'
 
 import { isInBlocklist } from './lib/isInBlocklist'
@@ -29,8 +30,30 @@ const isRepoCloned = (sourcegraphURL: string, repoName: string): Observable<bool
         })
     ).pipe(
         map(dataOrThrowErrors),
-        map(({ repository }) => !!repository?.mirrorInfo?.cloned)
+        map(({ repository }) => !!repository?.mirrorInfo?.cloned),
+        catchError(error => {
+            logger.error(error)
+            return of(false)
+        })
     )
+
+const CLOUD_SUPPORTED_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
+
+/*
+    Prevent repo lookups for code hosts that we know cannot have repositories
+    cloned on sourcegraph.com. Repo lookups trigger cloning, which will
+    inevitably fail in this case.
+*/
+const isCloudSupportedCodehost = (sourcegraphURL: string): boolean => {
+    if (sourcegraphURL !== CLOUD_SOURCEGRAPH_URL) {
+        return true
+    }
+    const { hostname } = new URL(location.href)
+    if (CLOUD_SUPPORTED_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)) {
+        return true
+    }
+    return false
+}
 
 export const SourcegraphUrlService = (() => {
     const selfHostedSourcegraphURL = new BehaviorSubject<string | undefined>(undefined)
@@ -66,7 +89,7 @@ export const SourcegraphUrlService = (() => {
         }
 
         return merge(
-            ...URLs.filter(url => !isBlocked(url, rawRepoName)).map(url =>
+            ...URLs.filter(url => !isBlocked(url, rawRepoName) && isCloudSupportedCodehost(url)).map(url =>
                 isRepoCloned(url, rawRepoName).pipe(map(isCloned => [isCloned, url] as [boolean, string]))
             )
         )

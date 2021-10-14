@@ -29,6 +29,7 @@ export const CodeTextArea: React.FC<CodeTextAreaProps> = ({ value, placeholder, 
                 value={value}
                 className={styles.textarea}
                 placeholder={placeholder}
+                spellCheck={false}
                 onChange={handleChange}
             />
         </div>

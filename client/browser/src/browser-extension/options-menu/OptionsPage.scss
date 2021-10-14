@@ -53,14 +53,15 @@
         color: var(--danger);
     }
 
+    &__open-new-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+        vertical-align: text-bottom;
+    }
+
     &__text-link {
         color: var(--link-color);
         font-weight: normal;
-
-        svg {
-            width: 0.9rem;
-            height: 0.9rem;
-        }
 
         &:focus, &:active {
             outline: none;

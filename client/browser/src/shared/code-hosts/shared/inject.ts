@@ -1,14 +1,11 @@
 import { Observable, Subscription } from 'rxjs'
-import { startWith, filter } from 'rxjs/operators'
+import { startWith } from 'rxjs/operators'
 
 import { SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
-import { CLOUD_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
 import { determineCodeHost, CodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
 import { logger } from './util/logger'
-
-const CLOUD_SUPPORTED_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
 
 function inject(codeHost: CodeHost, assetsURL: string, sourcegraphURL: string, isExtension: boolean): Subscription {
     logger.info('Attaching code intelligence using', sourcegraphURL)
@@ -64,28 +61,7 @@ export async function injectCodeIntelligence(
         await SourcegraphUrlService.use(rawRepoName)
     }
 
-    return SourcegraphUrlService.observe(isExtension)
-        .pipe(
-            filter(sourcegraphURL => {
-                /*
-                    /* Prevent repo lookups for code hosts that we know cannot have repositories
-                    /* cloned on sourcegraph.com. Repo lookups trigger cloning, which will
-                    /* inevitably fail in this case.
-                    */
-                if (sourcegraphURL !== CLOUD_SOURCEGRAPH_URL) {
-                    return true
-                }
-                const { hostname } = new URL(location.href)
-                if (CLOUD_SUPPORTED_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)) {
-                    return true
-                }
-                console.error(
-                    `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${CLOUD_SOURCEGRAPH_URL}.\n List of supported code hosts on ${CLOUD_SOURCEGRAPH_URL}: ${CLOUD_SUPPORTED_CODE_HOST_HOSTS.join(
-                        ', '
-                    )}`
-                )
-                return false
-            })
-        )
-        .subscribe(sourcegraphURL => inject(codeHost, assetsURL, sourcegraphURL, isExtension))
+    return SourcegraphUrlService.observe(isExtension).subscribe(sourcegraphURL =>
+        inject(codeHost, assetsURL, sourcegraphURL, isExtension)
+    )
 }

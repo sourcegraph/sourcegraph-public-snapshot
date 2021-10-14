@@ -23,7 +23,6 @@ const commonProps = subtypeOf<Partial<OptionsPageProps>>()({
 
 const requestPermissionsHandler = action('requestPermission')
 
-// TODO: update
 storiesOf('browser/Options/OptionsPage', module)
     .addDecorator(story => (
         <BrandedStory styles={brandedStyles}>
