@@ -339,7 +339,6 @@ INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
 VALUES %s;
 `
 
-
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
 	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
