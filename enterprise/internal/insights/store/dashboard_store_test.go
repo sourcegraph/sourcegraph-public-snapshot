@@ -7,7 +7,6 @@ import (
 
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
-	"github.com/keegancsmith/sqlf"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -127,7 +126,7 @@ func TestCreateDashboard(t *testing.T) {
 			Title: "test dashboard 1",
 		}}).Equal(t, got)
 
-		gotGrants, err := scanDashboardGrants(store.Query(ctx, sqlf.Sprintf("SELECT * FROM dashboard_grants where dashboard_id = 1")))
+		gotGrants, err := store.GetDashboardGrants(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -178,7 +177,7 @@ func TestUpdateDashboard(t *testing.T) {
 		global := true
 		userId := 1
 		grants := []DashboardGrant{{nil, nil, &global}, {&userId, nil, nil}}
-		_, err = store.UpdateDashboard(ctx, 1, &newTitle, &grants)
+		_, err = store.UpdateDashboard(ctx, UpdateDashboardArgs{1, &newTitle, grants})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -196,7 +195,7 @@ func TestUpdateDashboard(t *testing.T) {
 				Title: "test dashboard 2",
 			}}).Equal(t, got)
 
-		gotGrants, err := scanDashboardGrants(store.Query(ctx, sqlf.Sprintf("SELECT * FROM dashboard_grants where dashboard_id = 1")))
+		gotGrants, err := store.GetDashboardGrants(ctx, 1)
 		if err != nil {
 			t.Fatal(err)
 		}

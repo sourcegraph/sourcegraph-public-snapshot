@@ -179,35 +179,41 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.
 	return dashboard, nil
 }
 
-func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, id int, title *string, grants *[]DashboardGrant) (_ types.Dashboard, err error) {
+type UpdateDashboardArgs struct {
+	ID     int
+	Title  *string
+	Grants []DashboardGrant
+}
+
+func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ types.Dashboard, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return types.Dashboard{}, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if title != nil {
+	if args.Title != nil {
 		err := tx.Exec(ctx, sqlf.Sprintf(updateDashboardSql,
-			*title,
-			id,
+			*args.Title,
+			args.ID,
 		))
 		if err != nil {
 			return types.Dashboard{}, errors.Wrap(err, "updating title")
 		}
 	}
-	if grants != nil {
+	if args.Grants != nil {
 		err := tx.Exec(ctx, sqlf.Sprintf(removeDashboardGrants,
-			id,
+			args.ID,
 		))
 		if err != nil {
 			return types.Dashboard{}, errors.Wrap(err, "removing existing dashboard grants")
 		}
-		err = tx.AddDashboardGrants(ctx, id, *grants)
+		err = tx.AddDashboardGrants(ctx, args.ID, args.Grants)
 		if err != nil {
 			return types.Dashboard{}, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: id})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: args.ID})
 	if err != nil {
 		return types.Dashboard{}, errors.Wrap(err, "GetDashboards")
 	}
@@ -249,6 +255,10 @@ func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboa
 	return nil
 }
 
+func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId int) ([]*DashboardGrant, error) {
+	return scanDashboardGrants(s.Query(ctx, sqlf.Sprintf(getDashboardGrantsSql, dashboardId)))
+}
+
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId int, grants []DashboardGrant) error {
 	if dashboardId == 0 {
 		return errors.New("unable to grant dashboard permissions invalid dashboard id")
@@ -271,6 +281,11 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	}
 	return nil
 }
+
+const getDashboardGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
+SELECT * FROM dashboard_grants where dashboard_id = %s
+`
 
 const addDashboardGrantsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
@@ -312,6 +327,6 @@ WHERE dashboard_id = %s
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
 	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
-	UpdateDashboard(ctx context.Context, id int, title *string, grants *[]DashboardGrant) (_ types.Dashboard, err error)
+	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
 }

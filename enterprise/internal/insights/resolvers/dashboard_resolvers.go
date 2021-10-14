@@ -139,13 +139,13 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 }
 
 func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	var dashboardGrants *[]store.DashboardGrant
+	var dashboardGrants []store.DashboardGrant
 	if args.Input.Grants != nil {
 		parsedGrants, err := parseDashboardGrants(*args.Input.Grants)
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to parse dashboard grants")
 		}
-		dashboardGrants = &parsedGrants
+		dashboardGrants = parsedGrants
 	}
 	dashboardID, err := unmarshalDashboardID(args.Id)
 	if err != nil {
@@ -154,7 +154,7 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboardID.isVirtualized() {
 		return nil, errors.New("unable to update a virtualized dashboard")
 	}
-	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, int(dashboardID.Arg), args.Input.Title, dashboardGrants)
+	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{ID: int(dashboardID.Arg), Title: args.Input.Title, Grants: dashboardGrants})
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 }
 
 func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {
-	var dashboardGrants []store.DashboardGrant
+	dashboardGrants := []store.DashboardGrant{}
 	if inputGrants.Users != nil {
 		for _, userGrant := range *inputGrants.Users {
 			userID, err := graphqlbackend.UnmarshalUserID(userGrant)
