@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { GitObjectType } from '../../../graphql-operations'
 
 import styles from './GitObjectPreview.module.scss'
-import { useSearchGitBranches, useSearchGitTags, useSearchRepoName, GitObjectPreviewResult } from './useSearchGit'
+import { GitObjectPreviewResult, usePreviewGitObjectFilter } from './useSearchGit'
 
 export interface GitObjectPreviewWrapperProps {
     repoId: string
@@ -42,7 +42,11 @@ export interface GitPreviewProps {
 }
 
 const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = useSearchGitTags(repoId, pattern)
+    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(
+        repoId,
+        GitObjectType.GIT_TAG,
+        pattern
+    )
 
     return (
         <GitPreview
@@ -55,7 +59,11 @@ const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, ty
 }
 
 const GitBranchesPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = useSearchGitBranches(repoId, pattern)
+    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(
+        repoId,
+        GitObjectType.GIT_TREE,
+        pattern
+    )
 
     return (
         <GitPreview
@@ -68,7 +76,11 @@ const GitBranchesPreview: FunctionComponent<GitPreviewProps> = ({ repoId, patter
 }
 
 const GitCommitPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = useSearchRepoName(repoId, pattern)
+    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(
+        repoId,
+        GitObjectType.GIT_COMMIT,
+        pattern
+    )
 
     return (
         <GitPreview
@@ -111,18 +123,15 @@ const GitPreview: FunctionComponent<GitObjectPreviewProps> = ({ typeText, previe
                     <div className="mt-2 pt-2">
                         <div className={classNames('bg-dark text-light p-2', styles.container)}>
                             {preview.preview.map(tag => (
-                                <p key={tag.revlike} className="text-monospace p-0 m-0">
+                                <p key={`${tag.repoName}@${tag.name}`} className="text-monospace p-0 m-0">
                                     <span className="search-filter-keyword">repo:</span>
-                                    <span>{tag.name}</span>
+                                    <span>{tag.repoName}</span>
                                     <span className="search-filter-keyword">@</span>
-                                    <span>{tag.revlike}</span>
+                                    <span>{tag.name}</span>
+                                    <span className="badge badge-info ml-4">{tag.rev.slice(0, 7)}</span>
                                 </p>
                             ))}
                         </div>
-
-                        {preview.preview.length < preview.totalCount && (
-                            <p className="pt-2">...and {preview.totalCount - preview.preview.length} other matches</p>
-                        )}
                     </div>
                 ) : (
                     <div className="mt-2 pt-2">
