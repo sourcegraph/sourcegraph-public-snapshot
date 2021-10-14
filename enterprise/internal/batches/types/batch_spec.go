@@ -57,3 +57,55 @@ const BatchSpecTTL = 7 * 24 * time.Hour
 func (cs *BatchSpec) ExpiresAt() time.Time {
 	return cs.CreatedAt.Add(BatchSpecTTL)
 }
+
+type BatchSpecStats struct {
+	Workspaces int
+	Executions int
+
+	Queued     int
+	Processing int
+	Completed  int
+	Canceling  int
+	Canceled   int
+	Failed     int
+}
+
+func ComputeBatchSpecState(stats BatchSpecStats) string {
+	if stats.Executions == 0 {
+		return "PENDING"
+	}
+
+	if stats.Queued == stats.Executions {
+		return "QUEUED"
+	}
+
+	if stats.Completed == stats.Executions {
+		return "COMPLETED"
+	}
+
+	if stats.Canceled == stats.Executions {
+		return "CANCELED"
+	}
+
+	if stats.Failed+stats.Completed == stats.Executions {
+		return "FAILED"
+	}
+
+	if stats.Canceling+stats.Failed+stats.Completed+stats.Canceled == stats.Executions {
+		return "CANCELING"
+	}
+
+	if stats.Canceling > 0 || stats.Processing > 0 {
+		return "PROCESSING"
+	}
+
+	if (stats.Completed > 0 || stats.Failed > 0 || stats.Canceled > 0) && stats.Queued > 0 {
+		return "PROCESSING"
+	}
+
+	if stats.Canceled+stats.Failed+stats.Completed == stats.Executions {
+		return "CANCELED"
+	}
+
+	return ""
+}

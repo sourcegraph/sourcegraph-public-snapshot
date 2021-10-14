@@ -1092,3 +1092,17 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 		"%d errors when validating changeset specs:\n%s\n",
 		len(es), strings.Join(points, "\n"))
 }
+
+func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpecID int64) (string, error) {
+	statsMap, err := s.store.GetBatchSpecStats(ctx, []int64{batchSpecID})
+	if err != nil {
+		return "", err
+	}
+
+	stats, ok := statsMap[batchSpecID]
+	if !ok {
+		return "", store.ErrNoResults
+	}
+
+	return btypes.ComputeBatchSpecState(stats), nil
+}
