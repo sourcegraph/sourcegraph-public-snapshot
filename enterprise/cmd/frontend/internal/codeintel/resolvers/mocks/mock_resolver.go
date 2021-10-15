@@ -63,6 +63,9 @@ type MockResolver struct {
 	// object controlling the behavior of the method
 	// InferredIndexConfiguration.
 	InferredIndexConfigurationFunc *ResolverInferredIndexConfigurationFunc
+	// PreviewGitObjectFilterFunc is an instance of a mock function object
+	// controlling the behavior of the method PreviewGitObjectFilter.
+	PreviewGitObjectFilterFunc *ResolverPreviewGitObjectFilterFunc
 	// QueryResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryResolver.
 	QueryResolverFunc *ResolverQueryResolverFunc
@@ -157,6 +160,11 @@ func NewMockResolver() *MockResolver {
 				return nil, false, nil
 			},
 		},
+		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
+			defaultHook: func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error) {
+				return nil, nil
+			},
+		},
 		QueryResolverFunc: &ResolverQueryResolverFunc{
 			defaultHook: func(context.Context, *graphqlbackend.GitBlobLSIFDataArgs) (resolvers.QueryResolver, error) {
 				return nil, nil
@@ -230,6 +238,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		InferredIndexConfigurationFunc: &ResolverInferredIndexConfigurationFunc{
 			defaultHook: i.InferredIndexConfiguration,
+		},
+		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
+			defaultHook: i.PreviewGitObjectFilter,
 		},
 		QueryResolverFunc: &ResolverQueryResolverFunc{
 			defaultHook: i.QueryResolver,
@@ -1806,6 +1817,123 @@ func (c ResolverInferredIndexConfigurationFuncCall) Args() []interface{} {
 // invocation.
 func (c ResolverInferredIndexConfigurationFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// ResolverPreviewGitObjectFilterFunc describes the behavior when the
+// PreviewGitObjectFilter method of the parent MockResolver instance is
+// invoked.
+type ResolverPreviewGitObjectFilterFunc struct {
+	defaultHook func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error)
+	hooks       []func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error)
+	history     []ResolverPreviewGitObjectFilterFuncCall
+	mutex       sync.Mutex
+}
+
+// PreviewGitObjectFilter delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) PreviewGitObjectFilter(v0 context.Context, v1 int, v2 dbstore.GitObjectType, v3 string) (map[string][]string, error) {
+	r0, r1 := m.PreviewGitObjectFilterFunc.nextHook()(v0, v1, v2, v3)
+	m.PreviewGitObjectFilterFunc.appendCall(ResolverPreviewGitObjectFilterFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// PreviewGitObjectFilter method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverPreviewGitObjectFilterFunc) SetDefaultHook(hook func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PreviewGitObjectFilter method of the parent MockResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ResolverPreviewGitObjectFilterFunc) PushHook(hook func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverPreviewGitObjectFilterFunc) SetDefaultReturn(r0 map[string][]string, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverPreviewGitObjectFilterFunc) PushReturn(r0 map[string][]string, r1 error) {
+	f.PushHook(func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverPreviewGitObjectFilterFunc) nextHook() func(context.Context, int, dbstore.GitObjectType, string) (map[string][]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverPreviewGitObjectFilterFunc) appendCall(r0 ResolverPreviewGitObjectFilterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverPreviewGitObjectFilterFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverPreviewGitObjectFilterFunc) History() []ResolverPreviewGitObjectFilterFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverPreviewGitObjectFilterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverPreviewGitObjectFilterFuncCall is an object that describes an
+// invocation of method PreviewGitObjectFilter on an instance of
+// MockResolver.
+type ResolverPreviewGitObjectFilterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 dbstore.GitObjectType
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string][]string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverPreviewGitObjectFilterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverPreviewGitObjectFilterFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // ResolverQueryResolverFunc describes the behavior when the QueryResolver

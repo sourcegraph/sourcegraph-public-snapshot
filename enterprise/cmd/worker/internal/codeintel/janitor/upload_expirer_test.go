@@ -2,13 +2,13 @@ package janitor
 
 import (
 	"context"
-	"fmt"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -16,179 +16,12 @@ import (
 
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
-	t1 := now.Add(-time.Hour)                 // 1 hour old
-	t2 := now.Add(-time.Hour * 24 * 7)        // 1 week ago
-	t3 := now.Add(-time.Hour * 24 * 30 * 5)   // 5 months ago
-	t4 := now.Add(-time.Hour * 24 * 30 * 9)   // 9 months ago
-	t5 := now.Add(-time.Hour * 24 * 30 * 18)  // 18 months ago
-	t6 := now.Add(-time.Hour * 24 * 365 * 2)  // 3 years ago
-	t8 := now.Add(-time.Hour * 24 * 365 * 15) // 15 years ago
-
-	uploads := []dbstore.Upload{
-		//
-		// Repository 50
-
-		// 1 week old
-		// tip of develop (PROTECTED, younger than 3 months)
-		{ID: 1, RepositoryID: 50, Commit: "deadbeef01", State: "completed", FinishedAt: &t2},
-
-		// 1 week old
-		// on develop (UNPROTECTED, not tip)
-		// tip of feat/blank (PROTECTED, younger than 3 months)
-		{ID: 2, RepositoryID: 50, Commit: "deadbeef02", State: "completed", FinishedAt: &t2},
-
-		// 5 months old
-		// on develop (UNPROTECTED, not tip)
-		{ID: 3, RepositoryID: 50, Commit: "deadbeef03", State: "completed", FinishedAt: &t3},
-
-		// 5 months old
-		// on develop (UNPROTECTED, not tip)
-		// tag v1.2.3 (PROTECTED, younger than 6 months)
-		{ID: 4, RepositoryID: 50, Commit: "deadbeef04", State: "completed", FinishedAt: &t3},
-
-		// 9 months old
-		// on develop (UNPROTECTED, not tip)
-		// tag v1.2.2 (UNPROTECTED, older than 6 months)
-		{ID: 5, RepositoryID: 50, Commit: "deadbeef05", State: "completed", FinishedAt: &t4},
-
-		// 5 months old
-		// tip of es/feature-z (UNPROTECTED, older than 3 months)
-		{ID: 6, RepositoryID: 50, Commit: "deadbeef06", State: "completed", FinishedAt: &t3},
-
-		// 9 months old
-		// tip of ef/feature-x (PROTECTED, younger than 2 years)
-		{ID: 7, RepositoryID: 50, Commit: "deadbeef07", State: "completed", FinishedAt: &t4},
-
-		// 18 months old
-		// on ef/feature-x (PROTECTED, younger than 2 years)
-		{ID: 8, RepositoryID: 50, Commit: "deadbeef08", State: "completed", FinishedAt: &t5},
-
-		// 3 years old
-		// tip of ef/feature-y (UNPROTECTED, older than 2 years)
-		{ID: 9, RepositoryID: 50, Commit: "deadbeef09", State: "completed", FinishedAt: &t6},
-
-		//
-		// Repository 51
-
-		// 9 months old
-		// tip of ef/feature-w (UNPROTECTED, policy does not apply to this repo)
-		{ID: 10, RepositoryID: 51, Commit: "deadbeef10", State: "completed", FinishedAt: &t4},
-
-		//
-		// Repository 52
-
-		// 15 years old
-		// tip of main (PROTECTED, no duration)
-		{ID: 11, RepositoryID: 52, Commit: "deadbeef11", State: "completed", FinishedAt: &t8},
-
-		// 15 years old
-		// on main (UNPROTECTED, not tip)
-		{ID: 12, RepositoryID: 52, Commit: "deadbeef12", State: "completed", FinishedAt: &t8},
-
-		//
-		// Repository 53
-
-		// 1 hour old
-		// covered by catch-all (PROTECTED, younger than 1 day)
-		{ID: 13, RepositoryID: 53, Commit: "deadbeef13", State: "completed", FinishedAt: &t1},
-	}
-
-	// Repository 50:
-	//
-	//    05 ------ 04 ------ 03 ------ 02 ------ 01
-	//     \         \                   \         \
-	//      v1.2.2    v1.2.3              \         develop
-	//                                     feat/blank
-	//
-	//              08 ---- 07
-	//  09                   \                     06
-	//   \                   ef/feature-x           \
-	//    ef/feature-y                              es/feature-z
-
-	branchMap := map[string]map[string]string{
-		"deadbeef01": {"develop": "deadbeef01"},
-		"deadbeef02": {"develop": "deadbeef01", "feat/blank": "deadbeef02"},
-		"deadbeef03": {"develop": "deadbeef01"},
-		"deadbeef04": {"develop": "deadbeef01"},
-		"deadbeef05": {"develop": "deadbeef01"},
-		"deadbeef06": {"es/feature-z": "deadbeef06"},
-		"deadbeef07": {"ef/feature-x": "deadbeef07"},
-		"deadbeef08": {"ef/feature-x": "deadbeef07"},
-		"deadbeef09": {"ef/feature-y": "deadbeef09"},
-		"deadbeef10": {"ef/feature-w": "deadbeef10"},
-		"deadbeef11": {"main": "deadbeef11"},
-		"deadbeef12": {"main": "deadbeef11"},
-	}
-
-	tagMap := map[string][]string{
-		"deadbeef01": nil,
-		"deadbeef02": nil,
-		"deadbeef03": nil,
-		"deadbeef04": {"v1.2.3"},
-		"deadbeef05": {"v1.2.2"},
-		"deadbeef06": nil,
-		"deadbeef07": nil,
-		"deadbeef08": nil,
-		"deadbeef09": nil,
-		"deadbeef10": nil,
-		"deadbeef11": nil,
-		"deadbeef12": nil,
-	}
-
-	d1 := time.Hour * 24           // 1 day
-	d2 := time.Hour * 24 * 90      // 3 months
-	d3 := time.Hour * 24 * 180     // 6 months
-	d4 := time.Hour * 24 * 365 * 2 // 2 years
-
-	globalPolicies := []dbstore.ConfigurationPolicy{
-		{
-			Type:              "GIT_TREE",
-			Pattern:           "*",
-			RetentionEnabled:  true,
-			RetentionDuration: &d2,
-		},
-		{
-			Type:              "GIT_TAG",
-			Pattern:           "*",
-			RetentionEnabled:  true,
-			RetentionDuration: &d3,
-		},
-		{
-			Type:              "GIT_TREE",
-			Pattern:           "main",
-			RetentionEnabled:  true,
-			RetentionDuration: nil, // indefinite
-		},
-	}
-
-	repositoryPolicies := map[int][]dbstore.ConfigurationPolicy{
-		50: {
-			dbstore.ConfigurationPolicy{
-				Type:                      "GIT_TREE",
-				Pattern:                   "ef/*",
-				RetentionEnabled:          true,
-				RetainIntermediateCommits: true,
-				RetentionDuration:         &d4,
-			},
-		},
-		51: {},
-		52: {},
-		53: {
-			dbstore.ConfigurationPolicy{
-				Type:              "GIT_COMMIT",
-				Pattern:           "*",
-				RetentionEnabled:  true,
-				RetentionDuration: &d1,
-			},
-		},
-	}
-
-	dbStore := testUploadExpirerMockDBStore(globalPolicies, repositoryPolicies, uploads)
-	gitserverClient := testUploadExpirerMockGitserverClient(branchMap, tagMap)
+	dbStore := testUploadExpirerMockDBStore(now)
+	policyMatcher := testUploadExpirerMockPolicyMatcher(now)
 
 	uploadExpirer := &uploadExpirer{
 		dbStore:                dbStore,
-		gitserverClient:        gitserverClient,
+		policyMatcher:          policyMatcher,
 		metrics:                newMetrics(&observation.TestContext),
 		repositoryProcessDelay: 24 * time.Hour,
 		repositoryBatchSize:    100,
@@ -202,234 +35,6 @@ func TestUploadExpirer(t *testing.T) {
 		t.Fatalf("unexpected error from handle: %s", err)
 	}
 
-	assertProtectedAndExpiredIDs(
-		t,
-		dbStore,
-		[]int{1, 2, 4, 7, 8, 11, 13},
-		[]int{3, 5, 6, 9, 10, 12},
-	)
-}
-
-func TestUploadExpirerDefaultBranch(t *testing.T) {
-	now := timeutil.Now()
-	t1 := now.Add(-time.Hour * 24 * 365 * 15) // 15 years ago
-
-	uploads := []dbstore.Upload{
-		{ID: 1, RepositoryID: 50, Commit: "deadbeef01", State: "completed", FinishedAt: &t1},
-		{ID: 2, RepositoryID: 50, Commit: "deadbeef02", State: "completed", FinishedAt: &t1},
-		{ID: 3, RepositoryID: 50, Commit: "deadbeef03", State: "completed", FinishedAt: &t1},
-		{ID: 4, RepositoryID: 50, Commit: "deadbeef04", State: "completed", FinishedAt: &t1},
-		{ID: 5, RepositoryID: 50, Commit: "deadbeef05", State: "completed", FinishedAt: &t1},
-	}
-
-	branchMap := map[string]map[string]string{
-		"deadbeef01": {"main": "deadbeef01"},
-		"deadbeef02": {"main": "deadbeef01"},
-		"deadbeef03": {"main": "deadbeef01"},
-		"deadbeef04": {"main": "deadbeef01"},
-		"deadbeef05": {"main": "deadbeef01"},
-	}
-
-	tagMap := map[string][]string{
-		"deadbeef01": nil,
-		"deadbeef02": nil,
-		"deadbeef03": nil,
-		"deadbeef04": nil,
-		"deadbeef05": nil,
-	}
-
-	globalPolicies := []dbstore.ConfigurationPolicy{}
-	repositoryPolicies := map[int][]dbstore.ConfigurationPolicy{
-		50: {},
-	}
-
-	dbStore := testUploadExpirerMockDBStore(globalPolicies, repositoryPolicies, uploads)
-	gitserverClient := testUploadExpirerMockGitserverClient(branchMap, tagMap)
-
-	uploadExpirer := &uploadExpirer{
-		dbStore:                dbStore,
-		gitserverClient:        gitserverClient,
-		metrics:                newMetrics(&observation.TestContext),
-		repositoryProcessDelay: 24 * time.Hour,
-		repositoryBatchSize:    100,
-		uploadProcessDelay:     24 * time.Hour,
-		uploadBatchSize:        100,
-		commitBatchSize:        100,
-		branchesCacheMaxKeys:   10000,
-	}
-
-	if err := uploadExpirer.Handle(context.Background()); err != nil {
-		t.Fatalf("unexpected error from handle: %s", err)
-	}
-
-	assertProtectedAndExpiredIDs(
-		t,
-		dbStore,
-		[]int{1},
-		[]int{2, 3, 4, 5},
-	)
-}
-
-func TestUploadExpirerCachingStrategy(t *testing.T) {
-	now := timeutil.Now()
-
-	var uploads []dbstore.Upload
-	for i := 0; i < 10; i++ {
-		commit := fmt.Sprintf("deadbeef%02d", i+1)
-		finishedAt := now.Add(-time.Hour * time.Duration(i))
-
-		uploads = append(uploads, dbstore.Upload{
-			ID:           i + 1,
-			RepositoryID: 50,
-			State:        "completed",
-			Commit:       commit,
-			Root:         fmt.Sprintf("r%d/", i+1),
-			FinishedAt:   &finishedAt,
-		})
-	}
-
-	branchMap := map[string]map[string]string{
-		"deadbeef01": {"main": "deadbeef01"},
-		"deadbeef02": {"main": "deadbeef01"},
-		"deadbeef03": {"main": "deadbeef01"},
-		"deadbeef04": {"main": "deadbeef01"},
-		"deadbeef05": {"main": "deadbeef01"},
-		"deadbeef06": {"main": "deadbeef01"},
-		"deadbeef07": {"main": "deadbeef01"},
-		"deadbeef08": {"main": "deadbeef01"},
-		"deadbeef09": {"main": "deadbeef01"},
-		"deadbeef10": {"main": "deadbeef01"},
-	}
-
-	tagMap := map[string][]string{
-		"deadbeef01": nil,
-		"deadbeef02": nil,
-		"deadbeef03": nil,
-		"deadbeef04": nil,
-		"deadbeef05": nil,
-		"deadbeef06": nil,
-		"deadbeef07": nil,
-		"deadbeef08": nil,
-		"deadbeef09": nil,
-		"deadbeef10": nil,
-	}
-
-	t.Run("CachedUnprotectedCommits", func(t *testing.T) {
-		d1 := time.Hour * 1
-		d2 := time.Hour * 5
-
-		globalPolicies := []dbstore.ConfigurationPolicy{
-			{
-				Type:                      "GIT_TREE",
-				Pattern:                   "main",
-				RetentionEnabled:          true,
-				RetainIntermediateCommits: false,
-				RetentionDuration:         &d1,
-			},
-			{
-				Type:                      "GIT_TREE",
-				Pattern:                   "main",
-				RetentionEnabled:          true,
-				RetainIntermediateCommits: true,
-				RetentionDuration:         &d2,
-			},
-		}
-
-		repositoryPolicies := map[int][]dbstore.ConfigurationPolicy{
-			50: {},
-		}
-
-		dbStore := testUploadExpirerMockDBStore(globalPolicies, repositoryPolicies, uploads)
-		dbStore.CommitsVisibleToUploadFunc.SetDefaultHook(testMultipleCommitsVisibleToUpload)
-		gitserverClient := testUploadExpirerMockGitserverClient(branchMap, tagMap)
-
-		uploadExpirer := &uploadExpirer{
-			dbStore:                dbStore,
-			gitserverClient:        gitserverClient,
-			metrics:                newMetrics(&observation.TestContext),
-			repositoryProcessDelay: 24 * time.Hour,
-			repositoryBatchSize:    100,
-			uploadProcessDelay:     24 * time.Hour,
-			uploadBatchSize:        100,
-			commitBatchSize:        100,
-			branchesCacheMaxKeys:   10000,
-		}
-
-		if err := uploadExpirer.Handle(context.Background()); err != nil {
-			t.Fatalf("unexpected error from handle: %s", err)
-		}
-
-		assertProtectedAndExpiredIDs(
-			t,
-			dbStore,
-			[]int{1, 2, 3, 4, 5},
-			[]int{6, 7, 8, 9, 10},
-		)
-	})
-
-	t.Run("CachedBranches", func(t *testing.T) {
-		d1 := time.Hour * 1
-		d2 := time.Hour * 2
-		d3 := time.Hour * 5
-
-		globalPolicies := []dbstore.ConfigurationPolicy{
-			{
-				Type:                      "GIT_TREE",
-				Pattern:                   "main",
-				RetentionEnabled:          true,
-				RetainIntermediateCommits: false,
-				RetentionDuration:         &d1,
-			},
-			{
-				Type:                      "GIT_TREE",
-				Pattern:                   "main",
-				RetentionEnabled:          true,
-				RetainIntermediateCommits: false,
-				RetentionDuration:         &d2,
-			},
-			{
-				Type:                      "GIT_TREE",
-				Pattern:                   "main",
-				RetentionEnabled:          true,
-				RetainIntermediateCommits: false,
-				RetentionDuration:         &d3,
-			},
-		}
-
-		repositoryPolicies := map[int][]dbstore.ConfigurationPolicy{
-			50: {},
-		}
-
-		dbStore := testUploadExpirerMockDBStore(globalPolicies, repositoryPolicies, uploads)
-		dbStore.CommitsVisibleToUploadFunc.SetDefaultHook(testMultipleCommitsVisibleToUpload)
-		gitserverClient := testUploadExpirerMockGitserverClient(branchMap, tagMap)
-
-		uploadExpirer := &uploadExpirer{
-			dbStore:                dbStore,
-			gitserverClient:        gitserverClient,
-			metrics:                newMetrics(&observation.TestContext),
-			repositoryProcessDelay: 24 * time.Hour,
-			repositoryBatchSize:    100,
-			uploadProcessDelay:     24 * time.Hour,
-			uploadBatchSize:        100,
-			commitBatchSize:        100,
-			branchesCacheMaxKeys:   10000,
-		}
-
-		if err := uploadExpirer.Handle(context.Background()); err != nil {
-			t.Fatalf("unexpected error from handle: %s", err)
-		}
-
-		assertProtectedAndExpiredIDs(
-			t,
-			dbStore,
-			[]int{1, 2},
-			[]int{3, 4, 5, 6, 7, 8, 9, 10},
-		)
-	})
-}
-
-func assertProtectedAndExpiredIDs(t *testing.T, dbStore *MockDBStore, expectedProtectedIDs, expectedExpiredIDs []int) {
 	var protectedIDs []int
 	for _, call := range dbStore.UpdateUploadRetentionFunc.History() {
 		protectedIDs = append(protectedIDs, call.Arg1...)
@@ -442,35 +47,218 @@ func assertProtectedAndExpiredIDs(t *testing.T, dbStore *MockDBStore, expectedPr
 	}
 	sort.Ints(expiredIDs)
 
+	expectedProtectedIDs := []int{12, 16, 18, 20, 25, 26, 27, 28}
 	if diff := cmp.Diff(expectedProtectedIDs, protectedIDs); diff != "" {
 		t.Errorf("unexpected protected upload identifiers (-want +got):\n%s", diff)
 	}
+
+	expectedExpiredIDs := []int{11, 13, 14, 15, 17, 19, 21, 22, 23, 24, 29, 30}
 	if diff := cmp.Diff(expectedExpiredIDs, expiredIDs); diff != "" {
 		t.Errorf("unexpected expired upload identifiers (-want +got):\n%s", diff)
 	}
+
+	calls := policyMatcher.CommitsDescribedByPolicyFunc.History()
+	if len(calls) != 4 {
+		t.Fatalf("unexpected number of calls to CommitsDescribedByPolicy. want=%d have=%d", 4, len(calls))
+	}
+	for _, call := range calls {
+		var policyIDs []int
+		for _, policy := range call.Arg2 {
+			policyIDs = append(policyIDs, policy.ID)
+		}
+		sort.Ints(policyIDs)
+
+		expectedPolicyIDs := map[int][]int{
+			50: {1, 3, 4, 5},
+			51: {1, 3, 4},
+			52: {1, 3, 4},
+			53: {1, 2, 3, 4},
+		}
+		if diff := cmp.Diff(expectedPolicyIDs[call.Arg1], policyIDs); diff != "" {
+			t.Errorf("unexpected policies supplied to CommitsDescribedByPolicy(%d) (-want +got):\n%s", call.Arg1, diff)
+		}
+	}
 }
 
-// testMultipleCommitsVisibleToUpload is an alternate implementation of the mock DBStore
-// CommitsVisibleToUpload method. The default behavior mocked in this package returns _only_
-// the commit on which the upload is defined. We instead want to have each upload be visible
-// to one ancestor and one descendant commit as well so that we can test the slow path.
-//
-// This function assumes that the direct parent of deadbeef{c} is deadbeef{c+1}.
-func testMultipleCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error) {
-	lo := uploadID - 1
-	if lo < 1 {
-		lo = 1
+func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
+	uploads := []dbstore.Upload{
+		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
+		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
+		{ID: 13, State: "completed", RepositoryID: 50, Commit: "deadbeef03", UploadedAt: daysAgo(now, 3)},
+		{ID: 14, State: "completed", RepositoryID: 50, Commit: "deadbeef04", UploadedAt: daysAgo(now, 4)},
+		{ID: 15, State: "completed", RepositoryID: 50, Commit: "deadbeef05", UploadedAt: daysAgo(now, 5)},
+		{ID: 16, State: "completed", RepositoryID: 51, Commit: "deadbeef06", UploadedAt: daysAgo(now, 6)}, // repo 51
+		{ID: 17, State: "completed", RepositoryID: 51, Commit: "deadbeef07", UploadedAt: daysAgo(now, 7)},
+		{ID: 18, State: "completed", RepositoryID: 51, Commit: "deadbeef08", UploadedAt: daysAgo(now, 8)},
+		{ID: 19, State: "completed", RepositoryID: 51, Commit: "deadbeef09", UploadedAt: daysAgo(now, 9)},
+		{ID: 20, State: "completed", RepositoryID: 51, Commit: "deadbeef10", UploadedAt: daysAgo(now, 1)},
+		{ID: 21, State: "completed", RepositoryID: 52, Commit: "deadbeef11", UploadedAt: daysAgo(now, 9)}, // repo 52
+		{ID: 22, State: "completed", RepositoryID: 52, Commit: "deadbeef12", UploadedAt: daysAgo(now, 8)},
+		{ID: 23, State: "completed", RepositoryID: 52, Commit: "deadbeef13", UploadedAt: daysAgo(now, 7)},
+		{ID: 24, State: "completed", RepositoryID: 52, Commit: "deadbeef14", UploadedAt: daysAgo(now, 6)},
+		{ID: 25, State: "completed", RepositoryID: 52, Commit: "deadbeef15", UploadedAt: daysAgo(now, 5)},
+		{ID: 26, State: "completed", RepositoryID: 53, Commit: "deadbeef16", UploadedAt: daysAgo(now, 4)}, // repo 53
+		{ID: 27, State: "completed", RepositoryID: 53, Commit: "deadbeef17", UploadedAt: daysAgo(now, 3)},
+		{ID: 28, State: "completed", RepositoryID: 53, Commit: "deadbeef18", UploadedAt: daysAgo(now, 2)},
+		{ID: 29, State: "completed", RepositoryID: 53, Commit: "deadbeef19", UploadedAt: daysAgo(now, 1)},
+		{ID: 30, State: "completed", RepositoryID: 53, Commit: "deadbeef20", UploadedAt: daysAgo(now, 9)},
 	}
 
-	hi := uploadID + 1
-	if hi > 10 {
-		hi = 10
+	policies := []dbstore.ConfigurationPolicy{
+		{ID: 1, RepositoryID: nil},
+		{ID: 2, RepositoryID: intPtr(53)},
+		{ID: 3, RepositoryID: nil},
+		{ID: 4, RepositoryID: nil},
+		{ID: 5, RepositoryID: intPtr(50)},
 	}
 
-	var commits []string
-	for i := lo; i <= hi; i++ {
-		commits = append(commits, fmt.Sprintf("deadbeef%02d", i))
+	repositoryIDMap := map[int]struct{}{}
+	for _, upload := range uploads {
+		repositoryIDMap[upload.RepositoryID] = struct{}{}
 	}
 
-	return commits, nil, nil
+	repositoryIDs := make([]int, 0, len(repositoryIDMap))
+	for repositoryID := range repositoryIDMap {
+		repositoryIDs = append(repositoryIDs, repositoryID)
+	}
+
+	protected := map[int]time.Time{}
+	expired := map[int]struct{}{}
+
+	selectRepositoriesForRetentionScanFunc := func(ctx context.Context, processDelay time.Duration, limit int) (scannedIDs []int, _ error) {
+		if len(repositoryIDs) <= limit {
+			scannedIDs, repositoryIDs = repositoryIDs, nil
+		} else {
+			scannedIDs, repositoryIDs = repositoryIDs[:limit], repositoryIDs[limit:]
+		}
+
+		return scannedIDs, nil
+	}
+
+	getConfigurationPolicies := func(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) (filtered []dbstore.ConfigurationPolicy, _ error) {
+		for _, policy := range policies {
+			if opts.RepositoryID == 0 {
+				if policy.RepositoryID != nil {
+					continue
+				}
+			} else if policy.RepositoryID == nil || *policy.RepositoryID != opts.RepositoryID {
+				continue
+			}
+
+			filtered = append(filtered, policy)
+		}
+
+		return filtered, nil
+	}
+
+	getUploads := func(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
+		var filtered []dbstore.Upload
+		for _, upload := range uploads {
+			if upload.RepositoryID != opts.RepositoryID {
+				continue
+			}
+			if _, ok := expired[upload.ID]; ok {
+				continue
+			}
+			if lastScanned, ok := protected[upload.ID]; ok && !lastScanned.Before(*opts.LastRetentionScanBefore) {
+				continue
+			}
+
+			filtered = append(filtered, upload)
+		}
+
+		if len(filtered) > opts.Limit {
+			filtered = filtered[:opts.Limit]
+		}
+
+		return filtered, len(uploads), nil
+	}
+
+	updateUploadRetention := func(ctx context.Context, protectedIDs, expiredIDs []int) error {
+		for _, id := range protectedIDs {
+			protected[id] = time.Now()
+		}
+
+		for _, id := range expiredIDs {
+			expired[id] = struct{}{}
+		}
+
+		return nil
+	}
+
+	commitsVisibleToUpload := func(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error) {
+		for _, upload := range uploads {
+			if upload.ID == uploadID {
+				return []string{
+					upload.Commit,
+					"deadcafe" + upload.Commit[8:],
+				}, nil, nil
+			}
+		}
+
+		return nil, nil, nil
+	}
+
+	dbStore := NewMockDBStore()
+	dbStore.SelectRepositoriesForRetentionScanFunc.SetDefaultHook(selectRepositoriesForRetentionScanFunc)
+	dbStore.GetConfigurationPoliciesFunc.SetDefaultHook(getConfigurationPolicies)
+	dbStore.GetUploadsFunc.SetDefaultHook(getUploads)
+	dbStore.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)
+	dbStore.CommitsVisibleToUploadFunc.SetDefaultHook(commitsVisibleToUpload)
+	return dbStore
+}
+
+func testUploadExpirerMockPolicyMatcher(now time.Time) *MockPolicyMatcher {
+	policyMatches := map[int]map[string][]policies.PolicyMatch{
+		50: {
+			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1
+			"deadbeef02": {{PolicyDuration: days(9)}}, // 9 > 2 (protected)
+			"deadbeef03": {{PolicyDuration: days(2)}}, // 2 < 3
+			"deadbeef04": {},
+			"deadbeef05": {},
+		},
+		51: {
+			// N.B. deadcafe (alt visible commit) used here
+			"deadcafe06": {{PolicyDuration: days(7)}}, // 7 > 6 (protected)
+			"deadcafe07": {{PolicyDuration: days(6)}}, // 6 < 7
+			"deadbeef08": {{PolicyDuration: days(9)}}, // 9 > 8 (protected)
+			"deadbeef09": {{PolicyDuration: days(9)}}, // 9 = 9
+			"deadbeef10": {{PolicyDuration: days(9)}}, // 9 > 1 (protected)
+		},
+		52: {
+			"deadbeef11": {{PolicyDuration: days(5)}},                        // 5 < 9
+			"deadbeef12": {{PolicyDuration: days(5)}},                        // 5 < 8
+			"deadbeef13": {{PolicyDuration: days(5)}},                        // 5 < 7
+			"deadbeef14": {{PolicyDuration: days(5)}},                        // 5 < 6
+			"deadbeef15": {{PolicyDuration: days(5)}, {PolicyDuration: nil}}, // 5 = 5, catch-all (protected)
+		},
+		53: {
+			"deadbeef16": {{PolicyDuration: days(5)}}, // 5 > 4 (protected)
+			"deadbeef17": {{PolicyDuration: days(5)}}, // 5 > 3 (protected)
+			"deadbeef18": {{PolicyDuration: days(5)}}, // 5 > 2 (protected)
+			"deadbeef19": {},
+			"deadbeef20": {},
+		},
+	}
+
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]policies.PolicyMatch, error) {
+		return policyMatches[repositoryID], nil
+	}
+
+	policyMatcher := NewMockPolicyMatcher()
+	policyMatcher.CommitsDescribedByPolicyFunc.SetDefaultHook(commitsDescribedByPolicy)
+	return policyMatcher
+}
+
+func intPtr(v int) *int {
+	return &v
+}
+
+func days(n int) *time.Duration {
+	t := time.Hour * 24 * time.Duration(n)
+	return &t
+}
+
+func daysAgo(now time.Time, n int) time.Time {
+	return now.Add(-time.Hour * 24 * time.Duration(n))
 }

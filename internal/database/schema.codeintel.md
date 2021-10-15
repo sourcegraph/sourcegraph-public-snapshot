@@ -62,6 +62,292 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
 
 **min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
 
+# Table "public.lsif_data_docs_search_lang_names_private"
+```
+  Column   |   Type   | Collation | Nullable |                               Default                                
+-----------+----------+-----------+----------+----------------------------------------------------------------------
+ id        | bigint   |           | not null | nextval('lsif_data_docs_search_lang_names_private_id_seq'::regclass)
+ lang_name | text     |           | not null | 
+ tsv       | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_lang_names_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_lang_names_private_lang_name_key" UNIQUE CONSTRAINT, btree (lang_name)
+    "lsif_data_docs_search_lang_names_private_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
+
+```
+
+Each unique language name being stored in the API docs search index.
+
+**id**: The ID of the language name.
+
+**lang_name**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_lang_names_public"
+```
+  Column   |   Type   | Collation | Nullable |                               Default                               
+-----------+----------+-----------+----------+---------------------------------------------------------------------
+ id        | bigint   |           | not null | nextval('lsif_data_docs_search_lang_names_public_id_seq'::regclass)
+ lang_name | text     |           | not null | 
+ tsv       | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_lang_names_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_lang_names_public_lang_name_key" UNIQUE CONSTRAINT, btree (lang_name)
+    "lsif_data_docs_search_lang_names_public_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
+
+```
+
+Each unique language name being stored in the API docs search index.
+
+**id**: The ID of the language name.
+
+**lang_name**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_private"
+```
+         Column         |   Type   | Collation | Nullable |                          Default                          
+------------------------+----------+-----------+----------+-----------------------------------------------------------
+ id                     | bigint   |           | not null | nextval('lsif_data_docs_search_private_id_seq'::regclass)
+ repo_id                | integer  |           | not null | 
+ dump_id                | integer  |           | not null | 
+ dump_root              | text     |           | not null | 
+ path_id                | text     |           | not null | 
+ detail                 | text     |           | not null | 
+ lang_name_id           | integer  |           | not null | 
+ repo_name_id           | integer  |           | not null | 
+ tags_id                | integer  |           | not null | 
+ search_key             | text     |           | not null | 
+ search_key_tsv         | tsvector |           | not null | 
+ search_key_reverse_tsv | tsvector |           | not null | 
+ label                  | text     |           | not null | 
+ label_tsv              | tsvector |           | not null | 
+ label_reverse_tsv      | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_private_dump_id_idx" btree (dump_id)
+    "lsif_data_docs_search_private_dump_root_idx" btree (dump_root)
+    "lsif_data_docs_search_private_label_reverse_tsv_idx" btree (label_reverse_tsv)
+    "lsif_data_docs_search_private_label_tsv_idx" btree (label_tsv)
+    "lsif_data_docs_search_private_repo_id_idx" btree (repo_id)
+    "lsif_data_docs_search_private_search_key_reverse_tsv_idx" btree (search_key_reverse_tsv)
+    "lsif_data_docs_search_private_search_key_tsv_idx" btree (search_key_tsv)
+Foreign-key constraints:
+    "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
+    "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
+    "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+
+```
+
+A tsvector search index over API documentation (private repos only)
+
+**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+
+**id**: The row ID of the search result.
+
+**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+
+**label_reverse_tsv**: Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**label_tsv**: Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_private.
+
+**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
+
+**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
+
+**repo_name_id**: The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_private.
+
+**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
+
+**search_key_reverse_tsv**: Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**search_key_tsv**: Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tags_id**: The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_private.
+
+# Table "public.lsif_data_docs_search_public"
+```
+         Column         |   Type   | Collation | Nullable |                         Default                          
+------------------------+----------+-----------+----------+----------------------------------------------------------
+ id                     | bigint   |           | not null | nextval('lsif_data_docs_search_public_id_seq'::regclass)
+ repo_id                | integer  |           | not null | 
+ dump_id                | integer  |           | not null | 
+ dump_root              | text     |           | not null | 
+ path_id                | text     |           | not null | 
+ detail                 | text     |           | not null | 
+ lang_name_id           | integer  |           | not null | 
+ repo_name_id           | integer  |           | not null | 
+ tags_id                | integer  |           | not null | 
+ search_key             | text     |           | not null | 
+ search_key_tsv         | tsvector |           | not null | 
+ search_key_reverse_tsv | tsvector |           | not null | 
+ label                  | text     |           | not null | 
+ label_tsv              | tsvector |           | not null | 
+ label_reverse_tsv      | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_public_dump_id_idx" btree (dump_id)
+    "lsif_data_docs_search_public_dump_root_idx" btree (dump_root)
+    "lsif_data_docs_search_public_label_reverse_tsv_idx" btree (label_reverse_tsv)
+    "lsif_data_docs_search_public_label_tsv_idx" btree (label_tsv)
+    "lsif_data_docs_search_public_repo_id_idx" btree (repo_id)
+    "lsif_data_docs_search_public_search_key_reverse_tsv_idx" btree (search_key_reverse_tsv)
+    "lsif_data_docs_search_public_search_key_tsv_idx" btree (search_key_tsv)
+Foreign-key constraints:
+    "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
+    "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
+    "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+
+```
+
+A tsvector search index over API documentation (public repos only)
+
+**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
+
+**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
+
+**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
+
+**id**: The row ID of the search result.
+
+**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
+
+**label_reverse_tsv**: Indexed tsvector for the reverse of the label field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**label_tsv**: Indexed tsvector for the label field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**lang_name_id**: The programming language (or indexer name) that produced the result. Foreign key into lsif_data_docs_search_lang_names_public.
+
+**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
+
+**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
+
+**repo_name_id**: The repository name that produced the result. Foreign key into lsif_data_docs_search_repo_names_public.
+
+**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
+
+**search_key_reverse_tsv**: Indexed tsvector for the reverse of the search_key field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**search_key_tsv**: Indexed tsvector for the search_key field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tags_id**: The tags from the documentation node. Foreign key into lsif_data_docs_search_tags_public.
+
+# Table "public.lsif_data_docs_search_repo_names_private"
+```
+   Column    |   Type   | Collation | Nullable |                               Default                                
+-------------+----------+-----------+----------+----------------------------------------------------------------------
+ id          | bigint   |           | not null | nextval('lsif_data_docs_search_repo_names_private_id_seq'::regclass)
+ repo_name   | text     |           | not null | 
+ tsv         | tsvector |           | not null | 
+ reverse_tsv | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_repo_names_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_repo_names_private_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
+    "lsif_data_docs_search_repo_names_private_reverse_tsv_idx" gin (reverse_tsv)
+    "lsif_data_docs_search_repo_names_private_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
+
+```
+
+Each unique repository name being stored in the API docs search index.
+
+**id**: The ID of the repository name.
+
+**repo_name**: The fully qualified name of the repository.
+
+**reverse_tsv**: Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_repo_names_public"
+```
+   Column    |   Type   | Collation | Nullable |                               Default                               
+-------------+----------+-----------+----------+---------------------------------------------------------------------
+ id          | bigint   |           | not null | nextval('lsif_data_docs_search_repo_names_public_id_seq'::regclass)
+ repo_name   | text     |           | not null | 
+ tsv         | tsvector |           | not null | 
+ reverse_tsv | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_repo_names_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_repo_names_public_repo_name_key" UNIQUE CONSTRAINT, btree (repo_name)
+    "lsif_data_docs_search_repo_names_public_reverse_tsv_idx" gin (reverse_tsv)
+    "lsif_data_docs_search_repo_names_public_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
+
+```
+
+Each unique repository name being stored in the API docs search index.
+
+**id**: The ID of the repository name.
+
+**repo_name**: The fully qualified name of the repository.
+
+**reverse_tsv**: Indexed tsvector for the reverse of the lang_name field, for suffix lexeme/word matching. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+**tsv**: Indexed tsvector for the lang_name field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_tags_private"
+```
+ Column |   Type   | Collation | Nullable |                            Default                             
+--------+----------+-----------+----------+----------------------------------------------------------------
+ id     | bigint   |           | not null | nextval('lsif_data_docs_search_tags_private_id_seq'::regclass)
+ tags   | text     |           | not null | 
+ tsv    | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_tags_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_tags_private_tags_key" UNIQUE CONSTRAINT, btree (tags)
+    "lsif_data_docs_search_tags_private_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_private" CONSTRAINT "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+
+```
+
+Each uniques sequence of space-separated tags being stored in the API docs search index.
+
+**id**: The ID of the tags.
+
+**tags**: The full sequence of space-separated tags. See protocol/documentation.go:Documentation
+
+**tsv**: Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
+# Table "public.lsif_data_docs_search_tags_public"
+```
+ Column |   Type   | Collation | Nullable |                            Default                            
+--------+----------+-----------+----------+---------------------------------------------------------------
+ id     | bigint   |           | not null | nextval('lsif_data_docs_search_tags_public_id_seq'::regclass)
+ tags   | text     |           | not null | 
+ tsv    | tsvector |           | not null | 
+Indexes:
+    "lsif_data_docs_search_tags_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_tags_public_tags_key" UNIQUE CONSTRAINT, btree (tags)
+    "lsif_data_docs_search_tags_public_tsv_idx" gin (tsv)
+Referenced by:
+    TABLE "lsif_data_docs_search_public" CONSTRAINT "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+
+```
+
+Each uniques sequence of space-separated tags being stored in the API docs search index.
+
+**id**: The ID of the tags.
+
+**tags**: The full sequence of space-separated tags. See protocol/documentation.go:Documentation
+
+**tsv**: Indexed tsvector for the tags field. Crafted for ordered, case, and punctuation sensitivity, see data_write_documentation.go:textSearchVector.
+
 # Table "public.lsif_data_documentation_mappings"
 ```
   Column   |  Type   | Collation | Nullable | Default 
@@ -126,102 +412,6 @@ Associates documentation page pathIDs to information about what is at that pathI
 **dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
 
 **path_id**: The documentation page path ID, see see GraphQL codeintel.schema:documentationPage for what this is.
-
-# Table "public.lsif_data_documentation_search_private"
-```
-   Column   |  Type   | Collation | Nullable | Default  
-------------+---------+-----------+----------+----------
- dump_id    | integer |           | not null | 
- repo_id    | integer |           | not null | 
- path_id    | text    |           | not null | 
- detail     | text    |           | not null | 
- lang       | text    |           | not null | 
- repo_name  | text    |           | not null | 
- search_key | text    |           | not null | 
- label      | text    |           | not null | 
- tags       | text    |           | not null | 
- dump_root  | text    |           | not null | ''::text
-Indexes:
-    "lsif_data_documentation_search_private_pkey" PRIMARY KEY, btree (dump_id, path_id)
-    "lsif_data_documentation_search_private_label_trgm" gin (label gin_trgm_ops)
-    "lsif_data_documentation_search_private_lang_trgm" gin (lang gin_trgm_ops)
-    "lsif_data_documentation_search_private_repo_id_idx" btree (repo_id)
-    "lsif_data_documentation_search_private_repo_name_trgm" gin (repo_name gin_trgm_ops)
-    "lsif_data_documentation_search_private_search_key_trgm" gin (search_key gin_trgm_ops)
-    "lsif_data_documentation_search_private_tags_trgm" gin (tags gin_trgm_ops)
-
-```
-
-A trigram index over documentation for search (private repos only)
-
-**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
-
-**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
-
-**lang**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name
-
-**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
-
-**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
-
-**repo_name**: The name of the repository containing this search key.
-
-**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
-
-**tags**: A space separated list of tags from the documentation node. See protocol/documentation.go:Documentation
-
-# Table "public.lsif_data_documentation_search_public"
-```
-   Column   |  Type   | Collation | Nullable | Default  
-------------+---------+-----------+----------+----------
- dump_id    | integer |           | not null | 
- repo_id    | integer |           | not null | 
- path_id    | text    |           | not null | 
- detail     | text    |           | not null | 
- lang       | text    |           | not null | 
- repo_name  | text    |           | not null | 
- search_key | text    |           | not null | 
- label      | text    |           | not null | 
- tags       | text    |           | not null | 
- dump_root  | text    |           | not null | ''::text
-Indexes:
-    "lsif_data_documentation_search_public_pkey" PRIMARY KEY, btree (dump_id, path_id)
-    "lsif_data_documentation_search_private_dump_root_idx" btree (dump_root)
-    "lsif_data_documentation_search_public_dump_root_idx" btree (dump_root)
-    "lsif_data_documentation_search_public_label_trgm" gin (label gin_trgm_ops)
-    "lsif_data_documentation_search_public_lang_trgm" gin (lang gin_trgm_ops)
-    "lsif_data_documentation_search_public_repo_id_idx" btree (repo_id)
-    "lsif_data_documentation_search_public_repo_name_trgm" gin (repo_name gin_trgm_ops)
-    "lsif_data_documentation_search_public_search_key_trgm" gin (search_key gin_trgm_ops)
-    "lsif_data_documentation_search_public_tags_trgm" gin (tags gin_trgm_ops)
-
-```
-
-A trigram index over documentation for search (public repos only)
-
-**detail**: The detail string (e.g. the full function signature and its docs). See protocol/documentation.go:Documentation
-
-**dump_id**: The identifier of the associated dump in the lsif_uploads table (state=completed).
-
-**dump_root**: Identical to lsif_dumps.root; The working directory of the indexer image relative to the repository root.
-
-**label**: The label string of the result, e.g. a one-line function signature. See protocol/documentation.go:Documentation
-
-**lang**: The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name
-
-**path_id**: The fully qualified documentation page path ID, e.g. including "#section". See GraphQL codeintel.schema:documentationPage for what this is.
-
-**repo_id**: The repo ID, from the main app DB repo table. Used to search over a select set of repos by ID.
-
-**repo_name**: The name of the repository containing this search key.
-
-**search_key**: The search key generated by the indexer, e.g. mux.Router.ServeHTTP. It is language-specific, and likely unique within a repository (but not always.) See protocol/documentation.go:Documentation.SearchKey
-
-**tags**: A space separated list of tags from the documentation node. See protocol/documentation.go:Documentation
 
 # Table "public.lsif_data_documents"
 ```

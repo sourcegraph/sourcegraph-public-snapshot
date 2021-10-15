@@ -79,7 +79,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 		}
 
 		if op.LookUpByUsername {
-			user, getByUsernameErr := database.GlobalUsers.GetByUsername(ctx, op.UserProps.Username)
+			user, getByUsernameErr := database.Users(db).GetByUsername(ctx, op.UserProps.Username)
 			if getByUsernameErr == nil {
 				return user.ID, false, false, "", nil
 			}
@@ -90,7 +90,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 				return 0, false, false, fmt.Sprintf("User account with username %q does not exist. Ask a site admin to create your account.", op.UserProps.Username), getByUsernameErr
 			}
 		} else if op.UserProps.EmailIsVerified {
-			user, getByVerifiedEmailErr := database.GlobalUsers.GetByVerifiedEmail(ctx, op.UserProps.Email)
+			user, getByVerifiedEmailErr := database.Users(db).GetByVerifiedEmail(ctx, op.UserProps.Email)
 			if getByVerifiedEmailErr == nil {
 				return user.ID, false, false, "", nil
 			}
@@ -116,7 +116,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
 		}
 
-		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
@@ -143,7 +143,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 	if !userSaved {
 		// Update user in our DB if their profile info changed on the issuer. (Except username and
 		// email, which the user is somewhat likely to want to control separately on Sourcegraph.)
-		user, err := database.GlobalUsers.GetByID(ctx, userID)
+		user, err := database.Users(db).GetByID(ctx, userID)
 		if err != nil {
 			return 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
 		}
@@ -155,7 +155,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			userUpdate.AvatarURL = &op.UserProps.AvatarURL
 		}
 		if userUpdate != (database.UserUpdate{}) {
-			if err := database.GlobalUsers.Update(ctx, user.ID, userUpdate); err != nil {
+			if err := database.Users(db).Update(ctx, user.ID, userUpdate); err != nil {
 				return 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
 			}
 		}
@@ -168,7 +168,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
 
-		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,

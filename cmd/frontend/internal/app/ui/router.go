@@ -78,10 +78,9 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 
-	routeSearchQueryBuilder = "search.query-builder"
-	routeSearchStream       = "search.stream"
-	routeSearchConsole      = "search.console"
-	routeSearchNotebook     = "search.notebook"
+	routeSearchStream   = "search.stream"
+	routeSearchConsole  = "search.console"
+	routeSearchNotebook = "search.notebook"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -136,7 +135,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
@@ -271,7 +269,6 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(mux.Vars(r)["username"])
 	}, nil, noIndex)))
-	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil, index)))
 	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil, index)))
 	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil, index)))
 
