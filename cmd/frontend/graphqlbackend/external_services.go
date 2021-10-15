@@ -272,8 +272,6 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	// return nil, errors.Errorf("This is the namespace %q %q %q", namespaceUserID, namespaceOrgID, anotherVar)
-
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err
 	}

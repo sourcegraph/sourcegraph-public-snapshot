@@ -461,21 +461,6 @@ func TestRepos_ListRepoNames_orgID(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	// Create a user
-	user, err := Users(db).Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: user.ID,
-	})
-
 	// Create an org
 	displayName := "Acme Corp"
 	org, err := Orgs(db).Create(ctx, "acme", &displayName)
