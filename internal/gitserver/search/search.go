@@ -170,7 +170,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	// Create a new diff fetcher subprocess for each worker
-	diffFetcher, err := StartDiffFetcher(cs.RepoDir)
+	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
 	if err != nil {
 		return err
 	}
@@ -192,11 +192,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 				diffFetcher: diffFetcher,
 				LowerBuf:    startBuf,
 			}
-			commitMatches, highlights, err := cs.Query.Match(lc)
+			mergedResult, highlights, err := cs.Query.Match(lc)
 			if err != nil {
 				return err
 			}
-			if commitMatches {
+			if mergedResult.Satisfies() {
 				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
 				if err != nil {
 					return err

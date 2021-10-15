@@ -207,7 +207,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li
-                className="mr-2"
+                className="nav-item mr-2"
                 data-tooltip={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
@@ -251,7 +251,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const saveSearchButton = useMemo(
         () => (
-            <li className="mr-2">
+            <li className="nav-item mr-2">
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     onNonExperimentalLinkClick={props.onSaveQueryClick}

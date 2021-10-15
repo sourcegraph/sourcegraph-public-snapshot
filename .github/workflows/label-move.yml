@@ -3,17 +3,6 @@ on:
   issues:
     types: [labeled]
 jobs:
-  move-labeled-or-milestoned-issue:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: konradpabjan/move-labeled-or-milestoned-issue@v2.0
-      with:
-        action-token: "${{ secrets.LABELER_GITHUB_TOKEN }}"
-        project-url: "https://github.com/orgs/sourcegraph/projects/100"
-        column-name: "To Triage"
-        label-name: "team/code-intelligence"
-        columns-to-ignore: "*"
-
   # Uses issues beta API - see https://docs.github.com/en/issues/trying-out-the-new-projects-experience/automating-projects#example-workflow
   # To get your PROJECT_ID, use:
   #

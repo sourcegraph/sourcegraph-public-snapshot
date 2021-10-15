@@ -1,3 +1,4 @@
+import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
@@ -211,7 +212,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
 
     // Register dummy onCompletionSelected handler to prevent console errors
     useEffect(() => {
-        const disposable = Monaco.editor.registerCommand('completionItemSelected', () => {})
+        const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
         return () => disposable.dispose()
     }, [])
 

@@ -14,6 +14,7 @@ import { VersionContext } from '../../schema/site.schema'
 import { SearchContextProps } from '../../search'
 
 import { ConvertVersionContextNode } from './ConvertVersionContextNode'
+import styles from './ConvertVersionContextsPage.module.scss'
 
 export interface ConvertVersionContextsPageProps
     extends Pick<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'> {
@@ -119,9 +120,9 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
             <Page>
                 <div className="container col-8">
                     <PageTitle title="Convert version contexts" />
-                    <div className="convert-version-contexts-page">
+                    <div>
                         <Link to="/contexts">
-                            « <span className="convert-version-contexts-page__back-label">Back</span>
+                            « <span className={styles.backLabel}>Back</span>
                         </Link>
                         <div className="page-header d-flex flex-wrap align-items-center mt-2">
                             <h2 className="flex-grow-1">Convert version contexts</h2>
@@ -136,8 +137,8 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                                 Learn more
                             </a>
                         </div>
-                        <div className="convert-version-contexts-page__header d-flex flex-row justify-content-between align-items-center mt-4">
-                            <h3 className="convert-version-contexts-page__header-title">Available version contexts</h3>
+                        <div className="d-flex flex-row justify-content-between align-items-center mt-4">
+                            <h3>Available version contexts</h3>
                             <button
                                 type="button"
                                 className="btn btn-outline-primary test-convert-all-search-contexts-btn"

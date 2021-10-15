@@ -150,3 +150,6 @@ sitemap_query.db
 
 # Lighthouse CI reports
 .lighthouseci/
+
+# Trivy security vulnerability reports
+*-security-report.html

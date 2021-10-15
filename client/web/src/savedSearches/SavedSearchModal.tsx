@@ -1,4 +1,5 @@
 import Dialog from '@reach/dialog'
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 
@@ -6,6 +7,8 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 
 import { AuthenticatedUser } from '../auth'
 import { PatternTypeProps } from '../search'
+
+import styles from './SavedSearchModal.module.scss'
 
 interface Props extends Omit<PatternTypeProps, 'setPatternType'> {
     location: H.Location
@@ -46,13 +49,13 @@ export class SavedSearchModal extends React.Component<Props, State> {
     public render(): JSX.Element | null {
         return (
             this.props.authenticatedUser && (
-                <Dialog className="saved-search-modal-form " onDismiss={this.props.onDidCancel}>
+                <Dialog className={styles.savedSearchModalForm} onDismiss={this.props.onDidCancel}>
                     <Form onSubmit={this.onSubmit} className="test-saved-search-modal">
                         <h3>Save search query to: </h3>
                         <div className="form-group">
                             <select
                                 onChange={this.onLocationChange}
-                                className="form-control saved-search-modal-form__select"
+                                className={classNames(styles.select, 'form-control')}
                             >
                                 <option value={UserOrOrg.User}>User</option>
                                 {this.props.authenticatedUser.organizations &&
@@ -66,7 +69,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                                     <select
                                         onChange={this.onOrganizationChange}
                                         placeholder="Select an organization"
-                                        className="form-control saved-search-modal-form__select"
+                                        className={classNames(styles.select, 'form-control')}
                                     >
                                         <option value="" disabled={true} selected={true}>
                                             Select an organization
@@ -82,7 +85,7 @@ export class SavedSearchModal extends React.Component<Props, State> {
                         <button
                             type="submit"
                             disabled={this.state.saveLocation === UserOrOrg.Org && !this.state.organization}
-                            className="btn btn-primary saved-search-modal-form__button test-saved-search-modal-save-button"
+                            className={classNames(styles.button, 'btn btn-primary test-saved-search-modal-save-button')}
                         >
                             Save query
                         </button>

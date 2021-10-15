@@ -4,7 +4,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -76,5 +79,31 @@ func TestCheckSearchLimits(t *testing.T) {
 		if diff := cmp.Diff(test.wantError, haveErr); diff != "" {
 			t.Fatalf("test %s, mismatched error (-want, +got):\n%s", test.name, diff)
 		}
+	}
+}
+
+func TestQueryNodesToPredicates(t *testing.T) {
+	type testCase struct {
+		name   string
+		input  []query.Node
+		output []protocol.Node
+	}
+
+	cases := []testCase{{
+		name: "negated repo does not result in nil node (#26032)",
+		input: []query.Node{
+			query.Parameter{
+				Field:   query.FieldRepo,
+				Negated: true,
+			},
+		},
+		output: []protocol.Node{},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			output := queryNodesToPredicates(tc.input, false, false)
+			require.Equal(t, tc.output, output)
+		})
 	}
 }

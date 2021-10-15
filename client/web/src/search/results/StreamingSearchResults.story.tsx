@@ -125,6 +125,10 @@ add('search with quotes', () => (
     </WebStory>
 ))
 
+add('did you mean', () => (
+    <WebStory>{() => <StreamingSearchResults {...defaultProps} parsedSearchQuery="javascript test" />}</WebStory>
+))
+
 add('progress with warnings', () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',

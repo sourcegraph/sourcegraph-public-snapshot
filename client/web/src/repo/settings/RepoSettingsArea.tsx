@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -19,6 +20,7 @@ import { RepositoryFields, SettingsAreaRepositoryFields } from '../../graphql-op
 import { RouteDescriptor } from '../../util/contributions'
 
 import { fetchSettingsAreaRepository } from './backend'
+import styles from './RepoSettingsArea.module.scss'
 import { RepoSettingsSidebar, RepoSettingsSideBarGroups } from './RepoSettingsSidebar'
 
 const NotFoundPage: React.FunctionComponent = () => (
@@ -89,7 +91,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="repo-settings-area container d-flex mt-3">
+        <div className={classNames('container d-flex mt-3', styles.repoSettingsArea)}>
             <RepoSettingsSidebar className="flex-0 mr-3" {...props} {...context} />
             <div className="flex-bounded">
                 <Switch>
