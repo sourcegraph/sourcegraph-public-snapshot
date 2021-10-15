@@ -40,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where code insights queries could produce a panic on queued records that did not include a `record_time` [#25929](https://github.com/sourcegraph/sourcegraph/pull/25929)
 - Fixed an issue where Batch Change changeset diffs would sometimes render incorrectly when previewed from the UI if they contained deleted empty lines. [#25866](https://github.com/sourcegraph/sourcegraph/pull/25866)
 - An issue where `repo:contains.commit.after()` would fail on some malformed git repositories. [#25974](https://github.com/sourcegraph/sourcegraph/issues/25974)
+- Fixed primary email bug where users with no primary email set would break the email setting page when trying to add a new email. [#25008](https://github.com/sourcegraph/sourcegraph/pull/25008)
 
 ### Removed
 
@@ -69,7 +70,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a number of issues where repository permissions sync may fail for instances with very large numbers of repositories. [#24852](https://github.com/sourcegraph/sourcegraph/pull/24852), [#24972](https://github.com/sourcegraph/sourcegraph/pull/24972)
-- Fixed primary email bug where users with no primary email set would break the email setting page when trying to add a new email. [#25008](https://github.com/sourcegraph/sourcegraph/pull/25008)
 - Fixed excessive re-rendering of the whole web application on every keypress in the search query input. [#24844](https://github.com/sourcegraph/sourcegraph/pull/24844)
 - Code Insights line chart now supports different timelines for each data series (lines). [#25005](https://github.com/sourcegraph/sourcegraph/pull/25005)
 - Postgres exporter now exposes pg_stat_activity account to show the number of active DB connections. [#25086](https://github.com/sourcegraph/sourcegraph/pull/25086)
