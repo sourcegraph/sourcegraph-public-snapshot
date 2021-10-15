@@ -59,7 +59,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 		args.UserID, args.OrgID, err = getUserPermissions(ctx, d.orgStore)
 		if err != nil {
 			d.err = errors.Wrap(err, "getUserPermissions")
-			return;
+			return
 		}
 
 		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)
