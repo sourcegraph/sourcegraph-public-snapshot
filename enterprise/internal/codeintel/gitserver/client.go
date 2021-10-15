@@ -545,7 +545,7 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 
-	out, err := cmd.CombinedOutput(ctx)
+	out, err := cmd.Output(ctx)
 	if err == nil {
 		return string(bytes.TrimSpace(out)), nil
 	}
