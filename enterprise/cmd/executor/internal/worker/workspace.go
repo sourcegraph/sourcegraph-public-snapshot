@@ -30,7 +30,6 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	if repositoryName != "" {
 		cloneURL, err := makeURL(
 			h.options.ClientOptions.EndpointOptions.URL,
-			h.options.ClientOptions.EndpointOptions.Username,
 			h.options.ClientOptions.EndpointOptions.Password,
 			h.options.GitServicePath,
 			repositoryName,
@@ -59,13 +58,13 @@ func (h *handler) prepareWorkspace(ctx context.Context, commandRunner command.Ru
 	return tempDir, nil
 }
 
-func makeURL(base, username, password string, path ...string) (*url.URL, error) {
+func makeURL(base, password string, path ...string) (*url.URL, error) {
 	u, err := makeRelativeURL(base, path...)
 	if err != nil {
 		return nil, err
 	}
 
-	u.User = url.UserPassword(username, password)
+	u.User = url.UserPassword("sourcegraph", password)
 	return u, nil
 }
 

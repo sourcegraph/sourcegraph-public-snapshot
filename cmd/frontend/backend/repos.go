@@ -172,7 +172,13 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 		}
 		done()
 	}()
-	return s.cache.List(ctx)
+
+	if envvar.SourcegraphDotComMode() {
+		return s.cache.List(ctx)
+	}
+
+	trueP := true
+	return s.store.ListRepoNames(ctx, database.ReposListOptions{Index: &trueP})
 }
 
 // ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
@@ -197,7 +203,7 @@ func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err
 
 	// For authenticated users we also want to include any private repos they may have added
 	if a := actor.FromContext(ctx); a.IsAuthenticated() {
-		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
+		privateRepos, err := s.store.ListRepoNames(ctx, database.ReposListOptions{
 			UserID:      a.UID,
 			OnlyPrivate: true,
 		})

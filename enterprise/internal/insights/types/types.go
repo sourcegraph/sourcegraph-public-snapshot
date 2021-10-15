@@ -58,6 +58,7 @@ type InsightSeries struct {
 	NextSnapshotAfter     time.Time
 	BackfillQueuedAt      time.Time
 	RecordingIntervalDays int
+	Enabled               bool
 }
 
 type DirtyQuery struct {
@@ -72,4 +73,11 @@ type DirtyQueryAggregate struct {
 	Count   int
 	ForTime time.Time
 	Reason  string
+}
+
+type Dashboard struct {
+	ID         int
+	Title      string
+	InsightIDs []string // shallow references
+	Save       bool     // temporarily save dashboards from being cleared during setting migration
 }

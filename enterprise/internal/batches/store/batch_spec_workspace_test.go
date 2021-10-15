@@ -125,7 +125,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("All", func(t *testing.T) {
-			have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{})
+			have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +136,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 
 		t.Run("ByBatchSpecID", func(t *testing.T) {
 			for _, ws := range workspaces {
-				have, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
 					BatchSpecID: ws.BatchSpecID,
 				})
 

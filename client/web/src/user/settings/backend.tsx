@@ -140,6 +140,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                 $source: EventSource!
                 $argument: String
                 $publicArgument: String
+                $deviceID: String
+                $eventID: Int
+                $insertID: String
             ) {
                 logEvent(
                     event: $event
@@ -151,6 +154,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
                     source: $source
                     argument: $argument
                     publicArgument: $publicArgument
+                    deviceID: $deviceID
+                    eventID: $eventID
+                    insertID: $insertID
                 ) {
                     alwaysNil
                 }
@@ -166,6 +172,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
             source: EventSource.WEB,
             argument: eventProperties ? JSON.stringify(eventProperties) : null,
             publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
+            deviceID: window.context.sourcegraphDotComMode ? eventLogger.getDeviceID() : null,
+            eventID: window.context.sourcegraphDotComMode ? eventLogger.getEventID() : null,
+            insertID: window.context.sourcegraphDotComMode ? eventLogger.getInsertID() : null,
         }
     )
         .pipe(map(dataOrThrowErrors))

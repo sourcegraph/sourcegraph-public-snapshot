@@ -1,5 +1,6 @@
 .options-page {
     width: 26rem;
+    color: var(--body-color);
 
     &--full {
         margin: 8rem auto;
@@ -11,16 +12,6 @@
 
         &:last-of-type {
             border-bottom: none;
-        }
-    }
-
-    &__split-section-part {
-        padding: 0.75rem 1rem;
-        flex: 50%;
-        border-left: 1px solid var(--border-color-2);
-        text-align: center;
-        &:first-child {
-            border-left: none;
         }
     }
 
@@ -40,13 +31,42 @@
     &__permission-text {
         margin-top: 0.75rem;
     }
-}
 
-.code-hosts-section {
-    &__icon {
-        display: inline-flex;
-        place-items: center;
-        padding: 0.5rem;
-        border-radius: 100%;
+    &__icon-container {
+        right: 0.5rem;
+        top: 0;
+    }
+
+    &__icon-check {
+        margin: 0 0.25rem;
+    }
+
+    &__icon-loading {
+        padding: 0.25rem;
+    }
+
+    &__input-disabled {
+        display: none;
+    }
+
+    &__text-error {
+        color: var(--danger);
+    }
+
+    &__open-new-icon {
+        width: 0.9rem;
+        height: 0.9rem;
+        vertical-align: text-bottom;
+    }
+
+    &__text-link {
+        color: var(--link-color);
+        font-weight: normal;
+
+        &:focus,
+        &:active {
+            outline: none;
+            box-shadow: none;
+        }
     }
 }

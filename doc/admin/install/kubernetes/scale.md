@@ -1,4 +1,4 @@
-# Scaling
+# Scaling Sourcegraph with Kubernetes
 
 Sourcegraph can be configured to scale to very large codebases and large numbers of
 users. If you notice latency for search or code intelligence is higher than desired, changing these

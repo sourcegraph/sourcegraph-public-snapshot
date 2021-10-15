@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
@@ -20,7 +20,7 @@ type DBStore interface {
 	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
-	SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (map[int]*time.Time, error)
+	SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
 	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
 	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
@@ -48,7 +48,6 @@ type LSIFStore interface {
 	Clear(ctx context.Context, bundleIDs ...int) error
 }
 
-type GitserverClient interface {
-	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitserver.RefDescription, error)
-	BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error)
+type PolicyMatcher interface {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]policies.PolicyMatch, error)
 }

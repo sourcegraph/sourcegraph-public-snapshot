@@ -266,6 +266,21 @@ export const createSharedIntegrationTestContext = async <
                 DISPOSE_ACTION_TIMEOUT,
                 new Error('Recording coverage timed out')
             )
+
+            if (driver.page.url() !== 'about:blank') {
+                await pTimeout(
+                    driver.page.evaluate(() => {
+                        try {
+                            localStorage.clear()
+                        } catch (error) {
+                            console.error('Failed to clear localStorage!', error)
+                        }
+                    }),
+                    DISPOSE_ACTION_TIMEOUT,
+                    () => console.warn('Failed to clear localStorage!')
+                )
+            }
+
             await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
             await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
         },

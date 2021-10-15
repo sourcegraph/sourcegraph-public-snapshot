@@ -83,7 +83,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 	id, token, err := database.AccessTokens(r.db).Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "created an access token"); err != nil {
 			log15.Warn("Failed to send email to inform user of access token creation", "error", err)
 		}
 	}
@@ -123,13 +123,12 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
-		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID, token.SubjectUserID); err != nil {
+		if err := database.AccessTokens(r.db).DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 
@@ -149,7 +148,7 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, subjectUserID, "deleted an access token"); err != nil {
 			log15.Warn("Failed to send email to inform user of access token deletion", "error", err)
 		}
 	}

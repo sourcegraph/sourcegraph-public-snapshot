@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -314,8 +315,8 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		return nil, err
 	}
 
-	if args.Type != gql.GitObjectTypeCommit && args.Type != gql.GitObjectTypeTag && args.Type != gql.GitObjectTypeTree {
-		return nil, errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", args.Type)
+	if err := validateConfigurationPolicy(args.CodeIntelConfigurationPolicy); err != nil {
+		return nil, err
 	}
 
 	var repositoryID *int
@@ -348,23 +349,14 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	return NewConfigurationPolicyResolver(configurationPolicy), nil
 }
 
-func toDuration(hours *int32) *time.Duration {
-	if hours == nil {
-		return nil
-	}
-
-	v := time.Duration(*hours) * time.Hour
-	return &v
-}
-
 func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.UpdateCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may configure code intelligence
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, dbconn.Global); err != nil {
 		return nil, err
 	}
 
-	if args.Type != gql.GitObjectTypeCommit && args.Type != gql.GitObjectTypeTag && args.Type != gql.GitObjectTypeTree {
-		return nil, errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", args.Type)
+	if err := validateConfigurationPolicy(args.CodeIntelConfigurationPolicy); err != nil {
+		return nil, err
 	}
 
 	id, err := unmarshalConfigurationPolicyGQLID(args.ID)
@@ -388,6 +380,40 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func validateConfigurationPolicy(policy gql.CodeIntelConfigurationPolicy) error {
+	switch policy.Type {
+	case gql.GitObjectTypeCommit:
+	case gql.GitObjectTypeTag:
+	case gql.GitObjectTypeTree:
+	default:
+		return errors.Errorf("illegal git object type '%s', expected 'GIT_COMMIT', 'GIT_TAG', or 'GIT_TREE'", policy.Type)
+	}
+
+	if policy.Name == "" {
+		return errors.Errorf("no name supplied")
+	}
+	if policy.Pattern == "" {
+		return errors.Errorf("no pattern supplied")
+	}
+	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
+		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
+	}
+	if policy.IndexCommitMaxAgeHours != nil && *policy.IndexCommitMaxAgeHours <= 0 {
+		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
+	}
+
+	return nil
+}
+
+func toDuration(hours *int32) *time.Duration {
+	if hours == nil {
+		return nil
+	}
+
+	v := time.Duration(*hours) * time.Hour
+	return &v
 }
 
 func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *gql.DeleteCodeIntelligenceConfigurationPolicyArgs) (*gql.EmptyResponse, error) {
@@ -446,6 +472,34 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {
+	repositoryID, err := unmarshalLSIFIndexGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	namesByRev, err := r.resolver.PreviewGitObjectFilter(ctx, int(repositoryID), store.GitObjectType(args.Type), args.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	var previews []gql.GitObjectFilterPreviewResolver
+	for rev, names := range namesByRev {
+		for _, name := range names {
+			previews = append(previews, &gitObjectFilterPreviewResolver{
+				name: name,
+				rev:  rev,
+			})
+		}
+	}
+
+	sort.Slice(previews, func(i, j int) bool {
+		return previews[i].Name() < previews[j].Name() || (previews[i].Name() == previews[j].Name() && previews[i].Rev() < previews[j].Rev())
+	})
+
+	return previews, nil
 }
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the

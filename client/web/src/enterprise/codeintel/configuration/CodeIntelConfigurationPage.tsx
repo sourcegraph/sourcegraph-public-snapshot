@@ -1,70 +1,82 @@
 import * as H from 'history'
-import React, { FunctionComponent, useEffect } from 'react'
+import React, { FunctionComponent, useState, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { PageHeader } from '@sourcegraph/wildcard'
 
-import {
-    getConfigurationForRepository as defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository as defaultGetInferredConfigurationForRepository,
-    updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
-} from './backend'
+import { CodeIntelConfigurationPageHeader } from './CodeIntelConfigurationPageHeader'
+import { FlashMessage } from './FlashMessage'
+import { PolicyListActions } from './PolicyListActions'
 import { RepositoryConfiguration } from './RepositoryConfiguration'
 import { RepositoryPolicies } from './RepositoryPolicies'
 
 export interface CodeIntelConfigurationPageProps extends RouteComponentProps<{}>, ThemeProps, TelemetryProps {
     repo?: { id: string }
     indexingEnabled?: boolean
-    updateConfigurationForRepository?: typeof defaultUpdateConfigurationForRepository
-    getConfigurationForRepository?: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository?: typeof defaultGetInferredConfigurationForRepository
+    isLightTheme: boolean
+    telemetryService: TelemetryService
     history: H.History
 }
 
 export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfigurationPageProps> = ({
     repo,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
-    updateConfigurationForRepository = defaultUpdateConfigurationForRepository,
-    getConfigurationForRepository = defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository = defaultGetInferredConfigurationForRepository,
     isLightTheme,
     telemetryService,
     history,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPage'), [telemetryService])
+    const [displayActions, setDisplayAction] = useState(true)
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
 
     return (
         <>
             <PageTitle title="Precise code intelligence configuration" />
-            <PageHeader
-                headingElement="h2"
-                path={[
-                    {
-                        text: <>Precise code intelligence configuration</>,
-                    },
-                ]}
-                description={`Rules that define configuration for precise code intelligence ${
-                    repo ? 'in this repository' : 'over all repositories'
-                }.`}
-                className="mb-3"
-            />
+            <CodeIntelConfigurationPageHeader>
+                <PageHeader
+                    headingElement="h2"
+                    path={[
+                        {
+                            text: <>Precise code intelligence configuration</>,
+                        },
+                    ]}
+                    description={`Rules that define configuration for precise code intelligence ${
+                        repo ? 'in this repository' : 'over all repositories'
+                    }.`}
+                    className="mb-3"
+                />
+                {displayActions && <PolicyListActions disabled={isLoading} deleting={isDeleting} history={history} />}
+            </CodeIntelConfigurationPageHeader>
+
+            {history.location.state && (
+                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
+            )}
 
             {repo ? (
                 <RepositoryConfiguration
                     repo={repo}
-                    updateConfigurationForRepository={updateConfigurationForRepository}
-                    getConfigurationForRepository={getConfigurationForRepository}
-                    getInferredConfigurationForRepository={getInferredConfigurationForRepository}
                     indexingEnabled={indexingEnabled}
                     isLightTheme={isLightTheme}
                     telemetryService={telemetryService}
                     history={history}
+                    onHandleDisplayAction={setDisplayAction}
+                    onHandleIsDeleting={setIsDeleting}
+                    onHandleIsLoading={setIsLoading}
                 />
             ) : (
-                <RepositoryPolicies repo={repo} isGlobal={true} indexingEnabled={indexingEnabled} history={history} />
+                <RepositoryPolicies
+                    repo={repo}
+                    isGlobal={true}
+                    indexingEnabled={indexingEnabled}
+                    history={history}
+                    onHandleDisplayAction={setDisplayAction}
+                    onHandleIsDeleting={setIsDeleting}
+                    onHandleIsLoading={setIsLoading}
+                />
             )}
         </>
     )

@@ -55,7 +55,7 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
-	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, nil)
+	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, true, nil)
 
 	handler := &handler{
 		dbStore:         mockDBStore,
@@ -134,10 +134,10 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected UpdateDependencyNumReferences args (-want +got):\n%s", diff)
 	}
 
-	if len(mockDBStore.InsertDependencyIndexingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertDependencyIndexingJob calls. want=%d have=%d", 1, len(mockDBStore.InsertDependencyIndexingJobFunc.History()))
-	} else if mockDBStore.InsertDependencyIndexingJobFunc.History()[0].Arg1 != 42 {
-		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencyIndexingJobFunc.History()[0].Arg1)
+	if len(mockDBStore.InsertDependencySyncingJobFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertDependencyIndexingJob calls. want=%d have=%d", 1, len(mockDBStore.InsertDependencySyncingJobFunc.History()))
+	} else if mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1 != 42 {
+		t.Errorf("unexpected value for upload id. want=%d have=%d", 42, mockDBStore.InsertDependencySyncingJobFunc.History()[0].Arg1)
 	}
 
 	if len(mockDBStore.DeleteOverlappingDumpsFunc.History()) != 1 {
@@ -190,6 +190,9 @@ func TestHandleError(t *testing.T) {
 
 	// Give correlation package a valid input dump
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
+
+	// Supply non-nil commit date
+	gitserverClient.CommitDateFunc.SetDefaultReturn(time.Now(), true, nil)
 
 	// Set a different tip commit
 	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))

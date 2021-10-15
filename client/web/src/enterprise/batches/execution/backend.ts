@@ -14,30 +14,16 @@ import {
 } from '../../../graphql-operations'
 
 const batchSpecExecutionFieldsFragment = gql`
-    fragment BatchSpecExecutionFields on BatchSpecExecution {
+    fragment BatchSpecExecutionFields on BatchSpec {
         id
-        inputSpec
+        originalInput
         state
         createdAt
         startedAt
         finishedAt
-        failure
-        steps {
-            setup {
-                ...BatchSpecExecutionLogEntryFields
-            }
-            srcPreview {
-                ...BatchSpecExecutionLogEntryFields
-            }
-            teardown {
-                ...BatchSpecExecutionLogEntryFields
-            }
-        }
-        placeInQueue
-        batchSpec {
-            applyURL
-        }
-        initiator {
+        failureMessage
+        applyURL
+        creator {
             id
             url
             displayName
@@ -47,15 +33,6 @@ const batchSpecExecutionFieldsFragment = gql`
             url
             namespaceName
         }
-    }
-
-    fragment BatchSpecExecutionLogEntryFields on ExecutionLogEntry {
-        key
-        command
-        startTime
-        exitCode
-        durationMilliseconds
-        out
     }
 `
 
@@ -77,8 +54,8 @@ export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpec
             if (!node) {
                 return null
             }
-            if (node.__typename !== 'BatchSpecExecution') {
-                throw new Error(`Node is a ${node.__typename}, not a BatchSpecExecution`)
+            if (node.__typename !== 'BatchSpec') {
+                throw new Error(`Node is a ${node.__typename}, not a BatchSpec`)
             }
             return node
         })
@@ -88,7 +65,7 @@ export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<Batch
     const result = await requestGraphQL<CancelBatchSpecExecutionResult, CancelBatchSpecExecutionVariables>(
         gql`
             mutation CancelBatchSpecExecution($id: ID!) {
-                cancelBatchSpecExecution(batchSpecExecution: $id) {
+                cancelBatchSpecExecution(batchSpec: $id) {
                     ...BatchSpecExecutionFields
                 }
             }

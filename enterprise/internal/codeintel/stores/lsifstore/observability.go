@@ -29,13 +29,14 @@ type operations struct {
 	references                    *observation.Operation
 	stencil                       *observation.Operation
 	writeDefinitions              *observation.Operation
+	writeDocumentationMappings    *observation.Operation
 	writeDocumentationPages       *observation.Operation
 	writeDocumentationPathInfo    *observation.Operation
+	writeDocumentationSearch      *observation.Operation
 	writeDocuments                *observation.Operation
 	writeMeta                     *observation.Operation
 	writeReferences               *observation.Operation
 	writeResultChunks             *observation.Operation
-	writeDocumentationMappings    *observation.Operation
 
 	locations           *observation.Operation
 	locationsWithinFile *observation.Operation
@@ -91,6 +92,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		writeDocumentationMappings:    op("WriteDocumentationMappings"),
 		writeDocumentationPages:       op("WriteDocumentationPages"),
 		writeDocumentationPathInfo:    op("WriteDocumentationPathInfo"),
+		writeDocumentationSearch:      op("WriteDocumentationSearch"),
 		writeDocuments:                op("WriteDocuments"),
 		writeMeta:                     op("WriteMeta"),
 		writeReferences:               op("WriteReferences"),

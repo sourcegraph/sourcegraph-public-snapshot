@@ -5,7 +5,12 @@ import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
-import { QueryFieldExample } from '../queryBuilder/QueryBuilderInputRow'
+interface QueryFieldExample {
+    /** A markdown string describing the example. */
+    description: string
+    /** The value for the example. Will be displayed as an inline code block. */
+    value: string
+}
 
 interface Props {
     title: string

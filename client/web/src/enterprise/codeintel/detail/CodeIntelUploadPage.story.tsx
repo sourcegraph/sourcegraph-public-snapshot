@@ -114,8 +114,7 @@ const Template: Story<CodeIntelUploadPageProps> = args => (
 
 const defaults: Partial<CodeIntelUploadPageProps> = {
     now,
-    deleteLsifUpload: () => of(),
-    fetchLsifUploads: ({ dependencyOf }: { dependencyOf?: string | null }) =>
+    queryLsifUploadsList: ({ dependencyOf }: { dependencyOf?: string | null }) =>
         dependencyOf === undefined
             ? of({
                   nodes: dependents,
@@ -140,7 +139,7 @@ const defaults: Partial<CodeIntelUploadPageProps> = {
 export const Uploading = Template.bind({})
 Uploading.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -152,7 +151,7 @@ Uploading.args = {
 export const Queued = Template.bind({})
 Queued.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -165,7 +164,7 @@ Queued.args = {
 export const Processing = Template.bind({})
 Processing.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -178,7 +177,7 @@ Processing.args = {
 export const Completed = Template.bind({})
 Completed.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -192,7 +191,7 @@ Completed.args = {
 export const Errored = Template.bind({})
 Errored.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -208,7 +207,7 @@ Errored.args = {
 export const Deleting = Template.bind({})
 Deleting.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -222,7 +221,7 @@ Deleting.args = {
 export const FailedUpload = Template.bind({})
 FailedUpload.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',
@@ -237,7 +236,7 @@ FailedUpload.args = {
 export const AssociatedIndex = Template.bind({})
 AssociatedIndex.args = {
     ...defaults,
-    fetchLsifUpload: () =>
+    queryLisfUploadFields: () =>
         of({
             ...uploadPrototype,
             id: '1',

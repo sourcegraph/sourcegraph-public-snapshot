@@ -3,7 +3,7 @@ import { isEqual } from 'lodash'
 import { Observable, of, Subscription, from, ReplaySubject, Subscriber } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 
-import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/fromObservableQuery'
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { GetTemporarySettingsResult } from '../../graphql-operations'
 
@@ -51,7 +51,9 @@ export class TemporarySettingsStorage {
     public set<K extends keyof TemporarySettings>(key: K, value: TemporarySettings[K]): void {
         this.settings[key] = value
         this.onChange.next(this.settings)
-        this.saveSubscription = this.settingsBackend.save(this.settings).subscribe()
+
+        this.saveSubscription?.unsubscribe()
+        this.saveSubscription = this.settingsBackend.edit({ [key]: value }).subscribe()
     }
 
     public get<K extends keyof TemporarySettings>(
@@ -67,7 +69,7 @@ export class TemporarySettingsStorage {
 
 export interface SettingsBackend {
     load: () => Observable<TemporarySettings>
-    save: (settings: TemporarySettings) => Observable<void>
+    edit: (settings: TemporarySettings) => Observable<void>
 }
 
 /**
@@ -113,10 +115,11 @@ class LocalStorageSettingsBackend implements SettingsBackend {
         })
     }
 
-    public save(settings: TemporarySettings): Observable<void> {
+    public edit(newSettings: TemporarySettings): Observable<void> {
         try {
-            const settingsString = JSON.stringify(settings)
-            localStorage.setItem(this.TemporarySettingsKey, settingsString)
+            const encodedCurrentSettings = localStorage.getItem(this.TemporarySettingsKey) || '{}'
+            const currentSettings = JSON.parse(encodedCurrentSettings) as TemporarySettings
+            localStorage.setItem(this.TemporarySettingsKey, JSON.stringify({ ...currentSettings, ...newSettings }))
         } catch (error: unknown) {
             console.error(error)
         }
@@ -140,9 +143,9 @@ class ServersideSettingsBackend implements SettingsBackend {
         }
     `
 
-    private readonly SaveTemporarySettingsMutation = gql`
-        mutation SaveTemporarySettings($contents: String!) {
-            overwriteTemporarySettings(contents: $contents) {
+    private readonly EditTemporarySettingsMutation = gql`
+        mutation EditTemporarySettings($contents: String!) {
+            editTemporarySettings(settingsToEdit: $contents) {
                 alwaysNil
             }
         }
@@ -172,13 +175,31 @@ class ServersideSettingsBackend implements SettingsBackend {
         )
     }
 
-    public save(settings: TemporarySettings): Observable<void> {
+    public edit(newSettings: TemporarySettings): Observable<void> {
         try {
-            const settingsString = JSON.stringify(settings)
+            const settingsString = JSON.stringify(newSettings)
+
             return from(
                 this.apolloClient.mutate({
-                    mutation: this.SaveTemporarySettingsMutation,
+                    mutation: this.EditTemporarySettingsMutation,
                     variables: { contents: settingsString },
+                    update: cache => {
+                        const encodedCurrentSettings =
+                            cache.readQuery<GetTemporarySettingsResult>({
+                                query: this.GetTemporarySettingsQuery,
+                            })?.temporarySettings.contents || '{}'
+                        const currentSettings = JSON.parse(encodedCurrentSettings) as TemporarySettings
+
+                        return cache.writeQuery<GetTemporarySettingsResult>({
+                            query: this.GetTemporarySettingsQuery,
+                            data: {
+                                temporarySettings: {
+                                    __typename: 'TemporarySettings',
+                                    contents: JSON.stringify({ ...currentSettings, ...newSettings }),
+                                },
+                            },
+                        })
+                    },
                 })
             ).pipe(
                 map(() => {}) // Ignore return value, always empty
@@ -187,6 +208,20 @@ class ServersideSettingsBackend implements SettingsBackend {
             console.error(error)
         }
 
+        return of()
+    }
+}
+
+/**
+ * Static in memory setting backend for testing purposes
+ */
+export class InMemoryMockSettingsBackend implements SettingsBackend {
+    constructor(private settings: TemporarySettings) {}
+    public load(): Observable<TemporarySettings> {
+        return of(this.settings)
+    }
+    public edit(settings: TemporarySettings): Observable<void> {
+        this.settings = { ...this.settings, ...settings }
         return of()
     }
 }

@@ -1,10 +1,87 @@
 package protocol
 
 import (
+	"encoding/json"
 	"time"
 
+	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
+
+type SearchRequest struct {
+	Repo        api.RepoName
+	Revisions   []RevisionSpecifier
+	Query       Node
+	IncludeDiff bool
+	Limit       int
+}
+
+type RevisionSpecifier struct {
+	// RevSpec is a revision range specifier suitable for passing to git. See
+	// the manpage gitrevisions(7).
+	RevSpec string
+
+	// RefGlob is a reference glob to pass to git. See the documentation for
+	// "--glob" in git-log.
+	RefGlob string
+
+	// ExcludeRefGlob is a glob for references to exclude. See the
+	// documentation for "--exclude" in git-log.
+	ExcludeRefGlob string
+}
+
+type SearchEventMatches []CommitMatch
+
+type SearchEventDone struct {
+	LimitHit bool
+	Error    string
+}
+
+func (s SearchEventDone) Err() error {
+	if s.Error != "" {
+		var e vcs.RepoNotExistError
+		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
+			return &e
+		}
+		return errors.New(s.Error)
+	}
+	return nil
+}
+
+func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
+	event := SearchEventDone{
+		LimitHit: limitHit,
+	}
+	var notExistError *vcs.RepoNotExistError
+	if errors.As(err, &notExistError) {
+		b, _ := json.Marshal(notExistError)
+		event.Error = string(b)
+	} else if err != nil {
+		event.Error = err.Error()
+	}
+	return event
+}
+
+type CommitMatch struct {
+	Oid        api.CommitID
+	Author     Signature      `json:",omitempty"`
+	Committer  Signature      `json:",omitempty"`
+	Parents    []api.CommitID `json:",omitempty"`
+	Refs       []string       `json:",omitempty"`
+	SourceRefs []string       `json:",omitempty"`
+
+	Message result.MatchedString `json:",omitempty"`
+	Diff    result.MatchedString `json:",omitempty"`
+}
+
+type Signature struct {
+	Name  string `json:",omitempty"`
+	Email string `json:",omitempty"`
+	Date  time.Time
+}
 
 // ExecRequest is a request to execute a command inside a git repository.
 //

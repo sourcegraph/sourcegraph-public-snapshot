@@ -15,10 +15,47 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- More rules have been added to the search query validation so that user get faster feedback on issues with their query. [#24747](https://github.com/sourcegraph/sourcegraph/pull/24747)
+- Bloom filters have been added to the zoekt indexing backend to accelerate queries with code fragments matching `\w{4,}`. [zoekt#126](https://github.com/sourcegraph/zoekt/pull/126)
+- For short search queries containing no filters but the name of a supported programming language we are now suggesting to run the query with a language filter. [#25792](https://github.com/sourcegraph/sourcegraph/pull/25792)
+
+### Changed
+
+- Search context management pages are now only available in the Sourcegraph enterprise version. Search context dropdown is disabled in the OSS version. [#25147](https://github.com/sourcegraph/sourcegraph/pull/25147)
+- Search contexts GQL API is now only available in the Sourcegraph enterprise version. [#25281](https://github.com/sourcegraph/sourcegraph/pull/25281)
+- When running a commit or diff query, the accepted values of `before` and `after` have changed from "whatever git accepts" to a [slightly more strict subset](https://docs.sourcegraph.com/code_search/reference/language#before) of that. [#25414](https://github.com/sourcegraph/sourcegraph/pull/25414)
+- Search contexts are now enabled by default in the Sourcegraph enterprise version. [#25674](https://github.com/sourcegraph/sourcegraph/pull/25674)
+- Code Insights background queries will now retry a maximum of 10 times (down from 100). [#26057](https://github.com/sourcegraph/sourcegraph/pull/26057)
+- Our `sourcegraph/cadvisor` Docker image has been upgraded to cadvisor version `v0.42.0`. [#26126](https://github.com/sourcegraph/sourcegraph/pull/26126)
+
+### Fixed
+
+- A search regression in 3.32.0 which caused instances with search indexing _disabled_ (very rare) via `"search.index.enabled": false,` in their site config to crash with a panic. [#25321](https://github.com/sourcegraph/sourcegraph/pull/25321)
+- An issue where the default `search.index.enabled` value on single-container Docker instances would incorrectly be computed as `false` in some situations. [#25321](https://github.com/sourcegraph/sourcegraph/pull/25321)
+- StatefulSet service discovery in Kubernetes correctly constructs pod hostnames in the case where the ServiceName is different from the StatefulSet name. [#25146](https://github.com/sourcegraph/sourcegraph/pull/25146)
+- An issue where clicking on a link in the 'Revisions' search sidebar section would result in an invalid query if the query didn't already contain a 'repo:' filter. [#25076](https://github.com/sourcegraph/sourcegraph/pull/25076)
+- An issue where links to jump to Bitbucket Cloud wouldn't render in the UI. [#25533](https://github.com/sourcegraph/sourcegraph/pull/25533)
+- Fixed some code insights pings being aggregated on `anonymous_user_id` instead of `user_id`. [#25926](https://github.com/sourcegraph/sourcegraph/pull/25926)
+- Code insights running over all repositories using a commit search (`type:commit` or `type:diff`) would fail to deserialize and produce no results. [#25928](https://github.com/sourcegraph/sourcegraph/pull/25928)
+- Fixed an issue where code insights queries could produce a panic on queued records that did not include a `record_time` [#25929](https://github.com/sourcegraph/sourcegraph/pull/25929)
+- Fixed an issue where Batch Change changeset diffs would sometimes render incorrectly when previewed from the UI if they contained deleted empty lines. [#25866](https://github.com/sourcegraph/sourcegraph/pull/25866)
+- An issue where `repo:contains.commit.after()` would fail on some malformed git repositories. [#25974](https://github.com/sourcegraph/sourcegraph/issues/25974)
+
+### Removed
+
+- Batch Changes changeset specs stored the raw JSON used when creating them, which is no longer used and is not exposed in the API. This column has been removed, thereby saving space in the Sourcegraph database. [#25453](https://github.com/sourcegraph/sourcegraph/issues/25453)
+- The query builder page experimental feature, which was disabled in 3.21, is now removed. The setting `{ "experimentalFeatures": { "showQueryBuilder": true } }` now has no effect. [#26125](https://github.com/sourcegraph/sourcegraph/pull/26125)
+
+## 3.32.0
+
+### Added
+
 - The search sidebar shows a revisions section if all search results are from a single repository. This makes it easier to search in and switch between different revisions. [#23835](https://github.com/sourcegraph/sourcegraph/pull/23835)
 - The various alerts overview panels in Grafana can now be clicked to go directly to the relevant panels and dashboards. [#24920](https://github.com/sourcegraph/sourcegraph/pull/24920)
 - Added a `Documentation` tab to the Site Admin Maintenance panel that links to the official Sourcegraph documentation. [#24917](https://github.com/sourcegraph/sourcegraph/pull/24917)
 - Code Insights that run over all repositories now generate a moving daily snapshot between time points. [#24804](https://github.com/sourcegraph/sourcegraph/pull/24804)
+- The Code Insights GraphQL API now restricts the results to user, org, and globally scoped insights. Insights will be synced to the database with access associated to the user or org setting containing the insight definition. [#25017](https://github.com/sourcegraph/sourcegraph/pull/25017)
+- The timeout for long-running Git commands can be customized via `gitLongCommandTimeout` in the site config. [#25080](https://github.com/sourcegraph/sourcegraph/pull/25080)
 
 ### Changed
 
@@ -32,10 +69,15 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed a number of issues where repository permissions sync may fail for instances with very large numbers of repositories. [#24852](https://github.com/sourcegraph/sourcegraph/pull/24852), [#24972](https://github.com/sourcegraph/sourcegraph/pull/24972)
+- Fixed primary email bug where users with no primary email set would break the email setting page when trying to add a new email. [#25008](https://github.com/sourcegraph/sourcegraph/pull/25008)
+- Fixed excessive re-rendering of the whole web application on every keypress in the search query input. [#24844](https://github.com/sourcegraph/sourcegraph/pull/24844)
+- Code Insights line chart now supports different timelines for each data series (lines). [#25005](https://github.com/sourcegraph/sourcegraph/pull/25005)
+- Postgres exporter now exposes pg_stat_activity account to show the number of active DB connections. [#25086](https://github.com/sourcegraph/sourcegraph/pull/25086)
 
 ### Removed
 
 - The `PRECISE_CODE_INTEL_DATA_TTL` environment variable is no longer read by the worker service. Instead, global and repository-specific data retention policies configurable in the UI by site-admins will control the length of time LSIF uploads are considered _fresh_. [#24793](https://github.com/sourcegraph/sourcegraph/pull/24793)
+- The `repo.cloned` column was removed as it was deprecated in 3.26. [#25066](https://github.com/sourcegraph/sourcegraph/pull/25066)
 
 ## 3.31.2
 

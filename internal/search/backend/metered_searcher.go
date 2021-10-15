@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
+	"github.com/honeycombio/libhoney-go"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/rpc"
 	"github.com/opentracing/opentracing-go"
@@ -14,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
@@ -58,13 +60,25 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	qStr := queryString(q)
+
+	var event *libhoney.Event
+	if honey.Enabled() && cat == "SearchAll" {
+		event = honey.Event("search-zoekt")
+		event.AddField("category", cat)
+		event.AddField("query", qStr)
+		for _, t := range tags {
+			event.AddField(t.Key, t.Value)
+		}
+	}
+
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
 	if opts != nil {
-		tr.LogFields(
+		fields := []log.Field{
 			log.Bool("opts.estimate_doc_count", opts.EstimateDocCount),
 			log.Bool("opts.whole", opts.Whole),
 			log.Int("opts.shard_max_match_count", opts.ShardMaxMatchCount),
@@ -73,7 +87,13 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			log.Int("opts.total_max_important_match", opts.TotalMaxImportantMatch),
 			log.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
 			log.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
-		)
+		}
+		tr.LogFields(fields...)
+		if event != nil {
+			for _, f := range fields {
+				event.AddField(f.Key(), f.Value())
+			}
+		}
 	}
 
 	if isLeaf && opts != nil && ot.ShouldTrace(ctx) {
@@ -155,7 +175,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		code = "error"
 	}
 
-	tr.LogFields(
+	fields := []log.Field{
 		log.Int("filematches", nFilesMatches),
 		log.Int("events", nEvents),
 		log.Int64("stream.total_send_time_ms", totalSendTimeMs),
@@ -171,9 +191,23 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		log.Int("stats.match_count", statsAgg.MatchCount),
 		log.Int("stats.ngram_matches", statsAgg.NgramMatches),
 		log.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
+		log.Int("stats.shards_scanned", statsAgg.ShardsScanned),
 		log.Int("stats.shards_skipped", statsAgg.ShardsSkipped),
+		log.Int("stats.shards_skipped_filter", statsAgg.ShardsSkippedFilter),
 		log.Int64("stats.wait_ms", statsAgg.Wait.Milliseconds()),
-	)
+		log.Int("stats.regexps_considered", statsAgg.RegexpsConsidered),
+	}
+	tr.LogFields(fields...)
+	if event != nil {
+		event.AddField("duration_ms", time.Since(start).Milliseconds())
+		if err != nil {
+			event.AddField("error", err)
+		}
+		for _, f := range fields {
+			event.AddField(f.Key(), f.Value())
+		}
+		event.Send()
+	}
 
 	// Record total duration of stream
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())
@@ -201,14 +235,39 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		}
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, queryString(q), tags...)
+	qStr := queryString(q)
+
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
 	tr.LogFields(trace.Stringer("opts", opts))
+
+	var event *libhoney.Event
+	if honey.Enabled() && cat == "ListAll" {
+		event = honey.Event("search-zoekt")
+		event.AddField("category", cat)
+		event.AddField("query", qStr)
+		event.AddField("opts.minimal", opts != nil && opts.Minimal)
+		for _, t := range tags {
+			event.AddField(t.Key, t.Value)
+		}
+	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
 
 	code := "200"
 	if err != nil {
 		code = "error"
+	}
+
+	if event != nil {
+		event.AddField("duration_ms", time.Since(start).Milliseconds())
+		if zsl != nil {
+			event.AddField("repos", len(zsl.Repos))
+			event.AddField("minimal_repos", len(zsl.Minimal))
+		}
+		if err != nil {
+			event.AddField("error", err)
+		}
+		event.Send()
 	}
 
 	requestDuration.WithLabelValues(m.hostname, cat, code).Observe(time.Since(start).Seconds())

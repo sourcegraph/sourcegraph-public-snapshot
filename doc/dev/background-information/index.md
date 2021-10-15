@@ -12,6 +12,7 @@
 
 ## Development
 
+- [`sg` - the Sourcegraph developer tool](./sg/index.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -37,6 +38,7 @@
 - [Developing an out-of-band migration](oobmigrations.md)
 - [Developing a background routine](backgroundroutine.md)
 - [High-performance SQL](sql.md)
+- [Code host connections on local dev environment](code-host.md)
 
 ## [Languages](languages/index.md)
 

@@ -1,6 +1,6 @@
 import { replaceRange } from '../../util/strings'
 
-import { FilterType } from './filters'
+import { FILTERS, FilterType } from './filters'
 import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
 import { filterExists, findFilters } from './validate'
@@ -64,4 +64,41 @@ export const appendFilter = (query: string, field: string, value: string): strin
     const trimmedQuery = query.trim()
     const filter = `${field}:${value}`
     return trimmedQuery.length === 0 ? filter : `${query.trimEnd()} ${filter}`
+}
+
+/**
+ * Removes certain filters from a given query for privacy purposes, so query can be logged in telemtry.
+ */
+export const sanitizeQueryForTelemetry = (query: string): string => {
+    const redactedValue = '[REDACTED]'
+    const filterToRedact = [
+        FilterType.repo,
+        FilterType.file,
+        FilterType.rev,
+        FilterType.repohasfile,
+        FilterType.context,
+        FilterType.message,
+    ]
+
+    let newQuery = query
+
+    for (const filter of filterToRedact) {
+        if (filterExists(query, filter)) {
+            newQuery = updateFilters(newQuery, filter, redactedValue)
+        }
+        if (filterExists(query, filter, true)) {
+            newQuery = updateFilters(newQuery, `-${filter}`, redactedValue)
+        }
+        const alias = FILTERS[filter].alias
+        if (alias) {
+            if (filterExists(query, alias)) {
+                newQuery = updateFilters(newQuery, alias, redactedValue)
+            }
+            if (filterExists(query, alias, true)) {
+                newQuery = updateFilters(newQuery, `-${alias}`, redactedValue)
+            }
+        }
+    }
+
+    return newQuery
 }

@@ -47,7 +47,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
 		c := &btypes.ChangesetSpec{
-			RawSpec: `{"externalID":"12345"}`,
 			Spec: &batcheslib.ChangesetSpec{
 				ExternalID: "123456",
 			},
@@ -73,7 +72,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		UserID:      int32(424242),
 		Spec:        &batcheslib.ChangesetSpec{},
 		BatchSpecID: int64(424242),
-		RawSpec:     `{}`,
 		RepoID:      deletedRepo.ID,
 	}
 
@@ -354,7 +352,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		})
 	})
 
-	t.Run("Delete", func(t *testing.T) {
+	t.Run("DeleteChangesetSpec", func(t *testing.T) {
 		for i := range changesetSpecs {
 			err := s.DeleteChangesetSpec(ctx, changesetSpecs[i].ID)
 			if err != nil {
@@ -370,6 +368,37 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				t.Fatalf("have count: %d, want: %d", have, want)
 			}
 		}
+	})
+
+	t.Run("DeleteChangesetSpecs", func(t *testing.T) {
+		t.Run("ByBatchSpecID", func(t *testing.T) {
+
+			for i := 0; i < 3; i++ {
+				spec := &btypes.ChangesetSpec{
+					BatchSpecID: int64(i + 1),
+					RepoID:      repo.ID,
+				}
+				err := s.CreateChangesetSpec(ctx, spec)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.DeleteChangesetSpecs(ctx, DeleteChangesetSpecsOpts{
+					BatchSpecID: spec.BatchSpecID,
+				}); err != nil {
+					t.Fatal(err)
+				}
+
+				count, err := s.CountChangesetSpecs(ctx, CountChangesetSpecsOpts{BatchSpecID: spec.ID})
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if have, want := count, 0; have != want {
+					t.Fatalf("have count: %d, want: %d", have, want)
+				}
+			}
+		})
 	})
 
 	t.Run("DeleteExpiredChangesetSpecs", func(t *testing.T) {
@@ -688,6 +717,65 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 				})
 			}
 		})
+	})
+
+	t.Run("ListChangesetSpecsWithConflictingHeadRef", func(t *testing.T) {
+		user := ct.CreateTestUser(t, s.DB(), true)
+
+		repo2 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		if err := repoStore.Create(ctx, repo2); err != nil {
+			t.Fatal(err)
+		}
+		repo3 := ct.TestRepo(t, esStore, extsvc.KindGitHub)
+		if err := repoStore.Create(ctx, repo3); err != nil {
+			t.Fatal(err)
+		}
+
+		conflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
+		conflictingRef := "refs/heads/conflicting-head-ref"
+		for _, opts := range []ct.TestSpecOpts{
+			{ExternalID: "4321", Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo2.ID, BatchSpec: conflictingBatchSpec.ID},
+			{HeadRef: conflictingRef, Repo: repo3.ID, BatchSpec: conflictingBatchSpec.ID},
+		} {
+			ct.CreateChangesetSpec(t, ctx, s, opts)
+		}
+
+		conflicts, err := s.ListChangesetSpecsWithConflictingHeadRef(ctx, conflictingBatchSpec.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := len(conflicts), 2; have != want {
+			t.Fatalf("wrong number of conflicts. want=%d, have=%d", want, have)
+		}
+		for _, c := range conflicts {
+			if c.RepoID != repo.ID && c.RepoID != repo2.ID {
+				t.Fatalf("conflict has wrong RepoID: %d", c.RepoID)
+			}
+		}
+
+		nonConflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
+		for _, opts := range []ct.TestSpecOpts{
+			{ExternalID: "1234", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-2", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-2", Repo: repo2.ID, BatchSpec: nonConflictingBatchSpec.ID},
+			{HeadRef: "refs/heads/branch-1", Repo: repo3.ID, BatchSpec: nonConflictingBatchSpec.ID},
+		} {
+			ct.CreateChangesetSpec(t, ctx, s, opts)
+		}
+
+		conflicts, err = s.ListChangesetSpecsWithConflictingHeadRef(ctx, nonConflictingBatchSpec.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := len(conflicts), 0; have != want {
+			t.Fatalf("wrong number of conflicts. want=%d, have=%d", want, have)
+		}
 	})
 }
 

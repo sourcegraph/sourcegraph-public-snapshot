@@ -149,28 +149,24 @@ func NewMigrateSettingInsightsJob(ctx context.Context, base dbutil.DB, insights 
 func (m *settingMigrator) migrate(ctx context.Context) error {
 	insightStore := store.NewInsightStore(m.insights)
 	loader := insights.NewLoader(m.base)
+	dashboardStore := store.NewDashboardStore(m.insights)
 
 	discovered, err := discoverIntegrated(ctx, loader)
 	if err != nil {
 		return err
 	}
 
-	var count, skipped, errors int
+	var count, skipped, errorCount int
 	for _, d := range discovered {
 		if d.ID == "" {
 			// we need a unique ID, and if for some reason this insight doesn't have one, it can't be migrated.
 			skipped++
 			continue
 		}
-		results, err := insightStore.Get(ctx, store.InsightQueryArgs{
-			UniqueID: d.ID,
-		})
+		err := insightStore.DeleteViewByUniqueID(ctx, d.ID)
+		log15.Info("insights migration: deleting insight view", "unique_id", d.ID)
 		if err != nil {
-			return err
-		}
-		if len(results) != 0 {
-			// this insight has already been ingested, so let's skip it. Technically this insight could have been edited
-			// but for now we are going to ignore any edits to display settings.
+			// if we fail here there isn't much we can do in this migration, so continue
 			skipped++
 			continue
 		}
@@ -178,14 +174,74 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 		err = migrateSeries(ctx, insightStore, d)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
-			errors++
-			log15.Error("error while migrating insight", "error", err)
+			errorCount++
+			log15.Error("insights migration: error while migrating insight", "error", err)
 		}
 		count++
 	}
-	log15.Info("insights settings migration complete", "count", count, "skipped", skipped, "errors", errors)
+	log15.Info("insights settings migration complete", "count", count, "skipped", skipped, "errors", errorCount)
+
+	log15.Info("insights migration: migrating dashboards")
+	dashboards, err := loader.LoadDashboards(ctx)
+	if err != nil {
+		return err
+	}
+	err = clearDashboards(ctx, m.insights)
+	if err != nil {
+		return errors.Wrap(err, "clearDashboards")
+	}
+	for _, dashboard := range dashboards {
+		err := migrateDashboard(ctx, dashboardStore, dashboard)
+		if err != nil {
+			log15.Info("insights migration: error while migrating dashboard", "error", err)
+			continue
+		}
+	}
 	return nil
 }
+
+func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStore, from insights.SettingDashboard) (err error) {
+	tx, err := dashboardStore.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Store.Done(err) }()
+
+	dashboard := types.Dashboard{
+		Title:      from.Title,
+		InsightIDs: from.InsightIds,
+	}
+	log15.Info("insights migration: migrating dashboard", "settings_unique_id", from.ID)
+
+	var grants []store.DashboardGrant
+	if from.UserID != nil {
+		grants = []store.DashboardGrant{store.UserDashboardGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.DashboardGrant{store.OrgDashboardGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
+	}
+	_, err = dashboardStore.CreateDashboard(ctx, dashboard, grants)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// clearDashboards will delete all dashboards. This should be deprecated as soon as possible, and is only useful to ensure a smooth migration from settings to database.
+func clearDashboards(ctx context.Context, db dbutil.DB) error {
+	_, err := db.ExecContext(ctx, deleteAllDashboardsSql)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const deleteAllDashboardsSql = `
+-- source: enterprise/internal/insights/discovery/discovery.go:clearDashboards
+delete from dashboard where save != true;
+`
 
 // migrateSeries will attempt to take an insight defined in Sourcegraph settings and migrate it to the database.
 func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from insights.SearchInsight) (err error) {
@@ -195,7 +251,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	}
 	defer func() { err = tx.Store.Done(err) }()
 
-	log15.Info("attempting to migrate insight", "unique_id", from.ID)
+	log15.Info("insights migration: attempting to migrate insight", "unique_id", from.ID)
 	dataSeries := make([]types.InsightSeries, len(from.Series))
 	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
 
@@ -214,7 +270,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 		} else if len(existing) > 0 {
 			series = existing[0]
-			log15.Info("existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
+			log15.Info("insights migration: existing data series identified, attempting to construct and attach new view", "series_id", series.SeriesID, "unique_id", from.ID)
 		} else {
 			series, err = tx.CreateSeries(ctx, temp)
 			if err != nil {
@@ -235,7 +291,16 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		UniqueID:    from.ID,
 	}
 
-	view, err = tx.CreateView(ctx, view)
+	var grants []store.InsightViewGrant
+	if from.UserID != nil {
+		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
+	} else if from.OrgID != nil {
+		grants = []store.InsightViewGrant{store.OrgGrant(int(*from.OrgID))}
+	} else {
+		grants = []store.InsightViewGrant{store.GlobalGrant()}
+	}
+
+	view, err = tx.CreateView(ctx, view, grants)
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 	}

@@ -53,3 +53,16 @@ func findRoot(wd string) (string, error) {
 		return "", errors.Errorf("not running inside sourcegraph/sourcegraph")
 	}
 }
+
+func GetSGHomePath() (string, error) {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(homedir, ".sourcegraph")
+	if err := os.MkdirAll(filepath.Dir(path), os.ModePerm); err != nil {
+		return "", err
+	}
+	return path, nil
+}

@@ -58,6 +58,8 @@ var requireRestart = []string{
 	"externalURL",
 	"update.channel",
 	"insights.query.worker.concurrency",
+	"insights.commit.indexer.interval",
+	"codeIntelAutoIndexing.enabled",
 }
 
 // NeedRestartToApply determines if a restart is needed to apply the changes

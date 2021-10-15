@@ -120,6 +120,9 @@ func (s *UserEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 // The address must be verified.
 // All other addresses for the user will be set as not primary.
 func (s *UserEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
+	if Mocks.UserEmails.SetPrimaryEmail != nil {
+		return Mocks.UserEmails.SetPrimaryEmail(ctx, userID, email)
+	}
 	s.ensureStore()
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -208,6 +211,9 @@ func (s *UserEmailsStore) Remove(ctx context.Context, userID int32, email string
 // correct (not the one originally used when creating the user or adding the user email), then it
 // returns false.
 func (s *UserEmailsStore) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
+	if Mocks.UserEmails.Verify != nil {
+		return Mocks.UserEmails.Verify(ctx, userID, email, code)
+	}
 	s.ensureStore()
 	var dbCode sql.NullString
 	if err := s.Handle().DB().QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {

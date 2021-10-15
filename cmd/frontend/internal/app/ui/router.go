@@ -32,56 +32,55 @@ import (
 )
 
 const (
-	routeHome                 = "home"
-	routeSearch               = "search"
-	routeSearchBadge          = "search-badge"
-	routeRepo                 = "repo"
-	routeRepoSettings         = "repo-settings"
-	routeRepoCodeIntelligence = "repo-code-intelligence"
-	routeRepoCommit           = "repo-commit"
-	routeRepoBranches         = "repo-branches"
-	routeRepoBatchChanges     = "repo-batch-changes"
-	routeRepoDocs             = "repo-docs"
-	routeRepoCommits          = "repo-commits"
-	routeRepoTags             = "repo-tags"
-	routeRepoCompare          = "repo-compare"
-	routeRepoStats            = "repo-stats"
-	routeInsights             = "insights"
-	routeBatchChanges         = "batch-changes"
-	routeWelcome              = "welcome"
-	routeCodeMonitoring       = "code-monitoring"
-	routeContexts             = "contexts"
-	routeThreads              = "threads"
-	routeTree                 = "tree"
-	routeBlob                 = "blob"
-	routeRaw                  = "raw"
-	routeOrganizations        = "org"
-	routeSettings             = "settings"
-	routeSiteAdmin            = "site-admin"
-	routeAPIConsole           = "api-console"
-	routeUser                 = "user"
-	routeUserSettings         = "user-settings"
-	routeUserRedirect         = "user-redirect"
-	routeAboutSubdomain       = "about-subdomain"
-	aboutRedirectScheme       = "https"
-	aboutRedirectHost         = "about.sourcegraph.com"
-	routeSurvey               = "survey"
-	routeSurveyScore          = "survey-score"
-	routeRegistry             = "registry"
-	routeExtensions           = "extensions"
-	routeHelp                 = "help"
-	routeRepoGroups           = "repo-groups"
-	routeCncf                 = "repo-groups.cncf"
-	routeSnippets             = "snippets"
-	routeSubscriptions        = "subscriptions"
-	routeStats                = "stats"
-	routeViews                = "views"
-	routeDevToolTime          = "devtooltime"
+	routeHome                    = "home"
+	routeSearch                  = "search"
+	routeSearchBadge             = "search-badge"
+	routeRepo                    = "repo"
+	routeRepoSettings            = "repo-settings"
+	routeRepoCodeIntelligence    = "repo-code-intelligence"
+	routeRepoCommit              = "repo-commit"
+	routeRepoBranches            = "repo-branches"
+	routeRepoBatchChanges        = "repo-batch-changes"
+	routeRepoDocs                = "repo-docs"
+	routeRepoCommits             = "repo-commits"
+	routeRepoTags                = "repo-tags"
+	routeRepoCompare             = "repo-compare"
+	routeRepoStats               = "repo-stats"
+	routeInsights                = "insights"
+	routeBatchChanges            = "batch-changes"
+	routeWelcome                 = "welcome"
+	routeCodeMonitoring          = "code-monitoring"
+	routeContexts                = "contexts"
+	routeThreads                 = "threads"
+	routeTree                    = "tree"
+	routeBlob                    = "blob"
+	routeRaw                     = "raw"
+	routeOrganizations           = "org"
+	routeSettings                = "settings"
+	routeSiteAdmin               = "site-admin"
+	routeAPIConsole              = "api-console"
+	routeUser                    = "user"
+	routeUserSettings            = "user-settings"
+	routeUserRedirect            = "user-redirect"
+	routeAboutSubdomain          = "about-subdomain"
+	aboutRedirectScheme          = "https"
+	aboutRedirectHost            = "about.sourcegraph.com"
+	routeSurvey                  = "survey"
+	routeSurveyScore             = "survey-score"
+	routeRegistry                = "registry"
+	routeExtensions              = "extensions"
+	routeHelp                    = "help"
+	routeCommunitySearchContexts = "community-search-contexts"
+	routeCncf                    = "community-search-contexts.cncf"
+	routeSnippets                = "snippets"
+	routeSubscriptions           = "subscriptions"
+	routeStats                   = "stats"
+	routeViews                   = "views"
+	routeDevToolTime             = "devtooltime"
 
-	routeSearchQueryBuilder = "search.query-builder"
-	routeSearchStream       = "search.stream"
-	routeSearchConsole      = "search.console"
-	routeSearchNotebook     = "search.notebook"
+	routeSearchStream   = "search.stream"
+	routeSearchConsole  = "search.console"
+	routeSearchNotebook = "search.notebook"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -136,7 +135,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
@@ -168,10 +166,10 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/devtooltime").Methods("GET").Name(routeDevToolTime)
 	r.Path("/ping-from-self-hosted").Methods("GET", "OPTIONS").Name(uirouter.RoutePingFromSelfHosted)
 
-	// Repogroup pages. Must mirror web/src/Layout.tsx
+	// Community search contexts pages. Must mirror client/web/src/communitySearchContexts/routes.tsx
 	if envvar.SourcegraphDotComMode() {
-		repogroups := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui"}
-		r.Path("/{Path:(?:" + strings.Join(repogroups, "|") + ")}").Methods("GET").Name(routeRepoGroups)
+		communitySearchContexts := []string{"kubernetes", "stanford", "stackstorm", "temporal", "o3de", "chakraui"}
+		r.Path("/{Path:(?:" + strings.Join(communitySearchContexts, "|") + ")}").Methods("GET").Name(routeCommunitySearchContexts)
 		r.Path("/cncf").Methods("GET").Name(routeCncf)
 	}
 
@@ -271,7 +269,6 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(mux.Vars(r)["username"])
 	}, nil, noIndex)))
-	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil, index)))
 	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil, index)))
 	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil, index)))
 
@@ -310,7 +307,7 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 			r.URL.Path = "/" + aboutRedirects[mux.Vars(r)["Path"]]
 			http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		}))
-		router.Get(routeRepoGroups).Handler(handler(serveBrandedPageString("Repogroup", nil, noIndex)))
+		router.Get(routeCommunitySearchContexts).Handler(handler(serveBrandedPageString("Community search context", nil, noIndex)))
 		cncfDescription := "Search all repositories in the Cloud Native Computing Foundation (CNCF)."
 		router.Get(routeCncf).Handler(handler(serveBrandedPageString("CNCF code search", &cncfDescription, index)))
 		router.Get(routeDevToolTime).Handler(staticRedirectHandler("https://info.sourcegraph.com/dev-tool-time", http.StatusMovedPermanently))

@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import compression from 'compression'
 import { RequestHandler } from 'express'
 import { createProxyMiddleware, Options as HTTPProxyMiddlewareOptions } from 'http-proxy-middleware'
 import { once } from 'lodash'
@@ -10,20 +11,27 @@ import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
     getCSRFTokenCookieMiddleware,
-    PROXY_ROUTES,
     environmentConfig,
     getAPIProxySettings,
     getCSRFTokenAndCookie,
+    shouldCompressResponse,
     STATIC_ASSETS_PATH,
     STATIC_ASSETS_URL,
-    WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
+    HTTP_WEB_SERVER_URL,
+    PROXY_ROUTES,
 } from '../utils'
 import { getHTMLPage } from '../webpack/get-html-webpack-plugins'
 
 // TODO: migrate webpack.config.js to TS to use `import` in this file.
 // eslint-disable-next-line @typescript-eslint/no-var-requires, @typescript-eslint/no-require-imports
 const webpackConfig = require('../../webpack.config') as Configuration
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT, IS_HOT_RELOAD_ENABLED } = environmentConfig
+const {
+    SOURCEGRAPH_API_URL,
+    SOURCEGRAPH_HTTPS_PORT,
+    CLIENT_PROXY_DEVELOPMENT_PORT,
+    IS_HOT_RELOAD_ENABLED,
+} = environmentConfig
 
 interface DevelopmentServerInit {
     proxyRoutes: string[]
@@ -79,22 +87,30 @@ async function startWebpackDevelopmentServer({
         liveReload: false,
         allowedHosts: 'all',
         hot: IS_HOT_RELOAD_ENABLED,
-        // TODO: resolve https://github.com/webpack/webpack-dev-server/issues/2313 and enable HTTPS.
-        https: false,
         historyApiFallback: {
             disableDotRule: true,
         },
-        port: SOURCEGRAPH_HTTPS_PORT,
+        port: CLIENT_PROXY_DEVELOPMENT_PORT,
         client: {
             overlay: false,
+            webSocketTransport: 'ws',
+            logging: 'verbose',
+            webSocketURL: {
+                port: SOURCEGRAPH_HTTPS_PORT,
+                protocol: 'wss',
+            },
         },
         static: {
             directory: STATIC_ASSETS_PATH,
             publicPath: [STATIC_ASSETS_URL, '/'],
         },
         proxy: [proxyConfig],
+        // Disable default DevServer compression. We need more fine grained compression to support streaming search.
+        compress: false,
         onBeforeSetupMiddleware: developmentServer => {
             developmentServer.app.use(csrfTokenCookieMiddleware)
+            // Re-enable gzip compression using our own `compression` filter.
+            developmentServer.app.use(compression({ filter: shouldCompressResponse }))
         },
     }
 
@@ -109,7 +125,8 @@ async function startWebpackDevelopmentServer({
     )
 
     await server.start()
-    signale.success(`Development server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    signale.info(`Development HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
+    signale.success(`Development HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     signale.await('Waiting for Webpack to compile assets')
 }
 

@@ -49,6 +49,7 @@ jobs:
         root:
           - client/branded
           - client/browser
+          - client/build-config
           - client/shared
           - client/web
           - client/wildcard

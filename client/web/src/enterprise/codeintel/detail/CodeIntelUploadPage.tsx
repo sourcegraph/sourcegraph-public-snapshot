@@ -1,14 +1,15 @@
+import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
 import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
-import { timer } from 'rxjs'
-import { catchError, concatMap, delay, repeatWhen, takeWhile } from 'rxjs/operators'
+import { Observable } from 'rxjs'
+import { takeWhile } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import {
     FilteredConnection,
@@ -18,11 +19,9 @@ import { Button, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { LsifUploadFields } from '../../../graphql-operations'
-import { fetchLsifUploads as defaultFetchLsifUploads } from '../shared/backend'
+import { LsifUploadFields, LsifUploadConnectionFields } from '../../../graphql-operations'
 import { CodeIntelStateBanner } from '../shared/CodeIntelStateBanner'
 
-import { deleteLsifUpload as defaultDeleteLsifUpload, fetchLsifUpload as defaultFetchUpload } from './backend'
 import { CodeIntelAssociatedIndex } from './CodeIntelAssociatedIndex'
 import { CodeIntelDeleteUpload } from './CodeIntelDeleteUpload'
 import { CodeIntelUploadMeta } from './CodeIntelUploadMeta'
@@ -31,15 +30,17 @@ import { CodeIntelUploadTimeline } from './CodeIntelUploadTimeline'
 import { DependencyOrDependentNode } from './DependencyOrDependentNode'
 import { EmptyDependencies } from './EmptyDependencies'
 import { EmptyDependents } from './EmptyDependents'
+import {
+    useDeleteLsifUpload,
+    queryLisfUploadFields as defaultQueryLisfUploadFields,
+    queryLsifUploadsList as defaultQueryLsifUploadsList,
+} from './useLsifUpload'
 
 export interface CodeIntelUploadPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
-    fetchLsifUpload?: typeof defaultFetchUpload
-    fetchLsifUploads?: typeof defaultFetchLsifUploads
-    deleteLsifUpload?: typeof defaultDeleteLsifUpload
+    queryLisfUploadFields?: typeof defaultQueryLisfUploadFields
+    queryLsifUploadsList?: typeof defaultQueryLsifUploadsList
     now?: () => Date
 }
-
-const REFRESH_INTERVAL_MS = 5000
 
 const classNamesByState = new Map([
     [LSIFUploadState.COMPLETED, 'alert-success'],
@@ -55,32 +56,32 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
     match: {
         params: { id },
     },
-    fetchLsifUpload = defaultFetchUpload,
-    fetchLsifUploads = defaultFetchLsifUploads,
-    deleteLsifUpload = defaultDeleteLsifUpload,
+    queryLisfUploadFields = defaultQueryLisfUploadFields,
+    queryLsifUploadsList = defaultQueryLsifUploadsList,
     telemetryService,
     now,
+    history,
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUpload'), [telemetryService])
 
+    const apolloClient = useApolloClient()
     const [deletionOrError, setDeletionOrError] = useState<'loading' | 'deleted' | ErrorLike>()
     const [dependencyGraphState, setDependencyGraphState] = useState(DependencyGraphState.ShowDependencies)
+    const { handleDeleteLsifUpload, deleteError } = useDeleteLsifUpload()
+
+    useEffect(() => {
+        if (deleteError) {
+            setDeletionOrError(deleteError)
+        }
+    }, [deleteError])
 
     const uploadOrError = useObservable(
-        useMemo(
-            () =>
-                timer(0, REFRESH_INTERVAL_MS, undefined).pipe(
-                    concatMap(() =>
-                        fetchLsifUpload({ id }).pipe(
-                            catchError((error): [ErrorLike] => [asError(error)]),
-                            repeatWhen(observable => observable.pipe(delay(REFRESH_INTERVAL_MS)))
-                        )
-                    ),
-                    takeWhile(shouldReload, true)
-                ),
-            [id, fetchLsifUpload]
-        )
+        useMemo(() => queryLisfUploadFields(id, apolloClient).pipe(takeWhile(shouldReload, true)), [
+            id,
+            queryLisfUploadFields,
+            apolloClient,
+        ])
     )
 
     const deleteUpload = useCallback(async (): Promise<void> => {
@@ -100,33 +101,47 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
         setDeletionOrError('loading')
 
         try {
-            await deleteLsifUpload({ id }).toPromise()
+            await handleDeleteLsifUpload({
+                variables: { id },
+                update: cache => cache.modify({ fields: { node: () => {} } }),
+            })
             setDeletionOrError('deleted')
+            history.push({
+                state: {
+                    modal: 'SUCCESS',
+                    message: `Upload for commit ${description} is deleting.`,
+                },
+            })
         } catch (error) {
             setDeletionOrError(error)
+            history.push({
+                state: {
+                    modal: 'ERROR',
+                    message: `There was an error while deleting upload for commit ${description}.`,
+                },
+            })
         }
-    }, [id, uploadOrError, deleteLsifUpload])
+    }, [id, uploadOrError, handleDeleteLsifUpload, history])
 
     const queryDependencies = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
+        (args: FilteredConnectionQueryArguments): Observable<LsifUploadConnectionFields> => {
             if (uploadOrError && !isErrorLike(uploadOrError)) {
-                return fetchLsifUploads({ dependencyOf: uploadOrError.id, ...args })
+                return queryLsifUploadsList({ ...args, dependencyOf: uploadOrError.id }, apolloClient)
             }
-
             throw new Error('unreachable: queryDependencies referenced with invalid upload')
         },
-        [uploadOrError, fetchLsifUploads]
+        [uploadOrError, queryLsifUploadsList, apolloClient]
     )
 
     const queryDependents = useCallback(
         (args: FilteredConnectionQueryArguments) => {
             if (uploadOrError && !isErrorLike(uploadOrError)) {
-                return fetchLsifUploads({ dependentOf: uploadOrError.id, ...args })
+                return queryLsifUploadsList({ ...args, dependentOf: uploadOrError.id }, apolloClient)
             }
 
             throw new Error('unreachable: queryDependents referenced with invalid upload')
         },
-        [uploadOrError, fetchLsifUploads]
+        [uploadOrError, queryLsifUploadsList, apolloClient]
     )
 
     return deletionOrError === 'deleted' ? (
@@ -233,7 +248,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                     pluralNoun="dependencies"
                                     nodeComponent={DependencyOrDependentNode}
                                     queryConnection={queryDependencies}
-                                    history={props.history}
+                                    history={history}
                                     location={props.location}
                                     cursorPaging={true}
                                     emptyElement={<EmptyDependencies />}
@@ -246,7 +261,7 @@ export const CodeIntelUploadPage: FunctionComponent<CodeIntelUploadPageProps> = 
                                     pluralNoun="dependents"
                                     nodeComponent={DependencyOrDependentNode}
                                     queryConnection={queryDependents}
-                                    history={props.history}
+                                    history={history}
                                     location={props.location}
                                     cursorPaging={true}
                                     emptyElement={<EmptyDependents />}

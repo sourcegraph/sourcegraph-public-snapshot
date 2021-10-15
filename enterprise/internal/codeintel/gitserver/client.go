@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -73,8 +74,9 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	return revision, true, nil
 }
 
-// CommitDate returns the time that the given commit was committed.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+// CommitDate returns the time that the given commit was committed. If the given revision does not exist,
+// a false-valued flag is returned along with a nil error and zero-valued time.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
@@ -83,10 +85,38 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 
 	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
 	if err != nil {
-		return time.Time{}, err
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			err = nil
+		}
+
+		return time.Time{}, false, err
 	}
 
-	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+	rawDate := strings.TrimSpace(out)
+	if rawDate == "" {
+		return time.Time{}, false, nil
+	}
+
+	commitDate, err := time.Parse(time.RFC3339, rawDate)
+	if err != nil {
+		return time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, rawDate)
+	}
+
+	return commitDate, true, nil
+}
+
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
+	ctx, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("numRepos", len(repos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	resp, err := gitserver.DefaultClient.RepoInfo(ctx, repos...)
+	if resp == nil {
+		return nil, err
+	}
+
+	return resp.Results, err
 }
 
 type CommitGraph struct {
@@ -281,6 +311,60 @@ func parseRefDescriptions(lines []string) (map[string][]RefDescription, error) {
 	return refDescriptions, nil
 }
 
+// CommitsUniqueToBranch returns a map from commits that exist on a particular branch in the given repository to
+// their committer date. This set of commits is determined by listing `{branchName} ^HEAD`, which is interpreted
+// as: all commits on {branchName} not also on the tip of the default branch. If the supplied branch name is the
+// default branch, then this method instead returns all commits reachable from HEAD.
+func (c *Client) CommitsUniqueToBranch(ctx context.Context, repositoryID int, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
+	ctx, endObservation := c.operations.commitsUniqueToBranch.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("branchName", branchName),
+		log.Bool("isDefaultBranch", isDefaultBranch),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	args := []string{"log", "--pretty=format:%H:%cI"}
+	if maxAge != nil {
+		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
+	}
+	if isDefaultBranch {
+		args = append(args, "HEAD")
+	} else {
+		args = append(args, branchName, "^HEAD")
+	}
+
+	out, err := c.execGitCommand(ctx, repositoryID, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseCommitsUniqueToBranch(strings.Split(out, "\n"))
+}
+
+func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
+	commitDates := make(map[string]time.Time, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
+		}
+
+		duration, err := time.Parse(time.RFC3339, parts[1])
+		if err != nil {
+			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
+		}
+
+		commitDates[parts[0]] = duration
+	}
+
+	return commitDates, nil
+}
+
 // BranchesContaining returns a map from branch names to branch tip hashes for each brach
 // containing the given commit.
 func (c *Client) BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error) {
@@ -314,6 +398,39 @@ func parseBranchesContaining(lines []string) []string {
 	sort.Strings(names)
 
 	return names
+}
+
+// DefaultBranchContains tells if the default branch contains the given commit ID.
+//
+// TODO(apidocs): future: This could be implemented more optimally, but since it is called
+// infrequently it is fine for now.
+func (c *Client) DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error) {
+	// Determine default branch name.
+	descriptions, err := c.RefDescriptions(ctx, repositoryID)
+	if err != nil {
+		return false, errors.Wrap(err, "RefDescriptions")
+	}
+	var defaultBranchName string
+	for _, descriptions := range descriptions {
+		for _, ref := range descriptions {
+			if ref.IsDefaultBranch {
+				defaultBranchName = ref.Name
+				break
+			}
+		}
+	}
+
+	// Determine if branch contains commit.
+	branches, err := c.BranchesContaining(ctx, repositoryID, commit)
+	if err != nil {
+		return false, errors.Wrap(err, "BranchesContaining")
+	}
+	for _, branch := range branches {
+		if branch == defaultBranchName {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // RawContents returns the contents of a file in a particular commit of a repository.
@@ -443,7 +560,7 @@ func (c *Client) execResolveRevGitCommand(ctx context.Context, repositoryID int,
 	cmd := gitserver.DefaultClient.Command("git", args...)
 	cmd.Repo = repo
 
-	out, err := cmd.CombinedOutput(ctx)
+	out, err := cmd.Output(ctx)
 	if err == nil {
 		return string(bytes.TrimSpace(out)), nil
 	}

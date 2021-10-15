@@ -10,6 +10,7 @@ import { getPreviousMonday, redactSensitiveInfoFromAppURL, stripURLParameters } 
 export const ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
 export const COHORT_ID_KEY = 'sourcegraphCohortId'
 export const FIRST_SOURCE_URL_KEY = 'sourcegraphSourceUrl'
+export const DEVICE_ID_KEY = 'sourcegraphDeviceId'
 
 export class EventLogger implements TelemetryService {
     private hasStrippedQueryParameters = false
@@ -17,6 +18,8 @@ export class EventLogger implements TelemetryService {
     private anonymousUserID = ''
     private cohortID?: string
     private firstSourceURL?: string
+    private deviceID = ''
+    private eventID = 0
 
     private readonly cookieSettings: CookieAttributes = {
         // 365 days expiry, but renewed on activity.
@@ -68,6 +71,13 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     *
+     * @param eventLabel: the event name.
+     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * sent to our analytics systems. This may contain private info such as repository names or search queries.
+     * @param publicArgument: event properties that include only public information. Do NOT
+     * include any private information, such as full URLs that may contain private repo names or
+     * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (window.context?.userAgentIsBot || !eventLabel) {
@@ -113,6 +123,26 @@ export class EventLogger implements TelemetryService {
         return firstSourceURL
     }
 
+    // Device ID is a require field for Amplitude events.
+    // https://developers.amplitude.com/docs/http-api-v2
+    public getDeviceID(): string {
+        return this.deviceID
+    }
+
+    // Insert ID is used to deduplicate events in Amplitude.
+    // https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getInsertID(): string {
+        return uuid.v4()
+    }
+
+    // Event ID is used to deduplicate events in Amplitude.
+    // This is used in the case that multiple events with the same userID and timestamp
+    // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
+    public getEventID(): number {
+        this.eventID++
+        return this.eventID
+    }
+
     public getReferrer(): string {
         const referrer = document.referrer
         try {
@@ -142,7 +172,6 @@ export class EventLogger implements TelemetryService {
     private initializeLogParameters(): void {
         let anonymousUserID = cookies.get(ANONYMOUS_USER_ID_KEY) || localStorage.getItem(ANONYMOUS_USER_ID_KEY)
         let cohortID = cookies.get(COHORT_ID_KEY)
-
         if (!anonymousUserID) {
             anonymousUserID = uuid.v4()
             cohortID = getPreviousMonday(new Date())
@@ -156,8 +185,15 @@ export class EventLogger implements TelemetryService {
             cookies.set(COHORT_ID_KEY, cohortID, this.cookieSettings)
         }
 
+        let deviceID = cookies.get(DEVICE_ID_KEY)
+        if (!deviceID) {
+            deviceID = uuid.v4()
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
+        }
+
         this.anonymousUserID = anonymousUserID
         this.cohortID = cohortID
+        this.deviceID = deviceID
     }
 }
 

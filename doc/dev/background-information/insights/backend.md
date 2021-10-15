@@ -47,7 +47,7 @@ This flag should be used judiciously and should generally be considered a last r
 
 With version 3.31 this flag has moved from the `repo-updater` service to the `worker` service.
 
-### Soucegraph Setting
+### Sourcegraph Setting
 Code Insights is currently behind an experimental feature on Sourcegraph. You can enable it in settings.
 
 ```json

@@ -39,5 +39,14 @@ func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args st
 		return nil, errors.New("not authenticated")
 	}
 
-	return &EmptyResponse{}, database.TemporarySettings(r.db).UpsertTemporarySettings(ctx, a.UID, args.Contents)
+	return &EmptyResponse{}, database.TemporarySettings(r.db).OverwriteTemporarySettings(ctx, a.UID, args.Contents)
+}
+
+func (r *schemaResolver) EditTemporarySettings(ctx context.Context, args struct{ SettingsToEdit string }) (*EmptyResponse, error) {
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("not authenticated")
+	}
+
+	return &EmptyResponse{}, database.TemporarySettings(r.db).EditTemporarySettings(ctx, a.UID, args.SettingsToEdit)
 }

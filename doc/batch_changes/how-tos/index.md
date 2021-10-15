@@ -8,7 +8,6 @@ The following is a list of how-tos that show how to use [Sourcegraph Batch Chang
 - [Viewing batch changes](viewing_batch_changes.md)
 - [Tracking existing changesets](tracking_existing_changesets.md)
 - [Closing or deleting a batch change](closing_or_deleting_a_batch_change.md)
-- [Site admin configuration for Batch Changes](site_admin_configuration.md)
 - [Configuring credentials for Batch Changes](configuring_credentials.md)
 - [Handling errored changesets](handling_errored_changesets.md)
 - [Opting out of batch changes](opting_out_of_batch_changes.md)
@@ -16,3 +15,7 @@ The following is a list of how-tos that show how to use [Sourcegraph Batch Chang
 - Batch changes in monorepos
   - [Creating changesets per project in monorepos](creating_changesets_per_project_in_monorepos.md)
   - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](creating_multiple_changesets_in_large_repositories.md)
+
+### Administering Batch Changes
+
+- [Site admin configuration for Batch Changes](site_admin_configuration.md)

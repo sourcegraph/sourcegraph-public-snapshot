@@ -9,7 +9,7 @@ import { Container, PageHeader } from '@sourcegraph/wildcard'
 import { requestGraphQL } from '../../../backend/graphql'
 import { ErrorAlert } from '../../../components/alerts'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars, UserAreaUserFields, UserEmailsResult, UserEmailsVariables } from '../../../graphql-operations'
+import { Scalars, UserEmailsResult, UserEmailsVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { siteFlags } from '../../../site/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -18,10 +18,10 @@ import { SetUserPrimaryEmailForm } from './SetUserPrimaryEmailForm'
 import { UserEmail } from './UserEmail'
 
 interface Props {
-    user: UserAreaUserFields
+    user: UserSettingsAreaUserFields
 }
 
-type UserEmail = NonNullable<UserEmailsResult['node']>['emails'][number]
+type UserEmail = (NonNullable<UserEmailsResult['node']> & { __typename: 'User' })['emails'][number]
 type Status = undefined | 'loading' | 'loaded' | ErrorLike
 type EmailActionError = undefined | ErrorLike
 
@@ -47,7 +47,7 @@ export const UserSettingsEmailsPage: FunctionComponent<Props> = ({ user }) => {
         // always cleanup email action errors when re-fetching emails
         setEmailActionError(undefined)
 
-        if (fetchedEmails?.node?.emails) {
+        if (fetchedEmails?.node?.__typename === 'User' && fetchedEmails.node.emails) {
             setEmails(fetchedEmails.node.emails)
             setStatusOrError('loaded')
         } else {
@@ -128,6 +128,7 @@ async function fetchUserEmails(userID: Scalars['ID']): Promise<UserEmailsResult>
                 query UserEmails($user: ID!) {
                     node(id: $user) {
                         ... on User {
+                            __typename
                             emails {
                                 email
                                 isPrimary

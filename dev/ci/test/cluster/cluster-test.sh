@@ -6,20 +6,21 @@ DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)""
 # cd to repo root
 root_dir="$(dirname "${BASH_SOURCE[0]}")/../../../.."
 cd "$root_dir"
+root_dir=$(pwd)
 
-export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER"
+export NAMESPACE="cluster-ci-$BUILDKITE_BUILD_NUMBER-$BUILDKITE_JOB_ID"
 
 # Capture information about the state of the test cluster
 function cluster_capture_state() {
-  # Get status of all pods
+  echo "--- dump diagnostics"
+  # Get overview of all pods
   kubectl get pods
 
+  # Get specifics of pods
+  kubectl describe pods >"$root_dir/describe_pods.log" 2>&1
+
   # Get logs for some deployments
-  pushd "$root_dir"
-  FRONTEND_LOGS="frontend_logs.log"
-  kubectl logs deployment/sourcegraph-frontend --all-containers >$FRONTEND_LOGS
-  chmod 744 $FRONTEND_LOGS
-  popd
+  kubectl logs deployment/sourcegraph-frontend --all-containers >"$root_dir/frontend_logs.log" 2>&1
 }
 
 # Cleanup the cluster
@@ -44,20 +45,23 @@ function cluster_setup() {
   kubectl get -n "$NAMESPACE" pods
 
   pushd "$DIR/deploy-sourcegraph/"
-  pwd
-  # see $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
-  # replace all docker image tags with previously built candidate images
   set +e
   set +o pipefail
   pushd base
+  # Remove cAdvisor, it deploys on all Buildkite nodes as a daemonset and is non-critical.
+  rm -rf ./cadvisor
+  # See $DOCKER_CLUSTER_IMAGES_TXT in pipeline-steps.go for env var
+  # replace all docker image tags with previously built candidate images
   while IFS= read -r line; do
     echo "$line"
     grep -lr '.' -e "index.docker.io/sourcegraph/$line" --include \*.yaml | xargs sed -i -E "s#index.docker.io/sourcegraph/$line:.*#us.gcr.io/sourcegraph-dev/$line:$CANDIDATE_VERSION#g"
   done < <(printf '%s\n' "$DOCKER_CLUSTER_IMAGES_TXT")
   popd
+  echo "--- create cluster"
   ./create-new-cluster.sh
   popd
 
+  echo "--- wait for ready"
   kubectl get pods
   time kubectl wait --for=condition=Ready -l app=sourcegraph-frontend pod --timeout=20m
   set -e
@@ -88,16 +92,18 @@ function test_setup() {
   source /root/.profile
   set -x -u
 
-  echo "TEST: Checking Sourcegraph instance is accessible"
+  echo "--- TEST: Checking Sourcegraph instance is accessible"
 
   curl --fail "$SOURCEGRAPH_BASE_URL"
   curl --fail "$SOURCEGRAPH_BASE_URL/healthz"
 }
 
 function e2e() {
-  echo "TEST: Running tests"
   pushd client/web
+  echo "--- TEST: Downloading Puppeteer"
+  yarn --cwd client/shared run download-puppeteer-browser
   echo "$SOURCEGRAPH_BASE_URL"
+  echo "--- TEST: Running tests"
   yarn run test:regression:core
   yarn run test:regression:config-settings
   # yarn run test:regression:integrations

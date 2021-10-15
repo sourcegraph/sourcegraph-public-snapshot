@@ -52,10 +52,6 @@ describe('StreamingSearchResults', () => {
         location: history.location,
         authenticatedUser: null,
 
-        navbarSearchQueryState: { query: '' },
-        onNavbarQueryChange: () => {},
-        isSourcegraphDotCom: false,
-
         settingsCascade: {
             subjects: null,
             final: null,
@@ -69,6 +65,7 @@ describe('StreamingSearchResults', () => {
         enableCodeMonitoring: false,
         featureFlags: EMPTY_FEATURE_FLAGS,
         extensionViews: () => null,
+        isSourcegraphDotCom: false,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -81,7 +78,7 @@ describe('StreamingSearchResults', () => {
         )
     }
 
-    it('should call streaming search API with the right parameters from URL', () => {
+    it('should call streaming search API with the right parameters from URL', async () => {
         const searchSpy = sinon.spy(defaultProps.streamSearch)
 
         const element = render(
@@ -97,8 +94,13 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
+        const call = searchSpy.getCall(0)
+        // We have to extract the query from the observable since we can't directly compare observables
+        const receivedQuery = await call.args[0].toPromise()
+        const receivedOptions = call.args[1]
+
+        expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
+        expect(receivedOptions).toEqual({
             version: 'V2',
             patternType: SearchPatternType.regexp,
             caseSensitive: true,
@@ -109,7 +111,7 @@ describe('StreamingSearchResults', () => {
         element.unmount()
     })
 
-    it('should call streaming search API with no version context if parameter is invalid', () => {
+    it('should call streaming search API with no version context if parameter is invalid', async () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis+case:yes&patternType=regexp&c=test' })
 
@@ -128,8 +130,13 @@ describe('StreamingSearchResults', () => {
         )
 
         sinon.assert.calledOnce(searchSpy)
-        sinon.assert.calledWith(searchSpy, {
-            query: 'r:golang/oauth2 test f:travis',
+        const call = searchSpy.getCall(0)
+        // We have to extract the query from the observable since we can't directly compare observables
+        const receivedQuery = await call.args[0].toPromise()
+        const receivedOptions = call.args[1]
+
+        expect(receivedQuery).toEqual('r:golang/oauth2 test f:travis')
+        expect(receivedOptions).toEqual({
             version: 'V2',
             patternType: SearchPatternType.regexp,
             caseSensitive: false,

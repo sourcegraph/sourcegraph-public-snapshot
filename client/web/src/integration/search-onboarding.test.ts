@@ -24,14 +24,6 @@ describe('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSuggestions: () => ({
-                search: {
-                    suggestions: [{ __typename: 'Repository', name: '^github\\.com/sourcegraph/sourcegraph$' }],
-                },
-            }),
-            RepoGroups: () => ({
-                repoGroups: [],
-            }),
             AutoDefinedSearchContexts: () => ({
                 autoDefinedSearchContexts: [],
             }),
@@ -78,19 +70,27 @@ describe('Search onboarding', () => {
                     },
                 },
             }),
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    contents: JSON.stringify({
+                        'user.daysActiveCount': 1,
+                        'user.lastDayActive': new Date().toDateString(),
+                    }),
+                },
+            }),
         })
-        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
+        testContext.overrideSearchStreamEvents([
+            // Used for suggestions
+            {
+                type: 'matches',
+                data: [{ type: 'repo', repository: '^github\\.com/sourcegraph/sourcegraph$' }],
+            },
+            { type: 'done', data: {} },
+        ])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
 
-    const resetOnboardingTour = async () => {
-        await driver.page.evaluate(() => {
-            localStorage.setItem('has-cancelled-onboarding-tour', 'false')
-            localStorage.setItem('has-completed-onboarding-tour', 'false')
-            location.reload()
-        })
-    }
     const waitAndFocusInput = async () => {
         await driver.page.waitForSelector('.monaco-editor .view-lines')
         await driver.page.click('.monaco-editor .view-lines')
@@ -108,7 +108,6 @@ describe('Search onboarding', () => {
 
         it('displays all steps in the language onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.tour-language-button')
@@ -133,7 +132,6 @@ describe('Search onboarding', () => {
 
         it('displays all steps in the repo onboarding flow', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.tour-repo-button')
@@ -154,7 +152,6 @@ describe('Search onboarding', () => {
 
         it('advances filter-lang when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.tour-language-button')
@@ -180,7 +177,6 @@ describe('Search onboarding', () => {
 
         it('advances filter-repository when an autocomplete suggestion is selected', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.tour-repo-button')
@@ -206,7 +202,6 @@ describe('Search onboarding', () => {
 
         it('advances filter-repository when a user types their own repository', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-            await resetOnboardingTour()
             await waitAndFocusInput()
             await driver.page.waitForSelector('.tour-card')
             await driver.page.waitForSelector('.tour-repo-button')

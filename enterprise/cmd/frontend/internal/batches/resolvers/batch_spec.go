@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 const batchSpecIDKind = "BatchSpec"
@@ -44,6 +45,25 @@ type batchSpecResolver struct {
 	namespace     *graphqlbackend.NamespaceResolver
 	namespaceErr  error
 
+	resolutionOnce sync.Once
+	resolution     *btypes.BatchSpecResolutionJob
+	resolutionErr  error
+
+	workspacesOnce sync.Once
+	workspaces     []*btypes.BatchSpecWorkspace
+	workspacesErr  error
+
+	executionJobsOnce sync.Once
+	executionJobs     []*btypes.BatchSpecWorkspaceExecutionJob
+	executionJobsErr  error
+
+	validateSpecsOnce sync.Once
+	validateSpecsErr  error
+
+	stateOnce sync.Once
+	state     string
+	stateErr  error
+
 	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 	shouldActAsCampaignSpec bool
 }
@@ -67,7 +87,9 @@ func (r *batchSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
 }
 
 func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := store.ListChangesetSpecsOpts{}
+	opts := store.ListChangesetSpecsOpts{
+		BatchSpecID: r.batchSpec.ID,
+	}
 	if err := validateFirstParamDefaults(args.First); err != nil {
 		return nil, err
 	}
@@ -81,9 +103,8 @@ func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbac
 	}
 
 	return &changesetSpecConnectionResolver{
-		store:       r.store,
-		opts:        opts,
-		batchSpecID: r.batchSpec.ID,
+		store: r.store,
+		opts:  opts,
 	}, nil
 }
 
@@ -154,41 +175,22 @@ func (r *batchSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.Name
 	return r.computeNamespace(ctx)
 }
 
-func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
-	r.namespaceOnce.Do(func() {
-		if r.preloadedNamespace != nil {
-			r.namespace = r.preloadedNamespace
-			return
-		}
-		var (
-			err error
-			n   = &graphqlbackend.NamespaceResolver{}
-		)
+func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
+	state, err := r.computeState(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-		if r.batchSpec.NamespaceUserID != 0 {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceUserID)
-		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceOrgID)
-		}
+	if r.batchSpec.CreatedFromRaw && state != "COMPLETED" {
+		return nil, nil
+	}
 
-		if errcode.IsNotFound(err) {
-			r.namespace = nil
-			r.namespaceErr = errors.New("namespace of batch spec has been deleted")
-			return
-		}
-
-		r.namespace = n
-		r.namespaceErr = err
-	})
-	return r.namespace, r.namespaceErr
-}
-
-func (r *batchSpecResolver) ApplyURL(ctx context.Context) (string, error) {
 	n, err := r.computeNamespace(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return batchChangesApplyURL(n, r), nil
+	url := batchChangesApplyURL(n, r)
+	return &url, nil
 }
 
 func (r *batchSpecResolver) CreatedAt() graphqlbackend.DateTime {
@@ -217,8 +219,8 @@ func (r *batchChangeDescriptionResolver) Description() string {
 
 func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
 	specsConnection := &changesetSpecConnectionResolver{
-		store:       r.store,
-		batchSpecID: r.batchSpec.ID,
+		store: r.store,
+		opts:  store.ListChangesetSpecsOpts{BatchSpecID: r.batchSpec.ID},
 	}
 
 	specs, err := specsConnection.Nodes(ctx)
@@ -279,8 +281,13 @@ func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlba
 		return nil, err
 	}
 
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return nil, errors.New("user is not authenticated")
+	}
+
 	svc := service.New(r.store)
-	newest, err := svc.GetNewestBatchSpec(ctx, r.store, r.batchSpec, actor.FromContext(ctx).UID)
+	newest, err := svc.GetNewestBatchSpec(ctx, r.store, r.batchSpec, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -337,4 +344,278 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 			Offset: offset,
 		},
 	}, nil
+}
+
+func (r *batchSpecResolver) AutoApplyEnabled() bool {
+	// TODO(ssbc): not implemented
+	return false
+}
+
+func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
+	state, err := r.computeState(ctx)
+	if err != nil {
+		return "", err
+	}
+	return state, nil
+}
+
+func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	resolution, err := r.computeResolutionJob(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolution == nil {
+		return nil, nil
+	}
+	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(workspaces) == 0 {
+		return nil, nil
+	}
+	// TODO: Look at earliest started_at time among all workspaces.
+	return nil, nil
+}
+
+func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
+	resolution, err := r.computeResolutionJob(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolution == nil {
+		return nil, nil
+	}
+	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(workspaces) == 0 {
+		return nil, nil
+	}
+	// TODO: Look at latest finished_at time among all workspaces, and ensure all are in a final state.
+	return nil, nil
+}
+
+func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
+	resolution, err := r.computeResolutionJob(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolution != nil && resolution.FailureMessage != nil {
+		return resolution.FailureMessage, nil
+	}
+
+	validationErr := r.validateChangesetSpecs(ctx)
+	if validationErr != nil {
+		message := validationErr.Error()
+		return &message, nil
+	}
+
+	// TODO: look at execution jobs.
+	return nil, nil
+}
+
+func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
+	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	uniqueCSIDs := make(map[int64]struct{})
+	for _, w := range workspaces {
+		for _, id := range w.ChangesetSpecIDs {
+			if _, ok := uniqueCSIDs[id]; !ok {
+				uniqueCSIDs[id] = struct{}{}
+			}
+		}
+	}
+	specIDs := make([]int64, 0, len(uniqueCSIDs))
+	for id := range uniqueCSIDs {
+		specIDs = append(specIDs, id)
+	}
+
+	opts := store.ListChangesetSpecsOpts{
+		IDs:         specIDs,
+		BatchSpecID: r.batchSpec.ID,
+		Type:        batches.ChangesetSpecDescriptionTypeExisting,
+	}
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
+	}
+	opts.Limit = int(args.First)
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
+		if err != nil {
+			return nil, err
+		}
+		opts.Cursor = int64(id)
+	}
+
+	return &changesetSpecConnectionResolver{store: r.store, opts: opts}, nil
+}
+
+func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolutionResolver, error) {
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+	resolution, err := r.computeResolutionJob(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolution == nil {
+		return nil, nil
+	}
+
+	return &batchSpecWorkspaceResolutionResolver{store: r.store, resolution: resolution}, nil
+}
+
+func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
+	r.namespaceOnce.Do(func() {
+		if r.preloadedNamespace != nil {
+			r.namespace = r.preloadedNamespace
+			return
+		}
+		var (
+			err error
+			n   = &graphqlbackend.NamespaceResolver{}
+		)
+
+		if r.batchSpec.NamespaceUserID != 0 {
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceUserID)
+		} else {
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceOrgID)
+		}
+
+		if errcode.IsNotFound(err) {
+			r.namespace = nil
+			r.namespaceErr = errors.New("namespace of batch spec has been deleted")
+			return
+		}
+
+		r.namespace = n
+		r.namespaceErr = err
+	})
+	return r.namespace, r.namespaceErr
+}
+
+func (r *batchSpecResolver) computeResolutionJob(ctx context.Context) (*btypes.BatchSpecResolutionJob, error) {
+	r.resolutionOnce.Do(func() {
+		var err error
+		r.resolution, err = r.store.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{BatchSpecID: r.batchSpec.ID})
+		if err != nil {
+			if err == store.ErrNoResults {
+				return
+			}
+			r.resolutionErr = err
+		}
+	})
+	return r.resolution, r.resolutionErr
+}
+
+func (r *batchSpecResolver) validateChangesetSpecs(ctx context.Context) error {
+	r.validateSpecsOnce.Do(func() {
+		svc := service.New(r.store)
+		r.validateSpecsErr = svc.ValidateChangesetSpecs(ctx, r.batchSpec.ID)
+	})
+	return r.validateSpecsErr
+}
+
+func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*btypes.BatchSpecWorkspace, error) {
+	r.workspacesOnce.Do(func() {
+		r.workspaces, _, r.workspacesErr = r.store.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: r.batchSpec.ID})
+	})
+	return r.workspaces, r.workspacesErr
+}
+
+func (r *batchSpecResolver) computeExecutionJobs(ctx context.Context, workspaceIDs []int64) ([]*btypes.BatchSpecWorkspaceExecutionJob, error) {
+	r.executionJobsOnce.Do(func() {
+		opts := store.ListBatchSpecWorkspaceExecutionJobsOpts{BatchSpecWorkspaceIDs: workspaceIDs}
+
+		r.executionJobs, r.executionJobsErr = r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, opts)
+	})
+	return r.executionJobs, r.workspacesErr
+}
+
+func (r *batchSpecResolver) computeState(ctx context.Context) (string, error) {
+	r.stateOnce.Do(func() {
+		r.state, r.stateErr = func() (string, error) {
+			if !r.batchSpec.CreatedFromRaw {
+				return "COMPLETED", nil
+			}
+
+			validationErr := r.validateChangesetSpecs(ctx)
+			if validationErr != nil {
+				return "FAILED", nil
+			}
+
+			workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+			if err != nil {
+				return "", err
+			}
+			if len(workspaces) == 0 {
+				return "PENDING", nil
+			}
+
+			var ids []int64
+			for _, ws := range workspaces {
+				ids = append(ids, ws.ID)
+			}
+
+			jobs, err := r.computeExecutionJobs(ctx, ids)
+			if err != nil {
+				return "", err
+			}
+			if len(jobs) == 0 {
+				return "PENDING", nil
+			}
+
+			var (
+				processing bool
+				failed     bool
+				canceled   bool
+
+				canceling   bool
+				allFinished bool
+			)
+
+			for _, j := range jobs {
+				switch j.State {
+				case btypes.BatchSpecWorkspaceExecutionJobStateProcessing:
+					if j.Cancel {
+						canceling = true
+					} else {
+						processing = true
+					}
+
+					allFinished = false
+				case btypes.BatchSpecWorkspaceExecutionJobStateCompleted:
+					allFinished = true
+				case btypes.BatchSpecWorkspaceExecutionJobStateFailed:
+					if j.Cancel {
+						canceled = true
+					} else {
+						failed = true
+					}
+					allFinished = true
+				}
+			}
+
+			switch {
+			case canceling:
+				return "CANCELING", nil
+			case canceled && allFinished:
+				return "CANCELED", nil
+			case processing:
+				return "PROCESSING", nil
+			case allFinished && !failed:
+				return "COMPLETED", nil
+			case allFinished && failed:
+				return "FAILED", nil
+			default:
+				return "QUEUED", nil
+			}
+		}()
+	})
+	return r.state, r.stateErr
 }

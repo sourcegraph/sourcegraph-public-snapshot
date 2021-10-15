@@ -1,9 +1,8 @@
-import { Observable, of, combineLatest, defer } from 'rxjs'
-import { map, publishReplay, refCount } from 'rxjs/operators'
+import { Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 
@@ -39,28 +38,6 @@ import {
     FetchSearchContextBySpecResult,
     FetchSearchContextBySpecVariables,
 } from '../graphql-operations'
-
-/**
- * Repogroups to include in search suggestions.
- *
- * defer() is used here to avoid calling queryGraphQL in tests,
- * which would fail when accessing window.context.xhrHeaders.
- */
-const repogroupSuggestions = defer(() =>
-    queryGraphQL(gql`
-        query RepoGroups {
-            repoGroups {
-                __typename
-                name
-            }
-        }
-    `)
-).pipe(
-    map(dataOrThrowErrors),
-    map(({ repoGroups }) => repoGroups),
-    publishReplay(1),
-    refCount()
-)
 
 const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {
@@ -107,21 +84,21 @@ export function convertVersionContextToSearchContext(
     )
 }
 
-export const fetchAutoDefinedSearchContexts = defer(() =>
-    requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
+export function fetchAutoDefinedSearchContexts(): Observable<
+    AutoDefinedSearchContextsResult['autoDefinedSearchContexts']
+> {
+    return requestGraphQL<AutoDefinedSearchContextsResult, AutoDefinedSearchContextsVariables>(gql`
         query AutoDefinedSearchContexts {
             autoDefinedSearchContexts {
                 ...SearchContextFields
             }
         }
         ${searchContextFragment}
-    `)
-).pipe(
-    map(dataOrThrowErrors),
-    map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[]),
-    publishReplay(1),
-    refCount()
-)
+    `).pipe(
+        map(dataOrThrowErrors),
+        map(({ autoDefinedSearchContexts }) => autoDefinedSearchContexts as GQL.ISearchContext[])
+    )
+}
 
 export function getUserSearchContextNamespaces(authenticatedUser: AuthenticatedUser | null): Maybe<Scalars['ID']>[] {
     return authenticatedUser
@@ -291,68 +268,6 @@ export function isSearchContextAvailable(
         `,
         { spec }
     ).pipe(map(result => result.data?.isSearchContextAvailable ?? false))
-}
-
-export function fetchSuggestions(query: string): Observable<SearchSuggestion[]> {
-    return combineLatest([
-        repogroupSuggestions,
-        fetchAutoDefinedSearchContexts,
-        queryGraphQL(
-            gql`
-                query SearchSuggestions($query: String!) {
-                    search(query: $query) {
-                        suggestions {
-                            __typename
-                            ... on Repository {
-                                name
-                            }
-                            ... on File {
-                                path
-                                name
-                                isDirectory
-                                url
-                                repository {
-                                    name
-                                }
-                            }
-                            ... on Symbol {
-                                name
-                                containerName
-                                url
-                                kind
-                                location {
-                                    resource {
-                                        path
-                                        repository {
-                                            name
-                                        }
-                                    }
-                                }
-                            }
-                            ... on SearchContext {
-                                spec
-                                description
-                            }
-                        }
-                    }
-                }
-            `,
-            { query }
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data?.search?.suggestions) {
-                    throw createAggregateError(errors)
-                }
-                return data.search.suggestions
-            })
-        ),
-    ]).pipe(
-        map(([repogroups, autoDefinedSearchContexts, dynamicSuggestions]) => [
-            ...repogroups,
-            ...autoDefinedSearchContexts,
-            ...dynamicSuggestions,
-        ])
-    )
 }
 
 export function fetchReposByQuery(query: string): Observable<{ name: string; url: string }[]> {
@@ -586,6 +501,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
             query EventLogsData($userId: ID!, $first: Int, $eventName: String!) {
                 node(id: $userId) {
                     ... on User {
+                        __typename
                         eventLogs(first: $first, eventName: $eventName) {
                             nodes {
                                 argument
@@ -608,7 +524,7 @@ function fetchEvents(userId: Scalars['ID'], first: number, eventName: string): O
         map(dataOrThrowErrors),
         map(
             (data: EventLogsDataResult): EventLogResult => {
-                if (!data.node) {
+                if (!data.node || data.node.__typename !== 'User') {
                     throw new Error('User not found')
                 }
                 return data.node.eventLogs

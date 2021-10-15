@@ -4,6 +4,7 @@ import PencilIcon from 'mdi-react/PencilIcon'
 import TrashIcon from 'mdi-react/TrashIcon'
 import React, { FunctionComponent } from 'react'
 
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql/schema'
 import { Button } from '@sourcegraph/wildcard'
 
@@ -12,13 +13,12 @@ import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-oper
 import styles from './CodeIntelligencePolicyTable.module.scss'
 import { IndexingPolicyDescription } from './IndexingPolicyDescription'
 import { RetentionPolicyDescription } from './RetentionPolicyDescription'
-import { DeletePolicyResult } from './usePoliciesConfigurations'
 
 export interface CodeIntelligencePolicyTableProps {
     indexingEnabled: boolean
     disabled: boolean
     policies: CodeIntelligenceConfigurationPolicyFields[]
-    onDeletePolicy?: (id: string, name: string) => DeletePolicyResult
+    onDeletePolicy?: (id: string, name: string) => Promise<void>
     history: H.History
 }
 
@@ -29,7 +29,7 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
     onDeletePolicy,
     history,
 }) => (
-    <div className={classNames(styles.grid, 'mb-3')}>
+    <div className={styles.grid}>
         {policies.map(policy => (
             <React.Fragment key={policy.id}>
                 <span className={styles.separator} />
@@ -78,7 +78,8 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                             className="p-0"
                             disabled={disabled}
                         >
-                            <PencilIcon className="icon-inline" />
+                            <Tooltip />
+                            <PencilIcon className="icon-inline" data-tooltip="Edit the policy" />
                         </Button>
                     )}
                 </span>
@@ -89,7 +90,8 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                             className="ml-2 p-0"
                             disabled={disabled}
                         >
-                            <TrashIcon className="icon-inline text-danger" />
+                            <Tooltip />
+                            <TrashIcon className="icon-inline text-danger" data-tooltip="Delete the policy" />
                         </Button>
                     )}
                 </span>

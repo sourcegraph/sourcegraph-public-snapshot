@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RoaringBitmap/roaring"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -298,9 +300,9 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 	if p.Branch == "" {
 		p.Branch = "HEAD"
 	}
-	repoBranches := map[string][]string{string(p.Repo): {p.Branch}}
+	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
 	useFullDeadline := false
-	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, repoBranches, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
+	zoektMatches, _, _, err := zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, useFullDeadline, nil)
 	if err != nil {
 		return false, err
 	}

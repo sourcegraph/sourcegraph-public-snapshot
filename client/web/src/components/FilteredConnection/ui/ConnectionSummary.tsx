@@ -1,9 +1,12 @@
+import classNames from 'classnames'
 import * as React from 'react'
 
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { ConnectionNodesState, ConnectionProps, getTotalCount } from '../ConnectionNodes'
 import { Connection } from '../ConnectionType'
+
+import styles from './ConnectionSummary.module.scss'
 
 interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = {}>
     extends Pick<
@@ -20,6 +23,10 @@ interface ConnectionNodesSummaryProps<C extends Connection<N>, N, NP = {}, HP = 
     connection: C
 
     hasNextPage: boolean
+
+    compact?: boolean
+
+    centered?: boolean
 }
 
 /**
@@ -36,8 +43,11 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
     connectionQuery,
     emptyElement,
     first,
+    compact,
+    centered,
 }: ConnectionNodesSummaryProps<C, N, NP, HP>): JSX.Element | null => {
     const shouldShowSummary = !noSummaryIfAllNodesVisible || connection.nodes.length === 0 || hasNextPage
+    const summaryClassName = classNames(compact && styles.compact, centered && styles.centered, styles.normal)
 
     if (!shouldShowSummary) {
         return null
@@ -52,7 +62,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
 
     if (totalCount !== null && totalCount > 0 && !TotalCountSummaryComponent) {
         return (
-            <p className="filtered-connection__summary" data-testid="summary">
+            <p className={summaryClassName} data-testid="summary">
                 <small>
                     <span>
                         {totalCount} {pluralize(noun, totalCount, pluralNoun)}{' '}
@@ -78,7 +88,7 @@ export const ConnectionSummary = <C extends Connection<N>, N, NP = {}, HP = {}>(
 
     return (
         emptyElement || (
-            <p className="filtered-connection__summary" data-testid="summary">
+            <p className={summaryClassName} data-testid="summary">
                 <small>
                     No {pluralNoun}{' '}
                     {connectionQuery && (

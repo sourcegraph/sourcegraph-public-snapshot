@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	"go.uber.org/atomic"
@@ -45,6 +47,11 @@ func assertEqual(t *testing.T, got, want interface{}) {
 }
 
 func TestSearchResults(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		// #25936: Some unit tests rely on external services that break
+		// in CI but not locally. They should be removed or improved.
+		t.Skip("TestSeachResults only works in local dev and is not reliable in CI")
+	}
 	db := new(dbtesting.MockDB)
 
 	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
@@ -114,7 +121,7 @@ func TestSearchResults(t *testing.T) {
 		database.Mocks.Repos.MockGet(t, 1)
 		database.Mocks.Repos.Count = mockCount
 
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
 		defer func() { unindexed.MockSearchFilesInRepos = nil }()
@@ -167,11 +174,8 @@ func TestSearchResults(t *testing.T) {
 		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			if want := `(foo\d).*?(bar\*)`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
@@ -232,11 +236,8 @@ func TestSearchResults(t *testing.T) {
 		defer func() { symbol.MockSearchSymbols = nil }()
 
 		calledSearchFilesInRepos := atomic.NewBool(false)
-		unindexed.MockSearchFilesInRepos = func(args *search.TextParameters) ([]result.Match, *streaming.Stats, error) {
+		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			calledSearchFilesInRepos.Store(true)
-			if want := `foo\\d "bar\*"`; args.PatternInfo.Pattern != want {
-				t.Errorf("got %q, want %q", args.PatternInfo.Pattern, want)
-			}
 			repo := types.RepoName{ID: 1, Name: "repo"}
 			fm := mkFileMatch(repo, "dir/file", 123)
 			return []result.Match{fm}, &streaming.Stats{}, nil
@@ -554,12 +555,9 @@ func TestSearchResultsHydration(t *testing.T) {
 		Checksum: []byte{0, 1, 2},
 	}}
 
-	z := &searchbackend.Zoekt{
-		Client: &searchbackend.FakeSearcher{
-			Repos:  []*zoekt.RepoListEntry{zoektRepo},
-			Result: &zoekt.SearchResult{Files: zoektFileMatches},
-		},
-		DisableCache: true,
+	z := &searchbackend.FakeSearcher{
+		Repos:  []*zoekt.RepoListEntry{zoektRepo},
+		Result: &zoekt.SearchResult{Files: zoektFileMatches},
 	}
 
 	ctx := context.Background()
@@ -892,17 +890,14 @@ func TestEvaluateAnd(t *testing.T) {
 		},
 	}
 
-	minimalRepos, _, zoektRepos := generateRepos(5000)
+	minimalRepos, zoektRepos := generateRepos(5000)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			zoektFileMatches := generateZoektMatches(tt.zoektMatches)
-			z := &searchbackend.Zoekt{
-				Client: &searchbackend.FakeSearcher{
-					Repos:  zoektRepos,
-					Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
-				},
-				DisableCache: true,
+			z := &searchbackend.FakeSearcher{
+				Repos:  zoektRepos,
+				Result: &zoekt.SearchResult{Files: zoektFileMatches, Stats: zoekt.Stats{FilesSkipped: tt.filesSkipped}},
 			}
 
 			ctx := context.Background()
@@ -970,10 +965,7 @@ func TestSearchContext(t *testing.T) {
 		"userB": 2,
 	}
 
-	mockZoekt := &searchbackend.Zoekt{
-		Client:       &searchbackend.FakeSearcher{Repos: []*zoekt.RepoListEntry{}},
-		DisableCache: true,
-	}
+	mockZoekt := &searchbackend.FakeSearcher{Repos: []*zoekt.RepoListEntry{}}
 
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1076,5 +1068,37 @@ func TestZeroElapsedMilliseconds(t *testing.T) {
 	r := &SearchResultsResolver{}
 	if got := r.ElapsedMilliseconds(); got != 0 {
 		t.Fatalf("got %d, want %d", got, 0)
+	}
+}
+
+func TestIsContextError(t *testing.T) {
+	cases := []struct {
+		err  error
+		want bool
+	}{
+		{
+			context.Canceled,
+			true,
+		},
+		{
+			context.DeadlineExceeded,
+			true,
+		},
+		{
+			errors.Wrap(context.Canceled, "wrapped"),
+			true,
+		},
+		{
+			errors.New("not a context error"),
+			false,
+		},
+	}
+	ctx := context.Background()
+	for _, c := range cases {
+		t.Run(c.err.Error(), func(t *testing.T) {
+			if got := isContextError(ctx, c.err); got != c.want {
+				t.Fatalf("wanted %t, got %t", c.want, got)
+			}
+		})
 	}
 }

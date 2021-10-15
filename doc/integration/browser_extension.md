@@ -109,7 +109,7 @@ To use the browser extension with your private repositories, you need to set up 
 Follow these instructions:
 
 1. [Install Sourcegraph](https://docs.sourcegraph.com/admin/install). Skip this step if you already have a private Sourcegraph instance.
-2. Click the Sourcegraph extension icon in the browser toolbar to open the settings page.
+2. Click the Sourcegraph extension icon in the browser toolbar on the browser tab for your private Sourcegraph instance then open the settings page.
 3. Enter the URL (including the protocol) of your Sourcegraph instance (such as `https://sourcegraph.example.com`)
 4. Make sure the connection status shows "Looks good!"
 

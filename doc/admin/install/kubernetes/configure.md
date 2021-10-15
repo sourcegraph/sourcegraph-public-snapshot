@@ -56,7 +56,7 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 - Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](update.md) and [install your Sourcegraph instance](./index.md#installation).
 
   ```bash
-  export SOURCEGRAPH_VERSION="v3.31.2"
+  export SOURCEGRAPH_VERSION="v3.32.0"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
 
@@ -67,7 +67,7 @@ Some of the following instructions require cluster access. Ensure you can [acces
 To make customizations to the Sourcegraph deployment such as resources, replicas or other changes, we recommend using [Kustomize](./index.md#kustomize) and [overlays](./index.md#overlays).
 This means that you define your customizations as patches, and generate a manifest from our provided manifests to [apply](./operations.md#applying-manifests).
 
-In general, we recommend that customizations works like this:
+In general, we recommend that customizations work like this:
 
 1. [Create, customize, and apply overlays](#overlays) for your deployment
 2. Ensure the services came up correctly, then commit all the customizations to the new branch
@@ -658,7 +658,7 @@ spec:
 
 ## Configure external databases
 
-We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcgraph databases, see [this guide](../../postgres.md).
+We recommend utilizing an external database when deploying Sourcegraph to provide the most resilient and performant backend for your deployment. For more information on the specific requirements for Sourcegraph databases, see [this guide](../../postgres.md).
 
 Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) in [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to point to your existing PostgreSQL instance.
 
@@ -819,6 +819,10 @@ data:
 
     # ...
 ```
+
+## Outbound Traffic
+
+When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your organization's security requirements.
 
 ## Troubleshooting
 

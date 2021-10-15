@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -103,6 +104,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			db := dbtesting.GetDB(t)
 			database.Mocks.Users.CheckAndDecrementInviteQuota = func(context.Context, int32) (bool, error) {
 				return test.hasQuote, nil
 			}
@@ -114,7 +116,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 				database.Mocks.UserEmails.ListByUser = nil
 			}()
 
-			abused, reason, err := checkEmailAbuse(ctx, 1)
+			abused, reason, err := checkEmailAbuse(ctx, db, 1)
 			if test.expErr != err {
 				t.Fatalf("err: want %v but got %v", test.expErr, err)
 			} else if test.expAbused != abused {
@@ -159,6 +161,7 @@ func TestSendUserEmailVerificationEmail(t *testing.T) {
 }
 
 func TestSendUserEmailOnFieldUpdate(t *testing.T) {
+	db := dbtesting.GetDB(t)
 	var sent *txemail.Message
 	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
 		sent = &message
@@ -176,7 +179,7 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 		database.Mocks.Users.GetByID = nil
 	}()
 
-	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), 123, "updated password"); err != nil {
+	if err := UserEmails.SendUserEmailOnFieldUpdate(context.Background(), db, 123, "updated password"); err != nil {
 		t.Fatal(err)
 	}
 	if sent == nil {

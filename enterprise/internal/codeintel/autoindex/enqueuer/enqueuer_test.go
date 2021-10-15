@@ -166,7 +166,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
-	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
@@ -279,7 +278,6 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
 	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []store.Index) ([]store.Index, error) { return indexes, nil })
-	mockDBStore.GetRepositoriesWithIndexConfigurationFunc.SetDefaultReturn([]int{42}, nil)
 
 	mockGitserverClient := NewMockGitserverClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, rev string) (api.CommitID, error) {

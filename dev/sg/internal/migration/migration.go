@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/user"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/postgresdsn"
 )
 
 var once sync.Once
@@ -336,22 +338,17 @@ func doRunMigrations(database db.Database, n *int, name string, f func(*migrate.
 // the default, the PG* environment variables are prefixed with the database name. The
 // resulting address depends on the environment.
 func makePostgresDSN(database db.Database) string {
-	var prefix string
+	username := ""
+	if user, err := user.Current(); err == nil {
+		username = user.Username
+	}
+
+	prefix := ""
 	if database.Name != db.DefaultDatabase.Name {
 		prefix = strings.ToUpper(database.Name) + "_"
 	}
 
-	var port string
-	if value := os.Getenv(fmt.Sprintf("%sPGPORT", prefix)); value != "" {
-		port = ":" + value
-	}
-
-	return fmt.Sprintf(
-		"postgres://%s%s/%s",
-		os.Getenv(fmt.Sprintf("%sPGHOST", prefix)),
-		port,
-		os.Getenv(fmt.Sprintf("%sPGDATABASE", prefix)),
-	)
+	return postgresdsn.New(prefix, username, os.Getenv)
 }
 
 // ReadFilenamesNamesInDirectory returns a list of names in the given directory.

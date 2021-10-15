@@ -44,6 +44,12 @@
       "group": "Debug",
       "examples": [["20"]]
     },
+    "apidocs.search.index-size-limit-factor": {
+      "description": "Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs",
+      "type": "number",
+      "default": 1.0,
+      "additionalProperties": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -71,6 +77,12 @@
               "default": false
             }
           }
+        },
+        "apidocs.search.indexing": {
+          "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -464,6 +476,12 @@
       "group": "Internal",
       "hide": true
     },
+    "gitLongCommandTimeout": {
+      "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
+      "type": "integer",
+      "default": 3600,
+      "group": "External services"
+    },
     "gitMaxConcurrentClones": {
       "description": "Maximum number of git clone processes that will be run concurrently per gitserver to update repositories. Note: the global git update scheduler respects gitMaxConcurrentClones. However, we allow each gitserver to run upto gitMaxConcurrentClones to allow for urgent fetches. Urgent fetches are used when a user is browsing a PR and we do not have the commit yet.",
       "type": "integer",
@@ -694,6 +712,11 @@
       "group": "Email",
       "default": "noreply@sourcegraph.com"
     },
+    "executors.accessToken": {
+      "description": "The shared secret between Sourcegraph and executors.",
+      "type": "string",
+      "minLength": 20
+    },
     "extensions": {
       "description": "Configures Sourcegraph extensions.",
       "type": "object",
@@ -907,6 +930,13 @@
       "default": 10,
       "examples": [50.0, 0.5],
       "!go": { "pointer": true }
+    },
+    "insights.commit.indexer.interval": {
+      "description": "The interval (in minutes) at which the insights commit indexer will check for new commits.",
+      "type": "integer",
+      "group": "CodeInsights",
+      "default": 60,
+      "examples": [120]
     },
     "htmlHeadTop": {
       "description": "HTML to inject at the top of the `<head>` element on each page, for analytics scripts",

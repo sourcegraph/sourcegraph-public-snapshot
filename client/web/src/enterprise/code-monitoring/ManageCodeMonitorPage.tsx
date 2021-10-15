@@ -60,7 +60,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<ManageCodeMoni
             () =>
                 fetchCodeMonitor(match.params.id).pipe(
                     tap(monitor => {
-                        if (monitor.node !== null) {
+                        if (monitor.node !== null && monitor.node.__typename === 'Monitor') {
                             setCodeMonitorState(monitor.node)
                         }
                     }),

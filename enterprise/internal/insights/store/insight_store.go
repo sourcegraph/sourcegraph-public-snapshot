@@ -47,11 +47,13 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 type InsightQueryArgs struct {
 	UniqueIDs []string
 	UniqueID  string
+	UserID    []int
+	OrgID     []int
 }
 
 // Get returns all matching viewable insight series.
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0, 2)
+	preds := make([]*sqlf.Query, 0, 3)
 
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
@@ -63,6 +65,7 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
+	preds = append(preds, viewPermissionsQuery(args))
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
@@ -70,6 +73,28 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 
 	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
+// viewPermissionsQuery generates the SQL query for selecting insight views based on granted permissions.
+func viewPermissionsQuery(args InsightQueryArgs) *sqlf.Query {
+	permsPreds := make([]*sqlf.Query, 0, 2)
+	if len(args.OrgID) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.OrgID))
+		for _, id := range args.OrgID {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		permsPreds = append(permsPreds, sqlf.Sprintf("ivg.org_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	if len(args.UserID) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.UserID))
+		for _, id := range args.UserID {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		permsPreds = append(permsPreds, sqlf.Sprintf("ivg.user_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	permsPreds = append(permsPreds, sqlf.Sprintf("ivg.global is true"))
+
+	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, "OR"))
 }
 
 func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
@@ -182,7 +207,7 @@ type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
 	NextSnapshotBefore  time.Time
-	Deleted             bool
+	IncludeDeleted      bool
 	BackfillIncomplete  bool
 	SeriesID            string
 }
@@ -196,9 +221,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	if !args.NextSnapshotBefore.IsZero() {
 		preds = append(preds, sqlf.Sprintf("next_snapshot_after < %s", args.NextSnapshotBefore))
 	}
-	if args.Deleted {
-		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
-	} else {
+	if !args.IncludeDeleted {
 		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 	}
 	if len(preds) == 0 {
@@ -235,6 +258,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.RecordingIntervalDays,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
+			&temp.Enabled,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -288,8 +312,14 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
-func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (types.InsightView, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
+func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, grants []InsightViewGrant) (_ types.InsightView, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.InsightView{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	row := tx.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
 		view.Title,
 		view.Description,
 		view.UniqueID,
@@ -298,13 +328,62 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView) (
 		return types.InsightView{}, row.Err()
 	}
 	var id int
-	err := row.Scan(&id)
+	err = row.Scan(&id)
 	if err != nil {
-		return types.InsightView{}, err
+		return types.InsightView{}, errors.Wrap(err, "failed to insert insight view")
 	}
 	view.ID = id
+	err = tx.AddViewGrants(ctx, view, grants)
+	if err != nil {
+		return types.InsightView{}, errors.Wrap(err, "failed to attach view grants")
+	}
 	return view, nil
 }
+
+func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView, grants []InsightViewGrant) error {
+	if view.ID == 0 {
+		return errors.New("unable to grant view permissions invalid insight view id")
+	} else if len(grants) == 0 {
+		return nil
+	}
+
+	values := make([]*sqlf.Query, 0, len(grants))
+	for _, grant := range grants {
+		values = append(values, grant.toQuery(view.ID))
+	}
+	q := sqlf.Sprintf(addViewGrantsSql, sqlf.Join(values, ",\n"))
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const addViewGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AddViewGrants
+INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
+VALUES %s;
+`
+
+// DeleteViewByUniqueID deletes an insight view (cascading to dependent child tables) given a unique ID. This operation
+// is idempotent and can be executed many times with only one effect or error.
+func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string) error {
+	if len(uniqueID) == 0 {
+		return errors.New("unable to delete view invalid view ID")
+	}
+	conds := sqlf.Sprintf("unique_id = %s", uniqueID)
+	q := sqlf.Sprintf(deleteViewSql, conds)
+	err := s.Exec(ctx, q)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+const deleteViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:DeleteView
+delete from insight_view where %s;
+`
 
 // CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
 func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
@@ -338,6 +417,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		return types.InsightSeries{}, err
 	}
 	series.ID = id
+	series.Enabled = true
 	return series, nil
 }
 
@@ -346,6 +426,7 @@ type DataSeriesStore interface {
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
 }
 
 type InsightMetadataStore interface {
@@ -387,6 +468,23 @@ func (s *InsightStore) StampBackfill(ctx context.Context, series types.InsightSe
 	series.BackfillQueuedAt = current
 	return series, nil
 }
+
+func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error {
+	var arg *sqlf.Query
+	if enabled {
+		arg = sqlf.Sprintf("null")
+	} else {
+		arg = sqlf.Sprintf("%s", s.Now())
+	}
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
+}
+
+const setSeriesStatusSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
+UPDATE insight_series
+SET deleted_at = %s
+WHERE series_id = %s;
+`
 
 const stampBackfillSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:StampRecording
@@ -438,12 +536,13 @@ i.next_recording_after, i.backfill_queued_at, i.recording_interval_days, i.last_
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
+         JOIN insight_view_grants ivg ON iv.id = ivg.insight_view_id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
 `
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
 WHERE %s
 `

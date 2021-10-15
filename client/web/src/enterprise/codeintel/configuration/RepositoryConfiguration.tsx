@@ -5,43 +5,58 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
-import {
-    getConfigurationForRepository as defaultGetConfigurationForRepository,
-    getInferredConfigurationForRepository as defaultGetInferredConfigurationForRepository,
-    updateConfigurationForRepository as defaultUpdateConfigurationForRepository,
-} from './backend'
 import { ConfigurationEditor } from './ConfigurationEditor'
 import { RepositoryPolicies } from './RepositoryPolicies'
+import { RepositoryTab } from './RepositoryTab'
 
 export interface RepositoryConfigurationProps extends ThemeProps, TelemetryProps {
     repo: { id: string }
-    updateConfigurationForRepository: typeof defaultUpdateConfigurationForRepository
-    getConfigurationForRepository: typeof defaultGetConfigurationForRepository
-    getInferredConfigurationForRepository: typeof defaultGetInferredConfigurationForRepository
     indexingEnabled: boolean
     history: H.History
+    onHandleDisplayAction: React.Dispatch<React.SetStateAction<boolean>>
+    onHandleIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
+    onHandleIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationProps> = ({
     repo,
     indexingEnabled,
     history,
+    onHandleDisplayAction,
+    onHandleIsDeleting,
+    onHandleIsLoading,
     ...props
 }) => (
     <Tabs size="medium">
         <TabList>
-            <Tab>Repository-specific policies</Tab>
-            <Tab>Global policies</Tab>
+            <RepositoryTab onHandleDisplayAction={onHandleDisplayAction}>Repository-specific policies</RepositoryTab>
+            <RepositoryTab onHandleDisplayAction={onHandleDisplayAction}>Global policies</RepositoryTab>
             {indexingEnabled && <Tab>Index configuration</Tab>}
         </TabList>
 
         <TabPanels>
             <TabPanel>
-                <RepositoryPolicies isGlobal={false} repo={repo} indexingEnabled={indexingEnabled} history={history} />
+                <RepositoryPolicies
+                    isGlobal={false}
+                    repo={repo}
+                    indexingEnabled={indexingEnabled}
+                    history={history}
+                    onHandleDisplayAction={onHandleDisplayAction}
+                    onHandleIsDeleting={onHandleIsDeleting}
+                    onHandleIsLoading={onHandleIsLoading}
+                />
             </TabPanel>
 
             <TabPanel>
-                <RepositoryPolicies isGlobal={true} repo={repo} indexingEnabled={indexingEnabled} history={history} />
+                <RepositoryPolicies
+                    isGlobal={true}
+                    repo={repo}
+                    indexingEnabled={indexingEnabled}
+                    history={history}
+                    onHandleDisplayAction={onHandleDisplayAction}
+                    onHandleIsDeleting={onHandleIsDeleting}
+                    onHandleIsLoading={onHandleIsLoading}
+                />
             </TabPanel>
 
             {indexingEnabled && (

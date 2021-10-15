@@ -38,7 +38,6 @@ import { CodeIntelligenceProps } from '../codeintel'
 import { ErrorMessage } from '../components/alerts'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { FuzzyFinder } from '../components/fuzzyFinder/FuzzyFinder'
 import { HeroPage } from '../components/HeroPage'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
@@ -52,7 +51,7 @@ import {
     searchQueryForRepoRevision,
     SearchStreamingProps,
 } from '../search'
-import { QueryState } from '../search/helpers'
+import { useNavbarQueryState } from '../search/navbarSearchQueryState'
 import { StreamingSearchResultsListProps } from '../search/results/StreamingSearchResultsList'
 import { browserExtensionInstalled } from '../tracking/analyticsUtils'
 import { RouteDescriptor } from '../util/contributions'
@@ -144,7 +143,6 @@ interface RepoContainerProps
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     authenticatedUser: AuthenticatedUser | null
-    onNavbarQueryChange: (state: QueryState) => void
     history: H.History
     globbing: boolean
     showSearchNotebook: boolean
@@ -314,7 +312,8 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }, [props.extensionsController, repoName, resolvedRevisionOrError, revision])
 
     // Update the navbar query to reflect the current repo / revision
-    const { globbing, onNavbarQueryChange } = props
+    const { globbing } = props
+    const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
     useEffect(() => {
         let query = searchQueryForRepoRevision(repoName, globbing, revision)
         if (filePath) {
@@ -413,20 +412,7 @@ export const RepoContainer: React.FunctionComponent<RepoContainerProps> = props 
     }
 
     return (
-        <div className="repo-container test-repo-container w-100 d-flex flex-column action-items">
-            {!isErrorLike(props.settingsCascade.final) &&
-                props.settingsCascade.final?.experimentalFeatures?.fuzzyFinder &&
-                resolvedRevisionOrError &&
-                !isErrorLike(resolvedRevisionOrError) && (
-                    <FuzzyFinder
-                        repoName={repoName}
-                        commitID={resolvedRevisionOrError.commitID}
-                        caseInsensitiveFileCountThreshold={
-                            props.settingsCascade.final?.experimentalFeatures
-                                ?.fuzzyFinderCaseInsensitiveFileCountThreshold
-                        }
-                    />
-                )}
+        <div className="repo-container test-repo-container w-100 d-flex flex-column">
             {(showExtensionAlert || showFirefoxAddonAlert) && (
                 <InstallBrowserExtensionAlert
                     isChrome={IS_CHROME}

@@ -6,20 +6,18 @@ import (
 	"testing"
 	"time"
 
-	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
-
 	"golang.org/x/time/rate"
 
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background/queryrunner"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
 
 type testParams struct {
@@ -117,18 +115,18 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		return nil
 	}
 
-	gitFirstEverCommit := func(ctx context.Context, repoName api.RepoName) (*git.Commit, error) {
+	gitFirstEverCommit := func(ctx context.Context, repoName api.RepoName) (*gitapi.Commit, error) {
 		if repoName == "repo/1" {
 			daysAgo := clock().Add(-3 * 24 * time.Hour)
-			return &git.Commit{Committer: &git.Signature{Date: daysAgo}}, nil
+			return &gitapi.Commit{Committer: &gitapi.Signature{Date: daysAgo}}, nil
 		}
 		yearsAgo := clock().Add(-2 * 365 * 24 * time.Hour)
-		return &git.Commit{Committer: &git.Signature{Date: yearsAgo}}, nil
+		return &gitapi.Commit{Committer: &gitapi.Signature{Date: yearsAgo}}, nil
 	}
 
-	gitFindRecentCommit := func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*git.Commit, error) {
+	gitFindRecentCommit := func(ctx context.Context, repoName api.RepoName, target time.Time) ([]*gitapi.Commit, error) {
 		nearby := target.Add(-2 * 24 * time.Hour)
-		return []*git.Commit{{Committer: &git.Signature{Date: nearby}}}, nil
+		return []*gitapi.Commit{{Committer: &gitapi.Signature{Date: nearby}}}, nil
 	}
 
 	limiter := rate.NewLimiter(10, 1)

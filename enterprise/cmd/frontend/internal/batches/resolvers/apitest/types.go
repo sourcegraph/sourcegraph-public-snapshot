@@ -193,7 +193,7 @@ type BatchSpec struct {
 	OriginalInput string
 	ParsedInput   graphqlbackend.JSONValue
 
-	ApplyURL string
+	ApplyURL *string
 
 	Namespace UserOrg
 	Creator   *User
@@ -216,6 +216,13 @@ type BatchSpec struct {
 	// NEW
 	SupersedingBatchSpec *BatchSpec
 	AppliesToBatchChange BatchChange
+
+	State               string
+	WorkspaceResolution BatchSpecWorkspaceResolution
+}
+
+type BatchSpecWorkspaceResolution struct {
+	State string
 }
 
 // ChangesetSpecDelta is the delta between two ChangesetSpecs describing the same Changeset.

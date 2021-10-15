@@ -208,7 +208,9 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     )
 
     const fetchSelectedRepositories = useCallback(
-        async (): Promise<NonNullable<UserRepositoriesResult['node']>['repositories']['nodes']> =>
+        async (): Promise<
+            (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']['nodes']
+        > =>
             listUserRepositories({ id: authenticatedUser.id, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
@@ -608,7 +610,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             <input
                 className="form-control user-settings-repos__filter-input"
                 type="search"
-                placeholder="Search repositories..."
+                placeholder="Filter repositories..."
                 name="query"
                 autoComplete="off"
                 autoCorrect="off"

@@ -12,7 +12,7 @@ import (
 )
 
 func NewChangesetSpecFromRaw(rawSpec string) (*ChangesetSpec, error) {
-	c := &ChangesetSpec{RawSpec: rawSpec}
+	c := &ChangesetSpec{}
 
 	var err error
 	c.Spec, err = batcheslib.ParseChangesetSpec([]byte(rawSpec))
@@ -27,8 +27,6 @@ type ChangesetSpec struct {
 	ID     int64
 	RandID string
 
-	RawSpec string
-	// TODO(mrnugget): should we rename the "spec" column to "description"?
 	Spec *batcheslib.ChangesetSpec
 
 	DiffStatAdded   int32

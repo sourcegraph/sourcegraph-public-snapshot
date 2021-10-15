@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Resolver is the GraphQL resolver of all things related to batch changes.
@@ -101,7 +101,7 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 	}
 
 	featureFlags := featureflag.FromContext(ctx)
-	return usagestats.LogBackendEvent(db, actor.UID, name, jsonArg, jsonPublicArg, featureFlags, nil)
+	return usagestats.LogBackendEvent(db, actor.UID, deviceid.FromContext(ctx), name, jsonArg, jsonPublicArg, featureFlags, nil)
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -133,8 +133,8 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		bulkOperationIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.bulkOperationByID(ctx, id)
 		},
-		batchSpecExecutionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.batchSpecExecutionByID(ctx, id)
+		batchSpecWorkspaceIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+			return r.batchSpecWorkspaceByID(ctx, id)
 		},
 	}
 }
@@ -353,28 +353,34 @@ func (r *Resolver) bulkOperationByIDString(ctx context.Context, id string) (grap
 	return &bulkOperationResolver{store: r.store, bulkOperation: bulkOperation}, nil
 }
 
-func (r *Resolver) batchSpecExecutionByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecExecutionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
+func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID) (graphqlbackend.BatchSpecWorkspaceResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
 
-	randID, err := unmarshalBatchSpecExecutionRandID(id)
+	id, err := unmarshalBatchSpecWorkspaceID(gqlID)
 	if err != nil {
 		return nil, err
 	}
 
-	if randID == "" {
-		return nil, nil
+	if id == 0 {
+		return nil, ErrIDIsZero{}
 	}
 
-	spec, err := r.store.GetBatchSpecExecution(ctx, store.GetBatchSpecExecutionOpts{RandID: randID})
+	w, err := r.store.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: id})
 	if err != nil {
 		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return &batchSpecExecutionResolver{store: r.store, exec: spec}, nil
+	ex, err := r.store.GetBatchSpecWorkspaceExecutionJob(ctx, store.GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: w.ID})
+	if err != nil && err != store.ErrNoResults {
+		return nil, err
+	}
+
+	return &batchSpecWorkspaceResolver{store: r.store, workspace: w, execution: ex}, nil
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (graphqlbackend.BatchChangeResolver, error) {
@@ -709,37 +715,6 @@ func (r *Resolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBa
 	}
 
 	return &batchChangesConnectionResolver{
-		store: r.store,
-		opts:  opts,
-	}, nil
-}
-
-func (r *Resolver) BatchSpecExecutions(ctx context.Context, args *graphqlbackend.ListBatchSpecExecutionsArgs) (graphqlbackend.BatchSpecExecutionConnectionResolver, error) {
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	// These endpoints currently only work for site admins
-	authErr := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB())
-	if authErr != nil {
-		return nil, authErr
-	}
-
-	opts := store.ListBatchSpecExecutionsOpts{}
-
-	if err := validateFirstParamDefaults(args.First); err != nil {
-		return nil, err
-	}
-	opts.Limit = int(args.First)
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
-		if err != nil {
-			return nil, err
-		}
-		opts.Cursor = cursor
-	}
-
-	return &batchSpecExecutionConnectionResolver{
 		store: r.store,
 		opts:  opts,
 	}, nil
@@ -1454,111 +1429,41 @@ func (r *Resolver) PublishChangesets(ctx context.Context, args *graphqlbackend.P
 
 }
 
-func (r *Resolver) CreateBatchSpecExecution(ctx context.Context, args *graphqlbackend.CreateBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CreateBatchSpecExecution", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the requesting user is admin.
+func (r *Resolver) BatchSpecs(ctx context.Context, args *graphqlbackend.ListBatchSpecArgs) (_ graphqlbackend.BatchSpecConnectionResolver, err error) {
+	// TODO(ssbc): currently admin only.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
 
-	actor := actor.FromContext(ctx)
-
-	exec := &btypes.BatchSpecExecution{
-		BatchSpec: args.Spec,
-		UserID:    actor.UID,
+	if err := validateFirstParamDefaults(args.First); err != nil {
+		return nil, err
 	}
-
-	if args.Namespace != nil {
-		err = graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &exec.NamespaceUserID, &exec.NamespaceOrgID)
+	opts := store.ListBatchSpecsOpts{
+		LimitOpts: store.LimitOpts{
+			Limit: int(args.First),
+		},
+	}
+	if args.After != nil {
+		id, err := strconv.Atoi(*args.After)
 		if err != nil {
 			return nil, err
 		}
-		svc := service.New(r.store)
-		// 🚨 SECURITY: Check that the requesting user has access to the namespace.
-		err = svc.CheckNamespaceAccess(ctx, exec.NamespaceUserID, exec.NamespaceOrgID)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		exec.NamespaceUserID = actor.UID
+		opts.Cursor = int64(id)
 	}
 
-	if err := r.store.CreateBatchSpecExecution(ctx, exec); err != nil {
-		return nil, err
-	}
-
-	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
+	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
 }
 
-func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (_ graphqlbackend.BatchSpecExecutionResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.CancelBatchSpecExecution", fmt.Sprintf("BatchSpecExecution: %q", args.BatchSpecExecution))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the requesting user is admin.
+func (r *Resolver) CreateBatchSpecFromRaw(ctx context.Context, args *graphqlbackend.CreateBatchSpecFromRawArgs) (graphqlbackend.BatchSpecResolver, error) {
+	// TODO(ssbc): currently admin only.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
 
-	dbID, err := unmarshalBatchSpecExecutionRandID(args.BatchSpecExecution)
-	if err != nil {
-		return nil, err
-	}
-
-	if dbID == "" {
-		return nil, ErrIDIsZero{}
-	}
-
-	exec, err := r.store.CancelBatchSpecExecution(ctx, dbID)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.batchSpecExecutionByID(ctx, marshalBatchSpecExecutionRandID(exec.RandID))
-}
-
-func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) (_ graphqlbackend.BatchSpecWorkspacesResolver, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.ResolveWorkspacesForBatchSpec", fmt.Sprintf("AllowIgnored: %t AllowUnsupported: %t", args.AllowIgnored, args.AllowUnsupported))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-
-	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the requesting user is admin.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
-		return nil, err
-	}
-
-	spec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
-		AllowArrayEnvironments: true,
-		AllowTransformChanges:  true,
-		AllowConditionalExec:   true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	workspaceResolver := service.NewWorkspaceResolver(r.store)
-	workspaces, unsupported, ignored, err := workspaceResolver.ResolveWorkspacesForBatchSpec(ctx, spec, service.ResolveWorkspacesForBatchSpecOpts{
+	svc := service.New(r.store)
+	batchSpec, err := svc.CreateBatchSpecFromRaw(ctx, service.CreateBatchSpecFromRawOpts{
+		NamespaceUserID:  actor.FromContext(ctx).UID,
+		RawSpec:          args.BatchSpec,
 		AllowIgnored:     args.AllowIgnored,
 		AllowUnsupported: args.AllowUnsupported,
 	})
@@ -1566,15 +1471,125 @@ func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *grap
 		return nil, err
 	}
 
-	return &batchSpecWorkspacesResolver{
-		store:            r.store,
-		rawSpec:          args.BatchSpec,
-		allowUnsupported: args.AllowUnsupported,
-		allowIgnored:     args.AllowIgnored,
-		workspaces:       workspaces,
-		unsupported:      unsupported,
-		ignored:          ignored,
-	}, nil
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+}
+
+func (r *Resolver) DeleteBatchSpec(ctx context.Context, args *graphqlbackend.DeleteBatchSpecArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) ExecuteBatchSpec(ctx context.Context, args *graphqlbackend.ExecuteBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	svc := service.New(r.store)
+	batchSpec, err := svc.ExecuteBatchSpec(ctx, service.ExecuteBatchSpecOpts{
+		BatchSpecRandID: batchSpecRandID,
+		// TODO: args not yet implemented: NoCache, AutoApply
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
+}
+
+func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecExecutionArgs) (graphqlbackend.BatchSpecResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.EnqueueBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) ToggleBatchSpecAutoApply(ctx context.Context, args *graphqlbackend.ToggleBatchSpecAutoApplyArgs) (graphqlbackend.BatchSpecResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+	// TODO(ssbc): not implemented
+	return nil, errors.New("not implemented yet")
+}
+
+func (r *Resolver) ReplaceBatchSpecInput(ctx context.Context, args *graphqlbackend.ReplaceBatchSpecInputArgs) (graphqlbackend.BatchSpecResolver, error) {
+	// TODO(ssbc): currently admin only.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.PreviousSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	svc := service.New(r.store)
+	batchSpec, err := svc.ReplaceBatchSpecInput(ctx, service.ReplaceBatchSpecInputOpts{
+		BatchSpecRandID:  batchSpecRandID,
+		RawSpec:          args.BatchSpec,
+		AllowIgnored:     args.AllowIgnored,
+		AllowUnsupported: args.AllowUnsupported,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func parseBatchChangeState(s *string) (btypes.BatchChangeState, error) {

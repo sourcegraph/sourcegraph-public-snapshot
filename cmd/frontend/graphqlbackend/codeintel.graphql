@@ -305,6 +305,23 @@ extend type Repository {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    The set of git objects that match the given git object type and glob pattern.
+    This resolver is used by the UI to preview what names match a code intelligence
+    policy in a given repository.
+    """
+    previewGitObjectFilter(
+        """
+        The type of Git object described by the configuration policy.
+        """
+        type: GitObjectType!
+
+        """
+        A pattern matching the name of the matching Git object.
+        """
+        pattern: String!
+    ): [GitObjectFilterPreview!]!
 }
 
 extend interface TreeEntry {
@@ -342,6 +359,22 @@ extend type GitBlob {
         """
         toolName: String
     ): GitBlobLSIFData
+}
+
+"""
+A git object that matches a git object type and glob pattern. This type is used by
+the UI to preview what names match a code intelligence policy in a given repository.
+"""
+type GitObjectFilterPreview {
+    """
+    The relevant branch or tag name.
+    """
+    name: String!
+
+    """
+    The full 40-char revhash.
+    """
+    rev: String!
 }
 
 """

@@ -4,9 +4,9 @@
 
 ## Using Keycloak in local dev
 
-Keycloak is **not** started by default when you run `dev/start.sh`.
+Keycloak is **not** started by default when you run `sg start`.
 
-To enable it, use `USE_KEYCLOAK=1 dev/start.sh`.
+To enable it, run it separately with `./dev/auth-provider/keycloak.sh`.
 
 To use it, visit your local dev server's sign-in page and authenticate using an auth provider whose name contains "Keycloak".
 

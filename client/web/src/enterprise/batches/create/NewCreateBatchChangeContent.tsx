@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory } from 'react-router'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -15,7 +16,7 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { ErrorAlert } from '../../../components/alerts'
 import { Settings } from '../../../schema/settings.schema'
 
-import { createBatchSpecExecution } from './backend'
+import { createBatchSpec } from './backend'
 import { ExampleTabs } from './examples/ExampleTabs'
 import styles from './NewCreateBatchChangeContent.module.scss'
 
@@ -30,16 +31,20 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     const [spec, setSpec] = useState<{ fileName: string; code: string }>({ fileName: '', code: '' })
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [selectedNamespace, setSelectedNamespace] = useState<string>('')
+    const [previewID, setPreviewID] = useState<Scalars['ID']>()
 
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
+        if (!previewID) {
+            return
+        }
         setIsLoading(true)
         try {
-            const execution = await createBatchSpecExecution(spec.code, selectedNamespace)
+            const execution = await createBatchSpec(previewID)
             history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
         } catch (error) {
             setIsLoading(error)
         }
-    }, [spec.code, selectedNamespace, history])
+    }, [previewID, history])
 
     return (
         <>
@@ -56,7 +61,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                 </a>{' '}
                 for more options.
             </p>
-            <ExampleTabs isLightTheme={isLightTheme} updateSpec={setSpec} />
+            <ExampleTabs isLightTheme={isLightTheme} updateSpec={setSpec} setPreviewID={setPreviewID} />
             <h2 className="mt-4">2. Execute the batch spec</h2>
             <p>
                 Execute the batch spec to preview your batch change before publishing the results. There are two ways to

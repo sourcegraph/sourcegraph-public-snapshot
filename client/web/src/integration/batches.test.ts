@@ -124,6 +124,11 @@ const mockDiff: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
     },
 }
 
+const mockChangesetSpecFileDiffs: NonNullable<ExternalChangesetFileDiffsFields['diff']> = {
+    __typename: 'PreviewRepositoryComparison',
+    fileDiffs: mockDiff.fileDiffs,
+}
+
 const ChangesetCountsOverTime: (variables: ChangesetCountsOverTimeVariables) => ChangesetCountsOverTimeResult = () => ({
     node: {
         __typename: 'BatchChange',
@@ -178,6 +183,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     createdAt: subDays(new Date(), 5).toISOString(),
                     updatedAt: subDays(new Date(), 5).toISOString(),
                     diffStat: {
+                        __typename: 'DiffStat',
                         added: 100,
                         changed: 10,
                         deleted: 23,
@@ -249,6 +255,20 @@ function mockCommonGraphQLResponses(
                 settingsURL: `${namespaceURL}/settings`,
                 avatarURL: '',
                 viewerCanAdminister: true,
+                builtinAuth: true,
+                tags: [],
+            },
+        }),
+        UserSettingsAreaUserProfile: () => ({
+            node: {
+                __typename: 'User',
+                id: 'user123',
+                username: 'alice',
+                displayName: 'alice',
+                url: namespaceURL,
+                settingsURL: `${namespaceURL}/settings`,
+                avatarURL: '',
+                viewerCanAdminister: true,
                 viewerCanChangeUsername: true,
                 siteAdmin: true,
                 builtinAuth: true,
@@ -264,6 +284,7 @@ function mockCommonGraphQLResponses(
                 __typename: 'BatchChange',
                 id: 'change123',
                 changesetsStats: {
+                    __typename: 'ChangesetsStats',
                     closed: 2,
                     deleted: 1,
                     merged: 3,
@@ -286,7 +307,7 @@ function mockCommonGraphQLResponses(
                     namespaceName: entityType === 'user' ? 'alice' : 'test-org',
                     url: namespaceURL,
                 },
-                diffStat: { added: 1000, changed: 2000, deleted: 1000 },
+                diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
                 url: `${namespaceURL}/batch-changes/test-batch-change`,
                 viewerCanAdminister: true,
                 lastAppliedAt: subDays(new Date(), 5).toISOString(),
@@ -298,8 +319,8 @@ function mockCommonGraphQLResponses(
                     originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                     supersedingBatchSpec: null,
                 },
-                bulkOperations: { totalCount: 0 },
-                activeBulkOperations: { totalCount: 0, nodes: [] },
+                bulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0 },
+                activeBulkOperations: { __typename: 'BulkOperationConnection', totalCount: 0, nodes: [] },
                 ...batchesOverrides,
             },
         }),
@@ -560,6 +581,7 @@ describe('Batches', () => {
                                 description: '### Very great batch change',
                             },
                             diffStat: {
+                                __typename: 'DiffStat',
                                 added: 1000,
                                 changed: 100,
                                 deleted: 182,
@@ -638,6 +660,7 @@ describe('Batches', () => {
                                                         },
                                                     ],
                                                     diffStat: {
+                                                        __typename: 'DiffStat',
                                                         added: 10,
                                                         changed: 2,
                                                         deleted: 9,
@@ -664,7 +687,7 @@ describe('Batches', () => {
                             __typename: 'VisibleChangesetSpec',
                             description: {
                                 __typename: 'GitBranchChangesetDescription',
-                                diff: mockDiff,
+                                diff: mockChangesetSpecFileDiffs,
                             },
                         },
                     }),

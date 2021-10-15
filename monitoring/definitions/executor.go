@@ -11,7 +11,7 @@ func Executor() *monitoring.Container {
 	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches)"
 
 	// frontend is sometimes called sourcegraph-frontend in various contexts
-	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend)"
+	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker)"
 
 	return &monitoring.Container{
 		Name:        "executor",
@@ -36,6 +36,7 @@ func Executor() *monitoring.Container {
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewExecutorQueueGroup(queueContainerName),
 			shared.CodeIntelligence.NewExecutorProcessorGroup(containerName),
+			shared.CodeIntelligence.NewExecutorExecutionRunLockContentionGroup(containerName),
 			shared.CodeIntelligence.NewExecutorAPIClientGroup(containerName),
 			shared.CodeIntelligence.NewExecutorSetupCommandGroup(containerName),
 			shared.CodeIntelligence.NewExecutorExecutionCommandGroup(containerName),
