@@ -79,10 +79,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, errors.New("the authenticated user does not belong to the organization requested")
 		}
 
-	} else {
-		if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
-			return nil, backend.ErrMustBeSiteAdmin
-		}
+	} else if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+		return nil, backend.ErrMustBeSiteAdmin
 	}
 
 	externalService := &types.ExternalService{
@@ -273,8 +271,6 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 			return nil, err
 		}
 	}
-
-	// return nil, errors.Errorf("This is the namespace %q %q %q", namespaceUserID, namespaceOrgID, anotherVar)
 
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err

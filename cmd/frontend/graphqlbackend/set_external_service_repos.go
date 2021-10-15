@@ -3,12 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"

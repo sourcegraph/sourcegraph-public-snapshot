@@ -2,9 +2,9 @@ package graphqlbackend
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -49,11 +49,11 @@ func TestOrganizationRepositories(t *testing.T) {
 		}, nil
 	}
 	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ ID: 1 }, nil
+		return &types.User{ID: 1}, nil
 	}
 	database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 		return &types.OrgMembership{
-			OrgID: 1,
+			OrgID:  1,
 			UserID: 1,
 		}, nil
 	}

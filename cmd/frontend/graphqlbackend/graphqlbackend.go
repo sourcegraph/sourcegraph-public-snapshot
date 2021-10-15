@@ -617,9 +617,9 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 }
 
 func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
-	Namespace     graphql.ID
-	CodeHost *graphql.ID
-	Query    *string
+	Namespace graphql.ID
+	CodeHost  *graphql.ID
+	Query     *string
 }) (*affiliatedRepositoriesConnection, error) {
 	var userID, orgID int32
 	var err error
@@ -659,7 +659,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	return &affiliatedRepositoriesConnection{
 		db:       r.db,
 		userID:   userID,
-		orgID:	  orgID,
+		orgID:    orgID,
 		codeHost: codeHost,
 		query:    query,
 	}, nil

@@ -61,16 +61,16 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantArgs:        []interface{}{int32(1)},
 		},
 		{
-			name:            "has namespace org ID",
+			name:           "has namespace org ID",
 			namespaceOrgID: 1,
-			wantQuery:       "deleted_at IS NULL AND namespace_org_id = $1",
-			wantArgs:        []interface{}{int32(1)},
+			wantQuery:      "deleted_at IS NULL AND namespace_org_id = $1",
+			wantArgs:       []interface{}{int32(1)},
 		},
 		{
 			name:            "want no namespace",
 			noNamespace:     true,
 			namespaceUserID: 1,
-			namespaceOrgID: 42,
+			namespaceOrgID:  42,
 			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NULL",
 		},
 		{
@@ -369,20 +369,20 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		{
 			name: "Cloud: support org namespace on code host connections for GitHub",
 			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitHub,
-				DisplayName:     "GITHUB #4",
-				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-				NamespaceOrgID:  org.ID,
+				Kind:           extsvc.KindGitHub,
+				DisplayName:    "GITHUB #4",
+				Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
 		},
 		{
-			name: "Cloud: support org namespace on code host connections for GitHub",
+			name: "Cloud: support org namespace on code host connections for GitLab",
 			externalService: &types.ExternalService{
-				Kind:            extsvc.KindGitLab,
-				DisplayName:     "GITLAB #1",
-				Config:          `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
-				NamespaceOrgID:  org.ID,
+				Kind:           extsvc.KindGitLab,
+				DisplayName:    "GITLAB #1",
+				Config:         `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
 		},
@@ -1193,9 +1193,9 @@ func TestExternalServicesStore_List(t *testing.T) {
 			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
 		},
 		{
-			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #3",
-			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`,
+			Kind:           extsvc.KindGitHub,
+			DisplayName:    "GITHUB #3",
+			Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`,
 			NamespaceOrgID: org.ID,
 		},
 	}

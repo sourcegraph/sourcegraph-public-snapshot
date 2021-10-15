@@ -217,7 +217,7 @@ func TestAddExternalService(t *testing.T) {
 
 		t.Run("org namespace requested, but user does not belong to the org", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-				return &types.User{ ID: 1, SiteAdmin: true }, nil
+				return &types.User{ID: 1, SiteAdmin: true}, nil
 			}
 			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 				return nil, nil
@@ -247,12 +247,12 @@ func TestAddExternalService(t *testing.T) {
 
 		t.Run("org namespace requested, and user belongs to the same org", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-				return &types.User{ ID: 10, SiteAdmin: true }, nil
+				return &types.User{ID: 10, SiteAdmin: true}, nil
 			}
 			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 				return &types.OrgMembership{
-					ID: 1,
-					OrgID: 42,
+					ID:     1,
+					OrgID:  42,
 					UserID: 10,
 				}, nil
 			}
@@ -398,7 +398,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
-					ID:              id,
+					ID:             id,
 					NamespaceOrgID: orgID,
 				}, nil
 			}
@@ -459,13 +459,13 @@ func TestUpdateExternalService(t *testing.T) {
 			orgID := int32(1)
 			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 				return &types.OrgMembership{
-					OrgID: orgID,
+					OrgID:  orgID,
 					UserID: 1,
 				}, nil
 			}
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
-					ID:              id,
+					ID:             id,
 					NamespaceOrgID: orgID,
 				}, nil
 			}
@@ -680,7 +680,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
-					ID:              id,
+					ID:             id,
 					NamespaceOrgID: orgID,
 				}, nil
 			}
@@ -708,13 +708,13 @@ func TestDeleteExternalService(t *testing.T) {
 			orgID := int32(1)
 			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 				return &types.OrgMembership{
-					OrgID: orgID,
+					OrgID:  orgID,
 					UserID: 1,
 				}, nil
 			}
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
-					ID:              id,
+					ID:             id,
 					NamespaceOrgID: orgID,
 				}, nil
 			}

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
@@ -18,10 +19,6 @@ var errPermissionsUserMappingConflict = errors.New("The permissions user mapping
 // It uses `repo` as the table name to filter out repository IDs and should be
 // used as an AND condition in a complete SQL query.
 func AuthzQueryConds(ctx context.Context, db dbutil.DB) (*sqlf.Query, error) {
-	return AuthQueryCondsWithOptions(ctx, db, true)
-}
-
-func AuthQueryCondsWithOptions(ctx context.Context, db dbutil.DB, includeUserAddedRepos bool) (*sqlf.Query, error) {
 	authzAllowByDefault, authzProviders := authz.GetProviders()
 	usePermissionsUserMapping := globals.PermissionsUserMapping().Enabled
 
@@ -56,15 +53,14 @@ func AuthQueryCondsWithOptions(ctx context.Context, db dbutil.DB, includeUserAdd
 
 	q := authzQuery(bypassAuthz,
 		usePermissionsUserMapping,
-		includeUserAddedRepos,
 		authenticatedUserID,
 		authz.Read, // Note: We currently only support read for repository permissions.
 	)
 	return q, nil
 }
 
-func authzQuery(bypassAuthz, usePermissionsUserMapping bool, includeUserAddedRepos bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
-	var queryFmtString = `(
+func authzQuery(bypassAuthz, usePermissionsUserMapping bool, authenticatedUserID int32, perms authz.Perms) *sqlf.Query {
+	const queryFmtString = `(
     %s                            -- TRUE or FALSE to indicate whether to bypass the check
 OR  (
 	NOT %s                        -- Disregard unrestricted state when permissions user mapping is enabled
@@ -81,17 +77,13 @@ OR  (
 			)
 		)
 	)
-)`
-	if includeUserAddedRepos {
-		queryFmtString = queryFmtString + `
+)
 OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
 	SELECT
 	FROM external_service_repos
 	WHERE repo_id = repo.id
 	AND user_id = %s
-)`
-	}
-	queryFmtString += `
+)
 OR (                             -- Restricted repositories require checking permissions
 	SELECT object_ids_ints @> INTSET(repo.id)
 	FROM user_permissions
@@ -103,18 +95,10 @@ OR (                             -- Restricted repositories require checking per
 )
 `
 
-	if includeUserAddedRepos {
-		return sqlf.Sprintf(queryFmtString,
-			bypassAuthz,
-			usePermissionsUserMapping,
-			authenticatedUserID,
-			authenticatedUserID,
-			perms.String(),
-		)
-	}
 	return sqlf.Sprintf(queryFmtString,
 		bypassAuthz,
 		usePermissionsUserMapping,
+		authenticatedUserID,
 		authenticatedUserID,
 		perms.String(),
 	)

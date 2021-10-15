@@ -461,34 +461,22 @@ func TestRepos_ListRepoNames_orgID(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	// Create a user
-	user, err := Users(db).Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ctx = actor.WithActor(ctx, &actor.Actor{
-		UID: user.ID,
-	})
-
 	// Create an org
 	displayName := "Acme Corp"
 	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := time.Now()
 
 	// Create an external service
 	service := types.ExternalService{
-		Kind:            extsvc.KindGitHub,
-		DisplayName:     "Github - Test",
-		Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
-		CreatedAt:       now,
-		UpdatedAt:       now,
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "Github - Test",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 		NamespaceOrgID: org.ID,
 	}
 	confGet := func() *conf.Unified {
@@ -1907,7 +1895,7 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 
 func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "options ExternalServiceIDs and UserID are mutually exclusive"
+	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
 
 	t.Parallel()
 	db := dbtest.NewDB(t, "")

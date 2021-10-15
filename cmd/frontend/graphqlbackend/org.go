@@ -2,10 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -283,16 +285,16 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 }
 
 type ListOrgRepositoriesArgs struct {
-	First             *int32
-	Query             *string
-	After             *string
-	Cloned            bool
-	NotCloned         bool
-	Indexed           bool
-	NotIndexed        bool
+	First              *int32
+	Query              *string
+	After              *string
+	Cloned             bool
+	NotCloned          bool
+	Indexed            bool
+	NotIndexed         bool
 	ExternalServiceIDs *[]*graphql.ID
-	OrderBy           *string
-	Descending        bool
+	OrderBy            *string
+	Descending         bool
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
