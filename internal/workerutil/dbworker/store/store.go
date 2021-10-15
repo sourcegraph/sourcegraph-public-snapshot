@@ -792,13 +792,36 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	resetLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledQuery)
+	now := s.now()
+	scan := scanLastHeartbeatTimestampsFrom(now)
+
+	resetLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
 	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
-	failedLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
+	failedLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledMaxResetsQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
@@ -827,22 +850,6 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 
 		return m, nil
 	}
-}
-
-func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Duration, error) {
-	now := s.now()
-
-	return scanLastHeartbeatTimestampsFrom(now)(s.Query(
-		ctx,
-		s.formatQuery(
-			query,
-			quote(s.options.TableName),
-			now,
-			int(s.options.StalledMaxAge/time.Second),
-			s.options.MaxNumResets,
-			quote(s.options.TableName),
-		),
-	))
 }
 
 const resetStalledQuery = `
