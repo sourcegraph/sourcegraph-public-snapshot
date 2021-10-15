@@ -64,8 +64,8 @@ func HandleSiteInit(db dbutil.DB) http.HandlerFunc {
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason string, err error) {
-	email, err := database.GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
+func checkEmailAbuse(ctx context.Context, db dbutil.DB, addr string) (abused bool, reason string, err error) {
+	email, err := database.UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return false, "", nil
@@ -135,7 +135,7 @@ func handleSignUp(db dbutil.DB, w http.ResponseWriter, r *http.Request, failIfNe
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		abused, reason, err := checkEmailAbuse(r.Context(), creds.Email)
+		abused, reason, err := checkEmailAbuse(r.Context(), db, creds.Email)
 		if err != nil {
 			log15.Error("Error checking email abuse", "email", creds.Email, "error", err)
 			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
@@ -190,7 +190,7 @@ func handleSignUp(db dbutil.DB, w http.ResponseWriter, r *http.Request, failIfNe
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = database.GlobalUserEmails.SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		} else if err = database.UserEmails(db).SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}

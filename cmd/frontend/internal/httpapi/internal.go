@@ -329,20 +329,22 @@ func serveUsersGetByUsername(db dbutil.DB) func(http.ResponseWriter, *http.Reque
 	}
 }
 
-func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
-	var userID int32
-	err := json.NewDecoder(r.Body).Decode(&userID)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveUserEmailsGetEmail(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var userID int32
+		err := json.NewDecoder(r.Body).Decode(&userID)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		email, _, err := database.UserEmails(db).GetPrimaryEmail(r.Context(), userID)
+		if err != nil {
+			return errors.Wrap(err, "UserEmails.GetEmail")
+		}
+		if err := json.NewEncoder(w).Encode(email); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(r.Context(), userID)
-	if err != nil {
-		return errors.Wrap(err, "UserEmails.GetEmail")
-	}
-	if err := json.NewEncoder(w).Encode(email); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
