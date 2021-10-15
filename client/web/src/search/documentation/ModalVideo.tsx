@@ -3,36 +3,34 @@ import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useState } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import styles from './ModalVideo.module.scss'
 
-import styles from './HomepageModalVideo.module.scss'
+interface ModalVideoProps {
+    id: string
+    title: string
+    src: string
+    thumbnail: { src: string; alt: string }
+    onToggle?: (isOpen: boolean) => void
+}
 
-const THREE_WAYS_TO_SEARCH_TITLE = 'three-ways-to-search-title'
-
-export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryProps> = ({
-    isLightTheme,
-    telemetryService,
-}) => {
+export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title, src, thumbnail, onToggle }) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
         isOpen => {
-            telemetryService.log(isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed')
             setIsOpen(isOpen)
+            if (onToggle) {
+                onToggle(isOpen)
+            }
         },
-        [telemetryService, setIsOpen]
+        [onToggle]
     )
 
     return (
         <>
             <div className={styles.wrapper}>
                 <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
-                    <img
-                        src={`${assetsRoot}/img/watch-and-learn-${isLightTheme ? 'light' : 'dark'}.png`}
-                        alt="Watch and learn video thumbnail"
-                        className={styles.thumbnailImage}
-                    />
+                    <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
                     <div className={styles.playIconWrapper}>
                         <PlayIcon />
                     </div>
@@ -42,11 +40,11 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                 <Dialog
                     className={classNames(styles.modal, 'modal-body modal-body--centered p-4 rounded border')}
                     onDismiss={() => toggleDialog(false)}
-                    aria-labelledby={THREE_WAYS_TO_SEARCH_TITLE}
+                    aria-labelledby={id}
                 >
                     <div className={styles.modalContent}>
                         <div className={styles.modalHeader}>
-                            <h3 id={THREE_WAYS_TO_SEARCH_TITLE}>Three ways to search</h3>
+                            <h3 id={id}>{title}</h3>
                             <button
                                 type="button"
                                 className="btn btn-icon p-1"
@@ -60,7 +58,7 @@ export const HomepageModalVideo: React.FunctionComponent<ThemeProps & TelemetryP
                             <div className={styles.iframeVideoWrapper}>
                                 <iframe
                                     className={styles.iframeVideo}
-                                    src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                                    src={src}
                                     title="YouTube video player"
                                     frameBorder="0"
                                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
