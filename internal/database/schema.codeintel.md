@@ -142,6 +142,8 @@ Foreign-key constraints:
     "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
     "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
     "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+Triggers:
+    refresh_lsif_data_docs_search_private AFTER INSERT OR DELETE OR UPDATE OR TRUNCATE ON lsif_data_docs_search_private FOR EACH STATEMENT EXECUTE FUNCTION refresh_lsif_data_docs_search_private()
 
 ```
 
@@ -209,6 +211,8 @@ Foreign-key constraints:
     "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
     "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
     "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+Triggers:
+    refresh_lsif_data_docs_search_public AFTER INSERT OR DELETE OR UPDATE OR TRUNCATE ON lsif_data_docs_search_public FOR EACH STATEMENT EXECUTE FUNCTION refresh_lsif_data_docs_search_public()
 
 ```
 
@@ -382,6 +386,8 @@ Maps documentation path IDs to their corresponding integral documentationResult 
  search_indexed | boolean |           |          | false
 Indexes:
     "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
+Triggers:
+    refresh_lsif_data_documentation_pages AFTER INSERT OR DELETE OR UPDATE OR TRUNCATE ON lsif_data_documentation_pages FOR EACH STATEMENT EXECUTE FUNCTION refresh_lsif_data_documentation_pages()
 
 ```
 
