@@ -1,13 +1,10 @@
 /* eslint-disable id-length */
-import { Remote } from 'comlink'
 import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
-import { defaultIfEmpty, map, materialize, scan } from 'rxjs/operators'
+import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 import { AggregableBadge } from 'sourcegraph'
 
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { transformSearchQuery } from '../api/client/search'
-import { FlatExtensionHostAPI } from '../api/contract'
 import { displayRepoName } from '../components/RepoFileLink'
 import { SearchPatternType } from '../graphql-operations'
 import { SymbolKind } from '../graphql/schema'
@@ -396,7 +393,6 @@ const messageHandlers: {
 }
 
 export interface StreamSearchOptions {
-    query: string
     version: string
     patternType: SearchPatternType
     caseSensitive: boolean
@@ -404,66 +400,48 @@ export interface StreamSearchOptions {
     trace: string | undefined
     decorationKinds?: string[]
     decorationContextLines?: number
-    extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
 }
 
-/**
- * Initiates a streaming search. This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events).
- * The observable will emit each event returned from the backend.
- *
- * @param query the search query to send to Sourcegraph's backend.
- */
-function search({
-    query,
-    version,
-    patternType,
-    caseSensitive,
-    versionContext,
-    trace,
-    decorationKinds,
-    decorationContextLines,
-    extensionHostAPI,
-}: StreamSearchOptions): Observable<SearchEvent> {
+function initiateSearchStream(
+    query: string,
+    {
+        version,
+        patternType,
+        caseSensitive,
+        versionContext,
+        trace,
+        decorationKinds,
+        decorationContextLines,
+    }: StreamSearchOptions
+): Observable<SearchEvent> {
     return new Observable<SearchEvent>(observer => {
         const subscriptions = new Subscription()
 
-        // Call extension-contributed search query transformers
-        transformSearchQuery({ query, extensionHostAPIPromise: extensionHostAPI })
-            .catch(error => {
-                // Fallback: use original query
-                console.error('Extension query transformer error:', error)
-                return query
-            })
-            .then(transformedQuery => {
-                const parameters = [
-                    ['q', `${transformedQuery} ${caseSensitive ? 'case:yes' : ''}`],
-                    ['v', version],
-                    ['t', patternType as string],
-                    ['dl', '0'],
-                    ['dk', (decorationKinds || ['html']).join('|')],
-                    ['dc', (decorationContextLines || '1').toString()],
-                    ['display', '1500'],
-                ]
-                if (versionContext) {
-                    parameters.push(['vc', versionContext])
-                }
-                if (trace) {
-                    parameters.push(['trace', trace])
-                }
-                const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
+        const parameters = [
+            ['q', `${query} ${caseSensitive ? 'case:yes' : ''}`],
+            ['v', version],
+            ['t', patternType as string],
+            ['dl', '0'],
+            ['dk', (decorationKinds || ['html']).join('|')],
+            ['dc', (decorationContextLines || '1').toString()],
+            ['display', '1500'],
+        ]
+        if (versionContext) {
+            parameters.push(['vc', versionContext])
+        }
+        if (trace) {
+            parameters.push(['trace', trace])
+        }
+        const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
-                const eventSource = new EventSource('/search/stream?' + parameterEncoded)
-                subscriptions.add(() => eventSource.close())
+        const eventSource = new EventSource('/search/stream?' + parameterEncoded)
+        subscriptions.add(() => eventSource.close())
 
-                for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
-                    subscriptions.add(
-                        (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
-                    )
-                }
-            })
-            .catch(error => {
-                observer.error(error)
-            })
+        for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {
+            subscriptions.add(
+                (handleMessages as MessageHandler)(eventType as SearchEvent['type'], eventSource, observer)
+            )
+        }
 
         return () => {
             subscriptions.unsubscribe()
@@ -471,9 +449,23 @@ function search({
     })
 }
 
-/** Initiate a streaming search and aggregate the results */
-export function aggregateStreamingSearch(options: StreamSearchOptions): Observable<AggregateStreamingSearchResults> {
-    return search(options).pipe(switchAggregateSearchResults)
+/**
+ * Initiates a streaming search.
+ * This is a type safe wrapper around Sourcegraph's streaming search API (using Server Sent Events). The observable will emit each event returned from the backend.
+ *
+ * @param queryObservable is an observables that resolves to a query string
+ * @param options contains the search query and the necessary context to perform the search (version, patternType, caseSensitive, etc.)
+ */
+export function search(queryObservable: Observable<string>, options: StreamSearchOptions): Observable<SearchEvent> {
+    return queryObservable.pipe(switchMap(query => initiateSearchStream(query, options)))
+}
+
+/** Initiates a streaming search with and aggregates the results. */
+export function aggregateStreamingSearch(
+    queryObservable: Observable<string>,
+    options: StreamSearchOptions
+): Observable<AggregateStreamingSearchResults> {
+    return search(queryObservable, options).pipe(switchAggregateSearchResults)
 }
 
 export function getRepositoryUrl(repository: string, branches?: string[]): string {
