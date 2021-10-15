@@ -91,6 +91,10 @@ func ComputeBatchSpecState(stats BatchSpecStats) string {
 		return "FAILED"
 	}
 
+	if stats.Canceled+stats.Failed+stats.Completed == stats.Executions {
+		return "CANCELED"
+	}
+
 	if stats.Canceling+stats.Failed+stats.Completed+stats.Canceled == stats.Executions {
 		return "CANCELING"
 	}
@@ -101,10 +105,6 @@ func ComputeBatchSpecState(stats BatchSpecStats) string {
 
 	if (stats.Completed > 0 || stats.Failed > 0 || stats.Canceled > 0) && stats.Queued > 0 {
 		return "PROCESSING"
-	}
-
-	if stats.Canceled+stats.Failed+stats.Completed == stats.Executions {
-		return "CANCELED"
 	}
 
 	return ""
