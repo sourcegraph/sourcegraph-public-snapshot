@@ -38,9 +38,9 @@ main() {
   local _url
   _url="${_base_url}/sg_${_arch}"
 
-  local _file="/usr/local/bin/sg"
   local _dir
-  _dir="$(dirname ${_file})"
+  _dir="$(ensure mktemp -d)"
+  local _file="${_dir}/sg"
 
   local _ansi_escapes_are_valid=false
   if [ -t 2 ]; then
@@ -85,8 +85,7 @@ main() {
     exit 1
   fi
 
-  local _retval=$?
-  return "$_retval"
+  exec "$_file" install
 }
 
 get_architecture() {
