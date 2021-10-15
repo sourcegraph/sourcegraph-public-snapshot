@@ -30,12 +30,9 @@ const SCANNER_STATE: Monaco.languages.IState = {
 const printable = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
 
-function collectFilterTokens(tokens: Token[], filterType: FilterType): Filter[] {
-    return tokens.filter(token => isFilterType(token, filterType)) as Filter[]
-}
-
-function serializeFilterTokens(filters: Filter[]): string {
-    return filters
+function serializeFilterTokens(tokens: Token[], filterType: FilterType): string {
+    return tokens
+        .filter((token): token is Filter => isFilterType(token, filterType))
         .map(filter => (filter.value ? `${filter.field.value}:${filter.value.value}` : ''))
         .filter(filter => !!filter)
         .join(' ')
@@ -60,12 +57,12 @@ function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
         return ''
     }
     if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value) {
-        const repoQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.repo))
+        const repoQueryPart = serializeFilterTokens(tokens, FilterType.repo)
         return `${repoQueryPart} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`
     }
     if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value) {
-        const repoQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.repo))
-        const fileQueryPart = serializeFilterTokens(collectFilterTokens(tokens, FilterType.file))
+        const repoQueryPart = serializeFilterTokens(tokens, FilterType.repo)
+        const fileQueryPart = serializeFilterTokens(tokens, FilterType.file)
         return `${repoQueryPart} ${fileQueryPart} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
     }
 
