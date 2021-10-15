@@ -50,14 +50,15 @@ const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 INSERT INTO
 	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
 SELECT
-	id
+	batch_spec_workspaces.id
 FROM
 	batch_spec_workspaces
+JOIN batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
 WHERE
-	batch_spec_id = %s
-AND NOT ignored
-AND NOT unsupported
-AND jsonb_array_length(steps) > 0
+	batch_spec_workspaces.batch_spec_id = %s
+AND (batch_specs.allow_ignored OR NOT batch_spec_workspaces.ignored)
+AND (batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
+AND jsonb_array_length(batch_spec_workspaces.steps) > 0
 `
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
