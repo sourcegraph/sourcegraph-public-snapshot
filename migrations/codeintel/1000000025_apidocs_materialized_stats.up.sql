@@ -11,12 +11,23 @@ CREATE MATERIALIZED VIEW lsif_data_apidocs_num_dumps
 AS SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages
 WITH DATA;
 
+-- Materialized view for reporting progress of our OOB migration, which is expensive
+-- to calculate even once the migration has succeeded.
+CREATE MATERIALIZED VIEW lsif_data_documentation_pages_oob_migrated
+AS SELECT
+    CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END AS percent
+    FROM
+        (SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages WHERE search_indexed='true') c1,
+        (SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages) c2
+WITH DATA;
+
 CREATE OR REPLACE FUNCTION refresh_lsif_data_documentation_pages()
 RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_apidocs_num_pages;
 REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_apidocs_num_dumps;
+REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_documentation_pages_oob_migrated;
 RETURN NULL;
 END $$;
 
