@@ -916,6 +916,12 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 	insertRepo(t, db, 52, "r2")
 	insertRepo(t, db, 53, "r3")
 
+	// Make visible to repo culling query
+	addToSearchContext(t, db, 50)
+	addToSearchContext(t, db, 51)
+	addToSearchContext(t, db, 52)
+	addToSearchContext(t, db, 53)
+
 	// Can return nulls
 	if repositories, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 2, now); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
@@ -944,11 +950,21 @@ func TestSelectRepositoriesForIndexScan(t *testing.T) {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
 	}
 
-	// Make newly visible repository
+	// Make new invisible repository
 	insertRepo(t, db, 54, "r4")
 
-	// 95 minutes later, only new repository is visible
+	// 95 minutes later, new repository is not yet visible
 	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*95)); err != nil {
+		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
+	} else if diff := cmp.Diff([]int(nil), repositoryIDs); diff != "" {
+		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)
+	}
+
+	// Make new repository visible
+	addToSearchContext(t, db, 54)
+
+	// 100 minutes later, only new repository is visible
+	if repositoryIDs, err := store.selectRepositoriesForIndexScan(context.Background(), time.Hour, 100, now.Add(time.Minute*100)); err != nil {
 		t.Fatalf("unexpected error fetching repositories for index scan: %s", err)
 	} else if diff := cmp.Diff([]int{54}, repositoryIDs); diff != "" {
 		t.Fatalf("unexpected repository list (-want +got):\n%s", diff)

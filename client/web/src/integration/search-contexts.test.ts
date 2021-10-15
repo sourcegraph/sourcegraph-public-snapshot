@@ -216,10 +216,10 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
         await driver.page.click('.test-convert-version-context-btn')
 
-        await driver.page.waitForSelector('.convert-version-context-node .text-success')
+        await driver.page.waitForSelector('[data-testid="convert-version-context-node"] .text-success')
 
         const successText = await driver.page.evaluate(
-            () => document.querySelector('.convert-version-context-node .text-success')?.textContent
+            () => document.querySelector('[data-testid="convert-version-context-node"] .text-success')?.textContent
         )
         expect(successText).toBe('Version context successfully converted.')
     })
