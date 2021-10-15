@@ -1,82 +1,159 @@
 BEGIN;
 
----------------------------------------------------------------------------
--- Materialized stats views for the lsif_data_documentation_pages table. --
----------------------------------------------------------------------------
-CREATE MATERIALIZED VIEW lsif_data_apidocs_num_pages
-AS SELECT count(*) FROM lsif_data_documentation_pages
-WITH DATA;
+--------------------------------------------------------
+-- Stats for the lsif_data_documentation_pages table. --
+--------------------------------------------------------
+CREATE TABLE lsif_data_apidocs_num_pages AS SELECT count(*) FROM lsif_data_documentation_pages;
+CREATE TABLE lsif_data_apidocs_num_dumps AS SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages;
+CREATE TABLE lsif_data_apidocs_num_dumps_indexed AS SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages WHERE search_indexed='true';
 
-CREATE MATERIALIZED VIEW lsif_data_apidocs_num_dumps
-AS SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages
-WITH DATA;
-
--- Materialized view for reporting progress of our OOB migration, which is expensive
--- to calculate even once the migration has succeeded.
-CREATE MATERIALIZED VIEW lsif_data_documentation_pages_oob_migrated
-AS SELECT
-    CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END AS percent
-    FROM
-        (SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages WHERE search_indexed='true') c1,
-        (SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages) c2
-WITH DATA;
-
-CREATE OR REPLACE FUNCTION refresh_lsif_data_documentation_pages()
+CREATE OR REPLACE FUNCTION lsif_data_documentation_pages_delete()
 RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_apidocs_num_pages;
-REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_apidocs_num_dumps;
-REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_documentation_pages_oob_migrated;
+-- Decrement tally counting tables.
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_pages),
+    changed AS (SELECT count(*) FROM oldtbl)
+UPDATE lsif_data_apidocs_num_pages SET count=(select * from current) - (select * from changed);
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_dumps),
+    changed AS (SELECT count(DISTINCT dump_id) FROM oldtbl)
+UPDATE lsif_data_apidocs_num_dumps SET count=(select * from current) - (select * from changed);
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_dumps_indexed),
+    changed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')
+UPDATE lsif_data_apidocs_num_dumps_indexed SET count=(select * from current) - (select * from changed);
 RETURN NULL;
 END $$;
 
-CREATE TRIGGER refresh_lsif_data_documentation_pages
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
-ON lsif_data_documentation_pages
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_lsif_data_documentation_pages();
+CREATE TRIGGER lsif_data_documentation_pages_delete
+AFTER DELETE ON lsif_data_documentation_pages
+REFERENCING OLD TABLE AS oldtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_documentation_pages_delete();
 
---------------------------------------------------------------------------
--- Materialized stats views for the lsif_data_docs_search_public table. --
---------------------------------------------------------------------------
-CREATE MATERIALIZED VIEW lsif_data_apidocs_num_search_results_public
-AS SELECT count(*) FROM lsif_data_docs_search_public
-WITH DATA;
-
-CREATE OR REPLACE FUNCTION refresh_lsif_data_docs_search_public()
+CREATE OR REPLACE FUNCTION lsif_data_documentation_pages_insert()
 RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_apidocs_num_search_results_public;
+-- Increment tally counting tables.
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_pages),
+    changed AS (SELECT count(*) FROM newtbl)
+UPDATE lsif_data_apidocs_num_pages SET count=(select * from current) + (select * from changed);
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_dumps),
+    changed AS (SELECT count(DISTINCT dump_id) FROM newtbl)
+UPDATE lsif_data_apidocs_num_dumps SET count=(select * from current) + (select * from changed);
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_dumps_indexed),
+    changed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')
+UPDATE lsif_data_apidocs_num_dumps_indexed SET count=(select * from current) + (select * from changed);
 RETURN NULL;
 END $$;
 
-CREATE TRIGGER refresh_lsif_data_docs_search_public
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+CREATE TRIGGER lsif_data_documentation_pages_insert
+AFTER INSERT ON lsif_data_documentation_pages
+REFERENCING NEW TABLE AS newtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_documentation_pages_insert();
+
+CREATE OR REPLACE FUNCTION lsif_data_documentation_pages_update()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_dumps_indexed),
+    beforeIndexed AS (SELECT count(DISTINCT dump_id) FROM oldtbl WHERE search_indexed='true'),
+    afterIndexed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')
+UPDATE lsif_data_apidocs_num_dumps_indexed SET count=(select * from current) + ((select * from afterIndexed) - (select * from beforeIndexed));
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER lsif_data_documentation_pages_update
+AFTER UPDATE ON lsif_data_documentation_pages
+REFERENCING OLD TABLE AS oldtbl NEW TABLE AS newtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_documentation_pages_update();
+
+-------------------------------------------------------
+-- Stats for the lsif_data_docs_search_public table. --
+-------------------------------------------------------
+CREATE TABLE lsif_data_apidocs_num_search_results_public AS SELECT count(*) FROM lsif_data_docs_search_public;
+
+CREATE OR REPLACE FUNCTION lsif_data_docs_search_public_delete()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+-- Decrement tally counting tables.
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_public),
+    changed AS (SELECT count(*) FROM oldtbl)
+UPDATE lsif_data_apidocs_num_search_results_public SET count=(select * from current) - (select * from changed);
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER lsif_data_docs_search_public_delete
+AFTER DELETE
 ON lsif_data_docs_search_public
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_lsif_data_docs_search_public();
+REFERENCING OLD TABLE AS oldtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_docs_search_public_delete();
 
----------------------------------------------------------------------------
--- Materialized stats views for the lsif_data_docs_search_private table. --
----------------------------------------------------------------------------
-CREATE MATERIALIZED VIEW lsif_data_apidocs_num_search_results_private
-AS SELECT count(*) FROM lsif_data_docs_search_private
-WITH DATA;
-
-CREATE OR REPLACE FUNCTION refresh_lsif_data_docs_search_private()
+CREATE OR REPLACE FUNCTION lsif_data_docs_search_public_insert()
 RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
-REFRESH MATERIALIZED VIEW CONCURRENTLY lsif_data_apidocs_num_search_results_private;
+-- Increment tally counting tables.
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_public),
+    changed AS (SELECT count(*) FROM newtbl)
+UPDATE lsif_data_apidocs_num_search_results_public SET count=(select * from current) + (select * from changed);
 RETURN NULL;
 END $$;
 
-CREATE TRIGGER refresh_lsif_data_docs_search_private
-AFTER INSERT OR UPDATE OR DELETE OR TRUNCATE
+CREATE TRIGGER lsif_data_docs_search_public_insert
+AFTER INSERT
+ON lsif_data_docs_search_public
+REFERENCING NEW TABLE AS newtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_docs_search_public_insert();
+
+-------------------------------------------------------
+-- Stats for the lsif_data_docs_search_private table. --
+-------------------------------------------------------
+CREATE TABLE lsif_data_apidocs_num_search_results_private AS SELECT count(*) FROM lsif_data_docs_search_private;
+
+CREATE OR REPLACE FUNCTION lsif_data_docs_search_private_delete()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+-- Decrement tally counting tables.
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_private),
+    changed AS (SELECT count(*) FROM oldtbl)
+UPDATE lsif_data_apidocs_num_search_results_private SET count=(select * from current) - (select * from changed);
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER lsif_data_docs_search_private_delete
+AFTER DELETE
 ON lsif_data_docs_search_private
-FOR EACH STATEMENT
-EXECUTE PROCEDURE refresh_lsif_data_docs_search_private();
+REFERENCING OLD TABLE AS oldtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_docs_search_private_delete();
+
+CREATE OR REPLACE FUNCTION lsif_data_docs_search_private_insert()
+RETURNS TRIGGER LANGUAGE plpgsql
+AS $$
+BEGIN
+-- Increment tally counting tables.
+WITH
+    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_private),
+    changed AS (SELECT count(*) FROM newtbl)
+UPDATE lsif_data_apidocs_num_search_results_private SET count=(select * from current) + (select * from changed);
+RETURN NULL;
+END $$;
+
+CREATE TRIGGER lsif_data_docs_search_private_insert
+AFTER INSERT
+ON lsif_data_docs_search_private
+REFERENCING NEW TABLE AS newtbl
+FOR EACH STATEMENT EXECUTE PROCEDURE lsif_data_docs_search_private_insert();
 
 COMMIT;
