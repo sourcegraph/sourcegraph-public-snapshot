@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strings"
 	"time"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -70,42 +71,67 @@ type BatchSpecStats struct {
 	Failed     int
 }
 
-func ComputeBatchSpecState(stats BatchSpecStats) string {
+// BatchSpecState defines the possible states of a BatchSpec that was created
+// to be executed server-side.
+//
+// Some variants of this state are only computed in the BatchSpecResolver.
+type BatchSpecState string
+
+const (
+	BatchSpecStatePending    BatchSpecState = "pending"
+	BatchSpecStateQueued     BatchSpecState = "queued"
+	BatchSpecStateProcessing BatchSpecState = "processing"
+	BatchSpecStateErrored    BatchSpecState = "errored"
+	BatchSpecStateFailed     BatchSpecState = "failed"
+	BatchSpecStateCompleted  BatchSpecState = "completed"
+	BatchSpecStateCanceled   BatchSpecState = "canceled"
+	BatchSpecStateCanceling  BatchSpecState = "canceled"
+)
+
+// ToGraphQL returns the GraphQL representation of the state.
+func (s BatchSpecState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+// Canceable returns whether the state is one in which the BatchSpec can be canceled.
+func (s BatchSpecState) Canceable() bool {
+	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
+}
+
+func ComputeBatchSpecState(stats BatchSpecStats) BatchSpecState {
 	if stats.Executions == 0 {
-		return "PENDING"
+		return BatchSpecStatePending
 	}
 
 	if stats.Queued == stats.Executions {
-		return "QUEUED"
+		return BatchSpecStateQueued
 	}
 
 	if stats.Completed == stats.Executions {
-		return "COMPLETED"
+		return BatchSpecStateCompleted
 	}
 
 	if stats.Canceled == stats.Executions {
-		return "CANCELED"
+		return BatchSpecStateCanceled
 	}
 
 	if stats.Failed+stats.Completed == stats.Executions {
-		return "FAILED"
+		return BatchSpecStateFailed
 	}
 
 	if stats.Canceled+stats.Failed+stats.Completed == stats.Executions {
-		return "CANCELED"
+		return BatchSpecStateCanceled
 	}
 
 	if stats.Canceling+stats.Failed+stats.Completed+stats.Canceled == stats.Executions {
-		return "CANCELING"
+		return BatchSpecStateCanceling
 	}
 
 	if stats.Canceling > 0 || stats.Processing > 0 {
-		return "PROCESSING"
+		return BatchSpecStateProcessing
 	}
 
 	if (stats.Completed > 0 || stats.Failed > 0 || stats.Canceled > 0) && stats.Queued > 0 {
-		return "PROCESSING"
+		return BatchSpecStateProcessing
 	}
 
-	return ""
+	return "INVALID"
 }

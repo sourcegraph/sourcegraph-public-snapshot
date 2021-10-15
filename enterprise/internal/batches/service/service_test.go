@@ -1652,7 +1652,7 @@ func TestService(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := "PROCESSING"; have != want {
+			if want := btypes.BatchSpecStateProcessing; have != want {
 				t.Fatalf("wrong state for batch spec. want=%s, have=%s", want, have)
 			}
 		})

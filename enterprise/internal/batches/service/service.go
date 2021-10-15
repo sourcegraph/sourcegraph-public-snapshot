@@ -469,7 +469,7 @@ func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts)
 		return nil, err
 	}
 
-	if state != "PROCESSING" && state != "QUEUED" {
+	if !state.Canceable() {
 		return nil, ErrBatchSpecNotCanceable
 	}
 
@@ -1110,11 +1110,11 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 		len(es), strings.Join(points, "\n"))
 }
 
-func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpecID int64) (string, error) {
+func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpecID int64) (btypes.BatchSpecState, error) {
 	return computeBatchSpecState(ctx, s.store, batchSpecID)
 }
 
-func computeBatchSpecState(ctx context.Context, s *store.Store, id int64) (string, error) {
+func computeBatchSpecState(ctx context.Context, s *store.Store, id int64) (btypes.BatchSpecState, error) {
 	statsMap, err := s.GetBatchSpecStats(ctx, []int64{id})
 	if err != nil {
 		return "", err
