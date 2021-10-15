@@ -12,18 +12,9 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 -- Decrement tally counting tables.
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_pages),
-    changed AS (SELECT count(*) FROM oldtbl)
-UPDATE lsif_data_apidocs_num_pages SET count=(select * from current) - (select * from changed);
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_dumps),
-    changed AS (SELECT count(DISTINCT dump_id) FROM oldtbl)
-UPDATE lsif_data_apidocs_num_dumps SET count=(select * from current) - (select * from changed);
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_dumps_indexed),
-    changed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')
-UPDATE lsif_data_apidocs_num_dumps_indexed SET count=(select * from current) - (select * from changed);
+UPDATE lsif_data_apidocs_num_pages SET count = count - (select count(*) from oldtbl);
+UPDATE lsif_data_apidocs_num_dumps SET count = count - (select count(DISTINCT dump_id) from oldtbl);
+UPDATE lsif_data_apidocs_num_dumps_indexed SET count = count - (select count(DISTINCT dump_id) from oldtbl WHERE search_indexed='true');
 RETURN NULL;
 END $$;
 
@@ -37,18 +28,9 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 -- Increment tally counting tables.
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_pages),
-    changed AS (SELECT count(*) FROM newtbl)
-UPDATE lsif_data_apidocs_num_pages SET count=(select * from current) + (select * from changed);
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_dumps),
-    changed AS (SELECT count(DISTINCT dump_id) FROM newtbl)
-UPDATE lsif_data_apidocs_num_dumps SET count=(select * from current) + (select * from changed);
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_dumps_indexed),
-    changed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')
-UPDATE lsif_data_apidocs_num_dumps_indexed SET count=(select * from current) + (select * from changed);
+UPDATE lsif_data_apidocs_num_pages SET count = count + (select count(*) from newtbl);
+UPDATE lsif_data_apidocs_num_dumps SET count = count + (select count(DISTINCT dump_id) from newtbl);
+UPDATE lsif_data_apidocs_num_dumps_indexed SET count = count + (select count(DISTINCT dump_id) from newtbl WHERE search_indexed='true');
 RETURN NULL;
 END $$;
 
@@ -62,10 +44,9 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_dumps_indexed),
     beforeIndexed AS (SELECT count(DISTINCT dump_id) FROM oldtbl WHERE search_indexed='true'),
     afterIndexed AS (SELECT count(DISTINCT dump_id) FROM newtbl WHERE search_indexed='true')
-UPDATE lsif_data_apidocs_num_dumps_indexed SET count=(select * from current) + ((select * from afterIndexed) - (select * from beforeIndexed));
+UPDATE lsif_data_apidocs_num_dumps_indexed SET count=count + ((select * from afterIndexed) - (select * from beforeIndexed));
 RETURN NULL;
 END $$;
 
@@ -84,10 +65,7 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 -- Decrement tally counting tables.
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_public),
-    changed AS (SELECT count(*) FROM oldtbl)
-UPDATE lsif_data_apidocs_num_search_results_public SET count=(select * from current) - (select * from changed);
+UPDATE lsif_data_apidocs_num_search_results_public SET count = count - (select count(*) from oldtbl);
 RETURN NULL;
 END $$;
 
@@ -102,10 +80,7 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 -- Increment tally counting tables.
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_public),
-    changed AS (SELECT count(*) FROM newtbl)
-UPDATE lsif_data_apidocs_num_search_results_public SET count=(select * from current) + (select * from changed);
+UPDATE lsif_data_apidocs_num_search_results_public SET count = count + (select count(*) from newtbl);
 RETURN NULL;
 END $$;
 
@@ -125,10 +100,7 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 -- Decrement tally counting tables.
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_private),
-    changed AS (SELECT count(*) FROM oldtbl)
-UPDATE lsif_data_apidocs_num_search_results_private SET count=(select * from current) - (select * from changed);
+UPDATE lsif_data_apidocs_num_search_results_private SET count = count - (select count(*) from oldtbl);
 RETURN NULL;
 END $$;
 
@@ -143,10 +115,7 @@ RETURNS TRIGGER LANGUAGE plpgsql
 AS $$
 BEGIN
 -- Increment tally counting tables.
-WITH
-    current AS (SELECT count FROM lsif_data_apidocs_num_search_results_private),
-    changed AS (SELECT count(*) FROM newtbl)
-UPDATE lsif_data_apidocs_num_search_results_private SET count=(select * from current) + (select * from changed);
+UPDATE lsif_data_apidocs_num_search_results_private SET count = count + (select count(*) from newtbl);
 RETURN NULL;
 END $$;
 
