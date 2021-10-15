@@ -33,7 +33,9 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     value={policy.name}
                     onChange={({ target: { value } }) => setPolicy({ ...policy, name: value })}
                     disabled={disabled}
+                    required={true}
                 />
+                <small className="form-text text-muted">Required.</small>
             </div>
 
             <div className="form-group">
@@ -61,7 +63,9 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     <option value={GitObjectType.GIT_TAG}>Tag</option>
                     <option value={GitObjectType.GIT_TREE}>Branch</option>
                 </select>
+                <small className="form-text text-muted">Required.</small>
             </div>
+
             <div className="form-group">
                 <label htmlFor="pattern">Pattern</label>
                 <input
@@ -74,7 +78,9 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                         debouncedSetPattern(value)
                     }}
                     disabled={disabled}
+                    required={true}
                 />
+                <small className="form-text text-muted">Required.</small>
             </div>
 
             {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}

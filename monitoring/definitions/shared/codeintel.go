@@ -284,6 +284,32 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 	})
 }
 
+// src_executor_run_lock_wait_total
+// src_executor_run_lock_held_total
+func (codeIntelligence) NewExecutorExecutionRunLockContentionGroup(containerName string) monitoring.Group {
+	return monitoring.Group{
+		Title:  "Run lock contention",
+		Hidden: true,
+		Rows: []monitoring.Row{
+			{
+				Standard.Count("wait")(ObservableConstructorOptions{
+					MetricNameRoot:        "executor_run_lock_wait",
+					MetricDescriptionRoot: "milliseconds",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of milliseconds spent waiting for the run lock every 5m
+				`).Observable(),
+
+				Standard.Count("held")(ObservableConstructorOptions{
+					MetricNameRoot:        "executor_run_lock_held",
+					MetricDescriptionRoot: "milliseconds",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of milliseconds spent holding for the run lock every 5m
+				`).Observable(),
+			},
+		},
+	}
+}
+
 // src_apiworker_command_total
 // src_apiworker_command_duration_seconds_bucket
 // src_apiworker_command_errors_total
@@ -672,7 +698,14 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 					MetricNameRoot:        "codeintel_background_upload_records_scanned",
 					MetricDescriptionRoot: "lsif upload",
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of upload recrods considered for data retention scanning every 5m
+					Number of upload records considered for data retention scanning every 5m
+				`).Observable(),
+
+				Standard.Count("commits scanned")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_commits_scanned",
+					MetricDescriptionRoot: "lsif upload",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of commits considered for data retention scanning every 5m
 				`).Observable(),
 
 				Standard.Count("records expired")(ObservableConstructorOptions{

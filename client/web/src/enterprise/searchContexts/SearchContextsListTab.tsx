@@ -21,6 +21,7 @@ import {
 import { SearchContextProps } from '../../search'
 
 import { SearchContextNode, SearchContextNodeProps } from './SearchContextNode'
+import styles from './SearchContextsListTab.module.scss'
 
 export interface SearchContextsListTabProps
     extends Pick<
@@ -155,11 +156,11 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
             {isSourcegraphDotCom && (
                 <div
                     className={classNames(
-                        'search-contexts-list-tab__auto-defined-search-contexts',
+                        styles.autoDefinedSearchContexts,
                         'mb-4',
                         autoDefinedSearchContexts && autoDefinedSearchContexts.length >= 3
-                            ? 'search-contexts-list-tab__auto-defined-search-contexts--repeat-3'
-                            : 'search-contexts-list-tab__auto-defined-search-contexts--repeat-2'
+                            ? styles.autoDefinedSearchContextsRepeat3
+                            : styles.autoDefinedSearchContextsRepeat2
                     )}
                 >
                     {autoDefinedSearchContexts?.map(context => (
@@ -169,7 +170,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                                     <strong>{context.spec}</strong>
                                 </Link>
                                 <span
-                                    className="badge badge-pill badge-secondary ml-1"
+                                    className={classNames('badge badge-pill badge-secondary ml-1', styles.badge)}
                                     data-tooltip="Automatic contexts are created by Sourcegraph."
                                 >
                                     auto
@@ -202,7 +203,7 @@ export const SearchContextsListTab: React.FunctionComponent<SearchContextsListTa
                 pluralNoun="search contexts"
                 noSummaryIfAllNodesVisible={true}
                 cursorPaging={true}
-                inputClassName="search-contexts-list-tab__filter-input"
+                inputClassName={styles.filterInput}
                 inputPlaceholder="Filter search contexts..."
             />
         </>

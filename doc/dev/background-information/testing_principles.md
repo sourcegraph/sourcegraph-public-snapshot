@@ -37,6 +37,27 @@ If the build or test infrastructure itself is flaky, then [open an issue](https:
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
 
+## Broken builds on the `main` branch
+
+A red `main` build is not okay and must be fixed. Consecutive failed builds on the `main` branch means that [the releasability contract is broken](https://handbook.sourcegraph.com/engineering/continuous_releasability#continuous-releasability-contract), and that we cannot confidently ship that revision to our customers nor have it deployed in the Cloud environment.
+
+### Process
+
+> In essence: Someone must have eyes on the build failure. Unsure about what's happening? Get help on #buildkite-main.
+
+- When a PR breaks the build, the author is responsible for investigating why, and asking for help if necessary:
+  - The failure will appear on [#buildkite-main](https://sourcegraph.slack.com/archives/C02FLQDD3TQ).
+  - If you've done ~30 mins of investigation and the cause is still unclear, ask for help!
+  - Handing the issue over to someone else (for any reason) is totally okay, but it has to happen.
+  - If there's no action being taken after a reasonable amount of time, the offending PR can be reverted by anyone blocked by it.
+- If there is reasonable suspicion of a [flake](#flaky-tests) (e.g. can't reproduce the problem locally) or if it’s clear that the cause is not related to the PR:
+  - Rebuild the job.
+  - Notify the team in charge of the concerned test or disable it.
+  - It's a CI flake? Pass ownership to the DX team.
+- If there is no immediate fix in sight (or rebuilding didn't fix it):
+  - [Mark the faulty test as skipped or revert the changes](#flaky-tests) to restore the main branch to green and avoid blocking others.
+  - if reverting won't fix because it depends on external resources, just comment out that test and open a ticket mentioning the owners.
+
 ## Testing pyramid
 
 ![Testing pyramid](testing-pyramid.svg)
@@ -103,8 +124,8 @@ We use [Percy](https://percy.io/) to detect visual changes in Sourcegraph featur
 
 ## Ownership
 
-- [Distribution team](https://about.sourcegraph.com/handbook/engineering/distribution) owns build and test infrastructure.
-- [Web team](https://about.sourcegraph.com/handbook/engineering/web) owns any tests that are driven through the browser.
+- [DevX Team](https://handbook.sourcegraph.com/engineering/enablement/dev-experience) owns build and test infrastructure.
+- [Frontend Platform Team](https://handbook.sourcegraph.com/engineering/enablement/frontend-platform) owns any tests that are driven through the browser.
 
 ## Conventions
 

@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"os"
 	"reflect"
 	"sync"
 	"testing"
@@ -25,6 +26,11 @@ import (
 )
 
 func TestSearchSuggestions(t *testing.T) {
+	if os.Getenv("CI") != "" {
+		// #25936: Some unit tests rely on external services that break
+		// in CI but not locally. They should be removed or improved.
+		t.Skip("TestSeachSuggestions only works in local dev and is not reliable in CI")
+	}
 	db := new(dbtesting.MockDB)
 
 	getSuggestions := func(t *testing.T, query, version string) []string {

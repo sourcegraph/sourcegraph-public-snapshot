@@ -69,6 +69,18 @@ export function useCachedSearchResults(
         ])
     )
 
+    // Add a history listener that resets cached results if a new search is made
+    // with the same query (e.g. to force refresh when the search button is clicked).
+    useEffect(() => {
+        const unlisten = history.listen((location, action) => {
+            if (location.pathname === '/search' && action === 'PUSH') {
+                setCachedResults(null)
+            }
+        })
+
+        return unlisten
+    }, [history, setCachedResults])
+
     useEffect(() => {
         if (results?.state === 'complete') {
             setCachedResults({ results, query, options })
