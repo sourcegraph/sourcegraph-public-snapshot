@@ -191,7 +191,7 @@
           ]
         },
         "versionContexts": {
-          "description": "JSON array of version context configuration",
+          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
           "type": "array",
           "items": {
             "title": "VersionContext",
