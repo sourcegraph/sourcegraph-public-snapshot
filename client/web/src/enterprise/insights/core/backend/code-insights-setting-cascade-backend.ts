@@ -217,7 +217,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
                     // We have to preserve id and insights IDs value since edit UI
                     // doesn't have these options.
                     id: previousDashboard.id,
-                    insightIds: previousDashboard.insightIds,
+                    insightIds: nextDashboardInput.insightIds ?? previousDashboard.insightIds,
                 }
 
                 settingsContent = addDashboardToSettings(settingsContent, updatedDashboard)
