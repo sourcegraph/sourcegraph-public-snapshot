@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -471,6 +472,34 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {
+	repositoryID, err := unmarshalLSIFIndexGQLID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	namesByRev, err := r.resolver.PreviewGitObjectFilter(ctx, int(repositoryID), store.GitObjectType(args.Type), args.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	var previews []gql.GitObjectFilterPreviewResolver
+	for rev, names := range namesByRev {
+		for _, name := range names {
+			previews = append(previews, &gitObjectFilterPreviewResolver{
+				name: name,
+				rev:  rev,
+			})
+		}
+	}
+
+	sort.Slice(previews, func(i, j int) bool {
+		return previews[i].Name() < previews[j].Name() || (previews[i].Name() == previews[j].Name() && previews[i].Rev() < previews[j].Rev())
+	})
+
+	return previews, nil
 }
 
 // makeGetUploadsOptions translates the given GraphQL arguments into options defined by the
