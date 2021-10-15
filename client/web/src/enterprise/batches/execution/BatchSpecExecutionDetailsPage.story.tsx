@@ -45,14 +45,14 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
     },
 })
 
-const batchSpecExecutionErrored = (): BatchSpecExecutionFields => ({
+const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
     id: '1234',
     originalInput,
     createdAt: createdAt.toISOString(),
     startedAt: addMinutes(createdAt, 1).toISOString(),
     finishedAt: addMinutes(createdAt, 2).toISOString(),
     failureMessage: 'failed to perform src-cli step: command failed',
-    state: BatchSpecState.ERRORED,
+    state: BatchSpecState.FAILED,
     creator: {
         id: 'VXNlcjox',
         url: '/users/mrnugget',
@@ -79,13 +79,13 @@ add('Completed', () => (
     </EnterpriseWebStory>
 ))
 
-add('Errored', () => (
+add('Failed', () => (
     <EnterpriseWebStory>
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
                 executionID="123123"
-                fetchBatchSpecExecution={() => of(batchSpecExecutionErrored())}
+                fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
                 expandStage="srcPreview"
             />
         )}

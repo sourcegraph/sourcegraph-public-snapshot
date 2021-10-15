@@ -51,6 +51,10 @@ itself](https://www.jaegertracing.io/docs/1.17/sampling/), and even then, the vo
 traffic caused by Jaeger spans being sent to the collector may disrupt the performance of the
 overall Sourcegraph instance.
 
+### GraphQL Requests
+
+To receive a traceID on a GraphQL request, include the header `X-Sourcegraph-Should-Trace: true` with the request.
+
 ### Jaeger debugging algorithm
 
 Jaeger is a powerful debugging tool that can break down where time is spent over the lifecycle of a

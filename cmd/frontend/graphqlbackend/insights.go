@@ -20,7 +20,9 @@ type InsightsResolver interface {
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
+	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	DeleteInsightsDashboard(ctx context.Context, args *DeleteInsightsDashboardArgs) (*EmptyResponse, error)
+	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 }
 
@@ -99,6 +101,16 @@ type CreateInsightsDashboardInput struct {
 	Grants InsightsPermissionGrants
 }
 
+type UpdateInsightsDashboardArgs struct {
+	Id    graphql.ID
+	Input UpdateInsightsDashboardInput
+}
+
+type UpdateInsightsDashboardInput struct {
+	Title  *string
+	Grants *InsightsPermissionGrants
+}
+
 type InsightsPermissionGrants struct {
 	Users         *[]graphql.ID
 	Organizations *[]graphql.ID
@@ -131,6 +143,15 @@ type AddInsightViewToDashboardArgs struct {
 }
 
 type AddInsightViewToDashboardInput struct {
+	InsightViewID graphql.ID
+	DashboardID   graphql.ID
+}
+
+type RemoveInsightViewFromDashboardArgs struct {
+	Input RemoveInsightViewFromDashboardInput
+}
+
+type RemoveInsightViewFromDashboardInput struct {
 	InsightViewID graphql.ID
 	DashboardID   graphql.ID
 }

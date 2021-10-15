@@ -7,7 +7,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators'
+import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -44,7 +44,6 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
-import { ExternalServicesResult, UserRepositoriesResult } from './graphql-operations'
 import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
@@ -386,13 +385,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                               ])
                             : of(null)
                     ),
-                    tap(result => {
-                        if (!isErrorLike(result) && result !== null && window.context.sourcegraphDotComMode) {
-                            // Set user properties for Cloud analytics.
-                            const [userRepositoriesResult, externalServicesResult, authenticatedUser] = result
-                            this.setUserProperties(userRepositoriesResult, externalServicesResult, authenticatedUser)
-                        }
-                    }),
                     catchError(error => [asError(error)])
                 )
                 .subscribe(result => {
@@ -670,33 +662,8 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         )
     }
 
-    private setUserProperties = (
-        reposResult: NonNullable<UserRepositoriesResult['node'] & { __typename: 'User' }>['repositories'],
-        extensionSvcResult: ExternalServicesResult['externalServices'],
-        authenticatedUser: AuthenticatedUser | null
-    ): void => {
-        const userProps: userProperties = {
-            hasAddedRepositories: reposResult.totalCount ? reposResult.totalCount > 0 : false,
-            numberOfRepositoriesAdded: reposResult.totalCount ? reposResult.totalCount : 0,
-            numberOfPublicRepos: reposResult.nodes ? reposResult.nodes.filter(repo => !repo.isPrivate).length : 0,
-            numberOfPrivateRepos: reposResult.nodes ? reposResult.nodes.filter(repo => repo.isPrivate).length : 0,
-            hasActiveCodeHost: extensionSvcResult.totalCount > 0,
-            isSourcegraphTeammate: authenticatedUser?.email.endsWith('@sourcegraph.com') || false,
-        }
-        localStorage.setItem('SOURCEGRAPH_USER_PROPERTIES', JSON.stringify(userProps))
-    }
-
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
         const extensionHostAPI = await this.extensionsController.extHostAPI
         await extensionHostAPI.setSearchContext(spec)
     }
-}
-
-interface userProperties {
-    hasAddedRepositories: boolean
-    numberOfRepositoriesAdded: number
-    numberOfPublicRepos: number
-    numberOfPrivateRepos: number
-    hasActiveCodeHost: boolean
-    isSourcegraphTeammate: boolean
 }

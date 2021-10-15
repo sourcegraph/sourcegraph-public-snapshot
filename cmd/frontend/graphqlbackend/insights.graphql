@@ -195,6 +195,11 @@ extend type Mutation {
     createInsightsDashboard(input: CreateInsightsDashboardInput!): InsightsDashboardPayload!
 
     """
+    Edit an existing dashboard.
+    """
+    updateInsightsDashboard(id: ID!, input: UpdateInsightsDashboardInput!): InsightsDashboardPayload!
+
+    """
     Delete a dashboard.
     """
     deleteInsightsDashboard(id: ID!): EmptyResponse!
@@ -203,6 +208,11 @@ extend type Mutation {
     Associate an existing insight view with this dashboard.
     """
     addInsightViewToDashboard(input: AddInsightViewToDashboardInput!): InsightsDashboardPayload!
+
+    """
+    Remove an insight view from a dashboard.
+    """
+    removeInsightViewFromDashboard(input: RemoveInsightViewFromDashboardInput!): InsightsDashboardPayload!
 }
 
 """
@@ -252,6 +262,20 @@ input CreateInsightsDashboardInput {
     Permissions to grant to the dashboard.
     """
     grants: InsightsPermissionGrants!
+}
+
+"""
+Input object for updating a dashboard.
+"""
+input UpdateInsightsDashboardInput {
+    """
+    Dashboard title.
+    """
+    title: String
+    """
+    Permissions to grant to the dashboard.
+    """
+    grants: InsightsPermissionGrants
 }
 
 """
@@ -313,6 +337,21 @@ Input object for adding insight view to dashboard.
 input AddInsightViewToDashboardInput {
     """
     ID of the insight view to attach to the dashboard
+    """
+    insightViewId: ID!
+
+    """
+    ID of the dashboard.
+    """
+    dashboardId: ID!
+}
+
+"""
+Input object for adding insight view to dashboard.
+"""
+input RemoveInsightViewFromDashboardInput {
+    """
+    ID of the insight view to remove from the dashboard
     """
     insightViewId: ID!
 

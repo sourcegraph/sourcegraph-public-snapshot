@@ -460,7 +460,6 @@ function initiateSearchStream(
  *
  * @param queryObservable is an observables that resolves to a query string
  * @param options contains the search query and the necessary context to perform the search (version, patternType, caseSensitive, etc.)
- * @param messageHandlers provide handler functions for each possible `SearchEvent` type
  */
 export function search(
     queryObservable: Observable<string>,

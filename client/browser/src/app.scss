@@ -43,6 +43,7 @@ $line-height-base: (20/14);
 @import './shared';
 @import './shared/components/CodeViewToolbar.scss';
 @import './shared/code-hosts/bitbucket/style.scss';
+@import './shared/code-hosts/bitbucket-cloud/style.scss';
 @import './shared/code-hosts/gitlab/style.scss';
 @import './shared/code-hosts/github/style.scss';
 @import './shared/code-hosts/phabricator/style.scss';
