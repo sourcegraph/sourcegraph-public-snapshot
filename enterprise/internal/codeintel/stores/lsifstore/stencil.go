@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// TODO - test
+// Stencil return all ranges within a single document.
 func (s *Store) Stencil(ctx context.Context, bundleID int, path string) (_ []Range, err error) {
 	ctx, traceLog, endObservation := s.operations.stencil.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),

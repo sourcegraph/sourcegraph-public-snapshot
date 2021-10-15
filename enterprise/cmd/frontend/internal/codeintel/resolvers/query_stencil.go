@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -13,7 +14,7 @@ import (
 
 const slowStencilRequestThreshold = time.Second
 
-// TODO - test
+// Stencil return all ranges within a single document.
 func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore.Range, err error) {
 	ctx, traceLog, endObservation := observeResolver(ctx, &err, "Stencil", r.operations.stencil, slowStencilRequestThreshold, observation.Args{
 		LogFields: []log.Field{
@@ -34,7 +35,6 @@ func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore
 	for i := range adjustedUploads {
 		traceLog(log.Int("uploadID", adjustedUploads[i].Upload.ID))
 
-		// TODO
 		ranges, err := r.lsifStore.Stencil(
 			ctx,
 			adjustedUploads[i].Upload.ID,
@@ -45,12 +45,62 @@ func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore
 		}
 
 		for _, rn := range ranges {
-			// TODO - adjust range
-			// TODO - keep sorted
-			adjustedRanges = append(adjustedRanges, rn)
+			// Adjust the highlighted range back to the appropriate range in the target commit
+			_, adjustedRange, _, err := r.adjustRange(ctx, r.uploads[i].RepositoryID, r.uploads[i].Commit, r.path, rn)
+			if err != nil {
+				return nil, err
+			}
+
+			adjustedRanges = append(adjustedRanges, adjustedRange)
 		}
 	}
 	traceLog(log.Int("numRanges", len(adjustedRanges)))
 
-	return adjustedRanges, nil
+	return sortRanges(adjustedRanges), nil
+}
+
+func sortRanges(ranges []lsifstore.Range) []lsifstore.Range {
+	sort.Slice(ranges, func(i, j int) bool {
+		iStart := ranges[i].Start
+		jStart := ranges[j].Start
+
+		if iStart.Line < jStart.Line {
+			// iStart comes first
+			return true
+		} else if iStart.Line > jStart.Line {
+			// jStart comes first
+			return false
+		}
+		// otherwise, starts on same line
+
+		if iStart.Character < jStart.Character {
+			// iStart comes first
+			return true
+		} else if iStart.Character > jStart.Character {
+			// jStart comes first
+			return false
+		}
+		// otherwise, starts at same character
+
+		iEnd := ranges[i].End
+		jEnd := ranges[j].End
+
+		if jEnd.Line < iEnd.Line {
+			// ranges[i] encloses ranges[j] (we want smaller first)
+			return false
+		} else if jStart.Line < jEnd.Line {
+			// ranges[j] encloses ranges[i] (we want smaller first)
+			return true
+		}
+		// otherwise, ends on same line
+
+		if jStart.Character < jEnd.Character {
+			// ranges[j] encloses ranges[i] (we want smaller first)
+			return true
+		}
+
+		return false
+	})
+
+	return ranges
 }
