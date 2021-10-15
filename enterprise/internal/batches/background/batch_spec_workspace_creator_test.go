@@ -13,7 +13,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -68,12 +67,30 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 				Steps:              []batcheslib.Step{},
 				OnlyFetchWorkspace: true,
 			},
-		},
-		unsupported: map[*types.Repo]struct{}{
-			repos[2]: {},
-		},
-		ignored: map[*types.Repo]struct{}{
-			repos[3]: {},
+			{
+				// Unsupported
+				RepoRevision: &service.RepoRevision{
+					Repo:        repos[2],
+					Branch:      "refs/heads/base-branch",
+					Commit:      "h0rs3s",
+					FileMatches: []string{"main.go"},
+				},
+				Path:        "",
+				Steps:       []batcheslib.Step{},
+				Unsupported: true,
+			},
+			{
+				// Ignored
+				RepoRevision: &service.RepoRevision{
+					Repo:        repos[3],
+					Branch:      "refs/heads/main-base-branch",
+					Commit:      "f00b4r",
+					FileMatches: []string{"lol.txt"},
+				},
+				Path:    "",
+				Steps:   []batcheslib.Step{},
+				Ignored: true,
+			},
 		},
 	}
 
@@ -124,16 +141,20 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 		{
 			RepoID:           repos[2].ID,
 			BatchSpecID:      batchSpec.ID,
+			Branch:           "refs/heads/base-branch",
+			Commit:           "h0rs3s",
 			ChangesetSpecIDs: []int64{},
-			FileMatches:      []string{},
+			FileMatches:      []string{"main.go"},
 			Steps:            []batcheslib.Step{},
 			Unsupported:      true,
 		},
 		{
 			RepoID:           repos[3].ID,
 			BatchSpecID:      batchSpec.ID,
+			Branch:           "refs/heads/main-base-branch",
+			Commit:           "f00b4r",
 			ChangesetSpecIDs: []int64{},
-			FileMatches:      []string{},
+			FileMatches:      []string{"lol.txt"},
 			Steps:            []batcheslib.Step{},
 			Ignored:          true,
 		},
@@ -148,10 +169,8 @@ func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
 }
 
 type dummyWorkspaceResolver struct {
-	workspaces  []*service.RepoWorkspace
-	unsupported map[*types.Repo]struct{}
-	ignored     map[*types.Repo]struct{}
-	err         error
+	workspaces []*service.RepoWorkspace
+	err        error
 }
 
 // DummyBuilder is a simple implementation of the service.WorkspaceResolverBuilder
@@ -159,6 +178,6 @@ func (d *dummyWorkspaceResolver) DummyBuilder(s *store.Store) service.WorkspaceR
 	return d
 }
 
-func (d *dummyWorkspaceResolver) ResolveWorkspacesForBatchSpec(context.Context, *batcheslib.BatchSpec, service.ResolveWorkspacesForBatchSpecOpts) ([]*service.RepoWorkspace, map[*types.Repo]struct{}, map[*types.Repo]struct{}, error) {
-	return d.workspaces, d.unsupported, d.ignored, d.err
+func (d *dummyWorkspaceResolver) ResolveWorkspacesForBatchSpec(context.Context, *batcheslib.BatchSpec) ([]*service.RepoWorkspace, error) {
+	return d.workspaces, d.err
 }

@@ -57,15 +57,12 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	resolver := newResolver(tx)
 	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
-	workspaces, unsupported, ignored, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
-		AllowUnsupported: spec.AllowUnsupported,
-		AllowIgnored:     spec.AllowIgnored,
-	})
+	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec)
 	if err != nil {
 		return err
 	}
 
-	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
+	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces))
 
 	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
@@ -80,38 +77,9 @@ func (r *batchSpecWorkspaceCreator) process(
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
 			Steps:              w.Steps,
-		})
-	}
 
-	for repo := range unsupported {
-		ws = append(ws, &btypes.BatchSpecWorkspace{
-			BatchSpecID:      spec.ID,
-			ChangesetSpecIDs: []int64{},
-
-			RepoID:      repo.ID,
-			Unsupported: true,
-
-			// TODO: These are all not-nullable, so we have to set some values
-			Branch:      "",
-			Commit:      "",
-			Path:        "",
-			FileMatches: []string{},
-		})
-	}
-
-	for repo := range ignored {
-		ws = append(ws, &btypes.BatchSpecWorkspace{
-			BatchSpecID:      spec.ID,
-			ChangesetSpecIDs: []int64{},
-
-			RepoID:  repo.ID,
-			Ignored: true,
-
-			// TODO: These are all not-nullable, so we have to set some values
-			Branch:      "",
-			Commit:      "",
-			Path:        "",
-			FileMatches: []string{},
+			Unsupported: w.Unsupported,
+			Ignored:     w.Ignored,
 		})
 	}
 
