@@ -107,7 +107,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                                 alt: 'Watch and learn video thumbnail',
                             }}
                             onToggle={isOpen =>
-                                telemetryService.log(
+                                props.telemetryService.log(
                                     isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
                                 )
                             }

@@ -6,27 +6,21 @@ import React, { useCallback, useState } from 'react'
 import styles from './ModalVideo.module.scss'
 
 interface ModalVideoProps {
-    id: string;
-    title: string;
-    src: string;
-    thumbnail: {src: string, alt: string};
-    onToggle?: (isOpen: boolean) => void;
+    id: string
+    title: string
+    src: string
+    thumbnail: { src: string; alt: string }
+    onToggle?: (isOpen: boolean) => void
 }
 
-export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
-    id,
-    title,
-    src,
-    thumbnail,
-    onToggle,
-}) => {
+export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title, src, thumbnail, onToggle }) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
         isOpen => {
-            setIsOpen(isOpen);
+            setIsOpen(isOpen)
             if (onToggle) {
-                onToggle(isOpen);
+                onToggle(isOpen)
             }
         },
         [onToggle]
@@ -36,11 +30,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
         <>
             <div className={styles.wrapper}>
                 <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
-                    <img
-                        src={`${assetsRoot}/${thumbnail.src}`}
-                        alt={thumbnail.alt}
-                        className={styles.thumbnailImage}
-                    />
+                    <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
                     <div className={styles.playIconWrapper}>
                         <PlayIcon />
                     </div>
