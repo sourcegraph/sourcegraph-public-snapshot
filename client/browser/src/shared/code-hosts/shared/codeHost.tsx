@@ -88,12 +88,14 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
+import { SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
+import { CLOUD_SOURCEGRAPH_URL, getPlatformName } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
 import { githubCodeHost } from '../github/codeHost'
@@ -112,6 +114,7 @@ import {
     registerNativeTooltipContributions,
 } from './nativeTooltips'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
+import { logger } from './util/logger'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
@@ -146,7 +149,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
 
-export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab' | 'gerrit'
+export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
@@ -279,6 +282,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    /**
+     * Whether or not hover tooltips can be pinned.
+     */
+    pinningEnabled?: boolean
 }
 
 /**
@@ -458,7 +466,7 @@ function initCodeIntelligence({
                     hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
-        pinningEnabled: true,
+        pinningEnabled: codeHost.pinningEnabled ?? true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
@@ -677,7 +685,7 @@ export function handleCodeHost({
     const checkPrivateCloudError = (error: any): boolean =>
         !!(
             isRepoNotFoundErrorLike(error) &&
-            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
+            sourcegraphURL === CLOUD_SOURCEGRAPH_URL &&
             codeHost.getContext?.().privateRepository
         )
 
@@ -1279,39 +1287,14 @@ const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
 const CODE_HOSTS: CodeHost[] = [
     bitbucketServerCodeHost,
+    bitbucketCloudCodeHost,
     githubCodeHost,
     gitlabCodeHost,
     phabricatorCodeHost,
     gerritCodeHost,
 ]
 
-const CLOUD_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
-
-export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined => {
-    const codeHost = CODE_HOSTS.find(codeHost => codeHost.check())
-
-    if (!codeHost) {
-        return undefined
-    }
-
-    // Prevent repo lookups for code hosts that we know cannot have repositories
-    // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
-    // inevitably fail in this case.
-    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
-        const { hostname } = new URL(location.href)
-        const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
-        if (!validCodeHost) {
-            console.log(
-                `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${DEFAULT_SOURCEGRAPH_URL}.\n List of supported code hosts on ${DEFAULT_SOURCEGRAPH_URL}: ${CLOUD_CODE_HOST_HOSTS.join(
-                    ', '
-                )}`
-            )
-            return undefined
-        }
-    }
-
-    return codeHost
-}
+export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
 
 export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
@@ -1329,7 +1312,7 @@ export function injectCodeIntelligenceToCodeHost(
     const { requestGraphQL } = platformContext
     subscriptions.add(extensionsController)
 
-    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
+    const overrideSendTelemetry = SourcegraphUrlService.observe(isExtension).pipe(
         map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
     )
 
@@ -1365,7 +1348,7 @@ export function injectCodeIntelligenceToCodeHost(
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
-                console.log('Browser extension is disabled')
+                logger.info('Browser extension is disabled')
             } else {
                 codeHostSubscription = handleCodeHost({
                     mutations,
@@ -1380,7 +1363,7 @@ export function injectCodeIntelligenceToCodeHost(
                     background,
                 })
                 subscriptions.add(codeHostSubscription)
-                console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
+                logger.info(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
             }
         })
     )

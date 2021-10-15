@@ -10,6 +10,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -40,6 +41,13 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 }
 
 func newResolver(ctx context.Context, db dbutil.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
+	policyMatcher := policies.NewMatcher(
+		services.gitserverClient,
+		policies.NoopExtractor,
+		false,
+		false,
+	)
+
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
 		return nil, errors.Errorf("failed to initialize hunk cache: %s", err)
@@ -49,13 +57,13 @@ func newResolver(ctx context.Context, db dbutil.DB, observationContext *observat
 		services.dbStore,
 		services.lsifStore,
 		services.gitserverClient,
+		policyMatcher,
 		services.indexEnqueuer,
 		hunkCache,
 		observationContext,
 	)
-	resolver := codeintelgqlresolvers.NewResolver(db, innerResolver)
 
-	return resolver, err
+	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
 }
 
 func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {

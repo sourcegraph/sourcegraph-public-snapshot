@@ -228,6 +228,14 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
 
+	exists, err := r.dashboardStore.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsViewOnDashboard")
+	}
+	if exists {
+		return nil, errors.New("this insight view is already attached to this dashboard")
+	}
+
 	err = r.dashboardStore.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
 	if err != nil {
 		return nil, errors.Wrap(err, "AddInsightViewToDashboard")

@@ -166,7 +166,7 @@ type UpdateInsightSeriesArgs struct {
 
 type UpdateInsightSeriesInput struct {
 	SeriesId           string
-	DesiredActiveState *bool
+	Enabled *bool
 }
 
 type InsightSeriesMetadataResolver interface {

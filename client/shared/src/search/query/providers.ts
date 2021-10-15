@@ -1,14 +1,17 @@
 import * as Monaco from 'monaco-editor'
-import { Observable, fromEventPattern, of, asyncScheduler, Subject } from 'rxjs'
-import { map, takeUntil, switchMap, debounceTime, share, observeOn } from 'rxjs/operators'
+import { Observable, fromEventPattern, of } from 'rxjs'
+import { map, takeUntil, switchMap, delay } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
-import { SearchSuggestion } from '../suggestions'
+import { SearchMatch } from '../stream'
 
 import { getCompletionItems } from './completion'
 import { getMonacoTokens } from './decoratedToken'
+import { FilterType } from './filters'
 import { getHoverResult } from './hover'
 import { scanSearchQuery } from './scanner'
+import { Filter, KeywordKind, Token } from './token'
+import { isFilterType } from './validate'
 
 interface SearchFieldProviders {
     tokens: Monaco.languages.TokensProvider
@@ -27,12 +30,55 @@ const SCANNER_STATE: Monaco.languages.IState = {
 const printable = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
 
+function serializeFilterTokens(tokens: Token[], filterType: FilterType): string {
+    return tokens
+        .filter((token): token is Filter => isFilterType(token, filterType))
+        .map(filter => (filter.value ? `${filter.field.value}:${filter.value.value}` : ''))
+        .filter(filter => !!filter)
+        .join(' ')
+}
+
+const MAX_SUGGESTION_COUNT = 50
+
+function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
+    const hasAndOrOperators = tokens.some(
+        token => token.type === 'keyword' && (token.kind === KeywordKind.Or || token.kind === KeywordKind.And)
+    )
+
+    if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
+        return `repo:${tokenAtColumn.value.value} type:repo count:${MAX_SUGGESTION_COUNT}`
+    }
+
+    // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
+    // for each filter which filters from the surrounding expression apply to it. For example, if we have a query: `repo:x file:y z OR repo:xx file:yy`
+    // and we want to get suggestions for the `file:yy` filter. We would only want to include file suggestions from the `xx` repo and not the `x` repo, because it
+    // is a part of a different expression.
+    if (hasAndOrOperators) {
+        return ''
+    }
+    if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value) {
+        const repoQueryPart = serializeFilterTokens(tokens, FilterType.repo)
+        return `${repoQueryPart} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`
+    }
+    if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value) {
+        const repoQueryPart = serializeFilterTokens(tokens, FilterType.repo)
+        const fileQueryPart = serializeFilterTokens(tokens, FilterType.file)
+        return `${repoQueryPart} ${fileQueryPart} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
+    }
+
+    return ''
+}
+
+function getTokenAtColumn(tokens: Token[], column: number): Token | null {
+    return tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column) ?? null
+}
+
 /**
  * Returns the providers used by the Monaco query input to provide syntax highlighting,
  * hovers and completions for the Sourcegraph search syntax.
  */
 export function getProviders(
-    fetchSuggestions: (input: string) => Observable<SearchSuggestion[]>,
+    fetchSuggestions: (input: string) => Observable<SearchMatch[]>,
     options: {
         patternType: SearchPatternType
         globbing: boolean
@@ -40,12 +86,6 @@ export function getProviders(
         isSourcegraphDotCom?: boolean
     }
 ): SearchFieldProviders {
-    // To debounce the dynamic suggestions we have to pipe them through a Subject and supply the queries in `provideCompletionItems`.
-    // Debouncing the `fetchSuggestions` request directly in `provideCompletionItems` would have no effect, since the observables
-    // are not connected between `provideCompletionItems` calls.
-    const completionRequests = new Subject<string>()
-    const debouncedDynamicSuggestions = completionRequests.pipe(debounceTime(300), switchMap(fetchSuggestions), share())
-
     return {
         tokens: {
             getInitialState: () => SCANNER_STATE,
@@ -75,25 +115,37 @@ export function getProviders(
         completion: {
             // An explicit list of trigger characters is needed for the Monaco editor to show completions.
             triggerCharacters: [...printable, ...latin1Alpha],
-            provideCompletionItems: (textModel, position, context, token) => {
-                const value = textModel.getValue()
-                completionRequests.next(value)
-                return of(value)
+            provideCompletionItems: (textModel, position, context, cancellationToken) => {
+                const scanned = scanSearchQuery(
+                    textModel.getValue(),
+                    options.interpretComments ?? false,
+                    options.patternType
+                )
+                if (scanned.type === 'error') {
+                    return null
+                }
+                const tokenAtColumn = getTokenAtColumn(scanned.term, position.column)
+                if (!tokenAtColumn) {
+                    return null
+                }
+
+                return of(getSuggestionQuery(scanned.term, tokenAtColumn))
                     .pipe(
-                        map(value => scanSearchQuery(value, options.interpretComments ?? false, options.patternType)),
-                        switchMap(scanned =>
-                            scanned.type === 'error'
-                                ? of(null)
+                        // We use a delay here to implement a custom debounce. In the next step we check if the current
+                        // completion request was cancelled in the meantime (`token.isCancellationRequested`).
+                        // This prevents us from needlessly running multiple suggestion queries.
+                        delay(200),
+                        switchMap(query =>
+                            cancellationToken.isCancellationRequested
+                                ? Promise.resolve(null)
                                 : getCompletionItems(
-                                      scanned.term,
+                                      tokenAtColumn,
                                       position,
-                                      debouncedDynamicSuggestions,
+                                      fetchSuggestions(query),
                                       options.globbing,
                                       options.isSourcegraphDotCom
                                   )
-                        ),
-                        observeOn(asyncScheduler),
-                        map(completions => (token.isCancellationRequested ? undefined : completions))
+                        )
                     )
                     .toPromise()
             },

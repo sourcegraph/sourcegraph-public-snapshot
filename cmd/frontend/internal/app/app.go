@@ -55,8 +55,8 @@ func NewHandler(db dbutil.DB) http.Handler {
 
 	r.Get(router.UI).Handler(ui.Router())
 
-	r.Get(router.SignUp).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignUp)))
-	r.Get(router.SiteInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSiteInit)))
+	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(db)))
+	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(db)))
 	r.Get(router.SignIn).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleSignIn(db))))
 	r.Get(router.SignOut).Handler(trace.Route(http.HandlerFunc(serveSignOutHandler(db))))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(http.HandlerFunc(userpasswd.HandleResetPasswordInit(db))))

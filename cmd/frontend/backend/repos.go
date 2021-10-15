@@ -203,7 +203,7 @@ func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err
 
 	// For authenticated users we also want to include any private repos they may have added
 	if a := actor.FromContext(ctx); a.IsAuthenticated() {
-		privateRepos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{
+		privateRepos, err := s.store.ListRepoNames(ctx, database.ReposListOptions{
 			UserID:      a.UID,
 			OnlyPrivate: true,
 		})

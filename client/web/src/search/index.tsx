@@ -221,10 +221,6 @@ export type SearchContextInputProps = Pick<
     | 'getUserSearchContextNamespaces'
 >
 
-export interface ShowQueryBuilderProps {
-    showQueryBuilder: boolean
-}
-
 export interface HomePanelsProps {
     showEnterpriseHomePanels: boolean
     fetchSavedSearches: () => Observable<ISavedSearch[]>
@@ -236,7 +232,10 @@ export interface HomePanelsProps {
 }
 
 export interface SearchStreamingProps {
-    streamSearch: (options: StreamSearchOptions) => Observable<AggregateStreamingSearchResults>
+    streamSearch: (
+        queryObservable: Observable<string>,
+        options: StreamSearchOptions
+    ) => Observable<AggregateStreamingSearchResults>
 }
 
 /**
