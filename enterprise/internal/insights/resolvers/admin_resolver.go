@@ -24,8 +24,8 @@ func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend
 		return nil, err
 	}
 
-	if args.Input.DesiredActiveState != nil {
-		err := r.dataSeriesStore.SetSeriesEnabled(ctx, args.Input.SeriesId, *args.Input.DesiredActiveState)
+	if args.Input.Enabled != nil {
+		err := r.dataSeriesStore.SetSeriesEnabled(ctx, args.Input.SeriesId, *args.Input.Enabled)
 		if err != nil {
 			return nil, err
 		}

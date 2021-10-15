@@ -165,8 +165,8 @@ type UpdateInsightSeriesArgs struct {
 }
 
 type UpdateInsightSeriesInput struct {
-	SeriesId           string
-	Enabled *bool
+	SeriesId string
+	Enabled  *bool
 }
 
 type InsightSeriesMetadataResolver interface {
