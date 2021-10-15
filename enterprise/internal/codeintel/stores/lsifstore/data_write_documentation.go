@@ -508,11 +508,9 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 	return nil
 }
 
-// TODO(apidocs): future: introduce materialized count for this table and for other interesting API
-// docs data points in general. https://github.com/sourcegraph/sourcegraph/pull/25206#discussion_r714270738
 const countDocumentationSearchRowsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:truncateDocumentationSearchIndexSize
-SELECT count(*)::bigint FROM lsif_data_docs_search_$SUFFIX
+SELECT count::bigint FROM lsif_data_apidocs_num_search_results_$SUFFIX
 `
 
 const truncateDocumentationSearchRowsQuery = `
