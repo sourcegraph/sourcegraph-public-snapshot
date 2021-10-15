@@ -60,7 +60,7 @@ func NewPermsSyncer(
 		permsStore:          permsStore,
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
-		scheduleInterval:    time.Minute,
+		scheduleInterval:    15 * time.Second,
 	}
 }
 
@@ -669,24 +669,32 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	}
 }
 
-// scheduleUsersWithNoPerms returns computed schedules for users who have no permissions
-// found in database.
-func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
-	ids, err := s.permsStore.UserIDsWithNoPerms(ctx)
+// todo: scheduleUsersWithOutdatedPerms returns computed schedules for private repositories that
+// // have oldest permissions in database.
+func (s *PermsSyncer) scheduleUsersWithOutdatedPerms(ctx context.Context) ([]scheduledUser, error) {
+	results, err := s.permsStore.UserIDsWithOutdatedPerms(ctx)
 	if err != nil {
 		return nil, err
 	}
-	metricsNoPerms.WithLabelValues("user").Set(float64(len(ids)))
 
-	users := make([]scheduledUser, len(ids))
-	for i, id := range ids {
-		users[i] = scheduledUser{
-			priority: priorityLow,
-			userID:   id,
-			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
-			noPerms: true,
+	users := make([]scheduledUser, 0, len(results))
+	noPermsCount := 0
+	for id, t := range results {
+		users = append(users,
+			scheduledUser{
+				priority:   priorityLow,
+				userID:     id,
+				nextSyncAt: t,
+				noPerms:    t.IsZero(),
+			},
+		)
+
+		if t.IsZero() {
+			noPermsCount++
 		}
 	}
+
+	metricsNoPerms.WithLabelValues("user").Set(float64(noPermsCount))
 	return users, nil
 }
 
@@ -786,9 +794,9 @@ type scheduledRepo struct {
 func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	schedule := new(schedule)
 
-	users, err := s.scheduleUsersWithNoPerms(ctx)
+	users, err := s.scheduleUsersWithOutdatedPerms(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "schedule users with no permissions")
+		return nil, errors.Wrap(err, "schedule users with outdated permissions")
 	}
 	schedule.Users = append(schedule.Users, users...)
 
@@ -840,6 +848,8 @@ func (s *PermsSyncer) isDisabled() bool {
 		conf.Get().DisableAutoCodeHostSyncs
 }
 
+// runSchedule periodically looks for least updated records and schedule syncs
+// for them.
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	log15.Debug("PermsSyncer.runSchedule.started")
 	defer log15.Info("PermsSyncer.runSchedule.stopped")

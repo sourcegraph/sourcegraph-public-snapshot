@@ -1384,9 +1384,9 @@ AND account_id IN (%s)
 	return userIDs, nil
 }
 
-// UserIDsWithNoPerms returns a list of user IDs with no permissions found in
+// todo: UserIDsWithNoPerms returns a list of user IDs with no permissions found in
 // the database.
-func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
+func (s *PermsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error) {
 	// By default, site admins can access any repo
 	filterSiteAdmins := sqlf.Sprintf("users.site_admin = FALSE")
 	// Unless we enforce it in config
@@ -1395,23 +1395,19 @@ func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 	}
 
 	q := sqlf.Sprintf(`
--- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithNoPerms
-SELECT users.id, NULL FROM users
-WHERE users.deleted_at IS NULL
+-- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOutdatedPerms
+SELECT users.id, user_permissions.synced_at FROM users
+JOIN external_services ON external_services.namespace_user_id = users.id
+LEFT JOIN user_permissions ON user_permissions.user_id = users.id
+WHERE
+	users.deleted_at IS NULL
 AND %s
-AND users.id NOT IN
-	(SELECT perms.user_id FROM user_permissions AS perms)
+AND (
+		user_permissions.synced_at IS NULL
+ 	OR  external_services.last_sync_at > user_permissions.synced_at
+)
 `, filterSiteAdmins)
-	results, err := s.loadIDsWithTime(ctx, q)
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]int32, 0, len(results))
-	for id := range results {
-		ids = append(ids, id)
-	}
-	return ids, nil
+	return s.loadIDsWithTime(ctx, q)
 }
 
 // RepoIDsWithNoPerms returns a list of private repository IDs with no permissions
