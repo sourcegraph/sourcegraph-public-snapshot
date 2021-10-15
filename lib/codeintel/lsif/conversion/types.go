@@ -17,6 +17,20 @@ type Range struct {
 	DocumentationResultID  int
 }
 
+// Note [Assignment to fields of structs in maps]
+//
+// Go disallows `m[key].field2 = ...`. Known workarounds include:
+//
+// - Assign a whole struct value to the index: `m[key] = V{field1: m[key].field1, field2: ...}`
+// - Change `m`'s values to be pointers
+//
+// This file provides convenience functions for assigning a whole struct value to the index.
+//
+// See https://stackoverflow.com/a/32751792/16865079
+
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (r Range) SetDefinitionResultID(id int) Range {
 	return Range{
 		Range:                  r.Range,
@@ -28,6 +42,9 @@ func (r Range) SetDefinitionResultID(id int) Range {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (r Range) SetReferenceResultID(id int) Range {
 	return Range{
 		Range:                  r.Range,
@@ -39,6 +56,9 @@ func (r Range) SetReferenceResultID(id int) Range {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (r Range) SetImplementationResultID(id int) Range {
 	return Range{
 		Range:                  r.Range,
@@ -50,6 +70,9 @@ func (r Range) SetImplementationResultID(id int) Range {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (r Range) SetHoverResultID(id int) Range {
 	return Range{
 		Range:                  r.Range,
@@ -61,6 +84,9 @@ func (r Range) SetHoverResultID(id int) Range {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (r Range) SetDocumentationResultID(id int) Range {
 	return Range{
 		Range:                  r.Range,
@@ -81,6 +107,9 @@ type ResultSet struct {
 	DocumentationResultID  int
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (rs ResultSet) SetDefinitionResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
@@ -92,6 +121,9 @@ func (rs ResultSet) SetDefinitionResultID(id int) ResultSet {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (rs ResultSet) SetReferenceResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
@@ -103,6 +135,9 @@ func (rs ResultSet) SetReferenceResultID(id int) ResultSet {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (rs ResultSet) SetImplementationResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
@@ -114,6 +149,9 @@ func (rs ResultSet) SetImplementationResultID(id int) ResultSet {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
@@ -125,6 +163,9 @@ func (rs ResultSet) SetHoverResultID(id int) ResultSet {
 	}
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (rs ResultSet) SetDocumentationResultID(id int) ResultSet {
 	return ResultSet{
 		ResultSet:              rs.ResultSet,
@@ -141,6 +182,9 @@ type Moniker struct {
 	PackageInformationID int
 }
 
+// Convenience function for setting the field within a map.
+//
+// See Note [Assignment to fields of structs in maps]
 func (m Moniker) SetPackageInformationID(id int) Moniker {
 	return Moniker{
 		Moniker:              m.Moniker,
