@@ -245,7 +245,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				t.Fatal(err)
 			}
 
-			var specJobs []*btypes.BatchSpecWorkspaceExecutionJob
 			var specJobIDs []int64
 			for i := 0; i < 3; i++ {
 				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: api.RepoID(i)}
@@ -257,7 +256,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
 					t.Fatal(err)
 				}
-				specJobs = append(specJobs, job)
 				specJobIDs = append(specJobIDs, job.ID)
 			}
 

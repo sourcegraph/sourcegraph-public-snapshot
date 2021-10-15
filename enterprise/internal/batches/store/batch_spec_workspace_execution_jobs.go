@@ -251,7 +251,7 @@ type CancelBatchSpecWorkspaceExecutionJobsOpts struct {
 // The returned list of records may not match the list of the given IDs, if
 // some of the records were already canceled, completed, failed, errored, etc.
 func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts CancelBatchSpecWorkspaceExecutionJobsOpts) (jobs []*btypes.BatchSpecWorkspaceExecutionJob, err error) {
-	ctx, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
 	if opts.BatchSpecID == 0 && len(opts.IDs) == 0 {

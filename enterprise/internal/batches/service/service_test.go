@@ -1627,7 +1627,6 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var jobIDs []int64
 			for _, repo := range rs {
 				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -1644,8 +1643,6 @@ func TestService(t *testing.T) {
 				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
 					t.Fatal(err)
 				}
-
-				jobIDs = append(jobIDs, job.ID)
 			}
 
 			have, err := svc.ComputeBatchSpecState(ctx, spec.ID)

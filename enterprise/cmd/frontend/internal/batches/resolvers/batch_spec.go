@@ -53,15 +53,11 @@ type batchSpecResolver struct {
 	workspaces     []*btypes.BatchSpecWorkspace
 	workspacesErr  error
 
-	executionJobsOnce sync.Once
-	executionJobs     []*btypes.BatchSpecWorkspaceExecutionJob
-	executionJobsErr  error
-
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
 	stateOnce sync.Once
-	state     string
+	state     btypes.BatchSpecState
 	stateErr  error
 
 	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
@@ -181,7 +177,7 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 
-	if r.batchSpec.CreatedFromRaw && state != "COMPLETED" {
+	if r.batchSpec.CreatedFromRaw && state != btypes.BatchSpecStateCompleted {
 		return nil, nil
 	}
 
@@ -356,7 +352,7 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return state, nil
+	return state.ToGraphQL(), nil
 }
 
 func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -528,93 +524,20 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 	return r.workspaces, r.workspacesErr
 }
 
-func (r *batchSpecResolver) computeExecutionJobs(ctx context.Context, workspaceIDs []int64) ([]*btypes.BatchSpecWorkspaceExecutionJob, error) {
-	r.executionJobsOnce.Do(func() {
-		opts := store.ListBatchSpecWorkspaceExecutionJobsOpts{BatchSpecWorkspaceIDs: workspaceIDs}
-
-		r.executionJobs, r.executionJobsErr = r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, opts)
-	})
-	return r.executionJobs, r.workspacesErr
-}
-
-func (r *batchSpecResolver) computeState(ctx context.Context) (string, error) {
+func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
 	r.stateOnce.Do(func() {
-		r.state, r.stateErr = func() (string, error) {
+		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
 			if !r.batchSpec.CreatedFromRaw {
-				return "COMPLETED", nil
+				return btypes.BatchSpecStateCompleted, nil
 			}
 
 			validationErr := r.validateChangesetSpecs(ctx)
 			if validationErr != nil {
-				return "FAILED", nil
+				return btypes.BatchSpecStateFailed, nil
 			}
 
-			workspaces, err := r.computeBatchSpecWorkspaces(ctx)
-			if err != nil {
-				return "", err
-			}
-			if len(workspaces) == 0 {
-				return "PENDING", nil
-			}
-
-			var ids []int64
-			for _, ws := range workspaces {
-				ids = append(ids, ws.ID)
-			}
-
-			jobs, err := r.computeExecutionJobs(ctx, ids)
-			if err != nil {
-				return "", err
-			}
-			if len(jobs) == 0 {
-				return "PENDING", nil
-			}
-
-			var (
-				processing bool
-				failed     bool
-				canceled   bool
-
-				canceling   bool
-				allFinished bool
-			)
-
-			for _, j := range jobs {
-				switch j.State {
-				case btypes.BatchSpecWorkspaceExecutionJobStateProcessing:
-					if j.Cancel {
-						canceling = true
-					} else {
-						processing = true
-					}
-
-					allFinished = false
-				case btypes.BatchSpecWorkspaceExecutionJobStateCompleted:
-					allFinished = true
-				case btypes.BatchSpecWorkspaceExecutionJobStateFailed:
-					if j.Cancel {
-						canceled = true
-					} else {
-						failed = true
-					}
-					allFinished = true
-				}
-			}
-
-			switch {
-			case canceling:
-				return "CANCELING", nil
-			case canceled && allFinished:
-				return "CANCELED", nil
-			case processing:
-				return "PROCESSING", nil
-			case allFinished && !failed:
-				return "COMPLETED", nil
-			case allFinished && failed:
-				return "FAILED", nil
-			default:
-				return "QUEUED", nil
-			}
+			svc := service.New(r.store)
+			return svc.ComputeBatchSpecState(ctx, r.batchSpec.ID)
 		}()
 	})
 	return r.state, r.stateErr

@@ -85,7 +85,7 @@ const (
 	BatchSpecStateFailed     BatchSpecState = "failed"
 	BatchSpecStateCompleted  BatchSpecState = "completed"
 	BatchSpecStateCanceled   BatchSpecState = "canceled"
-	BatchSpecStateCanceling  BatchSpecState = "canceled"
+	BatchSpecStateCanceling  BatchSpecState = "canceling"
 )
 
 // ToGraphQL returns the GraphQL representation of the state.
@@ -96,6 +96,9 @@ func (s BatchSpecState) Canceable() bool {
 	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
 }
 
+// ComputeBatchSpecState computes the BatchSpecState based on the given stats.
+// NOTE: This does not take into account failed changeset spec validation and
+// does not check whether the batch spec was created from raw.
 func ComputeBatchSpecState(stats BatchSpecStats) BatchSpecState {
 	if stats.Executions == 0 {
 		return BatchSpecStatePending
