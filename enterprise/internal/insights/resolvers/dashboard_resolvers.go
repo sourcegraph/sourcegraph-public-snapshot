@@ -31,7 +31,7 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
 	dashboardStore   store.DashboardStore
-	orgStore	     *database.OrgStore
+	orgStore         *database.OrgStore
 	args             *graphqlbackend.InsightsDashboardsArgs
 
 	// Cache results because they are used by multiple fields
