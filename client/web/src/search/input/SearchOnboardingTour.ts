@@ -72,8 +72,8 @@ function generateStep1(
     content.className = 'd-flex align-items-center'
     content.innerHTML = `
         <div class="tour-card__title">Get started</div>
-        <button class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
-        <button class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
+        <button type="button" class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
+        <button type="button" class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
     `
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
