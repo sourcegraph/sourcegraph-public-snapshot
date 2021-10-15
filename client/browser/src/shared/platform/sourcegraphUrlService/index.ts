@@ -44,7 +44,7 @@ const CLOUD_SUPPORTED_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
     cloned on sourcegraph.com. Repo lookups trigger cloning, which will
     inevitably fail in this case.
 */
-const isCloudSupportedCodehost = (sourcegraphURL: string): boolean => {
+export const isCloudSupportedCodehost = (sourcegraphURL: string): boolean => {
     if (sourcegraphURL !== CLOUD_SOURCEGRAPH_URL) {
         return true
     }

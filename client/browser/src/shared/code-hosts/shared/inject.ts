@@ -1,7 +1,7 @@
 import { Observable, Subscription } from 'rxjs'
-import { startWith } from 'rxjs/operators'
+import { filter, startWith } from 'rxjs/operators'
 
-import { SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
+import { isCloudSupportedCodehost, SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
 import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
 import { determineCodeHost, CodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
@@ -68,7 +68,7 @@ export async function injectCodeIntelligence(
         }
     }
 
-    return SourcegraphUrlService.observe(isExtension).subscribe(sourcegraphURL =>
-        inject(codeHost, assetsURL, sourcegraphURL, isExtension)
-    )
+    return SourcegraphUrlService.observe(isExtension)
+        .pipe(filter(isCloudSupportedCodehost))
+        .subscribe(sourcegraphURL => inject(codeHost, assetsURL, sourcegraphURL, isExtension))
 }
