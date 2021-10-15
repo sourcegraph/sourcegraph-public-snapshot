@@ -2,9 +2,8 @@ import { DialogContent, DialogOverlay } from '@reach/dialog'
 import React, { useRef } from 'react'
 import { useHistory } from 'react-router'
 
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, useAutoFocus } from '@sourcegraph/wildcard'
-
-import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
 
 import styles from './BetaConfirmationModal.module.scss'
 import { FourLineChart, PieChart, ThreeLineChart } from './components/MediaCharts'

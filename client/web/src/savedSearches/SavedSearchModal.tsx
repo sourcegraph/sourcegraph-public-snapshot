@@ -4,9 +4,9 @@ import * as H from 'history'
 import * as React from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { PatternTypeProps } from '@sourcegraph/shared/src/search'
 
 import { AuthenticatedUser } from '../auth'
-import { PatternTypeProps } from '../search'
 
 import styles from './SavedSearchModal.module.scss'
 

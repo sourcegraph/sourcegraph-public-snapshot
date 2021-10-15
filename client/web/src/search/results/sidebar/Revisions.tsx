@@ -2,23 +2,22 @@ import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
 import React from 'react'
 
+import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src/components/SyntaxHighlightedSearchQuery'
+import { FilterLink } from '@sourcegraph/branded/src/search/results/sidebar/FilterLink'
+import { RevisionsProps, TabIndex } from '@sourcegraph/branded/src/search/results/sidebar/Revisions'
+import styles from '@sourcegraph/branded/src/search/results/sidebar/SearchSidebarSection.module.scss'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { GitRefType } from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
-import { SyntaxHighlightedSearchQuery } from '../../../components/SyntaxHighlightedSearchQuery'
 import {
     SearchSidebarGitRefsResult,
     SearchSidebarGitRefsVariables,
     SearchSidebarGitRefFields,
 } from '../../../graphql-operations'
-import { useTemporarySetting } from '../../../settings/temporary/useTemporarySetting'
-import { QueryUpdate } from '../../../stores/navbarSearchQueryState'
-
-import { FilterLink } from './FilterLink'
-import styles from './SearchSidebarSection.module.scss'
 
 const DEFAULT_FIRST = 10
 export const GIT_REVS_QUERY = gql`
@@ -144,21 +143,6 @@ const RevisionList: React.FunctionComponent<RevisionListProps> = ({
             ) : null}
         </>
     )
-}
-
-export enum TabIndex {
-    BRANCHES,
-    TAGS,
-}
-
-export interface RevisionsProps {
-    repoName: string
-    onFilterClick: (updates: QueryUpdate[]) => void
-    query: string
-    /**
-     * This property is only exposed for storybook tests.
-     */
-    _initialTab?: TabIndex
 }
 
 export const Revisions: React.FunctionComponent<RevisionsProps> = React.memo(

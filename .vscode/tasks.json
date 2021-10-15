@@ -111,5 +111,17 @@
       "path": "client/extension-api/",
       "problemMatcher": ["$eslint-stylish"],
     },
+    {
+      "label": "build-vscode",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "build",
+    },
+    {
+      "label": "build-vscode-dev",
+      "type": "npm",
+      "path": "client/vscode/",
+      "script": "dev",
+    },
   ],
 }

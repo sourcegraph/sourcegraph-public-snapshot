@@ -1,8 +1,8 @@
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings } from '../../../../../../../../schema/settings.schema'
 import { ReachableInsight } from '../../../../../../core/backend/code-insights-backend-types'
 import { INSIGHTS_ALL_REPOS_SETTINGS_KEY } from '../../../../../../core/types'
 import {

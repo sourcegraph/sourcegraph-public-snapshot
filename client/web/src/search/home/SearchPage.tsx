@@ -4,25 +4,19 @@ import React, { useEffect } from 'react'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    HomePanelsProps,
-    ParsedSearchQueryProps,
-    SearchContextInputProps,
-} from '..'
+import { OnboardingTourProps, HomePanelsProps, ParsedSearchQueryProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CodeInsightsProps } from '../../insights/types'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps } from '../../theme'
 import { HomePanels } from '../panels/HomePanels'
 
@@ -42,7 +36,9 @@ export interface SearchPageProps
         KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings'>,
+        PlatformContextProps<
+            'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'updateSettings' | 'requestGraphQL'
+        >,
         SearchContextInputProps,
         OnboardingTourProps,
         HomePanelsProps,

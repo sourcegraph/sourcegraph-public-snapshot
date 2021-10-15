@@ -9,17 +9,18 @@ import { Observable, of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import { useQueryDiagnostics } from '@sourcegraph/shared/src/search/useQueryIntelligence'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
-import { SearchContextProps } from '..'
 import { StreamingSearchResultsList } from '../results/StreamingSearchResultsList'
-import { useQueryDiagnostics } from '../useQueryIntelligence'
 
 import blockStyles from './SearchNotebookBlock.module.scss'
 import { BlockMenuAction, SearchNotebookBlockMenu } from './SearchNotebookBlockMenu'
@@ -37,7 +38,8 @@ interface SearchNotebookQueryBlockProps
         Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
         ThemeProps,
         SettingsCascadeProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
     sourcegraphSearchLanguageId: string
@@ -58,6 +60,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
     fetchHighlightedFileLineRanges,
     onRunBlock,
     onSelectBlock,
+    platformContext,
     ...props
 }) => {
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
@@ -183,6 +186,7 @@ export const SearchNotebookQueryBlock: React.FunctionComponent<SearchNotebookQue
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                             telemetryService={telemetryService}
                             settingsCascade={settingsCascade}
+                            platformContext={platformContext}
                         />
                     </div>
                 )}

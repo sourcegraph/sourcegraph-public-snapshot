@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Badge, BadgeProps } from './Badge'
+import { Badge, BadgeProps } from '@sourcegraph/branded/src/components/Badge'
 
 interface FeedbackBadgeProps extends BadgeProps {
     /** Render a mailto href to share feedback */

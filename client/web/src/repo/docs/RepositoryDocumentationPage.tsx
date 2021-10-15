@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom'
 import { Observable } from 'rxjs'
 import { catchError, startWith } from 'rxjs/operators'
 
+import { Badge } from '@sourcegraph/branded/src/components/Badge'
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
@@ -18,7 +19,6 @@ import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Container } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../components/Badge'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useScrollToLocationHash } from '../../components/useScrollToLocationHash'

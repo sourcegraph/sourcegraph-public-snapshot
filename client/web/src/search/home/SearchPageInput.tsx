@@ -2,26 +2,22 @@ import * as H from 'history'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Form } from 'reactstrap'
 
+import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import { SubmitSearchParameters } from '@sourcegraph/shared/src/search/helpers'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    ParsedSearchQueryProps,
-    SearchContextInputProps,
-} from '..'
+import { OnboardingTourProps, ParsedSearchQueryProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { Notices } from '../../global/Notices'
-import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
-import { Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps } from '../../theme'
-import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
-import { SearchBox } from '../input/SearchBox'
+import { canSubmitSearch, submitSearch } from '../helpers'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 
@@ -37,7 +33,7 @@ interface Props
         KeyboardShortcutsProps,
         TelemetryProps,
         Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps,
         OnboardingTourProps {
@@ -138,6 +134,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
+                        isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                     />
                 </div>
                 <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />

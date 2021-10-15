@@ -1,10 +1,11 @@
 import { Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
+import { dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from './backend/graphql'
-import { CurrentAuthStateResult } from './graphql-operations'
 
 /**
  * Always represents the latest state of the currently authenticated user.
@@ -14,43 +15,14 @@ import { CurrentAuthStateResult } from './graphql-operations'
  */
 export const authenticatedUser = new ReplaySubject<AuthenticatedUser | null>(1)
 
-export type AuthenticatedUser = NonNullable<CurrentAuthStateResult['currentUser']>
+// TODO(tj): don't re-export, just update imports to use shared.
+export type AuthenticatedUser = SharedAuthenticatedUser
 
 /**
  * Fetches the current user, orgs, and config state from the remote. Emits no items, completes when done.
  */
 export function refreshAuthenticatedUser(): Observable<never> {
-    return requestGraphQL<CurrentAuthStateResult>(gql`
-        query CurrentAuthState {
-            currentUser {
-                __typename
-                id
-                databaseID
-                username
-                avatarURL
-                email
-                displayName
-                siteAdmin
-                tags
-                url
-                settingsURL
-                organizations {
-                    nodes {
-                        id
-                        name
-                        displayName
-                        url
-                        settingsURL
-                    }
-                }
-                session {
-                    canSignOut
-                }
-                viewerCanAdminister
-                tags
-            }
-        }
-    `).pipe(
+    return requestGraphQL<CurrentAuthStateResult>(currentAuthStateQuery).pipe(
         map(dataOrThrowErrors),
         tap(data => authenticatedUser.next(data.currentUser)),
         catchError(() => {

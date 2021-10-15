@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../schema/settings.schema'
 import { InsightDashboard, InsightsDashboardScope, InsightsDashboardType } from '../../core/types'
 import { isSubjectInsightSupported } from '../../core/types/subjects'
 

@@ -7,10 +7,13 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import React, { useCallback, useEffect, useState } from 'react'
 import { Observable } from 'rxjs'
 
+import { NoResultsPage } from '@sourcegraph/branded/src/search/results/NoResultsPage'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import {
     AggregateStreamingSearchResults,
     ContentMatch,
@@ -23,10 +26,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { SearchContextProps } from '..'
 import { SearchResult } from '../../components/SearchResult'
 
-import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
 const initialItemsToShow = 15
@@ -36,7 +37,8 @@ export interface StreamingSearchResultsListProps
     extends ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'> {
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
     location: H.Location
@@ -55,6 +57,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     isSourcegraphDotCom,
     searchContextsEnabled,
     showSearchContext,
+    platformContext,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -104,6 +107,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             telemetryService={telemetryService}
+                            platformContext={platformContext}
                         />
                     )
                 case 'repo':
@@ -113,6 +117,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                             result={result}
                             repoName={result.repository}
                             telemetryService={telemetryService}
+                            platformContext={platformContext}
                         />
                     )
             }
@@ -124,9 +129,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
+            platformContext,
         ]
     )
-
     return (
         <>
             <VirtualList<SearchMatch>
@@ -149,6 +154,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isLightTheme={isLightTheme}
                                 telemetryService={telemetryService}
+                                assetsRoot={window.context?.assetsRoot}
                             />
                         )}
                     </>
@@ -158,6 +164,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     )
 }
 
+// TODO(tj) move to shared
 function getFileMatchIcon(result: ContentMatch | SymbolMatch | PathMatch): React.ComponentType<{ className?: string }> {
     switch (result.type) {
         case 'content':

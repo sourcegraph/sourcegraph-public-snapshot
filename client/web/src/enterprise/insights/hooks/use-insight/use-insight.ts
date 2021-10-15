@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     ConfiguredSubjectOrError,
     SettingsCascadeOrError,
@@ -8,7 +9,6 @@ import {
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings } from '../../../../schema/settings.schema'
 import {
     Insight,
     InsightExecutionType,

@@ -4,11 +4,13 @@ import { cleanup, within, fireEvent } from '@testing-library/react'
 import React from 'react'
 import { take } from 'rxjs/operators'
 
+import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
+import {
+    InMemoryMockSettingsBackend,
+    TemporarySettingsStorage,
+} from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { renderWithRouter, RenderWithRouterResult } from '@sourcegraph/shared/src/testing/render-with-router'
-
-import { TemporarySettings } from '../settings/temporary/TemporarySettings'
-import { TemporarySettingsContext } from '../settings/temporary/TemporarySettingsProvider'
-import { InMemoryMockSettingsBackend, TemporarySettingsStorage } from '../settings/temporary/TemporarySettingsStorage'
 
 import { SurveyToast } from './SurveyToast'
 

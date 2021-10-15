@@ -4,6 +4,7 @@ import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -31,6 +32,7 @@ add(
                     searchContext={searchContext}
                     toggleDeleteModal={sinon.fake()}
                     deleteSearchContext={sinon.fake(() => NEVER)}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>

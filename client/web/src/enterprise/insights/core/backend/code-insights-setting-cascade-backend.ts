@@ -5,11 +5,14 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import {
+    Settings,
+    InsightDashboard as InsightDashboardConfiguration,
+} from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 
-import { Settings, InsightDashboard as InsightDashboardConfiguration } from '../../../../schema/settings.schema'
 import { getInsightsDashboards } from '../../hooks/use-dashboards/use-dashboards'
 import { getInsightIdsFromSettings } from '../../hooks/use-dashboards/utils'
 import { getDeleteInsightEditOperations } from '../../hooks/use-delete-insight/delete-helpers'

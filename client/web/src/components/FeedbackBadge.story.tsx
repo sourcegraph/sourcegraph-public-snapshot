@@ -2,9 +2,10 @@ import { select } from '@storybook/addon-knobs'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
+import { AppRouterContainer } from '@sourcegraph/branded/src/components/AppRouterContainer'
+
 import webStyles from '../SourcegraphWebApp.scss'
 
-import { AppRouterContainer } from './AppRouterContainer'
 import { FeedbackBadge } from './FeedbackBadge'
 
 const { add } = storiesOf('web/Badge', module).addDecorator(story => (

@@ -6,12 +6,12 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../auth'
 import { CodeMonitoringProps } from '../../../code-monitoring'
 import { Page } from '../../../components/Page'
 import { FeatureFlagProps } from '../../../featureFlags/featureFlags'
-import { lazyComponent } from '../../../util/lazyComponent'
 
 interface Props
     extends RouteComponentProps<{}>,

@@ -10,13 +10,13 @@ import { catchError, concatMap, delay, mergeMap, retryWhen, tap, timeout } from 
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import siteSchemaJSON from '../../../../schema/site.schema.json'
 import { ErrorAlert } from '../components/alerts'
 import { PageTitle } from '../components/PageTitle'
-import { SiteConfiguration } from '../schema/site.schema'
 import { DynamicallyImportedMonacoSettingsEditor } from '../settings/DynamicallyImportedMonacoSettingsEditor'
 import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'

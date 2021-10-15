@@ -3,8 +3,7 @@ import LinkIcon from 'mdi-react/LinkIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-
-import { QuickLink } from '../schema/settings.schema'
+import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 
 import styles from './QuickLinks.module.scss'
 

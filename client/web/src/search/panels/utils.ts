@@ -1,9 +1,9 @@
 import { Observable, of } from 'rxjs'
 
 import { ISavedSearch, Namespace, IOrg, IUser } from '@sourcegraph/shared/src/graphql/schema'
+import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 
 import { AuthenticatedUser } from '../../auth'
-import { EventLogResult } from '../backend'
 
 export const authUser: AuthenticatedUser = {
     __typename: 'User',

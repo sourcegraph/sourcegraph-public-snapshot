@@ -8,19 +8,18 @@ import { Key } from 'ts-key-enum'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { Config } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
-import { retry } from '@sourcegraph/shared/src/testing/utils'
-import { asError } from '@sourcegraph/shared/src/util/errors'
-
 import {
     GitHubAuthProvider,
     GitLabAuthProvider,
     OpenIDConnectAuthProvider,
     SAMLAuthProvider,
     SiteConfiguration,
-} from '../../schema/site.schema'
+} from '@sourcegraph/shared/src/schema/site.schema'
+import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
+import { Config } from '@sourcegraph/shared/src/testing/config'
+import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import { retry } from '@sourcegraph/shared/src/testing/utils'
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import {
     deleteUser,

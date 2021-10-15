@@ -11,6 +11,8 @@ import {
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -19,7 +21,6 @@ import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/Aw
 import { Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { SearchContextProps } from '../../search'
 
 import { fetchRepositoriesByNames } from './backend'
 import { DeleteSearchContextModal } from './DeleteSearchContextModal'
@@ -91,7 +92,8 @@ export interface SearchContextFormProps
     extends RouteComponentProps,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     searchContext?: ISearchContext
     authenticatedUser: AuthenticatedUser
 
@@ -390,6 +392,7 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
                             deleteSearchContext={deleteSearchContext}
                             searchContext={searchContext}
                             toggleDeleteModal={toggleDeleteModal}
+                            platformContext={props.platformContext}
                         />
                     </>
                 )}

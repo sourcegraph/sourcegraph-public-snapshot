@@ -4,13 +4,14 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import { useQueryIntelligence } from '@sourcegraph/shared/src/search/useQueryIntelligence'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchStreamingProps } from '..'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
-import { useQueryIntelligence } from '../useQueryIntelligence'
 
 import styles from './SearchNotebook.module.scss'
 import { SearchNotebookAddBlockButtons } from './SearchNotebookAddBlockButtons'
@@ -25,7 +26,8 @@ export interface SearchNotebookProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'> {
+        ExtensionsControllerProps<'extHostAPI'>,
+        PlatformContextProps<'requestGraphQL'> {
     globbing: boolean
     isMacPlatform: boolean
     isReadOnly?: boolean
@@ -37,12 +39,13 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
     onSerializeBlocks,
     isReadOnly = false,
     extensionsController,
+    platformContext,
     ...props
 }) => {
-    const notebook = useMemo(() => new Notebook(props.blocks, { extensionHostAPI: extensionsController.extHostAPI }), [
-        props.blocks,
-        extensionsController.extHostAPI,
-    ])
+    const notebook = useMemo(
+        () => new Notebook(props.blocks, { extensionHostAPI: extensionsController.extHostAPI, platformContext }),
+        [props.blocks, extensionsController.extHostAPI, platformContext]
+    )
 
     const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
     const [blocks, setBlocks] = useState<Block[]>(notebook.getBlocks())
@@ -254,6 +257,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
                                 isReadOnly={isReadOnly}
                                 isSelected={selectedBlockId === block.id}
                                 isOtherBlockSelected={selectedBlockId !== null && selectedBlockId !== block.id}
+                                platformContext={platformContext}
                             />
                         )}
                     </>

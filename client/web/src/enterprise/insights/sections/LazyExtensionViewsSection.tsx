@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react'
 
-import { lazyComponent } from '../../../util/lazyComponent'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import type { ExtensionViewsSectionProps } from './ExtensionViewsSection'
 

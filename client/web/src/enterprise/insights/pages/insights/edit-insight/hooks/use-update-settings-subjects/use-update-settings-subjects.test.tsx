@@ -3,10 +3,10 @@ import React, { PropsWithChildren } from 'react'
 import { Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { stringify } from '@sourcegraph/shared/src/util/jsonc'
 
-import { Settings } from '../../../../../../../schema/settings.schema'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { createMockInsightAPI } from '../../../../../core/backend/create-insights-api'
 import { ApiService } from '../../../../../core/backend/types'

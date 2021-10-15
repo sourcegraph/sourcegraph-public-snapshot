@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { useHistory, useLocation } from 'react-router'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FeedbackBadge } from '@sourcegraph/web/src/components/FeedbackBadge'
@@ -24,7 +25,8 @@ interface SearchNotebookPageProps
         ThemeProps,
         TelemetryProps,
         Omit<StreamingSearchResultsListProps, 'allExpanded'>,
-        ExtensionsControllerProps<'extHostAPI'> {
+        ExtensionsControllerProps<'extHostAPI'>,
+        PlatformContextProps<'requestGraphQL'> {
     globbing: boolean
     isMacPlatform: boolean
 }

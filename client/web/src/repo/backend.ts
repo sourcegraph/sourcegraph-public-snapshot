@@ -7,7 +7,6 @@ import {
     RepoSeeOtherError,
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
@@ -169,55 +168,6 @@ export const resolveRevision = memoizeObservable(
             })
         ),
     makeRepoURI
-)
-
-/**
- * Fetches the specified highlighted file line ranges (`FetchFileParameters.ranges`) and returns
- * them as a list of ranges, each describing a list of lines in the form of HTML table '<tr>...</tr>'.
- */
-export const fetchHighlightedFileLineRanges = memoizeObservable(
-    (context: FetchFileParameters, force?: boolean): Observable<string[][]> =>
-        queryGraphQL(
-            gql`
-                query HighlightedFile(
-                    $repoName: String!
-                    $commitID: String!
-                    $filePath: String!
-                    $disableTimeout: Boolean!
-                    $ranges: [HighlightLineRange!]!
-                ) {
-                    repository(name: $repoName) {
-                        commit(rev: $commitID) {
-                            file(path: $filePath) {
-                                isDirectory
-                                richHTML
-                                highlight(disableTimeout: $disableTimeout) {
-                                    aborted
-                                    lineRanges(ranges: $ranges)
-                                }
-                            }
-                        }
-                    }
-                }
-            `,
-            context
-        ).pipe(
-            map(({ data, errors }) => {
-                if (!data?.repository?.commit?.file?.highlight) {
-                    throw createAggregateError(errors)
-                }
-                const file = data.repository.commit.file
-                if (file.isDirectory) {
-                    return []
-                }
-                return file.highlight.lineRanges
-            })
-        ),
-    context =>
-        makeRepoURI(context) +
-        `?disableTimeout=${String(context.disableTimeout)}&ranges=${context.ranges
-            .map(range => `${range.startLine}:${range.endLine}`)
-            .join(',')}`
 )
 
 export const fetchFileExternalLinks = memoizeObservable(

@@ -1,0 +1,9 @@
+.sidebar-container {
+    padding: 0;
+    margin-top: 0.125rem;
+
+    & [data-reach-tabs] {
+        // Override our default background color.
+        background: none;
+    }
+}

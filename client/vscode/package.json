@@ -1,0 +1,81 @@
+{
+  "private": true,
+  "name": "@sourcegraph/vscode",
+  "displayName": "Sourcegraph",
+  "version": "0.0.1",
+  "description": "Sourcegraph VS Code extension",
+  "publisher": "sourcegraph",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.61.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:sourcegraph.search",
+    "onView:sourcegraph.extensionHost",
+    "onView:sourcegraph.searchSidebar"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sourcegraph.search",
+        "title": "Sourcegraph: Open search tab"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sourcegraph-view",
+          "title": "Sourcegraph",
+          "icon": "images/logo.png"
+        }
+      ]
+    },
+    "views": {
+      "sourcegraph-view": [
+        {
+          "type": "webview",
+          "id": "sourcegraph.searchSidebar",
+          "name": "Sourcegraph Search Sidebar"
+        },
+        {
+          "type": "webview",
+          "id": "sourcegraph.extensionHost",
+          "name": "Sourcegraph Extensions"
+        }
+      ]
+    },
+    "configuration": {
+      "type": "object",
+      "title": "Sourcegraph extension configuration",
+      "properties": {
+        "sourcegraph.url": {
+          "type": [
+            "string"
+          ],
+          "default": "https://sourcegraph.com",
+          "description": "The base URL of the Sourcegraph instance to use."
+        },
+        "sourcegraph.accessToken": {
+          "type": [
+            "string"
+          ],
+          "default": "",
+          "description": "The access token to query the Sourcegraph API. Create a new access token at ${SOURCEGRAPH_URL}/users/settings/tokens"
+        }
+      }
+    }
+  },
+  "keybindings": [],
+  "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "build": "webpack",
+    "dev": "NODE_ENV=development webpack",
+    "watch": "webpack --watch",
+    "test": "echo \"No tests exist yet\" && exit 1"
+  }
+}

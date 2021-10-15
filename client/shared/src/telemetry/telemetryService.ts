@@ -1,3 +1,7 @@
+import { EMPTY } from 'rxjs'
+
+import { PlatformContext } from '../platform/context'
+
 /**
  * Props interface that can be extended by React components depending on the TelemetryService.
  */
@@ -32,4 +36,8 @@ export const NOOP_TELEMETRY_SERVICE: TelemetryService = {
     logViewEvent: () => {
         /* noop */
     },
+}
+
+export const NOOP_PLATFORM_CONTEXT: Pick<PlatformContext, 'requestGraphQL'> = {
+    requestGraphQL: () => EMPTY,
 }

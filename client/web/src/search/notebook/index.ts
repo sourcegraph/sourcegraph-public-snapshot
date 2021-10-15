@@ -5,17 +5,17 @@ import * as uuid from 'uuid'
 
 import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
     AggregateStreamingSearchResults,
     emptyAggregateResults,
+    LATEST_VERSION,
 } from '@sourcegraph/shared/src/search/stream'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
-
-import { fetchHighlightedFileLineRanges } from '../../repo/backend'
-import { LATEST_VERSION } from '../results/StreamingSearchResults'
 
 export type BlockType = 'md' | 'query' | 'file'
 
@@ -69,6 +69,7 @@ export interface BlockProps {
 
 export interface BlockDependencies {
     extensionHostAPI: Promise<Remote<FlatExtensionHostAPI>>
+    platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }
 
 export class Notebook {
@@ -153,6 +154,7 @@ export class Notebook {
                             ? [block.input.lineRange]
                             : [{ startLine: 0, endLine: 2147483647 }], // entire file,
                         disableTimeout: false,
+                        platformContext: this.dependencies.platformContext,
                     }).pipe(map(ranges => ranges[0])),
                 })
                 break

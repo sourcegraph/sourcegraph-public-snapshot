@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 export const UserSessionStores: React.FunctionComponent = () => {
     const today = new Date().toDateString()

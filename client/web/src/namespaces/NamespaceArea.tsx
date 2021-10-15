@@ -1,10 +1,10 @@
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PatternTypeProps } from '@sourcegraph/shared/src/search'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
-import { PatternTypeProps } from '../search'
 import { NavItemWithIconDescriptor, RouteDescriptor } from '../util/contributions'
 
 /**

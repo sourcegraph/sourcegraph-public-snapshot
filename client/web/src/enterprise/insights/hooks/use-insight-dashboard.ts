@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../schema/settings.schema'
 import { isRealDashboard, RealInsightDashboard } from '../core/types'
 
 import { useDashboards } from './use-dashboards/use-dashboards'

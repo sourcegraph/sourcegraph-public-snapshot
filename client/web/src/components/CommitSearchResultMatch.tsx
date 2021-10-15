@@ -10,15 +10,15 @@ import sanitizeHtml from 'sanitize-html'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { LastSyncedIcon } from '@sourcegraph/shared/src/components/LastSyncedIcon'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { highlightCode } from '@sourcegraph/shared/src/search/backend'
 import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { highlightNode } from '@sourcegraph/shared/src/util/dom'
-
-import { highlightCode } from '../search/backend'
 
 import styles from './CommitSearchResultMatch.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
 
-interface CommitSearchResultMatchProps {
+interface CommitSearchResultMatchProps extends PlatformContextProps<'requestGraphQL'> {
     item: CommitMatch
 }
 
@@ -67,6 +67,7 @@ export class CommitSearchResultMatch extends React.Component<
                                 code: codeContent,
                                 fuzzyLanguage: lang,
                                 disableTimeout: false,
+                                platformContext: props.platformContext,
                             }).pipe(
                                 // Return the rendered markdown if highlighting fails.
                                 catchError(error => {

@@ -1,9 +1,9 @@
 import { get } from 'lodash'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../schema/settings.schema'
 import {
     RemoveInsight,
     RemoveInsightFromDashboard,

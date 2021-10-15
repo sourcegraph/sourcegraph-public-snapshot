@@ -6,13 +6,15 @@ import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION } from '@sourcegraph/web/src/components/AwayPrompt'
 
-import { SearchContextProps } from '../../search'
-
-interface DeleteSearchContextModalProps extends Pick<SearchContextProps, 'deleteSearchContext'> {
+interface DeleteSearchContextModalProps
+    extends Pick<SearchContextProps, 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     isOpen: boolean
     searchContext: ISearchContext
     toggleDeleteModal: () => void
@@ -23,6 +25,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
     deleteSearchContext,
     toggleDeleteModal,
     searchContext,
+    platformContext,
 }) => {
     const LOADING = 'loading' as const
     const deleteLabelId = 'deleteSearchContextId'
@@ -33,7 +36,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
             (click: Observable<React.MouseEvent<HTMLButtonElement>>) =>
                 click.pipe(
                     mergeMap(() =>
-                        deleteSearchContext(searchContext.id).pipe(
+                        deleteSearchContext(searchContext.id, platformContext).pipe(
                             tap(() => {
                                 history.push('/contexts', ALLOW_NAVIGATION)
                             }),
@@ -42,7 +45,7 @@ export const DeleteSearchContextModal: React.FunctionComponent<DeleteSearchConte
                         )
                     )
                 ),
-            [deleteSearchContext, history, searchContext]
+            [deleteSearchContext, history, searchContext, platformContext]
         )
     )
 

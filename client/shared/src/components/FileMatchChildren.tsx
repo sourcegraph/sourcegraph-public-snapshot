@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React from 'react'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -23,7 +22,6 @@ import { LastSyncedIcon } from './LastSyncedIcon'
 import { Link } from './Link'
 
 interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
-    location: H.Location
     result: ContentMatch | SymbolMatch | PathMatch
     grouped: MatchGroup[]
     /* Called when the first result has fully loaded. */

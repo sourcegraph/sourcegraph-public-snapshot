@@ -1,9 +1,9 @@
 import { camelCase } from 'lodash'
 
+import { InsightDashboard, Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
-import { InsightDashboard, Settings } from '../../../../schema/settings.schema'
 import { INSIGHTS_DASHBOARDS_SETTINGS_KEY } from '../types'
 
 /**

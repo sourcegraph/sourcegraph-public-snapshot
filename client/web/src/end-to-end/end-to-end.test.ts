@@ -8,13 +8,12 @@ import MockDate from 'mockdate'
 
 import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
 import { createDriverForTest, Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-
-import { Settings } from '../schema/settings.schema'
 
 const { gitHubToken, sourcegraphBaseUrl } = getConfig('gitHubToken', 'sourcegraphBaseUrl')
 

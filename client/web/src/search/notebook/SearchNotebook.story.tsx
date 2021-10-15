@@ -3,7 +3,7 @@ import React from 'react'
 import { NEVER } from 'rxjs'
 
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
-import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { NOOP_PLATFORM_CONTEXT, NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { extensionsController } from '@sourcegraph/shared/src/util/searchTestHelpers'
 
 import { WebStory } from '../../components/WebStory'
@@ -39,6 +39,7 @@ add('default', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
+                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
     </WebStory>
@@ -62,6 +63,7 @@ add('default read-only', () => (
                 blocks={blocks}
                 settingsCascade={EMPTY_SETTINGS_CASCADE}
                 extensionsController={extensionsController}
+                platformContext={NOOP_PLATFORM_CONTEXT}
             />
         )}
     </WebStory>

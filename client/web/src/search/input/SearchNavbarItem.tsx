@@ -3,26 +3,21 @@ import * as H from 'history'
 import React, { useCallback, useState, useEffect } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { SearchBox } from '@sourcegraph/branded/src/search/input/SearchBox'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
+import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import { SubmitSearchParameters } from '@sourcegraph/shared/src/search/helpers'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { FuzzyFinder } from '@sourcegraph/web/src/components/fuzzyFinder/FuzzyFinder'
 
-import {
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    SearchContextInputProps,
-    parseSearchURLQuery,
-} from '..'
+import { OnboardingTourProps, parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { useGlobalStore } from '../../stores/global'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
-import { SubmitSearchParameters } from '../helpers'
-
-import { SearchBox } from './SearchBox'
 
 interface Props
     extends ActivationProps,
@@ -32,7 +27,8 @@ interface Props
         ThemeProps,
         SearchContextInputProps,
         OnboardingTourProps,
-        TelemetryProps {
+        TelemetryProps,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -108,6 +104,7 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}
+                isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
             />
             <Shortcut
                 {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}

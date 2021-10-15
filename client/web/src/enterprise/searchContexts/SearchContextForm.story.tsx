@@ -5,6 +5,7 @@ import { NEVER, Observable, of } from 'rxjs'
 import sinon from 'sinon'
 
 import { IOrg, IRepository, ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
@@ -86,6 +87,7 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>
@@ -104,6 +106,7 @@ add(
                     authenticatedUser={authUser}
                     onSubmit={onSubmit}
                     deleteSearchContext={deleteSearchContext}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>

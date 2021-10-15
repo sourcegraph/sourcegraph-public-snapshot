@@ -9,6 +9,8 @@ import {
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -17,7 +19,6 @@ import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import { SearchContextProps } from '../../search'
 
 import { SearchContextForm } from './SearchContextForm'
 
@@ -25,7 +26,8 @@ export interface CreateSearchContextPageProps
     extends RouteComponentProps,
         ThemeProps,
         TelemetryProps,
-        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'> {
+        Pick<SearchContextProps, 'createSearchContext' | 'deleteSearchContext'>,
+        PlatformContextProps<'requestGraphQL'> {
     authenticatedUser: AuthenticatedUser
 }
 
@@ -36,8 +38,8 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
             id: Scalars['ID'] | undefined,
             searchContext: SearchContextInput,
             repositories: SearchContextRepositoryRevisionsInput[]
-        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }),
-        [createSearchContext]
+        ): Observable<ISearchContext> => createSearchContext({ searchContext, repositories }, props.platformContext),
+        [createSearchContext, props.platformContext]
     )
 
     if (!authenticatedUser) {

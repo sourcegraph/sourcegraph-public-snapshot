@@ -12,7 +12,7 @@ import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
 import { highlightFileResult, mixedSearchStreamEvents } from './streaming-search-mocks'
 
-const viewerSettings: Partial<WebGraphQlOperations> = {
+const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ViewerSettings: () => ({
         viewerSettings: {
             __typename: 'SettingsCascade',

@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Page } from '@sourcegraph/web/src/components/Page'
@@ -8,7 +9,6 @@ import { PageHeader } from '@sourcegraph/wildcard'
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { PageTitle } from '../../../components/PageTitle'
-import { Settings } from '../../../schema/settings.schema'
 
 import { NewCreateBatchChangePage } from './NewCreateBatchChangePage'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'

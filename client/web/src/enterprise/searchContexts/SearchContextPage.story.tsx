@@ -4,6 +4,7 @@ import React from 'react'
 import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
+import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -69,7 +70,13 @@ add(
     'public context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPublicContext} />}
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    fetchSearchContextBySpec={fetchPublicContext}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -79,7 +86,13 @@ add(
     'autodefined context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchAutoDefinedContext} />}
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    fetchSearchContextBySpec={fetchAutoDefinedContext}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -89,7 +102,13 @@ add(
     'private context',
     () => (
         <WebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPrivateContext} />}
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    fetchSearchContextBySpec={fetchPrivateContext}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )}
         </WebStory>
     ),
     {}
@@ -97,7 +116,17 @@ add(
 
 add(
     'loading',
-    () => <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}</WebStory>,
+    () => (
+        <WebStory>
+            {webProps => (
+                <SearchContextPage
+                    {...webProps}
+                    fetchSearchContextBySpec={() => NEVER}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
+                />
+            )}
+        </WebStory>
+    ),
     {}
 )
 
@@ -109,6 +138,7 @@ add(
                 <SearchContextPage
                     {...webProps}
                     fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
+                    platformContext={NOOP_PLATFORM_CONTEXT}
                 />
             )}
         </WebStory>

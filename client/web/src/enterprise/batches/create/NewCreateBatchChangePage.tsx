@@ -2,6 +2,7 @@ import classNames from 'classnames'
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { BatchSpecWorkspaceResolutionState } from '@sourcegraph/shared/src/graphql/schema'
+import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import {
     SettingsCascadeProps,
     SettingsOrgSubject,
@@ -13,7 +14,6 @@ import { ButtonTooltip } from '@sourcegraph/web/src/components/ButtonTooltip'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
-import { Settings } from '../../../schema/settings.schema'
 import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'

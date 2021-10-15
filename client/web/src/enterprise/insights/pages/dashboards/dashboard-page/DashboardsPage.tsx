@@ -3,11 +3,11 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
+import { Badge } from '@sourcegraph/branded/src/components/Badge'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, PageHeader } from '@sourcegraph/wildcard'
 
-import { Badge } from '../../../../../components/Badge'
 import { Page } from '../../../../../components/Page'
 import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
 import { CodeInsightsIcon } from '../../../components'

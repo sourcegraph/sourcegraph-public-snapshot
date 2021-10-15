@@ -3,12 +3,11 @@ import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import expect from 'expect'
 import { describe, before, beforeEach, afterEach, test } from 'mocha'
 
+import { BuiltinAuthProvider, SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
-
-import { BuiltinAuthProvider, SiteConfiguration } from '../schema/site.schema'
 
 import { fetchSiteConfiguration } from './util/api'
 import { GraphQLClient } from './util/GraphQlClient'

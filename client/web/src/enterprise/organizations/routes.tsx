@@ -1,9 +1,10 @@
 import React from 'react'
 import { Redirect } from 'react-router'
 
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+
 import { OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
-import { lazyComponent } from '../../util/lazyComponent'
 import { NamespaceBatchChangesAreaProps } from '../batches/global/GlobalBatchChangesArea'
 import { enterpriseNamespaceAreaRoutes } from '../namespaces/routes'
 

@@ -1,28 +1,14 @@
 import { escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
-import { map } from 'rxjs/operators'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ISavedSearch } from '@sourcegraph/shared/src/graphql/schema'
+import { EventLogResult } from '@sourcegraph/shared/src/search/backend'
 import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { replaceRange } from '@sourcegraph/shared/src/util/strings'
-
-import {
-    EventLogResult,
-    isSearchContextAvailable,
-    fetchAutoDefinedSearchContexts,
-    fetchSearchContexts,
-    fetchSearchContext,
-    fetchSearchContextBySpec,
-    createSearchContext,
-    updateSearchContext,
-    deleteSearchContext,
-    getUserSearchContextNamespaces,
-} from './backend'
 
 /**
  * Parses the query out of the URL search params (the 'q' parameter). In non-interactive mode, if the 'q' parameter is not present, it
@@ -149,54 +135,9 @@ export interface ParsedSearchQueryProps {
     setParsedSearchQuery: (query: string) => void
 }
 
-export interface PatternTypeProps {
-    patternType: SearchPatternType
-    setPatternType: (patternType: SearchPatternType) => void
-}
-
-export interface CaseSensitivityProps {
-    caseSensitive: boolean
-    setCaseSensitivity: (caseSensitive: boolean) => void
-}
-
 export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
-
-export interface SearchContextProps {
-    searchContextsEnabled: boolean
-    showSearchContext: boolean
-    showSearchContextManagement: boolean
-    hasUserAddedRepositories: boolean
-    hasUserAddedExternalServices: boolean
-    defaultSearchContextSpec: string
-    selectedSearchContextSpec?: string
-    setSelectedSearchContextSpec: (spec: string) => void
-    getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
-    fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
-    fetchSearchContexts: typeof fetchSearchContexts
-    isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
-    fetchSearchContext: typeof fetchSearchContext
-    fetchSearchContextBySpec: typeof fetchSearchContextBySpec
-    createSearchContext: typeof createSearchContext
-    updateSearchContext: typeof updateSearchContext
-    deleteSearchContext: typeof deleteSearchContext
-}
-
-export type SearchContextInputProps = Pick<
-    SearchContextProps,
-    | 'searchContextsEnabled'
-    | 'showSearchContext'
-    | 'hasUserAddedRepositories'
-    | 'hasUserAddedExternalServices'
-    | 'showSearchContextManagement'
-    | 'defaultSearchContextSpec'
-    | 'selectedSearchContextSpec'
-    | 'setSelectedSearchContextSpec'
-    | 'fetchAutoDefinedSearchContexts'
-    | 'fetchSearchContexts'
-    | 'getUserSearchContextNamespaces'
->
 
 export interface HomePanelsProps {
     showEnterpriseHomePanels: boolean
@@ -223,14 +164,3 @@ export function getGlobalSearchContextFilter(query: string): { filter: Filter; s
     const searchContextSpec = globalContextFilter.value?.value || ''
     return { filter: globalContextFilter, spec: searchContextSpec }
 }
-
-export const isSearchContextSpecAvailable = memoizeObservable(
-    (spec: string) => isSearchContextAvailable(spec),
-    parameters => parameters
-)
-
-export const getAvailableSearchContextSpecOrDefault = memoizeObservable(
-    ({ spec, defaultSpec }: { spec: string; defaultSpec: string }) =>
-        isSearchContextAvailable(spec).pipe(map(isAvailable => (isAvailable ? spec : defaultSpec))),
-    ({ spec, defaultSpec }) => `${spec}:${defaultSpec}`
-)

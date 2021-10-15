@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import React from 'react'
 
-import { Badge } from '../../components/Badge'
+import { Badge } from '@sourcegraph/branded/src/components/Badge'
 
 /**
  * Shows an "EXPERIMENTAL" badge for work-in-progress extensions.

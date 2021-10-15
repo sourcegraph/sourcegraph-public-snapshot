@@ -2,7 +2,7 @@ import { action } from '@storybook/addon-actions'
 import { storiesOf } from '@storybook/react'
 import { subDays } from 'date-fns'
 import React from 'react'
-import { NEVER, Observable, of } from 'rxjs'
+import { EMPTY, NEVER, Observable, of } from 'rxjs'
 
 import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -40,6 +40,7 @@ const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
     forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
+    requestGraphQL: () => EMPTY,
 }
 
 const authUser: AuthenticatedUser = {

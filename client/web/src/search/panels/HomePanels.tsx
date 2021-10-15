@@ -1,9 +1,10 @@
 import classNames from 'classnames'
 import * as React from 'react'
 
+import { PatternTypeProps } from '@sourcegraph/shared/src/search'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { HomePanelsProps, PatternTypeProps } from '..'
+import { HomePanelsProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'

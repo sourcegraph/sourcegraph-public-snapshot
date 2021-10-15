@@ -11,13 +11,13 @@ import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
+import { PatternTypeProps } from '@sourcegraph/shared/src/search'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../components/alerts'
 import { NamespaceProps } from '../namespaces'
-import { PatternTypeProps } from '../search'
 import { deleteSavedSearch, fetchSavedSearches } from '../search/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
