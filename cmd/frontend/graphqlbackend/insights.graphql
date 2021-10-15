@@ -368,8 +368,7 @@ enum TimeIntervalStepUnit {
 A custom repository scope for an insight data series.
 """
 input RepositoryScopeInput {
-    global: Boolean
-    repositories: [String!]
+    repositories: [String!]!
 }
 
 """
@@ -487,11 +486,10 @@ union InsightTimeScope = InsightIntervalTimeScope
 
 
 """
-A custom repository scope for an insight.
+A custom repository scope for an insight. A scope with all empty fields implies a global scope.
 """
 type InsightRepositoryScope {
-    global: Boolean
-    repositories: [String!]
+    repositories: [String!]!
 }
 """
 Defines a time scope using an interval of time
