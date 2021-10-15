@@ -109,16 +109,16 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 				return test.mockOrgMember, nil
 			}
+			defer func() {
+				database.Mocks.Users = database.MockUsers{}
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
+			}()
 
 			result := CheckExternalServiceAccess(test.ctx, db, test.namespaceUserId, test.namespaceOrgId)
 
 			if test.expectNil != (result == nil) {
 				t.Errorf(test.errMessage)
 			}
-			defer func() {
-				database.Mocks.Users = database.MockUsers{}
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-			}()
 		})
 	}
 }

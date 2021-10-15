@@ -377,7 +377,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 			wantUnrestricted: false,
 		},
 		{
-			name: "Cloud: support org namespace on code host connections for GitHub",
+			name: "Cloud: support org namespace on code host connections for GitLab",
 			externalService: &types.ExternalService{
 				Kind:           extsvc.KindGitLab,
 				DisplayName:    "GITLAB #1",

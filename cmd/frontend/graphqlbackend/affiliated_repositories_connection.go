@@ -42,7 +42,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			svcs []*types.ExternalService
 			err  error
 		)
-		// get all external services for user, or for the specified external service
+		// get all external services for the user, the organization, or for the specified external service
 		if a.codeHost == 0 {
 			svcs, err = database.ExternalServices(a.db).List(ctx, database.ExternalServicesListOptions{
 				NamespaceUserID: a.userID,
@@ -176,7 +176,7 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 	}
 }
 
-func allowPrivate(ctx context.Context, db dbutil.DB, userID int32, orgID int32) (bool, error) {
+func allowPrivate(ctx context.Context, db dbutil.DB, userID, orgID int32) (bool, error) {
 	if userID > 0 {
 		mode, err := database.Users(db).UserAllowedExternalServices(ctx, userID)
 		if err != nil {
@@ -188,5 +188,5 @@ func allowPrivate(ctx context.Context, db dbutil.DB, userID int32, orgID int32) 
 		return true, nil
 	}
 
-	return false, errors.New("Either userID or orgID expected to be defined")
+	return false, errors.New("either userID or orgID expected to be defined")
 }
