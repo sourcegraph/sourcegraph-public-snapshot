@@ -32,6 +32,7 @@ var batchSpecWorkspaceInsertColumns = []string{
 	"steps",
 	"unsupported",
 	"ignored",
+	"skipped",
 
 	"created_at",
 	"updated_at",
@@ -54,6 +55,7 @@ var BatchSpecWorkspaceColums = SQLColumns{
 	"batch_spec_workspaces.steps",
 	"batch_spec_workspaces.unsupported",
 	"batch_spec_workspaces.ignored",
+	"batch_spec_workspaces.skipped",
 
 	"batch_spec_workspaces.created_at",
 	"batch_spec_workspaces.updated_at",
@@ -112,6 +114,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 				marshaledSteps,
 				wj.Unsupported,
 				wj.Ignored,
+				wj.Skipped,
 				wj.CreatedAt,
 				wj.UpdatedAt,
 			); err != nil {
@@ -246,6 +249,41 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 	)
 }
 
+// NOTE: The conditions here are the reverse of the conditions used in
+// CreateBatchSpecWorkspaceExecutionJobs. If you update them here, update them
+// over there too.
+const markSkippedBatchSpecWorkspacesQueryFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspaces.go:MarkSkippedBatchSpecWorkspaces
+UPDATE
+	batch_spec_workspaces
+SET skipped = TRUE
+FROM batch_specs
+WHERE
+	batch_spec_workspaces.batch_spec_id = %s
+AND
+    batch_specs.id = batch_spec_workspaces.batch_spec_id
+AND
+(
+	(batch_spec_workspaces.ignored AND NOT batch_specs.allow_ignored)
+	OR
+	(batch_spec_workspaces.unsupported AND NOT batch_specs.allow_unsupported)
+	OR
+	jsonb_array_length(batch_spec_workspaces.steps) = 0
+)
+`
+
+// MarkSkippedBatchSpecWorkspaces marks the workspace that were skipped in
+// CreateBatchSpecWorkspaceExecutionJobs as skipped.
+func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(batchSpecID)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(markSkippedBatchSpecWorkspacesQueryFmtstr, batchSpecID)
+	return s.Exec(ctx, q)
+}
+
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 	var steps json.RawMessage
 
@@ -262,6 +300,7 @@ func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
 		&steps,
 		&wj.Unsupported,
 		&wj.Ignored,
+		&wj.Skipped,
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {

@@ -24,6 +24,8 @@ type BatchSpecWorkspace struct {
 	Unsupported bool
 	Ignored     bool
 
+	Skipped bool
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

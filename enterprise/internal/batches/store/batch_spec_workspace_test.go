@@ -59,6 +59,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 			OnlyFetchWorkspace: true,
 			Unsupported:        true,
 			Ignored:            true,
+			Skipped:            true,
 		}
 
 		if i == cap(workspaces)-1 {
@@ -161,5 +162,72 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				}
 			}
 		})
+	})
+
+	t.Run("MarkSkippedBatchSpecWorkspaces", func(t *testing.T) {
+		tests := []struct {
+			batchSpec   *btypes.BatchSpec
+			workspace   *btypes.BatchSpecWorkspace
+			wantSkipped bool
+		}{
+			{
+				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false},
+				workspace:   &btypes.BatchSpecWorkspace{Ignored: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				wantSkipped: true,
+			},
+			{
+				batchSpec:   &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: false},
+				workspace:   &btypes.BatchSpecWorkspace{Ignored: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				wantSkipped: false,
+			},
+			{
+				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false},
+				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				wantSkipped: true,
+			},
+			{
+				batchSpec:   &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: true},
+				workspace:   &btypes.BatchSpecWorkspace{Unsupported: true, Steps: []batcheslib.Step{{Run: "test"}}},
+				wantSkipped: false,
+			},
+			{
+				batchSpec:   &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: true},
+				workspace:   &btypes.BatchSpecWorkspace{Steps: []batcheslib.Step{}},
+				wantSkipped: true,
+			},
+		}
+
+		for _, tt := range tests {
+			tt.batchSpec.NamespaceUserID = 1
+			tt.batchSpec.UserID = 1
+			err := s.CreateBatchSpec(ctx, tt.batchSpec)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			tt.workspace.BatchSpecID = tt.batchSpec.ID
+			tt.workspace.RepoID = repo.ID
+			tt.workspace.Branch = "master"
+			tt.workspace.Commit = "d34db33f"
+			tt.workspace.Path = "sub/dir/ectory"
+			tt.workspace.FileMatches = []string{}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, tt.workspace); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := s.MarkSkippedBatchSpecWorkspaces(ctx, tt.batchSpec.ID); err != nil {
+				t.Fatal(err)
+			}
+
+			reloaded, err := s.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: tt.workspace.ID})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if want, have := tt.wantSkipped, reloaded.Skipped; have != want {
+				t.Fatalf("workspace.Skipped is wrong. want=%t, have=%t", want, have)
+			}
+		}
 	})
 }

@@ -45,6 +45,9 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
 
+// NOTE: The conditions here are the reverse of the conditions used in
+// MarkSkippedBatchSpecWorkspaces. If you update them here, update them
+// over there too.
 const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
 INSERT INTO

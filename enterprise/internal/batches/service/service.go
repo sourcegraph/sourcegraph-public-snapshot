@@ -425,7 +425,16 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		return batchSpec, tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return batchSpec, nil
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
