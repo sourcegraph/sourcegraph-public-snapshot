@@ -410,5 +410,5 @@ input UpdateInsightSeriesInput {
     """
     The desired activity state (enabled or disabled) for the series.
     """
-    desiredActiveState: Boolean
+    enabled: Boolean
 }
