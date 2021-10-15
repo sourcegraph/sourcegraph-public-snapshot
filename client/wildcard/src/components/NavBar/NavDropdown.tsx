@@ -77,7 +77,6 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ items }
                 </ButtonDropdown>
             </NavItem>
             {/* All nav items for smaller screens */}
-
             {/* Render the toggle item separately */}
             <NavItem icon={toggleItem.icon} className="d-flex d-md-none">
                 <NavLink to={toggleItem.path}>{toggleItem.content}</NavLink>
