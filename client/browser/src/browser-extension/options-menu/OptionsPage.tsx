@@ -148,6 +148,7 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form onSubmit={handleFormSubmit} noValidate={true}>
                     <SourcegraphURLInput
+                        id="sourcegraph-url"
                         label="Sourcegraph cloud"
                         editable={false}
                         className="mb-3"
@@ -161,7 +162,9 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
                         }
                     />
                     <SourcegraphURLInput
+                        id="self-hosted-sourcegraph-url"
                         label="Sourcegraph self-hosted"
+                        dataTestId="test-sourcegraph-url"
                         validate={validateSourcegraphUrl}
                         initialValue={selfHostedSourcegraphURL || ''}
                         onChange={onSelfHostedSourcegraphURLChange}
@@ -189,6 +192,7 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
                 <p className="mb-0">
                     <button
                         type="button"
+                        data-testid="test-show-advanced-settings"
                         className="options-page__text-link btn btn-link p-0"
                         onClick={toggleAdvancedSettings}
                     >

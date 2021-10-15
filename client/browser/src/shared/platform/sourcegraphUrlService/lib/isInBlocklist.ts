@@ -7,7 +7,9 @@ export const isInBlocklist = (blocklistContent: string, rawRepoName: string): bo
         .filter(Boolean)
         .some(pattern => {
             let rawRepoRegex = pattern.replace(/(\/$|(https?:\/\/))/g, '')
-            if (!rawRepoRegex.endsWith('$') && !rawRepoRegex.endsWith('*')) {
+            if (rawRepoRegex === '*') {
+                rawRepoRegex = '.*'
+            } else if (!rawRepoRegex.endsWith('$') && !rawRepoRegex.endsWith('*')) {
                 rawRepoRegex += '$'
             }
             return new RegExp(rawRepoRegex).test(rawRepoName)

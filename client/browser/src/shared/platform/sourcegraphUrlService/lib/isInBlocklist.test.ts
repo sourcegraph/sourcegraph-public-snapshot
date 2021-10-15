@@ -12,6 +12,8 @@ describe('isInBlocklist', () => {
     })
 
     it('handles pattern', () => {
+        expect(isInBlocklist('*', 'github.com/sourcegraph/sourcegraph')).toBeTruthy()
+        expect(isInBlocklist('github.com/*', 'github.com/sourcegraph/sourcegraph')).toBeTruthy()
         expect(isInBlocklist('github.com/sourcegraph/*', 'github.com/sourcegraph/sourcegraph')).toBeTruthy()
         expect(isInBlocklist('github.com/sourcegraph/source', 'github.com/sourcegraph/sourcegraph')).toBeFalsy()
         expect(isInBlocklist('github.com/sourcegraph/sourcegraph$', 'github.com/sourcegraph/sourcegraph')).toBeTruthy()

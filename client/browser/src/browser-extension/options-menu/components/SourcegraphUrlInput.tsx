@@ -33,6 +33,8 @@ export interface SourcegraphURLInputProps {
     validate: (url: string) => Observable<string | undefined>
     editable?: boolean
     onChange?: (value: string) => void
+    id: string
+    dataTestId?: string
 }
 
 export const SourcegraphURLInput: React.FC<SourcegraphURLInputProps> = ({
@@ -43,6 +45,8 @@ export const SourcegraphURLInput: React.FC<SourcegraphURLInputProps> = ({
     initialValue,
     onChange,
     validate,
+    id,
+    dataTestId,
 }) => {
     const urlInputReference = useRef<HTMLInputElement | null>(null)
     const [urlState, nextUrlFieldChange, nextUrlInputElement] = useInputValidation(
@@ -70,7 +74,7 @@ export const SourcegraphURLInput: React.FC<SourcegraphURLInputProps> = ({
 
     return (
         <div className={classNames('position-relative', className)}>
-            <label htmlFor="sourcegraph-url">{label}</label>
+            <label htmlFor={id}>{label}</label>
             <div>
                 <LoaderInput
                     loading={urlState.kind === 'LOADING' && !!urlState.value}
@@ -79,14 +83,9 @@ export const SourcegraphURLInput: React.FC<SourcegraphURLInputProps> = ({
                     })}
                 >
                     <input
-                        className={classNames(
-                            'form-control',
-                            'mb-2',
-                            urlState.value ? deriveInputClassName(urlState) : '',
-                            'test-sourcegraph-url'
-                        )}
-                        id="sourcegraph-url"
+                        id={id}
                         type="url"
+                        data-testid={dataTestId}
                         pattern="^https://.*"
                         placeholder="https://sourcegraph.example.com"
                         value={urlState.value}
@@ -94,6 +93,11 @@ export const SourcegraphURLInput: React.FC<SourcegraphURLInputProps> = ({
                         ref={urlInputElements}
                         spellCheck={false}
                         disabled={!editable}
+                        className={classNames(
+                            'form-control',
+                            'mb-2',
+                            urlState.value ? deriveInputClassName(urlState) : ''
+                        )}
                     />
                 </LoaderInput>
                 {!editable && <InfoText>{description}</InfoText>}
@@ -113,7 +117,7 @@ export const SourcegraphURLInput: React.FC<SourcegraphURLInputProps> = ({
                         {urlState.kind === 'VALID' && (
                             <>
                                 {editable ? (
-                                    <small className="valid-feedback test-valid-sourcegraph-url-feedback">
+                                    <small className="valid-feedback" data-testid="test-valid-sourcegraph-url-feedback">
                                         Looks good!
                                     </small>
                                 ) : (
