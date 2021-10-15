@@ -31,53 +31,43 @@ func TestReposIndex(t *testing.T) {
 	indexableRepos := allRepos[:2]
 
 	cases := []struct {
-		name string
-		srv  *reposListServer
-		body string
-		want []string
+		name      string
+		indexable []types.RepoName
+		body      string
+		want      []string
 	}{{
-		name: "indexers",
-		srv: &reposListServer{
-			ListIndexable:   fakeListIndexable(allRepos),
-			StreamRepoNames: fakeStreamRepoNames(allRepos),
-			Indexers:        suffixIndexers(true),
-		},
-		body: `{"Hostname": "foo"}`,
-		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+		name:      "indexers",
+		indexable: allRepos,
+		body:      `{"Hostname": "foo"}`,
+		want:      []string{"github.com/popular/foo", "github.com/alice/foo"},
 	}, {
-		name: "indexers",
-		srv: &reposListServer{
-			ListIndexable:   fakeListIndexable(allRepos),
-			StreamRepoNames: fakeStreamRepoNames(allRepos),
-			Indexers:        suffixIndexers(true),
-		},
-		body: `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
-		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
+		name:      "indexers",
+		indexable: allRepos,
+		body:      `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
+		want:      []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
 	}, {
-		name: "dot-com indexers",
-		srv: &reposListServer{
-			ListIndexable:   fakeListIndexable(indexableRepos),
-			StreamRepoNames: fakeStreamRepoNames(allRepos),
-			Indexers:        suffixIndexers(true),
-		},
-		body: `{"Hostname": "foo"}`,
-		want: []string{"github.com/popular/foo"},
+		name:      "dot-com indexers",
+		indexable: indexableRepos,
+		body:      `{"Hostname": "foo"}`,
+		want:      []string{"github.com/popular/foo"},
 	}, {
-		name: "none",
-		srv: &reposListServer{
-			ListIndexable:   fakeListIndexable(allRepos),
-			StreamRepoNames: fakeStreamRepoNames(allRepos),
-			Indexers:        suffixIndexers(true),
-		},
-		want: []string{},
-		body: `{"Hostname": "baz"}`,
+		name:      "none",
+		indexable: allRepos,
+		body:      `{"Hostname": "baz"}`,
+		want:      []string{},
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			srv := &reposListServer{
+				ListIndexable:   fakeListIndexable(tc.indexable),
+				StreamRepoNames: fakeStreamRepoNames(allRepos),
+				Indexers:        suffixIndexers(true),
+			}
+
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
 			w := httptest.NewRecorder()
-			if err := tc.srv.serveIndex(w, req); err != nil {
+			if err := srv.serveIndex(w, req); err != nil {
 				t.Fatal(err)
 			}
 
