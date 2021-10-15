@@ -57,7 +57,7 @@ exports[`GlobalNavbar default 1`] = `
         class="list menuClose"
       >
         <li
-          class="item hideSmDown"
+          class="item d-none d-md-flex"
         >
           <div
             class="btn-group"
@@ -65,7 +65,7 @@ exports[`GlobalNavbar default 1`] = `
             <a
               aria-expanded="false"
               aria-haspopup="true"
-              class="link dropdownToggle nav-link"
+              class="link d-flex align-items-center p-0 nav-link"
               href="#"
             >
               <span
@@ -149,7 +149,7 @@ exports[`GlobalNavbar default 1`] = `
           </div>
         </li>
         <li
-          class="item hideSmUp"
+          class="item d-flex d-md-none"
         >
           <a
             class="link"
@@ -178,7 +178,7 @@ exports[`GlobalNavbar default 1`] = `
           </a>
         </li>
         <li
-          class="item hideSmUp"
+          class="item d-flex d-md-none"
         >
           <a
             class="link"
@@ -364,7 +364,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="list menuClose"
       >
         <li
-          class="item hideSmDown"
+          class="item d-none d-md-flex"
         >
           <div
             class="btn-group"
@@ -372,7 +372,7 @@ exports[`GlobalNavbar low-profile 1`] = `
             <a
               aria-expanded="false"
               aria-haspopup="true"
-              class="link dropdownToggle nav-link"
+              class="link d-flex align-items-center p-0 nav-link"
               href="#"
             >
               <span
@@ -456,7 +456,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           </div>
         </li>
         <li
-          class="item hideSmUp"
+          class="item d-flex d-md-none"
         >
           <a
             class="link"
@@ -485,7 +485,7 @@ exports[`GlobalNavbar low-profile 1`] = `
           </a>
         </li>
         <li
-          class="item hideSmUp"
+          class="item d-flex d-md-none"
         >
           <a
             class="link"
