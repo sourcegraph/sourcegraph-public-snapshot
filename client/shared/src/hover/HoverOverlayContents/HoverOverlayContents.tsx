@@ -14,10 +14,11 @@ interface HoverOverlayContentsProps extends Pick<HoverOverlayBaseProps, 'hoverOr
     iconClassName?: string
     badgeClassName?: string
     errorAlertClassName?: string
+    contentClassName?: string
 }
 
 export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsProps> = props => {
-    const { hoverOrError, iconClassName, errorAlertClassName, badgeClassName } = props
+    const { hoverOrError, iconClassName, errorAlertClassName, badgeClassName, contentClassName } = props
 
     if (hoverOrError === 'loading') {
         return (
@@ -56,6 +57,7 @@ export const HoverOverlayContents: React.FunctionComponent<HoverOverlayContentsP
                     aggregatedBadges={hoverOrError.aggregatedBadges}
                     errorAlertClassName={errorAlertClassName}
                     badgeClassName={badgeClassName}
+                    contentClassName={contentClassName}
                 />
             ))}
         </>

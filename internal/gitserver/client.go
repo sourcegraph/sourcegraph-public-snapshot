@@ -285,6 +285,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 // receives in response.
 func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search")
+	span.SetTag("repo", string(args.Repo))
 	span.SetTag("query", args.Query.String())
 	span.SetTag("diff", args.IncludeDiff)
 	span.SetTag("limit", args.Limit)

@@ -148,7 +148,7 @@ async function main(): Promise<void> {
     )
 
     if (browser.omnibox) {
-        initializeOmniboxInterface(requestGraphQL)
+        initializeOmniboxInterface()
 
         // Configure the omnibox when the sourcegraphURL changes.
         subscriptions.add(

@@ -255,6 +255,11 @@ func (s *DBDashboardStore) RemoveViewsFromDashboard(ctx context.Context, dashboa
 	return nil
 }
 
+func (s *DBDashboardStore) IsViewOnDashboard(ctx context.Context, dashboardId int, viewId string) (bool, error) {
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getViewFromDashboardByViewId, dashboardId, viewId)))
+	return count != 0, err
+}
+
 func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId int) ([]*DashboardGrant, error) {
 	return scanDashboardGrants(s.Query(ctx, sqlf.Sprintf(getDashboardGrantsSql, dashboardId)))
 }
@@ -282,17 +287,6 @@ func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId i
 	return nil
 }
 
-const getDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
-SELECT * FROM dashboard_grants where dashboard_id = %s
-`
-
-const addDashboardGrantsSql = `
--- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
-INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
-VALUES %s;
-`
-
 const insertDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:CreateDashboard
 INSERT INTO dashboard (title, save) VALUES (%s, %s) RETURNING id;
@@ -304,7 +298,9 @@ INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id) (
     SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
     FROM insight_view
     WHERE unique_id = ANY(%s)
-);`
+)
+ON CONFLICT DO NOTHING;
+`
 
 const updateDashboardSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:UpdateDashboard
@@ -322,6 +318,25 @@ DELETE
 FROM dashboard_insight_view
 WHERE dashboard_id = %s
   AND insight_view_id IN (SELECT id FROM insight_view WHERE unique_id = ANY(%s));
+`
+
+const getViewFromDashboardByViewId = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetViewFromDashboardByViewId
+SELECT COUNT(*)
+FROM dashboard_insight_view div
+	INNER JOIN insight_view iv ON div.insight_view_id = iv.id
+WHERE div.dashboard_id = %s AND iv.unique_id = %s
+`
+
+const getDashboardGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
+SELECT * FROM dashboard_grants where dashboard_id = %s
+`
+
+const addDashboardGrantsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
+INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
+VALUES %s;
 `
 
 type DashboardStore interface {

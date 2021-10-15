@@ -3,6 +3,7 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const logger = require('gulplog')
 const MiniCssExtractPlugin = require('mini-css-extract-plugin')
@@ -157,6 +158,31 @@ const config = {
     shouldAnalyze && new BundleAnalyzerPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),
     isHotReloadEnabled && new ReactRefreshWebpackPlugin({ overlay: false }),
+    isProduction &&
+      new CompressionPlugin({
+        filename: '[path][base].gz',
+        algorithm: 'gzip',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Gzip */
+          level: 9,
+        },
+      }),
+    isProduction &&
+      new CompressionPlugin({
+        filename: '[path][base].br',
+        algorithm: 'brotliCompress',
+        test: /\.(js|css|svg)$/,
+        compressionOptions: {
+          /** Maximum compression level for Brotli */
+          level: 11,
+        },
+        /**
+         * We get little/no benefits from compressing files that are already under this size.
+         * We can fall back to dynamic gzip for these.
+         */
+        threshold: 10240,
+      }),
   ].filter(Boolean),
   resolve: {
     extensions: ['.mjs', '.ts', '.tsx', '.js', '.json'],
