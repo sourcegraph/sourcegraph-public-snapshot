@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
