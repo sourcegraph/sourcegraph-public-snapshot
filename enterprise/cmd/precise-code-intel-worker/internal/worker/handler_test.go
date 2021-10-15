@@ -55,7 +55,7 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
-	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, nil)
+	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, true, nil)
 
 	handler := &handler{
 		dbStore:         mockDBStore,

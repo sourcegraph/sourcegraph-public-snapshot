@@ -1605,8 +1605,8 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitDateFunc: &GitserverClientCommitDateFunc{
-			defaultHook: func(context.Context, int, string) (time.Time, error) {
-				return time.Time{}, nil
+			defaultHook: func(context.Context, int, string) (time.Time, bool, error) {
+				return time.Time{}, false, nil
 			},
 		},
 		DefaultBranchContainsFunc: &GitserverClientDefaultBranchContainsFunc{
@@ -1650,24 +1650,24 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 // GitserverClientCommitDateFunc describes the behavior when the CommitDate
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitDateFunc struct {
-	defaultHook func(context.Context, int, string) (time.Time, error)
-	hooks       []func(context.Context, int, string) (time.Time, error)
+	defaultHook func(context.Context, int, string) (time.Time, bool, error)
+	hooks       []func(context.Context, int, string) (time.Time, bool, error)
 	history     []GitserverClientCommitDateFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitDate delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 int, v2 string) (time.Time, error) {
-	r0, r1 := m.CommitDateFunc.nextHook()(v0, v1, v2)
-	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 int, v2 string) (time.Time, bool, error) {
+	r0, r1, r2 := m.CommitDateFunc.nextHook()(v0, v1, v2)
+	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the CommitDate method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context, int, string) (time.Time, error)) {
+func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context, int, string) (time.Time, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1675,7 +1675,7 @@ func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context
 // CommitDate method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int, string) (time.Time, error)) {
+func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int, string) (time.Time, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1683,21 +1683,21 @@ func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (time.Time, error) {
-		return r0, r1
+func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 time.Time, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (time.Time, bool, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientCommitDateFunc) PushReturn(r0 time.Time, r1 error) {
-	f.PushHook(func(context.Context, int, string) (time.Time, error) {
-		return r0, r1
+func (f *GitserverClientCommitDateFunc) PushReturn(r0 time.Time, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, int, string) (time.Time, bool, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *GitserverClientCommitDateFunc) nextHook() func(context.Context, int, string) (time.Time, error) {
+func (f *GitserverClientCommitDateFunc) nextHook() func(context.Context, int, string) (time.Time, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1744,7 +1744,10 @@ type GitserverClientCommitDateFuncCall struct {
 	Result0 time.Time
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1756,7 +1759,7 @@ func (c GitserverClientCommitDateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientCommitDateFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // GitserverClientDefaultBranchContainsFunc describes the behavior when the

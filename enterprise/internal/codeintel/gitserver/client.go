@@ -74,8 +74,9 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 	return revision, true, nil
 }
 
-// CommitDate returns the time that the given commit was committed.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, err error) {
+// CommitDate returns the time that the given commit was committed. If the given revision does not exist,
+// a false-valued flag is returned along with a nil error and zero-valued time.
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
@@ -84,10 +85,24 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 
 	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
 	if err != nil {
-		return time.Time{}, err
+		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			err = nil
+		}
+
+		return time.Time{}, false, err
 	}
 
-	return time.Parse(time.RFC3339, strings.TrimSpace(out))
+	rawDate := strings.TrimSpace(out)
+	if rawDate == "" {
+		return time.Time{}, false, nil
+	}
+
+	commitDate, err := time.Parse(time.RFC3339, rawDate)
+	if err != nil {
+		return time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, rawDate)
+	}
+
+	return commitDate, true, nil
 }
 
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
