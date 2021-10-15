@@ -39,7 +39,7 @@ export const CodeIntelAssociatedIndex: FunctionComponent<CodeIntelAssociatedInde
                     </span>
                     <span>
                         <Link
-                            to={`/${node.projectRoot.repository.name}/-/settings/code-intelligence/indexes/${node.associatedIndex.id}`}
+                            to={`/${node.projectRoot.repository.name}/-/code-intelligence/indexes/${node.associatedIndex.id}`}
                         >
                             <ChevronRightIcon />
                         </Link>
