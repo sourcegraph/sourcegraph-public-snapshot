@@ -176,12 +176,17 @@ export function createExtensionAPIFactory(
         registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
             addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
+            // TODO: it would probably br good to error if anything else has this ID.
+            // for (let panel in state.panelViews) {
+            // }
+
             const panelViewData = new BehaviorSubject<PanelViewData>({
                 id,
                 title: '',
                 content: '',
                 component: null,
                 priority: 0,
+                selector: [],
             })
 
             const panelView: sourcegraph.PanelView = {
@@ -208,6 +213,12 @@ export function createExtensionAPIFactory(
                 },
                 set priority(priority: number) {
                     panelViewData.next({ ...panelViewData.value, priority })
+                },
+                get selector() {
+                    return panelViewData.value.selector
+                },
+                set selector(selector: string[]) {
+                    panelViewData.next({ ...panelViewData.value, selector })
                 },
                 unsubscribe: () => {
                     subscription.unsubscribe()

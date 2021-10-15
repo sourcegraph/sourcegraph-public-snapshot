@@ -4,7 +4,7 @@ import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { BehaviorSubject, from, Observable } from 'rxjs'
-import { map, switchMap } from 'rxjs/operators'
+import { map, switchMap, filter } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -151,6 +151,21 @@ export const Panel = React.memo<Props>(props => {
                             map(panelViews => ({ panelViews, extensionHostAPI }))
                         )
                     ),
+                    map(({ panelViews, extensionHostAPI }) => {
+                        console.log(panelViews)
+                        console.log(extensionHostAPI)
+                        return {
+                            panelViews: panelViews.filter(value => {
+                                console.log(value)
+                                if (value.selector.length == 0) {
+                                    return true
+                                }
+
+                                return value.selector.some((value, _index, _selector) => { return value == "*.go" })
+                            }),
+                            extensionHostAPI,
+                        }
+                    }),
                     map(({ panelViews, extensionHostAPI }) =>
                         panelViews.map((panelView: PanelViewWithComponent) => {
                             const locationProviderID = panelView.component?.locationProvider

@@ -765,6 +765,11 @@ declare module 'sourcegraph' {
          * @internal
          */
         component: { locationProvider: string } | null
+
+        /**
+         * @internal
+         */
+        selector: string[]
     }
 
     export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>
