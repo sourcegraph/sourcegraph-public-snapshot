@@ -50,7 +50,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (ids?: string[]) => Observable<Insight[]>
+    getInsights(ids?: string[]): Observable<Insight[]>
 
     /**
      * Returns all reachable subject's insights from subject with subjectId.
@@ -74,12 +74,12 @@ export interface CodeInsightsBackend {
      * Returns all available for users subjects (sharing levels, historically it was introduced
      * from the setting cascade subject levels - global, org levels, personal)
      */
-    getInsightSubjects: () => Observable<SupportedInsightSubject[]>
+    getInsightSubjects(): Observable<SupportedInsightSubject[]>
 
     /**
      * Returns backend insight (via gql API handler)
      */
-    getBackendInsightData: (insight: SearchBackendBasedInsight) => Observable<BackendInsightData>
+    getBackendInsightData(insight: SearchBackendBasedInsight): Observable<BackendInsightData>
 
     /**
      * Returns extension like built-in insight that is fetched via frontend
@@ -99,16 +99,16 @@ export interface CodeInsightsBackend {
     /**
      * Returns content for the code stats insight live preview chart.
      */
-    getLangStatsInsightContent: <D extends keyof ViewContexts>(
+    getLangStatsInsightContent<D extends keyof ViewContexts>(
         input: GetLangStatsInsightContentInput<D>
-    ) => Promise<PieChartContent<any>>
+    ): Promise<PieChartContent<any>>
 
     /**
      * Returns a list of suggestions for the repositories field in the insight creation UI.
      *
      * @param query - A string with a possible value for the repository name
      */
-    getRepositorySuggestions: (query: string) => Promise<RepositorySuggestionData[]>
+    getRepositorySuggestions(query: string): Promise<RepositorySuggestionData[]>
 
     /**
      * Returns a list of resolved repositories from the search page query via search API.
@@ -117,5 +117,5 @@ export interface CodeInsightsBackend {
      *
      * @param query - search page query value
      */
-    getResolvedSearchRepositories: (query: string) => Promise<string[]>
+    getResolvedSearchRepositories(query: string): Promise<string[]>
 }
