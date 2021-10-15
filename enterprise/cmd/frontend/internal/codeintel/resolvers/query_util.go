@@ -225,15 +225,6 @@ func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCo
 	return filtered, nil
 }
 
-func intsToString(ints []int) string {
-	segments := make([]string, 0, len(ints))
-	for _, id := range ints {
-		segments = append(segments, strconv.Itoa(id))
-	}
-
-	return strings.Join(segments, ", ")
-}
-
 func uploadIDsToString(vs []dbstore.Dump) string {
 	ids := make([]string, 0, len(vs))
 	for _, v := range vs {
