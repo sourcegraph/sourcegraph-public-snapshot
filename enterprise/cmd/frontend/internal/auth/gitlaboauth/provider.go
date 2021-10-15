@@ -87,7 +87,7 @@ func requestedScopes(defaultAPIScope string, extraScopes []string) []string {
 		scopes = append(scopes, "read_api")
 	} else {
 		// For customer instances we default to api scope so that they can clone private
-		// repos but in some cases they can override this in config.
+		// repos but in they can optionally override this in config.
 		scopes = append(scopes, defaultAPIScope)
 	}
 	// Append extra scopes and ensure there are no duplicates
