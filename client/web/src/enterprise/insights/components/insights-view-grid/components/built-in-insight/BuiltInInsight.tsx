@@ -3,12 +3,9 @@ import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useContext, useMemo, useState } from 'react'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { Settings } from '../../../../../../schema/settings.schema'
 import {
     ViewCard,
     ViewLoadingContent,
@@ -16,17 +13,16 @@ import {
     ViewContent,
     LineChartSettingsContext,
 } from '../../../../../../views'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context';
 import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
+import { useDistinctValue } from '../../../../hooks/use-distinct-value';
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
 interface BuiltInInsightProps<D extends keyof ViewContexts>
     extends TelemetryProps,
-        PlatformContextProps<'updateSettings'>,
-        SettingsCascadeProps<Settings>,
         React.HTMLAttributes<HTMLElement> {
     insight: SearchExtensionBasedInsight | LangStatsInsight
     where: D
@@ -42,21 +38,21 @@ interface BuiltInInsightProps<D extends keyof ViewContexts>
  * main work thread instead of using Extension API.
  */
 export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsightProps<D>): React.ReactElement {
-    const { insight, telemetryService, settingsCascade, platformContext, where, context, ...otherProps } = props
-    const { getBuiltInInsight } = useContext(InsightsApiContext)
+    const { insight, telemetryService, where, context, ...otherProps } = props
+    const { getBuiltInInsightData } = useContext(CodeInsightsBackendContext)
+
+    const cachedInsight = useDistinctValue(insight)
 
     const { data, loading } = useParallelRequests(
-        useMemo(() => () => getBuiltInInsight(insight, { where, context }), [
-            getBuiltInInsight,
-            insight,
-            where,
-            context,
-        ])
+        useMemo(
+            () => () => getBuiltInInsightData({ insight: cachedInsight, options: { where, context }}),
+            [getBuiltInInsightData, cachedInsight, where, context]
+        )
     )
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
-    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight({ settingsCascade, platformContext })
+    const { delete: handleDelete, loading: isDeleting } = useDeleteInsight()
 
     return (
         <ViewCard

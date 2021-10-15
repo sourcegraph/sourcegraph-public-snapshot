@@ -4,15 +4,12 @@ import { useRouteMatch } from 'react-router'
 import { Redirect } from 'react-router-dom'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, PageHeader } from '@sourcegraph/wildcard'
 
 import { Badge } from '../../../../../components/Badge'
 import { Page } from '../../../../../components/Page'
 import { FeedbackPromptContent } from '../../../../../nav/Feedback/FeedbackPrompt'
-import { Settings } from '../../../../../schema/settings.schema'
 import { CodeInsightsIcon } from '../../../components'
 import { flipRightPosition } from '../../../components/context-menu/utils'
 import { Popover } from '../../../components/popover/Popover'
@@ -21,10 +18,7 @@ import { InsightsDashboardType } from '../../../core/types'
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 import styles from './DashboardPage.module.scss'
 
-export interface DashboardsPageProps
-    extends PlatformContextProps<'updateSettings'>,
-        TelemetryProps,
-        SettingsCascadeProps<Settings> {
+export interface DashboardsPageProps extends TelemetryProps{
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -38,7 +32,7 @@ export interface DashboardsPageProps
  * Displays insights dashboard page - dashboard selector and grid of dashboard insights.
  */
 export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = props => {
-    const { dashboardID, settingsCascade, telemetryService, platformContext } = props
+    const { dashboardID, telemetryService } = props
     const { url } = useRouteMatch()
 
     useEffect(() => {
@@ -79,9 +73,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                 />
 
                 <DashboardsContent
-                    platformContext={platformContext}
                     telemetryService={telemetryService}
-                    settingsCascade={settingsCascade}
                     dashboardID={dashboardID}
                 />
             </Page>
