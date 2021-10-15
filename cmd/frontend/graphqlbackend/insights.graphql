@@ -360,3 +360,55 @@ input RemoveInsightViewFromDashboardInput {
     """
     dashboardId: ID!
 }
+
+"""
+Metadata about a specific data series for an insight.
+"""
+type InsightSeriesMetadata {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
+    Sourcegraph query string used to generate the series.
+    """
+    query: String!
+
+    """
+    Current status of the series.
+    """
+    enabled: Boolean!
+}
+
+extend type Mutation {
+    """
+    Update an insight series. Restricted to admins only.
+    """
+    updateInsightSeries(input: UpdateInsightSeriesInput!): InsightSeriesMetadataPayload
+}
+
+"""
+Wrapper payload object for insight series metadata.
+"""
+type InsightSeriesMetadataPayload {
+    """
+    The series metadata.
+    """
+    series: InsightSeriesMetadata!
+}
+
+"""
+Input object for update insight series mutation.
+"""
+input UpdateInsightSeriesInput {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
+    The desired activity state (enabled or disabled) for the series.
+    """
+    enabled: Boolean
+}
