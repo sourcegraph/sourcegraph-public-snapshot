@@ -67,7 +67,8 @@ func TestCorrelate(t *testing.T) {
 						End:   protocol.Pos{Line: 6, Character: 7},
 					},
 				},
-				ReferenceResultID: 15,
+				ReferenceResultID:      15,
+				ImplementationResultID: 100,
 			},
 			8: {
 				Range: reader.Range{
@@ -103,6 +104,9 @@ func TestCorrelate(t *testing.T) {
 		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
 			14: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{2: datastructures.IDSetWith(4, 5)}),
 			15: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{}),
+		},
+		ImplementationData: map[int]*datastructures.DefaultIDSetMap{
+			100: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{2: datastructures.IDSetWith(5)}),
 		},
 		HoverData: map[int]string{
 			16: "```go\ntext A\n```",
@@ -218,6 +222,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
+		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},
@@ -267,6 +272,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		ResultSetData:          map[int]ResultSet{},
 		DefinitionData:         map[int]*datastructures.DefaultIDSetMap{},
 		ReferenceData:          map[int]*datastructures.DefaultIDSetMap{},
+		ImplementationData:     map[int]*datastructures.DefaultIDSetMap{},
 		HoverData:              map[int]string{},
 		MonikerData:            map[int]Moniker{},
 		PackageInformationData: map[int]PackageInformation{},
