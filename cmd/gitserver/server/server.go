@@ -947,7 +947,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &domain.RepoNotExistError{
 				Repo: args.Repo,
 			}))
 			return
@@ -955,7 +955,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &domain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
@@ -966,14 +966,14 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &domain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
 			}))
 			return
 		}
 
-		eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+		eventWriter.Event("done", protocol.NewSearchEventDone(false, &domain.RepoNotExistError{
 			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,

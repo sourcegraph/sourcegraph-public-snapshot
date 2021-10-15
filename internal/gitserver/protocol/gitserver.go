@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type SearchRequest struct {
@@ -43,7 +42,7 @@ type SearchEventDone struct {
 
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
-		var e vcs.RepoNotExistError
+		var e domain.RepoNotExistError
 		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
 			return &e
 		}
@@ -56,7 +55,7 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	event := SearchEventDone{
 		LimitHit: limitHit,
 	}
-	var notExistError *vcs.RepoNotExistError
+	var notExistError *domain.RepoNotExistError
 	if errors.As(err, &notExistError) {
 		b, _ := json.Marshal(notExistError)
 		event.Error = string(b)
