@@ -76,6 +76,10 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 }
 
 func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	if r.workspace.Skipped {
+		return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
+	}
+
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
@@ -135,6 +139,9 @@ func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceS
 }
 
 func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
+	if r.workspace.Skipped {
+		return nil
+	}
 	if r.execution == nil {
 		return nil
 	}
@@ -145,6 +152,9 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
+	if r.workspace.Skipped {
+		return nil
+	}
 	if r.execution == nil {
 		return nil
 	}
@@ -155,6 +165,9 @@ func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
+	if r.workspace.Skipped {
+		return nil
+	}
 	if r.execution == nil {
 		return nil
 	}
@@ -162,6 +175,9 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 }
 
 func (r *batchSpecWorkspaceResolver) State() string {
+	if r.workspace.Skipped {
+		return "SKIPPED"
+	}
 	if r.execution == nil {
 		return "PENDING"
 	}
@@ -169,6 +185,10 @@ func (r *batchSpecWorkspaceResolver) State() string {
 }
 
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.ChangesetSpecResolver, error) {
+	if r.workspace.Skipped {
+		return nil, nil
+	}
+
 	if len(r.workspace.ChangesetSpecIDs) == 0 {
 		none := []graphqlbackend.ChangesetSpecResolver{}
 		return &none, nil

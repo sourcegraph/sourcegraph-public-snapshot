@@ -2578,6 +2578,11 @@ The states a workspace can be in.
 """
 enum BatchSpecWorkspaceState {
     """
+    The workspace will not be enqueued for execution, because either the
+    workspace is unsupported/ignored or has 0 steps to execute.
+    """
+    SKIPPED
+    """
     The workspace is not yet enqueued for execution.
     """
     PENDING
