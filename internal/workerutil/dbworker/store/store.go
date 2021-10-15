@@ -820,6 +820,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 			int(s.options.StalledMaxAge/time.Second),
 			s.options.MaxNumResets,
 			quote(s.options.TableName),
+			"failed to process",
 		),
 	))
 	if err != nil {
@@ -885,7 +886,7 @@ UPDATE %s
 SET
 	{state} = 'failed',
 	{finished_at} = clock_timestamp(),
-	{failure_message} = 'failed to process'
+	{failure_message} = %s
 WHERE {id} IN (SELECT {id} FROM stalled)
 RETURNING {id}, {last_heartbeat_at}
 `
