@@ -25,7 +25,7 @@ type InsightsResolver interface {
 	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 
-	// Admin Management Mutations
+	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
 }
