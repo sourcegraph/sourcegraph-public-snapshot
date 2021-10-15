@@ -3,7 +3,6 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { InsightDashboard as InsightDashboardConfiguration } from '../../../../schema/settings.schema'
 import { Insight, InsightDashboard } from '../types'
 import { SearchBackendBasedInsight } from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
@@ -18,11 +17,9 @@ import {
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
     InsightCreateInput,
-    InsightCreateWithFiltersInput,
     InsightUpdateInput,
     ReachableInsight,
     RepositorySuggestionData,
-    SubjectSettingsData,
 } from './code-insights-backend-types'
 
 /**
@@ -39,7 +36,7 @@ export interface CodeInsightsBackend {
 
     getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
 
-    findDashboardByName: (name: string) => Observable<InsightDashboardConfiguration | null>
+    findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 
     createDashboard: (input: DashboardCreateInput) => Observable<void>
 
@@ -71,8 +68,6 @@ export interface CodeInsightsBackend {
 
     updateInsight: (event: InsightUpdateInput) => Observable<void[]>
 
-    createInsightWithNewFilters: (options: InsightCreateWithFiltersInput) => Observable<void>
-
     deleteInsight: (insightId: string) => Observable<void[]>
 
     /**
@@ -93,8 +88,6 @@ export interface CodeInsightsBackend {
     getBuiltInInsightData: <D extends keyof ViewContexts>(
         input: GetBuiltInsightInput<D>
     ) => Observable<ViewProviderResult>
-
-    getSubjectSettingsById: (id: string) => Observable<SubjectSettingsData>
 
     /**
      * Returns content for the search based insight live preview chart.
