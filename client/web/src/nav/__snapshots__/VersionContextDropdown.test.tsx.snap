@@ -37,7 +37,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
   versionContext="3.15"
 >
   <div
-    className="version-context-dropdown text-nowrap"
+    className="text-nowrap versionContextDropdown"
   >
     <ListboxInput
       onChange={[Function]}
@@ -79,7 +79,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
               "disabled": false,
               "element": <li
                 aria-selected="true"
-                class="version-context-dropdown__option"
+                class="option"
                 data-current=""
                 data-label="3.15"
                 data-reach-listbox-option=""
@@ -107,12 +107,12 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                   </button>
                 </div>
                 <span
-                  class="version-context-dropdown__option-name"
+                  class="optionName"
                 >
                   3.15
                 </span>
                 <span
-                  class="version-context-dropdown__option-description"
+                  class="optionDescription"
                 >
                   3.15
                 </span>
@@ -124,7 +124,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
             Object {
               "disabled": false,
               "element": <li
-                class="version-context-dropdown__option"
+                class="option"
                 data-label="3.0"
                 data-reach-listbox-option=""
                 data-value="3.0"
@@ -133,12 +133,12 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
               >
                 <div />
                 <span
-                  class="version-context-dropdown__option-name"
+                  class="optionName"
                 >
                   3.0
                 </span>
                 <span
-                  class="version-context-dropdown__option-description"
+                  class="optionDescription"
                 >
                   3.0
                 </span>
@@ -158,12 +158,12 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
           id="listbox-input--6"
         >
           <ListboxButton
-            className="version-context-dropdown__button btn btn-secondary"
+            className="btn btn-secondary button"
           >
             <span
               aria-haspopup="listbox"
               aria-labelledby="button--listbox-input--6"
-              className="version-context-dropdown__button btn btn-secondary"
+              className="btn btn-secondary button"
               data-reach-listbox-button=""
               id="button--listbox-input--6"
               onKeyDown={[Function]}
@@ -176,7 +176,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                 className="icon-inline small"
               />
               <span
-                className="version-context-dropdown__button-text ml-2 mr-1"
+                className="ml-2 mr-1 buttonText"
               >
                 3.15
                  (Active)
@@ -187,11 +187,11 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
             </span>
           </ListboxButton>
           <ListboxPopover
-            className="version-context-dropdown__popover dropdown-menu show"
+            className="dropdown-menu popover show"
             portal={false}
           >
             <div
-              className="version-context-dropdown__popover dropdown-menu show"
+              className="dropdown-menu popover show"
               data-reach-listbox-popover=""
               hidden={true}
               onBlur={[Function]}
@@ -199,7 +199,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
               tabIndex={-1}
             >
               <div
-                className="version-context-dropdown__info card"
+                className="card info"
               >
                 <span
                   className="font-weight-bold"
@@ -218,7 +218,7 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                   ) allow you to search a set of repositories based on a commit hash, tag, or other interesting moment in time of multiple code bases. Your administrator can configure version contexts in the site configuration.
                 </p>
                 <button
-                  className="btn btn-outline-primary version-context-dropdown__info-dismiss"
+                  className="btn btn-outline-primary infoDismiss"
                   onClick={[Function]}
                   type="button"
                 >
@@ -226,23 +226,23 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                 </button>
               </div>
               <ListboxList
-                className="version-context-dropdown__list"
+                className="list"
               >
                 <ul
                   aria-activedescendant="option-3.15--listbox-input--6"
-                  className="version-context-dropdown__list"
+                  className="list"
                   data-reach-listbox-list=""
                   id="listbox--listbox-input--6"
                   role="listbox"
                   tabIndex={-1}
                 >
                   <ListboxGroupLabel
-                    className="version-context-dropdown__option version-context-dropdown__title"
+                    className="option title"
                     disabled={true}
                     value="title"
                   >
                     <span
-                      className="version-context-dropdown__option version-context-dropdown__title"
+                      className="option title"
                       data-reach-listbox-group-label=""
                       disabled={true}
                       role="presentation"
@@ -256,12 +256,12 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                       >
                         <div />
                         <span
-                          className="version-context-dropdown__option-name"
+                          className="optionName"
                         >
                           Name
                         </span>
                         <span
-                          className="version-context-dropdown__option-description"
+                          className="optionDescription"
                         >
                           Description
                         </span>
@@ -269,14 +269,14 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                     </span>
                   </ListboxGroupLabel>
                   <ListboxOption
-                    className="version-context-dropdown__option"
+                    className="option"
                     key="3.15"
                     label="3.15"
                     value="3.15"
                   >
                     <li
                       aria-selected={true}
-                      className="version-context-dropdown__option"
+                      className="option"
                       data-current=""
                       data-label="3.15"
                       data-reach-listbox-option=""
@@ -309,12 +309,12 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                           </button>
                         </div>
                         <span
-                          className="version-context-dropdown__option-name"
+                          className="optionName"
                         >
                           3.15
                         </span>
                         <span
-                          className="version-context-dropdown__option-description"
+                          className="optionDescription"
                         >
                           3.15
                         </span>
@@ -322,13 +322,13 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                     </li>
                   </ListboxOption>
                   <ListboxOption
-                    className="version-context-dropdown__option"
+                    className="option"
                     key="3.0"
                     label="3.0"
                     value="3.0"
                   >
                     <li
-                      className="version-context-dropdown__option"
+                      className="option"
                       data-label="3.0"
                       data-reach-listbox-option=""
                       data-value="3.0"
@@ -349,12 +349,12 @@ exports[`VersionContextDropdown renders the expanded version context dropdown, w
                       >
                         <div />
                         <span
-                          className="version-context-dropdown__option-name"
+                          className="optionName"
                         >
                           3.0
                         </span>
                         <span
-                          className="version-context-dropdown__option-description"
+                          className="optionDescription"
                         >
                           3.0
                         </span>
@@ -406,7 +406,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
   setVersionContext={[Function]}
 >
   <div
-    className="version-context-dropdown text-nowrap"
+    className="text-nowrap versionContextDropdown"
   >
     <ListboxInput
       onChange={[Function]}
@@ -447,7 +447,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
               "disabled": false,
               "element": <li
                 aria-selected="true"
-                class="version-context-dropdown__option"
+                class="option"
                 data-current=""
                 data-label="3.0"
                 data-reach-listbox-option=""
@@ -457,12 +457,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
               >
                 <div />
                 <span
-                  class="version-context-dropdown__option-name"
+                  class="optionName"
                 >
                   3.0
                 </span>
                 <span
-                  class="version-context-dropdown__option-description"
+                  class="optionDescription"
                 >
                   3.0
                 </span>
@@ -474,7 +474,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
             Object {
               "disabled": false,
               "element": <li
-                class="version-context-dropdown__option"
+                class="option"
                 data-label="3.15"
                 data-reach-listbox-option=""
                 data-value="3.15"
@@ -483,12 +483,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
               >
                 <div />
                 <span
-                  class="version-context-dropdown__option-name"
+                  class="optionName"
                 >
                   3.15
                 </span>
                 <span
-                  class="version-context-dropdown__option-description"
+                  class="optionDescription"
                 >
                   3.15
                 </span>
@@ -508,12 +508,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
           id="listbox-input--1"
         >
           <ListboxButton
-            className="version-context-dropdown__button btn btn-secondary"
+            className="btn btn-secondary button"
           >
             <span
               aria-haspopup="listbox"
               aria-labelledby="button--listbox-input--1"
-              className="version-context-dropdown__button btn btn-secondary"
+              className="btn btn-secondary button"
               data-reach-listbox-button=""
               id="button--listbox-input--1"
               onKeyDown={[Function]}
@@ -526,7 +526,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                 className="icon-inline small"
               />
               <span
-                className="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
+                className="ml-2 mr-1 buttonText d-sm-none d-md-block"
               >
                 Select context
               </span>
@@ -536,10 +536,10 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
             </span>
           </ListboxButton>
           <ListboxPopover
-            className="version-context-dropdown__popover dropdown-menu"
+            className="dropdown-menu popover"
           >
             <Popover
-              className="version-context-dropdown__popover dropdown-menu"
+              className="dropdown-menu popover"
               data-reach-listbox-popover=""
               hidden={true}
               onBlur={[Function]}
@@ -551,7 +551,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                   "current": <span
                     aria-haspopup="listbox"
                     aria-labelledby="button--listbox-input--1"
-                    class="version-context-dropdown__button btn btn-secondary"
+                    class="btn btn-secondary button"
                     data-reach-listbox-button=""
                     id="button--listbox-input--1"
                     role="button"
@@ -569,7 +569,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                       />
                     </svg>
                     <span
-                      class="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
+                      class="ml-2 mr-1 buttonText d-sm-none d-md-block"
                     >
                       Select context
                     </span>
@@ -593,7 +593,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                   containerInfo={
                     <reach-portal>
                       <div
-                        class="version-context-dropdown__popover dropdown-menu"
+                        class="dropdown-menu popover"
                         data-reach-listbox-popover=""
                         data-reach-popover=""
                         hidden=""
@@ -601,7 +601,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                         tabindex="-1"
                       >
                         <div
-                          class="version-context-dropdown__info card"
+                          class="card info"
                         >
                           <span
                             class="font-weight-bold"
@@ -620,7 +620,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                             ) allow you to search a set of repositories based on a commit hash, tag, or other interesting moment in time of multiple code bases. Your administrator can configure version contexts in the site configuration.
                           </p>
                           <button
-                            class="btn btn-outline-primary version-context-dropdown__info-dismiss"
+                            class="btn btn-outline-primary infoDismiss"
                             type="button"
                           >
                             Do not show this again
@@ -628,14 +628,14 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                         </div>
                         <ul
                           aria-activedescendant="option-3.0--listbox-input--1"
-                          class="version-context-dropdown__list"
+                          class="list"
                           data-reach-listbox-list=""
                           id="listbox--listbox-input--1"
                           role="listbox"
                           tabindex="-1"
                         >
                           <span
-                            class="version-context-dropdown__option version-context-dropdown__title"
+                            class="option title"
                             data-reach-listbox-group-label=""
                             disabled=""
                             role="presentation"
@@ -643,19 +643,19 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                           >
                             <div />
                             <span
-                              class="version-context-dropdown__option-name"
+                              class="optionName"
                             >
                               Name
                             </span>
                             <span
-                              class="version-context-dropdown__option-description"
+                              class="optionDescription"
                             >
                               Description
                             </span>
                           </span>
                           <li
                             aria-selected="true"
-                            class="version-context-dropdown__option"
+                            class="option"
                             data-current=""
                             data-label="3.0"
                             data-reach-listbox-option=""
@@ -665,18 +665,18 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                           >
                             <div />
                             <span
-                              class="version-context-dropdown__option-name"
+                              class="optionName"
                             >
                               3.0
                             </span>
                             <span
-                              class="version-context-dropdown__option-description"
+                              class="optionDescription"
                             >
                               3.0
                             </span>
                           </li>
                           <li
-                            class="version-context-dropdown__option"
+                            class="option"
                             data-label="3.15"
                             data-reach-listbox-option=""
                             data-value="3.15"
@@ -685,12 +685,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                           >
                             <div />
                             <span
-                              class="version-context-dropdown__option-name"
+                              class="optionName"
                             >
                               3.15
                             </span>
                             <span
-                              class="version-context-dropdown__option-description"
+                              class="optionDescription"
                             >
                               3.15
                             </span>
@@ -701,7 +701,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                   }
                 >
                   <PopoverImpl
-                    className="version-context-dropdown__popover dropdown-menu"
+                    className="dropdown-menu popover"
                     data-reach-listbox-popover=""
                     hidden={true}
                     onBlur={[Function]}
@@ -713,7 +713,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                         "current": <span
                           aria-haspopup="listbox"
                           aria-labelledby="button--listbox-input--1"
-                          class="version-context-dropdown__button btn btn-secondary"
+                          class="btn btn-secondary button"
                           data-reach-listbox-button=""
                           id="button--listbox-input--1"
                           role="button"
@@ -731,7 +731,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                             />
                           </svg>
                           <span
-                            class="version-context-dropdown__button-text ml-2 mr-1 d-sm-none d-md-block"
+                            class="ml-2 mr-1 buttonText d-sm-none d-md-block"
                           >
                             Select context
                           </span>
@@ -751,7 +751,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                     }
                   >
                     <div
-                      className="version-context-dropdown__popover dropdown-menu"
+                      className="dropdown-menu popover"
                       data-reach-listbox-popover=""
                       data-reach-popover=""
                       hidden={true}
@@ -768,7 +768,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                       tabIndex={-1}
                     >
                       <div
-                        className="version-context-dropdown__info card"
+                        className="card info"
                       >
                         <span
                           className="font-weight-bold"
@@ -787,7 +787,7 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                           ) allow you to search a set of repositories based on a commit hash, tag, or other interesting moment in time of multiple code bases. Your administrator can configure version contexts in the site configuration.
                         </p>
                         <button
-                          className="btn btn-outline-primary version-context-dropdown__info-dismiss"
+                          className="btn btn-outline-primary infoDismiss"
                           onClick={[Function]}
                           type="button"
                         >
@@ -795,23 +795,23 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                         </button>
                       </div>
                       <ListboxList
-                        className="version-context-dropdown__list"
+                        className="list"
                       >
                         <ul
                           aria-activedescendant="option-3.0--listbox-input--1"
-                          className="version-context-dropdown__list"
+                          className="list"
                           data-reach-listbox-list=""
                           id="listbox--listbox-input--1"
                           role="listbox"
                           tabIndex={-1}
                         >
                           <ListboxGroupLabel
-                            className="version-context-dropdown__option version-context-dropdown__title"
+                            className="option title"
                             disabled={true}
                             value="title"
                           >
                             <span
-                              className="version-context-dropdown__option version-context-dropdown__title"
+                              className="option title"
                               data-reach-listbox-group-label=""
                               disabled={true}
                               role="presentation"
@@ -825,12 +825,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                               >
                                 <div />
                                 <span
-                                  className="version-context-dropdown__option-name"
+                                  className="optionName"
                                 >
                                   Name
                                 </span>
                                 <span
-                                  className="version-context-dropdown__option-description"
+                                  className="optionDescription"
                                 >
                                   Description
                                 </span>
@@ -838,14 +838,14 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                             </span>
                           </ListboxGroupLabel>
                           <ListboxOption
-                            className="version-context-dropdown__option"
+                            className="option"
                             key="3.0"
                             label="3.0"
                             value="3.0"
                           >
                             <li
                               aria-selected={true}
-                              className="version-context-dropdown__option"
+                              className="option"
                               data-current=""
                               data-label="3.0"
                               data-reach-listbox-option=""
@@ -867,12 +867,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                               >
                                 <div />
                                 <span
-                                  className="version-context-dropdown__option-name"
+                                  className="optionName"
                                 >
                                   3.0
                                 </span>
                                 <span
-                                  className="version-context-dropdown__option-description"
+                                  className="optionDescription"
                                 >
                                   3.0
                                 </span>
@@ -880,13 +880,13 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                             </li>
                           </ListboxOption>
                           <ListboxOption
-                            className="version-context-dropdown__option"
+                            className="option"
                             key="3.15"
                             label="3.15"
                             value="3.15"
                           >
                             <li
-                              className="version-context-dropdown__option"
+                              className="option"
                               data-label="3.15"
                               data-reach-listbox-option=""
                               data-value="3.15"
@@ -907,12 +907,12 @@ exports[`VersionContextDropdown renders the version context dropdown with no con
                               >
                                 <div />
                                 <span
-                                  className="version-context-dropdown__option-name"
+                                  className="optionName"
                                 >
                                   3.15
                                 </span>
                                 <span
-                                  className="version-context-dropdown__option-description"
+                                  className="optionDescription"
                                 >
                                   3.15
                                 </span>

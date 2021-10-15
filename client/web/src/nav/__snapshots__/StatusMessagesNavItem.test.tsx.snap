@@ -93,22 +93,22 @@ exports[`StatusMessagesNavItem no messages 1`] = `
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -121,23 +121,23 @@ exports[`StatusMessagesNavItem no messages 1`] = `
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
@@ -260,22 +260,22 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -288,23 +288,23 @@ exports[`StatusMessagesNavItem one CloningProgress message as non-site admin 1`]
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
@@ -427,22 +427,22 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -455,23 +455,23 @@ exports[`StatusMessagesNavItem one CloningProgress message as site admin 1`] = `
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
@@ -594,22 +594,22 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -622,23 +622,23 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as non-site 
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
@@ -761,22 +761,22 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -789,23 +789,23 @@ exports[`StatusMessagesNavItem one ExternalServiceSyncError message as site admi
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
@@ -928,22 +928,22 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -956,23 +956,23 @@ exports[`StatusMessagesNavItem one SyncError message as non-site admin 1`] = `
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
@@ -1095,22 +1095,22 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
             </Reference>
           </DropdownToggle>
           <DropdownMenu
-            className="status-messages-nav-item__dropdown-menu p-0"
+            className="p-0 dropdownMenu"
             flip={true}
             right={true}
             tag="div"
           >
             <div
               aria-hidden={true}
-              className="status-messages-nav-item__dropdown-menu p-0 dropdown-menu dropdown-menu-right"
+              className="p-0 dropdownMenu dropdown-menu dropdown-menu-right"
               role="menu"
               tabIndex="-1"
             >
               <div
-                className="status-messages-nav-item__dropdown-menu-content"
+                className="dropdownMenuContent"
               >
                 <small
-                  className="d-inline-block text-muted status-messages-nav-item__entry-sync"
+                  className="d-inline-block text-muted sync"
                 >
                   Code sync status
                 </small>
@@ -1123,23 +1123,23 @@ exports[`StatusMessagesNavItem one SyncError message as site admin 1`] = `
                   message="Repositories available for search"
                 >
                   <div
-                    className="status-messages-nav-item__entry"
+                    className="entry"
                     key="Repositories available for search"
                   >
                     <h4
                       className="d-flex align-items-center mb-0"
                     >
                       <Memo(CheckboxMarkedCircleIcon)
-                        className="text-success status-messages-nav-item__entry-icon"
+                        className="text-success icon"
                         size={14}
                       />
                       Your repositories
                     </h4>
                     <div
-                      className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active status-messages-nav-item__entry--border-success"
+                      className="status-messages-nav-item__entry-card cardActive entryBorderSuccess"
                     >
                       <p
-                        className="status-messages-nav-item__entry-message"
+                        className="message"
                       >
                         Repositories available for search
                       </p>
