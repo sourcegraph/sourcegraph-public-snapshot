@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
 import { RepositoryFields } from '../../../graphql-operations'
 import { RouteDescriptor } from '../../../util/contributions'
@@ -21,6 +22,7 @@ import { CodeIntelSidebar, CodeIntelSideBarGroups } from './CodeIntelSidebar'
 
 export interface CodeIntelAreaRouteContext extends ThemeProps, TelemetryProps {
     repo: { id: string }
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export interface CodeIntelAreaRoute extends RouteDescriptor<CodeIntelAreaRouteContext> {}
@@ -111,6 +113,7 @@ export interface RepositoryCodeIntelAreaPageProps
         TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
+    authenticatedUser: AuthenticatedUser | null
 }
 
 const sidebarRoutes: CodeIntelSideBarGroups = [
@@ -161,6 +164,7 @@ export const RepositoryCodeIntelArea: React.FunctionComponent<RepositoryCodeInte
                                 />
                             )
                     )}
+
                     <Route key="hardcoded-key" component={NotFoundPage} />
                 </Switch>
             </div>
