@@ -116,7 +116,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", err
 		}
 
-		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
@@ -168,7 +168,7 @@ func GetAndSaveUser(ctx context.Context, db dbutil.DB, op GetAndSaveUserOp) (use
 			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
 		}
 
-		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,

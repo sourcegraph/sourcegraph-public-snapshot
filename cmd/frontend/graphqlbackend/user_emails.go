@@ -174,7 +174,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *struct 
 
 	// Avoid unnecessary calls if the email is set to unverified.
 	if args.Verified {
-		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = database.Authz(r.db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: userID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,
