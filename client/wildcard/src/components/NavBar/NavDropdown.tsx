@@ -7,7 +7,6 @@ import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 
-import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
 
 import { NavItem, NavLink } from '.'
@@ -19,19 +18,18 @@ interface NavDropdownItem {
 }
 
 interface NavDropdownProps {
-    toggleItem: NavDropdownItem
+    // Items to display in the dropdown. The first item will be used as the dropdown toggle.
     items: NavDropdownItem[]
 }
 
-export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, items }) => {
+export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ items }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggle = (): void => setIsDropdownOpen(!isDropdownOpen)
 
-    const allItems = useMemo(() => [toggleItem].concat(items), [toggleItem, items])
-
+    const toggleItem = items[0]
     const location = useLocation()
-    const isItemSelected = useMemo(() => allItems.some(item => location.pathname.startsWith(item.path)), [
-        allItems,
+    const isItemSelected = useMemo(() => items.some(item => location.pathname.startsWith(item.path)), [
+        items,
         location.pathname,
     ])
 
@@ -40,13 +38,15 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
     return (
         <>
             {/* Dropdown nav item for bigger screens */}
-            <NavItem className={styles.hideSmDown}>
+            <NavItem className="d-none d-md-flex">
                 <ButtonDropdown isOpen={isDropdownOpen} toggle={toggle}>
                     <DropdownToggle
                         className={classNames(
                             navItemStyles.link,
                             isItemSelected && navItemStyles.active,
-                            styles.dropdownToggle
+                            'd-flex',
+                            'align-items-center',
+                            'p-0'
                         )}
                         nav={true}
                     >
@@ -63,7 +63,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                         </span>
                     </DropdownToggle>
                     <DropdownMenu>
-                        {allItems.map(item => (
+                        {items.map(item => (
                             <Link
                                 key={item.path}
                                 to={item.path}
@@ -77,12 +77,14 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                 </ButtonDropdown>
             </NavItem>
             {/* All nav items for smaller screens */}
-            <NavItem icon={toggleItem.icon} className={styles.hideSmUp}>
+
+            {/* Render the toggle item separately */}
+            <NavItem icon={toggleItem.icon} className="d-flex d-md-none">
                 <NavLink to={toggleItem.path}>{toggleItem.content}</NavLink>
             </NavItem>
-            {items.map(item => (
-                <NavItem key={item.path} icon={item.icon} className={styles.hideSmUp}>
-                    {/* Indent non-toggle items to indicate a hierarchical structure */}
+            {/* Render the rest of the items and indent them to indicate a hierarchical structure */}
+            {items.slice(1).map(item => (
+                <NavItem key={item.path} icon={item.icon} className="d-flex d-md-none">
                     <NavLink to={item.path} className="pl-2">
                         {item.content}
                     </NavLink>
