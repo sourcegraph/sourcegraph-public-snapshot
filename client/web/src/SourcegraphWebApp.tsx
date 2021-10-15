@@ -208,11 +208,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showSearchNotebook: boolean
 
     /**
-     * Whether we show the multiline editor at /search/query-builder
-     */
-    showQueryBuilder: boolean
-
-    /**
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
@@ -308,7 +303,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             globbing: false,
             showMultilineSearchConsole: false,
             showSearchNotebook: false,
-            showQueryBuilder: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -554,7 +548,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     globbing={this.state.globbing}
                                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                                     showSearchNotebook={this.state.showSearchNotebook}
-                                                    showQueryBuilder={this.state.showQueryBuilder}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
