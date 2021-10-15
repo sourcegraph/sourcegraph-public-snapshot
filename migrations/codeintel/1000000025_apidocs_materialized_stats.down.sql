@@ -1,0 +1,16 @@
+BEGIN;
+
+DROP MATERIALIZED VIEW lsif_data_apidocs_num_pages;
+DROP MATERIALIZED VIEW lsif_data_apidocs_num_dumps;
+DROP TRIGGER refresh_lsif_data_documentation_pages ON lsif_data_documentation_pages;
+DROP FUNCTION refresh_lsif_data_documentation_pages;
+
+DROP MATERIALIZED VIEW lsif_data_apidocs_num_search_results_public;
+DROP TRIGGER refresh_lsif_data_docs_search_public ON lsif_data_docs_search_public;
+DROP FUNCTION refresh_lsif_data_docs_search_public;
+
+DROP MATERIALIZED VIEW lsif_data_apidocs_num_search_results_private;
+DROP TRIGGER refresh_lsif_data_docs_search_private ON lsif_data_docs_search_private;
+DROP FUNCTION refresh_lsif_data_docs_search_private;
+
+COMMIT;
