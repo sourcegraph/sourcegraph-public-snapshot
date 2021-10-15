@@ -8,7 +8,6 @@ require('ts-node').register({
 
 const chalk = require('chalk')
 const compression = require('compression')
-const expressStaticGzip = require('express-static-gzip')
 const log = require('fancy-log')
 const gulp = require('gulp')
 const { createProxyMiddleware } = require('http-proxy-middleware')
@@ -32,12 +31,7 @@ const {
 
 const { build: buildEsbuild } = require('./dev/esbuild/build')
 const { esbuildDevelopmentServer } = require('./dev/esbuild/server')
-const {
-  DEV_SERVER_LISTEN_ADDR,
-  DEV_SERVER_PROXY_TARGET_ADDR,
-  shouldCompressResponse,
-  STATIC_ASSETS_PATH,
-} = require('./dev/utils')
+const { DEV_SERVER_LISTEN_ADDR, DEV_SERVER_PROXY_TARGET_ADDR, shouldCompressResponse } = require('./dev/utils')
 const { DEV_WEB_BUILDER } = require('./dev/utils/environment-config').environmentConfig
 const webpackConfig = require('./webpack.config')
 
