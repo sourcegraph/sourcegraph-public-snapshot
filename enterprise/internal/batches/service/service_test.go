@@ -1287,6 +1287,39 @@ func TestService(t *testing.T) {
 				t.Fatalf("not all jobs were canceled. jobs=%d, canceled=%d", len(jobs), canceled)
 			}
 		})
+
+		t.Run("already completed", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			resolutionJob := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+			if err := s.CreateBatchSpecResolutionJob(ctx, resolutionJob); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: rs[0].ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			job := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+			}
+			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed', started_at = now(), finished_at = now() WHERE id = %s", job.ID)); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := svc.CancelBatchSpec(ctx, CancelBatchSpecOpts{BatchSpecRandID: spec.RandID})
+			if !errors.Is(err, ErrBatchSpecNotCanceable) {
+				t.Fatalf("error has wrong type: %T", err)
+			}
+		})
 	})
 
 	t.Run("ReplaceBatchSpecInput", func(t *testing.T) {
@@ -1580,6 +1613,49 @@ func TestService(t *testing.T) {
 		if diff := cmp.Diff(want, err.Error()); diff != "" {
 			t.Fatalf("wrong error message: %s", diff)
 		}
+	})
+
+	t.Run("ComputeBatchSpecState", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			var jobIDs []int64
+			for _, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+
+				job := &btypes.BatchSpecWorkspaceExecutionJob{
+					BatchSpecWorkspaceID: ws.ID,
+				}
+				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+
+				jobIDs = append(jobIDs, job.ID)
+			}
+
+			have, err := svc.ComputeBatchSpecState(ctx, spec.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := "PROCESSING"; have != want {
+				t.Fatalf("wrong state for batch spec. want=%s, have=%s", want, have)
+			}
+		})
 	})
 }
 

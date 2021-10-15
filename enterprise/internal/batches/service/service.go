@@ -433,6 +433,8 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 	}
 }
 
+var ErrBatchSpecNotCanceable = errors.New("batch spec is not in canceable state")
+
 type CancelBatchSpecOpts struct {
 	BatchSpecRandID string
 }
@@ -456,8 +458,23 @@ func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts)
 		return nil, err
 	}
 
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	state, err := computeBatchSpecState(ctx, tx, batchSpec.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if state != "PROCESSING" && state != "QUEUED" {
+		return nil, ErrBatchSpecNotCanceable
+	}
+
 	cancelOpts := store.CancelBatchSpecWorkspaceExecutionJobsOpts{BatchSpecID: batchSpec.ID}
-	_, err = s.store.CancelBatchSpecWorkspaceExecutionJobs(ctx, cancelOpts)
+	_, err = tx.CancelBatchSpecWorkspaceExecutionJobs(ctx, cancelOpts)
 	return batchSpec, err
 }
 
@@ -1094,12 +1111,16 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 }
 
 func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpecID int64) (string, error) {
-	statsMap, err := s.store.GetBatchSpecStats(ctx, []int64{batchSpecID})
+	return computeBatchSpecState(ctx, s.store, batchSpecID)
+}
+
+func computeBatchSpecState(ctx context.Context, s *store.Store, id int64) (string, error) {
+	statsMap, err := s.GetBatchSpecStats(ctx, []int64{id})
 	if err != nil {
 		return "", err
 	}
 
-	stats, ok := statsMap[batchSpecID]
+	stats, ok := statsMap[id]
 	if !ok {
 		return "", store.ErrNoResults
 	}
