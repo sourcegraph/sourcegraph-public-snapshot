@@ -25,6 +25,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchResult } from '../../components/SearchResult'
 
+import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
 const initialItemsToShow = 15
@@ -47,6 +48,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     fetchHighlightedFileLineRanges,
     settingsCascade,
     telemetryService,
+    isLightTheme,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -118,6 +120,9 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
             />
 
             {itemsToShow >= (results?.results.length || 0) && <StreamingSearchResultFooter results={results} />}
+            {results?.state === 'complete' && results?.results.length === 0 && (
+                <NoResultsPage isLightTheme={isLightTheme} showSearchContext={true} />
+            )}
         </>
     )
 }

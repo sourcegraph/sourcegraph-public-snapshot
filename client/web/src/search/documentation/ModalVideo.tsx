@@ -11,9 +11,17 @@ interface ModalVideoProps {
     src: string
     thumbnail: { src: string; alt: string }
     onToggle?: (isOpen: boolean) => void
+    showCaption?: boolean
 }
 
-export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title, src, thumbnail, onToggle }) => {
+export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
+    id,
+    title,
+    src,
+    thumbnail,
+    onToggle,
+    showCaption = false,
+}) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const [isOpen, setIsOpen] = useState(false)
     const toggleDialog = useCallback(
@@ -26,16 +34,31 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({ id, title
         [onToggle]
     )
 
+    let thumbnailElement = (
+        <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
+            <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
+            <div className={styles.playIconWrapper}>
+                <PlayIcon />
+            </div>
+        </button>
+    )
+
+    if (showCaption) {
+        thumbnailElement = (
+            <figure>
+                {thumbnailElement}
+                <figcaption>
+                    <button type="button" className="btn btn-link" onClick={() => toggleDialog(true)}>
+                        {title}
+                    </button>
+                </figcaption>
+            </figure>
+        )
+    }
+
     return (
         <>
-            <div className={styles.wrapper}>
-                <button type="button" className={styles.thumbnailButton} onClick={() => toggleDialog(true)}>
-                    <img src={`${assetsRoot}/${thumbnail.src}`} alt={thumbnail.alt} className={styles.thumbnailImage} />
-                    <div className={styles.playIconWrapper}>
-                        <PlayIcon />
-                    </div>
-                </button>
-            </div>
+            <div className={styles.wrapper}>{thumbnailElement}</div>
             {isOpen && (
                 <Dialog
                     className={classNames(styles.modal, 'modal-body modal-body--centered p-4 rounded border')}

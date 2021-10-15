@@ -1,0 +1,71 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.root {
+    display: flex;
+
+    @media (--md-breakpoint-down) {
+        flex-direction: column-reverse;
+    }
+}
+
+.mainPanels,
+.videoPanel {
+    margin-right: 1rem;
+}
+
+.container {
+}
+
+.videoContainer figcaption {
+    text-align: center;
+}
+
+.containerContent {
+    background-color: var(--color-bg-1);
+    border: 1px solid var(--border-color);
+    padding: 1.5rem;
+    border-radius: 3px;
+}
+
+.videoContainer .containerContent {
+    padding: 0;
+    background-color: transparent;
+    border: 0;
+
+    @media (--md-breakpoint-down) {
+        display: flex;
+        flex-wrap: wrap;
+
+        > * {
+            padding: 0 1rem;
+        }
+    }
+}
+
+.container:last-of-type {
+    margin-bottom: 1rem;
+}
+
+.containerContent > p:last-of-type {
+    margin-bottom: 0;
+}
+
+.containerTitle {
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.searchBox {
+    background-color: var(--body-bg);
+}
+
+.marker {
+    border: 1px solid red;
+    height: 10px;
+}
+
+.annotadedExampleContainer {
+    display: grid;
+}

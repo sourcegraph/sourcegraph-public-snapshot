@@ -26,8 +26,12 @@ export const StreamingSearchResultFooter: React.FunctionComponent<{ results?: Ag
         )}
 
         {results?.state === 'complete' && !results.alert && results?.results.length === 0 && (
-            <div className="alert alert-info d-flex m-3">
-                <p className="m-0">No results</p>
+            <div className="alert alert-info align-self-stretch mr-3 mt-3">
+                <p className="m-0">
+                    <strong>No results matched your query</strong>
+                    <br />
+                    Use the tips below to improve your query.
+                </p>
             </div>
         )}
 
