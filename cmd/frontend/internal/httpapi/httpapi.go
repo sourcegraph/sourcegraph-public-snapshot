@@ -130,7 +130,7 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.SavedQueriesDeleteInfo).Handler(trace.Route(handler(serveSavedQueriesDeleteInfo(db))))
 	m.Get(apirouter.OrgsListUsers).Handler(trace.Route(handler(serveOrgsListUsers(db))))
 	m.Get(apirouter.OrgsGetByName).Handler(trace.Route(handler(serveOrgsGetByName(db))))
-	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername)))
+	m.Get(apirouter.UsersGetByUsername).Handler(trace.Route(handler(serveUsersGetByUsername(db))))
 	m.Get(apirouter.UserEmailsGetEmail).Handler(trace.Route(handler(serveUserEmailsGetEmail)))
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.CanSendEmail).Handler(trace.Route(handler(serveCanSendEmail)))

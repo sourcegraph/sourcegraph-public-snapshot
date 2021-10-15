@@ -78,7 +78,7 @@ func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *database
 		}
 
 	case "username":
-		user, err := database.GlobalUsers.GetByID(ctx, args.UserID)
+		user, err := database.Users(s.store.Handle().DB()).GetByID(ctx, args.UserID)
 		if err != nil {
 			return errors.Wrap(err, "get user")
 		}

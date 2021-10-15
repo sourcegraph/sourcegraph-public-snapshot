@@ -39,7 +39,7 @@ func serveSignOutHandler(db dbutil.DB) func(w http.ResponseWriter, r *http.Reque
 		// Invalidate all user sessions first
 		// This way, any other signout failures should not leave a valid session
 		var err error
-		if err = session.InvalidateSessionCurrentUser(w, r); err != nil {
+		if err = session.InvalidateSessionCurrentUser(w, r, db); err != nil {
 			logSignOutEvent(r, db, database.SecurityEventNameSignOutFailed, err)
 			log15.Error("serveSignOutHandler", "err", err)
 		}

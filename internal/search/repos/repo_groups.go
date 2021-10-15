@@ -56,7 +56,7 @@ func ResolveRepoGroups(ctx context.Context, db dbutil.DB, settings *schema.Setti
 		return groups, nil
 	}
 
-	if mode, err := database.GlobalUsers.CurrentUserAllowedExternalServices(ctx); err != nil {
+	if mode, err := database.Users(db).CurrentUserAllowedExternalServices(ctx); err != nil {
 		return groups, err
 	} else if mode == conf.ExternalServiceModeDisabled {
 		return groups, nil

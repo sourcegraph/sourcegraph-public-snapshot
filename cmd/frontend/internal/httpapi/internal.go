@@ -311,20 +311,22 @@ func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
-	var username string
-	err := json.NewDecoder(r.Body).Decode(&username)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveUsersGetByUsername(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var username string
+		err := json.NewDecoder(r.Body).Decode(&username)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		user, err := database.Users(db).GetByUsername(r.Context(), username)
+		if err != nil {
+			return errors.Wrap(err, "Users.GetByUsername")
+		}
+		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	user, err := database.GlobalUsers.GetByUsername(r.Context(), username)
-	if err != nil {
-		return errors.Wrap(err, "Users.GetByUsername")
-	}
-	if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {

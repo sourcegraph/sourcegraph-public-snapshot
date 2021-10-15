@@ -97,9 +97,9 @@ func hasFindRefsOccurred(ctx context.Context) (_ bool, err error) {
 	return usagestats.HasFindRefsOccurred(ctx)
 }
 
-func getTotalUsersCount(ctx context.Context) (_ int, err error) {
+func getTotalUsersCount(ctx context.Context, db dbutil.DB) (_ int, err error) {
 	defer recordOperation("getTotalUsersCount")(&err)
-	return database.GlobalUsers.Count(ctx, &database.UsersListOptions{})
+	return database.Users(db).Count(ctx, &database.UsersListOptions{})
 }
 
 func getTotalReposCount(ctx context.Context, db dbutil.DB) (_ int, err error) {
@@ -341,7 +341,7 @@ func updateBody(ctx context.Context, db dbutil.DB) (io.Reader, error) {
 		CodeMonitoringUsage: []byte("{}"),
 	}
 
-	totalUsers, err := getTotalUsersCount(ctx)
+	totalUsers, err := getTotalUsersCount(ctx, db)
 	if err != nil {
 		logFunc("telemetry: database.Users.Count failed", "error", err)
 	}
