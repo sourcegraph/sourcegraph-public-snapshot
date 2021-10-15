@@ -6,15 +6,16 @@ import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { Badge, BadgeStatus } from '../../components/Badge'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { UserAreaUserFields } from '../../graphql-operations'
+import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
 import { OnboardingTourProps } from '../../search'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { NavItemDescriptor } from '../../util/contributions'
-import { UserAreaRouteContext } from '../area/UserArea'
+
+import { UserSettingsAreaRouteContext } from './UserSettingsArea'
 
 export interface UserSettingsSidebarItemConditionContext extends BatchChangesProps {
-    user: UserAreaUserFields
+    user: UserSettingsAreaUserFields
     authenticatedUser: Pick<AuthenticatedUser, 'id' | 'siteAdmin' | 'tags'>
     isSourcegraphDotCom: boolean
 }
@@ -26,7 +27,7 @@ type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditio
 export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 
 export interface UserSettingsSidebarProps
-    extends UserAreaRouteContext,
+    extends UserSettingsAreaRouteContext,
         BatchChangesProps,
         OnboardingTourProps,
         RouteComponentProps<{}> {

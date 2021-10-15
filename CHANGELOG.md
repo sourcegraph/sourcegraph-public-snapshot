@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Repogroups and version contexts are deprecated in favor of search contexts. Read more about the deprecation and how to migrate to search contexts in the [blog post](https://example.com). [#25676](https://github.com/sourcegraph/sourcegraph/pull/25676)
 - Search contexts are now enabled by default in the Sourcegraph enterprise version. [#25674](https://github.com/sourcegraph/sourcegraph/pull/25674)
 - Code Insights background queries will now retry a maximum of 10 times (down from 100). [#26057](https://github.com/sourcegraph/sourcegraph/pull/26057)
+- Our `sourcegraph/cadvisor` Docker image has been upgraded to cadvisor version `v0.42.0`. [#26126](https://github.com/sourcegraph/sourcegraph/pull/26126)
 
 ### Fixed
 

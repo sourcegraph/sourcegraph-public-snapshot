@@ -25,7 +25,13 @@ interface ExecutionLogEntryProps extends React.PropsWithChildren<{}> {
 export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> = ({ logEntry, children, now }) => (
     <div className="card mb-3">
         <div className="card-body">
-            <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
+            {logEntry.command.length > 0 ? (
+                <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
+            ) : (
+                <div className="mb-3">
+                    <span className="text-muted">Internal step {logEntry.key}.</span>
+                </div>
+            )}
 
             <div>
                 {logEntry.exitCode === null && <LoadingSpinner className="icon-inline mr-1" />}
@@ -47,7 +53,6 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                     </>
                 )}
             </div>
-
             {children}
         </div>
 
@@ -118,15 +123,16 @@ const formatMilliseconds = (milliseconds: number): string => {
         return msRemaining - part * denominator
     }, milliseconds)
 
-    return (
-        parts
-            // Trim leading zero-valued parts
-            .slice(parts.findIndex(part => part !== ''))
-            // Keep only two consecutive non-zero parts
-            .slice(0, 2)
-            // Re-filter zero-valued parts
-            .filter(part => part !== '')
-            // If there are two parts, join them
-            .join(' and ')
-    )
+    const description = parts
+        // Trim leading zero-valued parts
+        .slice(parts.findIndex(part => part !== ''))
+        // Keep only two consecutive non-zero parts
+        .slice(0, 2)
+        // Re-filter zero-valued parts
+        .filter(part => part !== '')
+        // If there are two parts, join them
+        .join(' and ')
+
+    // If description is empty return a canned string
+    return description || '0 milliseconds'
 }

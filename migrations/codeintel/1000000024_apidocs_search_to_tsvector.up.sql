@@ -2,8 +2,11 @@ BEGIN;
 
 -- We're completely changing the API docs search table schema, so we'll reindex everything
 -- from scratch. Reset our OOB migration's progress entirely.
-UPDATE lsif_data_documentation_pages SET search_indexed='false';
-
+--
+-- IMPORTANT: Dropping the column and recreating it is nearly instant, updating the table
+-- to set the column to 'false' again can take several minutes.
+ALTER TABLE lsif_data_documentation_pages DROP COLUMN search_indexed;
+ALTER TABLE lsif_data_documentation_pages ADD COLUMN search_indexed boolean DEFAULT 'false';
 
 -- We're completely redefining the table.
 DROP TABLE IF EXISTS lsif_data_documentation_search_public;

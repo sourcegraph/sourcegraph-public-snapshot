@@ -739,10 +739,19 @@ func (s *Store) selectRepositoriesForIndexScan(ctx context.Context, processDelay
 
 const selectRepositoriesForIndexScanQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/uploads.go:selectRepositoriesForIndexScan
-WITH candidate_repositories AS (
+WITH
+search_context_repositories AS (
+	SELECT repo_id FROM user_public_repos UNION ALL
+	SELECT repo_id FROM search_context_repos UNION ALL
+	SELECT repo_id FROM external_service_repos WHERE user_id IS NOT NULL
+),
+candidate_repositories AS (
 	SELECT r.id AS id
 	FROM repo r
-	WHERE r.deleted_at IS NULL
+	WHERE
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL AND
+		r.id IN (SELECT repo_id FROM search_context_repositories)
 ),
 repositories AS (
 	SELECT cr.id

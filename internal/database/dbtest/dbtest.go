@@ -57,6 +57,10 @@ var rngLock sync.Mutex
 // NewDB returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
 func NewDB(t testing.TB, dsn string) *sql.DB {
+	if testing.Short() {
+		t.Skip("skipping DB test since -short specified")
+	}
+
 	var err error
 	var config *url.URL
 	if dsn == "" {
