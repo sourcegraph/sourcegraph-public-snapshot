@@ -29,70 +29,64 @@ main() {
   assert_nz "$_arch" "arch"
 
   local _location_header
-  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:")"
+  _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:" | tr -d '\r')"
 
-  echo "location_header='${_location_header}'"
-  # local _base_url
-  # _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"
-  # assert_nz "$_base_url" "base_url"
+  local _base_url
+  _base_url="$(echo "${_location_header}" | sed s/location:\ // | sed s/tag/download/ | tr -d "[:blank:]")"
+  assert_nz "$_base_url" "base_url"
 
-  # local _url
-  # _url="${_base_url}/sg_${_arch}"
-  # echo "base_url='${_base_url}'"
-  # echo "base_url=${_base_url}, arch=${_arch}"
-  # echo "$_url"
-  # say "$_url"
+  local _url
+  _url="${_base_url}/sg_${_arch}"
 
-  # # TODO: Put this in /usr/local/bin?
-  # local _dir
-  # _dir="$(ensure mktemp -d)"
-  # local _file="${_dir}/sg"
+  local _file="/usr/local/bin/sg"
+  local _dir
+  _dir="$(dirname ${_file})"
 
-  # local _ansi_escapes_are_valid=false
-  # if [ -t 2 ]; then
-  #   if [ "${TERM+set}" = 'set' ]; then
-  #     case "$TERM" in
-  #     xterm* | rxvt* | urxvt* | linux* | vt*)
-  #       _ansi_escapes_are_valid=true
-  #       ;;
-  #     esac
-  #   fi
-  # fi
+  local _ansi_escapes_are_valid=false
+  if [ -t 2 ]; then
+    if [ "${TERM+set}" = 'set' ]; then
+      case "$TERM" in
+      xterm* | rxvt* | urxvt* | linux* | vt*)
+        _ansi_escapes_are_valid=true
+        ;;
+      esac
+    fi
+  fi
 
-  # # check if we have to use /dev/tty to prompt the user
-  # local need_tty=yes
-  # for arg in "$@"; do
-  #   case "$arg" in
-  #   -h | --help)
-  #     usage
-  #     exit 0
-  #     ;;
-  #   -y)
-  #     # user wants to skip the prompt -- we don't need /dev/tty
-  #     need_tty=no
-  #     ;;
-  #   *) ;;
+  # check if we have to use /dev/tty to prompt the user
+  local need_tty=yes
+  for arg in "$@"; do
+    case "$arg" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    -y)
+      # user wants to skip the prompt -- we don't need /dev/tty
+      need_tty=no
+      ;;
+    *) ;;
 
-  #   esac
-  # done
+    esac
+  done
 
-  # if $_ansi_escapes_are_valid; then
-  #   printf "\33[1minfo:\33[0m downloading sg\n" 1>&2
-  # else
-  #   printf '%s\n' 'info: downloading sg' 1>&2
-  # fi
+  if $_ansi_escapes_are_valid; then
+    printf "\33[1minfo:\33[0m downloading sg\n" 1>&2
+  else
+    printf '%s\n' 'info: downloading sg' 1>&2
+  fi
 
-  # ensure mkdir -p "$_dir"
-  # ensure downloader "$_url" "$_file" "$_arch"
-  # ensure chmod u+x "$_file"
-  # if [ ! -x "$_file" ]; then
-  #   printf '%s\n' "Cannot execute $_file (likely because of mounting /tmp as noexec)." 1>&2
-  #   printf '%s\n' "Please copy the file to a location where you can execute binaries and run ./sg." 1>&2
-  #   exit 1
-  # fi
+  ensure mkdir -p "$_dir"
+  ensure download "$_url" "$_file" "$_arch"
+  ensure chmod u+x "$_file"
+  if [ ! -x "$_file" ]; then
+    printf '%s\n' "Cannot execute $_file (likely because of mounting /tmp as noexec)." 1>&2
+    printf '%s\n' "Please copy the file to a location where you can execute binaries and run ./sg." 1>&2
+    exit 1
+  fi
 
-  # local _retval=$?
-  # return "$_retval"
+  local _retval=$?
+  return "$_retval"
 }
 
 get_architecture() {
@@ -291,25 +285,6 @@ get_ciphersuites_for_curl() {
   RETVAL="$_cs"
 }
 
-# Return cipher suite string specified by user, otherwise return strong TLS 1.2-1.3 cipher suites
-# if support by local tools is detected. Detection currently supports these wget backends:
-# GnuTLS and OpenSSL (possibly also LibreSSL and BoringSSL). Return value can be empty.
-get_ciphersuites_for_wget() {
-  local _cs=""
-  if wget -V | grep -q '\-DHAVE_LIBSSL'; then
-    # "unspecified" is for arch, allows for possibility old OS using macports, homebrew, etc.
-    if check_help_for "notspecified" "wget" "TLSv1_2" "--ciphers" "--https-only" "--secure-protocol"; then
-      _cs=$(get_strong_ciphersuites_for "openssl")
-    fi
-  elif wget -V | grep -q '\-DHAVE_LIBGNUTLS'; then
-    # "unspecified" is for arch, allows for possibility old OS using macports, homebrew, etc.
-    if check_help_for "notspecified" "wget" "TLSv1_2" "--ciphers" "--https-only" "--secure-protocol"; then
-      _cs=$(get_strong_ciphersuites_for "gnutls")
-    fi
-  fi
-
-  RETVAL="$_cs"
-}
 
 # Return strong TLS 1.2-1.3 cipher suites in OpenSSL or GnuTLS syntax. TLS 1.2
 # excludes non-ECDHE and non-AEAD cipher suites. DHE is excluded due to bad
