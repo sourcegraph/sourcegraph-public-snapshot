@@ -3445,7 +3445,6 @@ type BatchSpec implements Node {
     Null, if not created through createBatchSpecFromRaw.
     """
     allowUnsupported: Boolean
-
 }
 
 """
