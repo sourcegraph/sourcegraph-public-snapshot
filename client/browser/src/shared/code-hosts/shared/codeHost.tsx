@@ -94,6 +94,7 @@ import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from 
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
+import { bitbucketCloudCodeHost } from '../bitbucket-cloud/codeHost'
 import { bitbucketServerCodeHost } from '../bitbucket/codeHost'
 import { gerritCodeHost } from '../gerrit/codeHost'
 import { githubCodeHost } from '../github/codeHost'
@@ -146,7 +147,7 @@ export type MountGetter = (container: HTMLElement) => HTMLElement | null
  */
 export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRepository: boolean }
 
-export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'gitlab' | 'gerrit'
+export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
 /** Information for adding code intelligence to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
@@ -279,6 +280,11 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Whether or not code views need to be tokenized. Defaults to false.
      */
     codeViewsRequireTokenization?: boolean
+
+    /**
+     * Whether or not hover tooltips can be pinned.
+     */
+    pinningEnabled?: boolean
 }
 
 /**
@@ -458,7 +464,7 @@ function initCodeIntelligence({
                     hasPrivateCloudError ? of([]) : getHoverActions({ extensionsController, platformContext }, context)
                 )
             ),
-        pinningEnabled: true,
+        pinningEnabled: codeHost.pinningEnabled ?? true,
         tokenize: codeHost.codeViewsRequireTokenization,
     })
 
@@ -1279,6 +1285,7 @@ const SHOW_DEBUG = (): boolean => localStorage.getItem('debug') !== null
 
 const CODE_HOSTS: CodeHost[] = [
     bitbucketServerCodeHost,
+    bitbucketCloudCodeHost,
     githubCodeHost,
     gitlabCodeHost,
     phabricatorCodeHost,

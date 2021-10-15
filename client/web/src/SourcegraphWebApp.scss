@@ -81,7 +81,6 @@ body,
 @import './Layout';
 @import './api/ApiConsole';
 @import './global/GlobalDebug';
-@import './savedSearches/index';
 @import './search/home/SearchPage';
 @import './search/SearchConsolePage';
 @import './search/ShepherdTour';
@@ -92,13 +91,8 @@ body,
 @import './settings/SettingsFile';
 @import './tree/Tree';
 @import './views/view-global-styles';
-@import './nav/GlobalNavbar';
-@import './nav/Feedback/FeedbackPrompt.scss';
-@import './nav/UserNavItem.scss';
-@import './nav/StatusMessagesNavItem.scss';
 @import './repo/RepoContainer';
 @import './repo/FilePathBreadcrumbs.scss';
-@import './repo/settings/RepoSettingsArea';
 @import './repo/actions/InstallBrowserExtensionPopover.scss';
 @import './repo/actions/InstallBrowserExtensionAlert.scss';
 @import './components/Dialog';

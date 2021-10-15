@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
@@ -27,6 +28,7 @@ import { RegistryExtensionNameFormGroup, RegistryPublisherFormGroup } from '../e
 
 import { queryViewerRegistryPublishers } from './backend'
 import { RegistryAreaPageProps } from './RegistryArea'
+import styles from './RegistryNewExtensionPage.module.scss'
 
 function createExtension(
     publisher: Scalars['ID'],
@@ -161,17 +163,12 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
             return (
                 <>
                     <PageTitle title="New extension" />
-                    <ModalPage className="registry-new-extension-page mt-4 overflow-hidden">
+                    <ModalPage className="mt-4 overflow-hidden">
                         <h2 className="mb-4">
                             <PuzzleIcon className="icon-inline" /> New extension
                         </h2>
                         <div className="mb-3">
-                            <a
-                                target="_blank"
-                                rel="noopener"
-                                href="https://docs.sourcegraph.com/extensions/authoring"
-                                className="registry-new-extension-page__docs-link"
-                            >
+                            <a target="_blank" rel="noopener" href="https://docs.sourcegraph.com/extensions/authoring">
                                 Learn more
                             </a>{' '}
                             about authoring Sourcegraph extensions{' '}
@@ -201,7 +198,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     </label>
                                     <code
                                         id="extension-registry-create-extension-page__extensionID"
-                                        className="registry-new-extension-page__extension-id mt-1"
+                                        className={classNames('mt-1', styles.extensionId)}
                                     >
                                         <strong>{extensionID}</strong>
                                     </code>

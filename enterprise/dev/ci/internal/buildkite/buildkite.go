@@ -106,7 +106,10 @@ func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 
-	n, err := w.Write(output)
+	cleanedOutput := strings.ReplaceAll(string(output), "$", `\$`)
+	cleanedOutput = strings.ReplaceAll(cleanedOutput, "`", "\\`")
+
+	n, err := w.Write([]byte(cleanedOutput))
 	return int64(n), err
 }
 
@@ -205,7 +208,7 @@ func DisableManualRetry(reason string) StepOpt {
 
 func ArtifactPaths(paths ...string) StepOpt {
 	return func(step *Step) {
-		step.ArtifactPaths = strings.Join(paths, ",")
+		step.ArtifactPaths = strings.Join(paths, ";")
 	}
 }
 

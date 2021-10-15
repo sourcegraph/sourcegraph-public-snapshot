@@ -56,6 +56,9 @@ func (o *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
 func (o *OrgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+	if Mocks.Orgs.GetByUserID != nil {
+		return Mocks.Orgs.GetByUserID(ctx, userID)
+	}
 	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
 	if err != nil {
 		return []*types.Org{}, err

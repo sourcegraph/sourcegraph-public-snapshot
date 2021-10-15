@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React, { useCallback, useEffect, useState } from 'react'
 import { merge, Observable, of, Subject } from 'rxjs'
 import { catchError, delay, mergeMap, switchMap } from 'rxjs/operators'
@@ -6,6 +7,7 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 
+import styles from './ConvertVersionContextNode.module.scss'
 import { ConvertVersionContextsPageProps } from './ConvertVersionContextsPage'
 
 export interface ConvertVersionContextNodeProps
@@ -58,7 +60,13 @@ export const ConvertVersionContextNode: React.FunctionComponent<ConvertVersionCo
     useEffect(() => isConvertedUpdates.next(), [isConvertedUpdates])
 
     return (
-        <div className="convert-version-context-node d-flex justify-content-between align-items-center flex-row">
+        <div
+            data-testid="convert-version-context-node"
+            className={classNames(
+                'd-flex justify-content-between align-items-center flex-row',
+                styles.convertVersionContextNode
+            )}
+        >
             <div>{name}</div>
             {(convertOrError === LOADING || isConverted === LOADING) && <LoadingSpinner />}
             {isConverted === false && !convertOrError && (
