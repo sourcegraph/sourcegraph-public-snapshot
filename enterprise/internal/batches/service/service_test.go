@@ -1227,6 +1227,7 @@ func TestService(t *testing.T) {
 	t.Run("CancelBatchSpec", func(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
@@ -1290,6 +1291,7 @@ func TestService(t *testing.T) {
 
 		t.Run("already completed", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
@@ -1618,6 +1620,7 @@ func TestService(t *testing.T) {
 	t.Run("ComputeBatchSpecState", func(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
 				t.Fatal(err)
 			}
@@ -1645,7 +1648,7 @@ func TestService(t *testing.T) {
 				}
 			}
 
-			have, err := svc.ComputeBatchSpecState(ctx, spec.ID)
+			have, err := svc.ComputeBatchSpecState(ctx, spec)
 			if err != nil {
 				t.Fatal(err)
 			}

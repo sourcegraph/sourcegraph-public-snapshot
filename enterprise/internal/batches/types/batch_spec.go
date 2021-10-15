@@ -97,9 +97,11 @@ func (s BatchSpecState) Canceable() bool {
 }
 
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.
-// NOTE: This does not take into account failed changeset spec validation and
-// does not check whether the batch spec was created from raw.
-func ComputeBatchSpecState(stats BatchSpecStats) BatchSpecState {
+func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
+	if !spec.CreatedFromRaw {
+		return BatchSpecStateCompleted
+	}
+
 	if stats.Executions == 0 {
 		return BatchSpecStatePending
 	}

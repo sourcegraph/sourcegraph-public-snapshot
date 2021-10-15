@@ -464,7 +464,7 @@ func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts)
 	}
 	defer func() { err = tx.Done(err) }()
 
-	state, err := computeBatchSpecState(ctx, tx, batchSpec.ID)
+	state, err := computeBatchSpecState(ctx, tx, batchSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -1110,20 +1110,20 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 		len(es), strings.Join(points, "\n"))
 }
 
-func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpecID int64) (btypes.BatchSpecState, error) {
-	return computeBatchSpecState(ctx, s.store, batchSpecID)
+func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	return computeBatchSpecState(ctx, s.store, batchSpec)
 }
 
-func computeBatchSpecState(ctx context.Context, s *store.Store, id int64) (btypes.BatchSpecState, error) {
-	statsMap, err := s.GetBatchSpecStats(ctx, []int64{id})
+func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	statsMap, err := s.GetBatchSpecStats(ctx, []int64{spec.ID})
 	if err != nil {
 		return "", err
 	}
 
-	stats, ok := statsMap[id]
+	stats, ok := statsMap[spec.ID]
 	if !ok {
 		return "", store.ErrNoResults
 	}
 
-	return btypes.ComputeBatchSpecState(stats), nil
+	return btypes.ComputeBatchSpecState(spec, stats), nil
 }

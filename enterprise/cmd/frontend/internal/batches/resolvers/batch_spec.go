@@ -527,17 +527,22 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
 	r.stateOnce.Do(func() {
 		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
-			if !r.batchSpec.CreatedFromRaw {
-				return btypes.BatchSpecStateCompleted, nil
-			}
-
-			validationErr := r.validateChangesetSpecs(ctx)
-			if validationErr != nil {
-				return btypes.BatchSpecStateFailed, nil
-			}
-
 			svc := service.New(r.store)
-			return svc.ComputeBatchSpecState(ctx, r.batchSpec.ID)
+			state, err := svc.ComputeBatchSpecState(ctx, r.batchSpec)
+			if err != nil {
+				return state, err
+			}
+
+			// If the BatchSpec finished execution successfully, we validate
+			// the changeset specs.
+			if state == btypes.BatchSpecStateCompleted {
+				validationErr := r.validateChangesetSpecs(ctx)
+				if validationErr != nil {
+					return btypes.BatchSpecStateFailed, nil
+				}
+			}
+
+			return state, nil
 		}()
 	})
 	return r.state, r.stateErr
