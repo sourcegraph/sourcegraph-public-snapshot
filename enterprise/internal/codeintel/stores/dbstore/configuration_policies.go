@@ -98,6 +98,8 @@ type GetConfigurationPoliciesOptions struct {
 }
 
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
+// If RepositoryID is non-zero, then only policies attached to the given repository are returned; if zero,
+// then only policies that are applied globally are returned.
 func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, err error) {
 	ctx, traceLog, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
