@@ -9,11 +9,11 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { communitySearchContextsList } from '../../communitySearchContexts/HomepageConfig'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { FeatureFlagProps } from '../../featureFlags/featureFlags'
+import { ModalVideo } from '../documentation/ModalVideo'
 
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
-import { ModalVideo } from '../documentation/ModalVideo'
 import { SearchExample, exampleNotebooks, exampleQueries, fonts } from './LoggedOutHomepage.constants'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
@@ -103,7 +103,7 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                             title="Three ways to search"
                             src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
                             thumbnail={{
-                                src: `/img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                src: `img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
                                 alt: 'Watch and learn video thumbnail',
                             }}
                             onToggle={isOpen =>
