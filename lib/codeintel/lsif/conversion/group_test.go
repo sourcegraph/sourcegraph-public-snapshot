@@ -204,6 +204,14 @@ func TestGroupBundleData(t *testing.T) {
 				},
 				PackageInformationID: 5003,
 			},
+			4007: {
+				Moniker: reader.Moniker{
+					Kind:       "implementation",
+					Scheme:     "scheme F",
+					Identifier: "ident F",
+				},
+				PackageInformationID: 5002,
+			},
 		},
 		PackageInformationData: map[int]PackageInformation{
 			5001: {
@@ -277,7 +285,7 @@ func TestGroupBundleData(t *testing.T) {
 		}),
 		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			2001: datastructures.IDSetWith(4001, 4002),
-			2002: datastructures.IDSetWith(4003, 4004),
+			2002: datastructures.IDSetWith(4003, 4004, 4007),
 		}),
 		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
 			1001: datastructures.IDSetWith(1001, 1002),
@@ -358,7 +366,7 @@ func TestGroupBundleData(t *testing.T) {
 					DefinitionResultID: "3001",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
-					MonikerIDs:         []precise.ID{"4003", "4004"},
+					MonikerIDs:         []precise.ID{"4003", "4004", "4007"},
 				},
 				"2003": {
 					StartLine:          3,
@@ -396,6 +404,12 @@ func TestGroupBundleData(t *testing.T) {
 					Scheme:               "scheme D",
 					Identifier:           "ident D",
 					PackageInformationID: "",
+				},
+				"4007": {
+					Kind:                 "implementation",
+					Scheme:               "scheme F",
+					Identifier:           "ident F",
+					PackageInformationID: "5002",
 				},
 			},
 			PackageInformation: map[precise.ID]precise.PackageInformationData{
@@ -655,6 +669,28 @@ func TestGroupBundleData(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
 		t.Errorf("unexpected references (-want +got):\n%s", diff)
+	}
+
+	var implementations []precise.MonikerLocations
+	for v := range actualBundleData.Implementations {
+		implementations = append(implementations, v)
+	}
+	sortMonikerLocations(implementations)
+
+	expectedImplementations := []precise.MonikerLocations{
+		{
+			Kind:       "implementation",
+			Scheme:     "scheme F",
+			Identifier: "ident F",
+			Locations: []precise.LocationData{
+				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
+				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
+				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			},
+		},
+	}
+	if diff := cmp.Diff(expectedImplementations, implementations); diff != "" {
+		t.Errorf("unexpected implementations (-want +got):\n%s", diff)
 	}
 }
 
