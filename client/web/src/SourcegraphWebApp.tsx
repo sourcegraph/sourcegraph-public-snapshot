@@ -332,7 +332,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 })
             })
             .catch(error => {
-                console.error('Error initalizing GraphQL client oh no', error)
+                console.error('Error initalizing GraphQL client', error)
             })
 
         this.subscriptions.add(
