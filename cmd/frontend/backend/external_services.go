@@ -13,7 +13,7 @@ var ErrNoAccessExternalService = errors.New("the authenticated user does not hav
 
 // CheckExternalServiceAccess checks whether the current user is allowed to
 // access the supplied external service.
-func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32, namespaceOrgID int32) error {
+func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) error {
 	// Fast path that doesn't need to hit DB as we can get id from context
 	a := actor.FromContext(ctx)
 	if namespaceUserID > 0 && a.IsAuthenticated() && namespaceUserID == a.UID {
