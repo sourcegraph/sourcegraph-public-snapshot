@@ -18,22 +18,24 @@ export interface GitObjectPreviewWrapperProps {
 
 const GitObjectHeader = <h3>Preview of Git object filter</h3>
 
-export const GitObjectPreview: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) => {
-    if (!type || type === GitObjectType.GIT_BLOB || type === GitObjectType.GIT_UNKNOWN) {
-        return (
-            <>
-                {GitObjectHeader}
-                <small>Select a Git object type to preview matching commits.</small>
-            </>
-        )
-    }
-
-    return {
-        [GitObjectType.GIT_COMMIT]: <GitCommitPreview repoId={repoId} pattern={pattern} typeText=" commit." />,
-        [GitObjectType.GIT_TAG]: <GitTagPreview repoId={repoId} pattern={pattern} typeText=" tags." />,
-        [GitObjectType.GIT_TREE]: <GitBranchesPreview repoId={repoId} pattern={pattern} typeText=" branches." />,
-    }[type]
-}
+export const GitObjectPreview: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) =>
+    pattern === '' ? (
+        <>
+            {GitObjectHeader}
+            <small>Enter a pattern to preview matching commits.</small>{' '}
+        </>
+    ) : type === GitObjectType.GIT_COMMIT ? (
+        <GitCommitPreview repoId={repoId} pattern={pattern} typeText=" commit." />
+    ) : type === GitObjectType.GIT_TAG ? (
+        <GitTagPreview repoId={repoId} pattern={pattern} typeText=" tags." />
+    ) : type === GitObjectType.GIT_TREE ? (
+        <GitBranchesPreview repoId={repoId} pattern={pattern} typeText=" branches." />
+    ) : (
+        <>
+            {GitObjectHeader}
+            <small>Select a Git object type to preview matching commits.</small>
+        </>
+    )
 
 export interface GitPreviewProps {
     repoId: string
