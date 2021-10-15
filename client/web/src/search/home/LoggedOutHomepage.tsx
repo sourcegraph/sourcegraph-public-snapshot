@@ -13,7 +13,7 @@ import { FeatureFlagProps } from '../../featureFlags/featureFlags'
 import { CustomersSection } from './CustomersSection'
 import { DynamicWebFonts } from './DynamicWebFonts'
 import { HeroSection } from './HeroSection'
-import { HomepageModalVideo } from './HomepageModalVideo'
+import { ModalVideo } from '../documentation/ModalVideo'
 import { SearchExample, exampleNotebooks, exampleQueries, fonts } from './LoggedOutHomepage.constants'
 import styles from './LoggedOutHomepage.module.scss'
 import { SelfHostInstructions } from './SelfHostInstructions'
@@ -98,7 +98,20 @@ export const LoggedOutHomepage: React.FunctionComponent<LoggedOutHomepageProps> 
                     )}
                     <div className={styles.thumbnail}>
                         <div className={classNames(styles.title, 'mb-2')}>Watch and learn</div>
-                        <HomepageModalVideo {...props} />
+                        <ModalVideo
+                            id="three-ways-to-search-title"
+                            title="Three ways to search"
+                            src="https://www.youtube-nocookie.com/embed/XLfE2YuRwvw"
+                            thumbnail={{
+                                src: `/img/watch-and-learn-${props.isLightTheme ? 'light' : 'dark'}.png`,
+                                alt: 'Watch and learn video thumbnail',
+                            }}
+                            onToggle={isOpen =>
+                                telemetryService.log(
+                                    isOpen ? 'HomepageVideoWaysToSearchClicked' : 'HomepageVideoClosed'
+                                )
+                            }
+                        />
                     </div>
                 </div>
 
