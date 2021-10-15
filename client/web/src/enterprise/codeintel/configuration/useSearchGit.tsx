@@ -37,6 +37,16 @@ export const PREVIEW_GIT_OBJECT_FILTER = gql`
 `
 
 export const usePreviewGitObjectFilter = (id: string, type: GitObjectType, pattern: string): SearchGitObjectResult => {
+    if (type === GitObjectType.GIT_UNKNOWN || pattern === '') {
+        return {
+            previewResult: {
+                preview: [],
+            },
+            isLoadingPreview: false,
+            previewError: undefined,
+        }
+    }
+
     const { data, loading, error } = useQuery<PreviewGitObjectFilterResult, PreviewGitObjectFilterVariables>(
         PREVIEW_GIT_OBJECT_FILTER,
         {

@@ -41,12 +41,12 @@ export interface GitPreviewProps {
     typeText: string
 }
 
-const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(
-        repoId,
-        GitObjectType.GIT_TAG,
-        pattern
-    )
+const createGitCommitPreview = (type: GitObjectType): FunctionComponent<GitPreviewProps> => ({
+    repoId,
+    pattern,
+    typeText,
+}) => {
+    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(repoId, type, pattern)
 
     return (
         <GitPreview
@@ -58,39 +58,9 @@ const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, ty
     )
 }
 
-const GitBranchesPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(
-        repoId,
-        GitObjectType.GIT_TREE,
-        pattern
-    )
-
-    return (
-        <GitPreview
-            typeText={typeText}
-            preview={previewResult}
-            previewLoading={isLoadingPreview}
-            previewError={previewError}
-        />
-    )
-}
-
-const GitCommitPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(
-        repoId,
-        GitObjectType.GIT_COMMIT,
-        pattern
-    )
-
-    return (
-        <GitPreview
-            typeText={typeText}
-            preview={previewResult}
-            previewLoading={isLoadingPreview}
-            previewError={previewError}
-        />
-    )
-}
+const GitTagPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TAG)
+const GitBranchesPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TREE)
+const GitCommitPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_COMMIT)
 
 interface GitObjectPreviewProps {
     typeText: string
