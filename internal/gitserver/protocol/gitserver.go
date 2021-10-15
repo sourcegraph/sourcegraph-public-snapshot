@@ -1,12 +1,14 @@
 package protocol
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type SearchRequest struct {
@@ -40,19 +42,27 @@ type SearchEventDone struct {
 
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
+		var e vcs.RepoNotExistError
+		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
+			return &e
+		}
 		return errors.New(s.Error)
 	}
 	return nil
 }
 
 func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
-	e := SearchEventDone{
+	event := SearchEventDone{
 		LimitHit: limitHit,
 	}
-	if err != nil {
-		e.Error = err.Error()
+	var notExistError *vcs.RepoNotExistError
+	if errors.As(err, &notExistError) {
+		b, _ := json.Marshal(notExistError)
+		event.Error = string(b)
+	} else if err != nil {
+		event.Error = err.Error()
 	}
-	return e
+	return event
 }
 
 type CommitMatch struct {

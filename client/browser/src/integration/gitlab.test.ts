@@ -68,6 +68,14 @@ describe('GitLab', () => {
                     },
                 },
             }),
+            ResolveRawRepoName: () => ({
+                repository: {
+                    mirrorInfo: {
+                        cloned: true,
+                    },
+                    uri: '',
+                },
+            }),
         })
 
         // Ensure that the same assets are requested in all environments.

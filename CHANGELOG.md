@@ -25,6 +25,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Search contexts GQL API is now only available in the Sourcegraph enterprise version. [#25281](https://github.com/sourcegraph/sourcegraph/pull/25281)
 - When running a commit or diff query, the accepted values of `before` and `after` have changed from "whatever git accepts" to a [slightly more strict subset](https://docs.sourcegraph.com/code_search/reference/language#before) of that. [#25414](https://github.com/sourcegraph/sourcegraph/pull/25414)
 - Search contexts are now enabled by default in the Sourcegraph enterprise version. [#25674](https://github.com/sourcegraph/sourcegraph/pull/25674)
+- Code Insights background queries will now retry a maximum of 10 times (down from 100). [#26057](https://github.com/sourcegraph/sourcegraph/pull/26057)
+- Our `sourcegraph/cadvisor` Docker image has been upgraded to cadvisor version `v0.42.0`. [#26126](https://github.com/sourcegraph/sourcegraph/pull/26126)
 
 ### Fixed
 
@@ -42,6 +44,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - Batch Changes changeset specs stored the raw JSON used when creating them, which is no longer used and is not exposed in the API. This column has been removed, thereby saving space in the Sourcegraph database. [#25453](https://github.com/sourcegraph/sourcegraph/issues/25453)
+- The query builder page experimental feature, which was disabled in 3.21, is now removed. The setting `{ "experimentalFeatures": { "showQueryBuilder": true } }` now has no effect. [#26125](https://github.com/sourcegraph/sourcegraph/pull/26125)
 
 ## 3.32.0
 

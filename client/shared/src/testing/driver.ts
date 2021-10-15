@@ -251,10 +251,29 @@ export class Driver {
      */
     public async setExtensionSourcegraphUrl(): Promise<void> {
         await this.page.goto(`chrome-extension://${BROWSER_EXTENSION_DEV_ID}/options.html`)
-        await this.page.waitForSelector('.test-sourcegraph-url')
-        await this.replaceText({ selector: '.test-sourcegraph-url', newText: this.sourcegraphBaseUrl })
+        await this.page.waitForSelector('[data-testid=test-sourcegraph-url]')
+        await this.replaceText({ selector: '[data-testid=test-sourcegraph-url]', newText: this.sourcegraphBaseUrl })
         await this.page.keyboard.press(Key.Enter)
-        await this.page.waitForSelector('.test-valid-sourcegraph-url-feedback')
+        await this.page.waitForSelector('[data-testid=test-valid-sourcegraph-url-feedback]')
+
+        if (this.sourcegraphBaseUrl !== 'https://sourcegraph.com') {
+            // Disabled using cloud url
+            // toggle advanced settings
+            await this.page.click('[data-testid=test-show-advanced-settings]')
+
+            // toggle blocklist checkbox
+            const toggleBlocklistSelector = '[data-testid=test-cloud-blocklist-toggle]'
+            await this.page.waitForSelector(toggleBlocklistSelector)
+            await this.page.click(toggleBlocklistSelector)
+
+            // update blocklist content
+            await this.replaceText({
+                selector: '[data-testid=test-cloud-blocklist-textarea]',
+                newText: '*',
+            })
+
+            await this.page.waitForSelector('[data-testid=blocklist-is-saved]')
+        }
     }
 
     public async close(): Promise<void> {

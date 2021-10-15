@@ -15,8 +15,9 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { fetchSite } from '../../shared/backend/server'
 import { isExtension } from '../../shared/context'
+import { SourcegraphUrlService } from '../../shared/platform/sourcegraphUrlService'
 import { initSentry } from '../../shared/sentry'
-import { observeSourcegraphURL, getExtensionVersion, DEFAULT_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { getExtensionVersion, CLOUD_SOURCEGRAPH_URL } from '../../shared/util/context'
 import { featureFlags } from '../../shared/util/featureFlags'
 import {
     OptionFlagKey,
@@ -28,7 +29,9 @@ import {
 } from '../../shared/util/optionFlags'
 import { assertEnvironment } from '../environmentAssertion'
 import { KnownCodeHost, knownCodeHosts } from '../knownCodeHosts'
-import { OptionsPage, URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/OptionsPage'
+import { URL_AUTH_ERROR, URL_FETCH_ERROR } from '../options-menu/constants'
+import { OptionsPage } from '../options-menu/OptionsPage'
+import { OptionsPageContext } from '../options-menu/OptionsPage.context'
 import { ThemeWrapper } from '../ThemeWrapper'
 import { background } from '../web-extension-api/runtime'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
@@ -43,8 +46,6 @@ interface TabStatus {
 assertEnvironment('OPTIONS')
 
 initSentry('options')
-
-const IS_EXTENSION = true
 
 /**
  * A list of protocols where we should *not* show the permissions notification.
@@ -107,7 +108,7 @@ const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
     )
 
 const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
-    const overrideSendTelemetry: Observable<boolean> = observeSourcegraphURL(IS_EXTENSION).pipe(
+    const overrideSendTelemetry: Observable<boolean> = SourcegraphUrlService.observe().pipe(
         map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
     )
 
@@ -123,21 +124,24 @@ const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
 }
 
 const observingIsActivated = observeStorageKey('sync', 'disableExtension').pipe(map(isDisabled => !isDisabled))
-const observingSourcegraphUrl = observeSourcegraphURL(true)
 const observingOptionFlagsWithValues = observeOptionFlagsWithValues()
 
 function handleToggleActivated(isActivated: boolean): void {
     storage.sync.set({ disableExtension: !isActivated }).catch(console.error)
 }
 
-function handleChangeOptionFlag(key: string, value: boolean): void {
+function onChangeOptionFlag(key: string, value: boolean): void {
     if (isOptionFlagKey(key)) {
         featureFlags.set(key, value).catch(noop)
     }
 }
 
-function handleChangeSourcegraphUrl(url: string): void {
-    storage.sync.set({ sourcegraphURL: url }).catch(console.error)
+function handleSelfHostedSourcegraphURLChange(sourcegraphURL?: string): void {
+    SourcegraphUrlService.setSelfHostedSourcegraphURL(sourcegraphURL).catch(console.error)
+}
+
+function onBlocklistChange(enabled: boolean, content: string): void {
+    SourcegraphUrlService.setBlocklist({ enabled, content }).catch(console.error)
 }
 
 function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
@@ -150,9 +154,11 @@ function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
 }
 
 const Options: React.FunctionComponent = () => {
-    const sourcegraphUrl = useObservable(observingSourcegraphUrl) || ''
+    const sourcegraphURL = useObservable(SourcegraphUrlService.observe())
+    const selfHostedSourcegraphURL = useObservable(SourcegraphUrlService.getSelfHostedSourcegraphURL())
+    const blocklist = useObservable(SourcegraphUrlService.getBlocklist())
     const isActivated = useObservable(observingIsActivated)
-    const optionFlagsWithValues = useObservable(observingOptionFlagsWithValues) || []
+    const optionFlags = useObservable(observingOptionFlagsWithValues) || []
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
@@ -182,24 +188,30 @@ const Options: React.FunctionComponent = () => {
 
     return (
         <ThemeWrapper>
-            <OptionsPage
-                isFullPage={isFullPage}
-                sourcegraphUrl={sourcegraphUrl}
-                onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
-                version={version}
-                validateSourcegraphUrl={validateSourcegraphUrl}
-                isActivated={!!isActivated}
-                onToggleActivated={handleToggleActivated}
-                optionFlags={optionFlagsWithValues}
-                onChangeOptionFlag={handleChangeOptionFlag}
-                showPrivateRepositoryAlert={
-                    currentTabStatus?.status.hasPrivateCloudError && sourcegraphUrl === DEFAULT_SOURCEGRAPH_URL
-                }
-                showSourcegraphCloudAlert={showSourcegraphCloudAlert}
-                permissionAlert={permissionAlert}
-                currentHost={currentTabStatus?.status.host}
-                requestPermissionsHandler={currentTabStatus?.handler}
-            />
+            <OptionsPageContext.Provider
+                value={{
+                    blocklist,
+                    onBlocklistChange,
+                    optionFlags,
+                    onChangeOptionFlag,
+                }}
+            >
+                <OptionsPage
+                    isFullPage={isFullPage}
+                    selfHostedSourcegraphURL={selfHostedSourcegraphURL}
+                    version={version}
+                    validateSourcegraphUrl={validateSourcegraphUrl}
+                    permissionAlert={permissionAlert}
+                    onSelfHostedSourcegraphURLChange={handleSelfHostedSourcegraphURLChange}
+                    isActivated={!!isActivated}
+                    onToggleActivated={handleToggleActivated}
+                    showPrivateRepositoryAlert={
+                        currentTabStatus?.status.hasPrivateCloudError && sourcegraphURL === CLOUD_SOURCEGRAPH_URL
+                    }
+                    showSourcegraphCloudAlert={showSourcegraphCloudAlert}
+                    requestPermissionsHandler={currentTabStatus?.handler}
+                />
+            </OptionsPageContext.Provider>
         </ThemeWrapper>
     )
 }

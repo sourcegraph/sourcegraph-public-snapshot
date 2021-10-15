@@ -7,7 +7,7 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { SearchSuggestion } from '@sourcegraph/shared/src/search/suggestions'
+import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 
@@ -15,7 +15,7 @@ const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
  * Adds code intelligence for the Sourcegraph search syntax to Monaco.
  */
 export function useQueryIntelligence(
-    fetchSuggestions: (query: string) => Observable<SearchSuggestion[]>,
+    fetchSuggestions: (query: string) => Observable<SearchMatch[]>,
     options: {
         patternType: SearchPatternType
         globbing: boolean

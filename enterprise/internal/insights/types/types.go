@@ -58,6 +58,7 @@ type InsightSeries struct {
 	NextSnapshotAfter     time.Time
 	BackfillQueuedAt      time.Time
 	RecordingIntervalDays int
+	Enabled               bool
 }
 
 type DirtyQuery struct {

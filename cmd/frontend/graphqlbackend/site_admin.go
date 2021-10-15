@@ -90,7 +90,7 @@ func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
 	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
-	if err := database.GlobalAuthz.RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
+	if err := database.Authz(r.db).RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
 		UserID:   user.ID,
 		Accounts: accounts,
 	}); err != nil {
@@ -203,11 +203,10 @@ func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struc
 	if err != nil {
 		return nil, err
 	}
-	if err := session.InvalidateSessionsByID(ctx, userID); err != nil {
+	if err := session.InvalidateSessionsByID(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
-
 }
 
 func logRoleChangeAttempt(ctx context.Context, db dbutil.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {

@@ -28,6 +28,8 @@ import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
+import styles from './StatusMessagesNavItem.module.scss'
+
 function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
     return requestGraphQL<StatusMessagesResult>(
         gql`
@@ -86,35 +88,43 @@ interface StatusMessageEntryProps {
 
 function entryIcon(entryType: EntryType): JSX.Element {
     switch (entryType) {
-        case 'error': {
-            return <InformationCircleIcon size={14} className="text-danger status-messages-nav-item__entry-icon" />
-        }
+        case 'error':
+            return <InformationCircleIcon size={14} className={classNames('text-danger', styles.icon)} />
         case 'warning':
-            return <AlertIcon size={14} className="text-warning status-messages-nav-item__entry-icon" />
+            return <AlertIcon size={14} className={classNames('text-warning', styles.icon)} />
         case 'success':
-            return <CheckboxCircleIcon size={14} className="text-success status-messages-nav-item__entry-icon" />
+            return <CheckboxCircleIcon size={14} className={classNames('text-success', styles.icon)} />
         case 'progress':
-            return <SyncIcon size={14} className="text-primary status-messages-nav-item__entry-icon" />
+            return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
         case 'not-active':
-            return (
-                <CircleDashedIcon
-                    size={16}
-                    className="status-messages-nav-item__entry-icon status-messages-nav-item__entry-icon--off"
-                />
-            )
+            return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
     }
 }
 
 const getMessageColor = (entryType: EntryType): string => {
-    const messageClass = 'status-messages-nav-item__entry-message'
     switch (entryType) {
         case 'error':
-            return `${messageClass}--error`
+            return styles.messageError
         case 'warning':
-            return `${messageClass}--warning`
+            return styles.messageWarning
+        default:
+            return ''
     }
+}
 
-    return ''
+const getBorderClassname = (entryType: EntryType): string => {
+    switch (entryType) {
+        case 'error':
+            return styles.entryBorderError
+        case 'warning':
+            return styles.entryBorderWarning
+        case 'success':
+            return styles.entryBorderSuccess
+        case 'progress':
+            return styles.entryBorderProgress
+        default:
+            return ''
+    }
 }
 
 const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
@@ -125,14 +135,14 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
     }
 
     return (
-        <div key={props.message} className="status-messages-nav-item__entry">
+        <div key={props.message} className={styles.entry}>
             <h4 className="d-flex align-items-center mb-0">
                 {entryIcon(props.entryType)}
                 {props.title ? props.title : 'Your repositories'}
             </h4>
             {props.entryType === 'not-active' ? (
-                <div className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--inactive border-0">
-                    <p className="text-muted status-messages-nav-item__entry-message">{props.message}</p>
+                <div className={classNames('status-messages-nav-item__entry-card border-0', styles.cardInactive)}>
+                    <p className={classNames('text-muted', styles.message)}>{props.message}</p>
                     <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
                         {props.linkText}
                     </Link>
@@ -140,18 +150,12 @@ const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProp
             ) : (
                 <div
                     className={classNames(
-                        'status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active',
-                        `status-messages-nav-item__entry--border-${props.entryType}`
+                        'status-messages-nav-item__entry-card',
+                        styles.cardActive,
+                        getBorderClassname(props.entryType)
                     )}
                 >
-                    <p
-                        className={classNames(
-                            'status-messages-nav-item__entry-message',
-                            getMessageColor(props.entryType)
-                        )}
-                    >
-                        {props.message}
-                    </p>
+                    <p className={classNames(styles.message, getMessageColor(props.entryType))}>{props.message}</p>
                     {props.messageHint && (
                         <>
                             <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
@@ -481,14 +485,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     {this.renderIcon()}
                 </DropdownToggle>
 
-                <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu p-0">
-                    <div className="status-messages-nav-item__dropdown-menu-content">
-                        <small className="d-inline-block text-muted status-messages-nav-item__entry-sync">
-                            Code sync status
-                        </small>
+                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
+                    <div className={styles.dropdownMenuContent}>
+                        <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
                         {isErrorLike(this.state.messagesOrError) ? (
                             <ErrorAlert
-                                className="status-messages-nav-item__entry"
+                                className={styles.entry}
                                 prefix="Failed to load status messages"
                                 error={this.state.messagesOrError}
                             />

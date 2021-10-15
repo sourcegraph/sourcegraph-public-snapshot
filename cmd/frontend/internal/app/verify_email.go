@@ -64,7 +64,7 @@ func serveVerifyEmail(db dbutil.DB) func(w http.ResponseWriter, r *http.Request)
 
 		logEmailVerified(ctx, db, r, actr.UID)
 
-		if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = database.Authz(db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: usr.ID,
 			Perm:   authz.Read,
 			Type:   authz.PermRepos,

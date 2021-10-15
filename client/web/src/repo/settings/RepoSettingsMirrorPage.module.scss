@@ -1,0 +1,20 @@
+.steps {
+    margin: 1rem 0 0.5rem 1.5rem;
+}
+
+.step:not(:last-child) {
+    margin-bottom: 0.5rem;
+}
+
+.log {
+    white-space: pre-wrap;
+    margin-bottom: 0;
+    overflow: auto;
+    max-height: 20rem;
+}
+
+.alert {
+    width: 100%;
+    flex: 1;
+    margin-top: 1rem;
+}

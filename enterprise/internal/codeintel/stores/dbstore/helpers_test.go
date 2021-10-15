@@ -194,6 +194,25 @@ func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 	}
 }
 
+// addToSearchContext creates a search context and adds the given repository to it. This is used to include
+// repositories within tests for indexing candidacy.
+func addToSearchContext(t testing.TB, db *sql.DB, id int) {
+	query := sqlf.Sprintf(`
+		WITH
+		inserted AS (
+			INSERT INTO search_contexts (name, description, public)
+			VALUES (%s, '', false)
+			RETURNING id
+		)
+		INSERT INTO search_context_repos (search_context_id, repo_id, revision)
+		SELECT id, %s, '' FROM inserted
+	`, fmt.Sprintf("test-context-%d", id), id)
+
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while adding repository to search context: %s", err)
+	}
+}
+
 // Marks a repo as deleted
 func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 	query := sqlf.Sprintf(

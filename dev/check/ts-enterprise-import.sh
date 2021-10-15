@@ -9,7 +9,6 @@ set +e
 IMPORT_MATCHES=$(
   git grep -e "import .*'\S*\/enterprise\S*'" -e "from .*'\S*\/enterprise\S*'" \
     ':(exclude)client/web/src/enterprise' \
-    ':(exclude)client/web/src/enterprise.scss' \
     'client/web/src'
 )
 set -e

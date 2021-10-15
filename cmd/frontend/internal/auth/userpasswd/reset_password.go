@@ -202,7 +202,7 @@ func HandleResetPasswordCode(db dbutil.DB) func(w http.ResponseWriter, r *http.R
 		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamePasswordChanged, params.UserID)
 
 		if conf.CanSendEmail() {
-			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
+			if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, db, params.UserID, "reset the password"); err != nil {
 				log15.Warn("Failed to send email to inform user of password reset", "error", err)
 			}
 		}
