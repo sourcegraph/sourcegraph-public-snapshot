@@ -166,6 +166,7 @@ func TestCorrelate(t *testing.T) {
 		},
 		ImportedMonikers:       datastructures.IDSetWith(18),
 		ExportedMonikers:       datastructures.IDSetWith(19),
+		ImplementedMonikers:    datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.DisjointIDSetWith(19, 21),
 		LinkedReferenceResults: map[int][]int{14: {15}},
 		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
@@ -224,6 +225,7 @@ func TestCorrelateMetaDataRoot(t *testing.T) {
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
+		ImplementedMonikers:    datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.NewDisjointIDSet(),
 		LinkedReferenceResults: map[int][]int{},
 		Contains:               datastructures.NewDefaultIDSetMap(),
@@ -272,6 +274,7 @@ func TestCorrelateMetaDataRootX(t *testing.T) {
 		NextData:               map[int]int{},
 		ImportedMonikers:       datastructures.NewIDSet(),
 		ExportedMonikers:       datastructures.NewIDSet(),
+		ImplementedMonikers:    datastructures.NewIDSet(),
 		LinkedMonikers:         datastructures.NewDisjointIDSet(),
 		LinkedReferenceResults: map[int][]int{},
 		Contains:               datastructures.NewDefaultIDSetMap(),
