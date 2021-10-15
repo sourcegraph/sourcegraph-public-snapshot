@@ -380,14 +380,14 @@ input LineChartOptionsInput {
 
 input LineChartSearchInsightInput {
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
-    repositoryScope: RepositoryScopeInput!
-    timeScope: TimeScopeInput!
     options: LineChartOptionsInput!
 }
 
 input LineChartSearchInsightDataSeriesInput {
     query: String!
     options: LineChartDataSeriesOptionsInput!
+    repositoryScope: RepositoryScopeInput!
+    timeScope: TimeScopeInput!
 }
 
 """
@@ -444,16 +444,6 @@ type InsightView implements Node {
     appliedFilters: InsightViewFilters!
 
     """
-    A scope of repositories defined for this insight.
-    """
-    repositoryScope: InsightRepositoryScope!
-
-    """
-    The scope of time for which the insight data is generated.
-    """
-    timeScope: InsightTimeScope!
-
-    """
     The time series data for this insight.
     """
     dataSeries: [InsightsSeries!]!
@@ -505,6 +495,16 @@ Defines an insight data series that is constructed from a Sourcegraph search que
 type SearchInsightDataSeriesDefinition {
     seriesId: String!
     query: String!
+
+    """
+    A scope of repositories defined for this insight.
+    """
+    repositoryScope: InsightRepositoryScope!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightTimeScope!
 }
 
 """
