@@ -30,11 +30,6 @@ const mockAPI = createMockInsightAPI({})
 
 add('Page', () => (
     <InsightsApiContext.Provider value={mockAPI}>
-        <InsightsDashboardCreationPage
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={PLATFORM_CONTEXT}
-            settingsCascade={SETTINGS_CASCADE_MOCK}
-            authenticatedUser={authUser}
-        />
+        <InsightsDashboardCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} authenticatedUser={authUser} />
     </InsightsApiContext.Provider>
 ))

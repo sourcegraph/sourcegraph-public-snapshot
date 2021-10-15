@@ -1,12 +1,12 @@
 import classnames from 'classnames'
-import { camelCase } from 'lodash';
+import { camelCase } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router'
 import { Link } from 'react-router-dom'
 
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Button, Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
@@ -15,13 +15,13 @@ import { LoaderButton } from '../../../../../components/LoaderButton'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
-import { FORM_ERROR } from '../../../components/form/hooks/useForm';
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context';
-import { isVirtualDashboard } from '../../../core/types';
-import { isSettingsBasedInsightsDashboard } from '../../../core/types/dashboard/real-dashboard';
+import { FORM_ERROR } from '../../../components/form/hooks/useForm'
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { isVirtualDashboard } from '../../../core/types'
+import { isSettingsBasedInsightsDashboard } from '../../../core/types/dashboard/real-dashboard'
 import {
     DashboardCreationFields,
-    InsightsDashboardCreationContent
+    InsightsDashboardCreationContent,
 } from '../creation/components/insights-dashboard-creation-content/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'

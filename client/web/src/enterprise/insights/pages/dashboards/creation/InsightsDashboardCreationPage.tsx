@@ -5,7 +5,7 @@ import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { PageHeader, Container, Button, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../../auth'
@@ -14,7 +14,7 @@ import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../components'
 import { FORM_ERROR, SubmissionErrors } from '../../../components/form/hooks/useForm'
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context';
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
 
 import {
     DashboardCreationFields,
@@ -74,10 +74,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
             </span>
 
             <Container className="mt-4">
-                <InsightsDashboardCreationContent
-                    subjects={subjects}
-                    onSubmit={handleSubmit}
-                >
+                <InsightsDashboardCreationContent subjects={subjects} onSubmit={handleSubmit}>
                     {formAPI => (
                         <>
                             <Button

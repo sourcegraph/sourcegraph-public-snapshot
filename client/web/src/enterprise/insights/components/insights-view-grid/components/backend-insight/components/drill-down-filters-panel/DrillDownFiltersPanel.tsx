@@ -27,13 +27,7 @@ export interface DrillDownFiltersPanelProps {
 }
 
 export const DrillDownFiltersPanel: React.FunctionComponent<DrillDownFiltersPanelProps> = props => {
-    const {
-        initialFiltersValue,
-        originalFiltersValue,
-        onFiltersChange,
-        onFilterSave,
-        onInsightCreate,
-    } = props
+    const { initialFiltersValue, originalFiltersValue, onFiltersChange, onFilterSave, onInsightCreate } = props
 
     const handleFilterChange = (event: FormChangeEvent<DrillDownFiltersFormValues>): void => {
         if (event.valid) {

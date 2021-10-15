@@ -13,7 +13,7 @@ import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
 import { Badge } from '../../../dashboard-select/components/badge/Badge'
 import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
-import { ReachableInsight } from '../../hooks/use-reachable-insights'
+import { ReachableInsight } from '../../utils/get-reachable-insights'
 
 import styles from './AddInsightModalContent.module.scss'
 

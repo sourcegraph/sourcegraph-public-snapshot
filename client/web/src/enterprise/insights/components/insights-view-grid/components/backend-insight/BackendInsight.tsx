@@ -1,5 +1,5 @@
 import classnames from 'classnames'
-import { camelCase } from 'lodash';
+import { camelCase } from 'lodash'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
@@ -15,8 +15,8 @@ import {
     LineChartSettingsContext,
 } from '../../../../../../views'
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context';
-import { InsightTypePrefix } from '../../../../core/types';
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { InsightTypePrefix } from '../../../../core/types'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
@@ -86,7 +86,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         try {
             const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
 
-            await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters}).toPromise()
+            await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
 

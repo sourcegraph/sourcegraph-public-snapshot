@@ -3,12 +3,12 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner';
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context';
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { AddInsightModal } from '../add-insight-modal/AddInsightModal'
@@ -126,17 +126,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
             )}
 
             {isAddInsightOpen && isDashboardConfigurable(currentDashboard) && (
-                <AddInsightModal
-                    dashboard={currentDashboard}
-                    onClose={() => setAddInsightsState(false)}
-                />
+                <AddInsightModal dashboard={currentDashboard} onClose={() => setAddInsightsState(false)} />
             )}
 
             {isDeleteDashboardActive && isDashboardConfigurable(currentDashboard) && (
-                <DeleteDashboardModal
-                    dashboard={currentDashboard}
-                    onClose={() => setDeleteDashboardActive(false)}
-                />
+                <DeleteDashboardModal dashboard={currentDashboard} onClose={() => setDeleteDashboardActive(false)} />
             )}
         </div>
     )

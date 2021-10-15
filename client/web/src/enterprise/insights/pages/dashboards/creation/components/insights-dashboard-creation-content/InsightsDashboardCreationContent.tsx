@@ -8,10 +8,10 @@ import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
-import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation';
-import { createRequiredValidator } from '../../../../../components/form/validators';
+import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
+import { createRequiredValidator } from '../../../../../components/form/validators'
 import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
-import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context';
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     isGlobalSubject,
     isOrganizationSubject,
@@ -34,7 +34,6 @@ export interface DashboardCreationFields {
 }
 
 export interface InsightsDashboardCreationContentProps {
-
     initialValues?: DashboardCreationFields
 
     /**
@@ -62,24 +61,24 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     const asyncNameValidator = useCallback<AsyncValidator<string>>(
-    async name => {
-        // Pass empty value and initial value (for edit page original name is acceptable)
-        if (!name || name === '' || name === initialValues?.name) {
-            return
-        }
+        async name => {
+            // Pass empty value and initial value (for edit page original name is acceptable)
+            if (!name || name === '' || name === initialValues?.name) {
+                return
+            }
 
-        try {
-            const possibleDashboard = await findDashboardByName(name).toPromise()
+            try {
+                const possibleDashboard = await findDashboardByName(name).toPromise()
 
-            return possibleDashboard !== null
-                ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
-        : undefined
-        } catch (error) {
-            return asError(error).message || 'Unknown Error'
-        }
-    },
+                return possibleDashboard !== null
+                    ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
+                    : undefined
+            } catch (error) {
+                return asError(error).message || 'Unknown Error'
+            }
+        },
         [findDashboardByName, initialValues?.name]
-)
+    )
 
     const name = useField({
         name: 'name',

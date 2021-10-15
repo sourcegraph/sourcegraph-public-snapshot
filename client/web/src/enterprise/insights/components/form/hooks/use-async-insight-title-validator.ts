@@ -1,9 +1,9 @@
-import { useCallback, useContext } from 'react';
+import { useCallback, useContext } from 'react'
 
-import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context';
-import { InsightTypePrefix } from '../../../core/types';
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { InsightTypePrefix } from '../../../core/types'
 
-import { AsyncValidator } from './utils/use-async-validation';
+import { AsyncValidator } from './utils/use-async-validation'
 
 interface Props {
     initialTitle?: string

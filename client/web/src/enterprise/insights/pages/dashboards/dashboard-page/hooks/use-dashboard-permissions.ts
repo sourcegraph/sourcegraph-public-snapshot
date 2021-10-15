@@ -27,7 +27,6 @@ export function useDashboardPermissions(
     dashboard: InsightDashboard | undefined,
     supportedSubjects?: SupportedInsightSubject[]
 ): DashboardPermissions {
-
     if (isVirtualDashboard(dashboard)) {
         return {
             isConfigurable: false,
