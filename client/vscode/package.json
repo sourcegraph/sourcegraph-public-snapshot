@@ -1,0 +1,34 @@
+{
+  "private": true,
+  "name": "@sourcegraph/vscode",
+  "displayName": "Sourcegraph",
+  "version": "0.0.1",
+  "description": "Sourcegraph VS Code extension",
+  "publisher": "sourcegraph",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "engines": {
+    "vscode": "^1.61.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:sourcegraph.test"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sourcegraph.test",
+        "title": "Sourcegraph: TEST"
+      }
+    ]
+  },
+  "keybindings": [],
+  "scripts": {
+    "eslint": "eslint --cache '**/*.[jt]s?(x)'",
+    "build": "webpack",
+    "test": "echo \"No tests exist yet\" && exit 1"
+  }
+}

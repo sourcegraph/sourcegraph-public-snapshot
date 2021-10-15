@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es6",
+    "lib": ["es6"],
+    "sourceMap": true,
+    "sourceRoot": "src",
+    "baseUrl": "./src",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+  },
+  "references": [{ "path": "../shared" }, { "path": "../branded" }],
+  "include": ["**/*", ".*"],
+  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "**/*.test.ts", "out", "dist"],
+}

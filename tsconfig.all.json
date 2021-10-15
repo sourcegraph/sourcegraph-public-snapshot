@@ -15,6 +15,7 @@
     { "path": "client/extension-api" },
     { "path": "client/extension-api-types" },
     { "path": "client/storybook" },
+    { "path": "client/vscode" },
     { "path": "dev/release" },
     { "path": "schema" },
   ],
