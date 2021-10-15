@@ -13,11 +13,12 @@ import {
 export interface DashboardCreateInput {
     name: string
     visibility: string
+    insightIds?: string[]
 }
 
 export interface DashboardUpdateInput {
     previousDashboard: SettingsBasedInsightDashboard
-    nextDashboard: SettingsBasedInsightDashboard
+    nextDashboardInput: DashboardCreateInput
 }
 
 export interface DashboardDeleteInput {

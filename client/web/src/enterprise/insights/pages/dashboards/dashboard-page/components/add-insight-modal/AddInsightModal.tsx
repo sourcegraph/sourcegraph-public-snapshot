@@ -42,9 +42,15 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
-            const nextDashboard = { ...dashboard, insightIds }
 
-            await updateDashboard({ previousDashboard: dashboard, nextDashboard }).toPromise()
+            await updateDashboard({
+                previousDashboard: dashboard,
+                nextDashboardInput: {
+                    name: dashboard.title,
+                    visibility: dashboard.owner.id,
+                    insightIds
+                }
+            }).toPromise()
             onClose()
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }

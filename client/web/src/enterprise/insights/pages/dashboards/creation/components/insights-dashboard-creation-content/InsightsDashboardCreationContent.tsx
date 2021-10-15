@@ -1,13 +1,17 @@
-import React, { ReactNode } from 'react'
+import React, { ReactNode, useCallback, useContext } from 'react'
+
+import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
-import { InsightDashboard } from '../../../../../../../schema/settings.schema'
 import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
 import { FormInput } from '../../../../../components/form/form-input/FormInput'
 import { FormRadioInput } from '../../../../../components/form/form-radio-input/FormRadioInput'
 import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
+import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation';
+import { createRequiredValidator } from '../../../../../components/form/validators';
 import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context';
 import {
     isGlobalSubject,
     isOrganizationSubject,
@@ -15,8 +19,9 @@ import {
     SupportedInsightSubject,
 } from '../../../../../core/types/subjects'
 
-import { useDashboardNameValidator } from './hooks/useDashboardNameValidator'
 import { getGlobalSubjectTooltipText } from './utils/get-global-subject-tooltip-text'
+
+const dashboardTitleRequired = createRequiredValidator('Name is a required field.')
 
 const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
     name: '',
@@ -29,19 +34,13 @@ export interface DashboardCreationFields {
 }
 
 export interface InsightsDashboardCreationContentProps {
-    /**
-     * Initial values for the dashboard creation form.
-     */
+
     initialValues?: DashboardCreationFields
 
     /**
      * Organizations list used in the creation form for dashboard visibility setting.
      */
     subjects: SupportedInsightSubject[]
-
-    dashboardsSettings: {
-        [k: string]: InsightDashboard
-    }
 
     onSubmit: (values: DashboardCreationFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     children: (formAPI: FormAPI<DashboardCreationFields>) => ReactNode
@@ -51,8 +50,9 @@ export interface InsightsDashboardCreationContentProps {
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
 export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
-    const { initialValues, subjects, dashboardsSettings, onSubmit, children } = props
+    const { initialValues, subjects, onSubmit, children } = props
 
+    const { findDashboardByName } = useContext(CodeInsightsBackendContext)
     // Calculate initial value for the visibility settings
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
 
@@ -61,12 +61,30 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
         onSubmit,
     })
 
-    const nameValidator = useDashboardNameValidator({ settings: dashboardsSettings })
+    const asyncNameValidator = useCallback<AsyncValidator<string>>(
+    async name => {
+        // Pass empty value and initial value (for edit page original name is acceptable)
+        if (!name || name === '' || name === initialValues?.name) {
+            return
+        }
+
+        try {
+            const possibleDashboard = await findDashboardByName(name).toPromise()
+
+            return possibleDashboard !== null
+                ? 'A dashboard with this name already exists. Please set a different name for the new dashboard.'
+        : undefined
+        } catch (error) {
+            return asError(error).message || 'Unknown Error'
+        }
+    },
+        [findDashboardByName, initialValues?.name]
+)
 
     const name = useField({
         name: 'name',
         formApi: formAPI,
-        validators: { sync: nameValidator },
+        validators: { sync: dashboardTitleRequired, async: asyncNameValidator },
     })
 
     const visibility = useField({
