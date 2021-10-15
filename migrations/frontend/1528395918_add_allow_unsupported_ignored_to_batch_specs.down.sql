@@ -1,0 +1,11 @@
+BEGIN;
+
+ALTER TABLE batch_specs
+  DROP COLUMN IF EXISTS allow_unsupported,
+  DROP COLUMN IF EXISTS allow_ignored;
+
+ALTER TABLE batch_spec_resolution_jobs
+  ADD COLUMN IF NOT EXISTS allow_unsupported BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS allow_ignored BOOLEAN NOT NULL DEFAULT FALSE;
+
+COMMIT;

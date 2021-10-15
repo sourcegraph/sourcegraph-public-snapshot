@@ -58,8 +58,8 @@ func (r *batchSpecWorkspaceCreator) process(
 	resolver := newResolver(tx)
 	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
 	workspaces, unsupported, ignored, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
-		AllowUnsupported: job.AllowUnsupported,
-		AllowIgnored:     job.AllowIgnored,
+		AllowUnsupported: spec.AllowUnsupported,
+		AllowIgnored:     spec.AllowIgnored,
 	})
 	if err != nil {
 		return err

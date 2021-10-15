@@ -342,6 +342,20 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 	}, nil
 }
 
+func (r *batchSpecResolver) AllowUnsupported() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.AllowUnsupported
+	}
+	return nil
+}
+
+func (r *batchSpecResolver) AllowIgnored() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.AllowIgnored
+	}
+	return nil
+}
+
 func (r *batchSpecResolver) AutoApplyEnabled() bool {
 	// TODO(ssbc): not implemented
 	return false

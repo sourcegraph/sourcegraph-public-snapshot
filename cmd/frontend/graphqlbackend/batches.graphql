@@ -2483,22 +2483,6 @@ type BatchSpecWorkspaceResolution {
     state: BatchSpecWorkspaceResolutionState!
 
     """
-    If true, repos with a .batchignore file will still be included.
-
-    TODO: Determine if this is required, or if we want to switch this over to
-    the spec file instead.
-    """
-    allowIgnored: Boolean!
-
-    """
-    If true, repos on unsupported codehosts will be included. These cannot
-    be published.
-
-    TODO: Determine if this is required.
-    """
-    allowUnsupported: Boolean!
-
-    """
     The actual list of determined workspaces.
     """
     workspaces(
@@ -3438,10 +3422,25 @@ type BatchSpec implements Node {
     """
     Set when something about this batch spec is not right. For example, the input spec
     is invalid, or if ValidateChangesetSpecs throws an error when the last job completes.
-
-    TODO: Not implemented yet.
     """
     failureMessage: String
+
+    """
+    If true, repos with a .batchignore file will still be included in the
+    execution.
+
+    Null, if not created through createBatchSpecFromRaw.
+    """
+    allowIgnored: Boolean
+
+    """
+    If true, repos on unsupported codehosts will be included in the execution.
+    These cannot be published.
+
+    Null, if not created through createBatchSpecFromRaw.
+    """
+    allowUnsupported: Boolean
+
 }
 
 """
