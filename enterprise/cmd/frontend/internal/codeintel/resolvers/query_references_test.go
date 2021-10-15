@@ -75,14 +75,6 @@ func TestReferencesRemote(t *testing.T) {
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
 
-	definitionUploads := []dbstore.Dump{
-		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
-		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
-		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
-		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
-	}
-	mockDBStore.DefinitionDumpsFunc.PushReturn(definitionUploads, nil)
-
 	referenceUploads := []dbstore.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 251, Commit: "deadbeef2", Root: "sub2/"},
@@ -150,9 +142,8 @@ func TestReferencesRemote(t *testing.T) {
 		{DumpID: 53, Path: "b.go", Range: testRange4},
 		{DumpID: 53, Path: "c.go", Range: testRange5},
 	}
-	mockLSIFStore.BulkMonikerResultsFunc.PushReturn(monikerLocations[0:1], 1, nil) // defs
-	mockLSIFStore.BulkMonikerResultsFunc.PushReturn(monikerLocations[1:2], 1, nil) // refs batch 1
-	mockLSIFStore.BulkMonikerResultsFunc.PushReturn(monikerLocations[2:], 3, nil)  // refs batch 2
+	mockLSIFStore.BulkMonikerResultsFunc.PushReturn(monikerLocations[0:1], 1, nil) // batch 1
+	mockLSIFStore.BulkMonikerResultsFunc.PushReturn(monikerLocations[1:], 4, nil)  // batch 2
 
 	uploads := []dbstore.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -190,48 +181,6 @@ func TestReferencesRemote(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
-	}
-
-	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
-		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
-	} else {
-		expectedMonikers := []precise.QualifiedMonikerData{
-			{MonikerData: monikers[0], PackageInformationData: packageInformation1},
-			{MonikerData: monikers[2], PackageInformationData: packageInformation2},
-		}
-		if diff := cmp.Diff(expectedMonikers, history[0].Arg1); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-	}
-
-	if history := mockLSIFStore.BulkMonikerResultsFunc.History(); len(history) != 3 {
-		t.Fatalf("unexpected call count for lsifstore.BulkMonikerResults. want=%d have=%d", 3, len(history))
-	} else {
-		if diff := cmp.Diff([]int{151, 152, 153}, history[0].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-
-		expectedMonikers := []precise.MonikerData{
-			monikers[0],
-			monikers[2],
-		}
-		if diff := cmp.Diff(expectedMonikers, history[0].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if diff := cmp.Diff([]int{251}, history[1].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff(expectedMonikers, history[1].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
-
-		if diff := cmp.Diff([]int{252, 253}, history[2].Arg2); diff != "" {
-			t.Errorf("unexpected ids (-want +got):\n%s", diff)
-		}
-		if diff := cmp.Diff(expectedMonikers, history[2].Arg3); diff != "" {
-			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
-		}
 	}
 }
 
