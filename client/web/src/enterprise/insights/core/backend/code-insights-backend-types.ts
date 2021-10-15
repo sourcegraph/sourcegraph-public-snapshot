@@ -17,7 +17,7 @@ export interface DashboardCreateInput {
 
 export interface DashboardUpdateInput {
     previousDashboard: SettingsBasedInsightDashboard
-    nextDashboardInput: DashboardCreateInput
+    nextDashboard: SettingsBasedInsightDashboard
 }
 
 export interface DashboardDeleteInput {
@@ -32,7 +32,6 @@ export interface FindInsightByNameInput {
 
 export interface InsightCreateInput {
     insight: Insight
-    subjectId: string
     dashboard: InsightDashboard | null
 }
 

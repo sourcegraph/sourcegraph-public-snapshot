@@ -1,10 +1,6 @@
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-
-import { Settings } from '../../../../../../schema/settings.schema'
 import { InsightDashboard, InsightsDashboardType, isRealDashboard, isVirtualDashboard } from '../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../core/types/dashboard/real-dashboard'
-import { isGlobalSubject } from '../../../../core/types/subjects'
-import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
+import { isGlobalSubject, SupportedInsightSubject } from '../../../../core/types/subjects'
 
 enum DashboardReasonDenied {
     AllVirtualDashboard,
@@ -29,9 +25,8 @@ const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
 
 export function useDashboardPermissions(
     dashboard: InsightDashboard | undefined,
-    settingsCascade: SettingsCascadeOrError<Settings>
+    supportedSubjects?: SupportedInsightSubject[]
 ): DashboardPermissions {
-    const supportedSubject = useInsightSubjects({ settingsCascade })
 
     if (isVirtualDashboard(dashboard)) {
         return {
@@ -40,7 +35,11 @@ export function useDashboardPermissions(
         }
     }
 
-    const dashboardOwner = supportedSubject.find(subject => subject.id === dashboard?.owner?.id)
+    if (!supportedSubjects) {
+        return DEFAULT_DASHBOARD_PERMISSIONS
+    }
+
+    const dashboardOwner = supportedSubjects.find(subject => subject.id === dashboard?.owner?.id)
 
     // No dashboard can't be modified
     if (!dashboard || !dashboardOwner) {

@@ -3,11 +3,9 @@ import classnames from 'classnames'
 import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-
-import { Settings } from '../../../../../../../schema/settings.schema'
 import { positionBottomRight } from '../../../../../components/context-menu/utils'
 import { InsightDashboard } from '../../../../../core/types'
+import { SupportedInsightSubject } from '../../../../../core/types/subjects';
 import { getTooltipMessage, useDashboardPermissions } from '../../hooks/use-dashboard-permissions'
 
 import styles from './DashboardMenu.module.scss'
@@ -19,18 +17,19 @@ export enum DashboardMenuAction {
     AddRemoveInsights,
 }
 
-export interface DashboardMenuProps extends SettingsCascadeProps<Settings> {
+export interface DashboardMenuProps {
     innerRef: React.Ref<HTMLButtonElement>
+    subjects?: SupportedInsightSubject[]
     dashboard?: InsightDashboard
     onSelect?: (action: DashboardMenuAction) => void
     tooltipText?: string
 }
 
 export const DashboardMenu: React.FunctionComponent<DashboardMenuProps> = props => {
-    const { innerRef, dashboard, settingsCascade, onSelect = () => {}, tooltipText } = props
+    const { innerRef, dashboard, subjects, onSelect = () => {}, tooltipText } = props
 
     const hasDashboard = dashboard !== undefined
-    const permissions = useDashboardPermissions(dashboard, settingsCascade)
+    const permissions = useDashboardPermissions(dashboard, subjects)
 
     return (
         <Menu>

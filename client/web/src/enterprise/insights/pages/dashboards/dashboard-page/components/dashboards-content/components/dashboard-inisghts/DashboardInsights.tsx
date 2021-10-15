@@ -1,34 +1,39 @@
-import React from 'react'
+import React, { useContext, useMemo } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner';
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable';
 
-import { Settings } from '../../../../../../../../../schema/settings.schema'
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
+import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context';
 import { InsightDashboard } from '../../../../../../../core/types'
+import { SupportedInsightSubject } from '../../../../../../../core/types/subjects';
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
-import { useInsights } from '../../../../../../../hooks/use-insight/use-insight'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
 
 import { DashboardInsightsContext } from './DashboardInsightsContext'
 
 const DEFAULT_INSIGHT_IDS: string[] = []
 
-interface DashboardInsightsProps
-    extends TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps<'updateSettings'> {
+interface DashboardInsightsProps extends TelemetryProps {
     dashboard: InsightDashboard
+    subjects?: SupportedInsightSubject[]
     onAddInsightRequest: () => void
 }
 
 export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> = props => {
-    const { telemetryService, dashboard, settingsCascade, platformContext, onAddInsightRequest } = props
+    const { telemetryService, dashboard, subjects, onAddInsightRequest } = props
+
+    const { getInsights } = useContext(CodeInsightsBackendContext)
 
     const dashboardInsightIds = dashboard.insightIds ?? DEFAULT_INSIGHT_IDS
     const insightIds = useDistinctValue(dashboardInsightIds)
-    const insights = useInsights({ insightIds, settingsCascade })
+
+    const insights = useObservable(useMemo(() => getInsights(insightIds), [getInsights, insightIds]))
+
+    if (insights === undefined) {
+        return <LoadingSpinner />
+    }
 
     return (
         <DashboardInsightsContext.Provider value={{ dashboard }}>
@@ -37,13 +42,11 @@ export const DashboardInsights: React.FunctionComponent<DashboardInsightsProps> 
                     <SmartInsightsViewGrid
                         insights={insights}
                         telemetryService={telemetryService}
-                        settingsCascade={settingsCascade}
-                        platformContext={platformContext}
                     />
                 ) : (
                     <EmptyInsightDashboard
+                        subjects={subjects}
                         dashboard={dashboard}
-                        settingsCascade={settingsCascade}
                         onAddInsight={onAddInsightRequest}
                     />
                 )}
