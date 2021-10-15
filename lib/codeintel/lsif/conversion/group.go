@@ -2,7 +2,6 @@ package conversion
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"sort"
 	"strings"
@@ -154,18 +153,22 @@ func serializeDocument(state *State, documentID int) precise.DocumentData {
 }
 
 func serializeResultChunks(ctx context.Context, state *State, numResultChunks int) chan precise.IndexedResultChunkData {
-	chunkAssignments := make(map[int][]int, numResultChunks)
-	for id := range state.DefinitionData {
-		index := precise.HashKey(toID(id), numResultChunks)
-		chunkAssignments[index] = append(chunkAssignments[index], id)
+	type entry struct {
+		id     int
+		ranges *datastructures.DefaultIDSetMap
 	}
-	for id := range state.ReferenceData {
+	chunkAssignments := make(map[int][]entry, numResultChunks)
+	for id, ranges := range state.DefinitionData {
 		index := precise.HashKey(toID(id), numResultChunks)
-		chunkAssignments[index] = append(chunkAssignments[index], id)
+		chunkAssignments[index] = append(chunkAssignments[index], entry{id: id, ranges: ranges})
 	}
-	for id := range state.ImplementationData {
+	for id, ranges := range state.ReferenceData {
 		index := precise.HashKey(toID(id), numResultChunks)
-		chunkAssignments[index] = append(chunkAssignments[index], id)
+		chunkAssignments[index] = append(chunkAssignments[index], entry{id: id, ranges: ranges})
+	}
+	for id, ranges := range state.ImplementationData {
+		index := precise.HashKey(toID(id), numResultChunks)
+		chunkAssignments[index] = append(chunkAssignments[index], entry{id: id, ranges: ranges})
 	}
 
 	ch := make(chan precise.IndexedResultChunkData)
@@ -173,31 +176,19 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 	go func() {
 		defer close(ch)
 
-		for index, resultIDs := range chunkAssignments {
-			if len(resultIDs) == 0 {
+		for index, entries := range chunkAssignments {
+			if len(entries) == 0 {
 				continue
 			}
 
 			documentPaths := map[precise.ID]string{}
-			rangeIDsByResultID := make(map[precise.ID][]precise.DocumentIDRangeID, len(resultIDs))
+			rangeIDsByResultID := make(map[precise.ID][]precise.DocumentIDRangeID, len(entries))
 
-			for _, resultID := range resultIDs {
-				var documentRanges *datastructures.DefaultIDSetMap
-
-				if ranges, ok := state.DefinitionData[resultID]; ok {
-					documentRanges = ranges
-				} else if ranges, ok := state.ReferenceData[resultID]; ok {
-					documentRanges = ranges
-				} else if ranges, ok := state.ImplementationData[resultID]; ok {
-					documentRanges = ranges
-				} else {
-					panic(fmt.Sprintf("in serializeResultChunks: resultID %d was not found in any known result set types [definition, reference, implementation]", resultID))
-				}
-
+			for _, entry := range entries {
 				rangeIDMap := map[precise.ID]int{}
 				var documentIDRangeIDs []precise.DocumentIDRangeID
 
-				documentRanges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
+				entry.ranges.Each(func(documentID int, rangeIDs *datastructures.IDSet) {
 					docID := toID(documentID)
 					documentPaths[docID] = state.DocumentData[documentID]
 
@@ -222,7 +213,7 @@ func serializeResultChunks(ctx context.Context, state *State, numResultChunks in
 					s:             documentIDRangeIDs,
 				})
 
-				rangeIDsByResultID[toID(resultID)] = documentIDRangeIDs
+				rangeIDsByResultID[toID(entry.id)] = documentIDRangeIDs
 			}
 
 			data := precise.IndexedResultChunkData{
