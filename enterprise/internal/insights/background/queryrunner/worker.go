@@ -313,6 +313,48 @@ const queryJobsStatusFmtStr = `
 SELECT COUNT(*) FROM insights_query_runner_jobs WHERE series_id=%s AND state=%s
 `
 
+func QueryAllSeriesStatus(ctx context.Context, workerBaseStore *basestore.Store) (_ []types.InsightSeriesStatus, err error) {
+	q := sqlf.Sprintf(queryAllSeriesStatusSql)
+	query, err := workerBaseStore.Query(ctx, q)
+	return scanAllSeriesStatusRows(query, err)
+}
+func scanAllSeriesStatusRows(rows *sql.Rows, queryErr error) (_ []types.InsightSeriesStatus, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []types.InsightSeriesStatus
+	for rows.Next() {
+		var temp types.InsightSeriesStatus
+		if err := rows.Scan(
+			&temp.SeriesId,
+			&temp.Errored,
+			&temp.Processing,
+			&temp.Failed,
+			&temp.Completed,
+			&temp.Queued,
+		); err != nil {
+			return []types.InsightSeriesStatus{}, err
+		}
+		results = append(results, temp)
+	}
+	return results, nil
+}
+
+const queryAllSeriesStatusSql = `
+select
+       series_id,
+       sum(case when state = 'errored' then 1 else 0 end) as errored,
+       sum(case when state = 'processing' then 1 else 0 end) as processing,
+       sum(case when state = 'failed' then 1 else 0 end) as failed,
+       sum(case when state = 'completed' then 1 else 0 end) as completed,
+       sum(case when state = 'queued' then 1 else 0 end) as queued
+from insights_query_runner_jobs
+group by series_id
+order by series_id;
+`
+
 // Job represents a single job for the query runner worker to perform. When enqueued, it is stored
 // in the insights_query_runner_jobs table - then the worker dequeues it by reading it from that
 // table.
