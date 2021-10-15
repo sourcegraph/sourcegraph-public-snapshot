@@ -24,8 +24,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 		ctx             context.Context
 		mockCurrentUser *types.User
 		mockOrgMember   *types.OrgMembership
-		namespaceUserId int32
-		namespaceOrgId  int32
+		namespaceUserID int32
+		namespaceOrgID  int32
 		expectNil       bool
 		errMessage      string
 	}{
@@ -34,8 +34,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             nonAuthContext,
 			mockCurrentUser: nil,
 			mockOrgMember:   nil,
-			namespaceOrgId:  0,
-			namespaceUserId: 1,
+			namespaceOrgID:  0,
+			namespaceUserID: 1,
 			expectNil:       false,
 			errMessage:      "got nil, want ErrNoAccessExternalService",
 		},
@@ -44,8 +44,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             ctx,
 			mockCurrentUser: mockSiteAdmin(false),
 			mockOrgMember:   nil,
-			namespaceOrgId:  0,
-			namespaceUserId: 0,
+			namespaceOrgID:  0,
+			namespaceUserID: 0,
 			expectNil:       false,
 			errMessage:      "got nil, want ErrNoAccessExternalService",
 		},
@@ -54,8 +54,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             ctx,
 			mockCurrentUser: mockSiteAdmin(true),
 			mockOrgMember:   nil,
-			namespaceOrgId:  0,
-			namespaceUserId: 0,
+			namespaceOrgID:  0,
+			namespaceUserID: 0,
 			expectNil:       true,
 			errMessage:      "got ErrNoAccessExternalService, want nil",
 		},
@@ -64,8 +64,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             ctx,
 			mockCurrentUser: mockSiteAdmin(true),
 			mockOrgMember:   nil,
-			namespaceOrgId:  0,
-			namespaceUserId: 42,
+			namespaceOrgID:  0,
+			namespaceUserID: 42,
 			expectNil:       false,
 			errMessage:      "got nil, want ErrNoAccessExternalService",
 		},
@@ -74,8 +74,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             ctx,
 			mockCurrentUser: mockSiteAdmin(false),
 			mockOrgMember:   nil,
-			namespaceOrgId:  0,
-			namespaceUserId: 1,
+			namespaceOrgID:  0,
+			namespaceUserID: 1,
 			expectNil:       true,
 			errMessage:      "got ErrNoAccessExternalService, want nil",
 		},
@@ -84,8 +84,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             ctx,
 			mockCurrentUser: mockSiteAdmin(true),
 			mockOrgMember:   nil,
-			namespaceOrgId:  42,
-			namespaceUserId: 0,
+			namespaceOrgID:  42,
+			namespaceUserID: 0,
 			expectNil:       false,
 			errMessage:      "got nil, want ErrNoAccessExternalService",
 		},
@@ -94,8 +94,8 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 			ctx:             ctx,
 			mockCurrentUser: mockSiteAdmin(false),
 			mockOrgMember:   &types.OrgMembership{ID: 1, OrgID: 42, UserID: 1},
-			namespaceOrgId:  42,
-			namespaceUserId: 0,
+			namespaceOrgID:  42,
+			namespaceUserID: 0,
 			expectNil:       true,
 			errMessage:      "got ErrNoAccessExternalService, want nil",
 		},
@@ -114,7 +114,7 @@ func TestCheckExternalServiceAccess(t *testing.T) {
 				database.Mocks.OrgMembers = database.MockOrgMembers{}
 			}()
 
-			result := CheckExternalServiceAccess(test.ctx, db, test.namespaceUserId, test.namespaceOrgId)
+			result := CheckExternalServiceAccess(test.ctx, db, test.namespaceUserID, test.namespaceOrgID)
 
 			if test.expectNil != (result == nil) {
 				t.Errorf(test.errMessage)
