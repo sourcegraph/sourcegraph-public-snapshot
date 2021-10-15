@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -30,7 +31,12 @@ var (
 func installExec(ctx context.Context, args []string) error {
 	const location = "/usr/local/bin/sg"
 
-	stdout.Out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleLogo, "Welcome to the sg installation!"))
+	var logoOut bytes.Buffer
+	printLogo(&logoOut)
+	stdout.Out.Write(logoOut.String())
+
+	stdout.Out.Write("")
+	stdout.Out.WriteLine(output.Linef("", output.StyleLogo, "Welcome to the sg installation!"))
 
 	stdout.Out.Write("")
 	stdout.Out.Writef("We are going to install %ssg%s to %s%s%s. Okay?", output.StyleBold, output.StyleReset, output.StyleBold, location, output.StyleReset)
