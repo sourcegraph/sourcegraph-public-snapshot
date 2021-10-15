@@ -73,6 +73,41 @@ func TestParseConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "1 GitLab.com config with scope override",
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				ExternalURL: "https://sourcegraph.example.com",
+				AuthProviders: []schema.AuthProviders{{
+					Gitlab: &schema.GitLabAuthProvider{
+						ApiScope:     "read_api",
+						ClientID:     "my-client-id",
+						ClientSecret: "my-client-secret",
+						DisplayName:  "GitLab",
+						Type:         extsvc.TypeGitLab,
+						Url:          "https://gitlab.com",
+					},
+				}},
+			}}},
+			wantProviders: map[schema.GitLabAuthProvider]providers.Provider{
+				{
+					ApiScope:     "read_api",
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					DisplayName:  "GitLab",
+					Type:         extsvc.TypeGitLab,
+					Url:          "https://gitlab.com",
+				}: provider("https://gitlab.com/", oauth2.Config{
+					RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					ClientID:     "my-client-id",
+					ClientSecret: "my-client-secret",
+					Endpoint: oauth2.Endpoint{
+						AuthURL:  "https://gitlab.com/oauth/authorize",
+						TokenURL: "https://gitlab.com/oauth/token",
+					},
+					Scopes: []string{"read_user", "read_api"},
+				}),
+			},
+		},
+		{
 			name:   "1 GitLab.com config, Sourcegraph.com",
 			dotcom: true,
 			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
