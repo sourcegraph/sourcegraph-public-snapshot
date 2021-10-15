@@ -2,7 +2,7 @@ import { useContext, useState } from 'react'
 
 import { ErrorLike, asError } from '@sourcegraph/shared/src/util/errors'
 
-import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context';
+import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
 import { SettingsBasedInsightDashboard } from '../../../../../../core/types'
 
 export interface UseDeleteDashboardHandlerProps {
@@ -30,7 +30,7 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
         try {
             await deleteDashboard({
                 dashboardSettingKey: dashboard.settingsKey,
-                dashboardOwnerId: dashboard.owner.id
+                dashboardOwnerId: dashboard.owner.id,
             }).toPromise()
 
             setLoadingOrError(false)

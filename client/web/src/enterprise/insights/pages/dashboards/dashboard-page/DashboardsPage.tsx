@@ -18,7 +18,7 @@ import { InsightsDashboardType } from '../../../core/types'
 import { DashboardsContent } from './components/dashboards-content/DashboardsContent'
 import styles from './DashboardPage.module.scss'
 
-export interface DashboardsPageProps extends TelemetryProps{
+export interface DashboardsPageProps extends TelemetryProps {
     /**
      * Possible dashboard id. All insights on the page will be get from
      * dashboard's info from the user or org settings by the dashboard id.
@@ -72,10 +72,7 @@ export const DashboardsPage: React.FunctionComponent<DashboardsPageProps> = prop
                     className="mb-3"
                 />
 
-                <DashboardsContent
-                    telemetryService={telemetryService}
-                    dashboardID={dashboardID}
-                />
+                <DashboardsContent telemetryService={telemetryService} dashboardID={dashboardID} />
             </Page>
         </div>
     )

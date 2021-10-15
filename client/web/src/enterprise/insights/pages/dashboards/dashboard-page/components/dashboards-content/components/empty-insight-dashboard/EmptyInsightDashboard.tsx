@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@sourcegraph/wildcard'
 
 import { InsightDashboard } from '../../../../../../../core/types'
-import { SupportedInsightSubject } from '../../../../../../../core/types/subjects';
+import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
 import { getTooltipMessage, useDashboardPermissions } from '../../../../hooks/use-dashboard-permissions'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 
@@ -22,11 +22,7 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
     const { onAddInsight, dashboard, subjects } = props
 
     return isDashboardConfigurable(dashboard) ? (
-        <EmptySettingsBasedDashboard
-            dashboard={dashboard}
-            subjects={subjects}
-            onAddInsight={onAddInsight}
-        />
+        <EmptySettingsBasedDashboard dashboard={dashboard} subjects={subjects} onAddInsight={onAddInsight} />
     ) : (
         <EmptyBuiltInDashboard dashboard={dashboard} />
     )

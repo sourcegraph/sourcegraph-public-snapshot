@@ -13,17 +13,15 @@ import {
     ViewContent,
     LineChartSettingsContext,
 } from '../../../../../../views'
-import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context';
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { LangStatsInsight } from '../../../../core/types'
 import { SearchExtensionBasedInsight } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
-import { useDistinctValue } from '../../../../hooks/use-distinct-value';
+import { useDistinctValue } from '../../../../hooks/use-distinct-value'
 import { useParallelRequests } from '../../../../hooks/use-parallel-requests/use-parallel-request'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
 
-interface BuiltInInsightProps<D extends keyof ViewContexts>
-    extends TelemetryProps,
-        React.HTMLAttributes<HTMLElement> {
+interface BuiltInInsightProps<D extends keyof ViewContexts> extends TelemetryProps, React.HTMLAttributes<HTMLElement> {
     insight: SearchExtensionBasedInsight | LangStatsInsight
     where: D
     context: ViewContexts[D]
@@ -44,10 +42,12 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
     const cachedInsight = useDistinctValue(insight)
 
     const { data, loading } = useParallelRequests(
-        useMemo(
-            () => () => getBuiltInInsightData({ insight: cachedInsight, options: { where, context }}),
-            [getBuiltInInsightData, cachedInsight, where, context]
-        )
+        useMemo(() => () => getBuiltInInsightData({ insight: cachedInsight, options: { where, context } }), [
+            getBuiltInInsightData,
+            cachedInsight,
+            where,
+            context,
+        ])
     )
 
     // Visual line chart settings

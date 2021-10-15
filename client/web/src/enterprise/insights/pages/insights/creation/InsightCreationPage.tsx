@@ -6,10 +6,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { InsightsApiContext } from '../../../core/backend/api-provider'
-import { addInsightToDashboard } from '../../../core/settings-action/dashboards'
-import { addInsightToSettings } from '../../../core/settings-action/insights'
+import { addInsight } from '../../../core/settings-action/insights'
 import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
-import { isSettingsBasedInsightsDashboard } from '../../../core/types/dashboard/real-dashboard'
 import { isUserSubject } from '../../../core/types/subjects'
 import { useDashboard } from '../../../hooks/use-dashboard'
 import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
@@ -29,21 +27,6 @@ const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string 
     }
 
     return dashboard.owner.id
-}
-
-const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
-    const dashboardSettingKey =
-        !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
-            ? dashboard.settingsKey
-            : undefined
-
-    const transforms = [
-        (settings: string) => addInsightToSettings(settings, insight),
-        (settings: string) =>
-            dashboardSettingKey ? addInsightToDashboard(settings, dashboardSettingKey, insight.id) : settings,
-    ]
-
-    return transforms.reduce((settings, transformer) => transformer(settings), settings)
 }
 
 interface InsightCreateEvent {
