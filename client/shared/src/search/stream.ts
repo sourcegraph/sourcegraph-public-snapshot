@@ -400,6 +400,7 @@ export interface StreamSearchOptions {
     caseSensitive: boolean
     versionContext: string | undefined
     trace: string | undefined
+    sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
 }
@@ -414,6 +415,7 @@ function initiateSearchStream(
         trace,
         decorationKinds,
         decorationContextLines,
+        sourcegraphURL = '',
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
 ): Observable<SearchEvent> {
@@ -437,7 +439,7 @@ function initiateSearchStream(
         }
         const parameterEncoded = parameters.map(([k, v]) => k + '=' + encodeURIComponent(v)).join('&')
 
-        const eventSource = new EventSource('/search/stream?' + parameterEncoded)
+        const eventSource = new EventSource(`${sourcegraphURL}/search/stream?${parameterEncoded}`)
         subscriptions.add(() => eventSource.close())
 
         for (const [eventType, handleMessages] of Object.entries(messageHandlers)) {

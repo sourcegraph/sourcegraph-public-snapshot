@@ -43,12 +43,13 @@ function firstMatchStreamingSearch(
     return search(queryObservable, options, firstMatchMessageHandlers).pipe(switchAggregateSearchResults)
 }
 
-export function fetchStreamSuggestions(query: string): Observable<SearchMatch[]> {
+export function fetchStreamSuggestions(query: string, sourcegraphURL?: string): Observable<SearchMatch[]> {
     return firstMatchStreamingSearch(of(query), {
         version: SearchVersion.V2,
         patternType: SearchPatternType.literal,
         caseSensitive: false,
         versionContext: undefined,
         trace: undefined,
+        sourcegraphURL,
     }).pipe(map(suggestions => suggestions.results))
 }
