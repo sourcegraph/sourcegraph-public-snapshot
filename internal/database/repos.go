@@ -972,8 +972,8 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	} else if opt.OrgID != 0 {
-		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id INNER JOIN external_services ON external_services.id = external_service_repos.external_service_id"))
-		where = append(where, sqlf.Sprintf("external_services.namespace_org_id = %d", opt.OrgID))
+		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
+		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
 		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
@@ -1396,12 +1396,14 @@ insert_sources AS (
     external_service_id,
     repo_id,
     user_id,
+    org_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
     es.namespace_user_id,
+    es.namespace_org_id,
     clone_url
   FROM sources_list
   JOIN external_services es ON (es.id = external_service_id)
