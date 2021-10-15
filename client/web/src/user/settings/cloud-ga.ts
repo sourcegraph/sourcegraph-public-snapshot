@@ -18,8 +18,7 @@ export interface Owner {
 export const externalServiceUserMode = (props: UserProps): 'disabled' | 'public' | 'all' | 'unknown' =>
     externalServiceUserModeFromTags(props.user.tags || [])
 
-// DO NOT COMMIT
-export const userExternalServicesEnabled = (props: UserProps): boolean => true // modeEnabled(externalServiceUserMode(props))
+export const userExternalServicesEnabled = (props: UserProps): boolean => modeEnabled(externalServiceUserMode(props))
 
 export const userExternalServicesEnabledFromTags = (tags: string[]): boolean =>
     modeEnabled(externalServiceUserModeFromTags(tags))

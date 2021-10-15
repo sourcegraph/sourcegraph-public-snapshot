@@ -6,6 +6,8 @@ import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../componen
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
+import { showOrganizationsCode } from './utils'
+
 import styles from './OrgSettingsSidebar.module.scss'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
@@ -21,6 +23,7 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
     }
 
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
+    const showOrgCode = showOrganizationsCode(authenticatedUser)
 
     return (
         <div className={classNames(styles.orgSettingsSidebar, className)}>
@@ -42,12 +45,16 @@ export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authen
                 <SidebarNavItem to={`${match.url}/members`} exact={true}>
                     Members
                 </SidebarNavItem>
-                <SidebarNavItem to={`${match.url}/code-hosts`} exact={true}>
-                    Code host connections
-                </SidebarNavItem>
-                <SidebarNavItem to={`${match.url}/repositories`} exact={true}>
-                    Repositories
-                </SidebarNavItem>
+                {showOrgCode && (
+                    <>
+                        <SidebarNavItem to={`${match.url}/code-hosts`} exact={true}>
+                            Code host connections
+                        </SidebarNavItem>
+                        <SidebarNavItem to={`${match.url}/repositories`} exact={true}>
+                            Repositories
+                        </SidebarNavItem>
+                    </>
+                )}
             </SidebarGroup>
         </div>
     )
