@@ -45,6 +45,9 @@ var (
 	_ workerutil.WithHooks      = &handler{}
 )
 
+// errCommitDoesNotExist occurs when gitserver does not recognize the commit attached to the upload.
+var errCommitDoesNotExist = errors.Errorf("commit does not exist")
+
 func (h *handler) Handle(ctx context.Context, record workerutil.Record) error {
 	_, err := h.handle(ctx, record.(store.Upload))
 	return err
@@ -140,9 +143,12 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// Find the date of the commit and store that in the upload record. We do this now as we
 			// will need to find the _oldest_ commit with code intelligence data to efficiently update
 			// the commit graph for the repository.
-			commitDate, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+			commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
 			if err != nil {
 				return errors.Wrap(err, "gitserverClient.CommitDate")
+			}
+			if !revisionExists {
+				return errCommitDoesNotExist
 			}
 			if err := tx.UpdateCommitedAt(ctx, upload.ID, commitDate); err != nil {
 				return errors.Wrap(err, "store.CommitDate")
