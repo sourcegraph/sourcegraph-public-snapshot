@@ -80,6 +80,7 @@ func TestReposIndex(t *testing.T) {
 
 			var data struct {
 				RepoNames []string
+				RepoIDs   []api.RepoID
 			}
 			if err := json.Unmarshal(body, &data); err != nil {
 				t.Fatal(err)
@@ -87,7 +88,19 @@ func TestReposIndex(t *testing.T) {
 			got := data.RepoNames
 
 			if !cmp.Equal(tc.want, got) {
-				t.Fatalf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+				t.Fatalf("names mismatch (-want +got):\n%s", cmp.Diff(tc.want, got))
+			}
+
+			wantIDs := make([]api.RepoID, len(tc.want))
+			for i, name := range tc.want {
+				for _, repo := range allRepos {
+					if string(repo.Name) == name {
+						wantIDs[i] = repo.ID
+					}
+				}
+			}
+			if d := cmp.Diff(wantIDs, data.RepoIDs); d != "" {
+				t.Fatalf("ids mismatch (-want +got):\n%s", d)
 			}
 		})
 	}
