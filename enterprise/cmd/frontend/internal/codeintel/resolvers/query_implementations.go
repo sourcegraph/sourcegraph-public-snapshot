@@ -64,11 +64,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		log.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)),
 	)
 
-	fmt.Println("implementation monikers:")
-	for _, moniker := range cursor.OrderedImplementationMonikers {
-		fmt.Println("- ", moniker)
-	}
-
 	if cursor.OrderedExportMonikers == nil {
 		if cursor.OrderedExportMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "export"); err != nil {
 			return nil, "", err
@@ -79,17 +74,11 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		log.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)),
 	)
 
-	fmt.Println("export monikers:")
-	for _, moniker := range cursor.OrderedExportMonikers {
-		fmt.Println("- ", moniker)
-	}
-
 	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
 	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
 	// no more local results remaining.
 	var locations []lsifstore.Location
 	if cursor.Phase == "local" {
-		fmt.Println("local")
 		for len(locations) < limit {
 			localLocations, hasMore, err := r.pageLocalReferences(ctx, "implementations", adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
 			if err != nil {
@@ -108,7 +97,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// there are no more local results. We'll continue to request additional locations until we fill an
 	// entire page or there are no more local results remaining, just as we did above.
 	if cursor.Phase == "dependencies" {
-		fmt.Println("dependencies")
 		uploads, err := r.definitionUploads(ctx, cursor.OrderedImplementationMonikers)
 		if err != nil {
 			return nil, "", err
@@ -130,7 +118,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 
 	// Phase 3: Gather all "remote" locations in dependents via moniker search.
 	if cursor.Phase == "dependents" {
-		fmt.Println("dependents")
 		for len(locations) < limit {
 			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "implementations", adjustedUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
@@ -149,7 +136,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	cursor.Phase = "done"
 
 	traceLog(log.Int("numLocations", len(locations)))
-	fmt.Println("Implementations: len(locations)", len(locations))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all implementations
