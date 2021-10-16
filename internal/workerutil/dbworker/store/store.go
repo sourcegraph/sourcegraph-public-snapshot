@@ -820,7 +820,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 			int(s.options.StalledMaxAge/time.Second),
 			s.options.MaxNumResets,
 			quote(s.options.TableName),
-			"failed to process",
+			makeFailureMessage(s.options),
 		),
 	))
 	if err != nil {
@@ -851,6 +851,12 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 
 		return m, nil
 	}
+}
+
+// makeFailureMessage constructs the default failure message used when a
+// job permanently fails after a number of reset attempts.
+func makeFailureMessage(options Options) string {
+	return "failed to process"
 }
 
 const resetStalledQuery = `
