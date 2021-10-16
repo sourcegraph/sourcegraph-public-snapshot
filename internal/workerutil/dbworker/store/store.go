@@ -233,6 +233,10 @@ type Options struct {
 	// cycle of the same input.
 	MaxNumResets int
 
+	// ResetFailureMessage overrides the default failure message written to job records that have been
+	// reset the maximum number of times.
+	ResetFailureMessage string
+
 	// RetryAfter determines whether the store dequeues jobs that have errored more than RetryAfter ago.
 	// Setting this value to zero will disable retries entirely.
 	//
@@ -783,6 +787,8 @@ WHERE %s
 RETURNING {id}
 `
 
+const defaultResetFailureMessage = "job processor died while handling this message too many times"
+
 // ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 // queued state. In order to prevent input that continually crashes worker instances, records that have been reset
 // more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
@@ -811,6 +817,11 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	}
 	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
+	resetFailureMessage := s.options.ResetFailureMessage
+	if resetFailureMessage == "" {
+		resetFailureMessage = defaultResetFailureMessage
+	}
+
 	failedLastHeartbeatsByIDs, err = scan(s.Query(
 		ctx,
 		s.formatQuery(
@@ -820,7 +831,7 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 			int(s.options.StalledMaxAge/time.Second),
 			s.options.MaxNumResets,
 			quote(s.options.TableName),
-			makeFailureMessage(s.options),
+			resetFailureMessage,
 		),
 	))
 	if err != nil {
@@ -851,12 +862,6 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 
 		return m, nil
 	}
-}
-
-// makeFailureMessage constructs the default failure message used when a
-// job permanently fails after a number of reset attempts.
-func makeFailureMessage(options Options) string {
-	return "failed to process"
 }
 
 const resetStalledQuery = `
