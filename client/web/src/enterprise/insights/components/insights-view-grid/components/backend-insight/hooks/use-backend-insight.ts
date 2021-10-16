@@ -95,7 +95,7 @@ export function useBackendInsight(props: UseBackendInsightProps): UseBackendInsi
 
     const { data, loading, error } = useQuery<InsightsResult, InsightsVariables>(BACKEND_INSIGHT_QUERY, {
         variables,
-        context: { concurrent: true },
+        context: { concurrentRequests: { limit: 2, key: 'codeInsightsBackendInsight' } },
         fetchPolicy: 'cache-and-network',
     })
 
