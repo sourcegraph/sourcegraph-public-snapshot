@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
+import { isEqual, capitalize } from 'lodash'
 import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
 import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
@@ -102,14 +102,20 @@ type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
-        {warning}. {hint} {hint ? 'for more details' : null}
+    <div className="alert alert-warning my-3" role="alert" key={warning}>
+        <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
+        <p className="align-middle mb-0">
+            {hint} {hint ? 'for more details.' : null}
+        </p>
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div key={error.message} className="alert alert-danger mt-3 mb-0" role="alert">
-        {error.message}. {hint} {hint ? 'for more details' : null}
+    <div className="alert alert-danger my-3" role="alert" key={error.message}>
+        <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
+        <p className="align-middle mb-0">
+            {hint} {hint ? 'for more details.' : null}
+        </p>
     </div>
 )
 
@@ -172,7 +178,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [affiliateRepoProblems, setAffiliateRepoProblems] = useState<affiliateRepoProblemType>()
     const [otherPublicRepoError, setOtherPublicRepoError] = useState<undefined | ErrorLike>()
 
-    const ExternalServiceProblemHint = <Link to={`${routingPrefix}/code-hosts`}>Check code host connections</Link>
+    const ExternalServiceProblemHint = (
+        <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
+            Check code host connections
+        </Link>
+    )
 
     const toggleTextArea = useCallback(
         () => setPublicRepoState({ ...publicRepoState, enabled: !publicRepoState.enabled }),
@@ -435,6 +445,8 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
 
+        debugger
+
         return (
             selectionState.radio !== onloadRadioValue ||
             !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
@@ -553,21 +565,24 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
-            <label className="d-flex flex-row align-items-baseline">
-                <input
-                    type="radio"
-                    value="all"
-                    disabled={noCodeHostsOrErrors}
-                    checked={selectionState.radio === 'all'}
-                    onChange={handleRadioSelect}
-                />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync all repositories</p>
-                    <p className="user-settings-repos__text-light text-muted">
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
+            {!isOrgOwner && (
+                <label className="d-flex flex-row align-items-baseline">
+                    <input
+                        type="radio"
+                        value="all"
+                        disabled={noCodeHostsOrErrors}
+                        checked={selectionState.radio === 'all'}
+                        onChange={handleRadioSelect}
+                    />
+                    <div className="d-flex flex-column ml-2">
+                        <p className="mb-0">Sync all repositories</p>
+                        <p className="user-settings-repos__text-light text-muted">
+                            Will sync all current and future public and private repositories
+                        </p>
+                    </div>
+                </label>
+            )}
+
             <label className="d-flex flex-row align-items-baseline mb-0">
                 <input
                     type="radio"
@@ -727,13 +742,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const modeSelectShimmer: JSX.Element = (
         <div className="container mt-4">
-            <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
-            </div>
-            <div className="mt-1 ml-2 row">
-                <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
-            </div>
+            {!isOrgOwner && (
+                <>
+                    <div className="mt-2 row">
+                        <div className="user-settings-repos__shimmer-circle mr-2" />
+                        <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
+                    </div>
+                    <div className="mt-1 ml-2 row">
+                        <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
+                    </div>
+                </>
+            )}
+
             <div className="mt-2 row">
                 <div className="user-settings-repos__shimmer-circle mr-2" />
                 <div className="user-settings-repos__shimmer p-2 mb-1 border-top-0 col-sm-3" />
@@ -782,8 +802,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             )}
                             {codeHosts.loaded && codeHosts.hosts.length === 0 && (
                                 <div className="alert alert-warning mb-2">
-                                    <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your
-                                    own repositories to Sourcegraph.
+                                    <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
+                                        Connect with a code host
+                                    </Link>{' '}
+                                    to add
+                                    {owner.name ? ` ${owner.name}'s` : ' your own'} repositories to Sourcegraph.
                                 </div>
                             )}
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}

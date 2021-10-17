@@ -75,21 +75,23 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         <Container className="text-center">
             <h4>{owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph</h4>
 
-            {externalServices?.length === 0 ? (
+            {externalServices?.length !== 0 ? (
+                <span className="text-muted">
+                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching{' '}
+                    {isUserOwner ? 'code with Sourcegraph.' : 'with your team!'}
+                </span>
+            ) : isUserOwner ? (
                 <span className="text-muted">
                     <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
-                    {isUserOwner && (
-                        <span>
-                            You can also{' '}
-                            <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link>{' '}
-                            from GitHub.com or GitLab.com.
-                        </span>
-                    )}
+                    <span>
+                        You can also{' '}
+                        <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link> from
+                        GitHub.com or GitLab.com.
+                    </span>
                 </span>
             ) : (
                 <span className="text-muted">
-                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching code
-                    with Sourcegraph.
+                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to get started with Sourcegraph.{' '}
                 </span>
             )}
         </Container>
@@ -281,7 +283,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             <p className="align-middle mb-0">
                 Search across all repositories added by {orgName} with{' '}
                 <code className="user-code-hosts-page__code--inline">
-                    <Link className="alert-link" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
+                    <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
                         context:
                     </Link>
                     @{orgName}
@@ -313,7 +315,8 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     {
                         text: (
                             <div className="d-flex">
-                                Your repositories <Badge status="beta" className="ml-2" />
+                                {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
+                                <Badge status="beta" className="ml-2" />
                             </div>
                         ),
                     },
@@ -321,7 +324,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 description={
                     <div className="text-muted">
                         All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
-                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts. </Link>
+                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>.
                     </div>
                 }
                 actions={
@@ -332,7 +335,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
                             >
-                                Manage Repositories
+                                Manage repositories
                             </Link>
                         ) : isUserOwner ? (
                             <Link
@@ -356,7 +359,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
                             >
-                                Manage Repositories
+                                <AddIcon className="icon-inline" /> Add repositories
                             </Link>
                         )}
                     </span>

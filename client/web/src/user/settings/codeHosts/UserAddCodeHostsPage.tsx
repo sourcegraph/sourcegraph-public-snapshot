@@ -167,13 +167,13 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 <p className="align-middle mb-0">
                     Next,{' '}
                     <Link
-                        className="alert-link"
+                        className="font-weight-normal"
                         to={`${routingPrefix}/repositories/manage`}
                         onClick={logAddRepositoriesClicked('banner')}
                     >
                         add repositories
                     </Link>{' '}
-                    to search Sourcegraph.
+                    to search with Sourcegraph.
                 </p>
             </div>
         ) : null
@@ -240,7 +240,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
         <div className="alert alert-danger my-3" key={service.id}>
-            <h4 className="align-middle mb-1">Could not connect with {service.displayName}.</h4>
+            <h4 className="align-middle mb-1">Could not connect with {service.displayName}</h4>
             <p className="align-middle mb-0">{service.problem}. Try connecting again.</p>
         </div>
     )

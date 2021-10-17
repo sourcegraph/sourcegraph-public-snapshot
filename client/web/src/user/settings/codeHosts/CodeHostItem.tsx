@@ -124,35 +124,24 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                 <h3 className="m-0">{name}</h3>
             </div>
             <div className="align-self-center">
-                {/* always show remove button when the service exists */}
-                {service?.id && (
-                    <button
-                        type="button"
-                        className="btn btn-link text-danger shadow-none"
-                        onClick={toggleRemoveConnectionModal}
-                    >
-                        Remove
-                    </button>
-                )}
-
                 {/* Show one of: update, updating, connect, connecting buttons */}
                 {!service?.id ? (
                     oauthInFlight ? (
                         <LoaderButton
                             type="button"
-                            className="btn btn-success"
+                            className="btn btn-primary"
                             loading={true}
                             disabled={true}
                             label="Connecting..."
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button type="button" className="btn btn-success" onClick={connectAction}>
+                        <button type="button" className="btn btn-primary" onClick={connectAction}>
                             Connect
                         </button>
                     )
                 ) : (
-                    isTokenUpdateRequired &&
+                    (isTokenUpdateRequired || !isUserOwner) &&
                     (oauthInFlight ? (
                         <LoaderButton
                             type="button"
@@ -163,10 +152,27 @@ export const CodeHostItem: React.FunctionComponent<CodeHostItemProps> = ({
                             alwaysShowLabel={true}
                         />
                     ) : (
-                        <button type="button" className="btn btn-merged" onClick={updateAction}>
+                        <button
+                            type="button"
+                            className={`btn ${
+                                !isUserOwner ? 'btn-link p-0 shadow-none font-weight-normal' : 'btn-merged'
+                            }`}
+                            onClick={updateAction}
+                        >
                             Update
                         </button>
                     ))
+                )}
+
+                {/* always show remove button when the service exists */}
+                {service?.id && (
+                    <button
+                        type="button"
+                        className="btn btn-link text-danger font-weight-normal shadow-none px-0 ml-3"
+                        onClick={toggleRemoveConnectionModal}
+                    >
+                        Remove
+                    </button>
                 )}
             </div>
         </div>
