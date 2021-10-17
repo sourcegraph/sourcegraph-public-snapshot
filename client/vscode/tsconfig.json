@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@sourcegraph/tsconfig",
   "compilerOptions": {
     "module": "commonjs",
     "target": "es6",
@@ -10,6 +10,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
+    "jsx": "react",
   },
   "references": [{ "path": "../shared" }, { "path": "../branded" }],
   "include": ["**/*", ".*"],
