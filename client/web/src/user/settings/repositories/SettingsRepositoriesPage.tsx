@@ -65,7 +65,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
-    const [shouldDisplayContextBanner, setShouldDisplayContextBanner] = useState(false)
+    const [shouldDisplayContextBanner /* setShouldDisplayContextBanner */] = useState(false)
 
     const isUserOwner = owner.type === 'user'
     const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
@@ -169,6 +169,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         setStatus(undefined)
                     }
 
+                    // TODO: @artem - fix the context banner
                     // if (repos.nodes.length !== 0) {
                     //     if (status === 'schedule-complete') {
                     //         setShouldDisplayContextBanner(true)
