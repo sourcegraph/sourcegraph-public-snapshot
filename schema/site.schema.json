@@ -1380,7 +1380,7 @@
         "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
         "apiScope": {
           "type": "string",
-          "description": "The OAuth api scope that should be used",
+          "description": "The OAuth API scope that should be used",
           "default": "api",
           "enum": ["api", "read_api"]
         }
