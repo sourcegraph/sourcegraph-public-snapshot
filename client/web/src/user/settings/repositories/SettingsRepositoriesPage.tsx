@@ -323,10 +323,10 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     },
                 ]}
                 description={
-                    <div className="text-muted">
+                    <span className="text-muted">
                         All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
                         <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>.
-                    </div>
+                    </span>
                 }
                 actions={
                     <span>
