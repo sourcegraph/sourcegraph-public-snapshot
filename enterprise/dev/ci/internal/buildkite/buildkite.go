@@ -7,6 +7,8 @@
 package buildkite
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"encoding/json"
 	"io"
 	"strings"
@@ -117,7 +119,29 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	for _, opt := range AfterEveryStepOpts {
 		opt(step)
 	}
+
+	if step.Key == "" {
+		// If no key has been assigned, generate one.
+		// TODO(JH) this is collision prone
+		hash := md5.Sum([]byte(step.Label))
+		step.Key = string(hex.EncodeToString(hash[:]))
+	}
+
 	p.Steps = append(p.Steps, step)
+}
+
+func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
+	p.AddStep(label, opts...)
+	lastStep := p.Steps[len(p.Steps)-1].(*Step)
+
+	// Collect all keys to make this step depends on all others.
+	keys := []string{}
+	for _, step := range p.Steps {
+		if s, ok := step.(*Step); ok && step != lastStep {
+			keys = append(keys, s.Key)
+		}
+	}
+	lastStep.DependsOn = keys
 }
 
 func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
@@ -263,6 +287,15 @@ func Agent(key, value string) StepOpt {
 
 func (p *Pipeline) AddWait() {
 	p.Steps = append(p.Steps, "wait")
+}
+
+// AddEnsure acts like AddWait, but subsequent steps are ran even if there was
+// a failure in the earlier steps.
+func (p *Pipeline) AddEnsure() {
+	p.Steps = append(p.Steps, map[string]interface{}{
+		"wait":                nil,
+		"continue_on_failure": true,
+	})
 }
 
 func Key(key string) StepOpt {

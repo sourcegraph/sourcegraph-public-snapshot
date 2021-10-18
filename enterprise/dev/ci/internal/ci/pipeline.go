@@ -245,6 +245,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
+	// TODO(JH) drop this simulating steps
+	ops.Append(fault())
+	ops.Append(depfault())
+	// ---
+
+	ops.Append(uploadBuildLogs())
+
 	ops.Apply(pipeline)
 	return pipeline, nil
 }
