@@ -5,8 +5,8 @@ import (
 
 	dbmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore/migration"
 	lsifmigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/migration"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
