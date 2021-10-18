@@ -10,7 +10,7 @@ url="https://github.com/sourcegraph/docsite/releases/download/${version}/docsite
 
 base="$PWD/.bin"
 if [[ "${CI:-"false"}" == "true" ]]; then
-    base="/tmp"
+  base="/tmp"
 fi
 
 target="${base}/docsite_${suffix}"
