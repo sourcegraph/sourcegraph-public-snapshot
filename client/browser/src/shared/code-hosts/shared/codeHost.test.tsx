@@ -27,7 +27,7 @@ import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockInter
 import { subtypeOf, allOf, check, isTaggedUnionMember } from '@sourcegraph/shared/src/util/types'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
+import { CLOUD_SOURCEGRAPH_URL } from '../../util/context'
 import { MutationRecordLike } from '../../util/dom'
 
 import {
@@ -96,7 +96,7 @@ const commonArguments = () =>
         mutations: of([{ addedNodes: [document.body], removedNodes: [] }]),
         showGlobalDebug: false,
         platformContext: createMockPlatformContext(),
-        sourcegraphURL: DEFAULT_SOURCEGRAPH_URL,
+        sourcegraphURL: CLOUD_SOURCEGRAPH_URL,
         telemetryService: NOOP_TELEMETRY_SERVICE,
         render: RENDER,
         userSignedIn: true,

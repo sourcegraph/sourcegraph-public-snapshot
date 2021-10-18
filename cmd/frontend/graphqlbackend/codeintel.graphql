@@ -305,6 +305,23 @@ extend type Repository {
         """
         after: String
     ): LSIFIndexConnection!
+
+    """
+    The set of git objects that match the given git object type and glob pattern.
+    This resolver is used by the UI to preview what names match a code intelligence
+    policy in a given repository.
+    """
+    previewGitObjectFilter(
+        """
+        The type of Git object described by the configuration policy.
+        """
+        type: GitObjectType!
+
+        """
+        A pattern matching the name of the matching Git object.
+        """
+        pattern: String!
+    ): [GitObjectFilterPreview!]!
 }
 
 extend interface TreeEntry {
@@ -342,6 +359,22 @@ extend type GitBlob {
         """
         toolName: String
     ): GitBlobLSIFData
+}
+
+"""
+A git object that matches a git object type and glob pattern. This type is used by
+the UI to preview what names match a code intelligence policy in a given repository.
+"""
+type GitObjectFilterPreview {
+    """
+    The relevant branch or tag name.
+    """
+    name: String!
+
+    """
+    The full 40-char revhash.
+    """
+    rev: String!
 }
 
 """
@@ -529,6 +562,11 @@ A wrapper object around LSIF query methods for a particular git-blob-at-revision
 null, no LSIF data is available for the git blob in question.
 """
 type GitBlobLSIFData implements TreeEntryLSIFData {
+    """
+    Return a flat list of all ranges in the document that have code intelligence.
+    """
+    stencil: [Range!]!
+
     """
     Get aggregated local code intelligence for all ranges that fall in the window
     indicated by the given zero-based start (inclusive) and end (exclusive) lines.

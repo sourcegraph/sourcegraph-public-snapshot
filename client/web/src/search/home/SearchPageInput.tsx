@@ -1,9 +1,8 @@
 import * as H from 'history'
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Form } from 'reactstrap'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
@@ -51,8 +50,6 @@ interface Props
     availableVersionContexts: VersionContext[] | undefined
     /** Whether globbing is enabled for filters. */
     globbing: boolean
-    /** Show the query builder link. */
-    showQueryBuilder: boolean
     /** A query fragment to appear at the beginning of the input. */
     queryPrefix?: string
     /** A query fragment to be prepended to queries. This will not appear in the input until a search is submitted. */
@@ -83,11 +80,14 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     ])
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
+    const tourContainer = useRef<HTMLDivElement>(null)
+
     const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
         showOnboardingTour,
         queryState: userQueryState,
         setQueryState: setUserQueryState,
+        stepsContainer: tourContainer.current ?? undefined,
     })
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
@@ -107,6 +107,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div className="search-page__input-container">
+                    {/* Search onboarding tour must be rendered before the SearchBox so
+                    the Monaco autocomplete suggestions are not blocked by the tour. */}
+                    <div ref={tourContainer} />
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
@@ -118,13 +121,6 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                     />
                 </div>
-                {props.showQueryBuilder && (
-                    <div className="search-page__input-sub-container">
-                        <Link className="btn btn-link btn-sm pl-0" to="/search/query-builder">
-                            Query builder
-                        </Link>
-                    </div>
-                )}
                 <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>

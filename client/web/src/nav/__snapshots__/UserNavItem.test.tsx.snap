@@ -97,7 +97,7 @@ exports[`UserNavItem simple 1`] = `
                           className="align-items-center d-flex"
                         >
                           <UserAvatar
-                            className="icon-inline user-nav-item__avatar"
+                            className="icon-inline avatar"
                             targetID="target-user-avatar"
                             user={
                               Object {
@@ -131,7 +131,7 @@ exports[`UserNavItem simple 1`] = `
                             }
                           >
                             <div
-                              className="user-avatar icon-inline user-nav-item__avatar"
+                              className="user-avatar icon-inline avatar"
                               id="target-user-avatar"
                             >
                               ad
@@ -147,14 +147,14 @@ exports[`UserNavItem simple 1`] = `
                 </Reference>
               </DropdownToggle>
               <DropdownMenu
-                className="user-nav-item__dropdown-menu"
+                className="dropdownMenu"
                 flip={true}
                 right={true}
                 tag="div"
               >
                 <div
                   aria-hidden={true}
-                  className="user-nav-item__dropdown-menu dropdown-menu dropdown-menu-right"
+                  className="dropdownMenu dropdown-menu dropdown-menu-right"
                   role="menu"
                   tabIndex="-1"
                 >

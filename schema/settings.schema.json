@@ -134,7 +134,7 @@
           }
         },
         "showQueryBuilder": {
-          "description": "Enables the search query builder page at search/query-builder",
+          "description": "REMOVED. Previously, enabled the search query builder page. This page has been removed.",
           "type": "boolean",
           "default": false,
           "!go": {

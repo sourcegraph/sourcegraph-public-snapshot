@@ -1377,7 +1377,13 @@
           "type": "string",
           "description": "The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
         },
-        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" }
+        "displayName": { "$ref": "#/definitions/AuthProviderCommon/properties/displayName" },
+        "apiScope": {
+          "type": "string",
+          "description": "The OAuth API scope that should be used",
+          "default": "api",
+          "enum": ["api", "read_api"]
+        }
       }
     },
     "AuthProviderCommon": {

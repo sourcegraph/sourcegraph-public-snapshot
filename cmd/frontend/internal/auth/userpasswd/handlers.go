@@ -39,29 +39,33 @@ type credentials struct {
 }
 
 // HandleSignUp handles submission of the user signup form.
-func HandleSignUp(w http.ResponseWriter, r *http.Request) {
-	if handleEnabledCheck(w) {
-		return
+func HandleSignUp(db dbutil.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if handleEnabledCheck(w) {
+			return
+		}
+		if pc, _ := getProviderConfig(); !pc.AllowSignup {
+			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
+			return
+		}
+		handleSignUp(db, w, r, false)
 	}
-	if pc, _ := getProviderConfig(); !pc.AllowSignup {
-		http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
-		return
-	}
-	handleSignUp(w, r, false)
 }
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func HandleSiteInit(w http.ResponseWriter, r *http.Request) {
-	// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
-	// allow signups after those conditions become true, so we don't need to check the builtin auth
-	// provider's allowSignup in site config.
-	handleSignUp(w, r, true)
+func HandleSiteInit(db dbutil.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
+		// allow signups after those conditions become true, so we don't need to check the builtin auth
+		// provider's allowSignup in site config.
+		handleSignUp(db, w, r, true)
+	}
 }
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason string, err error) {
-	email, err := database.GlobalUserEmails.GetLatestVerificationSentEmail(ctx, addr)
+func checkEmailAbuse(ctx context.Context, db dbutil.DB, addr string) (abused bool, reason string, err error) {
+	email, err := database.UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return false, "", nil
@@ -85,7 +89,7 @@ func checkEmailAbuse(ctx context.Context, addr string) (abused bool, reason stri
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+func handleSignUp(db dbutil.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -131,7 +135,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		abused, reason, err := checkEmailAbuse(r.Context(), creds.Email)
+		abused, reason, err := checkEmailAbuse(r.Context(), db, creds.Email)
 		if err != nil {
 			log15.Error("Error checking email abuse", "email", creds.Email, "error", err)
 			http.Error(w, defaultErrorMessage, http.StatusInternalServerError)
@@ -143,7 +147,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		}
 	}
 
-	usr, err := database.GlobalUsers.Create(r.Context(), newUserData)
+	usr, err := database.Users(db).Create(r.Context(), newUserData)
 	if err != nil {
 		var (
 			message    string
@@ -168,14 +172,14 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		log15.Error("Error in user signup.", "email", creds.Email, "username", creds.Username, "error", err)
 		http.Error(w, message, statusCode)
 
-		if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpFailed", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 			log15.Warn("Failed to log event SignUpFailed", "error", err)
 		}
 
 		return
 	}
 
-	if err = database.GlobalAuthz.GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
+	if err = database.Authz(db).GrantPendingPermissions(r.Context(), &database.GrantPendingPermissionsArgs{
 		UserID: usr.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -186,7 +190,7 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
 		if err := backend.SendUserEmailVerificationEmail(r.Context(), usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to send email verification (continuing, user's email will be unverified)", "email", creds.Email, "err", err)
-		} else if err = database.GlobalUserEmails.SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
+		} else if err = database.UserEmails(db).SetLastVerification(r.Context(), usr.ID, creds.Email, newUserData.EmailVerificationCode); err != nil {
 			log15.Error("failed to set email last verification sent at (user's email is verified)", "email", creds.Email, "err", err)
 		}
 	}
@@ -202,16 +206,16 @@ func handleSignUp(w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInit
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, DatabaseID: usr.ID})
 	}
 
-	if err = usagestats.LogBackendEvent(database.GlobalUsers.Handle().DB(), actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
+	if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.FromContext(r.Context()), nil); err != nil {
 		log15.Warn("Failed to log event SignUpSucceeded", "error", err)
 	}
 }
 
-func getByEmailOrUsername(ctx context.Context, emailOrUsername string) (*types.User, error) {
+func getByEmailOrUsername(ctx context.Context, db dbutil.DB, emailOrUsername string) (*types.User, error) {
 	if strings.Contains(emailOrUsername, "@") {
-		return database.GlobalUsers.GetByVerifiedEmail(ctx, emailOrUsername)
+		return database.Users(db).GetByVerifiedEmail(ctx, emailOrUsername)
 	}
-	return database.GlobalUsers.GetByUsername(ctx, emailOrUsername)
+	return database.Users(db).GetByUsername(ctx, emailOrUsername)
 }
 
 // HandleSignIn accepts a POST containing username-password credentials and authenticates the
@@ -247,7 +251,7 @@ func HandleSignIn(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Validate user. Allow login by both email and username (for convenience).
-		u, err := getByEmailOrUsername(ctx, creds.Email)
+		u, err := getByEmailOrUsername(ctx, db, creds.Email)
 		if err != nil {
 			httpLogAndError(w, "Authentication failed", http.StatusUnauthorized, "err", err)
 			return
