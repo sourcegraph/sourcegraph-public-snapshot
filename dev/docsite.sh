@@ -14,7 +14,7 @@ if [[ "${CI:-"false"}" == "true" ]]; then
 fi
 
 target="${base}/docsite_${suffix}"
-mkdir -p $(dirname "${target}")
+mkdir -p "$(dirname "${target}")"
 
 if [ ! -f "${target}" ]; then
   echo "downloading ${url}" 1>&2
