@@ -228,7 +228,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
                 'user.lastDayActive': new Date().toDateString(),
                 'search.usedNonGlobalContext': true,
             }),
-        }
+        },
     }),
     EditTemporarySettings: () => ({
         editTemporarySettings: {
