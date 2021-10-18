@@ -59,8 +59,8 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           },
           {
             group: ['**/wildcard/src/components/not-production-ready/*'],
-            message: `These components are not ready for production use.`
-          }
+            message: `These components are not ready for production use.`,
+          },
         ],
       },
     ],
