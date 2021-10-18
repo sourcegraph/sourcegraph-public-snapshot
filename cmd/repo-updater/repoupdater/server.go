@@ -217,6 +217,14 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	} else if err != nil {
 		log15.Error("server.external-service-sync", "kind", req.ExternalService.Kind, "error", err)
+		if errcode.IsUnauthorized(err) {
+			respond(w, http.StatusUnauthorized, err)
+			return
+		}
+		if errcode.IsForbidden(err) {
+			respond(w, http.StatusForbidden, err)
+			return
+		}
 		respond(w, http.StatusInternalServerError, err)
 		return
 	}
