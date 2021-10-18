@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 )
 
@@ -24,10 +23,7 @@ func init() {
 func main() {
 	flag.Parse()
 
-	config, err := ci.NewConfig(time.Now())
-	if err != nil {
-		panic(err)
-	}
+	config := ci.NewConfig(time.Now())
 
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
