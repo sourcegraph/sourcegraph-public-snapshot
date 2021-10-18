@@ -1,7 +1,8 @@
-import { Observable, of, throwError } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
+import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -33,12 +34,9 @@ import {
     FindInsightByNameInput,
     InsightCreateInput,
     InsightUpdateInput,
-    ReachableInsight,
-    RepositorySuggestionData,
+    ReachableInsight
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
-
-const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
 export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     constructor(
@@ -61,7 +59,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         return of(insightIds.map(id => findInsightById(this.settingCascade, id)).filter(isDefined))
     }
 
-    public getInsightById = errorMockMethod('getInsightById')
+    public getInsightById = (id: string): Observable<Insight | null> => of(findInsightById(this.settingCascade, id))
 
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> => {
         const { name } = input
@@ -230,14 +228,15 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     }
 
     // Live preview fetchers
-    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
-        errorMockMethod('getSearchInsightContent')().toPromise()
-    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> =>
-        errorMockMethod('getLangStatsInsightContent')().toPromise()
+    public getSearchInsightContent = <D extends keyof ViewContexts>(
+        input: GetSearchInsightContentInput<D>
+    ): Promise<LineChartContent<any, string>> => getSearchInsightContent(input.insight, input.options)
+
+    public getLangStatsInsightContent = <D extends keyof ViewContexts>(
+        input: GetLangStatsInsightContentInput<D>
+    ): Promise<PieChartContent<any>> => getLangStatsInsightContent(input.insight, input.options)
 
     // Repositories API
-    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>
-        errorMockMethod('getRepositorySuggestions')().toPromise()
-    public getResolvedSearchRepositories = (): Promise<string[]> =>
-        errorMockMethod('getResolvedSearchRepositories')().toPromise()
+    public getRepositorySuggestions = getRepositorySuggestions
+    public getResolvedSearchRepositories = getResolvedSearchRepositories
 }
