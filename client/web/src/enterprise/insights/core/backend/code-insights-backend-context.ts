@@ -1,7 +1,9 @@
 import React from 'react'
 import { throwError } from 'rxjs'
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { CodeInsightsBackend } from './code-insights-backend'
+import { RepositorySuggestionData } from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -29,12 +31,16 @@ export class FakeDefaultCodeInsightsBackend implements CodeInsightsBackend {
     public updateDashboard = errorMockMethod('updateDashboard')
 
     // Live preview fetchers
-    public getSearchInsightContent = () => errorMockMethod('getSearchInsightContent')().toPromise()
-    public getLangStatsInsightContent = () => errorMockMethod('getLangStatsInsightContent')().toPromise()
+    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
+        errorMockMethod('getSearchInsightContent')().toPromise()
+    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> =>
+        errorMockMethod('getLangStatsInsightContent')().toPromise()
 
     // Repositories API
-    public getRepositorySuggestions = () => errorMockMethod('getRepositorySuggestions')().toPromise()
-    public getResolvedSearchRepositories = () => errorMockMethod('getResolvedSearchRepositories')().toPromise()
+    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>
+        errorMockMethod('getRepositorySuggestions')().toPromise()
+    public getResolvedSearchRepositories = (): Promise<string[]> =>
+        errorMockMethod('getResolvedSearchRepositories')().toPromise()
 }
 
 export const CodeInsightsBackendContext = React.createContext<CodeInsightsBackend>(new FakeDefaultCodeInsightsBackend())
