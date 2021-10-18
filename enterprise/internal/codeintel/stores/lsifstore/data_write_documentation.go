@@ -3,6 +3,7 @@ package lsifstore
 import (
 	"context"
 	"fmt"
+	stdlog "log"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -10,7 +11,6 @@ import (
 	"time"
 	"unicode"
 	"unicode/utf8"
-	stdlog "log"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
