@@ -106,7 +106,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 			log.String("definitionUploads", uploadIDsToString(uploads)),
 		)
 
-		// TODO figure out why this returns some references (in addition to the definition). It shouldn't.
 		definitionLocations, _, err := r.monikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
 		if err != nil {
 			return nil, "", err
