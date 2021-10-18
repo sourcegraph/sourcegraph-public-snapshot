@@ -20,6 +20,8 @@ import { observeResize } from '../../util/dom'
 import { QueryChangeSource, QueryState } from '../helpers'
 import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
+import styles from './MonacoQueryInput.module.scss'
+
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
@@ -388,7 +390,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 options={options}
                 border={false}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                className="test-query-input monaco-query-input"
+                className={classNames('test-query-input', styles.monacoQueryInput)}
             />
         </div>
     )
