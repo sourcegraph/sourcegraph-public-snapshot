@@ -360,7 +360,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	})
 
 	t.Run("CreateBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
-		createJobsAndAssert := func(t *testing.T, batchSpec *btypes.BatchSpec, wantJobs int) {
+		singleStep := []batches.Step{{Run: "echo lol", Container: "alpine:3"}}
+		createWorkspaces := func(t *testing.T, batchSpec *btypes.BatchSpec, workspaces ...*btypes.BatchSpecWorkspace) {
 			t.Helper()
 
 			batchSpec.NamespaceUserID = 1
@@ -368,90 +369,81 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				t.Fatal(err)
 			}
 
-			workspaces := []*btypes.BatchSpecWorkspace{
-				// Normal workspace
-				{
-					BatchSpecID: batchSpec.ID,
-					RepoID:      1,
-					Branch:      "refs/heads/main",
-					Commit:      "d34db33f",
-					Path:        "",
-					Steps:       []batches.Step{{Run: "echo lol", Container: "alpine:3"}},
-					FileMatches: []string{
-						"a/b/c.go",
-					},
-				},
-				// Ignored
-				{
-					BatchSpecID: batchSpec.ID,
-					RepoID:      2,
-					Steps:       []batches.Step{{Run: "echo lol", Container: "alpine:3"}},
-					FileMatches: []string{},
-					Ignored:     true,
-				},
-				// Unsupported
-				{
-					BatchSpecID: batchSpec.ID,
-					RepoID:      3,
-					Steps:       []batches.Step{{Run: "echo lol", Container: "alpine:3"}},
-					FileMatches: []string{},
-					Unsupported: true,
-				},
-				// No steps
-				{
-					BatchSpecID: batchSpec.ID,
-					RepoID:      4,
-					Branch:      "refs/heads/main",
-					Commit:      "h0rs3s",
-					Path:        "a/b/c",
-					Steps:       []batches.Step{},
-					FileMatches: []string{},
-				},
+			for i, workspace := range workspaces {
+				workspace.BatchSpecID = batchSpec.ID
+				workspace.RepoID = 1
+				workspace.Branch = fmt.Sprintf("refs/heads/main-%d", i)
+				workspace.Commit = fmt.Sprintf("commit-%d", i)
 			}
 
 			if err := s.CreateBatchSpecWorkspace(ctx, workspaces...); err != nil {
 				t.Fatal(err)
 			}
-			ids := make([]int64, len(workspaces))
-			for i, w := range workspaces {
-				ids[i] = w.ID
-			}
+		}
+
+		createJobsAndAssert := func(t *testing.T, batchSpec *btypes.BatchSpec, wantJobsForWorkspaces []int64) {
+			t.Helper()
 
 			err := s.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
 
+			fmt.Printf("ids=%+v\n", wantJobsForWorkspaces)
 			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				BatchSpecWorkspaceIDs: ids,
+				BatchSpecWorkspaceIDs: wantJobsForWorkspaces,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if have, want := len(jobs), wantJobs; have != want {
+			if have, want := len(jobs), len(wantJobsForWorkspaces); have != want {
 				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", want, have)
 			}
 		}
 
 		t.Run("success", func(t *testing.T) {
-			batchSpec := &btypes.BatchSpec{AllowIgnored: false, AllowUnsupported: false}
-			createJobsAndAssert(t, batchSpec, 1)
+			normalWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep}
+			ignoredWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Ignored: true}
+			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Unsupported: true}
+			noStepsWorkspace := &btypes.BatchSpecWorkspace{Steps: []batches.Step{}}
+
+			batchSpec := &btypes.BatchSpec{}
+
+			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, noStepsWorkspace)
+			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID})
 		})
 
 		t.Run("allowIgnored", func(t *testing.T) {
+			normalWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep}
+			ignoredWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Ignored: true}
+
 			batchSpec := &btypes.BatchSpec{AllowIgnored: true}
-			createJobsAndAssert(t, batchSpec, 2)
+
+			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace)
+			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID})
 		})
 
 		t.Run("allowUnsupported", func(t *testing.T) {
+			normalWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep}
+			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Unsupported: true}
+
 			batchSpec := &btypes.BatchSpec{AllowUnsupported: true}
-			createJobsAndAssert(t, batchSpec, 2)
+
+			createWorkspaces(t, batchSpec, normalWorkspace, unsupportedWorkspace)
+			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, unsupportedWorkspace.ID})
 		})
 
-		t.Run("allowIgnored and allowUnsupported", func(t *testing.T) {
-			batchSpec := &btypes.BatchSpec{AllowIgnored: true, AllowUnsupported: true}
-			createJobsAndAssert(t, batchSpec, 3)
+		t.Run("allowUnsupported and allowIgnored", func(t *testing.T) {
+			normalWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep}
+			ignoredWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Ignored: true}
+			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Steps: singleStep, Unsupported: true}
+			noStepsWorkspace := &btypes.BatchSpecWorkspace{Steps: []batches.Step{}}
+
+			batchSpec := &btypes.BatchSpec{AllowUnsupported: true, AllowIgnored: true}
+
+			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, noStepsWorkspace)
+			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID, unsupportedWorkspace.ID})
 		})
 	})
 }
