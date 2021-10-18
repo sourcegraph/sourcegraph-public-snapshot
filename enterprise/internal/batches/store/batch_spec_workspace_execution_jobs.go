@@ -50,11 +50,14 @@ const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 INSERT INTO
 	batch_spec_workspace_execution_jobs (batch_spec_workspace_id)
 SELECT
-	id
+	batch_spec_workspaces.id
 FROM
 	batch_spec_workspaces
+JOIN batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
 WHERE
-	batch_spec_id = %s
+	batch_spec_workspaces.batch_spec_id = %s
+AND
+	%s
 `
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
@@ -64,9 +67,19 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batch
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID)
+	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID, cond)
 	return s.Exec(ctx, q)
 }
+
+const executableWorkspaceJobsConditionFmtstr = `
+(
+	(batch_specs.allow_ignored OR NOT batch_spec_workspaces.ignored)
+	AND
+	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
+	AND
+	jsonb_array_length(batch_spec_workspaces.steps) > 0
+)`
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs ...*btypes.BatchSpecWorkspaceExecutionJob) (err error) {

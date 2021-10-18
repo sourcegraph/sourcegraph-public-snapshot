@@ -1154,7 +1154,13 @@ func TestService(t *testing.T) {
 
 			var workspaceIDs []int64
 			for _, repo := range rs {
-				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Steps: []batcheslib.Step{
+						{Run: "echo hello", Container: "alpine:3"},
+					},
+				}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
 				}
@@ -1220,6 +1226,70 @@ func TestService(t *testing.T) {
 			_, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID})
 			if !errors.HasType(err, ErrBatchSpecResolutionErrored{}) {
 				t.Fatalf("error has wrong type: %T", err)
+			}
+		})
+
+		t.Run("ignored/unsupported workspace", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Simulate successful resolution.
+			job := &btypes.BatchSpecResolutionJob{
+				State:       btypes.BatchSpecResolutionJobStateCompleted,
+				BatchSpecID: spec.ID,
+			}
+
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			ignoredWorkspace := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+				Ignored: true,
+			}
+
+			unsupportedWorkspace := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+				Unsupported: true,
+			}
+			if err := s.CreateBatchSpecWorkspace(ctx, ignoredWorkspace, unsupportedWorkspace); err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
+				t.Fatal(err)
+			}
+
+			ids := []int64{ignoredWorkspace.ID, unsupportedWorkspace.ID}
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(jobs) != 0 {
+				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", len(rs), len(jobs))
+			}
+
+			for _, workspaceID := range ids {
+				reloaded, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: workspaceID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reloaded.Skipped {
+					t.Fatalf("workspace not marked as skipped")
+				}
 			}
 		})
 	})

@@ -255,7 +255,6 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	spec.NamespaceUserID = opts.NamespaceUserID
 	actor := actor.FromContext(ctx)
 	spec.UserID = actor.UID
-	spec.CreatedFromRaw = true
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -272,8 +271,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 
 type createBatchSpecForExecutionOpts struct {
 	spec             *btypes.BatchSpec
-	allowIgnored     bool
 	allowUnsupported bool
+	allowIgnored     bool
 }
 
 // createBatchSpecForExecution persists the given BatchSpec in the given
@@ -281,6 +280,10 @@ type createBatchSpecForExecutionOpts struct {
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
 	reposStore := tx.Repos()
+
+	opts.spec.CreatedFromRaw = true
+	opts.spec.AllowIgnored = opts.allowIgnored
+	opts.spec.AllowUnsupported = opts.allowUnsupported
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
@@ -339,10 +342,8 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 
 	// Return spec and enqueue resolution
 	return tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:            btypes.BatchSpecResolutionJobStateQueued,
-		BatchSpecID:      opts.spec.ID,
-		AllowIgnored:     opts.allowIgnored,
-		AllowUnsupported: opts.allowUnsupported,
+		State:       btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID: opts.spec.ID,
 	})
 }
 
@@ -359,10 +360,8 @@ func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBa
 	defer endObservation(1, observation.Args{})
 
 	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:            btypes.BatchSpecResolutionJobStateQueued,
-		BatchSpecID:      opts.BatchSpecID,
-		AllowIgnored:     opts.AllowIgnored,
-		AllowUnsupported: opts.AllowUnsupported,
+		State:       btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID: opts.BatchSpecID,
 	})
 }
 
@@ -426,7 +425,16 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		return batchSpec, tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return batchSpec, nil
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
@@ -539,12 +547,11 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	newSpec.NamespaceOrgID = batchSpec.NamespaceOrgID
 	newSpec.NamespaceUserID = batchSpec.NamespaceUserID
 	newSpec.UserID = batchSpec.UserID
-	newSpec.CreatedFromRaw = true
 
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
-		allowIgnored:     opts.AllowIgnored,
 		allowUnsupported: opts.AllowUnsupported,
+		allowIgnored:     opts.AllowIgnored,
 	})
 }
 

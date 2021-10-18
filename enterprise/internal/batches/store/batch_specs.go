@@ -26,6 +26,8 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.namespace_org_id"),
 	sqlf.Sprintf("batch_specs.user_id"),
 	sqlf.Sprintf("batch_specs.created_from_raw"),
+	sqlf.Sprintf("batch_specs.allow_unsupported"),
+	sqlf.Sprintf("batch_specs.allow_ignored"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -40,11 +42,13 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("user_id"),
 	sqlf.Sprintf("created_from_raw"),
+	sqlf.Sprintf("allow_unsupported"),
+	sqlf.Sprintf("allow_ignored"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -94,6 +98,8 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
 		c.CreatedFromRaw,
+		c.AllowUnsupported,
+		c.AllowIgnored,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -142,6 +148,8 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
 		c.CreatedFromRaw,
+		c.AllowUnsupported,
+		c.AllowIgnored,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -505,6 +513,8 @@ func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&dbutil.NullInt32{N: &c.UserID},
 		&c.CreatedFromRaw,
+		&c.AllowUnsupported,
+		&c.AllowIgnored,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

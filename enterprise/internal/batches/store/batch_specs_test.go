@@ -39,8 +39,10 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 						Published: &falsy,
 					},
 				},
-				CreatedFromRaw: true,
-				UserID:         int32(i + 1234),
+				CreatedFromRaw:   true,
+				AllowUnsupported: true,
+				AllowIgnored:     true,
+				UserID:           int32(i + 1234),
 			}
 
 			if i%2 == 0 {
@@ -172,6 +174,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		for _, c := range batchSpecs {
 			c.UserID += 1234
 			c.CreatedFromRaw = false
+			c.AllowUnsupported = false
+			c.AllowIgnored = false
 
 			clock.Add(1 * time.Second)
 

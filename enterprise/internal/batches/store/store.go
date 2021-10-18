@@ -232,9 +232,10 @@ type operations struct {
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
 
-	createBatchSpecWorkspace *observation.Operation
-	getBatchSpecWorkspace    *observation.Operation
-	listBatchSpecWorkspaces  *observation.Operation
+	createBatchSpecWorkspace       *observation.Operation
+	getBatchSpecWorkspace          *observation.Operation
+	listBatchSpecWorkspaces        *observation.Operation
+	markSkippedBatchSpecWorkspaces *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJob  *observation.Operation
 	createBatchSpecWorkspaceExecutionJobs *observation.Operation
@@ -356,9 +357,10 @@ func newOperations(observationContext *observation.Context) *operations {
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
 
-			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
 			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),

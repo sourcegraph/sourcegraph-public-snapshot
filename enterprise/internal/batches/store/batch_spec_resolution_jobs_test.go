@@ -20,9 +20,7 @@ func testStoreBatchSpecResolutionJobs(t *testing.T, ctx context.Context, s *Stor
 	jobs := make([]*btypes.BatchSpecResolutionJob, 0, 2)
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecResolutionJob{
-			BatchSpecID:      int64(i + 567),
-			AllowUnsupported: true,
-			AllowIgnored:     true,
+			BatchSpecID: int64(i + 567),
 		}
 
 		switch i {
