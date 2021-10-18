@@ -1,5 +1,6 @@
 import { Observable, of, throwError } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
+import { LineChartContent, PieChartContent } from 'sourcegraph';
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -32,7 +33,7 @@ import {
     FindInsightByNameInput,
     InsightCreateInput,
     InsightUpdateInput,
-    ReachableInsight,
+    ReachableInsight, RepositorySuggestionData,
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
 
@@ -61,7 +62,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
 
     public getInsightById = errorMockMethod('getInsightById')
 
-    public findInsightByName(input: FindInsightByNameInput): Observable<Insight | null> {
+    public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> => {
         const { name } = input
 
         return this.getInsights().pipe(
@@ -228,10 +229,10 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     }
 
     // Live preview fetchers
-    public getSearchInsightContent = () => errorMockMethod('getSearchInsightContent')().toPromise()
-    public getLangStatsInsightContent = () => errorMockMethod('getLangStatsInsightContent')().toPromise()
+    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> => errorMockMethod('getSearchInsightContent')().toPromise()
+    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> => errorMockMethod('getLangStatsInsightContent')().toPromise()
 
     // Repositories API
-    public getRepositorySuggestions = () => errorMockMethod('getRepositorySuggestions')().toPromise()
-    public getResolvedSearchRepositories = () => errorMockMethod('getResolvedSearchRepositories')().toPromise()
+    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> => errorMockMethod('getRepositorySuggestions')().toPromise()
+    public getResolvedSearchRepositories = (): Promise<string[]> => errorMockMethod('getResolvedSearchRepositories')().toPromise()
 }
