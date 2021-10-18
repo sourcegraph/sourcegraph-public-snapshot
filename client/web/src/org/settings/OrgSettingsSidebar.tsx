@@ -6,9 +6,8 @@ import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../componen
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
-import { showOrganizationsCode } from './utils'
-
 import styles from './OrgSettingsSidebar.module.scss'
+import { showOrganizationsCode } from './utils'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string

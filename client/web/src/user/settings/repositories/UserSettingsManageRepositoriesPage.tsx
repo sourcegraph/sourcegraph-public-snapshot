@@ -445,8 +445,6 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
         const currentlySelectedRepos = [...publicRepos, ...affiliatedRepos]
 
-        debugger
-
         return (
             selectionState.radio !== onloadRadioValue ||
             !isEqual(currentlySelectedRepos.sort(), onloadSelectedRepos.sort())
