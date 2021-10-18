@@ -1,10 +1,11 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@reach/tabs'
 import classNames from 'classnames'
+import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
-import { BehaviorSubject, from, Observable } from 'rxjs'
-import { map, switchMap, filter } from 'rxjs/operators'
+import { BehaviorSubject, from, Observable, combineLatest, of } from 'rxjs'
+import { map, switchMap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { Location } from '@sourcegraph/extension-api-types'
@@ -24,6 +25,9 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { combineLatestOrDefault } from '@sourcegraph/shared/src/util/rxjs/combineLatestOrDefault'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+
+import { match } from '../../../../shared/src/api/client/types/textDocument'
+import { ExtensionCodeEditor } from '../../../../shared/src/api/extension/api/codeEditor'
 
 import styles from './Panel.module.scss'
 import { registerPanelToolbarContributions } from './views/contributions'
@@ -147,50 +151,50 @@ export const Panel = React.memo<Props>(props => {
             () =>
                 from(props.extensionsController.extHostAPI).pipe(
                     switchMap(extensionHostAPI =>
-                        wrapRemoteObservable(extensionHostAPI.getPanelViews()).pipe(
-                            map(panelViews => ({ panelViews, extensionHostAPI }))
-                        )
-                    ),
-                    map(({ panelViews, extensionHostAPI }) => {
-                        console.log(panelViews)
-                        console.log(extensionHostAPI)
-                        return {
-                            panelViews: panelViews.filter(value => {
-                                console.log(value)
-                                if (value.selector.length == 0) {
-                                    return true
+                        combineLatest([
+                            wrapRemoteObservable(extensionHostAPI.getPanelViews()),
+                            wrapRemoteObservable(extensionHostAPI.getActiveViewComponentChanges()),
+                        ]).pipe(
+                            switchMap(async ([panelViews, viewer]) => {
+                                if ((await viewer?.type) !== 'CodeEditor') {
+                                    return undefined
                                 }
 
-                                return value.selector.some((value, _index, _selector) => { return value == "*.go" })
-                            }),
-                            extensionHostAPI,
-                        }
-                    }),
-                    map(({ panelViews, extensionHostAPI }) =>
-                        panelViews.map((panelView: PanelViewWithComponent) => {
-                            const locationProviderID = panelView.component?.locationProvider
-                            if (locationProviderID) {
-                                const panelViewWithProvider: PanelViewWithComponent = {
-                                    ...panelView,
-                                    locationProvider: wrapRemoteObservable(
-                                        extensionHostAPI.getActiveCodeEditorPosition()
-                                    ).pipe(
-                                        switchMap(parameters => {
-                                            if (!parameters) {
-                                                return [{ isLoading: false, result: [] }]
+                                const document = await (viewer as Remote<ExtensionCodeEditor>).document
+
+                                return panelViews
+                                    .filter(panelView =>
+                                        panelView.selector !== null ? match(panelView.selector, document) : true
+                                    )
+                                    .map((panelView: PanelViewWithComponent) => {
+                                        const locationProviderID = panelView.component?.locationProvider
+                                        if (locationProviderID) {
+                                            const panelViewWithProvider: PanelViewWithComponent = {
+                                                ...panelView,
+                                                locationProvider: wrapRemoteObservable(
+                                                    extensionHostAPI.getActiveCodeEditorPosition()
+                                                ).pipe(
+                                                    switchMap(parameters => {
+                                                        if (!parameters) {
+                                                            return [{ isLoading: false, result: [] }]
+                                                        }
+
+                                                        return wrapRemoteObservable(
+                                                            extensionHostAPI.getLocations(
+                                                                locationProviderID,
+                                                                parameters
+                                                            )
+                                                        )
+                                                    })
+                                                ),
                                             }
+                                            return panelViewWithProvider
+                                        }
 
-                                            return wrapRemoteObservable(
-                                                extensionHostAPI.getLocations(locationProviderID, parameters)
-                                            )
-                                        })
-                                    ),
-                                }
-                                return panelViewWithProvider
-                            }
-
-                            return panelView
-                        })
+                                        return panelView
+                                    })
+                            })
+                        )
                     )
                 ),
             [props.extensionsController]
