@@ -7,9 +7,9 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { LINE_CHART_CONTENT_MOCK, LINE_CHART_CONTENT_MOCK_EMPTY } from '../../../../../../views/mocks/charts-content'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
-import { createMockInsightAPI } from '../../../../core/backend/create-insights-api'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context';
+import { CodeInsightsSettingsCascadeBackend } from '../../../../core/backend/code-insights-setting-cascade-backend';
 import { InsightType } from '../../../../core/types'
 import { SearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
 import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
@@ -33,15 +33,15 @@ const mockInsightAPI = ({
     delayAmount = 0,
     throwProcessingError = false,
     hasData = true,
-} = {}) =>
-    createMockInsightAPI({
-        getBackendInsight: ({ id }) => {
+} = {}) => {
+    class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
+        public getBackendInsightData = (insight: SearchBackendBasedInsight) => {
             if (throwProcessingError) {
                 return throwError(new InsightStillProcessingError())
             }
 
             return of({
-                id,
+                id: insight.id,
                 view: {
                     title: 'Backend Insight Mock',
                     subtitle: 'Backend insight description text',
@@ -49,45 +49,46 @@ const mockInsightAPI = ({
                     isFetchingHistoricalData,
                 },
             }).pipe(delay(delayAmount))
-        },
-    })
+        }
+    }
+
+    return new CodeInsightsStoryBackend(SETTINGS_CASCADE_MOCK, {} as any)
+}
 
 const TestBackendInsight: React.FunctionComponent = () => (
     <BackendInsight
         style={{ width: 400, height: 400 }}
         insight={INSIGHT_CONFIGURATION_MOCK}
-        settingsCascade={SETTINGS_CASCADE_MOCK}
-        platformContext={{} as any}
         telemetryService={NOOP_TELEMETRY_SERVICE}
     />
 )
 
 add('Backend Insight Card', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI()}>
+    <CodeInsightsBackendContext.Provider value={mockInsightAPI()}>
         <TestBackendInsight />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))
 
 add('Backend Insight Card with delay API', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI({ delayAmount: 2000 })}>
+    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ delayAmount: 2000 })}>
         <TestBackendInsight />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))
 
 add('Backend Insight Card backfilling data', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
+    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ isFetchingHistoricalData: true })}>
         <TestBackendInsight />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))
 
 add('Backend Insight Card no data', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI({ hasData: false })}>
+    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ hasData: false })}>
         <TestBackendInsight />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))
 
 add('Backend Insight Card insight syncing', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
+    <CodeInsightsBackendContext.Provider value={mockInsightAPI({ throwProcessingError: true })}>
         <TestBackendInsight />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))

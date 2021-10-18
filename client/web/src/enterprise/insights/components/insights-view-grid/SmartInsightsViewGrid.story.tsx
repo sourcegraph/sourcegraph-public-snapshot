@@ -1,13 +1,11 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
-import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
-import { LINE_CHART_CONTENT_MOCK } from '../../../../views/mocks/charts-content'
-import { InsightsApiContext } from '../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../core/backend/create-insights-api'
+import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context';
+import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/code-insights-setting-cascade-backend';
 import { Insight, InsightType } from '../../core/types'
 import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
@@ -34,26 +32,13 @@ const insights: Insight[] = [
     },
 ]
 
-const mockInsightAPI = createMockInsightAPI({
-    getBackendInsight: ({ id }) =>
-        of({
-            id,
-            view: {
-                title: 'Backend Insight Mock',
-                subtitle: 'Backend insight description text',
-                content: [LINE_CHART_CONTENT_MOCK],
-                isFetchingHistoricalData: false,
-            },
-        }),
-})
+const codeInsightsApi = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE_MOCK, {} as any)
 
 add('SmartInsightsViewGrid', () => (
-    <InsightsApiContext.Provider value={mockInsightAPI}>
+    <CodeInsightsBackendContext.Provider value={codeInsightsApi}>
         <SmartInsightsViewGrid
             insights={insights}
-            settingsCascade={SETTINGS_CASCADE_MOCK}
             telemetryService={NOOP_TELEMETRY_SERVICE}
-            platformContext={{} as any}
         />
-    </InsightsApiContext.Provider>
+    </CodeInsightsBackendContext.Provider>
 ))

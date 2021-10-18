@@ -5,7 +5,6 @@ import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../../../../components/alerts'
 import { LoaderButton } from '../../../../../../../../../../components/LoaderButton'
-import { InsightTypePrefix } from '../../../../../../../../core/types'
 import { FormInput } from '../../../../../../../form/form-input/FormInput'
 import { useAsyncInsightTitleValidator } from '../../../../../../../form/hooks/use-async-insight-title-validator'
 import { useField } from '../../../../../../../form/hooks/useField'
@@ -38,7 +37,6 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
 
     const titleDuplicationValidator = useAsyncInsightTitleValidator({
         initialTitle: '',
-        type: InsightTypePrefix.search,
     })
 
     const insightName = useField({
