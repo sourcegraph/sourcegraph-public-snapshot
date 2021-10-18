@@ -1,5 +1,4 @@
 import { action } from '@storybook/addon-actions'
-import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
@@ -10,13 +9,6 @@ import { NOOP_TELEMETRY_SERVICE } from '../telemetry/telemetryService'
 import { subtypeOf } from '../util/types'
 
 import { ActionItem, ActionItemComponentProps, ActionItemProps } from './ActionItem'
-
-const { add } = storiesOf('shared/ActionItem', module).addDecorator(story => (
-    <>
-        <div className="p-4">{story()}</div>
-        <style>{webStyles}</style>
-    </>
-))
 
 const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = {
     executeCommand: () => new Promise(resolve => setTimeout(resolve, 750)),
@@ -46,15 +38,32 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-add('Noop action', () => (
+export default {
+    title: 'shared/ActionItem',
+
+    decorators: [
+        story => (
+            <>
+                <div className="p-4">{story()}</div>
+                <style>{webStyles}</style>
+            </>
+        ),
+    ],
+}
+
+export const NoopAction = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
         variant="actionItem"
     />
-))
+)
 
-add('Command action', () => (
+NoopAction.story = {
+    name: 'Noop action',
+}
+
+export const CommandAction = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
@@ -64,9 +73,13 @@ add('Command action', () => (
         showInlineError={true}
         onDidExecute={onDidExecute}
     />
-))
+)
 
-add('Link action', () => (
+CommandAction.story = {
+    name: 'Command action',
+}
+
+export const LinkAction = () => (
     <ActionItem
         {...commonProps}
         action={{
@@ -78,9 +91,13 @@ add('Link action', () => (
         variant="actionItem"
         onDidExecute={onDidExecute}
     />
-))
+)
 
-add('Executing', () => {
+LinkAction.story = {
+    name: 'Link action',
+}
+
+export const Executing = () => {
     class ActionItemExecuting extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
@@ -96,9 +113,9 @@ add('Executing', () => {
             showInlineError={true}
         />
     )
-})
+}
 
-add('Error', () => {
+export const _Error = () => {
     class ActionItemWithError extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
@@ -114,4 +131,4 @@ add('Error', () => {
             showInlineError={true}
         />
     )
-})
+}

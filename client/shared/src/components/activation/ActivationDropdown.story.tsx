@@ -1,6 +1,5 @@
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
-import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 
@@ -10,13 +9,6 @@ import { subtypeOf } from '../../util/types'
 
 import { Activation } from './Activation'
 import { ActivationDropdown, ActivationDropdownProps } from './ActivationDropdown'
-
-const { add } = storiesOf('shared/ActivationDropdown', module).addDecorator(story => (
-    <>
-        <style>{webMainStyles}</style>
-        <div>{story()}</div>
-    </>
-))
 
 const baseActivation = (): Activation => ({
     steps: [
@@ -58,8 +50,22 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     portal: false,
 })
 
-add('Loading', () => <ActivationDropdown {...commonProps} activation={baseActivation()} />)
-add('0/4 completed', () => (
+export default {
+    title: 'shared/ActivationDropdown',
+
+    decorators: [
+        story => (
+            <>
+                <style>{webMainStyles}</style>
+                <div>{story()}</div>
+            </>
+        ),
+    ],
+}
+
+export const Loading = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
+
+export const _04Completed = () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
@@ -72,8 +78,13 @@ add('0/4 completed', () => (
             },
         }}
     />
-))
-add('1/4 completed', () => (
+)
+
+_04Completed.story = {
+    name: '0/4 completed',
+}
+
+export const _14Completed = () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
@@ -86,4 +97,8 @@ add('1/4 completed', () => (
             },
         }}
     />
-))
+)
+
+_14Completed.story = {
+    name: '1/4 completed',
+}
