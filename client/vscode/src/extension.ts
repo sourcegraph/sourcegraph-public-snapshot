@@ -1,7 +1,7 @@
 // import { Endpoint } from 'comlink'
 import vscode from 'vscode'
 
-import { getWebviewContent } from './webviews/getWebviewContent'
+import { getWebviewContent } from './webview/getWebviewContent'
 
 export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
@@ -19,12 +19,7 @@ export function activate(context: vscode.ExtensionContext): void {
             // And set its HTML content
             panel.webview.html = getWebviewContent(context.extensionPath, panel.webview, 'search')
 
-            setInterval(() => {
-                panel.webview.postMessage({ results: 'test' }).then(
-                    () => {},
-                    () => {}
-                )
-            }, 2000)
+            // panel.webview.onDidReceiveMessage()
         })
     )
 }

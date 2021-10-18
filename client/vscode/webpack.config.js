@@ -47,7 +47,7 @@ const extensionConfig = {
 const rootPath = path.resolve(__dirname, '../../')
 const vscodeWorkspacePath = path.resolve(rootPath, 'client', 'vscode')
 const vscodeSourcePath = path.resolve(vscodeWorkspacePath, 'src')
-const webviewsSourcePath = path.resolve(vscodeSourcePath, 'webviews')
+const webviewSourcePath = path.resolve(vscodeSourcePath, 'webview')
 
 const getCSSLoaders = (...loaders) => [
   MiniCssExtractPlugin.loader,
@@ -69,12 +69,11 @@ const getCSSLoaders = (...loaders) => [
 const webviewConfig = {
   target: 'web',
   entry: {
-    search: [path.resolve(webviewsSourcePath, 'search', 'index.tsx')],
-    // Styles
-    style: path.join(webviewsSourcePath, 'app.scss'),
+    webview: [path.resolve(webviewSourcePath, 'index.tsx')],
+    style: path.join(webviewSourcePath, 'index.scss'),
   },
   output: {
-    path: path.join(vscodeWorkspacePath, 'dist/webviews'),
+    path: path.join(vscodeWorkspacePath, 'dist/webview'),
     filename: '[name].js',
   },
   plugins: [new MiniCssExtractPlugin()],
@@ -100,6 +99,21 @@ const webviewConfig = {
         use: getCSSLoaders({ loader: 'css-loader', options: { url: false } }),
       },
       // For CSS modules
+      {
+        test: /\.(css|sass|scss)$/,
+        include: /\.module\.(sass|scss)$/,
+        use: getCSSLoaders({
+          loader: 'css-loader',
+          options: {
+            sourceMap: false,
+            modules: {
+              exportLocalsConvention: 'camelCase',
+              localIdentName: '[name]__[local]_[hash:base64:5]',
+            },
+            url: false,
+          },
+        }),
+      },
     ],
   },
 }

@@ -13,6 +13,6 @@
     "jsx": "react",
   },
   "references": [{ "path": "../shared" }, { "path": "../branded" }],
-  "include": ["**/*", ".*"],
+  "include": ["**/*", ".*", "**/*.d.ts"],
   "exclude": ["node_modules", "../../node_modules", ".vscode-test", "**/*.test.ts", "out", "dist"],
 }
