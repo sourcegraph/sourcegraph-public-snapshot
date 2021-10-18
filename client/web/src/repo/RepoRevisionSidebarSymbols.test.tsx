@@ -88,8 +88,6 @@ describe('RepoRevisionSidebarSymbols', () => {
     it('renders symbol correctly', () => {
         const symbol = renderResult.getByText('firstSymbol')
         expect(symbol).toBeVisible()
-        // Displays full symbol information
-        expect(symbol.parentElement).toHaveTextContent('firstSymbolsrc/index.js')
     })
 
     it('renders summary correctly', () => {
