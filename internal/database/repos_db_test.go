@@ -2399,7 +2399,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 }
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
-	id := rand.String(3)
+	id := rand.String(8)
 	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,

@@ -1,5 +1,5 @@
 import { Observable, of, from, merge, BehaviorSubject } from 'rxjs'
-import { map, first, defaultIfEmpty, distinctUntilChanged, tap, catchError } from 'rxjs/operators'
+import { map, first, defaultIfEmpty, distinctUntilChanged, tap, catchError, filter } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
@@ -61,8 +61,11 @@ export const SourcegraphUrlService = (() => {
     const blocklist = new BehaviorSubject<SyncStorageItems['blocklist'] | undefined>(undefined)
 
     if (storage?.sync) {
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        observeStorageKey('sync', 'sourcegraphURL').subscribe(selfHostedSourcegraphURL)
+        observeStorageKey('sync', 'sourcegraphURL')
+            // filter since cloud url is already included
+            .pipe(filter(sgURL => sgURL !== CLOUD_SOURCEGRAPH_URL))
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+            .subscribe(selfHostedSourcegraphURL)
         // eslint-disable-next-line rxjs/no-ignored-subscription
         observeStorageKey('sync', 'blocklist').subscribe(blocklist)
     }

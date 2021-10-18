@@ -449,7 +449,10 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
 				return false
 			}
-
+			// Don't retry 401 (Unauthorized) / 403 (Forbidden) status codes
+			if status == 401 || status == 403 {
+				return false
+			}
 			if v, ok := a.Error.(*url.Error); ok {
 				e := v.Error()
 				// Don't retry if the error was due to too many redirects.

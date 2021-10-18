@@ -148,6 +148,7 @@ type GitBlobLSIFDataResolver interface {
 	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
 	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
 
+	Stencil(ctx context.Context) ([]RangeResolver, error)
 	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)

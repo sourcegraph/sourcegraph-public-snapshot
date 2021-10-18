@@ -1,5 +1,5 @@
 import * as H from 'history'
-import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { Form } from 'reactstrap'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
@@ -80,11 +80,14 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     ])
     const showOnboardingTour = props.showOnboardingTour && isHomepage
 
+    const tourContainer = useRef<HTMLDivElement>(null)
+
     const { shouldFocusQueryInput, ...onboardingTourQueryInputProps } = useSearchOnboardingTour({
         ...props,
         showOnboardingTour,
         queryState: userQueryState,
         setQueryState: setUserQueryState,
+        stepsContainer: tourContainer.current ?? undefined,
     })
     const onSubmit = useCallback(
         (event?: React.FormEvent<HTMLFormElement>): void => {
@@ -104,6 +107,9 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
                 <div className="search-page__input-container">
+                    {/* Search onboarding tour must be rendered before the SearchBox so
+                    the Monaco autocomplete suggestions are not blocked by the tour. */}
+                    <div ref={tourContainer} />
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}

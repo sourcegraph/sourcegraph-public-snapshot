@@ -3,11 +3,12 @@ import CheckCircleOutlineIcon from 'mdi-react/CheckCircleOutlineIcon'
 import LockIcon from 'mdi-react/LockIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import React, { useCallback, useState } from 'react'
+import { of } from 'rxjs'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
-import { CLOUD_SOURCEGRAPH_URL } from '../../shared/util/context'
+import { CLOUD_SOURCEGRAPH_URL, isCloudSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageAdvancedSettings } from './components/OptionsPageAdvancedSettings'
 import { SourcegraphURLInput, SourcegraphURLInputProps } from './components/SourcegraphUrlInput'
@@ -123,6 +124,16 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
         []
     )
 
+    const selfHostedSourcegraphUrlValidate = useCallback(
+        (url: string) => {
+            if (isCloudSourcegraphUrl(url)) {
+                return of('Sourcegraph cloud is supported by default')
+            }
+            return validateSourcegraphUrl(url)
+        },
+        [validateSourcegraphUrl]
+    )
+
     const handleFormSubmit = useCallback((event: React.FormEvent<HTMLFormElement>) => event.preventDefault(), [])
 
     return (
@@ -165,7 +176,7 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
                         id="self-hosted-sourcegraph-url"
                         label="Sourcegraph self-hosted"
                         dataTestId="test-sourcegraph-url"
-                        validate={validateSourcegraphUrl}
+                        validate={selfHostedSourcegraphUrlValidate}
                         initialValue={selfHostedSourcegraphURL || ''}
                         onChange={onSelfHostedSourcegraphURLChange}
                         description="Enter the URL of your Sourcegraph instance to use the extension on a private instance."

@@ -412,3 +412,61 @@ input UpdateInsightSeriesInput {
     """
     enabled: Boolean
 }
+
+extend type Query {
+    """
+    Retrieve information about queued insights series and their breakout by status. Restricted to admins only.
+    """
+    insightSeriesQueryStatus: [InsightSeriesQueryStatus!]!
+}
+
+"""
+Information about queue status for insight series queries.
+"""
+type InsightSeriesQueryStatus {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
+    Sourcegraph query string used to generate the series. This is the base query string that was input by the user,
+    and does not include each repository specific query that would be generated to backfill an entire series.
+    """
+    query: String!
+
+    """
+    The current activity status for this series.
+    """
+    enabled: Boolean!
+
+    """
+    The number of queries belonging to the series with errored status. Errored is a transient state representing a retryable error that has not
+    yet exceeded the max retry count. This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    errored: Int!
+
+    """
+    The number of queries belonging to the series that are successfully completed.
+    This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    completed: Int!
+
+    """
+    The number of queries belonging to the series that are currently processing.
+    This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    processing: Int!
+
+    """
+    The number of queries belonging to the series that are terminally failed. These have either been marked as non-retryable or exceeded
+    the max retry limit. This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    failed: Int!
+
+    """
+    The number of queries belonging to the series that are queued for processing.
+    This count only represents the queries that have yet to be pruned by the background maintenance workers.
+    """
+    queued: Int!
+}

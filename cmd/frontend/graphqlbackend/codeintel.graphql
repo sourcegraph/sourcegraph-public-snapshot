@@ -563,6 +563,11 @@ null, no LSIF data is available for the git blob in question.
 """
 type GitBlobLSIFData implements TreeEntryLSIFData {
     """
+    Return a flat list of all ranges in the document that have code intelligence.
+    """
+    stencil: [Range!]!
+
+    """
     Get aggregated local code intelligence for all ranges that fall in the window
     indicated by the given zero-based start (inclusive) and end (exclusive) lines.
     The associated data for each range is "local", in that the locations and hover

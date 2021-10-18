@@ -599,10 +599,18 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 			userLimit, siteLimit := s.userReposMaxPerUser(), s.userReposMaxPerSite()
 			if siteAdded >= siteLimit || userAdded >= userLimit {
+				userStore := database.Users(tx.Handle().DB())
+				var username string
+				// We can ignore the error here as it's not fatal
+				if u, _ := userStore.GetByID(ctx, svc.NamespaceUserID); u != nil {
+					username = u.Username
+				}
+
 				return Diff{}, errors.Errorf(
-					"reached maximum allowed user added repos: site:%d/%d, user:%d/%d",
+					"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (username: %q)",
 					siteAdded, siteLimit,
 					userAdded, userLimit,
+					username,
 				)
 			}
 		}

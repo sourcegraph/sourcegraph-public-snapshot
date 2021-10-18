@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
@@ -34,12 +33,12 @@ func TestCommittedAtMigrator(t *testing.T) {
 		expectedCommitDates = append(expectedCommitDates, t0.Add(time.Second*time.Duration(i)))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
-			return expectedCommitDates[i], nil
+			return expectedCommitDates[i], true, nil
 		}
 
-		return time.Time{}, errors.Errorf("too many calls")
+		return time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -133,16 +132,16 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 		}
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &vcs.RepoNotExistError{}
+				return time.Time{}, false, &vcs.RepoNotExistError{}
 			}
 
-			return allDates[i], nil
+			return allDates[i], true, nil
 		}
 
-		return time.Time{}, errors.Errorf("too many calls")
+		return time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -236,16 +235,16 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		}
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, &gitserver.RevisionNotFoundError{}
+				return time.Time{}, false, nil
 			}
 
-			return allDates[i], nil
+			return allDates[i], true, nil
 		}
 
-		return time.Time{}, errors.Errorf("too many calls")
+		return time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
