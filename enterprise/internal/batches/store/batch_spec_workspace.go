@@ -249,9 +249,6 @@ func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query 
 	)
 }
 
-// NOTE: The conditions here are the reverse of the conditions used in
-// CreateBatchSpecWorkspaceExecutionJobs. If you update them here, update them
-// over there too.
 const markSkippedBatchSpecWorkspacesQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspaces.go:MarkSkippedBatchSpecWorkspaces
 UPDATE
@@ -261,15 +258,8 @@ FROM batch_specs
 WHERE
 	batch_spec_workspaces.batch_spec_id = %s
 AND
-	batch_specs.id = batch_spec_workspaces.batch_spec_id
-AND
-(
-	(batch_spec_workspaces.ignored AND NOT batch_specs.allow_ignored)
-	OR
-	(batch_spec_workspaces.unsupported AND NOT batch_specs.allow_unsupported)
-	OR
-	jsonb_array_length(batch_spec_workspaces.steps) = 0
-)
+    batch_specs.id = batch_spec_workspaces.batch_spec_id
+AND NOT %s
 `
 
 // MarkSkippedBatchSpecWorkspaces marks the workspace that were skipped in
@@ -280,7 +270,11 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(markSkippedBatchSpecWorkspacesQueryFmtstr, batchSpecID)
+	q := sqlf.Sprintf(
+		markSkippedBatchSpecWorkspacesQueryFmtstr,
+		batchSpecID,
+		sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr),
+	)
 	return s.Exec(ctx, q)
 }
 

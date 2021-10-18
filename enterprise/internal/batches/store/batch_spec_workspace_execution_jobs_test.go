@@ -389,7 +389,6 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				t.Fatal(err)
 			}
 
-			fmt.Printf("ids=%+v\n", wantJobsForWorkspaces)
 			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 				BatchSpecWorkspaceIDs: wantJobsForWorkspaces,
 			})

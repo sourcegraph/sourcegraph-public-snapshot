@@ -45,9 +45,6 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
 
-// NOTE: The conditions here are the reverse of the conditions used in
-// MarkSkippedBatchSpecWorkspaces. If you update them here, update them
-// over there too.
 const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
 INSERT INTO
@@ -59,9 +56,8 @@ FROM
 JOIN batch_specs ON batch_specs.id = batch_spec_workspaces.batch_spec_id
 WHERE
 	batch_spec_workspaces.batch_spec_id = %s
-AND (batch_specs.allow_ignored OR NOT batch_spec_workspaces.ignored)
-AND (batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
-AND jsonb_array_length(batch_spec_workspaces.steps) > 0
+AND
+	%s
 `
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
@@ -71,9 +67,19 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batch
 	}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID)
+	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID, cond)
 	return s.Exec(ctx, q)
 }
+
+const executableWorkspaceJobsConditionFmtstr = `
+(
+	(batch_specs.allow_ignored OR NOT batch_spec_workspaces.ignored)
+	AND
+	(batch_specs.allow_unsupported OR NOT batch_spec_workspaces.unsupported)
+	AND
+	jsonb_array_length(batch_spec_workspaces.steps) > 0
+)`
 
 // CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
 func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs ...*btypes.BatchSpecWorkspaceExecutionJob) (err error) {
