@@ -345,21 +345,21 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
                             </Link>
-                        ) : !externalServices ? (
-                            <Link
-                                className="btn btn-primary"
-                                to={`${routingPrefix}/code-hosts`}
-                                onClick={logManageRepositoriesClick}
-                            >
-                                <AddIcon className="icon-inline" /> Connect code hosts
-                            </Link>
-                        ) : (
+                        ) : externalServices && externalServices.length !== 0 ? (
                             <Link
                                 className="btn btn-primary"
                                 to={`${routingPrefix}/repositories/manage`}
                                 onClick={logManageRepositoriesClick}
                             >
                                 <AddIcon className="icon-inline" /> Add repositories
+                            </Link>
+                        ) : (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/code-hosts`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                <AddIcon className="icon-inline" /> Connect code hosts
                             </Link>
                         )}
                     </span>

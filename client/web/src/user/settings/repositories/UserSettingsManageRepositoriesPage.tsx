@@ -784,10 +784,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
                         <div>
                             <h3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</h3>
+
                             <p className="text-muted">
-                                Repositories that can be synced through{' '}
+                                Repositories{' '}
+                                {isOrgOwner ? 'that can be synced through' : 'you own or collaborate on from your'}{' '}
                                 <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                             </p>
+
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
                                 <div className="alert alert-primary">
                                     Coming soon: search private repositories with Sourcegraph Cloud.{' '}
