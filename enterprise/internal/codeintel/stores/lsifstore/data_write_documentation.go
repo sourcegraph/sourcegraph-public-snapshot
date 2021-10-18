@@ -3,6 +3,8 @@ package lsifstore
 import (
 	"context"
 	"fmt"
+	stdlog "log"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -28,9 +30,25 @@ import (
 func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
+		log.String("repo", upload.RepositoryName),
+		log.String("commit", upload.Commit),
+		log.String("root", upload.Root),
 	}})
 	defer endObservation(1, observation.Args{})
 
+	defer func() {
+		if err := recover(); err != nil {
+			stack := debug.Stack()
+			stdlog.Printf("API docs panic: %v\n%s", err, stack)
+			traceLog(log.String("API docs panic error", fmt.Sprint(err)))
+			traceLog(log.String("API docs panic stack", string(stack)))
+		}
+	}()
+
+	return s.doWriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, traceLog)
+}
+
+func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData, traceLog observation.TraceLogger) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
