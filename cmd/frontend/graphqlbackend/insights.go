@@ -136,6 +136,42 @@ type InsightViewResolver interface {
 	// ToXX type guard methods, we need _something_ that makes this interface
 	// not match any other Node implementing type.
 	VeryUniqueResolver() bool
+
+	DefaultFilters(ctx context.Context) (InsightViewFiltersResolver, error)
+	AppliedFilters(ctx context.Context) (InsightViewFiltersResolver, error)
+	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
+	Presentation(ctx context.Context) (LineChartInsightViewPresentation, error)
+	DataSeriesDefinition(ctx context.Context) ([]SearchInsightDataSeriesDefinitionResolver, error)
+}
+
+type LineChartInsightViewPresentation interface {
+	Title(ctx context.Context) (string, error)
+	SeriesPresentation([]LineChartDataSeriesPresentationResolver, error)
+}
+
+type LineChartDataSeriesPresentationResolver interface {
+	SeriesId(ctx context.Context) (string, error)
+	Label(ctx context.Context) (string, error)
+	Color(ctx context.Context) (string, error)
+}
+
+type SearchInsightDataSeriesDefinitionResolver interface {
+	SeriesId(ctx context.Context) (string, error)
+	Query(ctx context.Context) (string, error)
+	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
+	TimeScope(ctx context.Context) (InsightIntervalTimeScope, error)
+}
+
+type InsightIntervalTimeScope interface {
+	Unit(ctx context.Context) (string, error)
+	Value(ctx context.Context) (int, error)
+}
+
+type InsightRepositoryScopeResolver interface {
+	Repositories(ctx context.Context) ([]string, error)
+}
+
+type lineChartInsightViewPresentation struct {
 }
 
 type InsightsDashboardPayloadResolver interface {
@@ -188,4 +224,9 @@ type InsightSeriesQueryStatusResolver interface {
 	Processing(ctx context.Context) (int32, error)
 	Failed(ctx context.Context) (int32, error)
 	Queued(ctx context.Context) (int32, error)
+}
+
+type InsightViewFiltersResolver interface {
+	IncludeRepoRegex(ctx context.Context) (string, error)
+	ExcludeRepoRegex(ctx context.Context) (string, error)
 }

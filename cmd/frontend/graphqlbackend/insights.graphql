@@ -571,28 +571,28 @@ type InsightView implements Node {
     """
     Presentation options for the insight.
     """
-    presentation: InsightPresentation!
+    presentation: LineChartInsightViewPresentation!
 
     """
     Information on how each data series was generated
     """
-    dataSeriesDefinitions: [InsightDataSeriesDefinition!]!
+    dataSeriesDefinitions: [SearchInsightDataSeriesDefinition!]!
 }
 
-"""
-Defines how the data series is generated.
-"""
-union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
+#"""
+#Defines how the data series is generated.
+#"""
+#union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
 
-"""
-Defines presentation options for the insight.
-"""
-union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
+#"""
+#Defines presentation options for the insight.
+#"""
+#union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
 
-"""
-Defines a scope of time for which the insight data is generated.
-"""
-union InsightTimeScope = InsightIntervalTimeScope
+#"""
+#Defines a scope of time for which the insight data is generated.
+#"""
+#union InsightTimeScope = InsightIntervalTimeScope
 
 
 """
@@ -624,7 +624,7 @@ type SearchInsightDataSeriesDefinition {
     """
     The scope of time for which the insight data is generated.
     """
-    timeScope: InsightTimeScope!
+    timeScope: InsightIntervalTimeScope!
 }
 
 """
