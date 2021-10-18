@@ -1,16 +1,17 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React, { useCallback, useState } from 'react'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { MultiCombobox } from './MultiCombobox'
 
 const decorator: DecoratorFn = story => (
-    <EnterpriseWebStory>{() => <div className="container mt-3">{story()}</div>}</EnterpriseWebStory>
+    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
-    title: 'insights/MultiCombobox',
+    title: 'wildcard/MultiCombobox',
     decorators: [decorator],
 }
 
@@ -51,7 +52,6 @@ export const MultiComboboxStory: Story = () => {
                 getTokenTitle={getTokenTitle}
                 getSuggestions={getSuggestions}
                 onChange={setValues}
-                onSearchChange={value => console.log('SearchValue:', value)}
             />
         </div>
     )

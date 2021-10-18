@@ -1,5 +1,6 @@
 import { Combobox, ComboboxInput, ComboboxList, ComboboxOption, ComboboxPopover } from '@reach/combobox'
 import classnames from 'classnames'
+import { noop } from 'lodash'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { ChangeEvent, ReactElement, useMemo, useState } from 'react'
 
@@ -13,11 +14,14 @@ interface ComboboxProps<T> {
     getTokenTitle: (token: T) => string
     getSuggestions: (searchInput: string) => T[]
     onChange: (newValues: T[]) => void
-    onSearchChange: (searchInput: string) => void
+    onSearchChange?: (searchInput: string) => void
 }
 
+/**
+ * THIS COMPONENT IS NOT READY FOR USE.
+ */
 export function MultiCombobox<T>(props: ComboboxProps<T>): ReactElement {
-    const { values, getTokenKey, getTokenTitle, getSuggestions, onSearchChange, onChange } = props
+    const { values, getTokenKey, getTokenTitle, getSuggestions, onSearchChange = noop, onChange } = props
 
     const [searchValue, setSearchValue] = useState('')
     const suggestions = useMemo(() => getSuggestions(searchValue), [getSuggestions, searchValue])
@@ -58,7 +62,7 @@ export function MultiCombobox<T>(props: ComboboxProps<T>): ReactElement {
                 ))}
             </div>
 
-            <Combobox className={styles.multicombobox} onSelect={handleOnSelect} aria-label="choose a fruit">
+            <Combobox className={styles.multicombobox} onSelect={handleOnSelect}>
                 <ComboboxInput
                     placeholder="Type value for searching"
                     className={classnames(styles.input)}
