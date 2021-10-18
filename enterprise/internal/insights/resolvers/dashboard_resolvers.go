@@ -24,7 +24,6 @@ import (
 var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
 var _ graphqlbackend.InsightsDashboardResolver = &insightsDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
-var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
 var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
 
 type dashboardConnectionResolver struct {
@@ -115,9 +114,9 @@ type stubDashboardInsightViewConnectionResolver struct {
 
 func (d *stubDashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
-	for _, id := range d.ids {
-		resolvers = append(resolvers, &stubInsightViewResolver{id: id})
-	}
+	// for _, id := range d.ids {
+	// 	// resolvers = append(resolvers, &insightViewResolver{id: id})
+	// }
 	return resolvers, nil
 }
 
@@ -203,18 +202,6 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 		return emptyResponse, err
 	}
 	return emptyResponse, nil
-}
-
-type stubInsightViewResolver struct {
-	id string
-}
-
-func (s *stubInsightViewResolver) ID() graphql.ID {
-	return relay.MarshalID("insight_view", s.id)
-}
-
-func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
-	return true
 }
 
 func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {

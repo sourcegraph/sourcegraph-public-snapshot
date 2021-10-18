@@ -255,7 +255,6 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.OldestHistoricalAt,
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
-			&temp.RecordingIntervalDays,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
 			&temp.Enabled,
@@ -289,7 +288,6 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
 			&temp.BackfillQueuedAt,
-			&temp.RecordingIntervalDays,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
 		); err != nil {
@@ -407,7 +405,6 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.OldestHistoricalAt,
 		series.LastRecordedAt,
 		series.NextRecordingAfter,
-		series.RecordingIntervalDays,
 		series.LastSnapshotAt,
 		series.NextSnapshotAfter,
 	))
