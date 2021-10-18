@@ -50,9 +50,9 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 		"deadbeef09": now.Add(-time.Hour * 15),
 	}
 
-	commitDate := func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
+	commitDate := func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		commitDate, ok := createdAt[commit]
-		return commitDate, ok, nil
+		return commit, commitDate, ok, nil
 	}
 
 	refDescriptions := func(ctx context.Context, repositoryID int) (map[string][]gitserver.RefDescription, error) {
