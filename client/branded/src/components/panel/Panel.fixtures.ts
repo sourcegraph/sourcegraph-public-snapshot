@@ -14,6 +14,7 @@ export const panels: PanelViewData[] = [
         content: 'Panel 1',
         priority: 3,
         component: null,
+        selector: null,
     },
     {
         id: 'panel_2',
@@ -21,6 +22,7 @@ export const panels: PanelViewData[] = [
         content: 'Panel 2',
         priority: 2,
         component: null,
+        selector: null,
     },
     {
         id: 'panel_3',
@@ -28,6 +30,7 @@ export const panels: PanelViewData[] = [
         content: 'Panel 3',
         priority: 1,
         component: null,
+        selector: null,
     },
 ]
 

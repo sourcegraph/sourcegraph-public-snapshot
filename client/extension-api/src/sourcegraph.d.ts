@@ -767,9 +767,9 @@ declare module 'sourcegraph' {
         component: { locationProvider: string } | null
 
         /**
-         * @internal
+         * A selector that defines the documents this panel is applicable to.
          */
-        selector: string[]
+        selector: DocumentSelector | null
     }
 
     export type ChartContent = LineChartContent<any, string> | BarChartContent<any, string> | PieChartContent<any>

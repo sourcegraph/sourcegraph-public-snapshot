@@ -186,7 +186,7 @@ export function createExtensionAPIFactory(
                 content: '',
                 component: null,
                 priority: 0,
-                selector: [],
+                selector: null,
             })
 
             const panelView: sourcegraph.PanelView = {
@@ -217,7 +217,7 @@ export function createExtensionAPIFactory(
                 get selector() {
                     return panelViewData.value.selector
                 },
-                set selector(selector: string[]) {
+                set selector(selector: sourcegraph.DocumentSelector | null) {
                     panelViewData.next({ ...panelViewData.value, selector })
                 },
                 unsubscribe: () => {
