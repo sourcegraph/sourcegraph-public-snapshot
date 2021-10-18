@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-func (s *Server) handleGetObject(getObject domain.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
+func handleGetObject(getObject domain.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req protocol.GetObjectRequest
 

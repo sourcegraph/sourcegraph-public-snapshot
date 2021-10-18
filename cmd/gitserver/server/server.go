@@ -377,7 +377,7 @@ func (s *Server) Handler() http.Handler {
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", s.handleGetObject(getObjectFunc))
+	mux.HandleFunc("/commands/get-object", handleGetObject(getObjectFunc))
 
 	return mux
 }
