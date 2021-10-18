@@ -222,6 +222,7 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     }),
     GetTemporarySettings: () => ({
         temporarySettings: {
+            __typename: 'TemporarySettings',
             contents: '{}',
         },
     }),
