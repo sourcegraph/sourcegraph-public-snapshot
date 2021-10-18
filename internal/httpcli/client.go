@@ -428,6 +428,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				"err", a.Error,
 			)
 		}()
+
 		if a.Response != nil {
 			status = a.Response.StatusCode
 		}
@@ -468,6 +469,7 @@ func NewRetryPolicy(max int) rehttp.RetryFn {
 				if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
 					return false
 				}
+
 			}
 			// The error is likely recoverable so retry.
 			return true
