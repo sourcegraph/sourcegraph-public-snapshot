@@ -142,16 +142,6 @@ describe('Search contexts', () => {
     test('Search context selected based on URL', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            GetTemporarySettings: () => ({
-                temporarySettings: {
-                    __typename: 'TemporarySettings',
-                    contents: JSON.stringify({
-                        'user.daysActiveCount': 1,
-                        'user.lastDayActive': new Date().toDateString(),
-                        'search.usedNonGlobalContext': true,
-                    }),
-                },
-            }),
             IsSearchContextAvailable: () => ({
                 isSearchContextAvailable: true,
             }),
@@ -176,20 +166,6 @@ describe('Search contexts', () => {
     })
 
     test('Unavailable search context should remain in the query and disable the search context dropdown', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            GetTemporarySettings: () => ({
-                temporarySettings: {
-                    __typename: 'TemporarySettings',
-                    contents: JSON.stringify({
-                        'user.daysActiveCount': 1,
-                        'user.lastDayActive': new Date().toDateString(),
-                        'search.usedNonGlobalContext': true,
-                    }),
-                },
-            }),
-        })
-
         await driver.page.goto(
             driver.sourcegraphBaseUrl + '/search?q=context:%40unavailableCtx+test&patternType=regexp',
             { waitUntil: 'networkidle0' }
@@ -201,20 +177,6 @@ describe('Search contexts', () => {
     })
 
     test('Reset unavailable search context from localStorage if query is not present', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            GetTemporarySettings: () => ({
-                temporarySettings: {
-                    __typename: 'TemporarySettings',
-                    contents: JSON.stringify({
-                        'user.daysActiveCount': 1,
-                        'user.lastDayActive': new Date().toDateString(),
-                        'search.usedNonGlobalContext': true,
-                    }),
-                },
-            }),
-        })
-
         // First initialize localStorage on the page
         await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
         await driver.page.evaluate(() => localStorage.setItem('sg-last-search-context', 'doesnotexist'))
