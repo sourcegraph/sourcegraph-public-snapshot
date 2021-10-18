@@ -82,6 +82,11 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                 await onInsightCreateRequest({ subjectId: subjectID, insight })
 
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
+                telemetryService.log(
+                    'Insight Addition',
+                    { insightType: 'searchInsights' },
+                    { insightType: 'searchInsights' }
+                )
 
                 // Clear initial values if user successfully created search insight
                 setLocalStorageFormValues(undefined)
