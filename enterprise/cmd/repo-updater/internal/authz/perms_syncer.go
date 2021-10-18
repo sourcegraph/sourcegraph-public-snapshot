@@ -669,8 +669,8 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	}
 }
 
-// todo: scheduleUsersWithOutdatedPerms returns computed schedules for private repositories that
-// // have oldest permissions in database.
+// scheduleUsersWithOutdatedPerms returns computed schedules for users who have
+// outdated permissions in database.
 func (s *PermsSyncer) scheduleUsersWithOutdatedPerms(ctx context.Context) ([]scheduledUser, error) {
 	results, err := s.permsStore.UserIDsWithOutdatedPerms(ctx)
 	if err != nil {
@@ -678,23 +678,36 @@ func (s *PermsSyncer) scheduleUsersWithOutdatedPerms(ctx context.Context) ([]sch
 	}
 
 	users := make([]scheduledUser, 0, len(results))
-	noPermsCount := 0
 	for id, t := range results {
 		users = append(users,
 			scheduledUser{
 				priority:   priorityLow,
 				userID:     id,
 				nextSyncAt: t,
-				noPerms:    t.IsZero(),
 			},
 		)
+	}
+	return users, nil
+}
 
-		if t.IsZero() {
-			noPermsCount++
+// scheduleUsersWithNoPerms returns computed schedules for users who have no
+// permissions found in database.
+func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
+	ids, err := s.permsStore.UserIDsWithNoPerms(ctx)
+	if err != nil {
+		return nil, err
+	}
+	metricsNoPerms.WithLabelValues("user").Set(float64(len(ids)))
+
+	users := make([]scheduledUser, len(ids))
+	for i, id := range ids {
+		users[i] = scheduledUser{
+			priority: priorityLow,
+			userID:   id,
+			// NOTE: Have nextSyncAt with zero value (i.e. not set) gives it higher priority.
+			noPerms: true,
 		}
 	}
-
-	metricsNoPerms.WithLabelValues("user").Set(float64(noPermsCount))
 	return users, nil
 }
 
@@ -800,6 +813,12 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	}
 	schedule.Users = append(schedule.Users, users...)
 
+	users, err = s.scheduleUsersWithNoPerms(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "schedule users with no permissions")
+	}
+	schedule.Users = append(schedule.Users, users...)
+
 	repos, err := s.scheduleReposWithNoPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule repositories with no permissions")
@@ -865,6 +884,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() {
+			log15.Debug("PermsSyncer.runSchedule.disabled")
 			continue
 		}
 
