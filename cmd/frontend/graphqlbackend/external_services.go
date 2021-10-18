@@ -79,7 +79,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, errors.New("the authenticated user does not belong to the organization requested")
 		}
 
-	} else if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
