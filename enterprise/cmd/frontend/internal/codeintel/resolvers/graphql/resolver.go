@@ -538,6 +538,9 @@ func validateConfigurationPolicy(policy gql.CodeIntelConfigurationPolicy) error 
 	if policy.Pattern == "" {
 		return errors.Errorf("no pattern supplied")
 	}
+	if policy.Type == gql.GitObjectTypeCommit && policy.Pattern != "HEAD" {
+		return errors.Errorf("pattern must be HEAD for policy type 'GIT_COMMIT'")
+	}
 	if policy.RetentionDurationHours != nil && *policy.RetentionDurationHours <= 0 {
 		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
 	}
