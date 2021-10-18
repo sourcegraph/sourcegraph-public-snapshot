@@ -82,33 +82,25 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 
 	// First, find all repositories that match the batch spec on definitions.
 	// This list is filtered by permissions using database.Repos.List.
-	// This also returns the list of repos that aren't supported.
-	seen, err := wr.determineRepositories(ctx, batchSpec)
+	repos, err := wr.determineRepositories(ctx, batchSpec)
 	if err != nil {
 		return nil, err
 	}
 
 	// Next, find the repos that are ignored through a .batchignore file.
-	ignored, err := findIgnoredRepositories(ctx, seen)
+	ignored, err := findIgnoredRepositories(ctx, repos)
 	if err != nil {
 		return nil, err
 	}
 
-	// Now build the list of repoRevs we want to consider for workspaces.
-	repoRevs := make([]*RepoRevision, 0, len(seen))
-	for _, rr := range seen {
-		// If the repo is unsupported or ignored, we by default don't care about it.
-		// This can be overwritten using the options.
-		// if (!isUnsupported || opts.AllowUnsupported) && (!isIgnored || opts.AllowIgnored) {
-		repoRevs = append(repoRevs, rr)
-		// }
-	}
-
-	workspaces, err = findWorkspaces(ctx, batchSpec, wr, repoRevs)
+	// Now build the workspaces for the list of repos
+	workspaces, err = findWorkspaces(ctx, batchSpec, wr, repos)
 	if err != nil {
 		return nil, err
 	}
 
+	// Finally, tag the workspaces if they're (a) on an unsupported code host
+	// or (b) ignored.
 	for _, ws := range workspaces {
 		if !btypes.IsKindSupported(extsvc.TypeToKind(ws.Repo.ExternalRepo.ServiceType)) {
 			ws.Unsupported = true
@@ -122,7 +114,7 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 	return workspaces, nil
 }
 
-func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) (map[api.RepoID]*RepoRevision, error) {
+func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpec *batcheslib.BatchSpec) ([]*RepoRevision, error) {
 	seen := map[api.RepoID]*RepoRevision{}
 
 	var errs error
@@ -151,10 +143,14 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 		}
 	}
 
-	return seen, errs
+	repoRevs := make([]*RepoRevision, 0, len(seen))
+	for _, rr := range seen {
+		repoRevs = append(repoRevs, rr)
+	}
+	return repoRevs, errs
 }
 
-func findIgnoredRepositories(ctx context.Context, repos map[api.RepoID]*RepoRevision) (map[*types.Repo]struct{}, error) {
+func findIgnoredRepositories(ctx context.Context, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
 		hasBatchIgnore bool

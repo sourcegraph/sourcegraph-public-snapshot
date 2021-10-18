@@ -261,7 +261,7 @@ FROM batch_specs
 WHERE
 	batch_spec_workspaces.batch_spec_id = %s
 AND
-    batch_specs.id = batch_spec_workspaces.batch_spec_id
+	batch_specs.id = batch_spec_workspaces.batch_spec_id
 AND
 (
 	(batch_spec_workspaces.ignored AND NOT batch_specs.allow_ignored)
