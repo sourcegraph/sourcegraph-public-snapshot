@@ -9,7 +9,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -286,7 +285,6 @@ func TestNewTimeoutOpt(t *testing.T) {
 func TestErrorResilience(t *testing.T) {
 	failures := int64(5)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.URL.Path)
 		if r.URL.Path == "/401" {
 			w.WriteHeader(401)
 			return
@@ -436,7 +434,6 @@ func TestErrorResilience(t *testing.T) {
 				),
 			).Doer()
 			url := srv.URL + "/" + strconv.Itoa(code)
-			fmt.Println(url)
 			req, err := http.NewRequest("GET", url, nil)
 			if err != nil {
 				t.Fatal(err)
