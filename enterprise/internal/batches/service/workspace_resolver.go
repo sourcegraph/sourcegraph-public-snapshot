@@ -111,6 +111,18 @@ func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, 
 		}
 	}
 
+	// Sort the workspaces so that the list of workspaces is kinda stable when
+	// using `replaceBatchSpecInput`.
+	sort.Slice(workspaces, func(i, j int) bool {
+		if workspaces[i].Repo.Name != workspaces[j].Repo.Name {
+			return workspaces[i].Repo.Name < workspaces[j].Repo.Name
+		}
+		if workspaces[i].Path != workspaces[j].Path {
+			return workspaces[i].Path < workspaces[j].Path
+		}
+		return workspaces[i].Branch < workspaces[j].Branch
+	})
+
 	return workspaces, nil
 }
 
