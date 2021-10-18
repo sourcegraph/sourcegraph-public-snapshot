@@ -24,14 +24,6 @@ describe('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSuggestions: () => ({
-                search: {
-                    suggestions: [{ __typename: 'Repository', name: '^github\\.com/sourcegraph/sourcegraph$' }],
-                },
-            }),
-            RepoGroups: () => ({
-                repoGroups: [],
-            }),
             AutoDefinedSearchContexts: () => ({
                 autoDefinedSearchContexts: [],
             }),
@@ -87,7 +79,14 @@ describe('Search onboarding', () => {
                 },
             }),
         })
-        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
+        testContext.overrideSearchStreamEvents([
+            // Used for suggestions
+            {
+                type: 'matches',
+                data: [{ type: 'repo', repository: '^github\\.com/sourcegraph/sourcegraph$' }],
+            },
+            { type: 'done', data: {} },
+        ])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())

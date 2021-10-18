@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -97,6 +98,8 @@ type GetConfigurationPoliciesOptions struct {
 }
 
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
+// If no repository identifier is supplied (if zero), then only global policies are returned. Otherwise,
+// only policies attached to the given repository are returned.
 func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurationPoliciesOptions) (_ []ConfigurationPolicy, err error) {
 	ctx, traceLog, endObservation := s.operations.getConfigurationPolicies.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", opts.RepositoryID),
@@ -105,16 +108,24 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 
 	conds := make([]*sqlf.Query, 0, 3)
 	if opts.RepositoryID == 0 {
-		conds = append(conds, sqlf.Sprintf("repository_id IS NULL"))
+		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL"))
 	} else {
-		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepositoryID))
+		conds = append(conds, sqlf.Sprintf("p.repository_id = %s", opts.RepositoryID))
 	}
 	if opts.ForDataRetention {
-		conds = append(conds, sqlf.Sprintf("retention_enabled"))
+		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))
 	}
 	if opts.ForIndexing {
-		conds = append(conds, sqlf.Sprintf("indexing_enabled"))
+		conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
 	}
+
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
+	// Global policies are visible to anyone
+	// Repository-specific policies must check repository permissions
+	conds = append(conds, sqlf.Sprintf("(p.repository_id IS NULL OR (%s))", authzConds))
 
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {
@@ -126,21 +137,22 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 }
 
 const getConfigurationPoliciesQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetSomething
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicies
 SELECT
-	id,
-	repository_id,
-	name,
-	type,
-	pattern,
-	protected,
-	retention_enabled,
-	retention_duration_hours,
-	retain_intermediate_commits,
-	indexing_enabled,
-	index_commit_max_age_hours,
-	index_intermediate_commits
-FROM lsif_configuration_policies
+	p.id,
+	p.repository_id,
+	p.name,
+	p.type,
+	p.pattern,
+	p.protected,
+	p.retention_enabled,
+	p.retention_duration_hours,
+	p.retain_intermediate_commits,
+	p.indexing_enabled,
+	p.index_commit_max_age_hours,
+	p.index_intermediate_commits
+FROM lsif_configuration_policies p
+LEFT JOIN repo ON repo.id = p.repository_id
 WHERE %s
 ORDER BY name
 `
@@ -152,26 +164,34 @@ func (s *Store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ Confi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return scanFirstConfigurationPolicy(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPolicyByIDQuery, id)))
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return ConfigurationPolicy{}, false, err
+	}
+
+	return scanFirstConfigurationPolicy(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPolicyByIDQuery, id, authzConds)))
 }
 
 const getConfigurationPolicyByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetConfigurationPolicyByID
 SELECT
-	id,
-	repository_id,
-	name,
-	type,
-	pattern,
-	protected,
-	retention_enabled,
-	retention_duration_hours,
-	retain_intermediate_commits,
-	indexing_enabled,
-	index_commit_max_age_hours,
-	index_intermediate_commits
-FROM lsif_configuration_policies
-WHERE id = %s
+	p.id,
+	p.repository_id,
+	p.name,
+	p.type,
+	p.pattern,
+	p.protected,
+	p.retention_enabled,
+	p.retention_duration_hours,
+	p.retain_intermediate_commits,
+	p.indexing_enabled,
+	p.index_commit_max_age_hours,
+	p.index_intermediate_commits
+FROM lsif_configuration_policies p
+LEFT JOIN repo ON repo.id = p.repository_id
+-- Global policies are visible to anyone
+-- Repository-specific policies must check repository permissions
+WHERE p.id = %s AND (p.repository_id IS NULL OR (%s))
 `
 
 // CreateConfigurationPolicy creates a configuration policy with the given fields (ignoring ID). The hydrated

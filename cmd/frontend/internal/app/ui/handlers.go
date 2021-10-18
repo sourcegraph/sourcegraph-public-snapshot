@@ -235,7 +235,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 	}
 
 	// common.Repo and common.CommitID are populated in the above if statement
-	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() {
+	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() && common.Repo != nil {
 		lineRange := findLineRangeInQueryParameters(r.URL.Query())
 
 		var symbolResult *result.Symbol

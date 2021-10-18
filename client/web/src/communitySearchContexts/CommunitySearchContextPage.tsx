@@ -30,7 +30,6 @@ import {
     PatternTypeProps,
     CaseSensitivityProps,
     OnboardingTourProps,
-    ShowQueryBuilderProps,
     ParsedSearchQueryProps,
     SearchContextInputProps,
     SearchContextProps,
@@ -58,8 +57,7 @@ export interface CommunitySearchContextPageProps
         VersionContextProps,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'>,
-        OnboardingTourProps,
-        ShowQueryBuilderProps {
+        OnboardingTourProps {
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
@@ -132,7 +130,6 @@ export const CommunitySearchContextPage: React.FunctionComponent<CommunitySearch
                         selectedSearchContextSpec={props.communitySearchContextMetadata.spec}
                         source="communitySearchContextPage"
                         hideVersionContexts={true}
-                        showQueryBuilder={false}
                     />
                 ) : (
                     <SearchPageInput

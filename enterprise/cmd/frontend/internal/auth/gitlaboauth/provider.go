@@ -54,7 +54,7 @@ func parseProvider(db dbutil.DB, callbackURL string, p *schema.GitLabAuthProvide
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
 			return CallbackHandler(
 				&oauth2Cfg,
-				oauth.SessionIssuer(&sessionIssuerHelper{
+				oauth.SessionIssuer(db, &sessionIssuerHelper{
 					db:       db,
 					CodeHost: codeHost,
 					clientID: p.ClientID,

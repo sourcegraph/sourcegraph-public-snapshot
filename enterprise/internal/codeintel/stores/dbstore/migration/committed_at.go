@@ -101,19 +101,20 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 }
 
 func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
-	var commitDateString string
-	if commitDate, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit); err != nil {
-		if !domain.IsRepoNotExist(err) && !errors.HasType(err, &domain.RevisionNotFoundError{}) {
-			return errors.Wrap(err, "gitserver.CommitDate")
-		}
+	commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
+	if err != nil && !domain.IsRepoNotExist(err) {
+		return errors.Wrap(err, "gitserver.CommitDate")
+	}
 
+	var commitDateString string
+	if revisionExists {
+		commitDateString = commitDate.Format(time.RFC3339)
+	} else {
 		// Set a value here that we'll filter out on the query side so that we don't
-		// reprocess the same failing batch infinitely. We could alternative soft
+		// reprocess the same failing batch infinitely. We could alternatively soft
 		// delete the record, but it would be better to keep record deletion behavior
 		// together in the same place (so we have unified metrics on that event).
 		commitDateString = "-infinity"
-	} else {
-		commitDateString = commitDate.Format(time.RFC3339)
 	}
 
 	// Update commit date of all uploads attached to this this repository and commit

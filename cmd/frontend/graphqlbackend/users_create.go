@@ -40,7 +40,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err = database.GlobalAuthz.GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+	if err = database.Authz(r.db).GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: user.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
