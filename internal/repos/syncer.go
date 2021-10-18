@@ -610,7 +610,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 					"reached maximum allowed user added repos: site:%d/%d, user:%d/%d (username: %q)",
 					siteAdded, siteLimit,
 					userAdded, userLimit,
-					username
+					username,
 				)
 			}
 		}
