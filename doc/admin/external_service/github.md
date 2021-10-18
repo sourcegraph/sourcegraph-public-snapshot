@@ -34,12 +34,11 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
-No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required:
+No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
 - `repo` to sync private repositories from GitHub to Sourcegraph.
-- `read:org` to use:
-  - the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github)
-  - GitHub external service [`"authorization.groupsCacheTTL"` (which also requires `"allowGroupsPermissionsSync"`) for permissions caching](../repo/permissions.md#teams-and-organizations-permissions-caching).
+- `read:org` to use the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github).
+- `write:org` to use the `"authorization.groupsCacheTTL"` setting (which also requires `"allowGroupsPermissionsSync"`) [with a GitHub authentication provider](../auth/index.md#github) for [teams and organizations permissions caching](../repo/permissions.md#teams-and-organizations-permissions-caching).
 - `repo`, `read:org`, `user:email`, and `read:discussion` to use [batch changes](../../batch_changes/index.md) with GitHub repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details.
 
 > NOTE: If you plan to use repository permissions with [background permissions syncing](../repo/permissions.md#background-permissions-syncing), an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
