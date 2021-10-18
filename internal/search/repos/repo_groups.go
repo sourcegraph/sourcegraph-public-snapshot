@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -43,7 +44,7 @@ func RepoGroupsToIncludePatterns(groupNames []string, groups map[string][]RepoGr
 
 // ResolveRepoGroups retrieves the repository group from settings and checks the database for any
 // user configured repogroups.
-func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
+func ResolveRepoGroups(ctx context.Context, db dbutil.DB, settings *schema.Settings) (groups map[string][]RepoGroupValue, err error) {
 	if MockResolveRepoGroups != nil {
 		return MockResolveRepoGroups()
 	}
@@ -55,13 +56,13 @@ func ResolveRepoGroups(ctx context.Context, settings *schema.Settings) (groups m
 		return groups, nil
 	}
 
-	if mode, err := database.GlobalUsers.CurrentUserAllowedExternalServices(ctx); err != nil {
+	if mode, err := database.Users(db).CurrentUserAllowedExternalServices(ctx); err != nil {
 		return groups, err
 	} else if mode == conf.ExternalServiceModeDisabled {
 		return groups, nil
 	}
 
-	repos, err := database.GlobalRepos.ListRepoNames(ctx, database.ReposListOptions{UserID: a.UID})
+	repos, err := database.Repos(db).ListRepoNames(ctx, database.ReposListOptions{UserID: a.UID})
 	if err != nil {
 		log15.Warn("getting user added repos", "err", err)
 		return groups, nil

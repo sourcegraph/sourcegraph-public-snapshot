@@ -15,6 +15,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -284,6 +285,14 @@ func TestNewTimeoutOpt(t *testing.T) {
 func TestErrorResilience(t *testing.T) {
 	failures := int64(5)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/401" {
+			w.WriteHeader(401)
+			return
+		}
+		if r.URL.Path == "/403" {
+			w.WriteHeader(403)
+			return
+		}
 		status := 0
 		switch n := atomic.AddInt64(&failures, -1); n {
 		case 4:
@@ -399,6 +408,43 @@ func TestErrorResilience(t *testing.T) {
 		// policy is on DNS failure to retry 3 times
 		if want := 3; retries != want {
 			t.Fatalf("expected %d retries, got %d", want, retries)
+		}
+	})
+
+	t.Run("don't retry unauthorized/forbidden", func(t *testing.T) {
+		for _, code := range []int{401, 403} {
+			// spy on policy so we see what decisions it makes
+			retries := 0
+			policy := NewRetryPolicy(1) // we should get 0 retries so 1 is enough here
+			wrapped := func(a rehttp.Attempt) bool {
+				if policy(a) {
+					retries++
+					return true
+				}
+				return false
+			}
+
+			cli, _ := NewFactory(
+				NewMiddleware(
+					ContextErrorMiddleware,
+				),
+				NewErrorResilientTransportOpt(
+					wrapped,
+					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				),
+			).Doer()
+			url := srv.URL + "/" + strconv.Itoa(code)
+			req, err := http.NewRequest("GET", url, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, err = cli.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := 0; retries != want {
+				t.Fatalf("expected %d retries, got %d", want, retries)
+			}
 		}
 	})
 }

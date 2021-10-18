@@ -1,9 +1,7 @@
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-
 import { SearchCommand } from './search'
 
-export function initializeOmniboxInterface(requestGraphQL: PlatformContext['requestGraphQL']): void {
-    const searchCommand = new SearchCommand(requestGraphQL)
+export function initializeOmniboxInterface(): void {
+    const searchCommand = new SearchCommand()
     browser.omnibox.onInputChanged.addListener(async (query, suggest) => {
         try {
             const suggestions = await searchCommand.getSuggestions(query)

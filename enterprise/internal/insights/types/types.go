@@ -58,6 +58,7 @@ type InsightSeries struct {
 	NextSnapshotAfter     time.Time
 	BackfillQueuedAt      time.Time
 	RecordingIntervalDays int
+	Enabled               bool
 }
 
 type DirtyQuery struct {
@@ -79,4 +80,15 @@ type Dashboard struct {
 	Title      string
 	InsightIDs []string // shallow references
 	Save       bool     // temporarily save dashboards from being cleared during setting migration
+}
+
+type InsightSeriesStatus struct {
+	SeriesId   string
+	Query      string
+	Enabled    bool
+	Errored    int
+	Processing int
+	Queued     int
+	Failed     int
+	Completed  int
 }

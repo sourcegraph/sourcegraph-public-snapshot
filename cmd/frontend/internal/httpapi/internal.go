@@ -156,12 +156,14 @@ func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveReposListEnabled(w http.ResponseWriter, r *http.Request) error {
-	names, err := database.GlobalRepos.ListEnabledNames(r.Context())
-	if err != nil {
-		return err
+func serveReposListEnabled(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		names, err := database.Repos(db).ListEnabledNames(r.Context())
+		if err != nil {
+			return err
+		}
+		return json.NewEncoder(w).Encode(names)
 	}
-	return json.NewEncoder(w).Encode(names)
 }
 
 func serveSavedQueriesListAll(db dbutil.DB) func(w http.ResponseWriter, r *http.Request) error {
@@ -309,36 +311,40 @@ func serveOrgsGetByName(db dbutil.DB) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func serveUsersGetByUsername(w http.ResponseWriter, r *http.Request) error {
-	var username string
-	err := json.NewDecoder(r.Body).Decode(&username)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveUsersGetByUsername(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var username string
+		err := json.NewDecoder(r.Body).Decode(&username)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		user, err := database.Users(db).GetByUsername(r.Context(), username)
+		if err != nil {
+			return errors.Wrap(err, "Users.GetByUsername")
+		}
+		if err := json.NewEncoder(w).Encode(user.ID); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	user, err := database.GlobalUsers.GetByUsername(r.Context(), username)
-	if err != nil {
-		return errors.Wrap(err, "Users.GetByUsername")
-	}
-	if err := json.NewEncoder(w).Encode(user.ID); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
-func serveUserEmailsGetEmail(w http.ResponseWriter, r *http.Request) error {
-	var userID int32
-	err := json.NewDecoder(r.Body).Decode(&userID)
-	if err != nil {
-		return errors.Wrap(err, "Decode")
+func serveUserEmailsGetEmail(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		var userID int32
+		err := json.NewDecoder(r.Body).Decode(&userID)
+		if err != nil {
+			return errors.Wrap(err, "Decode")
+		}
+		email, _, err := database.UserEmails(db).GetPrimaryEmail(r.Context(), userID)
+		if err != nil {
+			return errors.Wrap(err, "UserEmails.GetEmail")
+		}
+		if err := json.NewEncoder(w).Encode(email); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+		return nil
 	}
-	email, _, err := database.GlobalUserEmails.GetPrimaryEmail(r.Context(), userID)
-	if err != nil {
-		return errors.Wrap(err, "UserEmails.GetEmail")
-	}
-	if err := json.NewEncoder(w).Encode(email); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-	return nil
 }
 
 func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
@@ -407,46 +413,48 @@ func serveGitTar(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func serveGitExec(w http.ResponseWriter, r *http.Request) error {
-	defer r.Body.Close()
-	req := protocol.ExecRequest{}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return errors.Wrap(err, "Decode")
-	}
+func serveGitExec(db dbutil.DB) func(http.ResponseWriter, *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		defer r.Body.Close()
+		req := protocol.ExecRequest{}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			return errors.Wrap(err, "Decode")
+		}
 
-	vars := mux.Vars(r)
-	repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
-	if err != nil {
-		http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
+		vars := mux.Vars(r)
+		repoID, err := strconv.ParseInt(vars["RepoID"], 10, 64)
+		if err != nil {
+			http.Error(w, "illegal repository id: "+err.Error(), http.StatusBadRequest)
+			return nil
+		}
+
+		repo, err := database.Repos(db).Get(r.Context(), api.RepoID(repoID))
+		if err != nil {
+			return err
+		}
+
+		// Set repo name in gitserver request payload
+		req.Repo = repo.Name
+
+		var buf bytes.Buffer
+		if err := json.NewEncoder(&buf).Encode(req); err != nil {
+			return errors.Wrap(err, "Encode")
+		}
+
+		// Find the correct shard to query
+		addr := gitserver.DefaultClient.AddrForRepo(repo.Name)
+
+		director := func(req *http.Request) {
+			req.URL.Scheme = "http"
+			req.URL.Host = addr
+			req.URL.Path = "/exec"
+			req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
+			req.ContentLength = int64(buf.Len())
+		}
+
+		gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
 		return nil
 	}
-
-	repo, err := database.GlobalRepos.Get(r.Context(), api.RepoID(repoID))
-	if err != nil {
-		return err
-	}
-
-	// Set repo name in gitserver request payload
-	req.Repo = repo.Name
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(req); err != nil {
-		return errors.Wrap(err, "Encode")
-	}
-
-	// Find the correct shard to query
-	addr := gitserver.DefaultClient.AddrForRepo(repo.Name)
-
-	director := func(req *http.Request) {
-		req.URL.Scheme = "http"
-		req.URL.Host = addr
-		req.URL.Path = "/exec"
-		req.Body = io.NopCloser(bytes.NewReader(buf.Bytes()))
-		req.ContentLength = int64(buf.Len())
-	}
-
-	gitserver.DefaultReverseProxy.ServeHTTP(repo.Name, "POST", "exec", director, w, r)
-	return nil
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the

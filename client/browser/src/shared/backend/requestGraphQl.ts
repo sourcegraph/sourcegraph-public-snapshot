@@ -13,7 +13,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
-import { observeSourcegraphURL } from '../util/context'
+import { SourcegraphUrlService } from '../platform/sourcegraphUrlService'
 
 import { getHeaders } from './headers'
 
@@ -91,7 +91,7 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
         request,
         variables,
     }: RequestGraphQLOptions<V>): Observable<GraphQLResult<T>> =>
-        observeSourcegraphURL(isExtension).pipe(
+        SourcegraphUrlService.observe(isExtension).pipe(
             take(1),
             switchMap(sourcegraphURL =>
                 requestGraphQLCommon<T, V>({

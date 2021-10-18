@@ -4,10 +4,10 @@ const config = {
   ci: {
     collect: {
       url: [
-        'http://localhost:3443',
-        'http://localhost:3443/search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js',
-        'http://localhost:3443/github.com/sourcegraph/lighthouse-ci-test-repository',
-        'http://localhost:3443/github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js',
+        'http://localhost:3080',
+        'http://localhost:3080/search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js',
+        'http://localhost:3080/github.com/sourcegraph/lighthouse-ci-test-repository',
+        'http://localhost:3080/github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js',
       ],
       startServerCommand: 'yarn workspace @sourcegraph/web serve:prod',
       settings: {

@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 type Matcher struct {
@@ -239,13 +238,12 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
 		if policy.Type == dbstore.GitObjectTypeCommit {
-			commitDate, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
+			commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
 			if err != nil {
-				if errcode.IsNotFound(err) {
-					return nil
-				}
-
-				return errors.Wrap(err, "gitserver.ResolveRevision")
+				return errors.Wrap(err, "gitserver.CommitDate")
+			}
+			if !revisionExists {
+				continue
 			}
 
 			policyDuration, _ := m.extractor(policy)

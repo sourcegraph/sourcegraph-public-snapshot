@@ -28,6 +28,7 @@ type CodeIntelResolver interface {
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -147,6 +148,7 @@ type GitBlobLSIFDataResolver interface {
 	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
 	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
 
+	Stencil(ctx context.Context) ([]RangeResolver, error)
 	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
 	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
 	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
@@ -270,6 +272,16 @@ type IndexConfigurationResolver interface {
 type UpdateRepositoryIndexConfigurationArgs struct {
 	Repository    graphql.ID
 	Configuration string
+}
+
+type PreviewGitObjectFilterArgs struct {
+	Type    GitObjectType
+	Pattern string
+}
+
+type GitObjectFilterPreviewResolver interface {
+	Name() string
+	Rev() string
 }
 
 type CodeIntelligenceConfigurationPolicyResolver interface {

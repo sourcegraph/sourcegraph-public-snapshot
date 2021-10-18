@@ -21,6 +21,8 @@ import { VersionContext } from '../schema/site.schema'
 import { PatternTypeProps, CaseSensitivityProps, SearchContextProps } from '../search'
 import { submitSearch } from '../search/helpers'
 
+import styles from './VersionContextDropdown.module.scss'
+
 const HAS_DISMISSED_INFO_KEY = 'sg-has-dismissed-version-context-info'
 
 export interface VersionContextDropdownProps
@@ -112,16 +114,17 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
     return (
         <>
             {availableVersionContexts ? (
-                <div className={classNames('version-context-dropdown text-nowrap', className)}>
+                <div className={classNames('text-nowrap', styles.versionContextDropdown, className)}>
                     <ListboxInput value={currentVersionContext} onChange={updateValue}>
                         {({ isExpanded }) => (
                             <>
-                                <ListboxButton className="version-context-dropdown__button btn btn-secondary">
+                                <ListboxButton className={classNames('btn btn-secondary', styles.button)}>
                                     <FlagVariantIcon className="icon-inline small" />
                                     {!currentVersionContext || currentVersionContext === 'default' ? (
                                         <span
                                             className={classNames(
-                                                'version-context-dropdown__button-text ml-2 mr-1',
+                                                'ml-2 mr-1',
+                                                styles.buttonText,
                                                 // If the info blurb hasn't been dismissed, still show the label on non-small screens.
                                                 { 'd-sm-none d-md-block': !hasDismissedInfo },
                                                 // If the info blurb has been dismissed, never show this label.
@@ -131,20 +134,20 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                             Select context
                                         </span>
                                     ) : (
-                                        <span className="version-context-dropdown__button-text ml-2 mr-1">
+                                        <span className={classNames('ml-2 mr-1', styles.buttonText)}>
                                             {currentVersionContext} (Active)
                                         </span>
                                     )}
                                     <MenuDownIcon className="icon-inline" />
                                 </ListboxButton>
                                 <ListboxPopover
-                                    className={classNames('version-context-dropdown__popover dropdown-menu', {
+                                    className={classNames('dropdown-menu', styles.popover, {
                                         show: isExpanded || alwaysExpanded,
                                     })}
                                     portal={portal}
                                 >
                                     {hasDismissedInfo && (
-                                        <div className="version-context-dropdown__title pl-2 mb-1">
+                                        <div className={classNames('pl-2 mb-1', styles.title)}>
                                             <span className="text-nowrap">Select version context</span>
                                             <button type="button" className="btn btn-icon" onClick={showInfo}>
                                                 <HelpCircleOutlineIcon className="icon-inline small" />
@@ -152,7 +155,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                         </div>
                                     )}
                                     {!hasDismissedInfo && (
-                                        <div className="version-context-dropdown__info card">
+                                        <div className={classNames('card', styles.info)}>
                                             <span className="font-weight-bold">About version contexts</span>
                                             <p className="mb-2">
                                                 Version contexts (
@@ -165,18 +168,18 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                             </p>
                                             <button
                                                 type="button"
-                                                className="btn btn-outline-primary version-context-dropdown__info-dismiss"
+                                                className={classNames('btn btn-outline-primary', styles.infoDismiss)}
                                                 onClick={onDismissInfo}
                                             >
                                                 Do not show this again
                                             </button>
                                         </div>
                                     )}
-                                    <ListboxList className="version-context-dropdown__list">
+                                    <ListboxList className={styles.list}>
                                         <ListboxGroupLabel
                                             disabled={true}
                                             value="title"
-                                            className="version-context-dropdown__option version-context-dropdown__title"
+                                            className={classNames(styles.option, styles.title)}
                                         >
                                             <VersionContextInfoRow
                                                 name="Name"
@@ -202,7 +205,7 @@ export const VersionContextDropdown: React.FunctionComponent<VersionContextDropd
                                                     key={versionContext.name}
                                                     value={versionContext.name}
                                                     label={versionContext.name}
-                                                    className="version-context-dropdown__option"
+                                                    className={styles.option}
                                                 >
                                                     <VersionContextInfoRow
                                                         name={versionContext.name}
@@ -242,7 +245,7 @@ const VersionContextInfoRow: React.FunctionComponent<{
                 </button>
             )}
         </div>
-        <span className="version-context-dropdown__option-name">{name}</span>
-        <span className="version-context-dropdown__option-description">{description}</span>
+        <span className={styles.optionName}>{name}</span>
+        <span className={styles.optionDescription}>{description}</span>
     </>
 )

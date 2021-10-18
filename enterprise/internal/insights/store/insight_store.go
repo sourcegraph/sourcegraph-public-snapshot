@@ -207,7 +207,7 @@ type GetDataSeriesArgs struct {
 	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
 	NextRecordingBefore time.Time
 	NextSnapshotBefore  time.Time
-	Deleted             bool
+	IncludeDeleted      bool
 	BackfillIncomplete  bool
 	SeriesID            string
 }
@@ -221,9 +221,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	if !args.NextSnapshotBefore.IsZero() {
 		preds = append(preds, sqlf.Sprintf("next_snapshot_after < %s", args.NextSnapshotBefore))
 	}
-	if args.Deleted {
-		preds = append(preds, sqlf.Sprintf("deleted_at IS NOT NULL"))
-	} else {
+	if !args.IncludeDeleted {
 		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
 	}
 	if len(preds) == 0 {
@@ -260,6 +258,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.RecordingIntervalDays,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
+			&temp.Enabled,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -418,6 +417,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		return types.InsightSeries{}, err
 	}
 	series.ID = id
+	series.Enabled = true
 	return series, nil
 }
 
@@ -426,6 +426,7 @@ type DataSeriesStore interface {
 	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
 }
 
 type InsightMetadataStore interface {
@@ -467,6 +468,23 @@ func (s *InsightStore) StampBackfill(ctx context.Context, series types.InsightSe
 	series.BackfillQueuedAt = current
 	return series, nil
 }
+
+func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error {
+	var arg *sqlf.Query
+	if enabled {
+		arg = sqlf.Sprintf("null")
+	} else {
+		arg = sqlf.Sprintf("%s", s.Now())
+	}
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
+}
+
+const setSeriesStatusSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
+UPDATE insight_series
+SET deleted_at = %s
+WHERE series_id = %s;
+`
 
 const stampBackfillSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:StampRecording
@@ -525,6 +543,6 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
 WHERE %s
 `

@@ -18,6 +18,7 @@ All notable changes to Sourcegraph are documented in this file.
 - More rules have been added to the search query validation so that user get faster feedback on issues with their query. [#24747](https://github.com/sourcegraph/sourcegraph/pull/24747)
 - Bloom filters have been added to the zoekt indexing backend to accelerate queries with code fragments matching `\w{4,}`. [zoekt#126](https://github.com/sourcegraph/zoekt/pull/126)
 - For short search queries containing no filters but the name of a supported programming language we are now suggesting to run the query with a language filter. [#25792](https://github.com/sourcegraph/sourcegraph/pull/25792)
+- The API scope used by GitLab OAuth can now optionally be configured in the provider. [#26152](https://github.com/sourcegraph/sourcegraph/pull/26152)
 
 ### Changed
 
@@ -40,10 +41,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where code insights queries could produce a panic on queued records that did not include a `record_time` [#25929](https://github.com/sourcegraph/sourcegraph/pull/25929)
 - Fixed an issue where Batch Change changeset diffs would sometimes render incorrectly when previewed from the UI if they contained deleted empty lines. [#25866](https://github.com/sourcegraph/sourcegraph/pull/25866)
 - An issue where `repo:contains.commit.after()` would fail on some malformed git repositories. [#25974](https://github.com/sourcegraph/sourcegraph/issues/25974)
+- An issue where keywords like `and`, `or`, `not` would not be highlighted properly in the search bar due to the presence of quotes. [#26135](https://github.com/sourcegraph/sourcegraph/pull/26135)
+- An issue where frequent search indexing operations led to incoming search queries timing out. When these timeouts happened in quick succession, `zoekt-webserver` processes would shut themselves down via their `watchdog` routine. This should now only happen when a given `zoekt-webserver` is under-provisioned on CPUs. [#25872](https://github.com/sourcegraph/sourcegraph/issues/25872)
 
 ### Removed
 
 - Batch Changes changeset specs stored the raw JSON used when creating them, which is no longer used and is not exposed in the API. This column has been removed, thereby saving space in the Sourcegraph database. [#25453](https://github.com/sourcegraph/sourcegraph/issues/25453)
+- The query builder page experimental feature, which was disabled in 3.21, is now removed. The setting `{ "experimentalFeatures": { "showQueryBuilder": true } }` now has no effect. [#26125](https://github.com/sourcegraph/sourcegraph/pull/26125)
 
 ## 3.32.0
 

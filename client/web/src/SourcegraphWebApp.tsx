@@ -7,7 +7,7 @@ import ServerIcon from 'mdi-react/ServerIcon'
 import * as React from 'react'
 import { Route, Router } from 'react-router'
 import { combineLatest, from, Subscription, fromEvent, of, Subject } from 'rxjs'
-import { bufferCount, catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
 import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
@@ -44,7 +44,6 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagName, fetchFeatureFlags, FlagSet } from './featureFlags/featureFlags'
-import { logInsightMetrics } from './insights/analytics'
 import { CodeInsightsProps } from './insights/types'
 import { KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
 import { Layout, LayoutProps } from './Layout'
@@ -208,11 +207,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
     showSearchNotebook: boolean
 
     /**
-     * Whether we show the multiline editor at /search/query-builder
-     */
-    showQueryBuilder: boolean
-
-    /**
      * Whether the code monitoring feature flag is enabled.
      */
     enableCodeMonitoring: boolean
@@ -308,7 +302,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             globbing: false,
             showMultilineSearchConsole: false,
             showSearchNotebook: false,
-            showQueryBuilder: false,
             enableCodeMonitoring: false,
             // Disabling linter here as otherwise the application fails to compile. Bad lint?
             // See 7a137b201330eb2118c746f8cc5acddf63c1f039
@@ -355,19 +348,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                 },
                 () => this.setState({ authenticatedUser: null })
             )
-        )
-
-        // Track static metrics fo code insights.
-        // Insight count, insights settings, observe settings mutations for analytics
-        // Track add delete and update events of code insights via
-        this.subscriptions.add(
-            combineLatest([from(this.platformContext.settings), authenticatedUser])
-                .pipe(bufferCount(2, 1))
-                .subscribe(([[oldSettings], [newSettings, authUser]]) => {
-                    if (authUser) {
-                        logInsightMetrics(oldSettings, newSettings, eventLogger)
-                    }
-                })
         )
 
         this.subscriptions.add(
@@ -554,7 +534,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     globbing={this.state.globbing}
                                                     showMultilineSearchConsole={this.state.showMultilineSearchConsole}
                                                     showSearchNotebook={this.state.showSearchNotebook}
-                                                    showQueryBuilder={this.state.showQueryBuilder}
                                                     enableCodeMonitoring={this.state.enableCodeMonitoring}
                                                     fetchSavedSearches={fetchSavedSearches}
                                                     fetchRecentSearches={fetchRecentSearches}
