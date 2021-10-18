@@ -25,6 +25,8 @@ type InsightsResolver interface {
 	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 
+	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (CreateInsightResultResolver, error)
+
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
@@ -132,21 +134,16 @@ type InsightViewConnectionResolver interface {
 
 type InsightViewResolver interface {
 	ID() graphql.ID
-	// Until this interface becomes uniquely identifyable in the node resolvers
-	// ToXX type guard methods, we need _something_ that makes this interface
-	// not match any other Node implementing type.
-	VeryUniqueResolver() bool
-
 	DefaultFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	AppliedFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
 	Presentation(ctx context.Context) (LineChartInsightViewPresentation, error)
-	DataSeriesDefinition(ctx context.Context) ([]SearchInsightDataSeriesDefinitionResolver, error)
+	DataSeriesDefinitions(ctx context.Context) ([]SearchInsightDataSeriesDefinitionResolver, error)
 }
 
 type LineChartInsightViewPresentation interface {
 	Title(ctx context.Context) (string, error)
-	SeriesPresentation([]LineChartDataSeriesPresentationResolver, error)
+	SeriesPresentation(ctx context.Context) ([]LineChartDataSeriesPresentationResolver, error)
 }
 
 type LineChartDataSeriesPresentationResolver interface {
@@ -164,14 +161,11 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 
 type InsightIntervalTimeScope interface {
 	Unit(ctx context.Context) (string, error)
-	Value(ctx context.Context) (int, error)
+	Value(ctx context.Context) (int32, error)
 }
 
 type InsightRepositoryScopeResolver interface {
 	Repositories(ctx context.Context) ([]string, error)
-}
-
-type lineChartInsightViewPresentation struct {
 }
 
 type InsightsDashboardPayloadResolver interface {
@@ -227,6 +221,48 @@ type InsightSeriesQueryStatusResolver interface {
 }
 
 type InsightViewFiltersResolver interface {
-	IncludeRepoRegex(ctx context.Context) (string, error)
-	ExcludeRepoRegex(ctx context.Context) (string, error)
+	IncludeRepoRegex(ctx context.Context) (*string, error)
+	ExcludeRepoRegex(ctx context.Context) (*string, error)
+}
+
+type CreateLineChartSearchInsightArgs struct {
+	Input CreateLineChartSearchInsightInput
+}
+
+type CreateLineChartSearchInsightInput struct {
+	DataSeries []LineChartSearchInsightDataSeriesInput
+	Options    LineChartOptionsInput
+}
+
+type LineChartSearchInsightDataSeriesInput struct {
+	Query           string
+	TimeScope       TimeScopeInput
+	RepositoryScope RepositoryScopeInput
+	Options         LineChartDataSeriesOptionsInput
+}
+
+type LineChartDataSeriesOptionsInput struct {
+	Label     *string
+	LineColor *string
+}
+
+type RepositoryScopeInput struct {
+	Repositories []string
+}
+
+type TimeScopeInput struct {
+	StepInterval *TimeIntervalStepInput
+}
+
+type TimeIntervalStepInput struct {
+	Unit  string // this is actually an enum, not sure how that works here with graphql enums
+	Value int32
+}
+
+type LineChartOptionsInput struct {
+	Title *string
+}
+
+type CreateInsightResultResolver interface {
+	View(ctx context.Context) (InsightViewResolver, error)
 }

@@ -541,7 +541,7 @@ type CreateInsightResult {
 
 extend type Mutation {
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
-    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+#    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
 }
 
 """
