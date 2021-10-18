@@ -29,10 +29,13 @@ interface InsightDiff {
     insightType: string
 }
 
+const BACKEND_INSIGHTS_SETTINGS_KEY = 'insights.allrepos'
+
 export function diffCodeInsightsSettings(oldSettings: Settings, newSettings: Settings): InsightDiff[] {
     const oldInsights = new Map<string, InsightData>()
     const newInsights = new Map<string, InsightData>()
 
+    // Top level insights (extension insights)
     for (const key of Object.keys(oldSettings)) {
         const insightMetadata = parseInsightSettingsKey(key)
         if (insightMetadata) {
@@ -41,10 +44,29 @@ export function diffCodeInsightsSettings(oldSettings: Settings, newSettings: Set
         }
     }
 
+    // Special insights BE insight store (Backend Insights)
+    for (const key of Object.keys(oldSettings[BACKEND_INSIGHTS_SETTINGS_KEY] ?? {})) {
+        const insightMetadata = parseInsightSettingsKey(key)
+        const configuration = oldSettings[BACKEND_INSIGHTS_SETTINGS_KEY]?.[key]
+        if (insightMetadata && configuration) {
+            oldInsights.set(insightMetadata.name, { ...insightMetadata, configuration })
+        }
+    }
+
+    // Top level insights (extension insights)
     for (const key of Object.keys(newSettings)) {
         const insightMetadata = parseInsightSettingsKey(key)
         if (insightMetadata) {
             const configuration = newSettings[key]
+            newInsights.set(insightMetadata.name, { ...insightMetadata, configuration })
+        }
+    }
+
+    // Special insights BE insight store (Backend Insights)
+    for (const key of Object.keys(newSettings[BACKEND_INSIGHTS_SETTINGS_KEY] ?? {})) {
+        const insightMetadata = parseInsightSettingsKey(key)
+        const configuration = newSettings[BACKEND_INSIGHTS_SETTINGS_KEY]?.[key]
+        if (insightMetadata && configuration) {
             newInsights.set(insightMetadata.name, { ...insightMetadata, configuration })
         }
     }
