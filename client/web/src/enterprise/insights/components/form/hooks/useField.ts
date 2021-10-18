@@ -137,7 +137,7 @@ export function useField<FormValues, Key extends keyof FormAPI<FormValues>['init
                 startAsyncValidation({ value: state.value, validity })
             })
 
-            return
+            // return
         }
 
         return setState(state => ({
