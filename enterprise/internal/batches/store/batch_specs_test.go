@@ -6,7 +6,11 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -363,4 +367,143 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 		}
 	})
+}
+
+func TestStoreGetBatchSpecStats(t *testing.T) {
+	ctx := context.Background()
+	c := &ct.TestClock{Time: timeutil.Now()}
+
+	db := dbtest.NewDB(t, "")
+	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	admin := ct.CreateTestUser(t, db, true)
+
+	var specIDs []int64
+	for _, setup := range []struct {
+		jobs                []string
+		additionalWorkspace int
+	}{
+		{
+			jobs: []string{
+				"processing",
+				"completed",
+				"canceled",
+				"canceling",
+				"queued",
+				"failed",
+			},
+			additionalWorkspace: 1,
+		},
+		{
+			jobs: []string{
+				"processing",
+				"processing",
+				"completed",
+				"canceled",
+				"canceling",
+				"canceling",
+				"queued",
+				"failed",
+			},
+			additionalWorkspace: 3,
+		},
+	} {
+		spec := &btypes.BatchSpec{
+			Spec:            &batcheslib.BatchSpec{},
+			UserID:          admin.ID,
+			NamespaceUserID: admin.ID,
+		}
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+		specIDs = append(specIDs, spec.ID)
+
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+		if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		// Workspaces without execution job
+		for i := 0; i < setup.additionalWorkspace; i++ {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Workspaces with execution jobs
+		for _, jobState := range setup.jobs {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			job := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+			}
+			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			switch jobState {
+			case "processing":
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			case "completed":
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			case "queued":
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued' WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			case "failed":
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'failed', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			case "canceled":
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'failed', started_at = now(), finished_at = NULL, cancel = TRUE WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			case "canceling":
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL, cancel = TRUE WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+
+	}
+	have, err := s.GetBatchSpecStats(ctx, specIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[int64]btypes.BatchSpecStats{
+		specIDs[0]: {
+			Workspaces: 7,
+			Executions: 6,
+			Queued:     1,
+			Processing: 1,
+			Completed:  1,
+			Canceling:  1,
+			Canceled:   1,
+			Failed:     1,
+		},
+		specIDs[1]: {
+			Workspaces: 11,
+			Executions: 8,
+			Queued:     1,
+			Processing: 2,
+			Completed:  1,
+			Canceling:  2,
+			Canceled:   1,
+			Failed:     1,
+		},
+	}
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Errorf("unexpected batch spec stats:\n%s", diff)
+	}
 }

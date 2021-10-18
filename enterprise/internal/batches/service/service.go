@@ -60,6 +60,7 @@ type operations struct {
 	createBatchSpecFromRaw               *observation.Operation
 	enqueueBatchSpecResolution           *observation.Operation
 	executeBatchSpec                     *observation.Operation
+	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
 	createChangesetSpec                  *observation.Operation
 	getBatchChangeMatchingBatchSpec      *observation.Operation
@@ -107,6 +108,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecFromRaw:               op("CreateBatchSpecFromRaw"),
 			enqueueBatchSpecResolution:           op("EnqueueBatchSpecResolution"),
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
+			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
 			getBatchChangeMatchingBatchSpec:      op("GetBatchChangeMatchingBatchSpec"),
@@ -387,7 +389,9 @@ type ExecuteBatchSpecOpts struct {
 // It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
 // successfully.
 func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
@@ -427,6 +431,51 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
+}
+
+var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")
+
+type CancelBatchSpecOpts struct {
+	BatchSpecRandID string
+}
+
+// CancelBatchSpec cancels all BatchSpecWorkspaceExecutionJobs associated with
+// the BatchSpec.
+func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.cancelBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	state, err := computeBatchSpecState(ctx, tx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if !state.Cancelable() {
+		return nil, ErrBatchSpecNotCancelable
+	}
+
+	cancelOpts := store.CancelBatchSpecWorkspaceExecutionJobsOpts{BatchSpecID: batchSpec.ID}
+	_, err = tx.CancelBatchSpecWorkspaceExecutionJobs(ctx, cancelOpts)
+	return batchSpec, err
 }
 
 type ReplaceBatchSpecInputOpts struct {
@@ -1059,4 +1108,22 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 	return fmt.Sprintf(
 		"%d errors when validating changeset specs:\n%s\n",
 		len(es), strings.Join(points, "\n"))
+}
+
+func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	return computeBatchSpecState(ctx, s.store, batchSpec)
+}
+
+func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	statsMap, err := s.GetBatchSpecStats(ctx, []int64{spec.ID})
+	if err != nil {
+		return "", err
+	}
+
+	stats, ok := statsMap[spec.ID]
+	if !ok {
+		return "", store.ErrNoResults
+	}
+
+	return btypes.ComputeBatchSpecState(spec, stats), nil
 }
