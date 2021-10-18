@@ -1,5 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { number, select, text } from '@storybook/addon-knobs'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 import { NotificationType as NotificationTypeType } from 'sourcegraph'
@@ -20,21 +21,20 @@ const notificationClassNames = {
 
 const onDismiss = action('onDismiss')
 
-export default {
+const decorator: DecoratorFn = story => (
+    <>
+        <style>{webStyles}</style>
+        <style>{notificationItemStyles}</style>
+        <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
+    </>
+)
+const config: Meta = {
     title: 'shared/NotificationItem',
-
-    decorators: [
-        story => (
-            <>
-                <style>{webStyles}</style>
-                <style>{notificationItemStyles}</style>
-                <div style={{ maxWidth: '20rem', margin: '2rem' }}>{story()}</div>
-            </>
-        ),
-    ],
+    decorators: [decorator],
 }
+export default config
 
-export const WithoutProgress = () => {
+export const WithoutProgress: Story = () => {
     const message = text('Message', 'My *custom* message')
     const type = select<NotificationTypeType>(
         'Type',
@@ -51,7 +51,7 @@ export const WithoutProgress = () => {
     )
 }
 
-export const WithProgress = () => {
+export const WithProgress: Story = () => {
     const message = text('Message', 'My *custom* message')
     const type = select<NotificationTypeType>(
         'Type',
@@ -78,4 +78,4 @@ export const WithProgress = () => {
     )
 }
 
-WithProgress.storyName = 'With progress';
+WithProgress.storyName = 'With progress'

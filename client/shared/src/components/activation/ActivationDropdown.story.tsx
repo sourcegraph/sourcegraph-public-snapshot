@@ -1,5 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { boolean } from '@storybook/addon-knobs'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 
@@ -50,22 +51,20 @@ const commonProps = subtypeOf<Partial<ActivationDropdownProps>>()({
     portal: false,
 })
 
-export default {
+const decorator: DecoratorFn = story => (
+    <>
+        <style>{webMainStyles}</style>
+        <div>{story()}</div>
+    </>
+)
+const config: Meta = {
     title: 'shared/ActivationDropdown',
-
-    decorators: [
-        story => (
-            <>
-                <style>{webMainStyles}</style>
-                <div>{story()}</div>
-            </>
-        ),
-    ],
+    decorators: [decorator],
 }
+export default config
+export const Loading: Story = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
 
-export const Loading = () => <ActivationDropdown {...commonProps} activation={baseActivation()} />
-
-export const _04Completed = () => (
+export const _04Completed: Story = () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
@@ -80,9 +79,9 @@ export const _04Completed = () => (
     />
 )
 
-_04Completed.storyName = '0/4 completed';
+_04Completed.storyName = '0/4 completed'
 
-export const _14Completed = () => (
+export const _14Completed: Story = () => (
     <ActivationDropdown
         {...commonProps}
         activation={{
@@ -97,4 +96,4 @@ export const _14Completed = () => (
     />
 )
 
-_14Completed.storyName = '1/4 completed';
+_14Completed.storyName = '1/4 completed'

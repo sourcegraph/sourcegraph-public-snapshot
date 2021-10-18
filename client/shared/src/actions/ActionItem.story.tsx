@@ -1,4 +1,5 @@
 import { action } from '@storybook/addon-actions'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { NEVER } from 'rxjs'
@@ -38,20 +39,19 @@ const commonProps = subtypeOf<Partial<ActionItemProps>>()({
     active: true,
 })
 
-export default {
+const decorator: DecoratorFn = story => (
+    <>
+        <div className="p-4">{story()}</div>
+        <style>{webStyles}</style>
+    </>
+)
+const config: Meta = {
     title: 'shared/ActionItem',
-
-    decorators: [
-        story => (
-            <>
-                <div className="p-4">{story()}</div>
-                <style>{webStyles}</style>
-            </>
-        ),
-    ],
+    decorators: [decorator],
 }
+export default config
 
-export const NoopAction = () => (
+export const NoopAction: Story = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: undefined, actionItem: { label: 'Hello' } }}
@@ -59,9 +59,9 @@ export const NoopAction = () => (
     />
 )
 
-NoopAction.storyName = 'Noop action';
+NoopAction.storyName = 'Noop action'
 
-export const CommandAction = () => (
+export const CommandAction: Story = () => (
     <ActionItem
         {...commonProps}
         action={{ id: 'a', command: 'c', title: 'Hello', iconURL: ICON_URL }}
@@ -73,9 +73,9 @@ export const CommandAction = () => (
     />
 )
 
-CommandAction.storyName = 'Command action';
+CommandAction.storyName = 'Command action'
 
-export const LinkAction = () => (
+export const LinkAction: Story = () => (
     <ActionItem
         {...commonProps}
         action={{
@@ -89,12 +89,13 @@ export const LinkAction = () => (
     />
 )
 
-LinkAction.storyName = 'Link action';
+LinkAction.storyName = 'Link action'
 
-export const Executing = () => {
+export const Executing: Story = () => {
     class ActionItemExecuting extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
+            // eslint-disable-next-line react/no-this-in-sfc
             this.state.actionOrError = 'loading'
         }
     }
@@ -109,10 +110,11 @@ export const Executing = () => {
     )
 }
 
-export const _Error = () => {
+export const _Error: Story = () => {
     class ActionItemWithError extends ActionItem {
         constructor(props: ActionItem['props']) {
             super(props)
+            // eslint-disable-next-line react/no-this-in-sfc
             this.state.actionOrError = new Error('e')
         }
     }

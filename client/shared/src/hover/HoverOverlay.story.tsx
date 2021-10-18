@@ -1,4 +1,5 @@
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
@@ -26,11 +27,12 @@ const bitbucketClassProps: HoverOverlayClassProps = {
     },
 }
 
-export default {
+const config: Meta = {
     title: 'shared/HoverOverlay',
 }
+export default config
 
-export const BitbucketStyles = () => (
+export const BitbucketStyles: Story = () => (
     <>
         <style>{bitbucketStyles}</style>
         <style>{browserExtensionStyles}</style>
@@ -46,4 +48,4 @@ export const BitbucketStyles = () => (
     </>
 )
 
-BitbucketStyles.storyName = 'Bitbucket styles';
+BitbucketStyles.storyName = 'Bitbucket styles'
