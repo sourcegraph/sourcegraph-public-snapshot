@@ -81,6 +81,7 @@ export const panelProps = {
                 registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
                 haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                 getPanelViews: () => pretendProxySubscribable(of(panels)),
+                getActiveViewComponentChanges: () => pretendProxySubscribable(NEVER),
                 getActiveCodeEditorPosition: () => pretendProxySubscribable(NEVER),
             })
         ),
