@@ -125,7 +125,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 			}
 			locations = append(locations, remoteLocations...)
 
-			fmt.Println("Implementations: dependents len(remoteLocations)", len(remoteLocations), "hasMore", hasMore)
 			if !hasMore {
 				cursor.Phase = "done"
 				break
