@@ -197,7 +197,7 @@ func makeLSIFUploadURL(uploadID int) (string, error) {
 	}
 
 	graphqlID := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%d"`, uploadID)))
-	url.Path = lsifUploadFlags.repo + "/-/settings/code-intelligence/lsif-uploads/" + graphqlID
+	url.Path = lsifUploadFlags.repo + "/-/code-intelligence/uploads/" + graphqlID
 	url.User = nil
 	return url.String(), nil
 }
