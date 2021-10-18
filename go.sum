@@ -1408,8 +1408,6 @@ github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10 h1:lLSG41QZ5
 github.com/sourcegraph/gosaml2 v0.6.1-0.20210128133756-84151d087b10/go.mod h1:CAOGXqoL6YYtu7kCSx69SZlbNZWbwUchYzOacZatJ3s=
 github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc h1:iaDqNUpXf8FKUzw1pZrA6NrpILji4OigouwD9OSyamo=
 github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc/go.mod h1:WiNJKgKTnR3psOIGzVZQjLqZjJZuoL3F8tCh25Uk8dU=
-github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1 h1:o9U79WCNQjxxK2RYhIvflq7PK6JBbG70O2qG2haR26M=
-github.com/sourcegraph/httpgzip v0.0.0-20210213125624-48ebf036a6a1/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df h1:VaS8k40GiNVUxVx0ZUilU38NU6tWUHNQOX342DWtZUM=
 github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
@@ -1420,8 +1418,8 @@ github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e h1:qpG
 github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e/go.mod h1:HuIsMU8RRBOtsCgI77wP899iHVBQpCmg4ErYMZB+2IA=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20211014140928-418021206bd1 h1:YppRP53B3HORH6/fl3HDcjcid5h6QAmmaN/R946RgKc=
-github.com/sourcegraph/zoekt v0.0.0-20211014140928-418021206bd1/go.mod h1:aLcDL//nbHjkOFRadYDb9yNiFc3yOq+3ZSFKSGESiME=
+github.com/sourcegraph/zoekt v0.0.0-20211018100733-604df7db4253 h1:nUucNctrHMLOuC0qtfLzgYA0s7ZYrMD7WKhQ9QokRvY=
+github.com/sourcegraph/zoekt v0.0.0-20211018100733-604df7db4253/go.mod h1:aLcDL//nbHjkOFRadYDb9yNiFc3yOq+3ZSFKSGESiME=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
