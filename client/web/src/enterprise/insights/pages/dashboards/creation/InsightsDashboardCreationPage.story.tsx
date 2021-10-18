@@ -6,7 +6,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../components/WebStory'
 import { authUser } from '../../../../../search/panels/utils'
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { CodeInsightsSettingsCascadeBackend } from '../../../core/backend/code-insights-setting-cascade-backend';
+import { CodeInsightsSettingsCascadeBackend } from '../../../core/backend/code-insights-setting-cascade-backend'
 import { SETTINGS_CASCADE_MOCK } from '../../../mocks/settings-cascade'
 
 import { InsightsDashboardCreationPage } from './InsightsDashboardCreationPage'

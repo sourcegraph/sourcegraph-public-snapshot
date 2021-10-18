@@ -1,6 +1,6 @@
 import { Observable, of, throwError } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
-import { LineChartContent, PieChartContent } from 'sourcegraph';
+import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
@@ -33,7 +33,8 @@ import {
     FindInsightByNameInput,
     InsightCreateInput,
     InsightUpdateInput,
-    ReachableInsight, RepositorySuggestionData,
+    ReachableInsight,
+    RepositorySuggestionData,
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
 
@@ -229,10 +230,14 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     }
 
     // Live preview fetchers
-    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> => errorMockMethod('getSearchInsightContent')().toPromise()
-    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> => errorMockMethod('getLangStatsInsightContent')().toPromise()
+    public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
+        errorMockMethod('getSearchInsightContent')().toPromise()
+    public getLangStatsInsightContent = (): Promise<PieChartContent<any>> =>
+        errorMockMethod('getLangStatsInsightContent')().toPromise()
 
     // Repositories API
-    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> => errorMockMethod('getRepositorySuggestions')().toPromise()
-    public getResolvedSearchRepositories = (): Promise<string[]> => errorMockMethod('getResolvedSearchRepositories')().toPromise()
+    public getRepositorySuggestions = (): Promise<RepositorySuggestionData[]> =>
+        errorMockMethod('getRepositorySuggestions')().toPromise()
+    public getResolvedSearchRepositories = (): Promise<string[]> =>
+        errorMockMethod('getResolvedSearchRepositories')().toPromise()
 }

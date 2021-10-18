@@ -1,6 +1,6 @@
 import { SettingsCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 
-import { Settings } from '../../../schema/settings.schema';
+import { Settings } from '../../../schema/settings.schema'
 
 export const SETTINGS_CASCADE_MOCK: SettingsCascade<Settings> = {
     subjects: [
