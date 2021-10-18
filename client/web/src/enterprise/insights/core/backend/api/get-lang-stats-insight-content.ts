@@ -1,4 +1,4 @@
-import { escapeRegExp, once, partition, sum } from 'lodash'
+import { escapeRegExp, partition, sum } from 'lodash'
 import { defer } from 'rxjs'
 import { map, retry } from 'rxjs/operators'
 import { DirectoryViewContext, PieChartContent } from 'sourcegraph'
@@ -9,15 +9,8 @@ import { fetchLangStatsInsight } from '../requests/fetch-lang-stats-insight'
 import { LangStatsInsightsSettings } from '../types'
 import { resolveDocumentURI } from '../utils/resolve-uri'
 
-/**
- * Loads linguist-languages lib only once during the first call and returns
- * the first call result after. This means we load lib only once and use it
- * after for other calls.
- */
-const getLinguistLanguages = once(() => import('linguist-languages'))
-
 const getLangColor = async (language: string): Promise<string> => {
-    const { default: languagesMap } = await getLinguistLanguages()
+    const { default: languagesMap } = await import('linguist-languages')
 
     const isLinguistLanguage = (language: string): language is keyof typeof languagesMap =>
         Object.prototype.hasOwnProperty.call(languagesMap, language)
