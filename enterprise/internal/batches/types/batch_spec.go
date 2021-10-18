@@ -72,7 +72,8 @@ type BatchSpecStats struct {
 }
 
 // BatchSpecState defines the possible states of a BatchSpec that was created
-// to be executed server-side.
+// to be executed server-side. Client-side batch specs (created with src-cli)
+// are always in state "completed".
 //
 // Some variants of this state are only computed in the BatchSpecResolver.
 type BatchSpecState string
@@ -91,8 +92,9 @@ const (
 // ToGraphQL returns the GraphQL representation of the state.
 func (s BatchSpecState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
-// Canceable returns whether the state is one in which the BatchSpec can be canceled.
-func (s BatchSpecState) Canceable() bool {
+// Cancelable returns whether the state is one in which the BatchSpec can be
+// canceled.
+func (s BatchSpecState) Cancelable() bool {
 	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
 }
 

@@ -433,7 +433,7 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 	}
 }
 
-var ErrBatchSpecNotCanceable = errors.New("batch spec is not in canceable state")
+var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")
 
 type CancelBatchSpecOpts struct {
 	BatchSpecRandID string
@@ -469,8 +469,8 @@ func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts)
 		return nil, err
 	}
 
-	if !state.Canceable() {
-		return nil, ErrBatchSpecNotCanceable
+	if !state.Cancelable() {
+		return nil, ErrBatchSpecNotCancelable
 	}
 
 	cancelOpts := store.CancelBatchSpecWorkspaceExecutionJobsOpts{BatchSpecID: batchSpec.ID}

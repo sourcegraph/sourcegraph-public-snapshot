@@ -1318,7 +1318,7 @@ func TestService(t *testing.T) {
 			}
 
 			_, err := svc.CancelBatchSpec(ctx, CancelBatchSpecOpts{BatchSpecRandID: spec.RandID})
-			if !errors.Is(err, ErrBatchSpecNotCanceable) {
+			if !errors.Is(err, ErrBatchSpecNotCancelable) {
 				t.Fatalf("error has wrong type: %T", err)
 			}
 		})
