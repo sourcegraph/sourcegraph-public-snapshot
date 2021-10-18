@@ -108,6 +108,8 @@ docker-compose up -d
 
 * Select **Next: ...** until you get to the **Configure Security Group** page. Then add the following rules:
 
+> ℹ️ Please note that while the following will work, this provides open access of the ports specified. If possible, replace the IP address ranges specified with the IPs from which you actually want to allow access.
+
   * Default **HTTP** rule: port range `80`, source `0.0.0.0/0, ::/0`
   * Default **HTTPS** rule: port range `443`, source `0.0.0.0/0, ::/0`<br>(NOTE: additional work will be required later on to [configure SSL in the Docker Compose deployment](../../../admin/http_https_configuration.md#sourcegraph-via-docker-compose-caddy-2))
 
