@@ -1,7 +1,7 @@
 import classNames from 'classnames'
-import { isEqual } from 'lodash'
+import { isEqual, capitalize } from 'lodash'
 import React, { FormEvent, useCallback, useEffect, useState, useRef } from 'react'
-import { RouteComponentProps } from 'react-router'
+import { useHistory } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -24,31 +24,25 @@ import {
     ExternalServicesResult,
     Maybe,
     AffiliatedRepositoriesResult,
-    UserRepositoriesResult,
+    RepositoriesResult,
     SiteAdminRepositoryFields,
 } from '../../../graphql-operations'
 import {
     listUserRepositories,
+    listOrgRepositories,
     queryUserPublicRepositories,
     setUserPublicRepositories,
 } from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { externalServiceUserModeFromTags } from '../cloud-ga'
+import { externalServiceUserModeFromTags, Owner } from '../cloud-ga'
 
 import { CheckboxRepositoryNode } from './RepositoryNode'
 
-interface authenticatedUser {
-    id: string
-    siteAdmin: boolean
-    tags: string[]
-}
-
 interface Props
-    extends RouteComponentProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onSyncedPublicRepositoriesUpdate'> {
-    authenticatedUser: authenticatedUser
+    owner: Owner
     routingPrefix: string
 }
 
@@ -108,14 +102,20 @@ type initialFetchingReposState = undefined | 'loading'
 type affiliateRepoProblemType = undefined | string | ErrorLike | ErrorLike[]
 
 const displayWarning = (warning: string, hint?: JSX.Element): JSX.Element => (
-    <div key={warning} className="alert alert-warning mt-3 mb-0" role="alert">
-        {warning}. {hint} {hint ? 'for more details' : null}
+    <div className="alert alert-warning my-3" role="alert" key={warning}>
+        <h4 className="align-middle mb-1">{capitalize(warning)}</h4>
+        <p className="align-middle mb-0">
+            {hint} {hint ? 'for more details.' : null}
+        </p>
     </div>
 )
 
 const displayError = (error: ErrorLike, hint?: JSX.Element): JSX.Element => (
-    <div key={error.message} className="alert alert-danger mt-3 mb-0" role="alert">
-        {error.message}. {hint} {hint ? 'for more details' : null}
+    <div className="alert alert-danger my-3" role="alert" key={error.message}>
+        <h4 className="align-middle mb-1">{capitalize(error.message)}</h4>
+        <p className="align-middle mb-0">
+            {hint} {hint ? 'for more details.' : null}
+        </p>
     </div>
 )
 
@@ -142,8 +142,7 @@ const displayAffiliateRepoProblems = (
  * A page to manage the repositories a user syncs from their connected code hosts.
  */
 export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> = ({
-    history,
-    authenticatedUser,
+    owner,
     routingPrefix,
     telemetryService,
     onSyncedPublicRepositoriesUpdate,
@@ -152,8 +151,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         telemetryService.logViewEvent('UserSettingsRepositories')
     }, [telemetryService])
 
+    const history = useHistory()
+    const isOrgOwner = owner.type === 'org'
+
+    const listRepositories = isOrgOwner ? listOrgRepositories : listUserRepositories
+
     // if we should tweak UI messaging and copy
-    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags(authenticatedUser.tags) === 'all'
+    const ALLOW_PRIVATE_CODE = externalServiceUserModeFromTags() === 'all'
 
     // set up state hooks
     const [repoState, setRepoState] = useState(initialRepoState)
@@ -174,7 +178,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
     const [affiliateRepoProblems, setAffiliateRepoProblems] = useState<affiliateRepoProblemType>()
     const [otherPublicRepoError, setOtherPublicRepoError] = useState<undefined | ErrorLike>()
 
-    const ExternalServiceProblemHint = <Link to={`${routingPrefix}/code-hosts`}>Check code host connections</Link>
+    const ExternalServiceProblemHint = (
+        <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
+            Check code host connections
+        </Link>
+    )
 
     const toggleTextArea = useCallback(
         () => setPublicRepoState({ ...publicRepoState, enabled: !publicRepoState.enabled }),
@@ -186,35 +194,33 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: authenticatedUser.id,
+                namespace: owner.id,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [authenticatedUser.id]
+        [owner.id]
     )
 
     const fetchAffiliatedRepos = useCallback(
         async (): Promise<AffiliatedRepositoriesResult['affiliatedRepositories']['nodes']> =>
             listAffiliatedRepositories({
-                user: authenticatedUser.id,
+                namespace: owner.id,
                 codeHost: null,
                 query: null,
             })
                 .toPromise()
                 .then(({ affiliatedRepositories: { nodes } }) => nodes),
 
-        [authenticatedUser.id]
+        [owner.id]
     )
 
     const fetchSelectedRepositories = useCallback(
-        async (): Promise<
-            (NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']['nodes']
-        > =>
-            listUserRepositories({ id: authenticatedUser.id, first: 2000 })
+        async (): Promise<NonNullable<RepositoriesResult>['repositories']['nodes']> =>
+            listRepositories({ id: owner.id, first: 2000 })
                 .toPromise()
                 .then(({ nodes }) => nodes),
-        [authenticatedUser.id]
+        [owner.id, listRepositories]
     )
 
     const getRepoServiceAndName = (repo: Repo): string => `${repo.codeHost?.kind || 'unknown'}/${repo.name}`
@@ -387,7 +393,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     // fetch public repos for the "other public repositories" textarea
     const fetchAndSetPublicRepos = useCallback(async (): Promise<void> => {
-        const result = await queryUserPublicRepositories(authenticatedUser.id).toPromise()
+        const result = await queryUserPublicRepositories(owner.id).toPromise()
 
         if (!result) {
             setPublicRepoState({ ...initialPublicRepoState, loaded: true })
@@ -400,11 +406,13 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
             setPublicRepoState({ repos: publicRepos.join('\n'), loaded: true, enabled: result.length > 0 })
         }
-    }, [authenticatedUser.id])
+    }, [owner.id])
 
     useEffect(() => {
-        fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
-    }, [fetchAndSetPublicRepos])
+        if (!isOrgOwner) {
+            fetchAndSetPublicRepos().catch(error => setOtherPublicRepoError(asError(error)))
+        }
+    }, [fetchAndSetPublicRepos, isOrgOwner])
 
     // select repos by code host and query
     useEffect(() => {
@@ -472,12 +480,14 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             setFetchingRepos('loading')
             onSyncedPublicRepositoriesUpdate(publicRepos.length)
 
-            try {
-                await setUserPublicRepositories(authenticatedUser.id, publicRepos).toPromise()
-            } catch (error) {
-                setOtherPublicRepoError(asError(error))
-                setFetchingRepos(undefined)
-                return
+            if (!isOrgOwner) {
+                try {
+                    await setUserPublicRepositories(owner.id, publicRepos).toPromise()
+                } catch (error) {
+                    setOtherPublicRepoError(asError(error))
+                    setFetchingRepos(undefined)
+                    return
+                }
             }
 
             if (!selectionState.radio) {
@@ -517,15 +527,16 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
             return history.push(routingPrefix + '/repositories', ALLOW_NAVIGATION)
         },
         [
-            publicRepoState.repos,
             publicRepoState.enabled,
-            authenticatedUser.id,
-            codeHosts.hosts,
+            publicRepoState.repos,
             selectionState.radio,
             selectionState.repos,
+            onSyncedPublicRepositoriesUpdate,
+            isOrgOwner,
             history,
             routingPrefix,
-            onSyncedPublicRepositoriesUpdate,
+            owner.id,
+            codeHosts.hosts,
         ]
     )
 
@@ -552,21 +563,24 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const modeSelect: JSX.Element = (
         <Form className="mt-4">
-            <label className="d-flex flex-row align-items-baseline">
-                <input
-                    type="radio"
-                    value="all"
-                    disabled={noCodeHostsOrErrors}
-                    checked={selectionState.radio === 'all'}
-                    onChange={handleRadioSelect}
-                />
-                <div className="d-flex flex-column ml-2">
-                    <p className="mb-0">Sync all repositories</p>
-                    <p className="user-settings-repos__text-light text-muted">
-                        Will sync all current and future public and private repositories
-                    </p>
-                </div>
-            </label>
+            {!isOrgOwner && (
+                <label className="d-flex flex-row align-items-baseline">
+                    <input
+                        type="radio"
+                        value="all"
+                        disabled={noCodeHostsOrErrors}
+                        checked={selectionState.radio === 'all'}
+                        onChange={handleRadioSelect}
+                    />
+                    <div className="d-flex flex-column ml-2">
+                        <p className="mb-0">Sync all repositories</p>
+                        <p className="user-settings-repos__text-light text-muted">
+                            Will sync all current and future public and private repositories
+                        </p>
+                    </div>
+                </label>
+            )}
+
             <label className="d-flex flex-row align-items-baseline mb-0">
                 <input
                     type="radio"
@@ -601,7 +615,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                     aria-label="select code host type"
                     onChange={event => setCodeHostFilter(event.target.value)}
                 >
-                    <option key="any" value="" label="Any" />
+                    <option key="all" value="" label="All" />
                     {codeHosts.hosts.map(value => (
                         <option key={value.id} value={value.id} label={value.displayName} />
                     ))}
@@ -726,13 +740,18 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
 
     const modeSelectShimmer: JSX.Element = (
         <div className="container mt-4">
-            <div className="mt-2 row">
-                <div className="user-settings-repos__shimmer-circle mr-2" />
-                <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
-            </div>
-            <div className="mt-1 ml-2 row">
-                <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
-            </div>
+            {!isOrgOwner && (
+                <>
+                    <div className="mt-2 row">
+                        <div className="user-settings-repos__shimmer-circle mr-2" />
+                        <div className="user-settings-repos__shimmer mb-1 p-2 border-top-0 col-sm-2" />
+                    </div>
+                    <div className="mt-1 ml-2 row">
+                        <div className="user-settings-repos__shimmer mb-3 p-2 ml-1 border-top-0 col-sm-6" />
+                    </div>
+                </>
+            )}
+
             <div className="mt-2 row">
                 <div className="user-settings-repos__shimmer-circle mr-2" />
                 <div className="user-settings-repos__shimmer p-2 mb-1 border-top-0 col-sm-3" />
@@ -747,25 +766,29 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                 Manage Repositories <Badge status="beta" className="ml-2" />
             </h2>
             <p className="text-muted">
-                Choose which repositories to sync with Sourcegraph to search all your code in one place.
+                Choose repositories to sync with Sourcegraph.
                 <Link
                     to="https://docs.sourcegraph.com/code_search/how-to/adding_repositories_to_cloud"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
                     {' '}
-                    Learn more
+                    Learn more about who can see code on Sourcegraph
                 </Link>
+                .
             </p>
             <Container>
                 <ul className="list-group">
                     <li className="list-group-item user-settings-repos__container" key="from-code-hosts">
                         <div>
-                            <h3>Your repositories</h3>
+                            <h3>{owner.name ? `${owner.name}'s` : 'Your'} repositories</h3>
+
                             <p className="text-muted">
-                                Repositories you own or collaborate on from your{' '}
+                                Repositories{' '}
+                                {isOrgOwner ? 'that can be synced through' : 'you own or collaborate on from your'}{' '}
                                 <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
                             </p>
+
                             {!ALLOW_PRIVATE_CODE && hasCodeHosts && (
                                 <div className="alert alert-primary">
                                     Coming soon: search private repositories with Sourcegraph Cloud.{' '}
@@ -780,8 +803,11 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             )}
                             {codeHosts.loaded && codeHosts.hosts.length === 0 && (
                                 <div className="alert alert-warning mb-2">
-                                    <Link to={`${routingPrefix}/code-hosts`}>Connect with a code host</Link> to add your
-                                    own repositories to Sourcegraph.
+                                    <Link className="font-weight-normal" to={`${routingPrefix}/code-hosts`}>
+                                        Connect with a code host
+                                    </Link>{' '}
+                                    to add
+                                    {owner.name ? ` ${owner.name}'s` : ' your own'} repositories to Sourcegraph.
                                 </div>
                             )}
                             {displayAffiliateRepoProblems(affiliateRepoProblems, ExternalServiceProblemHint)}
@@ -816,7 +842,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
                             }
                         </div>
                     </li>
-                    {window.context.sourcegraphDotComMode && (
+                    {window.context.sourcegraphDotComMode && !isOrgOwner && (
                         <li className="list-group-item user-settings-repos__container" key="add-textarea">
                             <div>
                                 <h3>Other public repositories</h3>
