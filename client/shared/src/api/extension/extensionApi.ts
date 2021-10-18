@@ -176,10 +176,6 @@ export function createExtensionAPIFactory(
         registerFileDecorationProvider: (provider: sourcegraph.FileDecorationProvider): sourcegraph.Unsubscribable =>
             addWithRollback(state.fileDecorationProviders, provider),
         createPanelView: id => {
-            // TODO: it would probably br good to error if anything else has this ID.
-            // for (let panel in state.panelViews) {
-            // }
-
             const panelViewData = new BehaviorSubject<PanelViewData>({
                 id,
                 title: '',
