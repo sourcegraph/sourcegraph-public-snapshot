@@ -4,7 +4,7 @@ import { Remote } from 'comlink'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
-import { BehaviorSubject, from, Observable, combineLatest, of } from 'rxjs'
+import { BehaviorSubject, from, Observable, combineLatest } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
