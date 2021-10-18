@@ -4,8 +4,8 @@ import React from 'react'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../../components/WebStory'
-import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context';
-import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/code-insights-setting-cascade-backend';
+import { CodeInsightsBackendContext } from '../../core/backend/code-insights-backend-context'
+import { CodeInsightsSettingsCascadeBackend } from '../../core/backend/code-insights-setting-cascade-backend'
 import { Insight, InsightType } from '../../core/types'
 import { SETTINGS_CASCADE_MOCK } from '../../mocks/settings-cascade'
 
@@ -36,9 +36,6 @@ const codeInsightsApi = new CodeInsightsSettingsCascadeBackend(SETTINGS_CASCADE_
 
 add('SmartInsightsViewGrid', () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsApi}>
-        <SmartInsightsViewGrid
-            insights={insights}
-            telemetryService={NOOP_TELEMETRY_SERVICE}
-        />
+        <SmartInsightsViewGrid insights={insights} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </CodeInsightsBackendContext.Provider>
 ))
