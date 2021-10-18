@@ -57,6 +57,10 @@ const config = {
 
 See https://about.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
           },
+          {
+            group: ['**/wildcard/src/components/not-production-ready/*'],
+            message: `These components are not ready for production use.`
+          }
         ],
       },
     ],
