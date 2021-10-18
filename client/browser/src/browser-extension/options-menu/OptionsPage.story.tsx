@@ -94,9 +94,7 @@ export const UrlValidationError = () => {
     )
 }
 
-UrlValidationError.story = {
-    name: 'URL validation error',
-}
+UrlValidationError.storyName = 'URL validation error';
 
 export const AskingForPermission = () => (
     <OptionsPage
@@ -111,9 +109,7 @@ export const AskingForPermission = () => (
     />
 )
 
-AskingForPermission.story = {
-    name: 'Asking for permission',
-}
+AskingForPermission.storyName = 'Asking for permission';
 
 export const OnPrivateRepository = () => (
     <OptionsPage
@@ -128,9 +124,7 @@ export const OnPrivateRepository = () => (
     />
 )
 
-OnPrivateRepository.story = {
-    name: 'On private repository',
-}
+OnPrivateRepository.storyName = 'On private repository';
 
 export const OnSourcegraphCloud = () => (
     <OptionsPage

@@ -45,14 +45,10 @@ export default {
 export const Default = () => <StoryWrapper />
 export const WithEmptyEnabledBlocklist = () => <StoryWrapper blocklist={{ enabled: true, content: '' }} />
 
-WithEmptyEnabledBlocklist.story = {
-    name: 'With empty enabled "blocklist"',
-}
+WithEmptyEnabledBlocklist.storyName = 'With empty enabled "blocklist"';
 
 export const WithNonEmptyEnabledBlocklist = () => (
     <StoryWrapper blocklist={{ enabled: true, content: 'https://github.com/my-repo/*' }} />
 )
 
-WithNonEmptyEnabledBlocklist.story = {
-    name: 'With non-empty enabled "blocklist"',
-}
+WithNonEmptyEnabledBlocklist.storyName = 'With non-empty enabled "blocklist"';
