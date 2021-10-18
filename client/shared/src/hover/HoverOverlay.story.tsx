@@ -46,6 +46,4 @@ export const BitbucketStyles = () => (
     </>
 )
 
-BitbucketStyles.story = {
-    name: 'Bitbucket styles',
-}
+BitbucketStyles.storyName = 'Bitbucket styles';

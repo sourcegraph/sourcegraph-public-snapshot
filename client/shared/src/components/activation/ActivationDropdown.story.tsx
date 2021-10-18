@@ -80,9 +80,7 @@ export const _04Completed = () => (
     />
 )
 
-_04Completed.story = {
-    name: '0/4 completed',
-}
+_04Completed.storyName = '0/4 completed';
 
 export const _14Completed = () => (
     <ActivationDropdown
@@ -99,6 +97,4 @@ export const _14Completed = () => (
     />
 )
 
-_14Completed.story = {
-    name: '1/4 completed',
-}
+_14Completed.storyName = '1/4 completed';

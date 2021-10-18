@@ -59,9 +59,7 @@ export const NoopAction = () => (
     />
 )
 
-NoopAction.story = {
-    name: 'Noop action',
-}
+NoopAction.storyName = 'Noop action';
 
 export const CommandAction = () => (
     <ActionItem
@@ -75,9 +73,7 @@ export const CommandAction = () => (
     />
 )
 
-CommandAction.story = {
-    name: 'Command action',
-}
+CommandAction.storyName = 'Command action';
 
 export const LinkAction = () => (
     <ActionItem
@@ -93,9 +89,7 @@ export const LinkAction = () => (
     />
 )
 
-LinkAction.story = {
-    name: 'Link action',
-}
+LinkAction.storyName = 'Link action';
 
 export const Executing = () => {
     class ActionItemExecuting extends ActionItem {

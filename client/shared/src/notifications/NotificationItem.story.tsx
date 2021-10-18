@@ -78,6 +78,4 @@ export const WithProgress = () => {
     )
 }
 
-WithProgress.story = {
-    name: 'With progress',
-}
+WithProgress.storyName = 'With progress';
