@@ -26,7 +26,7 @@ import {
     ContributionOptions,
 } from './extension/extensionHostApi'
 import { Contributions, Evaluated, Raw, TextDocumentPositionParameters } from './protocol'
-import { TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
 /**
  * This is exposed from the extension host thread to the main thread
@@ -106,6 +106,8 @@ export interface FlatExtensionHostAPI {
     addTextDocumentIfNotExists: (textDocumentData: TextDocumentData) => void
 
     // VIEWERS
+    getActiveViewComponentChanges: () => ProxySubscribable<ExtensionViewer | undefined>
+
     getActiveCodeEditorPosition: () => ProxySubscribable<TextDocumentPositionParameters | null>
 
     getTextDecorations: (viewerId: ViewerId) => ProxySubscribable<clientType.TextDocumentDecoration[]>
