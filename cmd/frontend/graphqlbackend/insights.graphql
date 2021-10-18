@@ -312,16 +312,6 @@ type InsightViewConnection {
 }
 
 """
-Stub for insight view
-"""
-type InsightView implements Node {
-    """
-    The View ID.
-    """
-    id: ID!
-}
-
-"""
 Response wrapper object for insight dashboard mutations.
 """
 type InsightsDashboardPayload {
