@@ -1,5 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import { boolean, text } from '@storybook/addon-knobs'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import React, { useState } from 'react'
 import { Observable, of } from 'rxjs'
@@ -21,37 +22,32 @@ const commonProps = subtypeOf<Partial<OptionsPageProps>>()({
 })
 
 const requestPermissionsHandler = action('requestPermission')
-
-export default {
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={brandedStyles}>
+        {() => (
+            <OptionsPageContext.Provider
+                value={{
+                    onChangeOptionFlag: action('onChangeOptionFlag'),
+                    optionFlags: [
+                        { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
+                        { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
+                    ],
+                    onBlocklistChange: () => {},
+                }}
+            >
+                {story()}
+            </OptionsPageContext.Provider>
+        )}
+    </BrandedStory>
+)
+const config: Meta = {
     title: 'browser/Options/OptionsPage',
 
-    decorators: [
-        story => (
-            <BrandedStory styles={brandedStyles}>
-                {() => (
-                    <OptionsPageContext.Provider
-                        value={{
-                            onChangeOptionFlag: action('onChangeOptionFlag'),
-                            optionFlags: [
-                                { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
-                                { key: 'experimentalLinkPreviews', label: 'Experimental link previews', value: false },
-                            ],
-                            onBlocklistChange: () => {},
-                        }}
-                    >
-                        {story()}
-                    </OptionsPageContext.Provider>
-                )}
-            </BrandedStory>
-        ),
-    ],
-
-    parameters: {
-        chromatic: { delay: 500 },
-    },
+    decorators: [decorator],
 }
+export default config
 
-export const Default = () => (
+export const Default: Story = () => (
     <OptionsPage
         {...commonProps}
         showPrivateRepositoryAlert={boolean('isCurrentRepositoryPrivate', false)}
@@ -64,7 +60,7 @@ export const Default = () => (
     />
 )
 
-export const Interactive = () => {
+export const Interactive: Story = () => {
     const [isActivated, setIsActivated] = useState(false)
     return (
         <OptionsPage
@@ -80,7 +76,7 @@ export const Interactive = () => {
     )
 }
 
-export const UrlValidationError = () => {
+export const UrlValidationError: Story = () => {
     const [isActivated, setIsActivated] = useState(false)
     return (
         <OptionsPage
@@ -94,9 +90,9 @@ export const UrlValidationError = () => {
     )
 }
 
-UrlValidationError.storyName = 'URL validation error';
+UrlValidationError.storyName = 'URL validation error'
 
-export const AskingForPermission = () => (
+export const AskingForPermission: Story = () => (
     <OptionsPage
         {...commonProps}
         validateSourcegraphUrl={validateSourcegraphUrl}
@@ -109,9 +105,9 @@ export const AskingForPermission = () => (
     />
 )
 
-AskingForPermission.storyName = 'Asking for permission';
+AskingForPermission.storyName = 'Asking for permission'
 
-export const OnPrivateRepository = () => (
+export const OnPrivateRepository: Story = () => (
     <OptionsPage
         {...commonProps}
         validateSourcegraphUrl={validateSourcegraphUrl}
@@ -124,9 +120,9 @@ export const OnPrivateRepository = () => (
     />
 )
 
-OnPrivateRepository.storyName = 'On private repository';
+OnPrivateRepository.storyName = 'On private repository'
 
-export const OnSourcegraphCloud = () => (
+export const OnSourcegraphCloud: Story = () => (
     <OptionsPage
         {...commonProps}
         validateSourcegraphUrl={validateSourcegraphUrl}
