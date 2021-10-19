@@ -1,16 +1,14 @@
-import classNames from 'classnames'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-// import 'monaco-yaml'
+import 'monaco-yaml'
 import * as React from 'react'
 import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, map, startWith } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import jsonSchemaMetaSchema from '../../../../../../../schema/json-schema-draft-07.schema.json'
-import settingsSchema from '../../../../../../../schema/settings.schema.json'
-import { MonacoEditor } from '../../../../components/MonacoEditor'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -26,20 +24,6 @@ export interface Props extends ThemeProps {
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
     height?: number
-
-    // language?: string
-
-    /**
-     * JSON Schema of the document.
-     */
-    // jsonSchema?: JSONSchema
-
-    // monacoRef?: (monacoValue: typeof monaco | null) => void
-
-    /**
-     * Called when the user presses the key binding for "save" (Ctrl+S/Cmd+S).
-     */
-    // onDidSave?: () => void
 }
 
 interface State {}
@@ -47,7 +31,7 @@ interface State {}
 /**
  * A JSON settings editor using the Monaco editor.
  */
-export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
+export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public state: State = {}
 
     private monaco: typeof monaco | null = null
@@ -90,14 +74,14 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <MonacoEditor
-                className={classNames('monaco-settings-editor', this.props.className)}
+                className={this.props.className}
                 language="yaml"
                 height={this.props.height || 400}
                 isLightTheme={this.props.isLightTheme}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
                 options={{
-                    lineNumbers: 'off',
+                    lineNumbers: 'on',
                     automaticLayout: true,
                     minimap: { enabled: false },
                     formatOnType: true,
@@ -108,7 +92,6 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                     renderLineHighlight: 'none',
                     scrollBeyondLastLine: false,
                     quickSuggestions: true,
-                    quickSuggestionsDelay: 200,
                     wordBasedSuggestions: false,
                     readOnly: this.props.readOnly,
                     wordWrap: 'on',
@@ -176,75 +159,8 @@ function setDiagnosticsOptions(editor: typeof monaco): void {
                 uri: 'http://json-schema.org/draft-07/schema',
                 schema: jsonSchemaMetaSchema as JSONSchema,
             },
-            {
-                uri: 'settings.schema.json#',
-                schema: settingsSchema,
-            },
-            {
-                uri: 'settings.schema.json',
-                schema: settingsSchema,
-            },
         ],
     })
-    editor.languages.registerRenameProvider('yaml', {
-        provideRenameEdits: (model, position, newName, token) => {
-            if (
-                (position.lineNumber === 7 && position.column >= 7 && position.column <= 11) ||
-                (position.lineNumber === 9 && position.column >= 27 && position.column <= 31)
-            ) {
-                return {
-                    edits: [
-                        {
-                            edit: {
-                                range: { startLineNumber: 7, startColumn: 7, endLineNumber: 7, endColumn: 11 },
-                                text: newName,
-                            },
-                            modelVersionId: model.getVersionId(),
-                            resource: model.uri,
-                        },
-                        {
-                            edit: {
-                                range: { startLineNumber: 9, startColumn: 27, endLineNumber: 9, endColumn: 31 },
-                                text: newName,
-                            },
-                            modelVersionId: model.getVersionId(),
-                            resource: model.uri,
-                        },
-                    ],
-                }
-            }
-            return null
-        },
-    })
-    // Hover contribution. This highlights all uses of a variable when the cursor is over it.
-    editor.languages.registerDocumentHighlightProvider('yaml', {
-        provideDocumentHighlights: (model, position, token) => {
-            if (
-                (position.lineNumber === 7 && position.column >= 7 && position.column <= 11) ||
-                (position.lineNumber === 9 && position.column >= 27 && position.column <= 31)
-            ) {
-                return [
-                    {
-                        range: {
-                            startLineNumber: 7,
-                            startColumn: 7,
-                            endLineNumber: 7,
-                            endColumn: 11,
-                        },
-                        kind: 2,
-                    },
-                    {
-                        range: {
-                            startLineNumber: 9,
-                            startColumn: 27,
-                            endLineNumber: 9,
-                            endColumn: 31,
-                        },
-                        kind: 1,
-                    },
-                ]
-            }
-            return null
-        },
-    })
+    // TODO: Register rename provider for output variables.
+    // TODO: Register document highlight provider for output variables.
 }
