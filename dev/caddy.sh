@@ -15,7 +15,7 @@ case "$(go env GOOS)" in
     os="mac"
     ;;
 esac
-name="caddy_${version}_${os}_amd64"
+name="caddy_${version}_${os}_$(go env GOARCH)"
 target="$PWD/.bin/${name}"
 url="https://github.com/caddyserver/caddy/releases/download/v${version}/${name}.tar.gz"
 

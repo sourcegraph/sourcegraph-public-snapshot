@@ -4,6 +4,7 @@ set -ex -o nounset -o pipefail
 export IGNITE_VERSION=v0.10.0
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
+export NODE_EXPORTER_VERSION=1.2.2
 
 ## Install ops agent
 ## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
@@ -124,6 +125,47 @@ EOF
   chmod +x /shutdown_executor.sh
 }
 
+function install_node_exporter() {
+  useradd --system --shell /bin/false node_exporter
+
+  wget https://github.com/prometheus/node_exporter/releases/download/v${NODE_EXPORTER_VERSION}/node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz
+  tar xvfz node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz
+  mv node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter /usr/local/bin/node_exporter
+  rm -rf node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64 node_exporter-${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz
+
+  chown node_exporter:node_exporter /usr/local/bin/node_exporter
+
+  cat <<EOF >/etc/systemd/system/node_exporter.service
+
+[Unit]
+Description=Node Exporter
+
+[Service]
+User=node_exporter
+ExecStart=/usr/local/bin/node_exporter \
+  --web.listen-address="127.0.0.1:9100" \
+  --collector.disable-defaults \
+  --collector.cpu \
+  --collector.diskstats \
+  --collector.exec \
+  --collector.filesystem \
+  --collector.meminfo \
+  --collector.cpu \
+  --collector.netclass
+  --collector.netdev
+  --collector.netstat
+  --collector.softnet
+  --collector.pressure
+  --collector.vmstat
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable node_exporter
+}
+
 ## Build the ignite-ubuntu image for use in firecracker.
 ## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
@@ -160,6 +202,7 @@ install_ignite
 
 # Services
 install_executor
+install_node_exporter
 
 # Service prep and cleanup
 generate_ignite_base_image

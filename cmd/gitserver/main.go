@@ -151,9 +151,9 @@ func main() {
 				}
 
 				return &server.PerforceDepotSyncer{
-					MaxChanges:      int(c.MaxChanges),
-					Client:          c.P4Client,
-					UseFusionClient: c.UseFusionClient,
+					MaxChanges:   int(c.MaxChanges),
+					Client:       c.P4Client,
+					FusionConfig: configureFusionClient(c),
 				}, nil
 			case extsvc.TypeJVMPackages:
 				var c schema.JVMPackagesConnection
@@ -245,6 +245,32 @@ func main() {
 	// The most important thing this does is kill all our clones. If we just
 	// shutdown they will be orphaned and continue running.
 	gitserver.Stop()
+}
+
+func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
+	// Set up default settings first
+	fc := server.FusionConfig{
+		Enabled:        conn.UseFusionClient,
+		Client:         conn.P4Client,
+		LookAhead:      2000,
+		NetworkThreads: 12,
+		PrintBatch:     10,
+		Refresh:        100,
+		Retries:        10,
+	}
+
+	if conn.FusionClient == nil {
+		return fc
+	}
+
+	fc.Enabled = conn.FusionClient.Enabled || conn.UseFusionClient
+	fc.LookAhead = conn.FusionClient.LookAhead
+	fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	fc.PrintBatch = conn.FusionClient.PrintBatch
+	fc.Refresh = conn.FusionClient.Refresh
+	fc.Retries = conn.FusionClient.Retries
+
+	return fc
 }
 
 func getPercent(p int) (int, error) {
