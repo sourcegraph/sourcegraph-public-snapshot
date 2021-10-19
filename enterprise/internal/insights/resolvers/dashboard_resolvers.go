@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
@@ -30,7 +29,7 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 type dashboardConnectionResolver struct {
 	dashboardStore store.DashboardStore
 	insightStore   *store.InsightStore
-	orgStore         *database.OrgStore
+	orgStore       *database.OrgStore
 	args           *graphqlbackend.InsightsDashboardsArgs
 
 	// Cache results because they are used by multiple fields
