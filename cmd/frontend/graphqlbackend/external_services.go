@@ -28,6 +28,8 @@ import (
 
 var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
+const syncExternalServiceTimeout = 15 * time.Second
+
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
 }
@@ -46,21 +48,15 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	// 🚨 SECURITY: Only site admins may add external services if user mode is disabled.
 	namespaceUserID := int32(0)
-	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
-	allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
-	if err != nil {
-		return nil, err
-	}
+	namespaceOrgID := int32(0)
 
 	if args.Input.Namespace != nil {
-		if allowUserExternalServices == conf.ExternalServiceModeDisabled {
-			return nil, errors.New("allow users to add external services is not enabled")
-		}
-
 		var err error
 		switch relay.UnmarshalKind(*args.Input.Namespace) {
 		case "User":
 			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceOrgID)
 		default:
 			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
 		}
@@ -69,11 +65,23 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 			return nil, err
 		}
 
-		if namespaceUserID != actor.FromContext(ctx).UID {
-			return nil, errors.New("the namespace is not same as the authenticated user")
+		if namespaceUserID > 0 {
+			allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if allowUserExternalServices == conf.ExternalServiceModeDisabled {
+				return nil, errors.New("allow users to add external services is not enabled")
+			}
+			if namespaceUserID != actor.FromContext(ctx).UID {
+				return nil, errors.New("the namespace is not the same as the authenticated user")
+			}
+		}
+		if namespaceOrgID > 0 && backend.CheckOrgAccess(ctx, r.db, namespaceOrgID) != nil {
+			return nil, errors.New("the authenticated user does not belong to the organization requested")
 		}
 
-	} else if !isSiteAdmin {
+	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, backend.ErrMustBeSiteAdmin
 	}
 
@@ -85,13 +93,16 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 	if namespaceUserID > 0 {
 		externalService.NamespaceUserID = namespaceUserID
 	}
+	if namespaceOrgID > 0 {
+		externalService.NamespaceOrgID = namespaceOrgID
+	}
 
 	if err := database.ExternalServices(r.db).Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: externalService}
-	if err := syncExternalService(ctx, externalService, 5*time.Second, r.repoupdaterClient); err != nil {
+	if err := syncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -123,14 +134,9 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Site admins can only update site level external services.
-	// Otherwise, the current user can only update their own external services.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if es.NamespaceUserID == 0 {
-			return nil, err
-		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errNoAccessExternalService
-		}
+	// 🚨 SECURITY: check access to external service
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
 	}
 
 	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
@@ -153,7 +159,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	res := &externalServiceResolver{db: r.db, externalService: es}
-	if err = syncExternalService(ctx, es, 5*time.Second, r.repoupdaterClient); err != nil {
+	if err = syncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -187,6 +193,7 @@ func syncExternalService(ctx context.Context, svc *types.ExternalService, timeou
 		LastSyncAt:      svc.LastSyncAt,
 		NextSyncAt:      svc.NextSyncAt,
 		NamespaceUserID: svc.NamespaceUserID,
+		NamespaceOrgID:  svc.NamespaceOrgID,
 	})
 
 	// If context error is anything but a deadline exceeded error, we do not want to propagate
@@ -220,14 +227,9 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site admins may delete all or a user's external services.
-	// Otherwise, the authenticated user can only delete external services under the same namespace.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if es.NamespaceUserID == 0 {
-			return nil, err
-		} else if actor.FromContext(ctx).UID != es.NamespaceUserID {
-			return nil, errNoAccessExternalService
-		}
+	// 🚨 SECURITY: check external service access
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
+		return nil, err
 	}
 
 	if err := database.ExternalServices(r.db).Delete(ctx, id); err != nil {
@@ -239,7 +241,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	// The user doesn't care if triggering syncing failed when deleting a
 	// service, so kick off in the background.
 	go func() {
-		if err := syncExternalService(context.Background(), es, 5*time.Second, r.repoupdaterClient); err != nil {
+		if err := syncExternalService(context.Background(), es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 			log15.Warn("Performing final sync after external service deletion", "err", err)
 		}
 	}()
@@ -253,34 +255,16 @@ type ExternalServicesArgs struct {
 	After *string
 }
 
-var errNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
-
-// checkExternalServiceAccess checks whether the current user is allowed to
-// access the supplied external service.
-//
-// 🚨 SECURITY: Site admins can view external services with no owner, otherwise
-// only the owner of the external service is allowed to access it.
-func checkExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID int32) error {
-	// Fast path that doesn't need to hit DB as we can get id from context
-	if a := actor.FromContext(ctx); a.IsAuthenticated() && namespaceUserID == a.UID {
-		return nil
-	}
-
-	// Special case when external service has no owner
-	if namespaceUserID == 0 && backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
-		return nil
-	}
-
-	return errNoAccessExternalService
-}
-
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
 	var namespaceUserID int32
+	var namespaceOrgID int32
 	if args.Namespace != nil {
 		var err error
 		switch relay.UnmarshalKind(*args.Namespace) {
 		case "User":
 			err = relay.UnmarshalSpec(*args.Namespace, &namespaceUserID)
+		case "Org":
+			err = relay.UnmarshalSpec(*args.Namespace, &namespaceOrgID)
 		default:
 			err = errors.Errorf("invalid namespace %q", *args.Namespace)
 		}
@@ -290,7 +274,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 	}
 
-	if err := checkExternalServiceAccess(ctx, r.db, namespaceUserID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err
 	}
 
@@ -305,6 +289,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	opt := database.ExternalServicesListOptions{
 		NamespaceUserID: namespaceUserID,
+		NamespaceOrgID:  namespaceOrgID,
 		AfterID:         afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)

@@ -29,13 +29,13 @@ import { getHeaders } from '../../shared/backend/headers'
 import { fetchSite } from '../../shared/backend/server'
 import { initializeOmniboxInterface } from '../../shared/cli'
 import { browserPortToMessagePort, findMessagePorts } from '../../shared/platform/ports'
+import { SourcegraphUrlService } from '../../shared/platform/sourcegraphUrlService'
 import { createBlobURLForBundle } from '../../shared/platform/worker'
 import { initSentry } from '../../shared/sentry'
-import { observeSourcegraphURL } from '../../shared/util/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
-import { observeStorageKey, storage } from '../web-extension-api/storage'
+import { observeStorageKey } from '../web-extension-api/storage'
 import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
 
 const IS_EXTENSION = true
@@ -112,7 +112,7 @@ const requestGraphQL = <T, V = object>({
     variables: V
     sourcegraphURL?: string
 }): Observable<GraphQLResult<T>> =>
-    (sourcegraphURL ? of(sourcegraphURL) : observeSourcegraphURL(IS_EXTENSION)).pipe(
+    (sourcegraphURL ? of(sourcegraphURL) : SourcegraphUrlService.observe(IS_EXTENSION)).pipe(
         take(1),
         switchMap(sourcegraphURL =>
             requestGraphQLCommon<T, V>({
@@ -142,17 +142,17 @@ async function main(): Promise<void> {
         observeStorageKey('managed', 'sourcegraphURL')
             .pipe(
                 filter(isDefined),
-                concatMap(sourcegraphURL => storage.sync.set({ sourcegraphURL }))
+                concatMap(sourcegraphURL => SourcegraphUrlService.setSelfHostedSourcegraphURL(sourcegraphURL))
             )
             .subscribe()
     )
 
     if (browser.omnibox) {
-        initializeOmniboxInterface(requestGraphQL)
+        initializeOmniboxInterface()
 
         // Configure the omnibox when the sourcegraphURL changes.
         subscriptions.add(
-            observeSourcegraphURL(IS_EXTENSION).subscribe(sourcegraphURL => {
+            SourcegraphUrlService.observe(IS_EXTENSION).subscribe(sourcegraphURL => {
                 configureOmnibox(sourcegraphURL)
             })
         )
@@ -433,7 +433,7 @@ function observeCurrentTabPrivateCloudError(): Observable<boolean> {
 function observeSourcegraphUrlValidation(): Observable<boolean> {
     return merge(
         // Whenever the URL was persisted to storage, we can assume it was validated before-hand
-        observeStorageKey('sync', 'sourcegraphURL').pipe(mapTo(true)),
+        SourcegraphUrlService.observe().pipe(mapTo(true)),
         timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
     )
 }

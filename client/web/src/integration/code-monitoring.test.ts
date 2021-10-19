@@ -25,14 +25,6 @@ describe('Code monitoring', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSuggestions: () => ({
-                search: {
-                    suggestions: [{ __typename: 'Repository', name: '^github\\.com/sourcegraph/sourcegraph$' }],
-                },
-            }),
-            RepoGroups: () => ({
-                repoGroups: [],
-            }),
             AutoDefinedSearchContexts: () => ({
                 autoDefinedSearchContexts: [],
             }),

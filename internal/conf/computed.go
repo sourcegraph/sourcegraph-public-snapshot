@@ -301,7 +301,7 @@ func EventLoggingEnabled() bool {
 func APIDocsSearchIndexingEnabled() bool {
 	val := ExperimentalFeatures().ApidocsSearchIndexing
 	if val == "" {
-		return false // default to off for now until we've fixed https://github.com/sourcegraph/sourcegraph/issues/25856
+		return true
 	}
 	return val == "enabled"
 }

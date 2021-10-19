@@ -14,7 +14,7 @@ exports[`GlobalNavbar default 1`] = `
         href="/search"
       >
         <brandlogo
-          class="global-navbar__logo"
+          class="logo"
           variant="symbol"
         />
       </a>
@@ -249,7 +249,7 @@ exports[`GlobalNavbar default 1`] = `
         class="action"
       >
         <a
-          class="global-navbar__link"
+          class="link"
           to="https://about.sourcegraph.com"
         >
           About 
@@ -271,7 +271,7 @@ exports[`GlobalNavbar default 1`] = `
             Log in
           </a>
           <a
-            class="btn btn-sm global-navbar__sign-up"
+            class="btn btn-sm signUp"
             to="/sign-up"
           >
             Sign up
@@ -321,7 +321,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         href="/search"
       >
         <brandlogo
-          class="global-navbar__logo"
+          class="logo"
           variant="symbol"
         />
       </a>
@@ -556,7 +556,7 @@ exports[`GlobalNavbar low-profile 1`] = `
         class="action"
       >
         <a
-          class="global-navbar__link"
+          class="link"
           to="https://about.sourcegraph.com"
         >
           About 
@@ -578,7 +578,7 @@ exports[`GlobalNavbar low-profile 1`] = `
             Log in
           </a>
           <a
-            class="btn btn-sm global-navbar__sign-up"
+            class="btn btn-sm signUp"
             to="/sign-up"
           >
             Sign up

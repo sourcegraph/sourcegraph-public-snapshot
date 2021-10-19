@@ -219,6 +219,10 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
 			return nil, err
 		}
+	} else if r.opt.OrgID != 0 {
+		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
+			return nil, err
+		}
 	} else {
 		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 		// count does not respect repository permissions.

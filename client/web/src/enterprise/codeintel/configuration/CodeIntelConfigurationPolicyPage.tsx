@@ -54,6 +54,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
         }
 
         const variables = repo?.id ? { ...policy, repositoryId: repo.id ?? null } : { ...policy }
+        variables.pattern = variables.type === GitObjectType.GIT_COMMIT ? 'HEAD' : variables.pattern
+
         return savePolicyConfiguration({ variables })
             .then(() =>
                 history.push({
@@ -151,7 +153,7 @@ function validatePolicy(policy: CodeIntelligenceConfigurationPolicyFields): bool
         false ||
         // Required values
         policy.name === '' ||
-        policy.pattern === '' ||
+        (policy.pattern === '' && policy.type !== GitObjectType.GIT_COMMIT) ||
         // Required select values
         ![GitObjectType.GIT_COMMIT, GitObjectType.GIT_TAG, GitObjectType.GIT_TREE].includes(policy.type) ||
         // Numeric validation (optional)

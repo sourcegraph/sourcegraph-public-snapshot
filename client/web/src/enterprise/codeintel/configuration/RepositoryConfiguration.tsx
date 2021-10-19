@@ -5,6 +5,8 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Container, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
+
 import { ConfigurationEditor } from './ConfigurationEditor'
 import { RepositoryPolicies } from './RepositoryPolicies'
 import { RepositoryTab } from './RepositoryTab'
@@ -12,6 +14,7 @@ import { RepositoryTab } from './RepositoryTab'
 export interface RepositoryConfigurationProps extends ThemeProps, TelemetryProps {
     repo: { id: string }
     indexingEnabled: boolean
+    authenticatedUser: AuthenticatedUser | null
     history: H.History
     onHandleDisplayAction: React.Dispatch<React.SetStateAction<boolean>>
     onHandleIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
@@ -21,6 +24,7 @@ export interface RepositoryConfigurationProps extends ThemeProps, TelemetryProps
 export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationProps> = ({
     repo,
     indexingEnabled,
+    authenticatedUser,
     history,
     onHandleDisplayAction,
     onHandleIsDeleting,
@@ -38,6 +42,7 @@ export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationP
             <TabPanel>
                 <RepositoryPolicies
                     isGlobal={false}
+                    authenticatedUser={authenticatedUser}
                     repo={repo}
                     indexingEnabled={indexingEnabled}
                     history={history}
@@ -50,6 +55,7 @@ export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationP
             <TabPanel>
                 <RepositoryPolicies
                     isGlobal={true}
+                    authenticatedUser={authenticatedUser}
                     repo={repo}
                     indexingEnabled={indexingEnabled}
                     history={history}
@@ -64,7 +70,12 @@ export const RepositoryConfiguration: FunctionComponent<RepositoryConfigurationP
                     <Container>
                         <h3>Auto-indexing configuration</h3>
 
-                        <ConfigurationEditor repoId={repo.id} history={history} {...props} />
+                        <ConfigurationEditor
+                            repoId={repo.id}
+                            authenticatedUser={authenticatedUser}
+                            history={history}
+                            {...props}
+                        />
                     </Container>
                 </TabPanel>
             )}

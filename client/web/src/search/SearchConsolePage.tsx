@@ -6,14 +6,15 @@ import { BehaviorSubject } from 'rxjs'
 import { debounceTime } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { transformSearchQuery } from '@sourcegraph/shared/src/api/client/search'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { MonacoEditor } from '../components/MonacoEditor'
 import { PageTitle } from '../components/PageTitle'
 import { SearchPatternType } from '../graphql-operations'
 
-import { fetchSuggestions } from './backend'
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
 import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
@@ -72,23 +73,30 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
         props.history.push('/search/console?q=' + encodeURIComponent(searchQuery.value))
     }, [props.history, searchQuery])
 
+    const transformedQuery = useMemo(() => {
+        const query = parseSearchURLQuery(props.location.search)
+        return transformSearchQuery({
+            query: query?.replace(/\/\/.*/g, '') || '',
+            extensionHostAPIPromise: extensionHostAPI,
+        })
+    }, [props.location.search, extensionHostAPI])
+
     // Fetch search results when the `q` URL query parameter changes
     const results = useObservable(
-        useMemo(() => {
-            const query = parseSearchURLQuery(props.location.search)
-            return streamSearch({
-                query: query?.replace(/\/\/.*/g, '') || '',
-                version: LATEST_VERSION,
-                patternType: patternType ?? SearchPatternType.literal,
-                caseSensitive: false,
-                versionContext: undefined,
-                trace: undefined,
-                extensionHostAPI,
-            }).pipe(debounceTime(500))
-        }, [patternType, props.location.search, streamSearch, extensionHostAPI])
+        useMemo(
+            () =>
+                streamSearch(transformedQuery, {
+                    version: LATEST_VERSION,
+                    patternType: patternType ?? SearchPatternType.literal,
+                    caseSensitive: false,
+                    versionContext: undefined,
+                    trace: undefined,
+                }).pipe(debounceTime(500)),
+            [patternType, transformedQuery, streamSearch]
+        )
     )
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType,
         globbing,
         interpretComments: true,

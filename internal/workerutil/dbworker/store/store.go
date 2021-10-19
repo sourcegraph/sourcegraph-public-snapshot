@@ -233,6 +233,10 @@ type Options struct {
 	// cycle of the same input.
 	MaxNumResets int
 
+	// ResetFailureMessage overrides the default failure message written to job records that have been
+	// reset the maximum number of times.
+	ResetFailureMessage string
+
 	// RetryAfter determines whether the store dequeues jobs that have errored more than RetryAfter ago.
 	// Setting this value to zero will disable retries entirely.
 	//
@@ -783,6 +787,8 @@ WHERE %s
 RETURNING {id}
 `
 
+const defaultResetFailureMessage = "job processor died while handling this message too many times"
+
 // ResetStalled moves all processing records that have not received a heartbeat within `StalledMaxAge` back to the
 // queued state. In order to prevent input that continually crashes worker instances, records that have been reset
 // more than `MaxNumResets` times will be marked as failed. This method returns a pair of maps from record
@@ -792,13 +798,42 @@ func (s *store) ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, fai
 	ctx, traceLog, endObservation := s.operations.resetStalled.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	resetLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledQuery)
+	now := s.now()
+	scan := scanLastHeartbeatTimestampsFrom(now)
+
+	resetLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
 	traceLog(log.Int("numResetIDs", len(resetLastHeartbeatsByIDs)))
 
-	failedLastHeartbeatsByIDs, err = s.resetStalled(ctx, resetStalledMaxResetsQuery)
+	resetFailureMessage := s.options.ResetFailureMessage
+	if resetFailureMessage == "" {
+		resetFailureMessage = defaultResetFailureMessage
+	}
+
+	failedLastHeartbeatsByIDs, err = scan(s.Query(
+		ctx,
+		s.formatQuery(
+			resetStalledMaxResetsQuery,
+			quote(s.options.TableName),
+			now,
+			int(s.options.StalledMaxAge/time.Second),
+			s.options.MaxNumResets,
+			quote(s.options.TableName),
+			resetFailureMessage,
+		),
+	))
 	if err != nil {
 		return resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs, err
 	}
@@ -827,22 +862,6 @@ func scanLastHeartbeatTimestampsFrom(now time.Time) func(rows *sql.Rows, queryEr
 
 		return m, nil
 	}
-}
-
-func (s *store) resetStalled(ctx context.Context, query string) (map[int]time.Duration, error) {
-	now := s.now()
-
-	return scanLastHeartbeatTimestampsFrom(now)(s.Query(
-		ctx,
-		s.formatQuery(
-			query,
-			quote(s.options.TableName),
-			now,
-			int(s.options.StalledMaxAge/time.Second),
-			s.options.MaxNumResets,
-			quote(s.options.TableName),
-		),
-	))
 }
 
 const resetStalledQuery = `
@@ -878,7 +897,7 @@ UPDATE %s
 SET
 	{state} = 'failed',
 	{finished_at} = clock_timestamp(),
-	{failure_message} = 'failed to process'
+	{failure_message} = %s
 WHERE {id} IN (SELECT {id} FROM stalled)
 RETURNING {id}, {last_heartbeat_at}
 `

@@ -1514,8 +1514,25 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	svc := service.New(r.store)
+	batchSpec, err := svc.CancelBatchSpec(ctx, service.CancelBatchSpecOpts{
+		BatchSpecRandID: batchSpecRandID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {

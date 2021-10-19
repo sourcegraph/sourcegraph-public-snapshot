@@ -4,11 +4,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql/schema'
+import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchStreamingProps } from '..'
-import { fetchSuggestions } from '../backend'
 import { StreamingSearchResultsListProps } from '../results/StreamingSearchResultsList'
 import { useQueryIntelligence } from '../useQueryIntelligence'
 
@@ -204,7 +204,7 @@ export const SearchNotebook: React.FunctionComponent<SearchNotebookProps> = ({
         }
     }, [notebook, selectedBlockId, onMoveBlockSelection, setSelectedBlockId])
 
-    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestions, {
+    const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
         patternType: SearchPatternType.literal,
         globbing: props.globbing,
         interpretComments: true,

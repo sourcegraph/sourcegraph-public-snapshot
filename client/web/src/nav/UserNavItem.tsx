@@ -1,4 +1,5 @@
 import { Shortcut } from '@slimsag/react-shortcuts'
+import classNames from 'classnames'
 import * as H from 'history'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
@@ -16,6 +17,8 @@ import { Badge } from '../components/Badge'
 import { SearchContextProps } from '../search'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
+
+import styles from './UserNavItem.module.scss'
 
 export interface UserNavItemProps
     extends ThemeProps,
@@ -116,7 +119,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         <UserAvatar
                             user={props.authenticatedUser}
                             targetID={targetID}
-                            className="icon-inline user-nav-item__avatar"
+                            className={classNames('icon-inline', styles.avatar)}
                         />
                         {isOpen ? (
                             <ChevronUpIcon className="icon-inline" />
@@ -135,13 +138,13 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                                 offset: '0, 10px',
                             },
                         }}
-                        className="user-nav-item__tooltip"
+                        className={styles.tooltip}
                     >
                         Install the browser extension from here later
                     </Tooltip>
                 )}
             </DropdownToggle>
-            <DropdownMenu right={true} className="user-nav-item__dropdown-menu">
+            <DropdownMenu right={true} className={styles.dropdownMenu}>
                 <DropdownItem header={true} className="py-1">
                     Signed in as <strong>@{props.authenticatedUser.username}</strong>
                 </DropdownItem>
@@ -157,7 +160,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                         className="dropdown-item"
                     >
-                        Repositories <Badge className="ml-1" status="beta" />
+                        Your Repositories <Badge className="ml-1" status="beta" />
                     </Link>
                 )}
                 <Link to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
@@ -198,7 +201,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />
-                        <DropdownItem header={true}>Organizations</DropdownItem>
+                        <DropdownItem header={true}>Your organizations</DropdownItem>
                         {props.authenticatedUser.organizations.nodes.map(org => (
                             <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
                                 {org.displayName || org.name}

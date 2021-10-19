@@ -2,6 +2,7 @@ package commit
 
 import (
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
@@ -82,27 +83,58 @@ func TestCheckSearchLimits(t *testing.T) {
 	}
 }
 
-func TestQueryNodesToPredicates(t *testing.T) {
+func TestQueryToGitQuery(t *testing.T) {
 	type testCase struct {
 		name   string
-		input  []query.Node
-		output []protocol.Node
+		input  query.Q
+		diff   bool
+		output protocol.Node
 	}
 
 	cases := []testCase{{
 		name: "negated repo does not result in nil node (#26032)",
 		input: []query.Node{
-			query.Parameter{
-				Field:   query.FieldRepo,
-				Negated: true,
-			},
+			query.Parameter{Field: query.FieldRepo, Negated: true},
 		},
-		output: []protocol.Node{},
+		diff:   false,
+		output: &protocol.Boolean{Value: true},
+	}, {
+		name: "expensive nodes are placed last",
+		input: []query.Node{
+			query.Pattern{Value: "a"},
+			query.Parameter{Field: query.FieldAuthor, Value: "b"},
+		},
+		diff: true,
+		output: protocol.NewAnd(
+			&protocol.AuthorMatches{Expr: "b", IgnoreCase: true},
+			&protocol.DiffMatches{Expr: "a", IgnoreCase: true},
+		),
+	}, {
+		name: "all supported nodes are converted",
+		input: []query.Node{
+			query.Parameter{Field: query.FieldAuthor, Value: "author"},
+			query.Parameter{Field: query.FieldCommitter, Value: "committer"},
+			query.Parameter{Field: query.FieldBefore, Value: "2021-09-10"},
+			query.Parameter{Field: query.FieldAfter, Value: "2021-09-08"},
+			query.Parameter{Field: query.FieldFile, Value: "file"},
+			query.Parameter{Field: query.FieldMessage, Value: "message1"},
+			query.Pattern{Value: "message2"},
+		},
+		diff: false,
+		output: protocol.NewAnd(
+			&protocol.CommitBefore{Time: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC)},
+			&protocol.CommitAfter{Time: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC)},
+			&protocol.AuthorMatches{Expr: "author", IgnoreCase: true},
+			&protocol.CommitterMatches{Expr: "committer", IgnoreCase: true},
+			&protocol.MessageMatches{Expr: "message1", IgnoreCase: true},
+			&protocol.MessageMatches{Expr: "message2", IgnoreCase: true},
+			&protocol.DiffModifiesFile{Expr: "file", IgnoreCase: true},
+		),
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			output := queryNodesToPredicates(tc.input, false, false)
+			output := queryToGitQuery(tc.input, tc.diff)
 			require.Equal(t, tc.output, output)
 		})
 	}
