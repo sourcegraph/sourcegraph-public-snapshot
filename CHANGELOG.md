@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search contexts are now enabled by default in the Sourcegraph enterprise version. [#25674](https://github.com/sourcegraph/sourcegraph/pull/25674)
 - Code Insights background queries will now retry a maximum of 10 times (down from 100). [#26057](https://github.com/sourcegraph/sourcegraph/pull/26057)
 - Our `sourcegraph/cadvisor` Docker image has been upgraded to cadvisor version `v0.42.0`. [#26126](https://github.com/sourcegraph/sourcegraph/pull/26126)
+- Our `jaeger` version in the `sourcegraph/sourcegraph` Docker image has been upgraded to `1.24.0`. [#26215](https://github.com/sourcegraph/sourcegraph/pull/26215)
 
 ### Fixed
 
