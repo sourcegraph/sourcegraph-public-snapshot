@@ -83,14 +83,14 @@ describe('SearchPage', () => {
 
     it('should not show home panels if on Sourcegraph.com and showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} />).container
-        const homePanels = container.querySelector('.home-panels')
+        const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should show home panels if on Sourcegraph.com and showEnterpriseHomePanels enabled', () => {
         container = render(<SearchPage {...defaultProps} isSourcegraphDotCom={true} showEnterpriseHomePanels={true} />)
             .container
-        const homePanels = container.querySelector('.home-panels')
+        const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })
 
@@ -103,19 +103,19 @@ describe('SearchPage', () => {
                 authenticatedUser={null}
             />
         ).container
-        const homePanels = container.querySelector('.home-panels')
+        const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should not show home panels if showEnterpriseHomePanels disabled', () => {
         container = render(<SearchPage {...defaultProps} />).container
-        const homePanels = container.querySelector('.home-panels')
+        const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).not.toBeInTheDocument()
     })
 
     it('should show home panels if showEnterpriseHomePanels enabled and not on Sourcegraph.com', () => {
         container = render(<SearchPage {...defaultProps} showEnterpriseHomePanels={true} />).container
-        const homePanels = container.querySelector('.home-panels')
+        const homePanels = container.querySelector('[data-testid="home-panels"]')
         expect(homePanels).toBeVisible()
     })
 })
