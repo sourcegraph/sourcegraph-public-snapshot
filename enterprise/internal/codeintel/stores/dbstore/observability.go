@@ -44,8 +44,8 @@ type operations struct {
 	hasRepository                          *observation.Operation
 	indexQueueSize                         *observation.Operation
 	insertCloneableDependencyRepo          *observation.Operation
-	insertDependencySyncingJob             *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
+	insertDependencySyncingJob             *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
@@ -63,6 +63,7 @@ type operations struct {
 	repoName                               *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
+	selectRepositoriesForIndexScan         *observation.Operation
 	selectRepositoriesForRetentionScan     *observation.Operation
 	softDeleteExpiredUploads               *observation.Operation
 	staleSourcedCommits                    *observation.Operation
@@ -136,8 +137,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		hasRepository:                          op("HasRepository"),
 		indexQueueSize:                         op("IndexQueueSize"),
 		insertCloneableDependencyRepo:          op("InsertCloneableDependencyRepo"),
-		insertDependencySyncingJob:             op("InsertDependencySyncingJob"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
+		insertDependencySyncingJob:             op("InsertDependencySyncingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),
@@ -155,6 +156,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		repoName:                               op("RepoName"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
+		selectRepositoriesForIndexScan:         op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:     op("SelectRepositoriesForRetentionScan"),
 		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),

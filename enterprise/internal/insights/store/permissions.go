@@ -95,6 +95,31 @@ type DashboardGrant struct {
 	Global *bool
 }
 
+func scanDashboardGrants(rows *sql.Rows, queryErr error) (_ []*DashboardGrant, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var results []*DashboardGrant
+	var placeholder int
+	for rows.Next() {
+		var temp DashboardGrant
+		if err := rows.Scan(
+			&placeholder,
+			&placeholder,
+			&temp.UserID,
+			&temp.OrgID,
+			&temp.Global,
+		); err != nil {
+			return []*DashboardGrant{}, err
+		}
+		results = append(results, &temp)
+	}
+
+	return results, nil
+}
+
 func (i DashboardGrant) IsValid() bool {
 	if i.OrgID != nil || i.UserID != nil || i.Global != nil {
 		return true

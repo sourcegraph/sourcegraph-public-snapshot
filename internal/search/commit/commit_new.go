@@ -113,11 +113,15 @@ func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, lim
 	}
 
 	return &CommitSearch{
-		Query: gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...),
+		Query: queryToGitQuery(q, diff),
 		Repos: repos,
 		Diff:  diff,
 		Limit: limit,
 	}, nil
+}
+
+func queryToGitQuery(q query.Q, diff bool) gitprotocol.Node {
+	return gitprotocol.Reduce(gitprotocol.NewAnd(queryNodesToPredicates(q, q.IsCaseSensitive(), diff)...))
 }
 
 func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
@@ -210,7 +214,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 		newPred = &gitprotocol.DiffModifiesFile{Expr: search.LangToFileRegexp(parameter.Value), IgnoreCase: true}
 	}
 
-	if parameter.Negated {
+	if parameter.Negated && newPred != nil {
 		return gitprotocol.NewNot(newPred)
 	}
 	return newPred

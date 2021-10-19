@@ -124,18 +124,33 @@ describe('scanSearchQuery() for literal search', () => {
         )
     })
 
-    test('quoted, double quotes', () =>
+    test('quoted, double quotes, literal', () =>
         expect(scanSearchQuery('"a:b"')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":5},"kind":1,"value":"\\"a:b\\""}]}'
+        ))
+
+    test('quoted, double quotes, regexp', () =>
+        expect(scanSearchQuery('"a:b"', false, SearchPatternType.regexp)).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"literal","value":"a:b","range":{"start":0,"end":5},"quoted":true}]}'
         ))
 
-    test('quoted, single quotes', () =>
+    test('quoted, single quotes, literal', () =>
         expect(scanSearchQuery("'a:b'")).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":5},"kind":1,"value":"\'a:b\'"}]}'
+        ))
+
+    test('quoted, single quotes, regexp', () =>
+        expect(scanSearchQuery("'a:b'", false, SearchPatternType.regexp)).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"literal","value":"a:b","range":{"start":0,"end":5},"quoted":true}]}'
         ))
 
-    test('quoted (escaped quotes)', () =>
+    test('quoted (do not escape quotes in literal mode)', () =>
         expect(scanSearchQuery('"-\\"a\\":b"')).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":10},"kind":1,"value":"\\"-\\\\\\"a\\\\\\":b\\""}]}'
+        ))
+
+    test('quoted (escape quotes in regex mode)', () =>
+        expect(scanSearchQuery('"-\\"a\\":b"', false, SearchPatternType.regexp)).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"literal","value":"-\\\\\\"a\\\\\\":b","range":{"start":0,"end":10},"quoted":true}]}'
         ))
 
@@ -221,6 +236,12 @@ describe('scanSearchQuery() with predicate', () => {
     test('recognize parenthesized predicate', () => {
         expect(scanSearchQuery('(repo:contains(file:bar))')).toMatchInlineSnapshot(
             '{"type":"success","term":[{"type":"openingParen","range":{"start":0,"end":1}},{"type":"filter","range":{"start":1,"end":24},"field":{"type":"literal","value":"repo","range":{"start":1,"end":5}},"value":{"type":"literal","value":"contains(file:bar)","range":{"start":6,"end":24},"quoted":false},"negated":false},{"type":"closingParen","range":{"start":24,"end":25}}]}'
+        )
+    })
+
+    test('recognize `not` and other keywords in literal search where unquoted terms might appear to be quoted', () => {
+        expect(scanSearchQuery("'email is not allowed'", false, SearchPatternType.literal)).toMatchInlineSnapshot(
+            '{"type":"success","term":[{"type":"pattern","range":{"start":0,"end":6},"kind":1,"value":"\'email"},{"type":"whitespace","range":{"start":6,"end":7}},{"type":"pattern","range":{"start":7,"end":9},"kind":1,"value":"is"},{"type":"whitespace","range":{"start":9,"end":10}},{"type":"keyword","value":"not","range":{"start":10,"end":13},"kind":"not"},{"type":"whitespace","range":{"start":13,"end":14}},{"type":"pattern","range":{"start":14,"end":22},"kind":1,"value":"allowed\'"}]}'
         )
     })
 })

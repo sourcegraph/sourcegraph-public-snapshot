@@ -16,6 +16,8 @@ Select one of the issues labeled as [good first issue](https://github.com/orgs/s
 
 Each of these issues is either a frontend code issue in the Sourcegraph OSS project or a troubeshooting technical tutorial for educational purposes. **If you want to solve a technical tutorial issue, please follow [this guide instead](https://github.com/sourcegraph/learn/blob/main/docs/hacktoberfest-2021.md)**.
 
+Once you've chosen an issue, **comment on it to announce that you will be working on it**, making it visible for others that this issue is being tackled. If you end up not creating a pull request for this issue, please delete your comment.
+
 ## Step 2 - Clone the Sourcegraph repository.
 
 Clone the repo: `git clone https://github.com/sourcegraph/sourcegraph/`.

@@ -159,14 +159,6 @@ export class EventLogger implements TelemetryService {
         }
     }
 
-    public getUserProperties(): string {
-        const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
-        if (userProps) {
-            return userProps
-        }
-
-        return JSON.stringify({})
-    }
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with

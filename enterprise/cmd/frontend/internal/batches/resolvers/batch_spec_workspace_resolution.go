@@ -38,14 +38,6 @@ func (r *batchSpecWorkspaceResolutionResolver) FailureMessage() *string {
 	return r.resolution.FailureMessage
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) AllowIgnored() bool {
-	return r.resolution.AllowIgnored
-}
-
-func (r *batchSpecWorkspaceResolutionResolver) AllowUnsupported() bool {
-	return r.resolution.AllowUnsupported
-}
-
 func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, args *graphqlbackend.ListWorkspacesArgs) (graphqlbackend.BatchSpecWorkspaceConnectionResolver, error) {
 	opts := store.ListBatchSpecWorkspacesOpts{
 		BatchSpecID: r.resolution.BatchSpecID,

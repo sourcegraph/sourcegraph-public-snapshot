@@ -234,6 +234,7 @@ func TestCreateSeries(t *testing.T) {
 			LastSnapshotAt:        now,
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
+			Enabled:               true,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -252,6 +253,7 @@ func TestCreateSeries(t *testing.T) {
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
 			CreatedAt:             now,
+			Enabled:               true,
 		}
 
 		log15.Info("values", "want", want, "got", got)
@@ -593,6 +595,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			LastSnapshotAt:        now,
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
+			Enabled:               true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -632,6 +635,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 			LastSnapshotAt:        now,
 			NextSnapshotAfter:     now,
 			RecordingIntervalDays: 4,
+			Enabled:               true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -673,6 +677,7 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 		LastSnapshotAt:        now,
 		NextSnapshotAfter:     now,
 		RecordingIntervalDays: 4,
+		Enabled:               true,
 	}
 	created, err := store.CreateSeries(ctx, series)
 	if err != nil {
@@ -847,5 +852,69 @@ func TestDirtyQueriesAggregated(t *testing.T) {
 		}
 
 		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestSetSeriesEnabled(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("start enabled set disabled set enabled", func(t *testing.T) {
+		created, err := store.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:              "series1",
+			Query:                 "quer1",
+			CreatedAt:             now,
+			OldestHistoricalAt:    now,
+			LastRecordedAt:        now,
+			NextRecordingAfter:    now,
+			LastSnapshotAt:        now,
+			NextSnapshotAfter:     now,
+			BackfillQueuedAt:      now,
+			RecordingIntervalDays: 0,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !created.Enabled {
+			t.Errorf("series is disabled")
+		}
+		// set the series from enabled -> disabled
+		err = store.SetSeriesEnabled(ctx, created.SeriesID, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := store.GetDataSeries(ctx, GetDataSeriesArgs{IncludeDeleted: true, SeriesID: created.SeriesID})
+		if err != nil {
+			t.Fatal()
+		}
+		if len(got) == 0 {
+			t.Errorf("unexpected length from fetching data series")
+		}
+		if got[0].Enabled {
+			t.Errorf("series is enabled but should be disabled")
+		}
+
+		// set the series from disabled -> enabled
+		err = store.SetSeriesEnabled(ctx, created.SeriesID, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetDataSeries(ctx, GetDataSeriesArgs{IncludeDeleted: true, SeriesID: created.SeriesID})
+		if err != nil {
+			t.Fatal()
+		}
+		if len(got) == 0 {
+			t.Errorf("unexpected length from fetching data series")
+		}
+		if !got[0].Enabled {
+			t.Errorf("series is enabled but should be disabled")
+		}
 	})
 }

@@ -134,6 +134,7 @@ type ExternalService struct {
 	LastSyncAt      time.Time
 	NextSyncAt      time.Time
 	NamespaceUserID int32
+	NamespaceOrgID  int32
 	Unrestricted    bool
 	CloudDefault    bool
 }

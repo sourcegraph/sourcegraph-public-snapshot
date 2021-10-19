@@ -149,6 +149,8 @@ type ExternalServicesListOptions struct {
 	NoNamespace bool
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
+	// When specified, only include external services under given organization namespace.
+	NamespaceOrgID int32
 	// When specified, only include external services with given list of kinds.
 	Kinds []string
 	// When specified, only include external services with ID below this number
@@ -173,9 +175,11 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
 	}
 	if o.NoNamespace {
-		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
 	} else if o.NamespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
+	} else if o.NamespaceOrgID > 0 {
+		conds = append(conds, sqlf.Sprintf(`namespace_org_id = %d`, o.NamespaceOrgID))
 	}
 	if len(o.Kinds) > 0 {
 		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
@@ -204,6 +208,8 @@ type ValidateExternalServiceConfigOptions struct {
 	AuthProviders []schema.AuthProviders
 	// If non zero, indicates the user that owns the external service.
 	NamespaceUserID int32
+	// If non zero, indicates the organization that owns the codehost connection.
+	NamespaceOrgID int32
 }
 
 // ValidateConfig validates the given external service configuration, and returns a normalized
@@ -551,6 +557,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		Config:          es.Config,
 		AuthProviders:   confGet().AuthProviders,
 		NamespaceUserID: es.NamespaceUserID,
+		NamespaceOrgID:  es.NamespaceOrgID,
 	})
 	if err != nil {
 		return err
@@ -584,8 +591,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id",
-		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), es.Unrestricted, es.CloudDefault,
+		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
+		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault,
 	).Scan(&es.ID)
 }
 
@@ -1132,7 +1139,6 @@ ORDER BY es.id, essj.finished_at DESC
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
 
 	messages := make(map[int64]string)
 
@@ -1143,6 +1149,9 @@ ORDER BY es.id, essj.finished_at DESC
 			return nil, err
 		}
 		messages[svcID] = message.String
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return messages, nil
@@ -1194,7 +1203,7 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 	}
 
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, unrestricted, cloud_default
+		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
@@ -1219,9 +1228,10 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			lastSyncAt      sql.NullTime
 			nextSyncAt      sql.NullTime
 			namespaceUserID sql.NullInt32
+			namespaceOrgID  sql.NullInt32
 			keyID           string
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyID, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &h.Unrestricted, &h.CloudDefault); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyID, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &namespaceOrgID, &h.Unrestricted, &h.CloudDefault); err != nil {
 			return nil, err
 		}
 
@@ -1236,6 +1246,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		}
 		if namespaceUserID.Valid {
 			h.NamespaceUserID = namespaceUserID.Int32
+		}
+		if namespaceOrgID.Valid {
+			h.NamespaceOrgID = namespaceOrgID.Int32
 		}
 
 		keyIDs[h.ID] = keyID

@@ -5,6 +5,7 @@
 # script will be passed a single parameter: the target URL from which the instance is accessible.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../"
+root_dir=$(pwd)
 set -ex
 
 if [ -z "$IMAGE" ]; then
@@ -31,7 +32,7 @@ function cleanup() {
 
   jobs -p -r | xargs kill
   echo "--- dump server logs"
-  docker logs "$CONTAINER" 2>"$CONTAINER.log"
+  docker logs --timestamps "$CONTAINER" >"$root_dir/server.log" 2>&1
   echo "--- docker cleanup"
   docker container rm -f "$CONTAINER"
   docker image rm -f "$IMAGE"

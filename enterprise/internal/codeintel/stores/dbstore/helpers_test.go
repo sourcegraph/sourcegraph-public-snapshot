@@ -194,6 +194,25 @@ func insertRepo(t testing.TB, db *sql.DB, id int, name string) {
 	}
 }
 
+// addToSearchContext creates a search context and adds the given repository to it. This is used to include
+// repositories within tests for indexing candidacy.
+func addToSearchContext(t testing.TB, db *sql.DB, id int) {
+	query := sqlf.Sprintf(`
+		WITH
+		inserted AS (
+			INSERT INTO search_contexts (name, description, public)
+			VALUES (%s, '', false)
+			RETURNING id
+		)
+		INSERT INTO search_context_repos (search_context_id, repo_id, revision)
+		SELECT id, %s, '' FROM inserted
+	`, fmt.Sprintf("test-context-%d", id), id)
+
+	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while adding repository to search context: %s", err)
+	}
+}
+
 // Marks a repo as deleted
 func deleteRepo(t testing.TB, db *sql.DB, id int, deleted_at time.Time) {
 	query := sqlf.Sprintf(
@@ -241,7 +260,7 @@ func insertPackageReferences(t testing.TB, store *Store, packageReferences []sha
 
 // insertVisibleAtTip populates rows of the lsif_uploads_visible_at_tip table for the given repository
 // with the given identifiers. Each upload is assumed to refer to the tip of the default branch. To mark
-// an upload as protected (visible to _some_ branch) butn ot visible from teh default branch, use the
+// an upload as protected (visible to _some_ branch) butn ot visible from the default branch, use the
 // insertVisibleAtTipNonDefaultBranch method instead.
 func insertVisibleAtTip(t testing.TB, db *sql.DB, repositoryID int, uploadIDs ...int) {
 	insertVisibleAtTipInternal(t, db, repositoryID, true, uploadIDs...)

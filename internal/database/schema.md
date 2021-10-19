@@ -85,8 +85,6 @@ Indexes:
 -------------------+--------------------------+-----------+----------+--------------------------------------------------------
  id                | bigint                   |           | not null | nextval('batch_spec_resolution_jobs_id_seq'::regclass)
  batch_spec_id     | integer                  |           |          | 
- allow_unsupported | boolean                  |           | not null | false
- allow_ignored     | boolean                  |           | not null | false
  state             | text                     |           |          | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
@@ -152,6 +150,9 @@ Foreign-key constraints:
  steps                | jsonb                    |           |          | '[]'::jsonb
  created_at           | timestamp with time zone |           | not null | now()
  updated_at           | timestamp with time zone |           | not null | now()
+ ignored              | boolean                  |           | not null | false
+ unsupported          | boolean                  |           | not null | false
+ skipped              | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -178,6 +179,8 @@ Referenced by:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  created_from_raw  | boolean                  |           | not null | false
+ allow_unsupported | boolean                  |           | not null | false
+ allow_ignored     | boolean                  |           | not null | false
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -1091,6 +1094,21 @@ Stores metadata about a code intel index job.
 **outfile**: The path to the index file produced by the index command relative to the working directory.
 
 **root**: The working directory of the indexer image relative to the repository root.
+
+# Table "public.lsif_last_index_scan"
+```
+       Column       |           Type           | Collation | Nullable | Default 
+--------------------+--------------------------+-----------+----------+---------
+ repository_id      | integer                  |           | not null | 
+ last_index_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_index_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time repository was checked for auto-indexing job scheduling.
+
+**last_index_scan_at**: The last time uploads of this repository were considered for auto-indexing job scheduling.
 
 # Table "public.lsif_last_retention_scan"
 ```

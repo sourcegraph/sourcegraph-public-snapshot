@@ -452,6 +452,82 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 	}
 }
 
+func TestRepos_ListRepoNames_orgID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create an org
+	displayName := "Acme Corp"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "Github - Test",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		NamespaceOrgID: org.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices(db).Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	err = Repos(db).Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
+	}
+
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OrgID: org.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+}
+
 func TestRepos_List_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1819,7 +1895,7 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 
 func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "options ExternalServiceIDs and UserID are mutually exclusive"
+	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
 
 	t.Parallel()
 	db := dbtest.NewDB(t, "")
@@ -2399,7 +2475,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 }
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
-	id := rand.String(3)
+	id := rand.String(8)
 	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,

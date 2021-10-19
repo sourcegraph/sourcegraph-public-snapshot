@@ -277,6 +277,13 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	resolutionJob, err := bstore.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+		BatchSpecID: spec.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -305,7 +312,6 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		OriginalInput: spec.RawSpec,
 		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
 
-		ApplyURL:            &applyUrl,
 		Namespace:           apitest.UserOrg{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
 		Creator:             &apitest.User{ID: adminAPIID, DatabaseID: admin.ID, SiteAdmin: true},
 		ViewerCanAdminister: true,
@@ -321,18 +327,30 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 		},
 
 		State: "PENDING",
+		WorkspaceResolution: apitest.BatchSpecWorkspaceResolution{
+			State: resolutionJob.State.ToGraphQL(),
+		},
 	}
 
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
-	// Now enqueue jobs
-	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
+	// Complete the workspace resolution
+	var workspaces []*btypes.BatchSpecWorkspace
 	for _, repo := range rs {
 		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID, Steps: []batcheslib.Step{}}
 		if err := bstore.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 			t.Fatal(err)
 		}
+		workspaces = append(workspaces, ws)
+	}
 
+	setResolutionJobState(t, ctx, bstore, resolutionJob, btypes.BatchSpecResolutionJobStateCompleted)
+	want.WorkspaceResolution.State = btypes.BatchSpecResolutionJobStateCompleted.ToGraphQL()
+	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+
+	// Now enqueue jobs
+	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
+	for _, ws := range workspaces {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
 		if err := bstore.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
 			t.Fatal(err)
@@ -363,7 +381,9 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
 	want.State = "COMPLETED"
+	want.ApplyURL = &applyUrl
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
+	want.ApplyURL = nil
 
 	// 1/3 jobs is failed, 2/3 completed
 	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
@@ -418,6 +438,17 @@ func setJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.
 	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
 	if err != nil {
 		t.Fatalf("failed to set job state: %s", err)
+	}
+}
+
+func setResolutionJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecResolutionJob, state btypes.BatchSpecResolutionJobState) {
+	t.Helper()
+
+	job.State = state
+
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_resolution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
+	if err != nil {
+		t.Fatalf("failed to set resolution job state: %s", err)
 	}
 }
 
@@ -512,6 +543,9 @@ query($batchSpec: ID!) {
 	  }
 
       state
+      workspaceResolution {
+        state
+      }
     }
   }
 }

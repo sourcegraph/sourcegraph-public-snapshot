@@ -4,6 +4,8 @@ import { CardElement, ReactStripeElements } from 'react-stripe-elements'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import styles from './PaymentTokenFormControl.module.scss'
+
 interface Props extends ThemeProps {
     disabled?: boolean
 }
@@ -22,10 +24,7 @@ export const PaymentTokenFormControl: React.FunctionComponent<Props> = props => 
     return (
         <div className="payment-token-form-control">
             <PatchedCardElement
-                className={classNames(
-                    'form-control payment-token-form-control__card',
-                    props.disabled && 'payment-token-form-control__card--disabled'
-                )}
+                className={classNames('form-control', styles.card, props.disabled && styles.cardDisabled)}
                 disabled={props.disabled}
                 style={{
                     base: {

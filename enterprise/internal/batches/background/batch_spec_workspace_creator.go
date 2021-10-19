@@ -57,15 +57,12 @@ func (r *batchSpecWorkspaceCreator) process(
 
 	resolver := newResolver(tx)
 	userCtx := actor.WithActor(ctx, actor.FromUser(spec.UserID))
-	workspaces, unsupported, ignored, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec, service.ResolveWorkspacesForBatchSpecOpts{
-		AllowUnsupported: job.AllowUnsupported,
-		AllowIgnored:     job.AllowIgnored,
-	})
+	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(userCtx, evaluatableSpec)
 	if err != nil {
 		return err
 	}
 
-	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces), "unsupported", len(unsupported), "ignored", len(ignored))
+	log15.Info("resolved workspaces for batch spec", "job", job.ID, "spec", spec.ID, "workspaces", len(workspaces))
 
 	var ws []*btypes.BatchSpecWorkspace
 	for _, w := range workspaces {
@@ -80,6 +77,9 @@ func (r *batchSpecWorkspaceCreator) process(
 			FileMatches:        w.FileMatches,
 			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
 			Steps:              w.Steps,
+
+			Unsupported: w.Unsupported,
+			Ignored:     w.Ignored,
 		})
 	}
 

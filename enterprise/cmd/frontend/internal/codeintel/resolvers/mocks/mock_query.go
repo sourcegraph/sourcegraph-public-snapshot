@@ -46,6 +46,9 @@ type MockQueryResolver struct {
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *QueryResolverReferencesFunc
+	// StencilFunc is an instance of a mock function object controlling the
+	// behavior of the method Stencil.
+	StencilFunc *QueryResolverStencilFunc
 }
 
 // NewMockQueryResolver creates a new mock of the QueryResolver interface.
@@ -102,6 +105,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 				return nil, "", nil
 			},
 		},
+		StencilFunc: &QueryResolverStencilFunc{
+			defaultHook: func(context.Context) ([]lsifstore.Range, error) {
+				return nil, nil
+			},
+		},
 	}
 }
 
@@ -139,6 +147,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		},
 		ReferencesFunc: &QueryResolverReferencesFunc{
 			defaultHook: i.References,
+		},
+		StencilFunc: &QueryResolverStencilFunc{
+			defaultHook: i.Stencil,
 		},
 	}
 }
@@ -1284,4 +1295,110 @@ func (c QueryResolverReferencesFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// QueryResolverStencilFunc describes the behavior when the Stencil method
+// of the parent MockQueryResolver instance is invoked.
+type QueryResolverStencilFunc struct {
+	defaultHook func(context.Context) ([]lsifstore.Range, error)
+	hooks       []func(context.Context) ([]lsifstore.Range, error)
+	history     []QueryResolverStencilFuncCall
+	mutex       sync.Mutex
+}
+
+// Stencil delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockQueryResolver) Stencil(v0 context.Context) ([]lsifstore.Range, error) {
+	r0, r1 := m.StencilFunc.nextHook()(v0)
+	m.StencilFunc.appendCall(QueryResolverStencilFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Stencil method of
+// the parent MockQueryResolver instance is invoked and the hook queue is
+// empty.
+func (f *QueryResolverStencilFunc) SetDefaultHook(hook func(context.Context) ([]lsifstore.Range, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Stencil method of the parent MockQueryResolver instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *QueryResolverStencilFunc) PushHook(hook func(context.Context) ([]lsifstore.Range, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverStencilFunc) SetDefaultReturn(r0 []lsifstore.Range, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]lsifstore.Range, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverStencilFunc) PushReturn(r0 []lsifstore.Range, r1 error) {
+	f.PushHook(func(context.Context) ([]lsifstore.Range, error) {
+		return r0, r1
+	})
+}
+
+func (f *QueryResolverStencilFunc) nextHook() func(context.Context) ([]lsifstore.Range, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverStencilFunc) appendCall(r0 QueryResolverStencilFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverStencilFuncCall objects
+// describing the invocations of this function.
+func (f *QueryResolverStencilFunc) History() []QueryResolverStencilFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverStencilFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverStencilFuncCall is an object that describes an invocation of
+// method Stencil on an instance of MockQueryResolver.
+type QueryResolverStencilFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []lsifstore.Range
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverStencilFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverStencilFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }

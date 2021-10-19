@@ -21,7 +21,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	ctx := context.Background()
 
 	// Create user with initially verified email
-	user, err := database.GlobalUsers.Create(ctx, database.NewUser{
+	user, err := database.Users(db).Create(ctx, database.NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,
@@ -33,17 +33,17 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	code := "verify-code"
 
 	// Add and verify the second email
-	err = database.GlobalUserEmails.Add(ctx, user.ID, "alice2@example.com", &code)
+	err = database.UserEmails(db).Add(ctx, user.ID, "alice2@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = database.GlobalUserEmails.SetVerified(ctx, user.ID, "alice2@example.com", true)
+	err = database.UserEmails(db).SetVerified(ctx, user.ID, "alice2@example.com", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Add third email and leave as unverified
-	err = database.GlobalUserEmails.Add(ctx, user.ID, "alice3@example.com", &code)
+	err = database.UserEmails(db).Add(ctx, user.ID, "alice3@example.com", &code)
 	if err != nil {
 		t.Fatal(err)
 	}
