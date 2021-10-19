@@ -79,7 +79,7 @@
           }
         },
         "apidocs": {
-          "description": "API docs, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "description": "API docs, see https://docs.sourcegraph.com/code_intelligence/apidocs - note this doesn't currently disable the frontend UX",
           "type": "string",
           "enum": ["enabled", "disabled"],
           "default": "enabled"
