@@ -78,19 +78,24 @@ OR  (
 		)
 	)
 )
-OR EXISTS ( -- We assume that all repos added by the authenticated user should be shown
-	SELECT
-	FROM external_service_repos
-	WHERE repo_id = repo.id
-	AND user_id = %s
-)
-OR (                             -- Restricted repositories require checking permissions
-	SELECT object_ids_ints @> INTSET(repo.id)
-	FROM user_permissions
-	WHERE
-		user_id = %s
-	AND permission = %s
-	AND object_type = 'repos'
+OR  (                             -- Restricted repositories require checking permissions
+	(
+		SELECT object_ids_ints @> INTSET(repo.id)
+		FROM user_permissions
+		WHERE
+			user_id = %s
+		AND permission = %s
+		AND object_type = 'repos'
+	) AND EXISTS (               -- Check if the authenticated user added this repository or the repository was added at the instance level
+		SELECT
+		FROM external_service_repos
+		WHERE repo_id = repo.id
+		AND (
+				user_id IS NULL
+			OR  user_id = 0
+			OR  user_id = %s
+		)
+	)
 )
 )
 `
