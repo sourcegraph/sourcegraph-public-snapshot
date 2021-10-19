@@ -699,6 +699,10 @@ commands:
       LOKI_VERSION: "2.3.0"
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
+  storybook:
+    cmd: yarn storybook
+    install: yarn
+
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
   debug-env:
