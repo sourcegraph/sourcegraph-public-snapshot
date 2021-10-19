@@ -270,12 +270,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		tableSuffix = "private"
 	}
 
-	// This will not always produce a proper language name, e.g. if an indexer is not named after
-	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
-	// is the indexer name which is likely good enough since we use fuzzy search / partial text matching
-	// over it.
-	languageName := strings.ToLower(strings.TrimPrefix(upload.Indexer, "lsif-"))
-
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -284,21 +278,21 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 
 	repositoryNameID, err := tx.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "upsertRepositoryName")
 	}
 
-	languageNameID, err := tx.upsertLanguageName(ctx, languageName, tableSuffix)
+	languageNameID, err := tx.upsertLanguageName(ctx, upload.Indexer, tableSuffix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "upsertLanguageName")
 	}
 
 	tagIDs, err := tx.upsertTags(ctx, gatherTags(pages), tableSuffix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "upsertTags")
 	}
 
 	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
-		return err
+		return errors.Wrap(err, "replaceSearchRecords")
 	}
 
 	// Truncate the search index size if it exceeds our configured limit now.
@@ -331,11 +325,17 @@ ON CONFLICT (repo_name) DO UPDATE SET repo_name = EXCLUDED.repo_name
 RETURNING id
 `
 
-func (s *Store) upsertLanguageName(ctx context.Context, name, tableSuffix string) (int, error) {
+func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix string) (int, error) {
+	// This will not always produce a proper language name, e.g. if an indexer is not named after
+	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
+	// is the indexer name which is likely good enough since we use fuzzy search / partial text
+	// matching over it.
+	languageName := strings.ToLower(strings.TrimPrefix(indexerName, "lsif-"))
+
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(upsertLanguageNameQuery, "$SUFFIX", tableSuffix),
-		name,
-		textSearchVector(name),
+		languageName,
+		textSearchVector(languageName),
 	)))
 
 	return id, err
@@ -412,7 +412,7 @@ func (s *Store) replaceSearchRecords(
 	// the same value for the same upload. We'll insert these shared values all at once to save on query
 	// bandwidth.
 	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(insertSearchRecordsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
-		return err
+		return errors.Wrap(err, "creating temporary table")
 	}
 
 	inserter := func(inserter *batch.Inserter) error {
@@ -472,7 +472,7 @@ func (s *Store) replaceSearchRecords(
 		},
 		inserter,
 	); err != nil {
-		return err
+		return errors.Wrap(err, "bulk inserting search records")
 	}
 
 	// Insert the values from the temporary table into the target table. Here we insert
@@ -492,7 +492,7 @@ func (s *Store) replaceSearchRecords(
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
 	)); err != nil {
-		return err
+		return errors.Wrap(err, "committing staged search records")
 	}
 
 	return nil
