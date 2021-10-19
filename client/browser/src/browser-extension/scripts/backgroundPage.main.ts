@@ -430,11 +430,6 @@ function observeSourcegraphUrlValidation(): Observable<boolean> {
         filter(url => !!url),
         switchMap(url => timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(() => validateSite(url as string)))
     )
-    // return merge(
-    //     // Whenever the URL was persisted to storage, we can assume it was validated before-hand
-    //     SourcegraphUrlService.getSelfHostedSourcegraphURL().pipe(mapTo(true)),
-    //     timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
-    // )
 }
 
 function observeBrowserActionState(): Observable<BrowserActionIconState> {
