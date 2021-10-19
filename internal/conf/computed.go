@@ -298,10 +298,21 @@ func EventLoggingEnabled() bool {
 	return val == "enabled"
 }
 
+func APIDocsEnabled() bool {
+	val := ExperimentalFeatures().APIDocs
+	if val == "" {
+		return false // off by default temporarily, see https://github.com/sourcegraph/sourcegraph/issues/26292
+	}
+	return val == "enabled"
+}
+
 func APIDocsSearchIndexingEnabled() bool {
+	if !APIDocsEnabled() {
+		return false
+	}
 	val := ExperimentalFeatures().ApidocsSearchIndexing
 	if val == "" {
-		return true
+		return false // off by default temporarily, see https://github.com/sourcegraph/sourcegraph/issues/26292
 	}
 	return val == "enabled"
 }

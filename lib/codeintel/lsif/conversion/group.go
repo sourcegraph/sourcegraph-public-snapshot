@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/bloomfilter"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -32,25 +33,31 @@ func groupBundleData(ctx context.Context, state *State) (*precise.GroupedBundleD
 	resultChunks := serializeResultChunks(ctx, state, numResultChunks)
 	definitionRows := gatherMonikersLocations(ctx, state, state.DefinitionData, func(r Range) int { return r.DefinitionResultID })
 	referenceRows := gatherMonikersLocations(ctx, state, state.ReferenceData, func(r Range) int { return r.ReferenceResultID })
-	documentation := collectDocumentation(ctx, state)
+	var documentation documentationChannels
+	if conf.APIDocsEnabled() {
+		documentation = collectDocumentation(ctx, state)
+	}
 	packages := gatherPackages(state)
 	packageReferences, err := gatherPackageReferences(state, packages)
 	if err != nil {
 		return nil, err
 	}
 
-	return &precise.GroupedBundleDataChans{
-		Meta:                  meta,
-		Documents:             documents,
-		ResultChunks:          resultChunks,
-		Definitions:           definitionRows,
-		References:            referenceRows,
-		DocumentationPages:    documentation.pages,
-		DocumentationPathInfo: documentation.pathInfo,
-		DocumentationMappings: documentation.mappings,
-		Packages:              packages,
-		PackageReferences:     packageReferences,
-	}, nil
+	bundleChans := &precise.GroupedBundleDataChans{
+		Meta:              meta,
+		Documents:         documents,
+		ResultChunks:      resultChunks,
+		Definitions:       definitionRows,
+		References:        referenceRows,
+		Packages:          packages,
+		PackageReferences: packageReferences,
+	}
+	if conf.APIDocsEnabled() {
+		bundleChans.DocumentationPages = documentation.pages
+		bundleChans.DocumentationPathInfo = documentation.pathInfo
+		bundleChans.DocumentationMappings = documentation.mappings
+	}
+	return bundleChans, nil
 }
 
 func serializeBundleDocuments(ctx context.Context, state *State) chan precise.KeyedDocumentData {
