@@ -38,7 +38,16 @@ function serializeFilterTokens(tokens: Token[], filterType: FilterType): string 
         .join(' ')
 }
 
+function serializeFilters(tokens: Token[], filterTypes: FilterType[]): string {
+    return filterTypes
+        .map(filter => serializeFilterTokens(tokens, filter))
+        .filter(serialized => !!serialized)
+        .join(' ')
+}
+
 const MAX_SUGGESTION_COUNT = 50
+const REPO_SUGGESTION_FILTERS = [FilterType.fork, FilterType.visibility, FilterType.archived]
+const FILE_SUGGESTION_FILTERS = [...REPO_SUGGESTION_FILTERS, FilterType.repo, FilterType.rev, FilterType.lang]
 
 function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
     const hasAndOrOperators = tokens.some(
@@ -46,7 +55,8 @@ function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
     )
 
     if (isFilterType(tokenAtColumn, FilterType.repo) && tokenAtColumn.value) {
-        return `repo:${tokenAtColumn.value.value} type:repo count:${MAX_SUGGESTION_COUNT}`
+        const relevantFilters = !hasAndOrOperators ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
+        return `${relevantFilters} repo:${tokenAtColumn.value.value} type:repo count:${MAX_SUGGESTION_COUNT}`
     }
 
     // For the cases below, we are not handling queries with and/or operators. This is because we would need to figure out
@@ -57,13 +67,12 @@ function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token): string {
         return ''
     }
     if (isFilterType(tokenAtColumn, FilterType.file) && tokenAtColumn.value) {
-        const repoQueryPart = serializeFilterTokens(tokens, FilterType.repo)
-        return `${repoQueryPart} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`
+        const relevantFilters = serializeFilters(tokens, FILE_SUGGESTION_FILTERS)
+        return `${relevantFilters} file:${tokenAtColumn.value.value} type:path count:${MAX_SUGGESTION_COUNT}`
     }
     if (tokenAtColumn.type === 'pattern' && tokenAtColumn.value) {
-        const repoQueryPart = serializeFilterTokens(tokens, FilterType.repo)
-        const fileQueryPart = serializeFilterTokens(tokens, FilterType.file)
-        return `${repoQueryPart} ${fileQueryPart} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
+        const relevantFilters = serializeFilters(tokens, [...FILE_SUGGESTION_FILTERS, FilterType.file])
+        return `${relevantFilters} ${tokenAtColumn.value} type:symbol count:${MAX_SUGGESTION_COUNT}`
     }
 
     return ''
