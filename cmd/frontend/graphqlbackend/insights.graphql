@@ -250,7 +250,7 @@ type InsightsDashboard implements Node {
     views: InsightViewConnection
 
     """
-    The list of associated insights to the dashboard.
+    The permission grants assossiated with the dashboard.
     """
     grants: InsightsPermissionGrants!
 }
