@@ -499,7 +499,7 @@ func (s *Store) replaceSearchRecords(
 
 const insertSearchRecordsTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
-CREATE TEMPORARY TABLE t_lsif_data_docs_search (
+CREATE TEMPORARY TABLE t_lsif_data_docs_search_$SUFFIX (
 	path_id TEXT NOT NULL,
 	detail TEXT NOT NULL,
 	tags_id INTEGER NOT NULL,
@@ -547,7 +547,7 @@ ins AS (
 		source.label,
 		source.label_tsv,
 		source.label_reverse_tsv
-	FROM t_lsif_data_docs_search source
+	FROM t_lsif_data_docs_search_$SUFFIX source
 	RETURNING 1
 ),
 del AS (
