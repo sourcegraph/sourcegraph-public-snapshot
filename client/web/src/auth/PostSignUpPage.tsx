@@ -9,7 +9,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 
-import { AuthenticatedUser } from '../../../../wildcard'
+import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
