@@ -458,7 +458,7 @@ func (s *Store) replaceSearchRecords(
 	if err := batch.WithInserter(
 		ctx,
 		tx.Handle().DB(),
-		"t_lsif_data_docs_search",
+		"t_lsif_data_docs_search_"+tableSuffix,
 		[]string{
 			"path_id",
 			"detail",
