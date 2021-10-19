@@ -56,6 +56,11 @@
     "last 3 Safari major versions",
     "not IE > 0"
   ],
+  "bundlesize": [
+    {
+      "path": "./ui/assets/scripts/*.js.br"
+    }
+  ],
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
     "all": true,
@@ -224,6 +229,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-preset-react-app": "^10.0.0",
     "browserslist": "^4.12.0",
+    "bundlesize": "^0.18.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chalk": "^4.1.0",
