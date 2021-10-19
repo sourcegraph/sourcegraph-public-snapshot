@@ -129,7 +129,7 @@ func unmarshalEdgeFast(line []byte) (Edge, bool) {
 		Document: payload.Document,
 	}
 
-	if payload.Document == 0 && payload.Shard != 0 {
+	if payload.Document == 0 {
 		edge.Document = payload.Shard
 	}
 
