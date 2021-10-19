@@ -47,10 +47,9 @@ import { addWithRollback } from './util'
 
 export function createExtensionHostAPI(state: ExtensionHostState): FlatExtensionHostAPI {
     const getTextDocument = (uri: string): ExtensionDocument => {
-        const decodedUri = decodeURIComponent(uri)
-        const textDocument = state.textDocuments.get(decodedUri)
+        const textDocument = state.textDocuments.get(uri)
         if (!textDocument) {
-            throw new Error(`Text document does not exist with URI ${decodedUri}`)
+            throw new Error(`Text document does not exist with URI ${uri}`)
         }
         return textDocument
     }
@@ -299,12 +298,11 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
         },
 
         addTextDocumentIfNotExists: textDocumentData => {
-            const decodedUri = decodeURIComponent(textDocumentData.uri)
-            if (state.textDocuments.has(decodedUri)) {
+            if (state.textDocuments.has(textDocumentData.uri)) {
                 return
             }
             const textDocument = new ExtensionDocument(textDocumentData)
-            state.textDocuments.set(decodedUri, textDocument)
+            state.textDocuments.set(textDocumentData.uri, textDocument)
             state.openedTextDocuments.next(textDocument)
             // Update activeLanguages if no other existing model has the same language.
             if (state.languageReferences.increment(textDocumentData.languageId)) {
