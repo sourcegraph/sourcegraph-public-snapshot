@@ -329,7 +329,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		}
 
 		// Upsert the tags sequence.
-		tagsSlice := []string{}
+		tagsSlice := make([]string, 0, len(node.Documentation.Tags))
 		for _, tag := range node.Documentation.Tags {
 			tagsSlice = append(tagsSlice, string(tag))
 		}
