@@ -6,25 +6,17 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "p4.port",
-    "p4.user",
-    "p4.passwd"
-  ],
+  "required": ["p4.port", "p4.user", "p4.passwd"],
   "properties": {
     "p4.port": {
       "description": "The Perforce Server address to be used for p4 CLI (P4PORT).",
       "type": "string",
-      "examples": [
-        "ssl:111.222.333.444:1666"
-      ]
+      "examples": ["ssl:111.222.333.444:1666"]
     },
     "p4.user": {
       "description": "The user to be authenticated for p4 CLI (P4USER).",
       "type": "string",
-      "examples": [
-        "admin"
-      ]
+      "examples": ["admin"]
     },
     "p4.passwd": {
       "description": "The ticket value for the user (P4PASSWD).",
@@ -41,12 +33,7 @@
         "type": "string",
         "pattern": "^\\/[\\/\\S]+\\/$"
       },
-      "examples": [
-        [
-          "//Sourcegraph/",
-          "//Engineering/Cloud/"
-        ]
-      ]
+      "examples": [["//Sourcegraph/", "//Engineering/Cloud/"]]
     },
     "maxChanges": {
       "description": "Only import at most n changes when possible (git p4 clone --max-changes).",
@@ -58,10 +45,7 @@
       "description": "Rate limit applied when making background API requests to Perforce.",
       "title": "PerforceRateLimit",
       "type": "object",
-      "required": [
-        "enabled",
-        "requestsPerHour"
-      ],
+      "required": ["enabled", "requestsPerHour"],
       "properties": {
         "enabled": {
           "description": "true if rate limiting is enabled.",
@@ -101,9 +85,7 @@
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": [
-        "lookAhead"
-      ],
+      "required": ["lookAhead"],
       "properties": {
         "enabled": {
           "description": "Enable the p4-fusion client for cloning and fetching repos",
