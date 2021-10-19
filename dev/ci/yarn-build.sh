@@ -17,7 +17,7 @@ NODE_ENV='' yarn -s run browserslist
 echo "--- build"
 yarn -s run build --color
 
-if $CHECK_BUNDLESIZE && jq -e '.scripts.bundlesize' package.json >/dev/null; then
+if [ $CHECK_BUNDLESIZE ] && jq -e '.scripts.bundlesize' package.json >/dev/null; then
   echo "--- bundlesize"
   yarn -s run bundlesize --enable-github-checks
 fi
