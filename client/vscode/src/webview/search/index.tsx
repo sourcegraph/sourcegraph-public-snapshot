@@ -1,9 +1,13 @@
 import React from 'react'
 
+import { WebviewPageProps } from '..'
+
 import styles from './index.module.scss'
 import { SearchResults } from './SearchResults'
 
-export const SearchPage: React.FC = () => {
+interface SearchPageProps extends WebviewPageProps {}
+
+export const SearchPage: React.FC<SearchPageProps> = () => {
     console.log('test', window.location.pathname)
 
     return (
