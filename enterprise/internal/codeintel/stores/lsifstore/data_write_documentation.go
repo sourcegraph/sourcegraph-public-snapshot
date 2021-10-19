@@ -408,7 +408,7 @@ func (s *Store) replaceSearchRecords(
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Create temporary table symmetric to lsif_data_docs_search_$SUFFIX without the fields that have
+	// Create temporary table symmetric to lsif_data_docs_search_$SUFFIX without the fields that would have
 	// the same value for the same upload. We'll insert these shared values all at once to save on query
 	// bandwidth.
 	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(insertSearchRecordsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
