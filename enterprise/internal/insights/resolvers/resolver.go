@@ -66,8 +66,8 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return &dashboardConnectionResolver{
-		insightsDatabase: r.insightsDatabase,
-		dashboardStore:   store.NewDashboardStore(r.insightsDatabase),
-		args:             args,
+		dashboardStore: store.NewDashboardStore(r.insightsDatabase),
+		insightStore:   store.NewInsightStore(r.insightsDatabase),
+		args:           args,
 	}, nil
 }

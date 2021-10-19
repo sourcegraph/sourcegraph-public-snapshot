@@ -3,29 +3,23 @@ package resolvers
 import (
 	"context"
 
+	"github.com/graph-gophers/graphql-go/relay"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
 var _ graphqlbackend.InsightViewResolver = &insightViewResolver{}
-
-// type stubInsightViewResolver struct {
-// 	id string
-// }
-//
-// func (s *stubInsightViewResolver) ID() graphql.ID {
-// 	return relay.MarshalID("insight_view", s.id)
-// }
-//
-// func (s *stubInsightViewResolver) VeryUniqueResolver() bool {
-// 	return true
-// }
+var _ graphqlbackend.LineChartInsightViewPresentation = &lineChartInsightViewPresentation{}
 
 type insightViewResolver struct {
+	view *types.Insight
 }
 
 func (i *insightViewResolver) ID() graphql.ID {
-	panic("implement me")
+	return relay.MarshalID("insight_view", i.view.UniqueID)
 }
 
 func (i *insightViewResolver) DefaultFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
@@ -41,7 +35,7 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 }
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.LineChartInsightViewPresentation, error) {
-	panic("implement me")
+	return &lineChartInsightViewPresentation{view: i.view}, nil
 }
 
 func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.SearchInsightDataSeriesDefinitionResolver, error) {
@@ -49,5 +43,17 @@ func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]grap
 }
 
 func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (graphqlbackend.CreateInsightResultResolver, error) {
+	panic("implement me")
+}
+
+type lineChartInsightViewPresentation struct {
+	view *types.Insight
+}
+
+func (l *lineChartInsightViewPresentation) Title(ctx context.Context) (string, error) {
+	return l.view.Title, nil
+}
+
+func (l *lineChartInsightViewPresentation) SeriesPresentation(ctx context.Context) ([]graphqlbackend.LineChartDataSeriesPresentationResolver, error) {
 	panic("implement me")
 }
