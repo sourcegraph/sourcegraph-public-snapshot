@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
@@ -290,6 +291,9 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.BackfillQueuedAt,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
+			pq.Array(&temp.Repositories),
+			&temp.SampleIntervalUnit,
+			&temp.SampleIntervalValue,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -521,7 +525,7 @@ returning id;`
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after)
+                            next_recording_after, last_snapshot_at, next_snapshot_after)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
@@ -529,7 +533,7 @@ const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.recording_interval_days, i.last_snapshot_at, i.next_snapshot_after
+i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories, i.sample_interval_unit, i.sample_interval_value
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -540,6 +544,6 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
 WHERE %s
 `
