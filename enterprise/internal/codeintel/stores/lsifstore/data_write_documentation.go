@@ -553,13 +553,22 @@ ins AS (
 	FROM t_lsif_data_docs_search_$SUFFIX source
 	RETURNING 1
 ),
-del AS (
-	DELETE FROM lsif_data_docs_search_$SUFFIX
+deletion_candidates AS (
+	SELECT id
+	FROM lsif_data_docs_search_$SUFFIX
 	WHERE
 		repo_id = %s AND
 		dump_root = %s AND
 		lang_name_id = %s AND
 		dump_id != %s
+
+	-- Lock these rows in a deterministic order so that we don't deadlock with other processes
+	-- updating the lsif_data_docs_search_* tables.
+	ORDER BY id FOR UPDATE
+),
+del AS (
+	DELETE FROM lsif_data_docs_search_$SUFFIX
+	WHERE id IN (SELECT id FROM deletion_candidates)
 	RETURNING 1
 )
 SELECT
