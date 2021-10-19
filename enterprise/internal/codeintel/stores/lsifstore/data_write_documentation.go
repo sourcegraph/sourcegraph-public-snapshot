@@ -397,23 +397,25 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 const purgeDocumentationSearchOldData = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
 WITH
-	langs AS (
-		SELECT id FROM lsif_data_docs_search_lang_names_$SUFFIX
-		WHERE tsv = %s
-	),
-	candidates AS (
-		SELECT dump_id FROM lsif_data_docs_search_$SUFFIX
-		WHERE repo_id=%s
-		AND dump_root=%s
+target_langs AS (
+	SELECT id
+	FROM lsif_data_docs_search_lang_names_$SUFFIX
+	WHERE tsv = %s
+),
+candidates AS (
+	SELECT id
+	FROM lsif_data_docs_search_$SUFFIX
+	WHERE
+		repo_id = %s AND
+		dump_root = %s AND
+		lang_name_id IN (SELECT id FROM target_langs)
 
-		-- Lock these rows in a deterministic order so that we don't deadlock with other processes
-		-- updating the lsif_data_docs_search_* tables.
-		ORDER BY dump_id FOR UPDATE
-	)
+	-- Lock these rows in a deterministic order so that we don't deadlock with other
+	-- processes updating the lsif_data_docs_search_* tables.
+	ORDER BY id FOR UPDATE
+)
 DELETE FROM lsif_data_docs_search_$SUFFIX
-WHERE dump_id = ANY(SELECT dump_id FROM candidates)
-AND lang_name_id = ANY(SELECT id FROM langs)
-RETURNING dump_id
+WHERE id IN (SELECT id FROM candidates)
 `
 
 const writeDocumentationSearchLangNames = `
