@@ -190,8 +190,10 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	sourcer := repos.NewSourcer(httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
-
+	var sourcer repos.Sourcer
+	if sourcer = s.Sourcer; sourcer == nil {
+		sourcer = repos.NewSourcer(httpcli.ExternalClientFactory, repos.WithDB(s.Handle().DB()))
+	}
 	src, err := sourcer(&types.ExternalService{
 		ID:          req.ExternalService.ID,
 		Kind:        req.ExternalService.Kind,
