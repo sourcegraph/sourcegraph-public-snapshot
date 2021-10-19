@@ -4,11 +4,10 @@ import { distinctUntilChanged, filter } from 'rxjs/operators'
 import { observeStorageKey, setStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
 import { RepoIsBlockedForCloudError } from '../../code-hosts/shared/errors'
-import { logger } from '../../code-hosts/shared/util/logger'
 import { CLOUD_SOURCEGRAPH_URL, isCloudSourcegraphUrl } from '../../util/context'
 
-import { firstURLWhereRepoExists } from './lib/firstUrlWhereRepoExists'
 import { isInBlocklist } from './lib/isInBlocklist'
+import { isRepoCloned } from './lib/isRepoCloned'
 
 const CLOUD_SUPPORTED_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
 const STORAGE_AREA = 'sync'
@@ -73,23 +72,26 @@ export const SourcegraphUrlService = (() => {
          * Updates sourcegraphURL to use based on the rawRepoName, blocklist, self-hosted URL
          */
         use: async (rawRepoName: string): Promise<void> => {
-            const isCloudBlocked = isBlocked(rawRepoName, blocklist.value)
             const selfHostedUrl = selfHostedSourcegraphURL.value
-            const URLs = [
-                ...(!isCloudBlocked && isCloudSupportedCodehost(CLOUD_SOURCEGRAPH_URL) ? [CLOUD_SOURCEGRAPH_URL] : []),
-                selfHostedUrl,
-            ].filter(Boolean) as string[]
 
-            const detectedURL = await firstURLWhereRepoExists(URLs, rawRepoName)
-
-            if (detectedURL) {
-                logger.info('Detected sourcegraph', detectedURL)
-                currentSourcegraphURL.next(detectedURL)
-            } else if (isCloudBlocked && selfHostedUrl) {
-                logger.info('Repo is blocked. Falling back to self-hosted URL', detectedURL)
+            // 1. repo is in blocklist for cloud
+            if (isBlocked(rawRepoName, blocklist.value)) {
+                if (selfHostedUrl) {
+                    // 1.1. use self-hosted if it exist
+                    currentSourcegraphURL.next(selfHostedUrl)
+                } else {
+                    // 1.2 throw error otherwise
+                    throw new RepoIsBlockedForCloudError('Repository is in blocklist.')
+                }
+            } else if (await isRepoCloned(CLOUD_SOURCEGRAPH_URL, rawRepoName)) {
+                // 3. repo exist in cloud
+                currentSourcegraphURL.next(CLOUD_SOURCEGRAPH_URL)
+            } else if (selfHostedUrl && (await isRepoCloned(selfHostedUrl, rawRepoName))) {
+                // 4. repo exist in self-hosted
                 currentSourcegraphURL.next(selfHostedUrl)
-            } else if (isCloudBlocked) {
-                throw new RepoIsBlockedForCloudError('Repository is in blocklist.')
+            } else {
+                // 5. default use cloud
+                currentSourcegraphURL.next(CLOUD_SOURCEGRAPH_URL)
             }
         },
         /**

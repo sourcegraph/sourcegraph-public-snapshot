@@ -16,31 +16,20 @@ const QUERY = gql`
         }
     }
 `
-const isRepoCloned = (sourcegraphURL: string, repoName: string): Observable<boolean> =>
+export const isRepoCloned = (sourcegraphURL: string, repoName: string): Promise<boolean> =>
     from(
         background.requestGraphQL<GQL.IQuery>({
             request: QUERY,
             variables: { repoName },
             sourcegraphURL,
         })
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ repository }) => !!repository?.mirrorInfo?.cloned),
-        catchError(error => {
-            logger.error(error)
-            return of(false)
-        })
     )
-
-/**
- * Determines sourcegraph instance URL where a given rawRepoName exists.
- */
-export const firstURLWhereRepoExists = async (URLs: string[], rawRepoName: string): Promise<string | undefined> => {
-    for (const url of URLs) {
-        const isCloned = await isRepoCloned(url, rawRepoName).toPromise()
-        if (isCloned) {
-            return url
-        }
-    }
-    return undefined
-}
+        .pipe(
+            map(dataOrThrowErrors),
+            map(({ repository }) => !!repository?.mirrorInfo?.cloned),
+            catchError(error => {
+                logger.error(error)
+                return of(false)
+            })
+        )
+        .toPromise()
