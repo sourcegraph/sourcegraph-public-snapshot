@@ -778,7 +778,7 @@ func TestServer_handleExternalServiceSync(t *testing.T) {
 			}
 			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
 			w := httptest.NewRecorder()
-			s := &Server{Store: &repos.Store{}, Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			s := &Server{Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
 			s.handleExternalServiceSync(w, r)
 			if w.Code != test.wantErrCode {
 				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)
