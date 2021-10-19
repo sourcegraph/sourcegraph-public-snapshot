@@ -296,10 +296,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 
 	// Truncate the search index size if it exceeds our configured limit now.
-	for _, suffix := range []string{"public", "private"} {
-		if err := tx.truncateDocumentationSearchIndexSize(ctx, suffix); err != nil {
-			return errors.Wrap(err, "truncating documentation search index size")
-		}
+	if err := tx.truncateDocumentationSearchIndexSize(ctx, tableSuffix); err != nil {
+		return errors.Wrap(err, "truncateDocumentationSearchIndexSize")
 	}
 
 	return nil
