@@ -8720,7 +8720,7 @@ Query: `max by (type) (src_repoupdater_perms_syncer_stale_perms)`
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-no-perms) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100102` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -8733,13 +8733,32 @@ Query: `max by (type) (src_repoupdater_perms_syncer_no_perms)`
 
 <br />
 
+#### repo-updater: perms_syncer_outdated_perms
+
+<p class="subtitle">Number of entities with outdated permissions</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-outdated-perms) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`
+
+</details>
+
+<br />
+
 #### repo-updater: perms_syncer_sync_duration
 
 <p class="subtitle">95th permissions sync duration</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-duration) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100110` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -8758,7 +8777,7 @@ Query: `histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_s
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-queue-size) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100111` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100121` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
@@ -8777,7 +8796,7 @@ Query: `max(src_repoupdater_perms_syncer_queue_size)`
 
 Refer to the [alert solutions reference](./alert_solutions.md#repo-updater-perms-syncer-sync-errors) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100120` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100130` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
 
