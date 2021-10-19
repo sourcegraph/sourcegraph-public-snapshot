@@ -23,15 +23,15 @@ export enum SectionID {
 }
 
 const SearchContext: React.FunctionComponent<{}> = () => (
-    <>
-        <div className="btn text-monospace">
-            <code>
+    <div className={classNames('search-context-dropdown', styles.searchContext)}>
+        <div className="btn btn-link text-monospace search-context-dropdown__button dropdown-toggle">
+            <code className="search-context-dropdown__button-content">
                 <span className="search-filter-keyword">context:</span>
                 global
             </code>
         </div>
         <div className={searchBoxStyle.searchBoxSeparator} />
-    </>
+    </div>
 )
 
 const noop = (): void => {}
@@ -47,32 +47,50 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     query,
     patternType = SearchPatternType.literal,
 }) => (
-    <p>
-        <div
-            className={classNames(
-                searchBoxStyle.searchBox,
-                searchBoxStyle.searchBoxBackgroundContainer,
-                styles.searchBox
-            )}
-        >
-            {showSearchContext && <SearchContext />}
-            <span className={searchBoxStyle.searchBoxFocusContainer}>
-                <SyntaxHighlightedSearchQuery query={query} />
-            </span>
-            <Toggles
-                navbarSearchQuery={query}
-                caseSensitive={false}
-                history={null}
-                location={null}
-                patternType={patternType}
-                setCaseSensitivity={noop}
-                setPatternType={noop}
-                settingsCascade={{ subjects: null, final: {} }}
-                showSearchContext={showSearchContext}
-                versionContext={undefined}
-            />
+    <div className={styles.searchInputExample}>
+        <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchBox)}>
+            <div
+                className={classNames(
+                    searchBoxStyle.searchBoxBackgroundContainer,
+                    styles.fakeSearchBoxBackgroundContainer,
+                    'flex-shrink-past-contents'
+                )}
+            >
+                {showSearchContext && <SearchContext />}
+                <div
+                    className={classNames(
+                        searchBoxStyle.searchBoxFocusContainer,
+                        styles.fakeSearchBoxFocusContainer,
+                        'flex-shrink-past-contents'
+                    )}
+                >
+                    <div
+                        className={classNames(
+                            searchBoxStyle.searchBoxInput,
+                            styles.fakeSearchInput,
+                            'flex-shrink-past-contents'
+                        )}
+                    >
+                        <SyntaxHighlightedSearchQuery query={query} />
+                    </div>
+                </div>
+                <div className={styles.fakeSearchBoxToggles}>
+                    <Toggles
+                        navbarSearchQuery={query}
+                        caseSensitive={false}
+                        history={null}
+                        location={null}
+                        patternType={patternType}
+                        setCaseSensitivity={noop}
+                        setPatternType={noop}
+                        settingsCascade={{ subjects: null, final: {} }}
+                        showSearchContext={showSearchContext}
+                        versionContext={undefined}
+                    />
+                </div>
+            </div>
         </div>
-    </p>
+    </div>
 )
 
 interface ContainerProps {

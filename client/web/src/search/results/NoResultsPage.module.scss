@@ -3,7 +3,7 @@
 .root {
     display: flex;
 
-    @media (--md-breakpoint-down) {
+    @media (--lg-breakpoint-down) {
         flex-direction: column-reverse;
     }
 }
@@ -32,7 +32,7 @@
     background-color: transparent;
     border: 0;
 
-    @media (--md-breakpoint-down) {
+    @media (--lg-breakpoint-down) {
         display: flex;
         flex-wrap: wrap;
 
@@ -46,7 +46,7 @@
     margin-bottom: 1rem;
 }
 
-.containerContent > p:last-of-type {
+.containerContent > :last-child {
     margin-bottom: 0;
 }
 
@@ -57,15 +57,60 @@
     align-items: center;
 }
 
-.searchBox {
+.searchInputExample {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.searchContext {
+    display: flex;
+    align-items: center;
+
+    @media (--xs-breakpoint-down) {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.searchContext > :global(.btn) {
+    @media (--xs-breakpoint-down) {
+        background-color: var(--color-bg-1);
+    }
+}
+
+.fakeSearchBox {
+    @media (--xs-breakpoint-down) {
+        background-color: var(--body-bg);
+    }
+}
+
+.fakeSearchBoxBackgroundContainer {
     background-color: var(--body-bg);
+
+    @media (--sm-breakpoint-up) {
+        display: flex;
+        padding: 0.25rem 0;
+    }
 }
 
-.marker {
-    border: 1px solid red;
-    height: 10px;
+.fakeSearchBoxFocusContainer {
+    @media (--xs-breakpoint-down) {
+        display: block;
+    }
 }
 
-.annotadedExampleContainer {
-    display: grid;
+.fakeSearchInput {
+    white-space: nowrap;
+    overflow-x: auto;
+    margin-right: 1rem;
+
+    @media (--xs-breakpoint-down) {
+        background-color: var(--input-bg);
+        display: block;
+    }
+}
+
+.fakeSearchBoxToggles {
+    @media (--xs-breakpoint-down) {
+        margin-top: 0.75rem;
+    }
 }
