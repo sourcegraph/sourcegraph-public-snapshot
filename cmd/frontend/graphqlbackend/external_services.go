@@ -56,6 +56,17 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		case "User":
 			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
 		case "Org":
+			ok, err := EnterpriseResolvers.licenseResolver.EnterpriseLicenseHasFeature(ctx,
+				&EnterpriseLicenseHasFeatureArgs{
+					Feature: "cloud",
+				},
+			)
+			if err != nil {
+				return nil, err
+			} else if !ok {
+				return nil, errors.New("adding organization external services is not allowed")
+			}
+
 			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceOrgID)
 		default:
 			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
