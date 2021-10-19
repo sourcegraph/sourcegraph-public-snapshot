@@ -2,10 +2,11 @@
 set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
+export CNI_VERSION=v0.9.1
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
-export EXPORTER_EXPORTER_VERSION=v0.4.5
+export EXPORTER_EXPORTER_VERSION=0.4.5
 
 ## Install ops agent
 ## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
@@ -75,6 +76,9 @@ function install_ignite() {
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
+
+  mkdir -p /opt/cni/bin
+  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
 
 ## Install and configure executor service
@@ -147,15 +151,13 @@ ExecStart=/usr/local/bin/node_exporter \
   --collector.disable-defaults \
   --collector.cpu \
   --collector.diskstats \
-  --collector.exec \
   --collector.filesystem \
   --collector.meminfo \
-  --collector.cpu \
-  --collector.netclass
-  --collector.netdev
-  --collector.netstat
-  --collector.softnet
-  --collector.pressure
+  --collector.netclass \
+  --collector.netdev \
+  --collector.netstat \
+  --collector.softnet \
+  --collector.pressure \
   --collector.vmstat
 [Install]
 WantedBy=multi-user.target
@@ -238,6 +240,7 @@ install_ignite
 # Services
 install_executor
 install_node_exporter
+install_exporter_exporter
 
 # Service prep and cleanup
 generate_ignite_base_image

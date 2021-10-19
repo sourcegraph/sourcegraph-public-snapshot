@@ -95,7 +95,7 @@ export interface BackgroundPageApi {
     requestGraphQL<T, V = object>(options: {
         request: string
         variables: V
-        sourcegraphURL?: string
+        sourcegraphURL: string
     }): Promise<GraphQLResult<T>>
     notifyPrivateCloudError(hasPrivateCloudError: boolean): Promise<void>
     checkPrivateCloudError(tabId: number): Promise<boolean>
