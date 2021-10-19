@@ -526,7 +526,7 @@ const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
