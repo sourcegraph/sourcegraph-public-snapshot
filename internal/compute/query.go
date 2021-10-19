@@ -34,6 +34,7 @@ func RegexpFromQuery(q string) (*regexp.Regexp, error) {
 		if !node.Negated {
 			return regexp.Compile(node.Value)
 		}
+		return nil, errors.New("compute endpoint expects a non-negated regular expression pattern")
 	}
 	// unreachable
 	return nil, nil
