@@ -274,11 +274,17 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		tableSuffix = "private"
 	}
 
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// This upload is for a commit on the default branch of the repository, so it is eligible for API
 	// docs search indexing. It will replace any existing data that we have or this unique (repo_id, lang, root)
 	// tuple in either table so we go ahead and purge the old data now.
 	for _, suffix := range []string{"public", "private"} {
-		if err := s.Exec(ctx, sqlf.Sprintf(
+		if err := tx.Exec(ctx, sqlf.Sprintf(
 			strings.ReplaceAll(purgeDocumentationSearchOldData, "$SUFFIX", suffix),
 			textSearchVector(languageOrIndexerName), // langs CTE tsv
 			upload.RepositoryID,
@@ -289,7 +295,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 
 	// Upsert the language name.
-	langNameID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
+	langNameID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(writeDocumentationSearchLangNames, "$SUFFIX", tableSuffix),
 		languageOrIndexerName,                   // lang_name
 		textSearchVector(languageOrIndexerName), // tsv
@@ -303,7 +309,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 
 	// Upsert the repo name.
-	repoNameID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
+	repoNameID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(writeDocumentationSearchRepoNames, "$SUFFIX", tableSuffix),
 		upload.RepositoryName,                            // repo_name
 		textSearchVector(upload.RepositoryName),          // tsv
@@ -328,7 +334,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			tagsSlice = append(tagsSlice, string(tag))
 		}
 		tags := strings.Join(tagsSlice, " ")
-		tagsID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
+		tagsID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 			strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
 			tags,                   // tags
 			textSearchVector(tags), // tsv
@@ -344,7 +350,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		// Insert the search result.
 		label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
 		detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
-		return s.Exec(ctx, sqlf.Sprintf(
+		return tx.Exec(ctx, sqlf.Sprintf(
 			strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
 			upload.RepositoryID, // repo_id
 			upload.ID,           // dump_id
@@ -375,7 +381,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 
 	// Truncate the search index size if it exceeds our configured limit now.
 	for _, suffix := range []string{"public", "private"} {
-		if err := s.truncateDocumentationSearchIndexSize(ctx, suffix); err != nil {
+		if err := tx.truncateDocumentationSearchIndexSize(ctx, suffix); err != nil {
 			return errors.Wrap(err, "truncating documentation search index size")
 		}
 	}
