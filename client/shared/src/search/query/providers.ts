@@ -30,17 +30,14 @@ const SCANNER_STATE: Monaco.languages.IState = {
 const printable = ' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
 const latin1Alpha = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ'
 
-function serializeFilterTokens(tokens: Token[], filterType: FilterType): string {
-    return tokens
-        .filter((token): token is Filter => isFilterType(token, filterType))
-        .map(filter => (filter.value ? `${filter.field.value}:${filter.value.value}` : ''))
-        .filter(filter => !!filter)
-        .join(' ')
-}
-
 function serializeFilters(tokens: Token[], filterTypes: FilterType[]): string {
+    const serializeFilterTokens = (filterType: FilterType): string[] =>
+        tokens
+            .filter((token): token is Filter => isFilterType(token, filterType))
+            .map(filter => (filter.value ? `${filter.field.value}:${filter.value.value}` : ''))
+
     return filterTypes
-        .map(filter => serializeFilterTokens(tokens, filter))
+        .flatMap(serializeFilterTokens)
         .filter(serialized => !!serialized)
         .join(' ')
 }
