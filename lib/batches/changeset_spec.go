@@ -86,9 +86,10 @@ type ChangesetSpec struct {
 // MarshalJSON overwrites the default behavior of the json lib while unmarshalling
 // a *ChangesetSpec. We explicitly only set Published, when it's non-nil. Due to
 // it not being a pointer, omitempty does nothing. That causes it to fail schema
-// validation. TODO: we should not need this. This is the easiest workaround for
-// now, without risking breaking anything right before the release. Ideally, we
-// split up this type into two separate ones in the future.
+// validation.
+// TODO: This is the easiest workaround for now, without risking breaking anything
+// right before the release. Ideally, we split up this type into two separate ones
+// in the future.
 // See https://github.com/sourcegraph/sourcegraph/issues/25968.
 func (c *ChangesetSpec) MarshalJSON() ([]byte, error) {
 	v := struct {
