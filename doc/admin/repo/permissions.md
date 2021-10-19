@@ -29,7 +29,8 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
    "authorization": {}
 }
 ```
-> NOTE: The Github url used for settip up authentication must be the same provided for the Github code host connection for permission syncing to work properly.
+
+> NOTE: The Github url used to setup authentication must match the url for Github code host connection for permission syncing to work .
 
 > WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
