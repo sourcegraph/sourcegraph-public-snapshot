@@ -323,61 +323,114 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return fmt.Errorf("failed to upsert repo name")
 	}
 
-	handler := func(node *precise.DocumentationNode) error {
-		if node.Documentation.SearchKey == "" {
+	// Create temporary table symmetric to lsif_data_documentation_search_$SUFFIX without the fields
+	// that have the same value for the same upload. We'll insert these shared values all at once to
+	// save on query bandwidth
+	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(writeDocumentationSearchTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
+		return err
+	}
+
+	var count uint32
+
+	inserter := func(inserter *batch.Inserter) error {
+		handler := func(node *precise.DocumentationNode) error {
+			if node.Documentation.SearchKey == "" {
+				return nil
+			}
+
+			// Upsert the tags sequence.
+			tagsSlice := make([]string, 0, len(node.Documentation.Tags))
+			for _, tag := range node.Documentation.Tags {
+				tagsSlice = append(tagsSlice, string(tag))
+			}
+			tags := strings.Join(tagsSlice, " ")
+			tsv := textSearchVector(tags)
+			tagsID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+				strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
+				tags, // tags
+				tsv,  // tsv
+				tsv,  // union tsv query
+			)))
+			if err != nil {
+				return errors.Wrap(err, "upserting tags")
+			}
+			if !exists {
+				return fmt.Errorf("failed to upsert tags")
+			}
+
+			// Insert the search result.
+			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
+			detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
+
+			if err := inserter.Insert(
+				ctx,
+				upload.RepositoryID, // repo_id
+				upload.ID,           // dump_id
+				upload.Root,         // dump_root
+				node.PathID,         // path_id
+				detail,              // detail
+				langNameID,          // lang_name_id
+				repoNameID,          // repo_name_id
+				tagsID,              // tags_id
+
+				node.Documentation.SearchKey,                            // search_key
+				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
+				textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
+
+				label,                            // label
+				textSearchVector(label),          // label_tsv
+				textSearchVector(reverse(label)), // label_reverse_tsv
+			); err != nil {
+				return err
+			}
+
+			atomic.AddUint32(&count, 1)
 			return nil
 		}
 
-		// Upsert the tags sequence.
-		tagsSlice := make([]string, 0, len(node.Documentation.Tags))
-		for _, tag := range node.Documentation.Tags {
-			tagsSlice = append(tagsSlice, string(tag))
-		}
-		tags := strings.Join(tagsSlice, " ")
-		tsv := textSearchVector(tags)
-		tagsID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-			strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
-			tags, // tags
-			tsv,  // tsv
-			tsv,  // union tsv query
-		)))
-		if err != nil {
-			return errors.Wrap(err, "upserting tags")
-		}
-		if !exists {
-			return fmt.Errorf("failed to upsert tags")
+		// Index each page.
+		for _, page := range pages {
+			traceLog(log.String("page", page.Tree.PathID))
+			if err := walkDocumentationNode(page.Tree, handler); err != nil {
+				return err
+			}
 		}
 
-		// Insert the search result.
-		label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
-		detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
-		return tx.Exec(ctx, sqlf.Sprintf(
-			strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
-			upload.RepositoryID, // repo_id
-			upload.ID,           // dump_id
-			upload.Root,         // dump_root
-			node.PathID,         // path_id
-			detail,              // detail
-			langNameID,          // lang_name_id
-			repoNameID,          // repo_name_id
-			tagsID,              // tags_id
-
-			node.Documentation.SearchKey,                            // search_key
-			textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
-			textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
-
-			label,                            // label
-			textSearchVector(label),          // label_tsv
-			textSearchVector(reverse(label)), // label_reverse_tsv
-		))
+		return nil
 	}
 
-	// Index each page.
-	for _, page := range pages {
-		traceLog(log.String("page", page.Tree.PathID))
-		if err := walkDocumentationNode(page.Tree, handler); err != nil {
-			return err
-		}
+	// Bulk insert all the unique column values into the temporary table
+	if err := withBatchInserter(
+		ctx,
+		tx.Handle().DB(),
+		"t_lsif_data_documentation_search_"+tableSuffix,
+		[]string{
+			"repo_id",
+			"dump_id",
+			"dump_root",
+			"path_id",
+			"detail",
+			"lang_name_id",
+			"repo_name_id",
+			"tags_id",
+			"search_key",
+			"search_key_tsv",
+			"search_key_reverse_tsv",
+			"label",
+			"label_tsv",
+			"label_reverse_tsv",
+		},
+		inserter,
+	); err != nil {
+		return err
+	}
+	traceLog(log.Int("numSearchRecords", int(count)))
+
+	// Insert the values from the temporary table into the target table. Here we insert
+	// the value that are the same for ever row instead of sending them on each of the
+	// batched insert calls.
+	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix))); err != nil {
+		return err
 	}
 
 	// Truncate the search index size if it exceeds our configured limit now.
@@ -452,9 +505,29 @@ UNION
 	SELECT id FROM lsif_data_docs_search_tags_$SUFFIX WHERE tsv = %s
 `
 
+const writeDocumentationSearchTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
+CREATE TEMPORARY TABLE t_lsif_data_documentation_search (
+	repo_id INTEGER NOT NULL,
+	dump_id INTEGER NOT NULL,
+	dump_root TEXT NOT NULL,
+	path_id TEXT NOT NULL,
+	detail TEXT NOT NULL,
+	lang_name_id INTEGER NOT NULL,
+	repo_name_id INTEGER NOT NULL,
+	tags_id INTEGER NOT NULL,
+	search_key TEXT NOT NULL,
+	search_key_tsv TSVECTOR NOT NULL,
+	search_key_reverse_tsv TSVECTOR NOT NULL,
+	label TEXT NOT NULL,
+	label_tsv TSVECTOR NOT NULL,
+	label_reverse_tsv TSVECTOR NOT NULL
+) ON COMMIT DROP
+`
+
 const writeDocumentationSearchInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
-INSERT INTO lsif_data_docs_search_$SUFFIX (
+INSERT INTO lsif_data_documentation_search_$SUFFIX (
 	repo_id,
 	dump_id,
 	dump_root,
@@ -469,7 +542,23 @@ INSERT INTO lsif_data_docs_search_$SUFFIX (
 	label,
 	label_tsv,
 	label_reverse_tsv
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+)
+SELECT
+	source.repo_id,
+	source.dump_id,
+	source.dump_root,
+	source.path_id,
+	source.detail,
+	source.lang_name_id,
+	source.repo_name_id,
+	source.tags_id,
+	source.search_key,
+	source.search_key_tsv,
+	source.search_key_reverse_tsv,
+	source.label,
+	source.label_tsv,
+	source.label_reverse_tsv
+FROM t_lsif_data_documentation_search source
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
