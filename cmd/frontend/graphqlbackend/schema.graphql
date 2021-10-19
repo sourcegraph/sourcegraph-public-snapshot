@@ -1245,12 +1245,6 @@ type Query {
         The search query (such as "foo" or "repo:myrepo foo").
         """
         query: String = ""
-
-        """
-        (experimental) Optionally specify the versionContext. If not specified the
-        default version context is used (all repositories on the default branch).
-        """
-        versionContext: String
     ): Search
     """
     All saved searches configured for the current user, merged from all configurations.
@@ -1260,10 +1254,6 @@ type Query {
     All repository groups for the current user, merged from all configurations.
     """
     repoGroups: [RepoGroup!]!
-    """
-    (experimental) All version contexts.
-    """
-    versionContexts: [VersionContext!]!
     """
     (experimental) Return the parse tree of a search query.
     """
@@ -2522,22 +2512,6 @@ type ExternalRepository {
     Example: For GitHub.com, this is "https://github.com/".
     """
     serviceID: String!
-}
-
-"""
-(experimental) A version context. Used to change the set of default repository and revisions searched.
-Note: We do not expose the list of repositories and revisions in the version context. This is intentional. However, if a need arises we can add it in.
-"""
-type VersionContext {
-    """
-    The name of the version context.
-    """
-    name: String!
-
-    """
-    The description of the version context.
-    """
-    description: String!
 }
 
 """

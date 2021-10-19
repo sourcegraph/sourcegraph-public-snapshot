@@ -2,7 +2,6 @@ package searchcontexts
 
 import (
 	"context"
-	"regexp"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -15,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const (
@@ -314,53 +312,4 @@ func GetSearchContextSpec(searchContext *types.SearchContext) string {
 		}
 		return searchContextSpecPrefix + namespaceName + "/" + searchContext.Name
 	}
-}
-
-func getVersionContextRepositoryRevisions(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) ([]*types.SearchContextRepositoryRevisions, error) {
-	repositoriesToRevisions := map[string][]string{}
-	for _, revision := range versionContext.Revisions {
-		repositoriesToRevisions[revision.Repo] = append(repositoriesToRevisions[revision.Repo], revision.Rev)
-	}
-
-	repositories := make([]string, 0, len(repositoriesToRevisions))
-	for repo := range repositoriesToRevisions {
-		repositories = append(repositories, repo)
-	}
-
-	repositoryNames, err := database.Repos(db).ListRepoNames(ctx, database.ReposListOptions{Names: repositories})
-	if err != nil {
-		return nil, err
-	}
-
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, len(repositoryNames))
-	for idx, repositoryName := range repositoryNames {
-		revisions := repositoriesToRevisions[string(repositoryName.Name)]
-		repositoryRevisions[idx] = &types.SearchContextRepositoryRevisions{Repo: repositoryName, Revisions: revisions}
-	}
-
-	return repositoryRevisions, nil
-}
-
-func getSearchContextFromVersionContext(versionContext *schema.VersionContext) *types.SearchContext {
-	searchContextName := regexp.MustCompile(`\s+`).ReplaceAllString(versionContext.Name, "_")
-	return &types.SearchContext{Name: searchContextName, Description: versionContext.Description, Public: true}
-}
-
-func ConvertVersionContextToSearchContext(ctx context.Context, db dbutil.DB, versionContext *schema.VersionContext) (*types.SearchContext, error) {
-	repositoryRevisions, err := getVersionContextRepositoryRevisions(ctx, db, versionContext)
-	if err != nil {
-		return nil, err
-	}
-
-	searchContext, err := CreateSearchContextWithRepositoryRevisions(
-		ctx,
-		db,
-		getSearchContextFromVersionContext(versionContext),
-		repositoryRevisions,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return searchContext, nil
 }

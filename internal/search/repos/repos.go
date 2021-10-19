@@ -30,7 +30,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Resolved struct {
@@ -102,22 +101,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	// If a version context is specified, gather the list of repository names
-	// to limit the results to these repositories.
-	var versionContextRepositories []string
-	var versionContext *schema.VersionContext
-	// If a ref is specified we skip using version contexts.
-	if len(includePatternRevs) == 0 && op.VersionContextName != "" {
-		versionContext, err = resolveVersionContext(op.VersionContextName)
-		if err != nil {
-			return Resolved{}, err
-		}
-
-		for _, revision := range versionContext.Revisions {
-			versionContextRepositories = append(versionContextRepositories, revision.Repo)
-		}
-	}
-
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
@@ -151,7 +134,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 		options := database.ReposListOptions{
 			IncludePatterns: includePatterns,
-			Names:           versionContextRepositories,
 			ExcludePattern:  UnionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &database.LimitOffset{Limit: limit + 1},
@@ -215,15 +197,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
 		var revs []search.RevisionSpecifier
-		// versionContext will be nil if the Query contains revision specifiers
-		if versionContext != nil {
-			for _, vcRepoRev := range versionContext.Revisions {
-				if vcRepoRev.Repo == string(repo.Name) {
-					repoRev.Repo = repo
-					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRev.Rev})
-				}
-			}
-		} else if len(searchContextRepositoryRevisions) > 0 {
+		if len(searchContextRepositoryRevisions) > 0 {
 			for _, repositoryRevisions := range searchContextRepositoryRevisions {
 				if repo.ID == repositoryRevisions.Repo.ID {
 					repoRev.Repo = repo
@@ -357,17 +331,6 @@ func UnionRegExps(patterns []string) string {
 		patterns2[i] = p
 	}
 	return strings.Join(patterns2, "|")
-}
-
-// NOTE: This function is not called if the version context is not used
-func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
-	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
-		if vc.Name == versionContext {
-			return vc, nil
-		}
-	}
-
-	return nil, errors.New("version context not found")
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.

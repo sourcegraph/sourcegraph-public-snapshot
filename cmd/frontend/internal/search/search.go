@@ -63,7 +63,6 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tr, ctx := trace.New(ctx, "search.ServeStream", args.Query,
 		trace.Tag{Key: "version", Value: args.Version},
 		trace.Tag{Key: "pattern_type", Value: args.PatternType},
-		trace.Tag{Key: "version_context", Value: args.VersionContext},
 	)
 	defer func() {
 		tr.SetError(err)
@@ -283,10 +282,9 @@ func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan
 	eventsC := make(chan streaming.SearchEvent)
 
 	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
-		Query:          a.Query,
-		Version:        a.Version,
-		PatternType:    strPtr(a.PatternType),
-		VersionContext: strPtr(a.VersionContext),
+		Query:       a.Query,
+		Version:     a.Version,
+		PatternType: strPtr(a.PatternType),
 
 		Stream: streaming.StreamFunc(func(event streaming.SearchEvent) {
 			eventsC <- event
@@ -328,11 +326,10 @@ func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlba
 }
 
 type args struct {
-	Query          string
-	Version        string
-	PatternType    string
-	VersionContext string
-	Display        int
+	Query       string
+	Version     string
+	PatternType string
+	Display     int
 
 	// Optional decoration parameters for server-side rendering a result set
 	// or subset. Decorations may specify, e.g., highlighting results with
@@ -355,7 +352,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 		Query:          get("q", ""),
 		Version:        get("v", "V2"),
 		PatternType:    get("t", ""),
-		VersionContext: get("vc", ""),
 		DecorationKind: get("dk", "html"),
 	}
 
