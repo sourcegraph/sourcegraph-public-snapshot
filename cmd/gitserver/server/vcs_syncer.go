@@ -124,6 +124,7 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.UR
 	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
+// FusionConfig allows configuration of the p4-fusion client
 type FusionConfig struct {
 	// Enabled: Enable the p4-fusion client for cloning and fetching repos
 	Enabled bool
