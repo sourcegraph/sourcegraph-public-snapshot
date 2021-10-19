@@ -100,7 +100,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Other considerations:** We should migrate this ping to use the new database after we finish the settings migration. 
 
-- Aggregation: total, at that moment 
+- Aggregation: total time, by insight type
 - Event Code: [InsightOrgVisible](https://sourcegraph.com/search?q=context:global+insightorgvisible+r:sourcegraph/sourcegraph%24&patternType=literal)
 - PRs: [#21671](https://github.com/sourcegraph/sourcegraph/pull/21671/files)
 - **Version Added:** 3.29
