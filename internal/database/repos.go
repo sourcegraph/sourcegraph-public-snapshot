@@ -610,9 +610,14 @@ type ReposListOptions struct {
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
 
-	// MinLastChanged filters against the LastChanged field for the repository
-	// on gitserver. The value is the time of the last git fetch which changed
-	// refs stored. IE the last time any branch changed (not just HEAD).
+	// MinLastChanged finds repository metadata or data that has changed since
+	// MinLastChanged. It filters against repos.UpdatedAt and
+	// gitserver.LastChanged.
+	//
+	// LastChanged is the time of the last git fetch which changed refs
+	// stored. IE the last time any branch changed (not just HEAD).
+	//
+	// UpdatedAt is the last time the metadata changed for a repository.
 	MinLastChanged time.Time
 
 	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
@@ -915,7 +920,7 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
 	if !opt.MinLastChanged.IsZero() {
-		where = append(where, sqlf.Sprintf("gr.last_changed >= %s", opt.MinLastChanged))
+		where = append(where, sqlf.Sprintf("(gr.last_changed >= %s OR repo.updated_at >= %s)", opt.MinLastChanged, opt.MinLastChanged))
 	}
 	if opt.NoPrivate {
 		where = append(where, sqlf.Sprintf("NOT private"))

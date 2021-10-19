@@ -651,31 +651,47 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	now := time.Now()
-	old := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
+	now := time.Now().UTC()
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now.Add(-time.Hour),
-	})[0]
-	new := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
+	})
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now,
-	})[0]
+	})
+
+	// Our test helpers don't do updated_at, so manually doing it.
+	_, err := db.Exec("update repo set updated_at = $1", now.Add(-24*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// will have update_at set to now, so should be included as often as new.
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "newMeta"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-24 * time.Hour),
+	})
+	_, err = db.Exec("update repo set updated_at = $1 where name = 'newMeta'", now)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		Name           string
 		MinLastChanged time.Time
-		Want           types.Repos
+		Want           []string
 	}{{
 		Name: "not specified",
-		Want: types.Repos{old, new},
+		Want: []string{"old", "new", "newMeta"},
 	}, {
 		Name:           "old",
 		MinLastChanged: now.Add(-24 * time.Hour),
-		Want:           types.Repos{old, new},
+		Want:           []string{"old", "new", "newMeta"},
 	}, {
 		Name:           "new",
 		MinLastChanged: now.Add(-time.Minute),
-		Want:           types.Repos{new},
+		Want:           []string{"new", "newMeta"},
 	}, {
 		Name:           "none",
 		MinLastChanged: now.Add(time.Minute),
@@ -683,14 +699,20 @@ func TestRepos_List_LastChanged(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			got, err := repos.List(ctx, ReposListOptions{
+			repos, err := repos.List(ctx, ReposListOptions{
 				OnlyCloned:     true,
 				MinLastChanged: test.MinLastChanged,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			assertJSONEqual(t, test.Want, got)
+			var got []string
+			for _, r := range repos {
+				got = append(got, string(r.Name))
+			}
+			if d := cmp.Diff(test.Want, got); d != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", d)
+			}
 		})
 	}
 }
