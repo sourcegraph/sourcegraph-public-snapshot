@@ -37,9 +37,9 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, recording_interval_days)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, 5),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, 6);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
