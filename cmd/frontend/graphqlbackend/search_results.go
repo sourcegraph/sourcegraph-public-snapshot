@@ -1542,8 +1542,10 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 					PatternInfo:     argsIndexed.PatternInfo,
 					UseFullDeadline: argsIndexed.UseFullDeadline,
 				}
-				// This code path implies not-only-searcher is run (3rd arg is true)
-				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, true)
+
+				notSearcherOnly := argsIndexed.Mode != search.SearcherOnly
+
+				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly)
 			})
 		}
 
