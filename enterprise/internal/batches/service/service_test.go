@@ -1700,6 +1700,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			startedAt := clock()
 			for _, repo := range rs {
 				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
@@ -1713,17 +1714,24 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = %s, finished_at = NULL WHERE id = %s", startedAt, job.ID)); err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			have, err := svc.ComputeBatchSpecState(ctx, spec)
+			have, err := svc.LoadBatchSpecStats(ctx, spec)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := btypes.BatchSpecStateProcessing; have != want {
-				t.Fatalf("wrong state for batch spec. want=%s, have=%s", want, have)
+			want := btypes.BatchSpecStats{
+				Workspaces: len(rs),
+				Executions: len(rs),
+				Processing: len(rs),
+				StartedAt:  startedAt,
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("wrong stats: %s", diff)
 			}
 		})
 	})

@@ -104,6 +104,19 @@ func (s BatchSpecState) Cancelable() bool {
 	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
 }
 
+// Started returns whether the execution of the BatchSpec has started.
+func (s BatchSpecState) Started() bool {
+	return s != BatchSpecStateQueued && s != BatchSpecStatePending
+}
+
+// Finished returns whether the execution of the BatchSpec has finished.
+func (s BatchSpecState) Finished() bool {
+	return s == BatchSpecStateCompleted ||
+		s == BatchSpecStateFailed ||
+		s == BatchSpecStateErrored ||
+		s == BatchSpecStateCanceled
+}
+
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.
 func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
 	if !spec.CreatedFromRaw {
