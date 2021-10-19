@@ -601,7 +601,6 @@ func normalizeTags(tags []protocol.Tag) string {
 	for _, tag := range tags {
 		s = append(s, string(tag))
 	}
-	// Can we sort these? Might reduce number of total rows in tags table
 
 	return strings.Join(s, " ")
 }
