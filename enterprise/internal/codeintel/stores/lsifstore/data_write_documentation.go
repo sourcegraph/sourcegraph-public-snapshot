@@ -364,14 +364,9 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 
 			if err := inserter.Insert(
 				ctx,
-				upload.RepositoryID, // repo_id
-				upload.ID,           // dump_id
-				upload.Root,         // dump_root
-				node.PathID,         // path_id
-				detail,              // detail
-				langNameID,          // lang_name_id
-				repoNameID,          // repo_name_id
-				tagsID,              // tags_id
+				node.PathID, // path_id
+				detail,      // detail
+				tagsID,      // tags_id
 
 				node.Documentation.SearchKey,                            // search_key
 				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
@@ -405,13 +400,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		tx.Handle().DB(),
 		"t_lsif_data_documentation_search_"+tableSuffix,
 		[]string{
-			"repo_id",
-			"dump_id",
-			"dump_root",
 			"path_id",
 			"detail",
-			"lang_name_id",
-			"repo_name_id",
 			"tags_id",
 			"search_key",
 			"search_key_tsv",
@@ -429,7 +419,14 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	// Insert the values from the temporary table into the target table. Here we insert
 	// the value that are the same for ever row instead of sending them on each of the
 	// batched insert calls.
-	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix))); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
+		upload.RepositoryID, // repo_id
+		upload.ID,           // dump_id
+		upload.Root,         // dump_root
+		langNameID,          // lang_name_id
+		repoNameID,          // repo_name_id
+	)); err != nil {
 		return err
 	}
 
@@ -508,13 +505,8 @@ UNION
 const writeDocumentationSearchTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
 CREATE TEMPORARY TABLE t_lsif_data_documentation_search (
-	repo_id INTEGER NOT NULL,
-	dump_id INTEGER NOT NULL,
-	dump_root TEXT NOT NULL,
 	path_id TEXT NOT NULL,
 	detail TEXT NOT NULL,
-	lang_name_id INTEGER NOT NULL,
-	repo_name_id INTEGER NOT NULL,
 	tags_id INTEGER NOT NULL,
 	search_key TEXT NOT NULL,
 	search_key_tsv TSVECTOR NOT NULL,
@@ -531,10 +523,10 @@ INSERT INTO lsif_data_documentation_search_$SUFFIX (
 	repo_id,
 	dump_id,
 	dump_root,
-	path_id,
-	detail,
 	lang_name_id,
 	repo_name_id,
+	path_id,
+	detail,
 	tags_id,
 	search_key,
 	search_key_tsv,
@@ -544,13 +536,13 @@ INSERT INTO lsif_data_documentation_search_$SUFFIX (
 	label_reverse_tsv
 )
 SELECT
-	source.repo_id,
-	source.dump_id,
-	source.dump_root,
+	%s, -- repo_id
+	%s, -- dump_id
+	%s, -- dump_root
+	%s, -- lang_name_id
+	%s, -- repo_name_id
 	source.path_id,
 	source.detail,
-	source.lang_name_id,
-	source.repo_name_id,
 	source.tags_id,
 	source.search_key,
 	source.search_key_tsv,
