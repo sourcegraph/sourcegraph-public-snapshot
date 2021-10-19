@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 // RegexpFromQuery extracts a single valid regular expression from a query. If
