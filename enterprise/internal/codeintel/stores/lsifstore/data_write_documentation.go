@@ -395,7 +395,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 
 	// Bulk insert all the unique column values into the temporary table
-	if err := withBatchInserter(
+	if err := batch.WithInserter(
 		ctx,
 		tx.Handle().DB(),
 		"t_lsif_data_documentation_search_"+tableSuffix,
