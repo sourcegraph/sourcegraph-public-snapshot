@@ -476,7 +476,7 @@ func (s *Store) replaceSearchRecords(
 	}
 
 	// Insert the values from the temporary table into the target table. Here we insert
-	// the value that are the same for ever row instead of sending them on each of the
+	// the value that are the same for every row instead of sending them on each of the
 	// batched insert calls.
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(insertSearchRecordsInsertQuery, "$SUFFIX", tableSuffix),
