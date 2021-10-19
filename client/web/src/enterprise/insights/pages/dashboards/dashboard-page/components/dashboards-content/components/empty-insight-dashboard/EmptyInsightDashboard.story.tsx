@@ -28,6 +28,6 @@ add('EmptyInsightDashboard', () => {
         },
         settingsKey: 'test',
     }
-    const settingsCascade = {} as any
-    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} settingsCascade={settingsCascade} />
+
+    return <EmptyInsightDashboard dashboard={dashboard} onAddInsight={noop} />
 })
