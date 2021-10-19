@@ -6,6 +6,7 @@ import (
 	"fmt"
 	stdlog "log"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -286,6 +287,9 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return errors.Wrap(err, "upsertLanguageName")
 	}
 
+	// gatherTags sorts the tags we'll be dealing with, This ensures that we will always
+	// try to bulk-insert the tags in the same order, which should avoid deadlock situations
+	// where overlapping tags are updated in different orders from different processors.
 	tagIDs, err := tx.upsertTags(ctx, gatherTags(pages), tableSuffix)
 	if err != nil {
 		return errors.Wrap(err, "upsertTags")
@@ -348,9 +352,9 @@ ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXClUDED.lang_name
 RETURNING id
 `
 
-func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tableSuffix string) (map[string]int, error) {
+func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix string) (map[string]int, error) {
 	inserter := func(inserter *batch.Inserter) error {
-		for tags := range tagMap {
+		for _, tags := range tags {
 			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
 				return err
 			}
@@ -359,7 +363,7 @@ func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tabl
 		return nil
 	}
 
-	tagIDs := make(map[string]int, len(tagMap))
+	tagIDs := make(map[string]int, len(tags))
 	returningScanner := func(rows *sql.Rows) error {
 		var tagID int
 		var tags string
@@ -579,7 +583,7 @@ func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise
 	return nil
 }
 
-func gatherTags(pages []*precise.DocumentationPageData) map[string]struct{} {
+func gatherTags(pages []*precise.DocumentationPageData) []string {
 	tagMap := map[string]struct{}{}
 	for _, page := range pages {
 		_ = walkDocumentationNode(page.Tree, func(node *precise.DocumentationNode) error {
@@ -591,7 +595,13 @@ func gatherTags(pages []*precise.DocumentationPageData) map[string]struct{} {
 		})
 	}
 
-	return tagMap
+	tags := make([]string, 0, len(tagMap))
+	for normalizedTags := range tagMap {
+		tags = append(tags, normalizedTags)
+	}
+	sort.Strings(tags)
+
+	return tags
 }
 
 func normalizeTags(tags []protocol.Tag) string {
