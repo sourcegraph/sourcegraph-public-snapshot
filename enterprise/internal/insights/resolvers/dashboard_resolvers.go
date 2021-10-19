@@ -27,6 +27,7 @@ var _ graphqlbackend.InsightsDashboardResolver = &insightsDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &stubDashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightViewResolver = &stubInsightViewResolver{}
 var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
+var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
 	insightsDatabase dbutil.DB
@@ -116,6 +117,40 @@ func (i *insightsDashboardResolver) ID() graphql.ID {
 
 func (i *insightsDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
 	return &stubDashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs}
+}
+
+func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
+	return &insightsPermissionGrantsResolver{
+		UserIdGrants: i.dashboard.UserIdGrants,
+		OrgIdGrants: i.dashboard.OrgIdGrants,
+		GlobalGrant: i.dashboard.GlobalGrant,
+	}
+}
+
+type insightsPermissionGrantsResolver struct {
+	UserIdGrants []int64;
+	OrgIdGrants []int64;
+	GlobalGrant bool;
+}
+
+func (i *insightsPermissionGrantsResolver) Users() []graphql.ID {
+	var marshalledUserIds []graphql.ID
+	for _, userIdGrant := range i.UserIdGrants {
+		marshalledUserIds = append(marshalledUserIds, graphqlbackend.MarshalUserID(int32(userIdGrant)))
+	}
+	return marshalledUserIds;
+}
+
+func (i *insightsPermissionGrantsResolver) Organizations() []graphql.ID {
+	var marshalledOrgIds []graphql.ID
+	for _, orgIdGrant := range i.OrgIdGrants {
+		marshalledOrgIds = append(marshalledOrgIds, graphqlbackend.MarshalOrgID(int32(orgIdGrant)))
+	}
+	return marshalledOrgIds;
+}
+
+func (i *insightsPermissionGrantsResolver) Global() bool {
+	return i.GlobalGrant;
 }
 
 type stubDashboardInsightViewConnectionResolver struct {

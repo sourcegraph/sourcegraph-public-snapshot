@@ -120,6 +120,9 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 			&temp.ID,
 			&temp.Title,
 			pq.Array(&temp.InsightIDs),
+			pq.Array(&temp.UserIdGrants),
+			pq.Array(&temp.OrgIdGrants),
+			&temp.GlobalGrant,
 		); err != nil {
 			return []*types.Dashboard{}, err
 		}
@@ -130,7 +133,10 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 
 const getDashboardsSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboards
-SELECT db.id, db.title, t.uuid_array as insight_view_unique_ids
+SELECT db.id, db.title, t.uuid_array as insight_view_unique_ids,
+	array_remove(array_agg(dg.user_id), null) as userId_grants,
+	array_remove(array_agg(dg.org_id), null) as orgId_grants,
+	bool_and(dg.global is true) as global_grant
 FROM dashboard db
          JOIN dashboard_grants dg ON db.id = dg.dashboard_id
          LEFT JOIN (SELECT ARRAY_AGG(iv.unique_id) AS uuid_array, div.dashboard_id
@@ -138,6 +144,7 @@ FROM dashboard db
                         JOIN dashboard_insight_view div ON iv.id = div.insight_view_id
                GROUP BY div.dashboard_id) t on t.dashboard_id = db.id
 WHERE %S
+GROUP BY db.id, t.uuid_array
 ORDER BY db.id
 %S;
 `
