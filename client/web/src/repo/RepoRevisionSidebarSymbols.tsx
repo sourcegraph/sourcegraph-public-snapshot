@@ -4,6 +4,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -45,7 +46,7 @@ interface SymbolNodeProps {
 const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }) => {
     const isActiveFunc = symbolIsActive(node.url, location) ? symbolIsActiveTrue : symbolIsActiveFalse
     return (
-        <li className="repo-revision-sidebar-symbols-node">
+        <li className="repo-revision-sidebar-symbols-node" data-tooltip={node.location.resource.path}>
             <NavLink
                 to={node.url}
                 isActive={isActiveFunc}
@@ -59,9 +60,6 @@ const SymbolNode: React.FunctionComponent<SymbolNodeProps> = ({ node, location }
                         <small>{node.containerName}</small>
                     </span>
                 )}
-                <span className="repo-revision-sidebar-symbols-node__path">
-                    <small>{node.location.resource.path}</small>
-                </span>
             </NavLink>
         </li>
     )
@@ -194,6 +192,7 @@ export const RepoRevisionSidebarSymbols: React.FunctionComponent<RepoRevisionSid
             {error && <ConnectionError errors={[error.message]} compact={true} />}
             {connection && (
                 <ConnectionList compact={true}>
+                    <Tooltip />
                     {connection.nodes.map((node, index) => (
                         <SymbolNode key={index} node={node} location={location} />
                     ))}

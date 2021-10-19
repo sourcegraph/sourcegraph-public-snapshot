@@ -2,7 +2,8 @@
 
 exports[`HoverOverlay actions and hover empty 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -13,10 +14,11 @@ exports[`HoverOverlay actions and hover empty 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <small
-      className="hover-overlay__hover-empty"
+      className="hoverEmpty"
     >
       No hover information available.
     </small>
@@ -26,7 +28,8 @@ exports[`HoverOverlay actions and hover empty 1`] = `
 
 exports[`HoverOverlay actions and hover error 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -37,10 +40,11 @@ exports[`HoverOverlay actions and hover error 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <div
-      className="hover-overlay__hover-error"
+      className="hoverError"
     >
       M2
     </div>
@@ -50,7 +54,8 @@ exports[`HoverOverlay actions and hover error 1`] = `
 
 exports[`HoverOverlay actions and hover loading 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -61,10 +66,11 @@ exports[`HoverOverlay actions and hover loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents hover-overlay__contents--loading"
+    className="hoverOverlayContents hoverOverlayContentsLoading"
+    data-testid="hover-overlay-contents"
   >
     <div
-      className="hover-overlay__loader-row"
+      className="loaderRow"
     >
       <div
         className="loading-spinner "
@@ -76,7 +82,8 @@ exports[`HoverOverlay actions and hover loading 1`] = `
 
 exports[`HoverOverlay actions and hover present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -87,20 +94,22 @@ exports[`HoverOverlay actions and hover present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
   </div>
   <div
-    className="hover-overlay__actions"
+    className="actions"
   >
     <ActionItem
       action={
@@ -110,7 +119,7 @@ exports[`HoverOverlay actions and hover present 1`] = `
         }
       }
       active={true}
-      className="hover-overlay__action test-tooltip-untitled"
+      className="action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -153,7 +162,8 @@ exports[`HoverOverlay actions and hover undefined 1`] = `null`;
 
 exports[`HoverOverlay actions empty 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -164,7 +174,8 @@ exports[`HoverOverlay actions empty 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   />
 </div>
 `;
@@ -173,7 +184,8 @@ exports[`HoverOverlay actions error 1`] = `null`;
 
 exports[`HoverOverlay actions error, hover present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -184,16 +196,18 @@ exports[`HoverOverlay actions error, hover present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
   </div>
 </div>
@@ -201,7 +215,8 @@ exports[`HoverOverlay actions error, hover present 1`] = `
 
 exports[`HoverOverlay actions loading 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -212,14 +227,16 @@ exports[`HoverOverlay actions loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   />
 </div>
 `;
 
 exports[`HoverOverlay actions present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -230,10 +247,11 @@ exports[`HoverOverlay actions present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   />
   <div
-    className="hover-overlay__actions"
+    className="actions"
   >
     <ActionItem
       action={
@@ -244,7 +262,7 @@ exports[`HoverOverlay actions present 1`] = `
         }
       }
       active={true}
-      className="hover-overlay__action test-tooltip-some-title"
+      className="action test-tooltip-some-title"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -285,7 +303,8 @@ exports[`HoverOverlay actions present 1`] = `
 
 exports[`HoverOverlay actions present, hover loading 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -296,10 +315,11 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents hover-overlay__contents--loading"
+    className="hoverOverlayContents hoverOverlayContentsLoading"
+    data-testid="hover-overlay-contents"
   >
     <div
-      className="hover-overlay__loader-row"
+      className="loaderRow"
     >
       <div
         className="loading-spinner "
@@ -307,7 +327,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
     </div>
   </div>
   <div
-    className="hover-overlay__actions"
+    className="actions"
   >
     <ActionItem
       action={
@@ -317,7 +337,7 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
         }
       }
       active={true}
-      className="hover-overlay__action test-tooltip-untitled"
+      className="action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -358,7 +378,8 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
 
 exports[`HoverOverlay actions, hover and alert present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -369,35 +390,38 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
   </div>
   <div
-    className="hover-overlay__alerts"
+    className="hoverOverlayAlerts"
   >
     <div
-      className="hover-overlay__alert"
+      className="alert"
     >
       <span
-        className="hover-overlay__content"
+        className="hoverOverlayContent hoverOverlayContent"
         dangerouslySetInnerHTML={
           Object {
             "__html": "<p>Testing <code>markdown</code> rendering.</p>
 ",
           }
         }
+        data-testid="hover-overlay-content"
       />
       <div
-        className="hover-overlay__alert-dismiss"
+        className="alertDismiss"
       >
         <a
           href=""
@@ -412,7 +436,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
     </div>
   </div>
   <div
-    className="hover-overlay__actions"
+    className="actions"
   >
     <ActionItem
       action={
@@ -422,7 +446,7 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
         }
       }
       active={true}
-      className="hover-overlay__action test-tooltip-untitled"
+      className="action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -465,7 +489,8 @@ exports[`HoverOverlay hover empty 1`] = `null`;
 
 exports[`HoverOverlay hover error 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -476,10 +501,11 @@ exports[`HoverOverlay hover error 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <div
-      className="hover-overlay__hover-error"
+      className="hoverError"
     >
       M
     </div>
@@ -489,7 +515,8 @@ exports[`HoverOverlay hover error 1`] = `
 
 exports[`HoverOverlay hover error, actions present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -500,16 +527,17 @@ exports[`HoverOverlay hover error, actions present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <div
-      className="hover-overlay__hover-error"
+      className="hoverError"
     >
       M
     </div>
   </div>
   <div
-    className="hover-overlay__actions"
+    className="actions"
   >
     <ActionItem
       action={
@@ -519,7 +547,7 @@ exports[`HoverOverlay hover error, actions present 1`] = `
         }
       }
       active={true}
-      className="hover-overlay__action test-tooltip-untitled"
+      className="action test-tooltip-untitled"
       disabledDuringExecution={true}
       extensionsController={
         Object {
@@ -560,7 +588,8 @@ exports[`HoverOverlay hover error, actions present 1`] = `
 
 exports[`HoverOverlay hover loading 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -571,10 +600,11 @@ exports[`HoverOverlay hover loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents hover-overlay__contents--loading"
+    className="hoverOverlayContents hoverOverlayContentsLoading"
+    data-testid="hover-overlay-contents"
   >
     <div
-      className="hover-overlay__loader-row"
+      className="loaderRow"
     >
       <div
         className="loading-spinner "
@@ -586,7 +616,8 @@ exports[`HoverOverlay hover loading 1`] = `
 
 exports[`HoverOverlay hover present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -597,16 +628,18 @@ exports[`HoverOverlay hover present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
   </div>
 </div>
@@ -614,7 +647,8 @@ exports[`HoverOverlay hover present 1`] = `
 
 exports[`HoverOverlay hover present, actions loading 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -625,16 +659,18 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
   </div>
 </div>
@@ -642,7 +678,8 @@ exports[`HoverOverlay hover present, actions loading 1`] = `
 
 exports[`HoverOverlay multiple hovers present 1`] = `
 <div
-  className="hover-overlay"
+  className="hoverOverlay"
+  data-testid="hover-overlay"
   style={
     Object {
       "left": "0px",
@@ -653,26 +690,29 @@ exports[`HoverOverlay multiple hovers present 1`] = `
   }
 >
   <div
-    className="hover-overlay__contents"
+    className="hoverOverlayContents"
+    data-testid="hover-overlay-contents"
   >
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
     <hr />
     <span
-      className="hover-overlay__content test-tooltip-content"
+      className="hoverOverlayContent hoverOverlayContent test-tooltip-content"
       dangerouslySetInnerHTML={
         Object {
           "__html": "<p>v2</p>
 ",
         }
       }
+      data-testid="hover-overlay-content"
     />
   </div>
 </div>

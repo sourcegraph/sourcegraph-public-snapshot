@@ -5,6 +5,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../schema/settings.schema'
+import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { Insight, isVirtualDashboard } from '../../../../core/types'
 import { useDashboard } from '../../../../hooks/use-dashboard'
@@ -44,6 +45,8 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
                 newInsight,
                 settingsCascade,
             })
+
+            eventLogger.log('Insight Edit', { insightType: newInsight.type }, { insightType: newInsight.type })
 
             if (!dashboard || isVirtualDashboard(dashboard)) {
                 // Navigate user to the dashboard page with new created dashboard

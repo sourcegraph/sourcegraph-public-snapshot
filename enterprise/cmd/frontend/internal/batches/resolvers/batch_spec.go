@@ -56,6 +56,10 @@ type batchSpecResolver struct {
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
+	stateOnce sync.Once
+	state     btypes.BatchSpecState
+	stateErr  error
+
 	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
 	shouldActAsCampaignSpec bool
 }
@@ -168,7 +172,14 @@ func (r *batchSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.Name
 }
 
 func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
-	// TODO(ssbc): not implemented
+	state, err := r.computeState(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.batchSpec.CreatedFromRaw && state != btypes.BatchSpecStateCompleted {
+		return nil, nil
+	}
 
 	n, err := r.computeNamespace(ctx)
 	if err != nil {
@@ -331,22 +342,31 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 	}, nil
 }
 
+func (r *batchSpecResolver) AllowUnsupported() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.AllowUnsupported
+	}
+	return nil
+}
+
+func (r *batchSpecResolver) AllowIgnored() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.AllowIgnored
+	}
+	return nil
+}
+
 func (r *batchSpecResolver) AutoApplyEnabled() bool {
 	// TODO(ssbc): not implemented
 	return false
 }
 
-func (r *batchSpecResolver) State(ctx context.Context) string {
-	if !r.batchSpec.CreatedFromRaw {
-		return "COMPLETED"
+func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
+	state, err := r.computeState(ctx)
+	if err != nil {
+		return "", err
 	}
-
-	validationErr := r.validateChangesetSpecs(ctx)
-	if validationErr != nil {
-		return "FAILED"
-	}
-	// TODO(ssbc): not implemented
-	return "PROCESSING"
+	return state.ToGraphQL(), nil
 }
 
 func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -446,14 +466,17 @@ func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graph
 }
 
 func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolutionResolver, error) {
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
 	resolution, err := r.computeResolutionJob(ctx)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: switch to full error, once we can distinguish server side batch specs.
 	if resolution == nil {
 		return nil, nil
 	}
+
 	return &batchSpecWorkspaceResolutionResolver{store: r.store, resolution: resolution}, nil
 }
 
@@ -513,4 +536,28 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 		r.workspaces, _, r.workspacesErr = r.store.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: r.batchSpec.ID})
 	})
 	return r.workspaces, r.workspacesErr
+}
+
+func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
+	r.stateOnce.Do(func() {
+		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
+			svc := service.New(r.store)
+			state, err := svc.ComputeBatchSpecState(ctx, r.batchSpec)
+			if err != nil {
+				return state, err
+			}
+
+			// If the BatchSpec finished execution successfully, we validate
+			// the changeset specs.
+			if state == btypes.BatchSpecStateCompleted {
+				validationErr := r.validateChangesetSpecs(ctx)
+				if validationErr != nil {
+					return btypes.BatchSpecStateFailed, nil
+				}
+			}
+
+			return state, nil
+		}()
+	})
+	return r.state, r.stateErr
 }

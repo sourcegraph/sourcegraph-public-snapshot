@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -266,9 +267,9 @@ func deleteSession(w http.ResponseWriter, r *http.Request) error {
 }
 
 // InvalidateSessionCurrentUser invalidates all sessions for the current user.
-func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request) error {
+func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request, db dbutil.DB) error {
 	a := actor.FromContext(r.Context())
-	err := database.GlobalUsers.InvalidateSessionsByID(r.Context(), a.UID)
+	err := database.Users(db).InvalidateSessionsByID(r.Context(), a.UID)
 	if err != nil {
 		return err
 	}
@@ -281,9 +282,9 @@ func InvalidateSessionCurrentUser(w http.ResponseWriter, r *http.Request) error 
 
 // InvalidateSessionsByID invalidates all sessions for a user
 // If an error occurs, it returns the error
-func InvalidateSessionsByID(ctx context.Context, id int32) error {
+func InvalidateSessionsByID(ctx context.Context, db dbutil.DB, id int32) error {
 	// Get the user from the request context
-	return database.GlobalUsers.InvalidateSessionsByID(ctx, id)
+	return database.Users(db).InvalidateSessionsByID(ctx, id)
 }
 
 // CookieMiddleware is an http.Handler middleware that authenticates

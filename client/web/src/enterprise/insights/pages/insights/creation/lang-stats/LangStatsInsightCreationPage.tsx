@@ -90,6 +90,11 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
                 // Clear initial values if user successfully created search insight
                 setInitialFormValues(undefined)
                 telemetryService.log('CodeInsightsCodeStatsCreationPageSubmitClick')
+                telemetryService.log(
+                    'Insight Addition',
+                    { insightType: 'codeStatsInsights' },
+                    { insightType: 'codeStatsInsights' }
+                )
 
                 onSuccessfulCreation(insight)
             } catch (error) {

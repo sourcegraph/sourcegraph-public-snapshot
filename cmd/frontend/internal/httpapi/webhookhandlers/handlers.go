@@ -11,15 +11,15 @@ func Init(db dbutil.DB, w *webhooks.GitHubWebhook) {
 	// for event types
 
 	// Repository events
-	w.Register(handleGitHubRepoAuthzEvent(authz.FetchPermsOptions{}), "public")
-	w.Register(handleGitHubRepoAuthzEvent(authz.FetchPermsOptions{}), "repository")
+	w.Register(handleGitHubRepoAuthzEvent(db, authz.FetchPermsOptions{}), "public")
+	w.Register(handleGitHubRepoAuthzEvent(db, authz.FetchPermsOptions{}), "repository")
 
 	// Member refers to repository collaborators, and has both users and repos
-	w.Register(handleGitHubRepoAuthzEvent(authz.FetchPermsOptions{}), "member")
+	w.Register(handleGitHubRepoAuthzEvent(db, authz.FetchPermsOptions{}), "member")
 	w.Register(handleGitHubUserAuthzEvent(db, authz.FetchPermsOptions{}), "member")
 
 	// Events that touch cached permissions in authz/github.Provider implementation
-	w.Register(handleGitHubRepoAuthzEvent(authz.FetchPermsOptions{InvalidateCaches: true}), "team_add")
+	w.Register(handleGitHubRepoAuthzEvent(db, authz.FetchPermsOptions{InvalidateCaches: true}), "team_add")
 	w.Register(handleGitHubUserAuthzEvent(db, authz.FetchPermsOptions{InvalidateCaches: true}), "organisation")
 	w.Register(handleGitHubUserAuthzEvent(db, authz.FetchPermsOptions{InvalidateCaches: true}), "membership")
 

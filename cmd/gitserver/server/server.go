@@ -915,37 +915,47 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		args.Limit = math.MaxInt32
 	}
 
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	dir := s.dir(args.Repo)
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{})
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+				Repo: args.Repo,
+			}))
 			return
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
-			})
+			}))
 			return
 		}
 
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{CloneInProgress: false})
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+				Repo:            args.Repo,
+				CloneInProgress: false,
+			}))
 			return
 		}
-		w.WriteHeader(http.StatusNotFound)
-		_ = json.NewEncoder(w).Encode(&protocol.NotFoundPayload{
+
+		eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
-		})
+		}))
 		return
 	}
 
@@ -958,12 +968,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 				_ = s.ensureRevision(ctx, args.Repo, rev.RefGlob, dir)
 			}
 		}
-	}
-
-	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {

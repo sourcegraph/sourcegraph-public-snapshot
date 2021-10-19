@@ -2376,6 +2376,93 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	}
 }
 
+func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		s := Perms(db, time.Now)
+		t.Cleanup(func() {
+			cleanupUsersTable(t, s)
+			cleanupPermsTables(t, s)
+		})
+
+		ctx := context.Background()
+
+		// Create test users to include:
+		//  1. A user with newer code host connection sync
+		//  2. A user never had user-centric syncing
+		//  3. A user with up-to-date permissions data
+		qs := []*sqlf.Query{
+			// ID=1, with newer code host connection sync
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES ('alice')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`),
+			// ID=2, never had user-centric syncing
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id) VALUES(2, 'GitHub #2', 'GITHUB', '{}', 2)`),
+			// ID=3, with up-to-date permissions data
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id) VALUES(3, 'GitHub #3', 'GITHUB', '{}', 3)`),
+		}
+		for _, q := range qs {
+			if err := s.execute(ctx, q); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Give "alice" some permissions
+		err := s.SetUserPermissions(ctx,
+			&authz.UserPermissions{
+				UserID: 1,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+				IDs:    toBitmap(1),
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// "bob" never had a user-centric syncing
+		err = s.SetRepoPermissions(ctx,
+			&authz.RepoPermissions{
+				RepoID:  1,
+				Perm:    authz.Read,
+				UserIDs: toBitmap(2),
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Give "cindy" some permissions
+		err = s.SetUserPermissions(ctx,
+			&authz.UserPermissions{
+				UserID: 3,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+				IDs:    toBitmap(1),
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// Both "alice" and "bob" have outdated permissions
+		results, err := s.UserIDsWithOutdatedPerms(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids := make([]int32, 0, len(results))
+		for id := range results {
+			ids = append(ids, id)
+		}
+		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+
+		expIDs := []int32{1, 2}
+		if diff := cmp.Diff(expIDs, ids); diff != "" {
+			t.Fatal(diff)
+		}
+	}
+}
+
 func testPermsStore_UserIDsWithNoPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := Perms(db, time.Now)

@@ -29,8 +29,7 @@ export const NODES: BatchSpecListFields[] = [
     { ...COMMON_NODE_FIELDS, id: 'id1', state: BatchSpecState.QUEUED },
     { ...COMMON_NODE_FIELDS, id: 'id2', state: BatchSpecState.PROCESSING },
     successNode('id3'),
-    { ...COMMON_NODE_FIELDS, id: 'id4', state: BatchSpecState.ERRORED },
-    { ...COMMON_NODE_FIELDS, id: 'id5', state: BatchSpecState.FAILED },
-    { ...COMMON_NODE_FIELDS, id: 'id6', state: BatchSpecState.CANCELING },
-    { ...COMMON_NODE_FIELDS, id: 'id7', state: BatchSpecState.CANCELED },
+    { ...COMMON_NODE_FIELDS, id: 'id4', state: BatchSpecState.FAILED },
+    { ...COMMON_NODE_FIELDS, id: 'id5', state: BatchSpecState.CANCELING },
+    { ...COMMON_NODE_FIELDS, id: 'id6', state: BatchSpecState.CANCELED },
 ]

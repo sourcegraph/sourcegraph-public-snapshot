@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -53,6 +54,12 @@ type AuthzStore interface {
 	// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user.
 	// It is a no-op in the OSS version.
 	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
+}
+
+// Authz instantiates and returns a new AuthzStore. In the OSS version, this is a no-op AuthzStore, but
+// this constructor is overridden in enterprise versions.
+var Authz = func(db dbutil.DB) AuthzStore {
+	return &authzStore{}
 }
 
 // authzStore is a no-op placeholder for the OSS version.

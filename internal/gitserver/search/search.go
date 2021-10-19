@@ -10,6 +10,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -129,6 +130,8 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	if err != nil {
 		return err
 	}
+	var stderrBuf bytes.Buffer
+	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Start(); err != nil {
 		return err
@@ -165,12 +168,24 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		return scanner.Err()
 	}
 
-	return cmd.Wait()
+	if err := cmd.Wait(); err != nil {
+		return tryInterpretErrorWithStderr(err, stderrBuf.String())
+	}
+	return nil
+}
+
+func tryInterpretErrorWithStderr(err error, stderr string) error {
+	if strings.Contains(stderr, "does not have any commits yet") {
+		// Ignore no commits error error
+		return nil
+	}
+	log15.Warn("git search command exited with non-zero status and stderr content: %q", stderr)
+	return err
 }
 
 func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 	// Create a new diff fetcher subprocess for each worker
-	diffFetcher, err := StartDiffFetcher(cs.RepoDir)
+	diffFetcher, err := NewDiffFetcher(cs.RepoDir)
 	if err != nil {
 		return err
 	}
@@ -192,11 +207,11 @@ func (cs *CommitSearcher) runJobs(ctx context.Context, jobs chan job) error {
 				diffFetcher: diffFetcher,
 				LowerBuf:    startBuf,
 			}
-			commitMatches, highlights, err := cs.Query.Match(lc)
+			mergedResult, highlights, err := cs.Query.Match(lc)
 			if err != nil {
 				return err
 			}
-			if commitMatches {
+			if mergedResult.Satisfies() {
 				cm, err := CreateCommitMatch(lc, highlights, cs.IncludeDiff)
 				if err != nil {
 					return err

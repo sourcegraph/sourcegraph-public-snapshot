@@ -8,7 +8,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetConfigurationPolicies(t *testing.T) {
@@ -17,6 +19,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 	}
 	db := dbtesting.GetDB(t)
 	store := testStore(db)
+	ctx := context.Background()
 
 	query := sqlf.Sprintf(`
 		INSERT INTO lsif_configuration_policies (
@@ -38,13 +41,12 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			(4, NULL, 'policy 4', 'GIT_COMMIT', 'deadbeef', false, 5, true,  false, 6, true),
 			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      false, 6, false, true,  6, false)
 	`)
-
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	t.Run("Global", func(t *testing.T) {
-		policies, err := store.GetConfigurationPolicies(context.Background(), GetConfigurationPoliciesOptions{})
+	t.Run("global", func(t *testing.T) {
+		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{})
 		if err != nil {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)
 		}
@@ -85,10 +87,10 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 	})
 
-	t.Run("Repository", func(t *testing.T) {
+	t.Run("repository", func(t *testing.T) {
 		repositoryID := 42
 
-		policies, err := store.GetConfigurationPolicies(context.Background(), GetConfigurationPoliciesOptions{
+		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
 		})
 		if err != nil {
@@ -130,6 +132,107 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 		if diff := cmp.Diff(expected, policies); diff != "" {
 			t.Errorf("unexpected configuration policies (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		globalPolicies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{})
+		if err != nil {
+			t.Fatalf("unexpected error fetching configuration policies: %s", err)
+		}
+		if len(globalPolicies) != 2 {
+			t.Fatalf("unexpected global policy results to be visible")
+		}
+
+		repositoryPolicies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
+			RepositoryID: 42,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error fetching configuration policies: %s", err)
+		}
+		if len(repositoryPolicies) != 0 {
+			t.Fatalf("expected repository policies not to be visible")
+		}
+	})
+}
+
+func TestGetConfigurationPolicyByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	query := sqlf.Sprintf(`
+		INSERT INTO lsif_configuration_policies (
+			id,
+			repository_id,
+			name,
+			type,
+			pattern,
+			retention_enabled,
+			retention_duration_hours,
+			retain_intermediate_commits,
+			indexing_enabled,
+			index_commit_max_age_hours,
+			index_intermediate_commits
+		) VALUES (1, 42, 'policy 1', 'GIT_TREE', 'ab/', true, 2, false, false, 3, true)
+	`)
+	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
+	}
+
+	policy, ok, err := store.GetConfigurationPolicyByID(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("unexpected error fetching configuration policy: %s", err)
+	}
+	if !ok {
+		t.Fatalf("expected record")
+	}
+
+	d1 := time.Hour * 2
+	d2 := time.Hour * 3
+	repositoryID := 42
+
+	expectedPolicy := ConfigurationPolicy{
+		ID:                        1,
+		RepositoryID:              &repositoryID,
+		Name:                      "policy 1",
+		Type:                      GitObjectTypeTree,
+		Pattern:                   "ab/",
+		RetentionEnabled:          true,
+		RetentionDuration:         &d1,
+		RetainIntermediateCommits: false,
+		IndexingEnabled:           false,
+		IndexCommitMaxAge:         &d2,
+		IndexIntermediateCommits:  true,
+	}
+	if diff := cmp.Diff(expectedPolicy, policy); diff != "" {
+		t.Errorf("unexpected configuration policy (-want +got):\n%s", diff)
+	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		_, ok, err := store.GetConfigurationPolicyByID(ctx, 1)
+		if err != nil {
+			t.Fatalf("unexpected error fetching configuration policy: %s", err)
+		}
+		if ok {
+			t.Fatalf("unexpected record")
 		}
 	})
 }
@@ -304,7 +407,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 	}
 
 	t.Run("illegal update", func(t *testing.T) {
-		t.Run("Name", func(t *testing.T) {
+		t.Run("name", func(t *testing.T) {
 			newConfigurationPolicy := hydratedConfigurationPolicy
 			newConfigurationPolicy.Name = "some clever name"
 
@@ -313,7 +416,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 			}
 		})
 
-		t.Run("Type", func(t *testing.T) {
+		t.Run("type", func(t *testing.T) {
 			newConfigurationPolicy := hydratedConfigurationPolicy
 			newConfigurationPolicy.Type = GitObjectTypeTag
 
@@ -322,7 +425,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 			}
 		})
 
-		t.Run("Pattern", func(t *testing.T) {
+		t.Run("pattern", func(t *testing.T) {
 			newConfigurationPolicy := hydratedConfigurationPolicy
 			newConfigurationPolicy.Pattern = "ef/"
 
@@ -331,7 +434,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 			}
 		})
 
-		t.Run("RetentionEnabled", func(t *testing.T) {
+		t.Run("retentionEnabled", func(t *testing.T) {
 			newConfigurationPolicy := hydratedConfigurationPolicy
 			newConfigurationPolicy.RetentionEnabled = false
 
@@ -340,7 +443,7 @@ func TestUpdateProtectedConfigurationPolicy(t *testing.T) {
 			}
 		})
 
-		t.Run("RetainIntermediateCommits", func(t *testing.T) {
+		t.Run("retainIntermediateCommits", func(t *testing.T) {
 			newConfigurationPolicy := hydratedConfigurationPolicy
 			newConfigurationPolicy.RetainIntermediateCommits = true
 

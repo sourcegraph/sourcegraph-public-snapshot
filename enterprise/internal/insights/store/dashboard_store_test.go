@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
 
 	insightsdbtesting "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/dbtesting"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -89,6 +90,121 @@ func TestGetDashboard(t *testing.T) {
 		}
 
 		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestCreateDashboard(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+	store := NewDashboardStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test create dashboard", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("BeforeCreate", []*types.Dashboard{}).Equal(t, got)
+
+		global := true
+		orgId := 1
+		grants := []DashboardGrant{{nil, nil, &global}, {nil, &orgId, nil}}
+		_, err = store.CreateDashboard(ctx, types.Dashboard{ID: 1, Title: "test dashboard 1"}, grants)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterCreateDashboard", []*types.Dashboard{{
+			ID:    1,
+			Title: "test dashboard 1",
+		}}).Equal(t, got)
+
+		gotGrants, err := store.GetDashboardGrants(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterCreateGrant", []*DashboardGrant{
+			{
+				Global: valast.Addr(true).(*bool),
+			},
+			{OrgID: valast.Addr(1).(*int)},
+		}).Equal(t, gotGrants)
+	})
+}
+
+func TestUpdateDashboard(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+	store := NewDashboardStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	_, err := timescale.Exec(`
+	INSERT INTO dashboard (id, title)
+	VALUES (1, 'test dashboard 1'), (2, 'test dashboard 2');
+	INSERT INTO dashboard_grants (dashboard_id, global)
+	VALUES (1, true), (2, true);`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("test update dashboard", func(t *testing.T) {
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("BeforeUpdate", []*types.Dashboard{
+			{
+				ID:    1,
+				Title: "test dashboard 1",
+			},
+			{
+				ID:    2,
+				Title: "test dashboard 2",
+			}}).Equal(t, got)
+
+		newTitle := "new title!"
+		global := true
+		userId := 1
+		grants := []DashboardGrant{{nil, nil, &global}, {&userId, nil, nil}}
+		_, err = store.UpdateDashboard(ctx, UpdateDashboardArgs{1, &newTitle, grants})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterUpdate", []*types.Dashboard{
+			{
+				ID:    1,
+				Title: "new title!",
+			},
+			{
+				ID:    2,
+				Title: "test dashboard 2",
+			}}).Equal(t, got)
+
+		gotGrants, err := store.GetDashboardGrants(ctx, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterUpdateGrant", []*DashboardGrant{
+			{
+				Global: valast.Addr(true).(*bool),
+			},
+			{UserID: valast.Addr(1).(*int)},
+		}).Equal(t, gotGrants)
 	})
 }
 
@@ -182,7 +298,7 @@ func TestAssociateViewsById(t *testing.T) {
 		if len(dashboard.InsightIDs) != 0 {
 			t.Errorf("unexpected value for insight views on dashboard before adding view")
 		}
-		err = store.AssociateViewsByViewIds(ctx, dashboard.ID, []string{view.UniqueID})
+		err = store.AddViewsToDashboard(ctx, dashboard.ID, []string{view.UniqueID})
 		if err != nil {
 			t.Errorf("failed to add view to dashboard")
 		}
@@ -195,4 +311,76 @@ func TestAssociateViewsById(t *testing.T) {
 			"view1234567",
 		}}).Equal(t, got)
 	})
+}
+
+func TestRemoveViewsFromDashboard(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	store := NewDashboardStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	insightStore := NewInsightStore(timescale)
+
+	view, err := insightStore.CreateView(ctx, types.InsightView{
+		Title:       "view1",
+		Description: "view1",
+		UniqueID:    "view1",
+	}, []InsightViewGrant{GlobalGrant()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = store.CreateDashboard(ctx, types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}}, []DashboardGrant{GlobalDashboardGrant()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := store.CreateDashboard(ctx, types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}}, []DashboardGrant{GlobalDashboardGrant()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("remove view from one dashboard only", func(t *testing.T) {
+		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("dashboards before removing a view", []*types.Dashboard{
+			{
+				ID:         1,
+				Title:      "first",
+				InsightIDs: []string{"view1"},
+			},
+			{
+				ID:         2,
+				Title:      "second",
+				InsightIDs: []string{"view1"},
+			},
+		}).Equal(t, dashboards)
+
+		err = store.RemoveViewsFromDashboard(ctx, second.ID, []string{view.UniqueID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("dashboards after removing a view", []*types.Dashboard{
+			{
+				ID:         1,
+				Title:      "first",
+				InsightIDs: []string{"view1"},
+			},
+			{
+				ID:    2,
+				Title: "second",
+			},
+		}).Equal(t, dashboards)
+	})
+
 }

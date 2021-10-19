@@ -9,8 +9,7 @@ import { WebIntegrationTestContext, createWebIntegrationTestContext } from './co
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteID, siteGQLID } from './jscontext'
 
-// Flaky test, issue https://github.com/sourcegraph/sourcegraph/issues/25902
-describe.skip('Search onboarding', () => {
+describe('Search onboarding', () => {
     let driver: Driver
     before(async () => {
         driver = await createDriverForTest()
@@ -25,14 +24,6 @@ describe.skip('Search onboarding', () => {
         })
         testContext.overrideGraphQL({
             ...commonWebGraphQlResults,
-            SearchSuggestions: () => ({
-                search: {
-                    suggestions: [{ __typename: 'Repository', name: '^github\\.com/sourcegraph/sourcegraph$' }],
-                },
-            }),
-            RepoGroups: () => ({
-                repoGroups: [],
-            }),
             AutoDefinedSearchContexts: () => ({
                 autoDefinedSearchContexts: [],
             }),
@@ -79,8 +70,23 @@ describe.skip('Search onboarding', () => {
                     },
                 },
             }),
+            GetTemporarySettings: () => ({
+                temporarySettings: {
+                    contents: JSON.stringify({
+                        'user.daysActiveCount': 1,
+                        'user.lastDayActive': new Date().toDateString(),
+                    }),
+                },
+            }),
         })
-        testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
+        testContext.overrideSearchStreamEvents([
+            // Used for suggestions
+            {
+                type: 'matches',
+                data: [{ type: 'repo', repository: '^github\\.com/sourcegraph/sourcegraph$' }],
+            },
+            { type: 'done', data: {} },
+        ])
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())

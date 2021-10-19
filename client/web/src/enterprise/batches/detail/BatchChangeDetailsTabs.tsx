@@ -61,6 +61,7 @@ export interface BatchChangeDetailsProps
 
 interface BatchChangeDetailsTabsProps extends BatchChangeDetailsProps {
     batchChange: BatchChangeFields
+    refetchBatchChange: () => void
 }
 
 export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsTabsProps> = ({
@@ -74,6 +75,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
+    refetchBatchChange,
     telemetryService,
 }) => (
     <BatchChangeTabs history={history} location={location}>
@@ -133,6 +135,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                 <BatchChangeChangesets
                     batchChangeID={batchChange.id}
                     viewerCanAdminister={batchChange.viewerCanAdminister}
+                    refetchBatchChange={refetchBatchChange}
                     history={history}
                     location={location}
                     isLightTheme={isLightTheme}
@@ -181,6 +184,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={true}
+                    refetchBatchChange={refetchBatchChange}
                 />
             </BatchChangeTabPanel>
             <BatchChangeTabPanel index={4}>

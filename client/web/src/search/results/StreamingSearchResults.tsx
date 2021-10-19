@@ -36,6 +36,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
+import { DidYouMean } from './DidYouMean'
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
@@ -145,18 +146,16 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     const options: StreamSearchOptions = useMemo(
         () => ({
-            query,
             version: LATEST_VERSION,
             patternType: patternType ?? SearchPatternType.literal,
             caseSensitive,
             versionContext: resolveVersionContext(versionContext, availableVersionContexts),
             trace,
-            extensionHostAPI,
         }),
-        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext, extensionHostAPI]
+        [availableVersionContexts, caseSensitive, patternType, trace, versionContext]
     )
 
-    const results = useCachedSearchResults(streamSearch, options, telemetryService)
+    const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -294,6 +293,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         showTrace={!!trace}
                     />
                 }
+            />
+
+            <DidYouMean
+                telemetryService={props.telemetryService}
+                parsedSearchQuery={props.parsedSearchQuery}
+                patternType={props.patternType}
+                caseSensitive={props.caseSensitive}
+                versionContext={props.versionContext}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 
             <div className={styles.streamingSearchResultsContainer}>

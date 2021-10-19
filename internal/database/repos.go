@@ -525,6 +525,10 @@ type ReposListOptions struct {
 	// through external services. Mutually exclusive with the ExternalServiceIDs option.
 	UserID int32
 
+	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
+	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	OrgID int32
+
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
 	SearchContextID int64
@@ -955,8 +959,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 	}
 
-	if len(opt.ExternalServiceIDs) != 0 && opt.UserID != 0 {
-		return nil, errors.New("options ExternalServiceIDs and UserID are mutually exclusive")
+	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
+		(opt.UserID != 0 && opt.OrgID != 0) {
+		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
 	} else if opt.UserID != 0 {
@@ -966,6 +971,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+	} else if opt.OrgID != 0 {
+		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
+		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
 		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
@@ -980,10 +988,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	baseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
-		baseConds = sqlf.Sprintf("deleted_at IS NULL")
+		baseConds = sqlf.Sprintf("repo.deleted_at IS NULL")
 	}
 	if !opt.IncludeBlocked {
-		baseConds = sqlf.Sprintf("%s AND blocked IS NULL", baseConds)
+		baseConds = sqlf.Sprintf("%s AND repo.blocked IS NULL", baseConds)
 	}
 
 	whereConds := sqlf.Sprintf("TRUE")
@@ -1388,12 +1396,14 @@ insert_sources AS (
     external_service_id,
     repo_id,
     user_id,
+    org_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
     es.namespace_user_id,
+    es.namespace_org_id,
     clone_url
   FROM sources_list
   JOIN external_services es ON (es.id = external_service_id)

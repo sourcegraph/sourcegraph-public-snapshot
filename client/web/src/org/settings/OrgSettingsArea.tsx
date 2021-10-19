@@ -10,11 +10,15 @@ import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { SettingsArea } from '../../settings/SettingsArea'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
+import { SettingsRepositoriesPage } from '../../user/settings/repositories/SettingsRepositoriesPage'
+import { UserSettingsManageRepositoriesPage } from '../../user/settings/repositories/UserSettingsManageRepositoriesPage'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
+import { OrgAddCodeHostsPageContainer } from './codeHosts/OrgAddCodeHostsPageContainer'
 import { OrgSettingsMembersPage } from './members/OrgSettingsMembersPage'
 import { OrgSettingsSidebar } from './OrgSettingsSidebar'
 import { OrgSettingsProfilePage } from './profile/OrgSettingsProfilePage'
+import { showOrganizationsCode } from './utils'
 
 const NotFoundPage: React.FunctionComponent = () => (
     <HeroPage
@@ -36,6 +40,9 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
     if (!props.authenticatedUser) {
         return null
     }
+
+    const showOrgsCode = showOrganizationsCode(props.authenticatedUser)
+
     return (
         <div className="d-flex">
             <OrgSettingsSidebar {...props} className="flex-0 mr-3" />
@@ -86,6 +93,65 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
                                     <OrgSettingsMembersPage {...routeComponentProps} {...props} />
                                 )}
                             />
+                            {showOrgsCode && (
+                                <>
+                                    <Route
+                                        path={`${props.match.path}/code-hosts`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        render={routeComponentProps => (
+                                            <OrgAddCodeHostsPageContainer
+                                                {...routeComponentProps}
+                                                owner={{
+                                                    id: props.org.id,
+                                                    type: 'org',
+                                                    name: props.org.displayName || props.org.name,
+                                                }}
+                                                context={window.context}
+                                                routingPrefix={`${props.org.url}/settings`}
+                                                telemetryService={props.telemetryService}
+                                                onUserExternalServicesOrRepositoriesUpdate={() => {}}
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${props.match.path}/repositories`}
+                                        key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                                        exact={true}
+                                        render={routeComponentProps => (
+                                            <SettingsRepositoriesPage
+                                                {...routeComponentProps}
+                                                {...props}
+                                                owner={{
+                                                    id: props.org.id,
+                                                    type: 'org',
+                                                    name: props.org.displayName || props.org.name,
+                                                }}
+                                                routingPrefix={`${props.org.url}/settings`}
+                                                onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
+                                            />
+                                        )}
+                                    />
+                                    <Route
+                                        path={`${props.match.path}/repositories/manage`}
+                                        key="hardcoded-key"
+                                        exact={true}
+                                        render={routeComponentProps => (
+                                            <UserSettingsManageRepositoriesPage
+                                                {...routeComponentProps}
+                                                {...props}
+                                                owner={{
+                                                    id: props.org.id,
+                                                    type: 'org',
+                                                    name: props.org.displayName || props.org.name,
+                                                }}
+                                                routingPrefix={`${props.org.url}/settings`}
+                                                onSyncedPublicRepositoriesUpdate={() => {}}
+                                            />
+                                        )}
+                                    />
+                                </>
+                            )}
                             <Route component={NotFoundPage} />
                         </Switch>
                     </React.Suspense>

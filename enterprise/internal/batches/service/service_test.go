@@ -11,6 +11,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -190,6 +191,13 @@ func TestServicePermissionLevels(t *testing.T) {
 				_, err := svc.CreateBatchSpecFromRaw(currentUserCtx, CreateBatchSpecFromRawOpts{
 					RawSpec:         ct.TestRawBatchSpecYAML,
 					NamespaceUserID: tc.batchChangeAuthor,
+				})
+				tc.assertFunc(t, err)
+			})
+
+			t.Run("CancelBatchSpec", func(t *testing.T) {
+				_, err := svc.CancelBatchSpec(currentUserCtx, CancelBatchSpecOpts{
+					BatchSpecRandID: batchSpec.RandID,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -592,7 +600,7 @@ func TestService(t *testing.T) {
 			}
 
 			wantFields := &batcheslib.ChangesetSpec{}
-			if err := json.Unmarshal([]byte(spec.RawSpec), wantFields); err != nil {
+			if err := json.Unmarshal([]byte(rawSpec), wantFields); err != nil {
 				t.Fatal(err)
 			}
 
@@ -1146,7 +1154,13 @@ func TestService(t *testing.T) {
 
 			var workspaceIDs []int64
 			for _, repo := range rs {
-				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: spec.ID,
+					RepoID:      repo.ID,
+					Steps: []batcheslib.Step{
+						{Run: "echo hello", Container: "alpine:3"},
+					},
+				}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
 				}
@@ -1214,6 +1228,170 @@ func TestService(t *testing.T) {
 				t.Fatalf("error has wrong type: %T", err)
 			}
 		})
+
+		t.Run("ignored/unsupported workspace", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Simulate successful resolution.
+			job := &btypes.BatchSpecResolutionJob{
+				State:       btypes.BatchSpecResolutionJobStateCompleted,
+				BatchSpecID: spec.ID,
+			}
+
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			ignoredWorkspace := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+				Ignored: true,
+			}
+
+			unsupportedWorkspace := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+				Unsupported: true,
+			}
+			if err := s.CreateBatchSpecWorkspace(ctx, ignoredWorkspace, unsupportedWorkspace); err != nil {
+				t.Fatal(err)
+			}
+
+			if _, err := svc.ExecuteBatchSpec(ctx, ExecuteBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
+				t.Fatal(err)
+			}
+
+			ids := []int64{ignoredWorkspace.ID, unsupportedWorkspace.ID}
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(jobs) != 0 {
+				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", len(rs), len(jobs))
+			}
+
+			for _, workspaceID := range ids {
+				reloaded, err := s.GetBatchSpecWorkspace(ctx, store.GetBatchSpecWorkspaceOpts{ID: workspaceID})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if !reloaded.Skipped {
+					t.Fatalf("workspace not marked as skipped")
+				}
+			}
+		})
+	})
+
+	t.Run("CancelBatchSpec", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			// Simulate successful resolution.
+			job := &btypes.BatchSpecResolutionJob{
+				State:       btypes.BatchSpecResolutionJobStateCompleted,
+				BatchSpecID: spec.ID,
+			}
+
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			var jobIDs []int64
+			for _, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+
+				job := &btypes.BatchSpecWorkspaceExecutionJob{
+					BatchSpecWorkspaceID: ws.ID,
+				}
+				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+
+				jobIDs = append(jobIDs, job.ID)
+			}
+
+			if _, err := svc.CancelBatchSpec(ctx, CancelBatchSpecOpts{BatchSpecRandID: spec.RandID}); err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+				IDs: jobIDs,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(jobs) != len(rs) {
+				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", len(rs), len(jobs))
+			}
+
+			var canceled int
+			for _, j := range jobs {
+				if j.Cancel {
+					canceled += 1
+				}
+			}
+			if canceled != len(jobs) {
+				t.Fatalf("not all jobs were canceled. jobs=%d, canceled=%d", len(jobs), canceled)
+			}
+		})
+
+		t.Run("already completed", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			resolutionJob := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+			if err := s.CreateBatchSpecResolutionJob(ctx, resolutionJob); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: rs[0].ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			job := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+			}
+			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed', started_at = now(), finished_at = now() WHERE id = %s", job.ID)); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := svc.CancelBatchSpec(ctx, CancelBatchSpecOpts{BatchSpecRandID: spec.RandID})
+			if !errors.Is(err, ErrBatchSpecNotCancelable) {
+				t.Fatalf("error has wrong type: %T", err)
+			}
+		})
 	})
 
 	t.Run("ReplaceBatchSpecInput", func(t *testing.T) {
@@ -1239,6 +1417,21 @@ func TestService(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
+			return spec
+		}
+
+		createBatchSpecWithWorkspacesAndChangesetSpecs := func(t *testing.T) *btypes.BatchSpec {
+			t.Helper()
+
+			spec := createBatchSpecWithWorkspaces(t)
+
+			for _, r := range rs {
+				ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{
+					BatchSpec: spec.ID,
+					Repo:      r.ID,
+				})
+			}
+
 			return spec
 		}
 
@@ -1331,6 +1524,34 @@ func TestService(t *testing.T) {
 			if err != store.ErrNoResults {
 				t.Fatalf("unexpected error: %s", err)
 			}
+		})
+
+		t.Run("batchSpec already has changeset specs", func(t *testing.T) {
+			assertNoChangesetSpecs := func(t *testing.T, batchSpecID int64) {
+				t.Helper()
+				specs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{
+					BatchSpecID: batchSpecID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(specs) != 0 {
+					t.Fatalf("wrong number of changeset specs attached to batch spec %d: %d", batchSpecID, len(specs))
+				}
+			}
+
+			spec := createBatchSpecWithWorkspacesAndChangesetSpecs(t)
+
+			newSpec, err := svc.ReplaceBatchSpecInput(ctx, ReplaceBatchSpecInputOpts{
+				BatchSpecRandID: spec.RandID,
+				RawSpec:         ct.TestRawBatchSpecYAML,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assertNoChangesetSpecs(t, newSpec.ID)
+			assertNoChangesetSpecs(t, spec.ID)
 		})
 	})
 
@@ -1464,6 +1685,47 @@ func TestService(t *testing.T) {
 		if diff := cmp.Diff(want, err.Error()); diff != "" {
 			t.Fatalf("wrong error message: %s", diff)
 		}
+	})
+
+	t.Run("ComputeBatchSpecState", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			spec.CreatedFromRaw = true
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+			if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+				t.Fatal(err)
+			}
+
+			for _, repo := range rs {
+				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+
+				job := &btypes.BatchSpecWorkspaceExecutionJob{
+					BatchSpecWorkspaceID: ws.ID,
+				}
+				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			have, err := svc.ComputeBatchSpecState(ctx, spec)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := btypes.BatchSpecStateProcessing; have != want {
+				t.Fatalf("wrong state for batch spec. want=%s, have=%s", want, have)
+			}
+		})
 	})
 }
 

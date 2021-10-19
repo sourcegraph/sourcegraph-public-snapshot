@@ -333,27 +333,10 @@ commands:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
-  enterprise-web-standalone:
-    cmd: yarn workspace @sourcegraph/web serve:dev
-    install: yarn --no-progress
-    env:
-      ENTERPRISE: 1
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
   web-standalone-prod:
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
-  enterprise-web-standalone-prod:
-    cmd: yarn workspace @sourcegraph/web serve:prod
-    install: yarn workspace @sourcegraph/web run build
-    env:
-      ENTERPRISE: 1
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -701,6 +684,21 @@ commands:
       - monitoring
     continueWatchOnExit: true
 
+  loki:
+    cmd: |
+      echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
+      docker run --rm --name=loki \
+        -p 3100:3100 -v $LOKI_DISK:/loki \
+        index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${LOKI_DISK}"
+      mkdir -p "$(dirname ${LOKI_LOG_FILE})"
+      docker pull index.docker.io/grafana/loki:$LOKI_VERSION
+    env:
+      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
+      LOKI_VERSION: "2.3.0"
+      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
+
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
   debug-env:
@@ -911,6 +909,30 @@ commandsets:
       # For the alerting integration with frontend
       - enterprise-frontend
       - enterprise-web
+      - caddy
+
+  web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+    env:
+      ENTERPRISE: 1
+
+  oss-web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+
+  web-standalone-prod:
+    commands:
+      - web-standalone-prod
+      - caddy
+    env:
+      ENTERPRISE: 1
+
+  oss-web-standalone-prod:
+    commands:
+      - web-standalone-prod
       - caddy
 
 tests:

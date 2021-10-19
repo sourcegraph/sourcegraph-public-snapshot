@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
@@ -55,6 +56,7 @@ import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
+import styles from './GlobalNavbar.module.scss'
 import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
 interface Props
@@ -212,7 +214,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                         branding={branding}
                         isLightTheme={isLightTheme}
                         variant="symbol"
-                        className="global-navbar__logo"
+                        className={styles.logo}
                     />
                 }
             >
@@ -247,14 +249,18 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                     {!props.authenticatedUser && (
                         <>
                             <NavAction>
-                                <Link className="global-navbar__link" to="https://about.sourcegraph.com">
+                                <Link className={styles.link} to="https://about.sourcegraph.com">
                                     About <span className="d-none d-sm-inline">Sourcegraph</span>
                                 </Link>
                             </NavAction>
 
                             {showDotComMarketing && (
                                 <NavAction>
-                                    <Link className="global-navbar__link font-weight-medium" to="/help" target="_blank">
+                                    <Link
+                                        className={classNames('font-weight-medium', styles.link)}
+                                        to="/help"
+                                        target="_blank"
+                                    >
                                         Docs
                                     </Link>
                                 </NavAction>
@@ -298,7 +304,7 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                     <Link className="btn btn-sm btn-outline-secondary mr-1" to="/sign-in">
                                         Log in
                                     </Link>
-                                    <Link className="btn btn-sm global-navbar__sign-up" to="/sign-up">
+                                    <Link className={classNames('btn btn-sm', styles.signUp)} to="/sign-up">
                                         Sign up
                                     </Link>
                                 </div>

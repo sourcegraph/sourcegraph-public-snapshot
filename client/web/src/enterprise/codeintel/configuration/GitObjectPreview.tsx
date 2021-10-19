@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 import { GitObjectType } from '../../../graphql-operations'
 
 import styles from './GitObjectPreview.module.scss'
-import { useSearchGitBranches, useSearchGitTags, useSearchRepoName, GitObjectPreviewResult } from './useSearchGit'
+import { GitObjectPreviewResult, usePreviewGitObjectFilter } from './useSearchGit'
 
 export interface GitObjectPreviewWrapperProps {
     repoId: string
@@ -18,22 +18,24 @@ export interface GitObjectPreviewWrapperProps {
 
 const GitObjectHeader = <h3>Preview of Git object filter</h3>
 
-export const GitObjectPreview: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) => {
-    if (!type || type === GitObjectType.GIT_BLOB || type === GitObjectType.GIT_UNKNOWN) {
-        return (
-            <>
-                {GitObjectHeader}
-                <small>Select a Git object type to preview matching commits.</small>
-            </>
-        )
-    }
-
-    return {
-        [GitObjectType.GIT_COMMIT]: <GitCommitPreview repoId={repoId} pattern={pattern} typeText=" commit." />,
-        [GitObjectType.GIT_TAG]: <GitTagPreview repoId={repoId} pattern={pattern} typeText=" tags." />,
-        [GitObjectType.GIT_TREE]: <GitBranchesPreview repoId={repoId} pattern={pattern} typeText=" branches." />,
-    }[type]
-}
+export const GitObjectPreview: FunctionComponent<GitObjectPreviewWrapperProps> = ({ repoId, type, pattern }) =>
+    pattern === '' ? (
+        <>
+            {GitObjectHeader}
+            <small>Enter a pattern to preview matching commits.</small>{' '}
+        </>
+    ) : type === GitObjectType.GIT_COMMIT ? (
+        <GitCommitPreview repoId={repoId} pattern={pattern} typeText=" commit." />
+    ) : type === GitObjectType.GIT_TAG ? (
+        <GitTagPreview repoId={repoId} pattern={pattern} typeText=" tags." />
+    ) : type === GitObjectType.GIT_TREE ? (
+        <GitBranchesPreview repoId={repoId} pattern={pattern} typeText=" branches." />
+    ) : (
+        <>
+            {GitObjectHeader}
+            <small>Select a Git object type to preview matching commits.</small>
+        </>
+    )
 
 export interface GitPreviewProps {
     repoId: string
@@ -41,8 +43,12 @@ export interface GitPreviewProps {
     typeText: string
 }
 
-const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = useSearchGitTags(repoId, pattern)
+const createGitCommitPreview = (type: GitObjectType): FunctionComponent<GitPreviewProps> => ({
+    repoId,
+    pattern,
+    typeText,
+}) => {
+    const { previewResult, isLoadingPreview, previewError } = usePreviewGitObjectFilter(repoId, type, pattern)
 
     return (
         <GitPreview
@@ -54,31 +60,9 @@ const GitTagPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, ty
     )
 }
 
-const GitBranchesPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = useSearchGitBranches(repoId, pattern)
-
-    return (
-        <GitPreview
-            typeText={typeText}
-            preview={previewResult}
-            previewLoading={isLoadingPreview}
-            previewError={previewError}
-        />
-    )
-}
-
-const GitCommitPreview: FunctionComponent<GitPreviewProps> = ({ repoId, pattern, typeText }) => {
-    const { previewResult, isLoadingPreview, previewError } = useSearchRepoName(repoId, pattern)
-
-    return (
-        <GitPreview
-            typeText={typeText}
-            preview={previewResult}
-            previewLoading={isLoadingPreview}
-            previewError={previewError}
-        />
-    )
-}
+const GitTagPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TAG)
+const GitBranchesPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_TREE)
+const GitCommitPreview: FunctionComponent<GitPreviewProps> = createGitCommitPreview(GitObjectType.GIT_COMMIT)
 
 interface GitObjectPreviewProps {
     typeText: string
@@ -111,18 +95,15 @@ const GitPreview: FunctionComponent<GitObjectPreviewProps> = ({ typeText, previe
                     <div className="mt-2 pt-2">
                         <div className={classNames('bg-dark text-light p-2', styles.container)}>
                             {preview.preview.map(tag => (
-                                <p key={tag.revlike} className="text-monospace p-0 m-0">
+                                <p key={`${tag.repoName}@${tag.name}`} className="text-monospace p-0 m-0">
                                     <span className="search-filter-keyword">repo:</span>
-                                    <span>{tag.name}</span>
+                                    <span>{tag.repoName}</span>
                                     <span className="search-filter-keyword">@</span>
-                                    <span>{tag.revlike}</span>
+                                    <span>{tag.name}</span>
+                                    <span className="badge badge-info ml-4">{tag.rev.slice(0, 7)}</span>
                                 </p>
                             ))}
                         </div>
-
-                        {preview.preview.length < preview.totalCount && (
-                            <p className="pt-2">...and {preview.totalCount - preview.preview.length} other matches</p>
-                        )}
                     </div>
                 ) : (
                     <div className="mt-2 pt-2">

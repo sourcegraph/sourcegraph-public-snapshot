@@ -415,6 +415,7 @@ func (s *Store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		svc.ID,
 		r.ID,
 		svc.NamespaceUserID,
+		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }
@@ -443,16 +444,19 @@ INSERT INTO external_service_repos (
 	external_service_id,
 	repo_id,
 	user_id,
+	org_id,
 	clone_url
 )
-VALUES (%s, %s, NULLIF(%s, 0), %s)
+VALUES (%s, %s, NULLIF(%s, 0), NULLIF(%s, 0), %s)
 ON CONFLICT (external_service_id, repo_id)
 DO UPDATE SET
 	clone_url = excluded.clone_url,
-	user_id   = excluded.user_id
+	user_id   = excluded.user_id,
+	org_id    =  excluded.org_id
 WHERE
 	external_service_repos.clone_url != excluded.clone_url OR
-	external_service_repos.user_id   != excluded.user_id
+	external_service_repos.user_id   != excluded.user_id OR
+	external_service_repos.org_id    != excluded.org_id
 `
 
 // UpdateExternalServiceRepo updates a single repo and its association to an external service, respectively in the repo and
@@ -513,7 +517,7 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		if err != nil {
 			return errors.Wrap(err, "UpdateExternalServiceRepo")
 		}
-		defer func() { s.Done(err) }()
+		defer func() { _ = s.Done(err) }()
 	}
 
 	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
@@ -524,6 +528,7 @@ func (s *Store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		svc.ID,
 		r.ID,
 		svc.NamespaceUserID,
+		svc.NamespaceOrgID,
 		src.CloneURL,
 	))
 }

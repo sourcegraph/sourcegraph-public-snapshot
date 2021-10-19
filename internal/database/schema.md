@@ -85,8 +85,6 @@ Indexes:
 -------------------+--------------------------+-----------+----------+--------------------------------------------------------
  id                | bigint                   |           | not null | nextval('batch_spec_resolution_jobs_id_seq'::regclass)
  batch_spec_id     | integer                  |           |          | 
- allow_unsupported | boolean                  |           | not null | false
- allow_ignored     | boolean                  |           | not null | false
  state             | text                     |           |          | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
@@ -152,6 +150,9 @@ Foreign-key constraints:
  steps                | jsonb                    |           |          | '[]'::jsonb
  created_at           | timestamp with time zone |           | not null | now()
  updated_at           | timestamp with time zone |           | not null | now()
+ ignored              | boolean                  |           | not null | false
+ unsupported          | boolean                  |           | not null | false
+ skipped              | boolean                  |           | not null | false
 Indexes:
     "batch_spec_workspaces_pkey" PRIMARY KEY, btree (id)
 Check constraints:
@@ -178,6 +179,8 @@ Referenced by:
  created_at        | timestamp with time zone |           | not null | now()
  updated_at        | timestamp with time zone |           | not null | now()
  created_from_raw  | boolean                  |           | not null | false
+ allow_unsupported | boolean                  |           | not null | false
+ allow_ignored     | boolean                  |           | not null | false
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
@@ -258,7 +261,6 @@ Foreign-key constraints:
 -------------------+--------------------------+-----------+----------+---------------------------------------------
  id                | bigint                   |           | not null | nextval('changeset_specs_id_seq'::regclass)
  rand_id           | text                     |           | not null | 
- raw_spec          | text                     |           | not null | 
  spec              | jsonb                    |           | not null | '{}'::jsonb
  batch_spec_id     | bigint                   |           |          | 
  repo_id           | integer                  |           | not null | 
@@ -650,12 +652,14 @@ Check constraints:
  repo_id             | integer |           | not null | 
  clone_url           | text    |           | not null | 
  user_id             | integer |           |          | 
+ org_id              | integer |           |          | 
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
+    "external_service_repos_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE
     "external_service_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     "external_service_repos_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 
@@ -1091,6 +1095,21 @@ Stores metadata about a code intel index job.
 
 **root**: The working directory of the indexer image relative to the repository root.
 
+# Table "public.lsif_last_index_scan"
+```
+       Column       |           Type           | Collation | Nullable | Default 
+--------------------+--------------------------+-----------+----------+---------
+ repository_id      | integer                  |           | not null | 
+ last_index_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_last_index_scan_pkey" PRIMARY KEY, btree (repository_id)
+
+```
+
+Tracks the last time repository was checked for auto-indexing job scheduling.
+
+**last_index_scan_at**: The last time uploads of this repository were considered for auto-indexing job scheduling.
+
 # Table "public.lsif_last_retention_scan"
 ```
          Column         |           Type           | Collation | Nullable | Default 
@@ -1418,6 +1437,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "cm_monitors" CONSTRAINT "cm_monitors_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "cm_recipients" CONSTRAINT "cm_recipients_org_id_fk" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
+    TABLE "external_service_repos" CONSTRAINT "external_service_repos_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "external_services" CONSTRAINT "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     TABLE "feature_flag_overrides" CONSTRAINT "feature_flag_overrides_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE
     TABLE "names" CONSTRAINT "names_org_id_fkey" FOREIGN KEY (org_id) REFERENCES orgs(id) ON UPDATE CASCADE ON DELETE CASCADE

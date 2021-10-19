@@ -617,17 +617,32 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 }
 
 func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
-	User     graphql.ID
-	CodeHost *graphql.ID
-	Query    *string
+	Namespace graphql.ID
+	CodeHost  *graphql.ID
+	Query     *string
 }) (*affiliatedRepositoriesConnection, error) {
-	userID, err := UnmarshalUserID(args.User)
+	var userID, orgID int32
+	var err error
+	switch relay.UnmarshalKind(args.Namespace) {
+	case "User":
+		userID, err = UnmarshalUserID(args.Namespace)
+	case "Org":
+		orgID, err = UnmarshalOrgID(args.Namespace)
+	}
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Make sure the user is the same user being requested
-	if err := backend.CheckSameUser(ctx, userID); err != nil {
-		return nil, err
+	if userID > 0 {
+		// 🚨 SECURITY: Make sure the user is the same user being requested
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	}
+	if orgID > 0 {
+		// 🚨 SECURITY: Make sure the user can access the organization
+		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+			return nil, err
+		}
 	}
 	var codeHost int64
 	if args.CodeHost != nil {
@@ -644,6 +659,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	return &affiliatedRepositoriesConnection{
 		db:       r.db,
 		userID:   userID,
+		orgID:    orgID,
 		codeHost: codeHost,
 		query:    query,
 	}, nil

@@ -89,7 +89,6 @@ const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }
         case BatchSpecState.CANCELING:
             return <CancelIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-muted mb-1')} />
 
-        case BatchSpecState.ERRORED:
         case BatchSpecState.FAILED:
         default:
             return <ErrorIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />

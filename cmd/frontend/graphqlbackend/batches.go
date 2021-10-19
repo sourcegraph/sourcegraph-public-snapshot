@@ -436,12 +436,15 @@ type BatchSpecResolver interface {
 	ActAsCampaignSpec() bool
 
 	AutoApplyEnabled() bool
-	State(context.Context) string
+	State(context.Context) (string, error)
 	StartedAt(ctx context.Context) (*DateTime, error)
 	FinishedAt(ctx context.Context) (*DateTime, error)
 	FailureMessage(ctx context.Context) (*string, error)
 	WorkspaceResolution(ctx context.Context) (BatchSpecWorkspaceResolutionResolver, error)
 	ImportingChangesets(ctx context.Context, args *ListImportingChangesetsArgs) (ChangesetSpecConnectionResolver, error)
+
+	AllowIgnored() *bool
+	AllowUnsupported() *bool
 }
 
 type BatchChangeDescriptionResolver interface {
@@ -851,9 +854,6 @@ type BatchSpecWorkspaceResolutionResolver interface {
 	FinishedAt() *DateTime
 	FailureMessage() *string
 
-	AllowIgnored() bool
-	AllowUnsupported() bool
-
 	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
 	Unsupported(ctx context.Context) RepositoryConnectionResolver
 
@@ -897,6 +897,7 @@ type BatchSpecWorkspaceResolver interface {
 	OnlyFetchWorkspace() bool
 
 	Ignored() bool
+	Unsupported() bool
 
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
 	PlaceInQueue() *int32

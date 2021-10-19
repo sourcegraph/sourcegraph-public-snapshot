@@ -1,7 +1,7 @@
 import chalk from 'chalk'
-import compression from 'compression'
 import historyApiFallback from 'connect-history-api-fallback'
 import express, { RequestHandler } from 'express'
+import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
 
@@ -13,11 +13,11 @@ import {
     getCSRFTokenAndCookie,
     STATIC_ASSETS_PATH,
     STATIC_INDEX_PATH,
-    WEB_SERVER_URL,
-    shouldCompressResponse,
+    HTTP_WEB_SERVER_URL,
+    HTTPS_WEB_SERVER_URL,
 } from '../utils'
 
-const { SOURCEGRAPH_API_URL, SOURCEGRAPH_HTTPS_PORT } = environmentConfig
+const { SOURCEGRAPH_API_URL, CLIENT_PROXY_DEVELOPMENT_PORT } = environmentConfig
 
 async function startProductionServer(): Promise<void> {
     if (!SOURCEGRAPH_API_URL) {
@@ -30,15 +30,21 @@ async function startProductionServer(): Promise<void> {
 
     const app = express()
 
-    // Compress all HTTP responses
-    app.use(compression({ filter: shouldCompressResponse }))
     // Serve index.html in place of any 404 responses.
     app.use(historyApiFallback() as RequestHandler)
     // Attach `CSRF_COOKIE_NAME` cookie to every response to avoid "CSRF token is invalid" API error.
     app.use(getCSRFTokenCookieMiddleware(csrfCookieValue))
 
     // Serve build artifacts.
-    app.use('/.assets', express.static(STATIC_ASSETS_PATH))
+
+    app.use(
+        '/.assets',
+        expressStaticGzip(STATIC_ASSETS_PATH, {
+            enableBrotli: true,
+            orderPreference: ['br', 'gz'],
+            index: false,
+        })
+    )
 
     // Proxy API requests to the `process.env.SOURCEGRAPH_API_URL`.
     app.use(
@@ -55,8 +61,9 @@ async function startProductionServer(): Promise<void> {
     // Redirect remaining routes to index.html
     app.get('/*', (_request, response) => response.sendFile(STATIC_INDEX_PATH))
 
-    app.listen(SOURCEGRAPH_HTTPS_PORT, () => {
-        signale.success(`Production server is ready at ${chalk.blue.bold(WEB_SERVER_URL)}`)
+    app.listen(CLIENT_PROXY_DEVELOPMENT_PORT, () => {
+        signale.info(`Production HTTP server is ready at ${chalk.blue.bold(HTTP_WEB_SERVER_URL)}`)
+        signale.success(`Production HTTPS server is ready at ${chalk.blue.bold(HTTPS_WEB_SERVER_URL)}`)
     })
 }
 
