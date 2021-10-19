@@ -330,9 +330,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return err
 	}
 
-	var count uint32
-
 	inserter := func(inserter *batch.Inserter) error {
+		var count uint32
 		handler := func(node *precise.DocumentationNode) error {
 			if node.Documentation.SearchKey == "" {
 				return nil
@@ -391,6 +390,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			}
 		}
 
+		traceLog(log.Int("numNodes", int(count)))
 		return nil
 	}
 
@@ -414,7 +414,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	); err != nil {
 		return err
 	}
-	traceLog(log.Int("numSearchRecords", int(count)))
 
 	// Insert the values from the temporary table into the target table. Here we insert
 	// the value that are the same for ever row instead of sending them on each of the
