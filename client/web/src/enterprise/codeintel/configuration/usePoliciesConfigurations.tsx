@@ -22,6 +22,10 @@ const defaultCodeIntelligenceConfigurationPolicyFieldsFragment = gql`
         __typename
         id
         name
+        repository {
+            id
+        }
+        repositoryPatterns
         type
         pattern
         protected
@@ -152,6 +156,8 @@ const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
     __typename: 'CodeIntelligenceConfigurationPolicy',
     id: '',
     name: '',
+    repository: null,
+    repositoryPatterns: null,
     type: GitObjectType.GIT_UNKNOWN,
     pattern: '',
     protected: false,
@@ -276,6 +282,7 @@ export const useUpdateConfigurationForRepository = (): UpdateConfigurationForRep
 const CREATE_POLICY_CONFIGURATION = gql`
     mutation CreateCodeIntelligenceConfigurationPolicy(
         $repositoryId: ID
+        $repositoryPatterns: [String!]
         $name: String!
         $type: GitObjectType!
         $pattern: String!
@@ -288,6 +295,7 @@ const CREATE_POLICY_CONFIGURATION = gql`
     ) {
         createCodeIntelligenceConfigurationPolicy(
             repository: $repositoryId
+            repositoryPatterns: $repositoryPatterns
             name: $name
             type: $type
             pattern: $pattern
@@ -307,6 +315,7 @@ const UPDATE_POLICY_CONFIGURATION = gql`
     mutation UpdateCodeIntelligenceConfigurationPolicy(
         $id: ID!
         $name: String!
+        $repositoryPatterns: [String!]
         $type: GitObjectType!
         $pattern: String!
         $retentionEnabled: Boolean!
@@ -319,6 +328,7 @@ const UPDATE_POLICY_CONFIGURATION = gql`
         updateCodeIntelligenceConfigurationPolicy(
             id: $id
             name: $name
+            repositoryPatterns: $repositoryPatterns
             type: $type
             pattern: $pattern
             retentionEnabled: $retentionEnabled

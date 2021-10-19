@@ -9,6 +9,12 @@ extend type Mutation {
         """
         repository: ID
 
+        """
+        If supplied, the name patterns matching repositories to which this configuration policy
+        applies. This option is mutually exclusive with an explicit repository.
+        """
+        repositoryPatterns: [String!]
+
         name: String!
         type: GitObjectType!
         pattern: String!
@@ -25,6 +31,7 @@ extend type Mutation {
     """
     updateCodeIntelligenceConfigurationPolicy(
         id: ID!
+        repositoryPatterns: [String!]
         name: String!
         type: GitObjectType!
         pattern: String!
@@ -183,6 +190,16 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     A description of the configuration policy.
     """
     name: String!
+
+    """
+    The repository to which this configuration policy applies.
+    """
+    repository: Repository
+
+    """
+    The set of name patterns matching repositories to which this configuration policy applies.
+    """
+    repositoryPatterns: [String!]
 
     """
     The type of Git object described by the configuration policy.

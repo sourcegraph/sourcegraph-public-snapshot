@@ -237,6 +237,8 @@ type DiagnosticResolver interface {
 
 type CodeIntelConfigurationPolicy struct {
 	Name                      string
+	RepositoryID              *int32
+	RepositoryPatterns        *[]string
 	Type                      GitObjectType
 	Pattern                   string
 	RetentionEnabled          bool
@@ -257,7 +259,8 @@ type CreateCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
-	ID graphql.ID
+	ID         graphql.ID
+	Repository *graphql.ID
 	CodeIntelConfigurationPolicy
 }
 
@@ -291,6 +294,8 @@ type GitObjectFilterPreviewResolver interface {
 
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
+	Repository() *RepositoryResolver
+	RepositoryPatterns() *[]string
 	Name() string
 	Type() (GitObjectType, error)
 	Pattern() string

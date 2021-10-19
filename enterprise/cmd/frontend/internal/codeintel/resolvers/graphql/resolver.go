@@ -312,6 +312,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	configurationPolicy, err := r.resolver.CreateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
+		RepositoryPatterns:        args.RepositoryPatterns,
 		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
@@ -346,6 +347,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	if err := r.resolver.UpdateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
+		RepositoryPatterns:        args.RepositoryPatterns,
 		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,

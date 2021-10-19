@@ -28,6 +28,14 @@ func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
 }
 
+func (r *configurationPolicyResolver) Repository() *gql.RepositoryResolver {
+	return nil // TODO - r.configurationPolicy.RepositoryID
+}
+
+func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
+	return r.configurationPolicy.RepositoryPatterns
+}
+
 func (r *configurationPolicyResolver) Type() (gql.GitObjectType, error) {
 	switch r.configurationPolicy.Type {
 	case store.GitObjectTypeCommit:

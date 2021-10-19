@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,6 +26,7 @@ const (
 type ConfigurationPolicy struct {
 	ID                        int
 	RepositoryID              *int
+	RepositoryPatterns        *[]string
 	Name                      string
 	Type                      GitObjectType
 	Pattern                   string
@@ -52,6 +54,7 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 		if err := rows.Scan(
 			&configurationPolicy.ID,
 			&configurationPolicy.RepositoryID,
+			&configurationPolicy.RepositoryPatterns,
 			&configurationPolicy.Name,
 			&configurationPolicy.Type,
 			&configurationPolicy.Pattern,
@@ -141,6 +144,7 @@ const getConfigurationPoliciesQuery = `
 SELECT
 	p.id,
 	p.repository_id,
+	p.repository_patterns,
 	p.name,
 	p.type,
 	p.pattern,
@@ -177,6 +181,7 @@ const getConfigurationPolicyByIDQuery = `
 SELECT
 	p.id,
 	p.repository_id,
+	p.repository_patterns,
 	p.name,
 	p.type,
 	p.pattern,
@@ -212,9 +217,15 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		indexingCommitMaxAgeHours = &duration
 	}
 
+	var repositoryPatterns interface{}
+	if configurationPolicy.RepositoryPatterns != nil {
+		repositoryPatterns = pq.Array(*configurationPolicy.RepositoryPatterns)
+	}
+
 	hydratedConfigurationPolicy, _, err := scanFirstConfigurationPolicy(s.Query(ctx, sqlf.Sprintf(
 		createConfigurationPolicyQuery,
 		configurationPolicy.RepositoryID,
+		repositoryPatterns,
 		configurationPolicy.Name,
 		configurationPolicy.Type,
 		configurationPolicy.Pattern,
@@ -236,6 +247,7 @@ const createConfigurationPolicyQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:CreateConfigurationPolicy
 INSERT INTO lsif_configuration_policies (
 	repository_id,
+	repository_patterns,
 	name,
 	type,
 	pattern,
@@ -245,10 +257,11 @@ INSERT INTO lsif_configuration_policies (
 	indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
+	repository_patterns,
 	name,
 	type,
 	pattern,
@@ -307,8 +320,14 @@ func (s *Store) UpdateConfigurationPolicy(ctx context.Context, policy Configurat
 		}
 	}
 
+	var repositoryPatterns interface{}
+	if policy.RepositoryPatterns != nil {
+		repositoryPatterns = pq.Array(*policy.RepositoryPatterns)
+	}
+
 	return tx.Exec(ctx, sqlf.Sprintf(updateConfigurationPolicyQuery,
 		policy.Name,
+		repositoryPatterns,
 		policy.Type,
 		policy.Pattern,
 		policy.RetentionEnabled,
@@ -326,6 +345,7 @@ const updateConfigurationPolicySelectQuery = `
 SELECT
 	id,
 	repository_id,
+	repository_patterns,
 	name,
 	type,
 	pattern,
@@ -345,6 +365,7 @@ const updateConfigurationPolicyQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:UpdateConfigurationPolicy
 UPDATE lsif_configuration_policies SET
 	name = %s,
+	repository_patterns = %s,
 	type = %s,
 	pattern = %s,
 	retention_enabled = %s,
