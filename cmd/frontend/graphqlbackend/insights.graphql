@@ -478,7 +478,7 @@ input TimeIntervalStepInput {
     """
     The time unit for the interval.
     """
-    unit: TimeIntervalStepUnit!,
+    unit: TimeIntervalStepUnit!
 
     """
     The value for the interval.
@@ -517,6 +517,9 @@ input LineChartOptionsInput {
     title: String
 }
 
+"""
+Input for a line chart search insight.
+"""
 input LineChartSearchInsightInput {
     """
     The list of data series to create (or add) to this insight.
@@ -529,6 +532,9 @@ input LineChartSearchInsightInput {
     options: LineChartOptionsInput!
 }
 
+"""
+Input for a line chart search insight data series.
+"""
 input LineChartSearchInsightDataSeriesInput {
     """
     The query string.
@@ -596,6 +602,9 @@ input PieChartOptionsInput {
     otherThreshold: Float!
 }
 
+"""
+Payload for an insight view after creation.
+"""
 type CreateInsightResult {
     """
     The resulting view.
@@ -608,7 +617,7 @@ extend type Mutation {
     Create a line chart backed by search insights.
     """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
-#    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+    #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
 }
 
 """
@@ -661,7 +670,6 @@ type InsightView implements Node {
 #"""
 #union InsightTimeScope = InsightIntervalTimeScope
 
-
 """
 A custom repository scope for an insight. A scope with all empty fields implies a global scope.
 """
@@ -678,7 +686,7 @@ type InsightIntervalTimeScope {
     """
     The unit of time.
     """
-    unit: TimeIntervalStepUnit!,
+    unit: TimeIntervalStepUnit!
     """
     The value of time.
     """
