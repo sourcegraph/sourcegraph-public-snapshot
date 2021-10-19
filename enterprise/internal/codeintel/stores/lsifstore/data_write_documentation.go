@@ -403,7 +403,7 @@ target_langs AS (
 	WHERE tsv = %s
 ),
 candidates AS (
-	SELECT id, dump_id
+	SELECT id
 	FROM lsif_data_docs_search_$SUFFIX
 	WHERE
 		repo_id = %s AND
