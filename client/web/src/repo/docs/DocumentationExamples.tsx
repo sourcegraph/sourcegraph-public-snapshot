@@ -4,14 +4,13 @@ import VisibilitySensor from 'react-visibility-sensor'
 import { Observable } from 'rxjs'
 
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { RepositoryFields } from '../../graphql-operations'
 
 import { DocumentationExamplesList } from './DocumentationExamplesList'
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>

@@ -31,7 +31,6 @@ describe('SearchContextDropdown', () => {
         history: H.createMemoryHistory(),
         caseSensitive: true,
         patternType: SearchPatternType.literal,
-        versionContext: undefined,
         submitSearch: () => {},
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,

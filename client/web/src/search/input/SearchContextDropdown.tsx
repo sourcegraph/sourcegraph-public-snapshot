@@ -5,7 +5,6 @@ import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
@@ -20,7 +19,6 @@ export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps,
         TelemetryProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
@@ -40,7 +38,6 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         history,
         patternType,
         caseSensitive,
-        versionContext,
         query,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
@@ -62,13 +59,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const isContextFilterInQuery = useMemo(() => filterExists(query, FilterType.context), [query])
 
-    // Disable the dropdown if the query contains a context filter or if a version context is active
-    const isDisabled = isContextFilterInQuery || !!versionContext
-    const disabledTooltipText = isContextFilterInQuery
-        ? 'Overridden by query'
-        : versionContext
-        ? 'Overriden by version context'
-        : ''
+    const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : ''
 
     const submitOnToggle = useCallback(
         (selectedSearchContextSpec: string): void => {
@@ -79,10 +70,9 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 patternType,
                 caseSensitive,
                 selectedSearchContextSpec,
-                versionContext,
             })
         },
-        [submitSearch, caseSensitive, history, query, patternType, versionContext]
+        [submitSearch, caseSensitive, history, query, patternType]
     )
 
     const selectSearchContextSpec = useCallback(
@@ -126,7 +116,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     }
                 )}
                 color="link"
-                disabled={isDisabled}
+                disabled={isContextFilterInQuery}
                 data-tooltip={disabledTooltipText}
             >
                 <code className="search-context-dropdown__button-content test-selected-search-context-spec">

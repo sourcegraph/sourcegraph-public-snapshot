@@ -161,7 +161,6 @@ exports[`GlobalNavbar default 1`] = `
       class="pb-2 border-bottom"
     >
       <searchnavbaritem
-        availableversioncontexts=""
         defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
         history="[object Object]"
@@ -342,7 +341,6 @@ exports[`GlobalNavbar low-profile 1`] = `
       class="pb-2 border-bottom"
     >
       <searchnavbaritem
-        availableversioncontexts=""
         defaultsearchcontextspec=""
         extensionscontroller="[object Object]"
         history="[object Object]"
