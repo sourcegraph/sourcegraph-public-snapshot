@@ -1,4 +1,4 @@
-import { Observable, of, from } from 'rxjs'
+import { of, from } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'

@@ -1,7 +1,6 @@
 import { print } from 'graphql'
 import { once } from 'lodash'
 import { from, Observable } from 'rxjs'
-import { switchMap, take } from 'rxjs/operators'
 
 import {
     GraphQLResult,
@@ -13,7 +12,6 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
-import { SourcegraphUrlService } from '../platform/sourcegraphUrlService'
 
 import { getHeaders } from './headers'
 

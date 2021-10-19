@@ -1,8 +1,7 @@
-import { combineLatest, ReplaySubject, Observable } from 'rxjs'
+import { combineLatest, ReplaySubject } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
-import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
