@@ -8,13 +8,17 @@ import styles from './BatchChangesListIntro.module.scss'
 export const BatchChangesChangelogAlert: React.FunctionComponent = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
-        partialStorageKey="batch-changes-list-intro-changelog-3.32"
+        partialStorageKey="batch-changes-list-intro-changelog-3.33"
     >
         <div className={classNames(styles.batchChangesListIntroCard, 'card h-100 p-2')}>
             <div className="card-body">
-                <h4>New Batch Changes features in version 3.32</h4>
+                <h4>Batch Changes updates in version 3.33</h4>
                 <ul className="mb-0 pl-3">
-                    <li>No changes.</li>
+                    <li>The deprecated campaigns APIs will be removed in the next release.</li>
+                    <li>
+                        The deprecated <code>campaigns.enabled</code> and <code>campaigns.restrictToAdmins</code> site
+                        settings will be non-functional in the next release.
+                    </li>
                 </ul>
             </div>
         </div>
