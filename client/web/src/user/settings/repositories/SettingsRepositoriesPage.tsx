@@ -1,114 +1,61 @@
 import AddIcon from 'mdi-react/AddIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { RouteComponentProps } from 'react-router'
 import { EMPTY, Observable } from 'rxjs'
 import { catchError, tap } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+import { gql } from '@sourcegraph/shared/src/graphql/graphql'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { repeatUntil } from '@sourcegraph/shared/src/util/rxjs/repeatUntil'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Badge } from '@sourcegraph/web/src/components/Badge'
+import { queryExternalServices } from '@sourcegraph/web/src/components/externalServices/backend'
+import {
+    FilteredConnectionFilter,
+    FilteredConnectionQueryArguments,
+    Connection,
+} from '@sourcegraph/web/src/components/FilteredConnection'
+import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
 import { SelfHostedCtaLink } from '@sourcegraph/web/src/components/SelfHostedCtaLink'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
-import { ErrorAlert } from '../../../components/alerts'
-import { queryExternalServices } from '../../../components/externalServices/backend'
-import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-    Connection,
-} from '../../../components/FilteredConnection'
-import { PageTitle } from '../../../components/PageTitle'
 import {
     SiteAdminRepositoryFields,
-    UserRepositoriesResult,
-    UserRepositoriesVariables,
     ExternalServicesResult,
     CodeHostSyncDueResult,
     CodeHostSyncDueVariables,
+    RepositoriesResult,
 } from '../../../graphql-operations'
-import { listUserRepositories } from '../../../site-admin/backend'
+import {
+    listUserRepositories,
+    listOrgRepositories,
+    fetchUserRepositoriesCount,
+    fetchOrgRepositoriesCount,
+} from '../../../site-admin/backend'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
+import { Owner } from '../cloud-ga'
 
-import { RepositoryNode } from './RepositoryNode'
+import { defaultFilters, RepositoriesList } from './RepositoriesList'
 
 interface Props
-    extends RouteComponentProps,
-        TelemetryProps,
+    extends TelemetryProps,
         Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'> {
-    userID: string
+    owner: Owner
     routingPrefix: string
 }
-
-interface RowProps {
-    node: SiteAdminRepositoryFields
-}
-
-const DEFAULT_FILTERS: FilteredConnectionFilter[] = [
-    {
-        label: 'Status',
-        type: 'select',
-        id: 'status',
-        tooltip: 'Repository status',
-        values: [
-            {
-                value: 'all',
-                label: 'All',
-                args: {},
-            },
-            {
-                value: 'cloned',
-                label: 'Cloned',
-                args: { cloned: true, notCloned: false },
-            },
-            {
-                value: 'not-cloned',
-                label: 'Not Cloned',
-                args: { cloned: false, notCloned: true },
-            },
-        ],
-    },
-    {
-        label: 'Code host',
-        type: 'select',
-        id: 'code-host',
-        tooltip: 'Code host',
-        values: [
-            {
-                value: 'all',
-                label: 'All',
-                args: {},
-            },
-        ],
-    },
-]
-
-const Row: React.FunctionComponent<RowProps> = props => (
-    <RepositoryNode
-        name={props.node.name}
-        url={props.node.url}
-        serviceType={props.node.externalRepository.serviceType.toUpperCase()}
-        mirrorInfo={props.node.mirrorInfo}
-        isPrivate={props.node.isPrivate}
-    />
-)
 
 type SyncStatusOrError = undefined | 'scheduled' | 'schedule-complete' | ErrorLike
 
 /**
  * A page displaying the repositories for this user.
  */
-export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
-    history,
-    location,
-    userID,
+export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
+    owner,
     routingPrefix,
     telemetryService,
     onUserExternalServicesOrRepositoriesUpdate,
@@ -118,73 +65,36 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
     const [repoFilters, setRepoFilters] = useState<FilteredConnectionFilter[]>([])
     const [status, setStatus] = useState<SyncStatusOrError>()
     const [updateReposList, setUpdateReposList] = useState(false)
+    const [shouldDisplayContextBanner /* setShouldDisplayContextBanner */] = useState(false)
+
+    const isUserOwner = owner.type === 'user'
+    const fetchRepositories = isUserOwner ? listUserRepositories : listOrgRepositories
+    const fetchRepositoriesCount = isUserOwner ? fetchUserRepositoriesCount : fetchOrgRepositoriesCount
 
     const NoAddedReposBanner = (
         <Container className="text-center">
-            <h4>You have not added any repositories to Sourcegraph.</h4>
+            <h4>{owner.name ? `${owner.name} has` : 'You have'} not added any repositories to Sourcegraph</h4>
 
-            {externalServices?.length === 0 ? (
-                <small>
-                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to start searching your own
-                    repositories, or <Link to={`${routingPrefix}/repositories/manage`}>add public repositories</Link>{' '}
-                    from GitHub or GitLab.
-                </small>
+            {externalServices?.length !== 0 ? (
+                <span className="text-muted">
+                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching{' '}
+                    {isUserOwner ? 'code with Sourcegraph.' : 'with your team!'}
+                </span>
+            ) : isUserOwner ? (
+                <span className="text-muted">
+                    <Link to={`${routingPrefix}/code-hosts`}>Connect a code host</Link> to add your code to Sourcegraph.{' '}
+                    <span>
+                        You can also{' '}
+                        <Link to={`${routingPrefix}/repositories/manage`}>add individual public repositories</Link> from
+                        GitHub.com or GitLab.com.
+                    </span>
+                </span>
             ) : (
-                <small>
-                    <Link to={`${routingPrefix}/repositories/manage`}>Add repositories</Link> to start searching your
-                    code with Sourcegraph.
-                </small>
+                <span className="text-muted">
+                    <Link to={`${routingPrefix}/code-hosts`}>Connect code hosts</Link> to get started with Sourcegraph.{' '}
+                </span>
             )}
         </Container>
-    )
-
-    const fetchUserReposCount = useCallback(
-        async (): Promise<UserRepositoriesResult> =>
-            dataOrThrowErrors(
-                await requestGraphQL<UserRepositoriesResult, UserRepositoriesVariables>(
-                    gql`
-                        query UserRepositoriesTotalCount(
-                            $id: ID!
-                            $first: Int
-                            $query: String
-                            $cloned: Boolean
-                            $notCloned: Boolean
-                            $indexed: Boolean
-                            $notIndexed: Boolean
-                            $externalServiceID: ID
-                        ) {
-                            node(id: $id) {
-                                ... on User {
-                                    __typename
-                                    repositories(
-                                        first: $first
-                                        query: $query
-                                        cloned: $cloned
-                                        notCloned: $notCloned
-                                        indexed: $indexed
-                                        notIndexed: $notIndexed
-                                        externalServiceID: $externalServiceID
-                                    ) {
-                                        totalCount(precise: true)
-                                    }
-                                }
-                            }
-                        }
-                    `,
-                    {
-                        id: userID,
-                        cloned: true,
-                        notCloned: true,
-                        indexed: true,
-                        notIndexed: true,
-                        first: null,
-                        query: null,
-                        externalServiceID: null,
-                    }
-                ).toPromise()
-            ),
-
-        [userID]
     )
 
     const fetchExternalServices = useCallback(
@@ -192,12 +102,12 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             queryExternalServices({
                 first: null,
                 after: null,
-                namespace: userID,
+                namespace: owner.id,
             })
                 .toPromise()
                 .then(({ nodes }) => nodes),
 
-        [userID]
+        [owner.id]
     )
 
     const fetchCodeHostSyncDueStatus = useCallback(
@@ -219,15 +129,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         setExternalServices(services)
 
         // check if user has any manually added or affiliated repositories
-        const result = await fetchUserReposCount()
-        const userRepoCount =
-            result?.node?.__typename === 'User' && result.node.repositories.totalCount
-                ? result.node.repositories.totalCount
-                : 0
-        if (userRepoCount) {
+        const result = await fetchRepositoriesCount({
+            id: owner.id,
+        })
+        const repoCount = result.node.repositories.totalCount || 0
+
+        if (repoCount) {
             setHasRepos(true)
         }
-        onUserExternalServicesOrRepositoriesUpdate(services.length, userRepoCount)
+        onUserExternalServicesOrRepositoriesUpdate(services.length, repoCount)
 
         // configure filters
         const specificCodeHostFilters = services.map(service => ({
@@ -237,7 +147,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             args: { externalServiceID: service.id },
         }))
 
-        const [statusFilter, codeHostFilter] = DEFAULT_FILTERS
+        const [statusFilter, codeHostFilter] = defaultFilters
 
         // update default code host filter by adding GitLab and/or GitHub filters
         const updatedCodeHostFilter = {
@@ -246,9 +156,31 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         }
 
         setRepoFilters([statusFilter, updatedCodeHostFilter])
-    }, [fetchExternalServices, fetchUserReposCount, onUserExternalServicesOrRepositoriesUpdate])
+    }, [fetchExternalServices, fetchRepositoriesCount, onUserExternalServicesOrRepositoriesUpdate, owner.id])
 
     const TWO_SECONDS = 2
+
+    const queryRepos = useCallback(
+        (args: FilteredConnectionQueryArguments): Observable<NonNullable<RepositoriesResult>['repositories']> =>
+            fetchRepositories({ ...args, id: owner.id }).pipe(
+                tap(() => {
+                    if (status === 'schedule-complete') {
+                        setUpdateReposList(!updateReposList)
+                        setStatus(undefined)
+                    }
+
+                    // TODO: @artem - fix the context banner
+                    // if (repos.nodes.length !== 0) {
+                    //     if (status === 'schedule-complete') {
+                    //         setShouldDisplayContextBanner(true)
+                    //     }
+                    // } else {
+                    //     setShouldDisplayContextBanner(false)
+                    // }
+                })
+            ),
+        [owner.id, status, updateReposList, fetchRepositories]
+    )
 
     useObservable(
         useMemo(() => {
@@ -260,7 +192,7 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     repeatUntil(
                         result => {
                             const isScheduledToSync = result.data?.codeHostSyncDue === true
-                            // if all existing code hosts were just added
+                            // if all existing code hosts were just added -
                             // created and updated timestamps are the same
                             const areCodeHostsJustAdded = externalServices.every(
                                 ({ updatedAt, createdAt, repoCount }) => updatedAt === createdAt && repoCount === 0
@@ -305,21 +237,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         init().catch(error => setStatus(asError(error)))
     }, [init, status])
 
-    const queryRepositories = useCallback(
-        (
-            args: FilteredConnectionQueryArguments
-        ): Observable<(NonNullable<UserRepositoriesResult['node']> & { __typename: 'User' })['repositories']> =>
-            listUserRepositories({ ...args, id: userID }).pipe(
-                tap(() => {
-                    if (status === 'schedule-complete') {
-                        setUpdateReposList(!updateReposList)
-                        setStatus(undefined)
-                    }
-                })
-            ),
-        [userID, status, updateReposList]
-    )
-
     const onRepoQueryUpdate = useCallback(
         (value: Connection<SiteAdminRepositoryFields> | ErrorLike | undefined, query: string): void => {
             if (value as Connection<SiteAdminRepositoryFields>) {
@@ -339,36 +256,6 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
         []
     )
 
-    const NoMatchedRepos = (
-        <div className="border rounded p-3">
-            <small>No repositories matched.</small>
-        </div>
-    )
-
-    const RepoFilteredConnection = (
-        <Container>
-            <FilteredConnection<SiteAdminRepositoryFields, Omit<UserRepositoriesResult, 'node'>>
-                className="table mb-0"
-                defaultFirst={15}
-                compact={false}
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                updateOnChange={String(updateReposList)}
-                nodeComponent={Row}
-                listComponent="table"
-                listClassName="w-100"
-                onUpdate={onRepoQueryUpdate}
-                filters={repoFilters}
-                history={history}
-                location={location}
-                emptyElement={NoMatchedRepos}
-                totalCountSummaryComponent={TotalCountSummary}
-                inputClassName="user-settings-repos__filter-input"
-            />
-        </Container>
-    )
-
     const logManageRepositoriesClick = useCallback(() => {
         eventLogger.log('UserSettingsRepositoriesManageRepositoriesClick')
     }, [])
@@ -386,10 +273,26 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                 return namespaceStartIndex !== -1 ? name.slice(0, namespaceStartIndex - 1) : name
             })
 
-            return `Syncing ${names.join(', ')} code host${names.length > 1 ? 's' : ''}.`
+            return `Syncing with ${names.join(', ')}.`
         }
-        return 'Syncing code hosts.'
+        return 'Syncing.'
     }
+
+    const getSearchContextBanner = (orgName: string): JSX.Element => (
+        <div className="alert alert-success my-3" role="alert" key="add-repos">
+            <h4 className="align-middle mb-1">Added repositories</h4>
+            <p className="align-middle mb-0">
+                Search across all repositories added by {orgName} with{' '}
+                <code className="user-code-hosts-page__code--inline">
+                    <Link className="font-weight-normal" to={`/search?q=context:%40${orgName.toLowerCase()}`}>
+                        context:
+                    </Link>
+                    @{orgName}
+                </code>
+                .
+            </p>
+        </div>
+    )
 
     return (
         <div className="user-settings-repos">
@@ -400,41 +303,67 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
             />
             {status === 'scheduled' && (
                 <div className="alert alert-info">
-                    <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories list may not be
-                    up-to-date and will refresh once the sync is finished.
+                    <span className="font-weight-bold">{getCodeHostsSyncMessage()}</span> Repositories may not be
+                    up-to-date and will refresh once sync is finished.
                 </div>
             )}
+            {!isUserOwner && shouldDisplayContextBanner && owner.name && getSearchContextBanner(owner.name)}
             {isErrorLike(status) && <ErrorAlert error={status} icon={true} />}
-            <PageTitle title="Repositories" />
+            <PageTitle title="Your repositories" />
             <PageHeader
                 headingElement="h2"
                 path={[
                     {
                         text: (
                             <div className="d-flex">
-                                Repositories <Badge status="beta" className="ml-2" />
+                                {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
+                                <Badge status="beta" className="ml-2" />
                             </div>
                         ),
                     },
                 ]}
                 description={
-                    <div className="text-muted">
-                        All repositories synced with Sourcegraph from{' '}
-                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>
-                    </div>
+                    <span className="text-muted">
+                        All repositories synced with Sourcegraph from {owner.name ? owner.name + "'s" : 'your'}{' '}
+                        <Link to={`${routingPrefix}/code-hosts`}>connected code hosts</Link>.
+                    </span>
                 }
                 actions={
-                    <Link
-                        className="btn btn-primary"
-                        to={`${routingPrefix}/repositories/manage`}
-                        onClick={logManageRepositoriesClick}
-                    >
-                        {(hasRepos && <>Manage Repositories</>) || (
-                            <>
+                    <span>
+                        {hasRepos ? (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/repositories/manage`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                Manage repositories
+                            </Link>
+                        ) : isUserOwner ? (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/repositories/manage`}
+                                onClick={logManageRepositoriesClick}
+                            >
                                 <AddIcon className="icon-inline" /> Add repositories
-                            </>
+                            </Link>
+                        ) : externalServices && externalServices.length !== 0 ? (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/repositories/manage`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                <AddIcon className="icon-inline" /> Add repositories
+                            </Link>
+                        ) : (
+                            <Link
+                                className="btn btn-primary"
+                                to={`${routingPrefix}/code-hosts`}
+                                onClick={logManageRepositoriesClick}
+                            >
+                                <AddIcon className="icon-inline" /> Connect code hosts
+                            </Link>
                         )}
-                    </Link>
+                    </span>
                 }
                 className="mb-3"
             />
@@ -445,18 +374,15 @@ export const UserSettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                     <LoadingSpinner className="icon-inline" />
                 </div>
             ) : hasRepos ? (
-                RepoFilteredConnection
+                <RepositoriesList
+                    queryRepos={queryRepos}
+                    updateReposList={updateReposList}
+                    onRepoQueryUpdate={onRepoQueryUpdate}
+                    repoFilters={repoFilters}
+                />
             ) : (
                 NoAddedReposBanner
             )}
         </div>
     )
 }
-
-const TotalCountSummary: React.FunctionComponent<{ totalCount: number }> = ({ totalCount }) => (
-    <div className="d-inline-block mt-4 mr-2">
-        <small>
-            {totalCount} {totalCount === 1 ? 'repository' : 'repositories'} total
-        </small>
-    </div>
-)

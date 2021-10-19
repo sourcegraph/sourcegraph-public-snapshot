@@ -452,6 +452,82 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 	}
 }
 
+func TestRepos_ListRepoNames_orgID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create an org
+	displayName := "Acme Corp"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "Github - Test",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		NamespaceOrgID: org.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices(db).Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	err = Repos(db).Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
+	}
+
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OrgID: org.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+}
+
 func TestRepos_List_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -575,31 +651,47 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	now := time.Now()
-	old := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
+	now := time.Now().UTC()
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now.Add(-time.Hour),
-	})[0]
-	new := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
+	})
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
 		CloneStatus: types.CloneStatusCloned,
 		LastChanged: now,
-	})[0]
+	})
+
+	// Our test helpers don't do updated_at, so manually doing it.
+	_, err := db.Exec("update repo set updated_at = $1", now.Add(-24*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// will have update_at set to now, so should be included as often as new.
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "newMeta"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-24 * time.Hour),
+	})
+	_, err = db.Exec("update repo set updated_at = $1 where name = 'newMeta'", now)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		Name           string
 		MinLastChanged time.Time
-		Want           types.Repos
+		Want           []string
 	}{{
 		Name: "not specified",
-		Want: types.Repos{old, new},
+		Want: []string{"old", "new", "newMeta"},
 	}, {
 		Name:           "old",
 		MinLastChanged: now.Add(-24 * time.Hour),
-		Want:           types.Repos{old, new},
+		Want:           []string{"old", "new", "newMeta"},
 	}, {
 		Name:           "new",
 		MinLastChanged: now.Add(-time.Minute),
-		Want:           types.Repos{new},
+		Want:           []string{"new", "newMeta"},
 	}, {
 		Name:           "none",
 		MinLastChanged: now.Add(time.Minute),
@@ -607,14 +699,20 @@ func TestRepos_List_LastChanged(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			got, err := repos.List(ctx, ReposListOptions{
+			repos, err := repos.List(ctx, ReposListOptions{
 				OnlyCloned:     true,
 				MinLastChanged: test.MinLastChanged,
 			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			assertJSONEqual(t, test.Want, got)
+			var got []string
+			for _, r := range repos {
+				got = append(got, string(r.Name))
+			}
+			if d := cmp.Diff(test.Want, got); d != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", d)
+			}
 		})
 	}
 }
@@ -1819,7 +1917,7 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 
 func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "options ExternalServiceIDs and UserID are mutually exclusive"
+	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
 
 	t.Parallel()
 	db := dbtest.NewDB(t, "")
@@ -2399,7 +2497,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 }
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
-	id := rand.String(3)
+	id := rand.String(8)
 	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,

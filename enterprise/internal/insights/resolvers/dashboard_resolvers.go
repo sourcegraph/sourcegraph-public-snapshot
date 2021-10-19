@@ -13,6 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -27,6 +30,7 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 type dashboardConnectionResolver struct {
 	dashboardStore store.DashboardStore
 	insightStore   *store.InsightStore
+	orgStore         *database.OrgStore
 	args           *graphqlbackend.InsightsDashboardsArgs
 
 	// Cache results because they are used by multiple fields
@@ -50,6 +54,13 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 		if d.args.First != nil {
 			args.Limit = int(*d.args.First)
 		}
+		var err error
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, d.orgStore)
+		if err != nil {
+			d.err = errors.Wrap(err, "getUserPermissions")
+			return
+		}
+
 		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)
 		if err != nil {
 			d.err = err

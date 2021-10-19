@@ -33,12 +33,12 @@ func TestCommittedAtMigrator(t *testing.T) {
 		expectedCommitDates = append(expectedCommitDates, t0.Add(time.Second*time.Duration(i)))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
-			return expectedCommitDates[i], true, nil
+			return commit, expectedCommitDates[i], true, nil
 		}
 
-		return time.Time{}, false, errors.Errorf("too many calls")
+		return "", time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -132,16 +132,16 @@ func TestCommittedAtMigratorUnknownRepository(t *testing.T) {
 		}
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, false, &vcs.RepoNotExistError{}
+				return "", time.Time{}, false, &vcs.RepoNotExistError{}
 			}
 
-			return allDates[i], true, nil
+			return commit, allDates[i], true, nil
 		}
 
-		return time.Time{}, false, errors.Errorf("too many calls")
+		return "", time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {
@@ -235,16 +235,16 @@ func TestCommittedAtMigratorUnknownCommits(t *testing.T) {
 		}
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error) {
 		if i := len(gitserverClient.CommitDateFunc.History()); i < n {
 			if i%3 == 0 {
-				return time.Time{}, false, nil
+				return "", time.Time{}, false, nil
 			}
 
-			return allDates[i], true, nil
+			return commit, allDates[i], true, nil
 		}
 
-		return time.Time{}, false, errors.Errorf("too many calls")
+		return "", time.Time{}, false, errors.Errorf("too many calls")
 	})
 
 	assertProgress := func(expectedProgress float64) {

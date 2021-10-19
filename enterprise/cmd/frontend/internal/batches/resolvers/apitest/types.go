@@ -375,22 +375,40 @@ type BulkOperationConnection struct {
 	PageInfo   PageInfo
 }
 
-type BatchSpecExecution struct {
-	ID           string
-	InputSpec    string
-	State        string
-	CreatedAt    graphqlbackend.DateTime
-	StartedAt    graphqlbackend.DateTime
-	FinishedAt   graphqlbackend.DateTime
-	Failure      string
-	PlaceInQueue int
-	BatchSpec    BatchSpec
-	Initiator    User
-	Namespace    UserOrg
+type GitRef struct {
+	Name        string
+	DisplayName string
+	AbbrevName  string
+	Target      GitTarget
 }
 
-type BatchSpecExecutionConnection struct {
-	Nodes      []BatchSpecExecution
-	TotalCount int
-	PageInfo   PageInfo
+type BatchSpecWorkspace struct {
+	Typename string `json:"__typename"`
+	ID       string
+
+	Repository Repository
+	BatchSpec  BatchSpec
+
+	ChangesetSpecs []ChangesetSpec
+
+	Branch            GitRef
+	Path              string
+	SearchResultPaths []string
+	Steps             []BatchSpecWorkspaceStep
+
+	CachedResultFound  bool
+	OnlyFetchWorkspace bool
+	Ignored            bool
+	Unsupported        bool
+
+	State          string
+	StartedAt      graphqlbackend.DateTime
+	FinishedAt     graphqlbackend.DateTime
+	FailureMessage string
+	PlaceInQueue   int
+}
+
+type BatchSpecWorkspaceStep struct {
+	Run       string
+	Container string
 }

@@ -24,9 +24,9 @@ const fragment = gql`
                 }
             }
             state
-            allowIgnored
-            allowUnsupported
         }
+        allowUnsupported
+        allowIgnored
     }
 
     fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
@@ -36,6 +36,7 @@ const fragment = gql`
             url
         }
         ignored
+        unsupported
         branch {
             id
             abbrevName

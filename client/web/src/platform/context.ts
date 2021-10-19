@@ -71,7 +71,7 @@ export function createPlatformContext(): PlatformContext {
             }
 
             // The error will be emitted to consumers from the `context.settings` observable.
-            settingsQueryWatcher.refetch().catch(error => console.error(error))
+            await settingsQueryWatcher.refetch().catch(error => console.error(error))
         },
         getGraphQLClient: getWebGraphQLClient,
         requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),

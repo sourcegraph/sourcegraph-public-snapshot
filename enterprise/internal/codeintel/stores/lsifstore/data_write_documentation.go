@@ -3,6 +3,8 @@ package lsifstore
 import (
 	"context"
 	"fmt"
+	stdlog "log"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -28,9 +30,25 @@ import (
 func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
+		log.String("repo", upload.RepositoryName),
+		log.String("commit", upload.Commit),
+		log.String("root", upload.Root),
 	}})
 	defer endObservation(1, observation.Args{})
 
+	defer func() {
+		if err := recover(); err != nil {
+			stack := debug.Stack()
+			stdlog.Printf("API docs panic: %v\n%s", err, stack)
+			traceLog(log.String("API docs panic error", fmt.Sprint(err)))
+			traceLog(log.String("API docs panic stack", string(stack)))
+		}
+	}()
+
+	return s.doWriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, traceLog)
+}
+
+func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData, traceLog observation.TraceLogger) (err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return err
@@ -379,23 +397,25 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 const purgeDocumentationSearchOldData = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
 WITH
-	langs AS (
-		SELECT id FROM lsif_data_docs_search_lang_names_$SUFFIX
-		WHERE tsv = %s
-	),
-	candidates AS (
-		SELECT dump_id FROM lsif_data_docs_search_$SUFFIX
-		WHERE repo_id=%s
-		AND dump_root=%s
+target_langs AS (
+	SELECT id
+	FROM lsif_data_docs_search_lang_names_$SUFFIX
+	WHERE tsv = %s
+),
+candidates AS (
+	SELECT id
+	FROM lsif_data_docs_search_$SUFFIX
+	WHERE
+		repo_id = %s AND
+		dump_root = %s AND
+		lang_name_id IN (SELECT id FROM target_langs)
 
-		-- Lock these rows in a deterministic order so that we don't deadlock with other processes
-		-- updating the lsif_data_docs_search_* tables.
-		ORDER BY dump_id FOR UPDATE
-	)
+	-- Lock these rows in a deterministic order so that we don't deadlock with other
+	-- processes updating the lsif_data_docs_search_* tables.
+	ORDER BY id FOR UPDATE
+)
 DELETE FROM lsif_data_docs_search_$SUFFIX
-WHERE dump_id = ANY(SELECT dump_id FROM candidates)
-AND lang_name_id = ANY(SELECT id FROM langs)
-RETURNING dump_id
+WHERE id IN (SELECT id FROM candidates)
 `
 
 const writeDocumentationSearchLangNames = `
@@ -508,11 +528,9 @@ func (s *Store) truncateDocumentationSearchIndexSize(ctx context.Context, tableS
 	return nil
 }
 
-// TODO(apidocs): future: introduce materialized count for this table and for other interesting API
-// docs data points in general. https://github.com/sourcegraph/sourcegraph/pull/25206#discussion_r714270738
 const countDocumentationSearchRowsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:truncateDocumentationSearchIndexSize
-SELECT count(*)::bigint FROM lsif_data_docs_search_$SUFFIX
+SELECT count::bigint FROM lsif_data_apidocs_num_search_results_$SUFFIX
 `
 
 const truncateDocumentationSearchRowsQuery = `

@@ -69,9 +69,10 @@ func (m *apiDocsSearchMigrator) Progress(ctx context.Context) (float64, error) {
 
 const apiDocsSearchMigratorProgressQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/migration/apidocs_search.go:Progress
-SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
-	(SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages WHERE search_indexed='true') c1,
-	(SELECT count(DISTINCT dump_id) FROM lsif_data_documentation_pages) c2
+SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END
+FROM
+	(SELECT * FROM lsif_data_apidocs_num_dumps_indexed) c1,
+	(SELECT * FROM lsif_data_apidocs_num_dumps) c2
 `
 
 // Up runs a batch of the migration. This method is called repeatedly until the Progress

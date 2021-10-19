@@ -29,6 +29,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md#repository
    "authorization": {}
 }
 ```
+> NOTE: The Github url used for settip up authentication must be the same provided for the Github code host connection for permission syncing to work properly.
 
 > WARNING: It can take some time to complete mirroring repository permissions from a code host. [Learn more](#permissions-sync-times).
 
@@ -88,7 +89,7 @@ When enabling this feature, we currently recommend a default of `72` (hours, or 
 Caches can also be [manually invalidated](#permissions-caching) if necessary.
 Cache invaldiation also happens automatically on certain [webhook events](#faster-permissions-syncing-via-github-webhooks).
 
-> NOTE: The token associated with the external service must have `repo` and `read:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
+> NOTE: The token associated with the external service must have `repo` and `write:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
 
 <br />
 
