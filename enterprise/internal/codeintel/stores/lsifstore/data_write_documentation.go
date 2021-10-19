@@ -318,54 +318,51 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 
 	handler := func(node *precise.DocumentationNode) error {
-		if node.Documentation.SearchKey != "" {
-			// Upsert the tags sequence.
-			tagsSlice := []string{}
-			for _, tag := range node.Documentation.Tags {
-				tagsSlice = append(tagsSlice, string(tag))
-			}
-			tags := strings.Join(tagsSlice, " ")
-			tagsID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
-				strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
-				tags,                   // tags
-				textSearchVector(tags), // tsv
-				textSearchVector(tags), // union tsv query
-			)))
-			if err != nil {
-				return errors.Wrap(err, "upserting tags")
-			}
-			if !exists {
-				return fmt.Errorf("failed to upsert tags")
-			}
-
-			// Insert the search result.
-			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
-			detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
-			err = s.Exec(ctx, sqlf.Sprintf(
-				strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
-				upload.RepositoryID, // repo_id
-				upload.ID,           // dump_id
-				upload.Root,         // dump_root
-				node.PathID,         // path_id
-				detail,              // detail
-				langNameID,          // lang_name_id
-				repoNameID,          // repo_name_id
-				tagsID,              // tags_id
-
-				node.Documentation.SearchKey,                            // search_key
-				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
-				textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
-
-				label,                            // label
-				textSearchVector(label),          // label_tsv
-				textSearchVector(reverse(label)), // label_reverse_tsv
-			))
-			if err != nil {
-				return err
-			}
+		if node.Documentation.SearchKey == "" {
+			return nil
 		}
 
-		return nil
+		// Upsert the tags sequence.
+		tagsSlice := []string{}
+		for _, tag := range node.Documentation.Tags {
+			tagsSlice = append(tagsSlice, string(tag))
+		}
+		tags := strings.Join(tagsSlice, " ")
+		tagsID, exists, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
+			strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
+			tags,                   // tags
+			textSearchVector(tags), // tsv
+			textSearchVector(tags), // union tsv query
+		)))
+		if err != nil {
+			return errors.Wrap(err, "upserting tags")
+		}
+		if !exists {
+			return fmt.Errorf("failed to upsert tags")
+		}
+
+		// Insert the search result.
+		label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
+		detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
+		return s.Exec(ctx, sqlf.Sprintf(
+			strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
+			upload.RepositoryID, // repo_id
+			upload.ID,           // dump_id
+			upload.Root,         // dump_root
+			node.PathID,         // path_id
+			detail,              // detail
+			langNameID,          // lang_name_id
+			repoNameID,          // repo_name_id
+			tagsID,              // tags_id
+
+			node.Documentation.SearchKey,                            // search_key
+			textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
+			textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
+
+			label,                            // label
+			textSearchVector(label),          // label_tsv
+			textSearchVector(reverse(label)), // label_reverse_tsv
+		))
 	}
 
 	// Index each page.
