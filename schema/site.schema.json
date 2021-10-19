@@ -78,6 +78,12 @@
             }
           }
         },
+        "apidocs": {
+          "description": "API docs, see https://docs.sourcegraph.com/code_intelligence/apidocs",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "enabled"
+        },
         "apidocs.search.indexing": {
           "description": "Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs",
           "type": "string",
