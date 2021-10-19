@@ -19,13 +19,19 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
-## 3.31.2
+## 3.33.0
+
+### Fixed
+
+- Importing changesets won't fail validation when uploading to Sourcegraph 3.33.
+
+## 3.32.1
 
 ### Fixed
 
 - Fixes an issue where src-cli would panic when importing existing changesets.
 
-## 3.31.1
+## 3.32.0
 
 ### Added
 
