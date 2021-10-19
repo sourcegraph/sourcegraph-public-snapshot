@@ -93,14 +93,17 @@ To set up webhooks:
    * **Payload URL**: the URL you copied above from Sourcegraph.
    * **Content type**: this must be set to `application/json`.
    * **Secret**: the secret token you configured Sourcegraph to use above.
-   * **Which events**: select **Let me select individual events**, and then enable:
-     - Issue comments
-     - Pull requests
-     - Pull request reviews
-     - Pull request review comments
-     - Check runs
-     - Check suites
-     - Statuses
+   * **Which events**: 
+     * Select ***Let me select individual events***
+     * Enable these required events: *(push events are enabled by default, but are not required)*
+       - Issue comments
+       - Pull requests
+       - Pull request reviews
+       - Pull request review comments
+       - Check runs
+       - Check suites
+       - Statuses
+     
    * **Active**: ensure this is enabled.
 1. Click **Add webhook**.
 1. Confirm that the new webhook is listed.
