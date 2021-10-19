@@ -284,7 +284,8 @@ func makeOnConflictSuffix(command string) string {
 		return ""
 	}
 
-	return fmt.Sprintf(" ON CONFLICT %s", command)
+	// Command assumed to be full clause
+	return fmt.Sprintf(" %s", command)
 }
 
 // makeReturningSuffix creates a RETURNING ... clause of the batch insert statement, if any

@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -257,23 +258,23 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return nil
 	}
 
-	ctx, traceLog, endObservation := s.operations.writeDocumentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.writeDocumentationSearch.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", upload.RepositoryName),
 		log.Int("bundleID", upload.ID),
 		log.Int("pages", len(pages)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	// This will not always produce a proper language name, e.g. if an indexer is not named after
-	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
-	// is the indexer name which is likely good enough since we use fuzzy search / partial text matching
-	// over it.
-	languageOrIndexerName := strings.ToLower(strings.TrimPrefix(upload.Indexer, "lsif-"))
-
 	tableSuffix := "public"
 	if repo.Private {
 		tableSuffix = "private"
 	}
+
+	// This will not always produce a proper language name, e.g. if an indexer is not named after
+	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
+	// is the indexer name which is likely good enough since we use fuzzy search / partial text matching
+	// over it.
+	languageName := strings.ToLower(strings.TrimPrefix(upload.Indexer, "lsif-"))
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -287,7 +288,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	for _, suffix := range []string{"public", "private"} {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			strings.ReplaceAll(purgeDocumentationSearchOldData, "$SUFFIX", suffix),
-			textSearchVector(languageOrIndexerName), // langs CTE tsv
+			textSearchVector(languageName), // langs CTE tsv
 			upload.RepositoryID,
 			upload.Root,
 		)); err != nil {
@@ -295,149 +296,22 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		}
 	}
 
-	// Upsert the language name.
-	langNameID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		strings.ReplaceAll(writeDocumentationSearchLangNames, "$SUFFIX", tableSuffix),
-		languageOrIndexerName,                   // lang_name
-		textSearchVector(languageOrIndexerName), // tsv
-		textSearchVector(languageOrIndexerName), // union tsv query
-	)))
-	if err != nil {
-		return errors.Wrap(err, "upserting language name")
-	}
-	if !exists {
-		return fmt.Errorf("failed to upsert language name")
-	}
-
-	// Upsert the repo name.
-	repoNameID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		strings.ReplaceAll(writeDocumentationSearchRepoNames, "$SUFFIX", tableSuffix),
-		upload.RepositoryName,                            // repo_name
-		textSearchVector(upload.RepositoryName),          // tsv
-		textSearchVector(reverse(upload.RepositoryName)), // reverse_tsv
-		textSearchVector(upload.RepositoryName),          // union tsv query
-	)))
-	if err != nil {
-		return errors.Wrap(err, "upserting repo name")
-	}
-	if !exists {
-		return fmt.Errorf("failed to upsert repo name")
-	}
-
-	tagMap := map[string]struct{}{}
-	tagGatherer := func(node *precise.DocumentationNode) error {
-		if node.Documentation.SearchKey == "" {
-			return nil
-		}
-
-		tagsSlice := make([]string, 0, len(node.Documentation.Tags))
-		for _, tag := range node.Documentation.Tags {
-			tagsSlice = append(tagsSlice, string(tag))
-		}
-
-		tagMap[strings.Join(tagsSlice, " ")] = struct{}{}
-		return nil
-	}
-
-	// Gather tags for each page
-	for _, page := range pages {
-		traceLog(log.String("page", page.Tree.PathID))
-		if err := walkDocumentationNode(page.Tree, tagGatherer); err != nil {
-			return err
-		}
-	}
-
-	tagIDs, err := tx.upsertTags(ctx, tagMap, tableSuffix)
+	repositoryNameID, err := tx.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
 	if err != nil {
 		return err
 	}
 
-	// Create temporary table symmetric to lsif_data_docs_search_$SUFFIX without the fields that
-	// have the same value for the same upload. We'll insert these shared values all at once to
-	// save on query bandwidth
-	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(writeDocumentationSearchTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
+	languageNameID, err := tx.upsertLanguageName(ctx, languageName, tableSuffix)
+	if err != nil {
 		return err
 	}
 
-	searchInserter := func(inserter *batch.Inserter) error {
-		handler := func(node *precise.DocumentationNode) error {
-			if node.Documentation.SearchKey == "" {
-				return nil
-			}
-
-			tagsSlice := make([]string, 0, len(node.Documentation.Tags))
-			for _, tag := range node.Documentation.Tags {
-				tagsSlice = append(tagsSlice, string(tag))
-			}
-			tagsID := tagIDs[strings.Join(tagsSlice, " ")]
-
-			// Insert the search result.
-			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
-			detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
-
-			if err := inserter.Insert(
-				ctx,
-				node.PathID, // path_id
-				detail,      // detail
-				tagsID,      // tags_id
-
-				node.Documentation.SearchKey,                            // search_key
-				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
-				textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
-
-				label,                            // label
-				textSearchVector(label),          // label_tsv
-				textSearchVector(reverse(label)), // label_reverse_tsv
-			); err != nil {
-				return err
-			}
-
-			return nil
-		}
-
-		// Index each page.
-		for _, page := range pages {
-			traceLog(log.String("page", page.Tree.PathID))
-			if err := walkDocumentationNode(page.Tree, handler); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
-	// Bulk insert all the unique column values into the temporary table
-	if err := batch.WithInserter(
-		ctx,
-		tx.Handle().DB(),
-		"t_lsif_data_docs_search",
-		[]string{
-			"path_id",
-			"detail",
-			"tags_id",
-			"search_key",
-			"search_key_tsv",
-			"search_key_reverse_tsv",
-			"label",
-			"label_tsv",
-			"label_reverse_tsv",
-		},
-		searchInserter,
-	); err != nil {
+	tagIDs, err := tx.upsertTags(ctx, gatherTags(pages), tableSuffix)
+	if err != nil {
 		return err
 	}
 
-	// Insert the values from the temporary table into the target table. Here we insert
-	// the value that are the same for ever row instead of sending them on each of the
-	// batched insert calls.
-	if err := tx.Exec(ctx, sqlf.Sprintf(
-		strings.ReplaceAll(writeDocumentationSearchInsertQuery, "$SUFFIX", tableSuffix),
-		upload.RepositoryID, // repo_id
-		upload.ID,           // dump_id
-		upload.Root,         // dump_root
-		langNameID,          // lang_name_id
-		repoNameID,          // repo_name_id
-	)); err != nil {
+	if err := tx.insertSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
 		return err
 	}
 
@@ -447,51 +321,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			return errors.Wrap(err, "truncating documentation search index size")
 		}
 	}
+
 	return nil
-}
-
-// TODO - document
-func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tableSuffix string) (map[string]int, error) {
-	inserter := func(inserter *batch.Inserter) error {
-		for tags := range tagMap {
-			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
-	tagIDs := make(map[string]int, len(tagMap))
-	returningScanner := func(rows *sql.Rows) error {
-		var tagID int
-		var tags string
-		if err := rows.Scan(&tagID, &tags); err != nil {
-			return err
-		}
-
-		tagIDs[tags] = tagID
-		return nil
-	}
-
-	if err := batch.WithInserterWithReturn(
-		ctx,
-		s.Handle().DB(),
-		"lsif_data_docs_search_tags_"+tableSuffix,
-		[]string{"tags", "tsv"},
-		// TODO - make this API better
-		// Force a DO UPDATE on conflict to force the RETURNING clause to run.
-		// This lets us effectively bulk upsert the set of tags, regardless of
-		// how many duplicates we sent.
-		"(tags) DO UPDATE SET tags = EXCLUDED.tags",
-		[]string{"id", "tags"},
-		returningScanner,
-		inserter,
-	); err != nil {
-		return nil, err
-	}
-
-	return tagIDs, nil
 }
 
 const purgeDocumentationSearchOldData = `
@@ -518,41 +349,183 @@ DELETE FROM lsif_data_docs_search_$SUFFIX
 WHERE id IN (SELECT id FROM candidates)
 `
 
-const writeDocumentationSearchLangNames = `
-WITH e AS(
-	INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
-	VALUES (%s, %s)
-	ON CONFLICT DO NOTHING
-	RETURNING id
-)
-SELECT * FROM e
-UNION
-	-- Fallback union for when there is a conflict in the upsert CTE. We only scan the first item.
-    SELECT id FROM lsif_data_docs_search_lang_names_$SUFFIX WHERE tsv = %s
+func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix string) (int, error) {
+	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(upsertRepositoryNameQuery, "$SUFFIX", tableSuffix),
+		name,
+		textSearchVector(name),
+		textSearchVector(reverse(name)),
+	)))
+
+	return id, err
+}
+
+const upsertRepositoryNameQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertRepositoryName
+INSERT INTO lsif_data_docs_search_repo_names_$SUFFIX (repo_name, tsv, reverse_tsv)
+VALUES (%s, %s, %s)
+-- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
+ON CONFLICT (repo_name) DO UPDATE SET repo_name = EXCLUDED.repo_name
+RETURNING id
 `
 
-const writeDocumentationSearchRepoNames = `
-WITH e AS(
-	INSERT INTO lsif_data_docs_search_repo_names_$SUFFIX (repo_name, tsv, reverse_tsv)
-	VALUES (%s, %s, %s)
-	ON CONFLICT DO NOTHING
-	RETURNING id
-)
-SELECT * FROM e
-UNION
-	-- Fallback union for when there is a conflict in the upsert CTE. We only scan the first item.
-	SELECT id FROM lsif_data_docs_search_repo_names_$SUFFIX WHERE tsv = %s
-`
+func (s *Store) upsertLanguageName(ctx context.Context, name, tableSuffix string) (int, error) {
+	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(upsertLanguageNameQuery, "$SUFFIX", tableSuffix),
+		name,
+		textSearchVector(name),
+	)))
 
-const writeDocumentationSearchTags = `
-INSERT INTO lsif_data_docs_search_tags_$SUFFIX (tags, tsv)
+	return id, err
+}
+
+const upsertLanguageNameQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertLanguageName
+INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
 VALUES (%s, %s)
-ON CONFLICT DO NOTHING
-RETURNING id, tags
+-- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
+ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXClUDED.lang_name
+RETURNING id
 `
 
-const writeDocumentationSearchTemporaryTableQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
+func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tableSuffix string) (map[string]int, error) {
+	inserter := func(inserter *batch.Inserter) error {
+		for tags := range tagMap {
+			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	tagIDs := make(map[string]int, len(tagMap))
+	returningScanner := func(rows *sql.Rows) error {
+		var tagID int
+		var tags string
+		if err := rows.Scan(&tagID, &tags); err != nil {
+			return err
+		}
+
+		// Correlate id and tags of each upserted row
+		tagIDs[tags] = tagID
+		return nil
+	}
+
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		s.Handle().DB(),
+		"lsif_data_docs_search_tags_"+tableSuffix,
+		[]string{"tags", "tsv"},
+		// Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
+		"ON CONFLICT (tags) DO UPDATE SET tags = EXCLUDED.tags",
+		// Return id and tags on each row so we can correlate ids, either
+		// existing or new, for each row we sent to be inserted.
+		[]string{"id", "tags"},
+		returningScanner,
+		inserter,
+	); err != nil {
+		return nil, err
+	}
+
+	return tagIDs, nil
+}
+
+func (s *Store) insertSearchRecords(
+	ctx context.Context,
+	upload dbstore.Upload,
+	repositoryNameID int,
+	languageNameID int,
+	pages []*precise.DocumentationPageData,
+	tagIDs map[string]int,
+	tableSuffix string,
+) error {
+	// Create temporary table symmetric to lsif_data_docs_search_$SUFFIX without the fields that have
+	// the same value for the same upload. We'll insert these shared values all at once to save on query
+	// bandwidth.
+	if err := s.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(insertSearchRecordsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
+		return err
+	}
+
+	inserter := func(inserter *batch.Inserter) error {
+		handler := func(node *precise.DocumentationNode) error {
+			if node.Documentation.SearchKey == "" {
+				return nil
+			}
+
+			detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
+			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
+			tagsID := tagIDs[normalizeTags(node.Documentation.Tags)]
+
+			if err := inserter.Insert(
+				ctx,
+				node.PathID, // path_id
+				detail,      // detail
+				tagsID,      // tags_id
+
+				node.Documentation.SearchKey,                            // search_key
+				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
+				textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
+
+				label,                            // label
+				textSearchVector(label),          // label_tsv
+				textSearchVector(reverse(label)), // label_reverse_tsv
+			); err != nil {
+				return err
+			}
+
+			return nil
+		}
+
+		for _, page := range pages {
+			if err := walkDocumentationNode(page.Tree, handler); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	// Bulk insert all the unique column values into the temporary table
+	if err := batch.WithInserter(
+		ctx,
+		s.Handle().DB(),
+		"t_lsif_data_docs_search",
+		[]string{
+			"path_id",
+			"detail",
+			"tags_id",
+			"search_key",
+			"search_key_tsv",
+			"search_key_reverse_tsv",
+			"label",
+			"label_tsv",
+			"label_reverse_tsv",
+		},
+		inserter,
+	); err != nil {
+		return err
+	}
+
+	// Insert the values from the temporary table into the target table. Here we insert
+	// the value that are the same for ever row instead of sending them on each of the
+	// batched insert calls.
+	if err := s.Exec(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(insertSearchRecordsInsertQuery, "$SUFFIX", tableSuffix),
+		upload.RepositoryID, // repo_id
+		upload.ID,           // dump_id
+		upload.Root,         // dump_root
+		repositoryNameID,    // repo_name_id
+		languageNameID,      // lang_name_id
+	)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const insertSearchRecordsTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
 CREATE TEMPORARY TABLE t_lsif_data_docs_search (
 	path_id TEXT NOT NULL,
 	detail TEXT NOT NULL,
@@ -566,14 +539,14 @@ CREATE TEMPORARY TABLE t_lsif_data_docs_search (
 ) ON COMMIT DROP
 `
 
-const writeDocumentationSearchInsertQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
+const insertSearchRecordsInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
 INSERT INTO lsif_data_docs_search_$SUFFIX (
 	repo_id,
 	dump_id,
 	dump_root,
-	lang_name_id,
 	repo_name_id,
+	lang_name_id,
 	path_id,
 	detail,
 	tags_id,
@@ -588,8 +561,8 @@ SELECT
 	%s, -- repo_id
 	%s, -- dump_id
 	%s, -- dump_root
-	%s, -- lang_name_id
 	%s, -- repo_name_id
+	%s, -- lang_name_id
 	source.path_id,
 	source.detail,
 	source.tags_id,
@@ -616,6 +589,31 @@ func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise
 	}
 
 	return nil
+}
+
+func gatherTags(pages []*precise.DocumentationPageData) map[string]struct{} {
+	tagMap := map[string]struct{}{}
+	for _, page := range pages {
+		_ = walkDocumentationNode(page.Tree, func(node *precise.DocumentationNode) error {
+			if node.Documentation.SearchKey != "" {
+				tagMap[normalizeTags(node.Documentation.Tags)] = struct{}{}
+			}
+
+			return nil
+		})
+	}
+
+	return tagMap
+}
+
+func normalizeTags(tags []protocol.Tag) string {
+	s := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		s = append(s, string(tag))
+	}
+	// Can we sort these? Might reduce number of total rows in tags table
+
+	return strings.Join(s, " ")
 }
 
 var (
