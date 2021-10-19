@@ -73,7 +73,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "label1",
-				Stroke:             "color1",
+				LineColor:          "color1",
 			},
 			{
 				UniqueID:           "unique-1",
@@ -88,7 +88,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "label2",
-				Stroke:             "color2",
+				LineColor:          "color2",
 			},
 			{
 				UniqueID:           "unique-2",
@@ -103,7 +103,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "second-label-2",
-				Stroke:             "second-color-2",
+				LineColor:          "second-color-2",
 			},
 		}
 
@@ -134,7 +134,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "label1",
-				Stroke:             "color1",
+				LineColor:          "color1",
 			},
 			{
 				UniqueID:           "unique-1",
@@ -149,7 +149,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "label2",
-				Stroke:             "color2",
+				LineColor:          "color2",
 			},
 		}
 
@@ -179,7 +179,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "label1",
-				Stroke:             "color1",
+				LineColor:          "color1",
 			},
 			{
 				UniqueID:           "unique-1",
@@ -194,7 +194,7 @@ func TestGet(t *testing.T) {
 				LastSnapshotAt:     now,
 				NextSnapshotAfter:  now,
 				Label:              "label2",
-				Stroke:             "color2",
+				LineColor:          "color2",
 			},
 		}
 
@@ -541,7 +541,7 @@ func TestAttachSeriesView(t *testing.T) {
 			LastSnapshotAt:     now,
 			NextSnapshotAfter:  now,
 			Label:              "my label",
-			Stroke:             "my stroke",
+			LineColor:          "my stroke",
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {

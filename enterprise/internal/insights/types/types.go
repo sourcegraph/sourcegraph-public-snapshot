@@ -19,7 +19,7 @@ type InsightViewSeries struct {
 	NextSnapshotAfter   time.Time
 	BackfillQueuedAt    *time.Time
 	Label               string
-	Stroke              string
+	LineColor           string
 	Repositories        []string
 	SampleIntervalUnit  *string
 	SampleIntervalValue *int

@@ -287,7 +287,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.Title,
 			&temp.Description,
 			&temp.Label,
-			&temp.Stroke,
+			&temp.LineColor,
 			&temp.SeriesID,
 			&temp.Query,
 			&temp.CreatedAt,
