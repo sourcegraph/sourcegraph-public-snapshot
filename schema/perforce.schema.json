@@ -137,7 +137,8 @@
         "lookAhead": {
           "description": "How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them",
           "type": "integer",
-          "default": 2000
+          "default": 2000,
+          "minimum": 1
         }
       }
     }
