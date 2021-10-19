@@ -43,8 +43,6 @@ Use "src batch [command] -h" for more information about a command.
 			"batchchanges",
 			"batch-changes",
 			"batches",
-			"campaign",
-			"campaigns",
 		},
 		handler:   handler,
 		usageFunc: func() { fmt.Println(usage) },
