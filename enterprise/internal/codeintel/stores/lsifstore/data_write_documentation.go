@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	stdlog "log"
 	"runtime/debug"
@@ -323,39 +324,81 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return fmt.Errorf("failed to upsert repo name")
 	}
 
-	// Create temporary table symmetric to lsif_data_documentation_search_$SUFFIX without the fields
-	// that have the same value for the same upload. We'll insert these shared values all at once to
+	tagMap := map[string]int{}
+	tagGatherer := func(node *precise.DocumentationNode) error {
+		if node.Documentation.SearchKey == "" {
+			return nil
+		}
+
+		tagsSlice := make([]string, 0, len(node.Documentation.Tags))
+		for _, tag := range node.Documentation.Tags {
+			tagsSlice = append(tagsSlice, string(tag))
+		}
+
+		tagMap[strings.Join(tagsSlice, " ")] = 0
+		return nil
+	}
+
+	// Gather tags for each page
+	for _, page := range pages {
+		traceLog(log.String("page", page.Tree.PathID))
+		if err := walkDocumentationNode(page.Tree, tagGatherer); err != nil {
+			return err
+		}
+	}
+
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		tx.Handle().DB(),
+		"lsif_data_docs_search_tags_"+tableSuffix,
+		[]string{"tags", "tsv"},
+		// Force a DO UPDATE on conflict to force the RETURNING clause to run.
+		// This lets us effectively bulk upsert the set of tags, regardless of
+		// how many duplicates we sent.
+		"(tags) DO UPDATE SET tags = EXCLUDED.tags",
+		[]string{"id", "tags"},
+		func(rows *sql.Rows) error {
+			var tagID int
+			var tags string
+			if err := rows.Scan(&tagID, &tags); err != nil {
+				return err
+			}
+
+			tagMap[tags] = tagID
+			return nil
+		},
+		func(inserter *batch.Inserter) error {
+			for tags := range tagMap {
+				if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
+	); err != nil {
+		return err
+	}
+
+	// Create temporary table symmetric to lsif_data_docs_search_$SUFFIX without the fields that
+	// have the same value for the same upload. We'll insert these shared values all at once to
 	// save on query bandwidth
 	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(writeDocumentationSearchTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
 		return err
 	}
 
-	inserter := func(inserter *batch.Inserter) error {
-		var count uint32
+	searchInserter := func(inserter *batch.Inserter) error {
 		handler := func(node *precise.DocumentationNode) error {
 			if node.Documentation.SearchKey == "" {
 				return nil
 			}
 
-			// Upsert the tags sequence.
 			tagsSlice := make([]string, 0, len(node.Documentation.Tags))
 			for _, tag := range node.Documentation.Tags {
 				tagsSlice = append(tagsSlice, string(tag))
 			}
 			tags := strings.Join(tagsSlice, " ")
-			tsv := textSearchVector(tags)
-			tagsID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-				strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
-				tags, // tags
-				tsv,  // tsv
-				tsv,  // union tsv query
-			)))
-			if err != nil {
-				return errors.Wrap(err, "upserting tags")
-			}
-			if !exists {
-				return fmt.Errorf("failed to upsert tags")
-			}
+			tagsID := tagMap[tags]
 
 			// Insert the search result.
 			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
@@ -378,7 +421,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 				return err
 			}
 
-			atomic.AddUint32(&count, 1)
 			return nil
 		}
 
@@ -390,7 +432,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			}
 		}
 
-		traceLog(log.Int("numNodes", int(count)))
 		return nil
 	}
 
@@ -398,7 +439,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	if err := batch.WithInserter(
 		ctx,
 		tx.Handle().DB(),
-		"t_lsif_data_documentation_search_"+tableSuffix,
+		"t_lsif_data_docs_search",
 		[]string{
 			"path_id",
 			"detail",
@@ -410,7 +451,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			"label_tsv",
 			"label_reverse_tsv",
 		},
-		inserter,
+		searchInserter,
 	); err != nil {
 		return err
 	}
@@ -489,21 +530,15 @@ UNION
 `
 
 const writeDocumentationSearchTags = `
-WITH e AS(
-	INSERT INTO lsif_data_docs_search_tags_$SUFFIX (tags, tsv)
-	VALUES (%s, %s)
-	ON CONFLICT DO NOTHING
-	RETURNING id
-)
-SELECT * FROM e
-UNION
-	-- Fallback union for when there is a conflict in the upsert CTE. We only scan the first item.
-	SELECT id FROM lsif_data_docs_search_tags_$SUFFIX WHERE tsv = %s
+INSERT INTO lsif_data_docs_search_tags_$SUFFIX (tags, tsv)
+VALUES (%s, %s)
+ON CONFLICT DO NOTHING
+RETURNING id, tags
 `
 
 const writeDocumentationSearchTemporaryTableQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
-CREATE TEMPORARY TABLE t_lsif_data_documentation_search (
+CREATE TEMPORARY TABLE t_lsif_data_docs_search (
 	path_id TEXT NOT NULL,
 	detail TEXT NOT NULL,
 	tags_id INTEGER NOT NULL,
@@ -518,7 +553,7 @@ CREATE TEMPORARY TABLE t_lsif_data_documentation_search (
 
 const writeDocumentationSearchInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
-INSERT INTO lsif_data_documentation_search_$SUFFIX (
+INSERT INTO lsif_data_docs_search_$SUFFIX (
 	repo_id,
 	dump_id,
 	dump_root,
@@ -549,7 +584,7 @@ SELECT
 	source.label,
 	source.label_tsv,
 	source.label_reverse_tsv
-FROM t_lsif_data_documentation_search source
+FROM t_lsif_data_docs_search source
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
