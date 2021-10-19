@@ -324,7 +324,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return fmt.Errorf("failed to upsert repo name")
 	}
 
-	tagMap := map[string]int{}
+	tagMap := map[string]struct{}{}
 	tagGatherer := func(node *precise.DocumentationNode) error {
 		if node.Documentation.SearchKey == "" {
 			return nil
@@ -335,7 +335,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			tagsSlice = append(tagsSlice, string(tag))
 		}
 
-		tagMap[strings.Join(tagsSlice, " ")] = 0
+		tagMap[strings.Join(tagsSlice, " ")] = struct{}{}
 		return nil
 	}
 
@@ -347,36 +347,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		}
 	}
 
-	if err := batch.WithInserterWithReturn(
-		ctx,
-		tx.Handle().DB(),
-		"lsif_data_docs_search_tags_"+tableSuffix,
-		[]string{"tags", "tsv"},
-		// Force a DO UPDATE on conflict to force the RETURNING clause to run.
-		// This lets us effectively bulk upsert the set of tags, regardless of
-		// how many duplicates we sent.
-		"(tags) DO UPDATE SET tags = EXCLUDED.tags",
-		[]string{"id", "tags"},
-		func(rows *sql.Rows) error {
-			var tagID int
-			var tags string
-			if err := rows.Scan(&tagID, &tags); err != nil {
-				return err
-			}
-
-			tagMap[tags] = tagID
-			return nil
-		},
-		func(inserter *batch.Inserter) error {
-			for tags := range tagMap {
-				if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
-					return err
-				}
-			}
-
-			return nil
-		},
-	); err != nil {
+	tagIDs, err := tx.upsertTags(ctx, tagMap, tableSuffix)
+	if err != nil {
 		return err
 	}
 
@@ -397,8 +369,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			for _, tag := range node.Documentation.Tags {
 				tagsSlice = append(tagsSlice, string(tag))
 			}
-			tags := strings.Join(tagsSlice, " ")
-			tagsID := tagMap[tags]
+			tagsID := tagIDs[strings.Join(tagsSlice, " ")]
 
 			// Insert the search result.
 			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
@@ -477,6 +448,50 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		}
 	}
 	return nil
+}
+
+// TODO - document
+func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tableSuffix string) (map[string]int, error) {
+	inserter := func(inserter *batch.Inserter) error {
+		for tags := range tagMap {
+			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	tagIDs := make(map[string]int, len(tagMap))
+	returningScanner := func(rows *sql.Rows) error {
+		var tagID int
+		var tags string
+		if err := rows.Scan(&tagID, &tags); err != nil {
+			return err
+		}
+
+		tagIDs[tags] = tagID
+		return nil
+	}
+
+	if err := batch.WithInserterWithReturn(
+		ctx,
+		s.Handle().DB(),
+		"lsif_data_docs_search_tags_"+tableSuffix,
+		[]string{"tags", "tsv"},
+		// TODO - make this API better
+		// Force a DO UPDATE on conflict to force the RETURNING clause to run.
+		// This lets us effectively bulk upsert the set of tags, regardless of
+		// how many duplicates we sent.
+		"(tags) DO UPDATE SET tags = EXCLUDED.tags",
+		[]string{"id", "tags"},
+		returningScanner,
+		inserter,
+	); err != nil {
+		return nil, err
+	}
+
+	return tagIDs, nil
 }
 
 const purgeDocumentationSearchOldData = `
