@@ -303,6 +303,20 @@
       ],
       "group": "Experimental"
     },
+    "campaigns.enabled": {
+      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns",
+      "default": true
+    },
+    "campaigns.restrictToAdmins": {
+      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Campaigns",
+      "default": false
+    },
     "batchChanges.enabled": {
       "description": "Enables/disables the Batch Changes feature.",
       "type": "boolean",
