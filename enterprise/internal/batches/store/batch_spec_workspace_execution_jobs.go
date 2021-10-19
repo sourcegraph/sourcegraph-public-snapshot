@@ -116,6 +116,7 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs .
 		s.Handle().DB(),
 		"batch_spec_workspace_execution_jobs",
 		batchSpecWorkspaceExecutionJobInsertColumns,
+		"",
 		BatchSpecWorkspaceExecutionJobColums,
 		func(rows *sql.Rows) error {
 			i++
