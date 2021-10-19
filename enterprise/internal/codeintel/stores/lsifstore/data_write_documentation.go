@@ -334,11 +334,12 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			tagsSlice = append(tagsSlice, string(tag))
 		}
 		tags := strings.Join(tagsSlice, " ")
+		tsv := textSearchVector(tags)
 		tagsID, exists, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
 			strings.ReplaceAll(writeDocumentationSearchTags, "$SUFFIX", tableSuffix),
-			tags,                   // tags
-			textSearchVector(tags), // tsv
-			textSearchVector(tags), // union tsv query
+			tags, // tags
+			tsv,  // tsv
+			tsv,  // union tsv query
 		)))
 		if err != nil {
 			return errors.Wrap(err, "upserting tags")
