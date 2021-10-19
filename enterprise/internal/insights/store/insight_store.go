@@ -50,6 +50,10 @@ type InsightQueryArgs struct {
 	UniqueID  string
 	UserID    []int
 	OrgID     []int
+
+	// This field will disable user level authorization checks on the insight views. This should only be used
+	// when fetching insights from a container that also has authorization checks, such as a dashboard.
+	WithoutAuthorization bool
 }
 
 // Get returns all matching viewable insight series.
@@ -66,7 +70,9 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
-	preds = append(preds, viewPermissionsQuery(args))
+	if !args.WithoutAuthorization {
+		preds = append(preds, viewPermissionsQuery(args))
+	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
