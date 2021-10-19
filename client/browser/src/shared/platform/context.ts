@@ -1,7 +1,8 @@
-import { combineLatest, ReplaySubject } from 'rxjs'
+import { combineLatest, ReplaySubject, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isHTTPAuthError } from '@sourcegraph/shared/src/backend/fetch'
+import { GraphQLResult } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
@@ -55,6 +56,7 @@ export function createPlatformContext(
     isExtension: boolean
 ): BrowserPlatformContext {
     const updatedViewerSettings = new ReplaySubject<Pick<GQL.ISettingsCascade, 'subjects' | 'final'>>(1)
+    console.log('createPlatformContext', sourcegraphURL)
     const { requestGraphQL, getBrowserGraphQLClient } = createGraphQLHelpers(sourcegraphURL, isExtension)
 
     const context: BrowserPlatformContext = {

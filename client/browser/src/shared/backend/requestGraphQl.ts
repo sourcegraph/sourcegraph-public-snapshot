@@ -29,7 +29,7 @@ interface GraphQLHelpers {
     requestGraphQL: <T, V = object>(options: RequestGraphQLOptions<V>) => Observable<GraphQLResult<T>>
 }
 
-function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
+function createMainThreadExtensionGraphQLHelpers(sourcegraphURL: string): GraphQLHelpers {
     /**
      * Forward GraphQL request to the background script for execution.
      */
@@ -37,7 +37,10 @@ function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
         options: RequestGraphQLOptions<V>
         // Keep both helpers inside of the factory function.
         // eslint-disable-next-line unicorn/consistent-function-scoping
-    ): Observable<GraphQLResult<T>> => from(background.requestGraphQL<T, V>(options))
+    ): Observable<GraphQLResult<T>> =>
+        from(
+            background.requestGraphQL<T, V>({ ...options, sourcegraphURL })
+        )
 
     /**
      * Apollo-Client is not configured yet to execute requests in the background script.
@@ -84,25 +87,19 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
             console.warn('Check out the implementation of the `requestGraphQLInBackground` function above.')
         }
 
-        return createMainThreadExtensionGraphQLHelpers()
+        return createMainThreadExtensionGraphQLHelpers(sourcegraphURL)
     }
 
     const requestGraphQL = <T, V = object>({
         request,
         variables,
     }: RequestGraphQLOptions<V>): Observable<GraphQLResult<T>> =>
-        SourcegraphUrlService.observe(isExtension).pipe(
-            take(1),
-            switchMap(sourcegraphURL =>
-                requestGraphQLCommon<T, V>({
-                    request,
-                    variables,
-                    baseUrl: sourcegraphURL,
-                    credentials: 'include',
-                })
-            )
-        )
-
+        requestGraphQLCommon<T, V>({
+            request,
+            variables,
+            baseUrl: sourcegraphURL,
+            credentials: 'include',
+        })
     /**
      * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
      * After that, the same instance should be used by all consumers.
