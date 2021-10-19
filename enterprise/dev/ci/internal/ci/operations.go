@@ -135,7 +135,8 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"))
+		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CHECK_BUNDLESIZE", "1"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",

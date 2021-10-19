@@ -16,3 +16,8 @@ NODE_ENV='' yarn -s run browserslist
 
 echo "--- build"
 yarn -s run build --color
+
+if [ "$CHECK_BUNDLESIZE" ]; then
+  echo "--- bundlesize"
+  yarn -s run bundlesize --enable-github-checks
+fi

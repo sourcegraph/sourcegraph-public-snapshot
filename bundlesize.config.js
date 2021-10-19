@@ -3,8 +3,8 @@
 module.exports = {
   files: [
     {
-      path: './ui/assets/scripts/app.*.js',
-      maxSize: '600kb',
+      path: './ui/assets/scripts/*.js',
+      maxSize: '1000kb',
       compression: 'brotli',
     },
   ],
