@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
-import { AuthenticatedUser } from '../../../../../wildcard'
+import { AuthenticatedUser } from '../../auth'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../util'
 import { LogoAscii } from '../LogoAscii'

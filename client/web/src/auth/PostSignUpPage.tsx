@@ -10,7 +10,7 @@ import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 
-import { AuthenticatedUser } from '../../../../wildcard'
+import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
