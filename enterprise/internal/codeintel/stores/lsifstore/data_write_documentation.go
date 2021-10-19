@@ -282,20 +282,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// This upload is for a commit on the default branch of the repository, so it is eligible for API
-	// docs search indexing. It will replace any existing data that we have or this unique (repo_id, lang, root)
-	// tuple in either table so we go ahead and purge the old data now.
-	for _, suffix := range []string{"public", "private"} {
-		if err := tx.Exec(ctx, sqlf.Sprintf(
-			strings.ReplaceAll(purgeDocumentationSearchOldData, "$SUFFIX", suffix),
-			textSearchVector(languageName), // langs CTE tsv
-			upload.RepositoryID,
-			upload.Root,
-		)); err != nil {
-			return errors.Wrap(err, "purging old data")
-		}
-	}
-
 	repositoryNameID, err := tx.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
 	if err != nil {
 		return err
@@ -311,7 +297,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return err
 	}
 
-	if err := tx.insertSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
+	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
 		return err
 	}
 
@@ -324,30 +310,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 
 	return nil
 }
-
-const purgeDocumentationSearchOldData = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:WriteDocumentationSearch
-WITH
-target_langs AS (
-	SELECT id
-	FROM lsif_data_docs_search_lang_names_$SUFFIX
-	WHERE tsv = %s
-),
-candidates AS (
-	SELECT id
-	FROM lsif_data_docs_search_$SUFFIX
-	WHERE
-		repo_id = %s AND
-		dump_root = %s AND
-		lang_name_id IN (SELECT id FROM target_langs)
-
-	-- Lock these rows in a deterministic order so that we don't deadlock with other
-	-- processes updating the lsif_data_docs_search_* tables.
-	ORDER BY id FOR UPDATE
-)
-DELETE FROM lsif_data_docs_search_$SUFFIX
-WHERE id IN (SELECT id FROM candidates)
-`
 
 func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix string) (int, error) {
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
@@ -431,7 +393,7 @@ func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tabl
 	return tagIDs, nil
 }
 
-func (s *Store) insertSearchRecords(
+func (s *Store) replaceSearchRecords(
 	ctx context.Context,
 	upload dbstore.Upload,
 	repositoryNameID int,
@@ -440,10 +402,16 @@ func (s *Store) insertSearchRecords(
 	tagIDs map[string]int,
 	tableSuffix string,
 ) error {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
 	// Create temporary table symmetric to lsif_data_docs_search_$SUFFIX without the fields that have
 	// the same value for the same upload. We'll insert these shared values all at once to save on query
 	// bandwidth.
-	if err := s.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(insertSearchRecordsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(insertSearchRecordsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
 		return err
 	}
 
@@ -489,7 +457,7 @@ func (s *Store) insertSearchRecords(
 	// Bulk insert all the unique column values into the temporary table
 	if err := batch.WithInserter(
 		ctx,
-		s.Handle().DB(),
+		tx.Handle().DB(),
 		"t_lsif_data_docs_search",
 		[]string{
 			"path_id",
@@ -510,12 +478,17 @@ func (s *Store) insertSearchRecords(
 	// Insert the values from the temporary table into the target table. Here we insert
 	// the value that are the same for ever row instead of sending them on each of the
 	// batched insert calls.
-	if err := s.Exec(ctx, sqlf.Sprintf(
+	if err := tx.Exec(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(insertSearchRecordsInsertQuery, "$SUFFIX", tableSuffix),
+		// For insertion
 		upload.RepositoryID, // repo_id
 		upload.ID,           // dump_id
 		upload.Root,         // dump_root
 		repositoryNameID,    // repo_name_id
+		languageNameID,      // lang_name_id
+		// For deletion
+		upload.RepositoryID, // repo_id
+		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 	)); err != nil {
 		return err
@@ -541,38 +514,53 @@ CREATE TEMPORARY TABLE t_lsif_data_docs_search (
 
 const insertSearchRecordsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
-INSERT INTO lsif_data_docs_search_$SUFFIX (
-	repo_id,
-	dump_id,
-	dump_root,
-	repo_name_id,
-	lang_name_id,
-	path_id,
-	detail,
-	tags_id,
-	search_key,
-	search_key_tsv,
-	search_key_reverse_tsv,
-	label,
-	label_tsv,
-	label_reverse_tsv
+WITH
+ins AS (
+	INSERT INTO lsif_data_docs_search_$SUFFIX (
+		repo_id,
+		dump_id,
+		dump_root,
+		repo_name_id,
+		lang_name_id,
+		path_id,
+		detail,
+		tags_id,
+		search_key,
+		search_key_tsv,
+		search_key_reverse_tsv,
+		label,
+		label_tsv,
+		label_reverse_tsv
+	)
+	SELECT
+		%s, -- repo_id
+		%s, -- dump_id
+		%s, -- dump_root
+		%s, -- repo_name_id
+		%s, -- lang_name_id
+		source.path_id,
+		source.detail,
+		source.tags_id,
+		source.search_key,
+		source.search_key_tsv,
+		source.search_key_reverse_tsv,
+		source.label,
+		source.label_tsv,
+		source.label_reverse_tsv
+	FROM t_lsif_data_docs_search source
+	RETURNING 1
+),
+del AS (
+	DELETE FROM lsif_data_docs_search_$SUFFIX
+	WHERE
+		repo_id = %s AND
+		dump_root = %s AND
+		lang_name_id = %s
+	RETURNING 1
 )
 SELECT
-	%s, -- repo_id
-	%s, -- dump_id
-	%s, -- dump_root
-	%s, -- repo_name_id
-	%s, -- lang_name_id
-	source.path_id,
-	source.detail,
-	source.tags_id,
-	source.search_key,
-	source.search_key_tsv,
-	source.search_key_reverse_tsv,
-	source.label,
-	source.label_tsv,
-	source.label_reverse_tsv
-FROM t_lsif_data_docs_search source
+	(SELECT COUNT(*) FROM ins) AS num_ins,
+	(SELECT COUNT(*) FROM del) AS num_del
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
