@@ -317,8 +317,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return fmt.Errorf("failed to upsert repo name")
 	}
 
-	var index func(node *precise.DocumentationNode) error
-	index = func(node *precise.DocumentationNode) error {
+	handler := func(node *precise.DocumentationNode) error {
 		if node.Documentation.SearchKey != "" {
 			// Upsert the tags sequence.
 			tagsSlice := []string{}
@@ -366,21 +365,13 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 			}
 		}
 
-		// Index descendants.
-		for _, child := range node.Children {
-			if child.Node != nil {
-				if err := index(child.Node); err != nil {
-					return err
-				}
-			}
-		}
 		return nil
 	}
 
 	// Index each page.
 	for _, page := range pages {
 		traceLog(log.String("page", page.Tree.PathID))
-		if err := index(page.Tree); err != nil {
+		if err := walkDocumentationNode(page.Tree, handler); err != nil {
 			return err
 		}
 	}
@@ -476,6 +467,22 @@ INSERT INTO lsif_data_docs_search_$SUFFIX (
 	label_reverse_tsv
 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
+
+func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
+	if err := f(node); err != nil {
+		return err
+	}
+
+	for _, child := range node.Children {
+		if child.Node != nil {
+			if err := walkDocumentationNode(child.Node, f); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
 
 var (
 	lastTruncationWarningMu   sync.Mutex
