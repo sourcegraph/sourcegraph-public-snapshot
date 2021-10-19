@@ -263,6 +263,8 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
+		// Temporary fix until we fix the code-intel flake
+		bk.AutomaticRetry(3),
 		bk.Cmd("./dev/ci/go-test.sh"),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }
