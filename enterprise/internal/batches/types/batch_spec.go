@@ -72,6 +72,9 @@ type BatchSpecStats struct {
 	Canceling  int
 	Canceled   int
 	Failed     int
+
+	StartedAt  time.Time
+	FinishedAt time.Time
 }
 
 // BatchSpecState defines the possible states of a BatchSpec that was created
