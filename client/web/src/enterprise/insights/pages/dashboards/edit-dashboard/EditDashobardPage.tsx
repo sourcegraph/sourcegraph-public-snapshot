@@ -42,7 +42,15 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
 
     // Load edit dashboard information
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
-    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
+
+    const dashboard = useObservable(
+        useMemo(
+            () => getDashboardById(dashboardId),
+            // Load only on first render to avoid UI flashing after settings update
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+            [dashboardId]
+        )
+    )
 
     // Loading state
     if (subjects === undefined || dashboard === undefined) {
