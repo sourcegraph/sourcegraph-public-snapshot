@@ -4,7 +4,7 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LoaderButton } from '@sourcegraph/web/src/components/LoaderButton'
 
 import { FinishWelcomeFlow } from '../PostSignUpPage'
-import { useSteps } from '../Steps/context'
+import { useSteps } from '../../../../../wildcard/components/context'
 
 interface Props {
     onFinish: FinishWelcomeFlow

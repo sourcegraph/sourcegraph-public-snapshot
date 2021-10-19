@@ -5,7 +5,7 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { UserCodeHosts } from '../../user/settings/codeHosts/UserCodeHosts'
-import { useSteps } from '../Steps'
+import { useSteps } from '../../../../../wildcard/components'
 
 interface CodeHostsConnection extends Omit<UserCodeHosts, 'onDidRemove' | 'onDidError' | 'externalServices'> {
     refetch: UserCodeHosts['onDidRemove']
