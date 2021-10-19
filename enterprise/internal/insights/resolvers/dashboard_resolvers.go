@@ -130,7 +130,7 @@ func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]g
 	if err != nil {
 		return nil, err
 	}
-	for i, _ := range views {
+	for i := range views {
 		resolvers = append(resolvers, &insightViewResolver{view: &views[i]})
 	}
 	return resolvers, nil

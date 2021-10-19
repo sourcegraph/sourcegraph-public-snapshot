@@ -465,6 +465,9 @@ type InsightSeriesQueryStatus {
 A custom time scope for an insight data series.
 """
 input TimeScopeInput {
+    """
+    Sets a time scope using a step interval (intervals of time).
+    """
     stepInterval: TimeIntervalStepInput
 }
 
@@ -472,10 +475,20 @@ input TimeScopeInput {
 A time scope defined using a time interval (ex. 5 days)
 """
 input TimeIntervalStepInput {
+    """
+    The time unit for the interval.
+    """
     unit: TimeIntervalStepUnit!,
+
+    """
+    The value for the interval.
+    """
     value: Int!
 }
 
+"""
+Time interval units.
+"""
 enum TimeIntervalStepUnit {
     HOUR
     DAY
@@ -488,6 +501,9 @@ enum TimeIntervalStepUnit {
 A custom repository scope for an insight data series.
 """
 input RepositoryScopeInput {
+    """
+    The list of repositories included in this scope.
+    """
     repositories: [String!]!
 }
 
@@ -495,18 +511,40 @@ input RepositoryScopeInput {
 Options for a line chart
 """
 input LineChartOptionsInput {
+    """
+    The chart title.
+    """
     title: String
 }
 
 input LineChartSearchInsightInput {
+    """
+    The list of data series to create (or add) to this insight.
+    """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The options for this line chart.
+    """
     options: LineChartOptionsInput!
 }
 
 input LineChartSearchInsightDataSeriesInput {
+    """
+    The query string.
+    """
     query: String!
+    """
+    Options for this line chart data series.
+    """
     options: LineChartDataSeriesOptionsInput!
+    """
+    The scope of repositories.
+    """
     repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
     timeScope: TimeScopeInput!
 }
 
@@ -514,7 +552,13 @@ input LineChartSearchInsightDataSeriesInput {
 Options for a line chart data series
 """
 input LineChartDataSeriesOptionsInput {
+    """
+    The label for the data series.
+    """
     label: String
+    """
+    The line color for the data series.
+    """
     lineColor: String
 }
 
@@ -522,8 +566,18 @@ input LineChartDataSeriesOptionsInput {
 Input for a pie chart search insight
 """
 input PieChartSearchInsightInput {
+    """
+    The query string.
+    """
     query: String!
+    """
+    The scope of repositories.
+    """
     repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
     options: PieChartOptionsInput!
 }
 
@@ -531,15 +585,28 @@ input PieChartSearchInsightInput {
 Options for a pie chart
 """
 input PieChartOptionsInput {
+    """
+    The title for the pie chart.
+    """
     title: String
+    """
+    The threshold for which groups fall into the "other category". Only categories with a percentage greater than
+    this value will be separately rendered.
+    """
     otherThreshold: Float!
 }
 
 type CreateInsightResult {
+    """
+    The resulting view.
+    """
     view: InsightView!
 }
 
 extend type Mutation {
+    """
+    Create a line chart backed by search insights.
+    """
     createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
 #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
 }
@@ -599,13 +666,22 @@ type InsightView implements Node {
 A custom repository scope for an insight. A scope with all empty fields implies a global scope.
 """
 type InsightRepositoryScope {
+    """
+    The list of repositories in the scope.
+    """
     repositories: [String!]!
 }
 """
 Defines a time scope using an interval of time
 """
 type InsightIntervalTimeScope {
+    """
+    The unit of time.
+    """
     unit: TimeIntervalStepUnit!,
+    """
+    The value of time.
+    """
     value: Int!
 }
 
@@ -613,7 +689,13 @@ type InsightIntervalTimeScope {
 Defines an insight data series that is constructed from a Sourcegraph search query.
 """
 type SearchInsightDataSeriesDefinition {
+    """
+    The unique ID for the series.
+    """
     seriesId: String!
+    """
+    The query string.
+    """
     query: String!
 
     """
@@ -631,7 +713,14 @@ type SearchInsightDataSeriesDefinition {
 View presentation for a line chart insight
 """
 type LineChartInsightViewPresentation {
+    """
+    The title for the line chart.
+    """
     title: String!
+
+    """
+    The presentation options for the line chart.
+    """
     seriesPresentation: [LineChartDataSeriesPresentation!]!
 }
 
@@ -639,8 +728,17 @@ type LineChartInsightViewPresentation {
 View presentation for a single insight line chart data series
 """
 type LineChartDataSeriesPresentation {
+    """
+    Unique ID for the series.
+    """
     seriesId: String!
+    """
+    The label for the series.
+    """
     label: String!
+    """
+    The color for the series.
+    """
     color: String!
 }
 
@@ -648,7 +746,14 @@ type LineChartDataSeriesPresentation {
 View presentation for an insight pie chart.
 """
 type PieChartInsightViewPresentation {
+    """
+    The title for the pie chart.
+    """
     title: String!
+    """
+    The threshold for which groups fall into the "other category". Only categories with a percentage greater than
+    this value will be separately rendered.
+    """
     otherThreshold: Float!
 }
 
@@ -656,6 +761,13 @@ type PieChartInsightViewPresentation {
 The fields and values for which the insight is filtered.
 """
 type InsightViewFilters {
+    """
+    A regex string for which to include repositories in a filter.
+    """
     includeRepoRegex: String
+
+    """
+    A regex string for which to exclude repositories from a filter.
+    """
     excludeRepoRegex: String
 }
