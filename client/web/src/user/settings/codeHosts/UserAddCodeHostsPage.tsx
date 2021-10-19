@@ -243,13 +243,17 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             <h4 className="align-middle mb-1">Can't connect with {service.displayName}</h4>
             <p className="align-middle mb-0">
                 <span className="align-middle">Please try</span>{' '}
-                <button
-                    type="button"
-                    className="btn btn-link font-weight-normal shadow-none p-0 border-0"
-                    onClick={toggleUpdateModal}
-                >
-                    updating the code host connection
-                </button>{' '}
+                {owner.type === 'org' ? (
+                    <button
+                        type="button"
+                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                        onClick={toggleUpdateModal}
+                    >
+                        updating the code host connection
+                    </button>
+                ) : (
+                    <span className="align-middle">reconnecting the code host connection</span>
+                )}{' '}
                 <span className="align-middle">with {service.displayName} to restore access.</span>
             </p>
         </div>
