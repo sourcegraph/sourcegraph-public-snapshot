@@ -1,5 +1,4 @@
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, throwError } from 'rxjs'
@@ -83,7 +82,6 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<EditSea
                                 to: '/search',
                             },
                             {
-                                icon: SourceRepositoryMultipleIcon,
                                 to: '/contexts',
                                 text: 'Contexts',
                             },

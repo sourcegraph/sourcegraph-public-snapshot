@@ -1,5 +1,4 @@
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback } from 'react'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
@@ -57,7 +56,6 @@ export const AuthenticatedCreateSearchContextPage: React.FunctionComponent<Creat
                                 to: '/search',
                             },
                             {
-                                icon: SourceRepositoryMultipleIcon,
                                 to: '/contexts',
                                 text: 'Contexts',
                             },

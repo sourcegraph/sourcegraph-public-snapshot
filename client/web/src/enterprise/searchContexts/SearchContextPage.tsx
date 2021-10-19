@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
@@ -95,7 +94,6 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                         to: '/search',
                                     },
                                     {
-                                        icon: SourceRepositoryMultipleIcon,
                                         to: '/contexts',
                                         text: 'Contexts',
                                     },

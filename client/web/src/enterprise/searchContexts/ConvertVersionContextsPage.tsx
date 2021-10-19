@@ -1,5 +1,4 @@
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { combineLatest, concat, from, Observable, of, Subject } from 'rxjs'
 import { catchError, concatMap, delay, map, mergeMap, reduce, startWith, tap, toArray } from 'rxjs/operators'
@@ -128,7 +127,6 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
                                 to: '/search',
                             },
                             {
-                                icon: SourceRepositoryMultipleIcon,
                                 to: '/contexts',
                                 text: 'Contexts',
                             },

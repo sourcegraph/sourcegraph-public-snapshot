@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import * as H from 'history'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useCallback, useState } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -75,7 +74,6 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                             to: '/search',
                         },
                         {
-                            icon: SourceRepositoryMultipleIcon,
                             text: 'Contexts',
                         },
                     ]}
