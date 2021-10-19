@@ -490,6 +490,7 @@ func (s *Store) replaceSearchRecords(
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
+		upload.ID,           // dump_id
 	)); err != nil {
 		return err
 	}
@@ -555,7 +556,8 @@ del AS (
 	WHERE
 		repo_id = %s AND
 		dump_root = %s AND
-		lang_name_id = %s
+		lang_name_id = %s AND
+		dump_id != %s
 	RETURNING 1
 )
 SELECT
