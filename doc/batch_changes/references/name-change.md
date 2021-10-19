@@ -26,5 +26,5 @@ From 3.26:
 From 3.34:
 
 - all `<sourcegraph-instance>/campaigns/*` URLs are removed.
-- the CLI prompt `src campaigns` and its alias `src campaign` are deprecated. They will still work, and will be removed in a future release.
+- the CLI prompt `src campaigns` and its alias `src campaign` are removed.
 - `/campaigns` GraphQL API endpoints are removed.
