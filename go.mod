@@ -54,7 +54,6 @@ require (
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/golang/gddo v0.0.0-20200831202555-721e228c7686
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da
-	github.com/golang/protobuf v1.5.2
 	github.com/gomodule/oauth1 v0.0.0-20181215000758-9a59ed3b0a84
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/go-cmp v0.5.6
@@ -312,6 +311,7 @@ require (
 
 require (
 	github.com/go-logr/logr v1.1.0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	k8s.io/klog/v2 v2.20.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 )
