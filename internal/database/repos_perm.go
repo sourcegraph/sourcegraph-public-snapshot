@@ -104,7 +104,7 @@ OR  (                             -- Restricted repositories require checking pe
 		bypassAuthz,
 		usePermissionsUserMapping,
 		authenticatedUserID,
-		authenticatedUserID,
 		perms.String(),
+		authenticatedUserID,
 	)
 }
