@@ -21,6 +21,8 @@ var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
+
+	baseInsightResolver
 }
 
 func (i *insightViewResolver) ID() graphql.ID {
@@ -48,7 +50,17 @@ func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbacken
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
-	panic("implement me")
+	var resolvers []graphqlbackend.InsightSeriesResolver
+	for j := range i.view.Series {
+		resolvers = append(resolvers, &insightSeriesResolver{
+			insightsStore:   i.timeSeriesStore,
+			workerBaseStore: i.workerBaseStore,
+			series:          i.view.Series[j],
+			metadataStore:   i.insightStore,
+		})
+	}
+
+	return resolvers, nil
 }
 
 func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.LineChartInsightViewPresentation, error) {
