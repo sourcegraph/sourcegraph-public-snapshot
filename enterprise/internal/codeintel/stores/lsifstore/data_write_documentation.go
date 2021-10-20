@@ -389,6 +389,7 @@ func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix
 		strings.ReplaceAll(upsertLanguageNameQuery, "$SUFFIX", tableSuffix),
 		languageName,
 		textSearchVector(languageName),
+		languageName,
 	)))
 
 	return id, err
@@ -396,11 +397,16 @@ func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix
 
 const upsertLanguageNameQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertLanguageName
-INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
-VALUES (%s, %s)
--- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXCLUDED.lang_name
-RETURNING id
+WITH inserted AS (
+	INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
+	VALUES (%s, %s)
+	ON CONFLICT DO NOTHING
+	RETURNING id
+)
+SELECT id FROM inserted
+UNION
+SELECT id FROM lsif_data_docs_search_lang_names_$SUFFIX WHERE lang_name = %s
+LIMIT 1
 `
 
 func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix string) (map[string]int, error) {
