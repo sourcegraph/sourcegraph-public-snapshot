@@ -1,5 +1,5 @@
 import { Observable, of, BehaviorSubject } from 'rxjs'
-import { distinctUntilChanged, filter } from 'rxjs/operators'
+import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
 
 import { observeStorageKey, setStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
@@ -94,6 +94,12 @@ export const SourcegraphUrlService = (() => {
                 currentSourcegraphURL.next(CLOUD_SOURCEGRAPH_URL)
             }
         },
+        observeSelfHostedOrCloud: () =>
+            selfHostedSourcegraphURL
+                .asObservable()
+                .pipe(
+                    switchMap(selfHostedUrl => (selfHostedUrl ? of(selfHostedUrl) : SourcegraphUrlService.observe()))
+                ),
         /**
          * Get self-hosted Sourcegraph URL
          */
