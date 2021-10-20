@@ -113,7 +113,7 @@ func TestCreateDashboard(t *testing.T) {
 		global := true
 		orgId := 1
 		grants := []DashboardGrant{{nil, nil, &global}, {nil, &orgId, nil}}
-		_, err = store.CreateDashboard(ctx, types.Dashboard{ID: 1, Title: "test dashboard 1"}, grants)
+		_, err = store.CreateDashboard(ctx, CreateDashboardArgs{Dashboard: types.Dashboard{ID: 1, Title: "test dashboard 1"}, Grants: grants, UserID: []int{1}, OrgID: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -356,11 +356,19 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.CreateDashboard(ctx, types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}}, []DashboardGrant{GlobalDashboardGrant()})
+	_, err = store.CreateDashboard(ctx, CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}},
+		Grants:    []DashboardGrant{GlobalDashboardGrant()},
+		UserID:    []int{1},
+		OrgID:     []int{1}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := store.CreateDashboard(ctx, types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}}, []DashboardGrant{GlobalDashboardGrant()})
+	second, err := store.CreateDashboard(ctx, CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}},
+		Grants:    []DashboardGrant{GlobalDashboardGrant()},
+		UserID:    []int{1},
+		OrgID:     []int{1}})
 	if err != nil {
 		t.Fatal(err)
 	}

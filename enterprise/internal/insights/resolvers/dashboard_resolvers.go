@@ -181,11 +181,23 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, errors.Wrap(err, "unable to parse dashboard grants")
 	}
 
-	dashboard, err := r.dashboardStore.CreateDashboard(ctx, types.Dashboard{Title: args.Input.Title, Save: true}, dashboardGrants)
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+
+	dashboard, err := r.dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: args.Input.Title, Save: true},
+		Grants:    dashboardGrants,
+		UserID:    userIds,
+		OrgID:     orgIds})
 	if err != nil {
 		return nil, err
 	}
-	return &insightsDashboardPayloadResolver{&dashboard}, nil
+	if dashboard == nil {
+		return nil, nil
+	}
+	return &insightsDashboardPayloadResolver{dashboard}, nil
 }
 
 func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
@@ -218,17 +230,19 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, errors.New("this user does not have permission to update this dashboard")
 	}
 
-	dashboard, err := r.dashboardStore.UpdateDashboard(ctx,
-		store.UpdateDashboardArgs{
-			ID:     int(dashboardID.Arg),
-			Title:  args.Input.Title,
-			Grants: dashboardGrants,
-			UserID: userIds,
-			OrgID:  orgIds})
+	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{
+		ID:     int(dashboardID.Arg),
+		Title:  args.Input.Title,
+		Grants: dashboardGrants,
+		UserID: userIds,
+		OrgID:  orgIds})
 	if err != nil {
 		return nil, err
 	}
-	return &insightsDashboardPayloadResolver{&dashboard}, nil
+	if dashboard == nil {
+		return nil, nil
+	}
+	return &insightsDashboardPayloadResolver{dashboard}, nil
 }
 
 func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {

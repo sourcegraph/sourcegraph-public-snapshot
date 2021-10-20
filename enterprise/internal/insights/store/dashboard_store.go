@@ -154,36 +154,49 @@ const deleteDashboardSql = `
 update dashboard set deleted_at = NOW() where id = %s;
 `
 
-func (s *DBDashboardStore) CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error) {
+type CreateDashboardArgs struct {
+	Dashboard types.Dashboard
+	Grants    []DashboardGrant
+	UserID    []int // For dashboard permissions
+	OrgID     []int // For dashboard permissions
+}
+
+func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return types.Dashboard{}, err
+		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
 	row := tx.QueryRow(ctx, sqlf.Sprintf(insertDashboardSql,
-		dashboard.Title,
-		dashboard.Save,
+		args.Dashboard.Title,
+		args.Dashboard.Save,
 	))
 	if row.Err() != nil {
-		return types.Dashboard{}, row.Err()
+		return nil, row.Err()
 	}
-	var id int
-	err = row.Scan(&id)
+	var dashboardId int
+	err = row.Scan(&dashboardId)
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "CreateDashboard")
+		return nil, errors.Wrap(err, "CreateDashboard")
 	}
-	dashboard.ID = id
-	err = tx.AddViewsToDashboard(ctx, dashboard.ID, dashboard.InsightIDs)
+	err = tx.AddViewsToDashboard(ctx, dashboardId, args.Dashboard.InsightIDs)
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "AddViewsToDashboard")
+		return nil, errors.Wrap(err, "AddViewsToDashboard")
 	}
-	err = tx.AddDashboardGrants(ctx, dashboard.ID, grants)
+	err = tx.AddDashboardGrants(ctx, dashboardId, args.Grants)
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "AddDashboardGrants")
+		return nil, errors.Wrap(err, "AddDashboardGrants")
 	}
 
-	return dashboard, nil
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: dashboardId, UserID: args.UserID, OrgID: args.OrgID})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetDashboards")
+	}
+	if len(dashboards) > 0 {
+		return dashboards[0], nil
+	}
+	return nil, nil
 }
 
 type UpdateDashboardArgs struct {
@@ -194,10 +207,10 @@ type UpdateDashboardArgs struct {
 	OrgID  []int // For dashboard permissions
 }
 
-func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ types.Dashboard, err error) {
+func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
-		return types.Dashboard{}, err
+		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
@@ -207,7 +220,7 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashb
 			args.ID,
 		))
 		if err != nil {
-			return types.Dashboard{}, errors.Wrap(err, "updating title")
+			return nil, errors.Wrap(err, "updating title")
 		}
 	}
 	if args.Grants != nil {
@@ -215,25 +228,21 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashb
 			args.ID,
 		))
 		if err != nil {
-			return types.Dashboard{}, errors.Wrap(err, "removing existing dashboard grants")
+			return nil, errors.Wrap(err, "removing existing dashboard grants")
 		}
 		err = tx.AddDashboardGrants(ctx, args.ID, args.Grants)
 		if err != nil {
-			return types.Dashboard{}, errors.Wrap(err, "AddDashboardGrants")
+			return nil, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
 	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: args.ID, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
-		return types.Dashboard{}, errors.Wrap(err, "GetDashboards")
+		return nil, errors.Wrap(err, "GetDashboards")
 	}
-
-	var returnDashboard types.Dashboard
 	if len(dashboards) > 0 {
-		returnDashboard = *dashboards[0]
-	} else {
-		returnDashboard = types.Dashboard{}
+		return dashboards[0], nil
 	}
-	return returnDashboard, nil
+	return nil, nil
 }
 
 func (s *DBDashboardStore) AddViewsToDashboard(ctx context.Context, dashboardId int, viewIds []string) error {
@@ -378,8 +387,8 @@ VALUES %s;
 
 type DashboardStore interface {
 	GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error)
-	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
-	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ types.Dashboard, err error)
+	CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error)
+	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
 	HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error)
 }
