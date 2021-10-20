@@ -2,8 +2,8 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../../../../../schema/settings.schema'
+import { ReachableInsight } from '../../../../../../core/backend/code-insights-backend-types'
 import {
-    Insight,
     InsightExtensionBasedConfiguration,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
@@ -24,20 +24,13 @@ export interface UseReachableInsightsProps extends SettingsCascadeProps<Settings
     ownerId: string
 }
 
-export type ReachableInsight = Insight & {
-    owner: {
-        id: string
-        name: string
-    }
-}
-
 /**
  * Returns all reachable subject's insights by owner id.
  *
  * User subject has access to all insights from all organizations and global site settings.
  * Organization subject has access to only its insights.
  */
-export function useReachableInsights(props: UseReachableInsightsProps): ReachableInsight[] {
+export function getReachableInsights(props: UseReachableInsightsProps): ReachableInsight[] {
     const { settingsCascade, ownerId } = props
 
     if (!settingsCascade.subjects) {
