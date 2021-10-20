@@ -24,6 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Since 3.28.0, Batch Changes webhooks would not update changesets opened in private repositories. This has been fixed. [#26380](https://github.com/sourcegraph/sourcegraph/issues/26380)
+- Reconciling batch changes could stall when updating the state of a changeset that already existed. This has been fixed. [#26386](https://github.com/sourcegraph/sourcegraph/issues/26386)
 
 ### Removed
 
