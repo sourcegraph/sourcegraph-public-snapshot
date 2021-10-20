@@ -11,7 +11,6 @@ import { FormRadioInput } from '../../../../../../components/form/form-radio-inp
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import { VisibilityPicker } from '../../../../../../components/visibility-picker/VisibilityPicker'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
@@ -180,13 +179,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                     error={title.meta.touched && title.meta.error}
                     {...title.input}
                     className="d-flex flex-column"
-                />
-
-                <VisibilityPicker
-                    subjects={subjects}
-                    value={visibility.input.value}
-                    labelClassName={styles.creationInsightFormGroupLabel}
-                    onChange={visibility.input.onChange}
                 />
 
                 <FormGroup
