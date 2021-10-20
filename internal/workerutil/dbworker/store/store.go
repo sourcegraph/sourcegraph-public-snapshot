@@ -946,7 +946,7 @@ type MatchingColumnExpressions struct {
 //
 // The output slice has the same number of elements as the input column expressions
 // and the results are ordered in parallel with the given column expressions.
-func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query) [][]MatchingColumnExpressions {
+func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query, alternateColumnNames map[string]string) [][]MatchingColumnExpressions {
 	matches := make([][]MatchingColumnExpressions, len(columnExpressions))
 	columnPrefixes := makeColumnPrefixes(viewName)
 
