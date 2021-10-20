@@ -53,22 +53,20 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 	dataSeriesStore := store.NewMockDataSeriesStore()
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]itypes.InsightSeries{
 		{
-			ID:                    1,
-			SeriesID:              "series1",
-			Query:                 "query1",
-			NextRecordingAfter:    clock().Add(-1 * time.Hour),
-			CreatedAt:             clock(),
-			OldestHistoricalAt:    clock().Add(-time.Hour * 24 * 365),
-			RecordingIntervalDays: 1,
+			ID:                 1,
+			SeriesID:           "series1",
+			Query:              "query1",
+			NextRecordingAfter: clock().Add(-1 * time.Hour),
+			CreatedAt:          clock(),
+			OldestHistoricalAt: clock().Add(-time.Hour * 24 * 365),
 		},
 		{
-			ID:                    2,
-			SeriesID:              "series2",
-			Query:                 "query2",
-			NextRecordingAfter:    clock().Add(1 * time.Hour),
-			CreatedAt:             clock(),
-			OldestHistoricalAt:    clock().Add(-time.Hour * 24 * 365),
-			RecordingIntervalDays: 1,
+			ID:                 2,
+			SeriesID:           "series2",
+			Query:              "query2",
+			NextRecordingAfter: clock().Add(1 * time.Hour),
+			CreatedAt:          clock(),
+			OldestHistoricalAt: clock().Add(-time.Hour * 24 * 365),
 		},
 	}, nil)
 

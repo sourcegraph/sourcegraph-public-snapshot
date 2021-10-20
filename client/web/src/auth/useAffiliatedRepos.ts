@@ -13,7 +13,7 @@ interface UseAffiliatedReposResult {
               variables?:
                   | Partial<
                         Exact<{
-                            user: string
+                            namespace: string
                             codeHost: Maybe<string>
                             query: Maybe<string>
                         }>
@@ -24,8 +24,8 @@ interface UseAffiliatedReposResult {
 }
 
 const AFFILIATED_REPOS = gql`
-    query UserAffiliatedRepositories($user: ID!, $codeHost: ID, $query: String) {
-        affiliatedRepositories(user: $user, codeHost: $codeHost, query: $query) {
+    query UserAffiliatedRepositories($namespace: ID!, $codeHost: ID, $query: String) {
+        affiliatedRepositories(namespace: $namespace, codeHost: $codeHost, query: $query) {
             nodes {
                 name
                 codeHost {
@@ -44,7 +44,7 @@ export const useAffiliatedRepos = (userId: string): UseAffiliatedReposResult => 
         AFFILIATED_REPOS,
         {
             variables: {
-                user: userId,
+                namespace: userId,
                 codeHost: null,
                 query: null,
             },

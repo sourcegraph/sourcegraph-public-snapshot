@@ -56,6 +56,7 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 	}
 
 	dbStoreShim := &janitor.DBStoreShim{Store: dbStore}
+	lsifStoreShim := &janitor.LSIFStoreShim{Store: lsifStore}
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.RetentionExtractor, true, false)
 	uploadWorkerStore := dbstore.WorkerutilUploadStore(dbStoreShim, observationContext)
 	indexWorkerStore := dbstore.WorkerutilIndexStore(dbStoreShim, observationContext)
@@ -75,7 +76,10 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 		janitor.NewAbandonedUploadJanitor(dbStoreShim, janitorConfigInst.UploadTimeout, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewUploadExpirer(dbStoreShim, policyMatcher, janitorConfigInst.RepositoryProcessDelay, janitorConfigInst.RepositoryBatchSize, janitorConfigInst.UploadProcessDelay, janitorConfigInst.UploadBatchSize, janitorConfigInst.CommitBatchSize, janitorConfigInst.BranchesCacheMaxKeys, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewExpiredUploadDeleter(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
-		janitor.NewHardDeleter(dbStoreShim, lsifStore, janitorConfigInst.CleanupTaskInterval, metrics),
+		janitor.NewHardDeleter(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
+
+		// Current indexes
+		janitor.NewDocumentationSearchCurrentJanitor(lsifStoreShim, janitorConfigInst.DocumentationSearchCurrentMinimumTimeSinceLastCheck, janitorConfigInst.DocumentationSearchCurrentBatchSize, janitorConfigInst.CleanupTaskInterval, metrics),
 
 		// Resetters
 		janitor.NewUploadResetter(uploadWorkerStore, janitorConfigInst.CleanupTaskInterval, metrics, observationContext),

@@ -237,7 +237,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -286,7 +286,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -339,7 +339,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -395,7 +395,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,

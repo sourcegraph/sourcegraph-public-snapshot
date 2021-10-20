@@ -97,11 +97,10 @@ func (m *committedAtMigrator) handleSourcedCommits(ctx context.Context, tx *dbst
 	}
 
 	return nil
-
 }
 
 func (m *committedAtMigrator) handleCommit(ctx context.Context, tx *dbstore.Store, repositoryID int, repositoryName, commit string) error {
-	commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
+	_, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, repositoryID, commit)
 	if err != nil && !vcs.IsRepoNotExist(err) {
 		return errors.Wrap(err, "gitserver.CommitDate")
 	}

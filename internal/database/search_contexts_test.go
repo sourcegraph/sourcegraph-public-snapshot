@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -824,22 +825,22 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 
 	listSearchContextsTests := []struct {
 		name    string
-		repoIDs []int32
-		want    map[int32][]string
+		repoIDs []api.RepoID
+		want    map[api.RepoID][]string
 	}{
 		{
 			name:    "all contexts, deleted ones excluded",
-			repoIDs: []int32{int32(repos[0].ID), int32(repos[1].ID), int32(repos[2].ID)},
-			want: map[int32][]string{
-				int32(repos[0].ID): {testRevision},
-				int32(repos[1].ID): {testRevision},
+			repoIDs: []api.RepoID{repos[0].ID, repos[1].ID, repos[2].ID},
+			want: map[api.RepoID][]string{
+				repos[0].ID: {testRevision},
+				repos[1].ID: {testRevision},
 			},
 		},
 		{
 			name:    "subset of repos",
-			repoIDs: []int32{int32(repos[0].ID)},
-			want: map[int32][]string{
-				int32(repos[0].ID): {testRevision},
+			repoIDs: []api.RepoID{repos[0].ID},
+			want: map[api.RepoID][]string{
+				repos[0].ID: {testRevision},
 			},
 		},
 	}

@@ -143,7 +143,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// Find the date of the commit and store that in the upload record. We do this now as we
 			// will need to find the _oldest_ commit with code intelligence data to efficiently update
 			// the commit graph for the repository.
-			commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+			_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
 			if err != nil {
 				return errors.Wrap(err, "gitserverClient.CommitDate")
 			}
@@ -267,6 +267,13 @@ func withUploadData(ctx context.Context, uploadStore uploadstore.Store, id int, 
 
 // writeData transactionally writes the given grouped bundle data into the given LSIF store.
 func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, groupedBundleData *precise.GroupedBundleDataChans) (err error) {
+	// Upsert values used for documentation search that have high contention. We do this with the raw LSIF store
+	// instead of in the transaction below because the rows being upserted tend to have heavy contention.
+	repositoryNameID, languageNameID, err := lsifStore.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)
+	if err != nil {
+		return errors.Wrap(err, "store.WriteDocumentationSearchPrework")
+	}
+
 	tx, err := lsifStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -288,7 +295,7 @@ func writeData(ctx context.Context, lsifStore LSIFStore, upload dbstore.Upload, 
 	if err := tx.WriteReferences(ctx, upload.ID, groupedBundleData.References); err != nil {
 		return errors.Wrap(err, "store.WriteReferences")
 	}
-	if err := tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages); err != nil {
+	if err := tx.WriteDocumentationPages(ctx, upload, repo, isDefaultBranch, groupedBundleData.DocumentationPages, repositoryNameID, languageNameID); err != nil {
 		return errors.Wrap(err, "store.WriteDocumentationPages")
 	}
 	if err := tx.WriteDocumentationPathInfo(ctx, upload.ID, groupedBundleData.DocumentationPathInfo); err != nil {

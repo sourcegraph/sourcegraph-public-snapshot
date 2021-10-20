@@ -81,7 +81,7 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
 function requestGraphQL<T, V = object>(options: {
     request: string
     variables: V
-    sourcegraphURL?: string
+    sourcegraphURL: string
 }): Observable<GraphQLResult<T>> {
     return from(background.requestGraphQL<T, V>(options))
 }

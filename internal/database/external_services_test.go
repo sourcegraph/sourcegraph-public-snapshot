@@ -31,6 +31,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		name             string
 		noNamespace      bool
 		namespaceUserID  int32
+		namespaceOrgID   int32
 		kinds            []string
 		afterID          int64
 		wantQuery        string
@@ -60,10 +61,17 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantArgs:        []interface{}{int32(1)},
 		},
 		{
+			name:           "has namespace org ID",
+			namespaceOrgID: 1,
+			wantQuery:      "deleted_at IS NULL AND namespace_org_id = $1",
+			wantArgs:       []interface{}{int32(1)},
+		},
+		{
 			name:            "want no namespace",
 			noNamespace:     true,
 			namespaceUserID: 1,
-			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL",
+			namespaceOrgID:  42,
+			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NULL",
 		},
 		{
 			name:      "has after ID",
@@ -82,6 +90,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			opts := ExternalServicesListOptions{
 				NoNamespace:      test.noNamespace,
 				NamespaceUserID:  test.namespaceUserID,
+				NamespaceOrgID:   test.namespaceOrgID,
 				Kinds:            test.kinds,
 				AfterID:          test.afterID,
 				OnlyCloudDefault: test.onlyCloudDefault,
@@ -284,6 +293,12 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	displayName := "Acme org"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Create a new external service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -348,6 +363,26 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName:     "GITLAB #1",
 				Config:          `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
 				NamespaceUserID: user.ID,
+			},
+			wantUnrestricted: false,
+		},
+		{
+			name: "Cloud: support org namespace on code host connections for GitHub",
+			externalService: &types.ExternalService{
+				Kind:           extsvc.KindGitHub,
+				DisplayName:    "GITHUB #4",
+				Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+				NamespaceOrgID: org.ID,
+			},
+			wantUnrestricted: false,
+		},
+		{
+			name: "Cloud: support org namespace on code host connections for GitLab",
+			externalService: &types.ExternalService{
+				Kind:           extsvc.KindGitLab,
+				DisplayName:    "GITLAB #1",
+				Config:         `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
+				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
 		},
@@ -1134,6 +1169,13 @@ func TestExternalServicesStore_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Create test org
+	displayName := "Acme Org"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Create new external services
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -1149,6 +1191,12 @@ func TestExternalServicesStore_List(t *testing.T) {
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GITHUB #2",
 			Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`,
+		},
+		{
+			Kind:           extsvc.KindGitHub,
+			DisplayName:    "GITHUB #3",
+			Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`,
+			NamespaceOrgID: org.ID,
 		},
 	}
 	for _, es := range ess {
@@ -1205,7 +1253,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		}
 		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
 
-		if diff := cmp.Diff(ess[1:], got); diff != "" {
+		if diff := cmp.Diff(ess[1:2], got); diff != "" {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
@@ -1243,6 +1291,34 @@ func TestExternalServicesStore_List(t *testing.T) {
 	t.Run("list non-exist user's external services", func(t *testing.T) {
 		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
 			NamespaceUserID: 404,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(ess) != 0 {
+			t.Fatalf("Want 0 external service but got %d", len(ess))
+		}
+	})
+
+	t.Run("list only test org's external services", func(t *testing.T) {
+		got, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			NamespaceOrgID: org.ID,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(got) != 1 {
+			t.Fatalf("Want 1 external service but got %d", len(ess))
+		} else if diff := cmp.Diff(ess[2], got[0]); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("list non-existing org external services", func(t *testing.T) {
+		ess, err := ExternalServices(db).List(ctx, ExternalServicesListOptions{
+			NamespaceOrgID: 404,
 		})
 		if err != nil {
 			t.Fatal(err)

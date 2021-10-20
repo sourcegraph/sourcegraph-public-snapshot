@@ -76,33 +76,38 @@ func (c *Client) Head(ctx context.Context, repositoryID int) (_ string, revision
 
 // CommitDate returns the time that the given commit was committed. If the given revision does not exist,
 // a false-valued flag is returned along with a nil error and zero-valued time.
-func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ time.Time, revisionExists bool, err error) {
+func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string) (_ string, _ time.Time, revisionExists bool, err error) {
 	ctx, endObservation := c.operations.commitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%cI", commit)
+	out, err := c.execResolveRevGitCommand(ctx, repositoryID, commit, "show", "-s", "--format=%H:%cI", commit)
 	if err != nil {
 		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 			err = nil
 		}
 
-		return time.Time{}, false, err
+		return "", time.Time{}, false, err
 	}
 
-	rawDate := strings.TrimSpace(out)
-	if rawDate == "" {
-		return time.Time{}, false, nil
+	line := strings.TrimSpace(out)
+	if line == "" {
+		return "", time.Time{}, false, nil
 	}
 
-	commitDate, err := time.Parse(time.RFC3339, rawDate)
+	parts := strings.SplitN(line, ":", 2)
+	if len(parts) != 2 {
+		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
+	}
+
+	duration, err := time.Parse(time.RFC3339, parts[1])
 	if err != nil {
-		return time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, rawDate)
+		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
 	}
 
-	return commitDate, true, nil
+	return parts[0], duration, true, nil
 }
 
 func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
@@ -535,8 +540,8 @@ func (c *Client) ResolveRevision(ctx context.Context, repositoryID int, versionS
 	if err != nil {
 		return "", err
 	}
-	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
 
+	commitID, err = git.ResolveRevision(ctx, repoName, versionString, git.ResolveRevisionOptions{})
 	if err != nil {
 		return "", errors.Wrap(err, "git.ResolveRevision")
 	}
