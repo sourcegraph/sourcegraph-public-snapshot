@@ -16,6 +16,7 @@ var _ graphqlbackend.LineChartInsightViewPresentation = &lineChartInsightViewPre
 var _ graphqlbackend.LineChartDataSeriesPresentationResolver = &lineChartDataSeriesPresentationResolver{}
 var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
+var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -42,7 +43,11 @@ func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.
 }
 
 func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.SearchInsightDataSeriesDefinitionResolver, error) {
-	panic("implement me")
+	var resolvers []graphqlbackend.SearchInsightDataSeriesDefinitionResolver
+	for j := range i.view.Series {
+		resolvers = append(resolvers, &searchInsightDataSeriesDefinitionResolver{series: &i.view.Series[j]})
+	}
+	return resolvers, nil
 }
 
 type searchInsightDataSeriesDefinitionResolver struct {
@@ -62,25 +67,26 @@ func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.
 }
 
 func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightIntervalTimeScope, error) {
-	panic("implement me")
+	if s.series.SampleIntervalUnit != nil && s.series.SampleIntervalValue != nil {
+		return &insightIntervalTimeScopeResolver{
+			unit:  *s.series.SampleIntervalUnit,
+			value: int32(*s.series.SampleIntervalValue),
+		}, nil
+	}
+	return &insightIntervalTimeScopeResolver{}, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
-	series *types.InsightViewSeries
+	unit  string
+	value int32
 }
 
 func (i *insightIntervalTimeScopeResolver) Unit(ctx context.Context) (string, error) {
-	if i.series.SampleIntervalUnit != nil {
-		return *i.series.SampleIntervalUnit, nil
-	}
-	return "", nil
+	return i.unit, nil
 }
 
 func (i *insightIntervalTimeScopeResolver) Value(ctx context.Context) (int32, error) {
-	if i.series.SampleIntervalValue != nil {
-		return int32(*i.series.SampleIntervalValue), nil
-	}
-	return 0, nil
+	return i.value, nil
 }
 
 type insightRepositoryScopeResolver struct {
