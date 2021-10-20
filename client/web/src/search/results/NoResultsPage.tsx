@@ -78,13 +78,10 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                     <Toggles
                         navbarSearchQuery={query}
                         caseSensitive={false}
-                        history={null}
-                        location={null}
                         patternType={patternType}
                         setCaseSensitivity={noop}
                         setPatternType={noop}
                         settingsCascade={{ subjects: null, final: {} }}
-                        showSearchContext={showSearchContext}
                         versionContext={undefined}
                     />
                 </div>
