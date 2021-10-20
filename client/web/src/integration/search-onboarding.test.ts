@@ -72,6 +72,7 @@ describe('Search onboarding', () => {
             }),
             GetTemporarySettings: () => ({
                 temporarySettings: {
+                    __typename: 'TemporarySettings',
                     contents: JSON.stringify({
                         'user.daysActiveCount': 1,
                         'user.lastDayActive': new Date().toDateString(),

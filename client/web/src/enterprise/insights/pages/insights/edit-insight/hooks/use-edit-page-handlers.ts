@@ -1,20 +1,17 @@
+import { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
-import { Settings } from '../../../../../../schema/settings.schema'
 import { eventLogger } from '../../../../../../tracking/eventLogger'
 import { FORM_ERROR, SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { Insight, isVirtualDashboard } from '../../../../core/types'
-import { useDashboard } from '../../../../hooks/use-dashboard'
 import { useQueryParameters } from '../../../../hooks/use-query-parameters'
 
-import { useUpdateSettingsSubject } from './use-update-settings-subjects/use-update-settings-subjects'
-
-export interface UseHandleSubmitProps extends PlatformContextProps<'updateSettings'>, SettingsCascadeProps<Settings> {
-    originalInsight: Insight | null
+export interface UseHandleSubmitProps {
+    originalInsight: Insight | null | undefined
 }
 
 export interface useHandleSubmitOutput {
@@ -26,13 +23,13 @@ export interface useHandleSubmitOutput {
  * Returns submit and cancel handlers for the insight edit submit page.
  */
 export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmitOutput {
-    const { originalInsight, platformContext, settingsCascade } = props
+    const { originalInsight } = props
 
-    const { updateSettingSubjects } = useUpdateSettingsSubject({ platformContext })
+    const { updateInsight, getDashboardById } = useContext(CodeInsightsBackendContext)
     const history = useHistory()
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
-    const dashboard = useDashboard({ settingsCascade, dashboardId })
+    const dashboard = useObservable(useMemo(() => getDashboardById(dashboardId), [getDashboardById, dashboardId]))
 
     const handleSubmit = async (newInsight: Insight): Promise<SubmissionErrors> => {
         if (!originalInsight) {
@@ -40,11 +37,10 @@ export function useEditPageHandlers(props: UseHandleSubmitProps): useHandleSubmi
         }
 
         try {
-            await updateSettingSubjects({
+            await updateInsight({
                 oldInsight: originalInsight,
                 newInsight,
-                settingsCascade,
-            })
+            }).toPromise()
 
             eventLogger.log('Insight Edit', { insightType: newInsight.type }, { insightType: newInsight.type })
 

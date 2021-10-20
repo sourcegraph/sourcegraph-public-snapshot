@@ -56,7 +56,7 @@ func TestResolver_InsightSeries(t *testing.T) {
 						LastRecordedAt:     now,
 						NextRecordingAfter: now,
 						Label:              "label1",
-						LineColor:          "color1",
+						Stroke:             "color1",
 					},
 				},
 			},

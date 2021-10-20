@@ -24,13 +24,25 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData) (err error) {
+//
+// The repository name and language name identifiers should be created from a previous invocation of the
+// WriteDocumentationSearchPrework method with the same parameters.
+func (s *Store) WriteDocumentationPages(
+	ctx context.Context,
+	upload dbstore.Upload,
+	repo *types.Repo,
+	isDefaultBranch bool,
+	documentationPages chan *precise.DocumentationPageData,
+	repositoryNameID int,
+	languageNameID int,
+) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
 		log.String("repo", upload.RepositoryName),
@@ -48,18 +60,8 @@ func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Uplo
 		}
 	}()
 
-	return s.doWriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, traceLog)
-}
-
-func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData, traceLog observation.TraceLogger) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	// Create temporary table symmetric to lsif_data_documentation_pages without the dump id
-	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesTemporaryTableQuery)); err != nil {
+	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesTemporaryTableQuery)); err != nil {
 		return err
 	}
 
@@ -85,7 +87,7 @@ func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Up
 	// Bulk insert all the unique column values into the temporary table
 	if err := withBatchInserter(
 		ctx,
-		tx.Handle().DB(),
+		s.Handle().DB(),
 		"t_lsif_data_documentation_pages",
 		[]string{"path_id", "data"},
 		inserter,
@@ -98,14 +100,14 @@ func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Up
 	// indexed even if it is turned back on. Only future uploads would be.
 	if conf.APIDocsSearchIndexingEnabled() {
 		// Perform search indexing for API docs pages.
-		if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages); err != nil {
+		if err := s.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages, repositoryNameID, languageNameID); err != nil {
 			return errors.Wrap(err, "WriteDocumentationSearch")
 		}
 	}
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
+	return s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
 }
 
 const writeDocumentationPagesTemporaryTableQuery = `
@@ -252,19 +254,72 @@ SELECT %s, source.path_id, source.result_id, source.file_path
 FROM t_lsif_data_documentation_mappings source
 `
 
-// WriteDocumentationSearch is called (within a transaction) to write the search index for a given documentation page.
-func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, pages []*precise.DocumentationPageData) (err error) {
+// WriteDocumentationSearchPrework upserts the repository name and language name identifiers into the
+// appropriate tables. These values should be passed to a later invocation of WriteDocumentationSearch.
+//
+// Since these values are interned and heavily shared, we recommended upserting both of these values
+// outside of a long-running transaction to reduce lock contention between shared rows being held longer
+// than necessary.
+func (s *Store) WriteDocumentationSearchPrework(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool) (_ int, _ int, err error) {
+	ctx, endObservation := s.operations.writeDocumentationSearchPrework.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", upload.RepositoryName),
+		log.Int("bundleID", upload.ID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if !isDefaultBranch {
 		// We do not index non-default branches for API docs search.
-		return nil
+		return 0, 0, nil
 	}
 
+	if conf.APIDocsSearchIndexingEnabled() {
+		// We will not use these values within WriteDocumentationPages
+		return 0, 0, nil
+	}
+
+	tableSuffix := "public"
+	if repo.Private {
+		tableSuffix = "private"
+	}
+
+	repositoryNameID, err := s.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "upsertRepositoryName")
+	}
+
+	languageNameID, err := s.upsertLanguageName(ctx, upload.Indexer, tableSuffix)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "upsertLanguageName")
+	}
+
+	return repositoryNameID, languageNameID, nil
+}
+
+// WriteDocumentationSearch is called to write the search index for a given documentation page. This method
+// is called from transactionally from the precise-code-intel worker as well as from the apiDocsSearchMigrator.
+//
+// The repository name and language name identifiers should be created from a previous invocation of the
+// WriteDocumentationSearchPrework method with the same parameters.
+func (s *Store) WriteDocumentationSearch(
+	ctx context.Context,
+	upload dbstore.Upload,
+	repo *types.Repo,
+	isDefaultBranch bool,
+	pages []*precise.DocumentationPageData,
+	repositoryNameID int,
+	languageNameID int,
+) (err error) {
 	ctx, endObservation := s.operations.writeDocumentationSearch.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", upload.RepositoryName),
 		log.Int("bundleID", upload.ID),
 		log.Int("pages", len(pages)),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	if !isDefaultBranch {
+		// We do not index non-default branches for API docs search.
+		return nil
+	}
 
 	tableSuffix := "public"
 	if repo.Private {
@@ -277,16 +332,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryNameID, err := tx.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
-	if err != nil {
-		return errors.Wrap(err, "upsertRepositoryName")
-	}
-
-	languageNameID, err := tx.upsertLanguageName(ctx, upload.Indexer, tableSuffix)
-	if err != nil {
-		return errors.Wrap(err, "upsertLanguageName")
-	}
-
 	// gatherTags sorts the tags we'll be dealing with, This ensures that we will always
 	// try to bulk-insert the tags in the same order, which should avoid deadlock situations
 	// where overlapping tags are updated in different orders from different processors.
@@ -295,7 +340,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return errors.Wrap(err, "upsertTags")
 	}
 
-	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
+	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix, timeutil.Now()); err != nil {
 		return errors.Wrap(err, "replaceSearchRecords")
 	}
 
@@ -348,7 +393,7 @@ const upsertLanguageNameQuery = `
 INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
 VALUES (%s, %s)
 -- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXClUDED.lang_name
+ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXCLUDED.lang_name
 RETURNING id
 `
 
@@ -403,6 +448,7 @@ func (s *Store) replaceSearchRecords(
 	pages []*precise.DocumentationPageData,
 	tagIDs map[string]int,
 	tableSuffix string,
+	now time.Time,
 ) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -488,11 +534,13 @@ func (s *Store) replaceSearchRecords(
 		upload.Root,         // dump_root
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
-		// For deletion
+
+		// For current marker update
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
+		now,                 // last_cleanup_scan_at
 	)); err != nil {
 		return errors.Wrap(err, "committing staged search records")
 	}
@@ -551,29 +599,17 @@ ins AS (
 		source.label_tsv,
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
-	RETURNING 1
-),
-deletion_candidates AS (
-	SELECT id
-	FROM lsif_data_docs_search_$SUFFIX
-	WHERE
-		repo_id = %s AND
-		dump_root = %s AND
-		lang_name_id = %s AND
-		dump_id != %s
-
-	-- Lock these rows in a deterministic order so that we don't deadlock with other processes
-	-- updating the lsif_data_docs_search_* tables.
-	ORDER BY id FOR UPDATE
-),
-del AS (
-	DELETE FROM lsif_data_docs_search_$SUFFIX
-	WHERE id IN (SELECT id FROM deletion_candidates)
-	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM ins) AS num_ins,
-	(SELECT COUNT(*) FROM del) AS num_del
+INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+	repo_id,
+	dump_root,
+	lang_name_id,
+	dump_id,
+	last_cleanup_scan_at
+)
+VALUES (%s, %s, %s, %s, %s)
+ON CONFLICT (repo_id, dump_root, lang_name_id)
+DO UPDATE SET dump_id = EXCLUDED.dump_id
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {

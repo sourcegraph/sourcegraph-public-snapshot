@@ -421,6 +421,23 @@ func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (srr *SearchSuggestionsResult) String() string {
+	switch v := srr.inner.(type) {
+	case FileSuggestionResult:
+		return "file:" + v.Path
+	case RepositorySuggestionResult:
+		return "repo:" + v.Name
+	case SymbolSuggestionResult:
+		return "sym:" + v.Name
+	case LanguageSuggestionResult:
+		return "lang:" + v.Name
+	case SearchContextSuggestionResult:
+		return "context:" + v.Spec
+	default:
+		return fmt.Sprintf("UNKNOWN(%T)", srr.inner)
+	}
+}
+
 type RepositorySuggestionResult struct {
 	Name string
 }

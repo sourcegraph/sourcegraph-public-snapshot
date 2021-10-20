@@ -213,12 +213,6 @@ func SearchIndexEnabled() bool {
 }
 
 func BatchChangesEnabled() bool {
-	// TODO(campaigns-deprecation): This check can be removed once we remove
-	// the deprecated site-config settings.
-	if deprecated := Get().CampaignsEnabled; deprecated != nil {
-		return *deprecated
-	}
-
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
@@ -226,12 +220,6 @@ func BatchChangesEnabled() bool {
 }
 
 func BatchChangesRestrictedToAdmins() bool {
-	// TODO(campaigns-deprecation): This check can be removed once we remove
-	// the deprecated site-config settings.
-	if deprecated := Get().CampaignsRestrictToAdmins; deprecated != nil {
-		return *deprecated
-	}
-
 	if restricted := Get().BatchChangesRestrictToAdmins; restricted != nil {
 		return *restricted
 	}

@@ -23,11 +23,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Since 3.28.0, Batch Changes webhooks would not update changesets opened in private repositories. This has been fixed. [#26380](https://github.com/sourcegraph/sourcegraph/issues/26380)
 
 ### Removed
 
--
+- The deprecated Campaigns GraphQL APIs have been removed. Please use Batch Changes APIs going forward.
+- The deprecated Campaigns URLs have been removed.
+- The deprecated `campaigns.restrictToAdmins` and `campaigns.enable` config options have been rendered non-functional. Please use `batchChanges.restrictToAdmins` and `batchChanges.enabled` instead.
 
 ## 3.33.0
 

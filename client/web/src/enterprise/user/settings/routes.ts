@@ -1,6 +1,3 @@
-import * as React from 'react'
-import { Redirect } from 'react-router'
-
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { lazyComponent } from '../../../util/lazyComponent'
@@ -30,11 +27,6 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
         exact: true,
         render: lazyComponent(() => import('./UserSettingsExternalAccountsPage'), 'UserSettingsExternalAccountsPage'),
         condition: () => authExp,
-    },
-    {
-        path: '/campaigns',
-        exact: true,
-        render: ({ match }) => <Redirect to={match.path.replace('/campaigns', '/batch-changes')} />,
     },
     {
         path: '/batch-changes',

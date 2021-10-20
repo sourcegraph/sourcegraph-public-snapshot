@@ -37,15 +37,19 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, deleted_at)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, null),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, null),
+									('series-id-3-deleted', 'query-3', $1, $1, $1, $1, $1, $1, $1);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_view_series (insight_view_id, insight_series_id, label, stroke)
-									VALUES (1, 1, 'label1', 'color1'), (1, 2, 'label2', 'color2'), (2, 2, 'second-label-2', 'second-color-2');`)
+									VALUES (1, 1, 'label1', 'color1'),
+											(1, 2, 'label2', 'color2'),
+											(2, 2, 'second-label-2', 'second-color-2'),
+											(2, 3, 'label3', 'color-2');`)
 	if err != nil {
 		t.Fatal(err)
 	}
