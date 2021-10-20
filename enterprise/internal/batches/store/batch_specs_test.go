@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -464,9 +463,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			}
 
 			job.ID = clone.ID
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = %s, started_at = %s, finished_at = %s, cancel = %s WHERE id = %s", job.State, nullTimeColumn(job.StartedAt), nullTimeColumn(job.FinishedAt), job.Cancel, job.ID)); err != nil {
-				t.Fatal(err)
-			}
+			ct.UpdateJobState(t, ctx, s, job)
 		}
 
 	}

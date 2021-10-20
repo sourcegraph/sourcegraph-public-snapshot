@@ -103,9 +103,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
 			}
 
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s, cancel = %s WHERE id = %s", job.WorkerHostname, job.State, job.Cancel, job.ID)); err != nil {
-				t.Fatal(err)
-			}
+			ct.UpdateJobState(t, ctx, s, job)
 		}
 
 		t.Run("All", func(t *testing.T) {
