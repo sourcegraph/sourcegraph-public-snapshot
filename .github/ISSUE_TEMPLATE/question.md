@@ -18,3 +18,5 @@ assignees: ''
 #### Additional context
 
 <!-- Add any other context or other information you'd like to include. -->
+
+If would like immediate help on this, please email support@sourcegraph.com (you can still create the issue, too; we just might not see it for a few weeks depending when we triage next).
