@@ -18,10 +18,10 @@ type documentationSearchCurrentJanitor struct {
 var _ goroutine.Handler = &documentationSearchCurrentJanitor{}
 var _ goroutine.ErrorHandler = &documentationSearchCurrentJanitor{}
 
-// NewDocumentationSearchCommitJanitor returns a background routine that periodically removes any
+// NewDocumentationSearchCurrentJanitor returns a background routine that periodically removes any
 // residual lsif_data_docs_search records that are not the most recent for its key, as identified
 // by the recent dump_id in the associated lsif_data_docs_search_current table.
-func NewDocumentationSearchCommitJanitor(
+func NewDocumentationSearchCurrentJanitor(
 	lsifStore LSIFStore,
 	interval time.Duration,
 	metrics *metrics,
