@@ -36,7 +36,7 @@
 {"id": "36", "type": "edge", "label": "item", "outV": "13", "inVs": ["08"], "document": "03"}
 {"id": "37", "type": "edge", "label": "item", "outV": "14", "inVs": ["04"], "document": "02"}
 {"id": "38", "type": "edge", "label": "item", "outV": "14", "inVs": ["05"], "document": "02"}
-{"id": "39", "type": "edge", "label": "item", "outV": "14", "inVs": ["15"]}
+{"id": "39", "type": "edge", "label": "item", "outV": "14", "inVs": ["15"], "shard": "02"}
 {"id": "40", "type": "edge", "label": "moniker", "outV": "07", "inV": "18"}
 {"id": "41", "type": "edge", "label": "moniker", "outV": "09", "inV": "19"}
 {"id": "42", "type": "edge", "label": "moniker", "outV": "10", "inV": "20"}

@@ -676,6 +676,7 @@ func (s *PermsSyncer) scheduleUsersWithOutdatedPerms(ctx context.Context) ([]sch
 	if err != nil {
 		return nil, err
 	}
+	metricsOutdatedPerms.WithLabelValues("user").Set(float64(len(results)))
 
 	users := make([]scheduledUser, 0, len(results))
 	for id, t := range results {

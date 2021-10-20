@@ -11,6 +11,7 @@ type operations struct {
 	bulkMonikerResults            *observation.Operation
 	clear                         *observation.Operation
 	definitions                   *observation.Operation
+	deleteOldSearchRecords        *observation.Operation
 	diagnostics                   *observation.Operation
 	documentationAtPosition       *observation.Operation
 	documentationDefinitions      *observation.Operation
@@ -71,6 +72,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		bulkMonikerResults:            op("BulkMonikerResults"),
 		clear:                         op("Clear"),
 		definitions:                   op("Definitions"),
+		deleteOldSearchRecords:        op("DeleteOldSearchRecords"),
 		diagnostics:                   op("Diagnostics"),
 		documentationAtPosition:       op("DocumentationAtPosition"),
 		documentationDefinitions:      op("DocumentationDefinitions"),

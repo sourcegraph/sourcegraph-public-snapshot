@@ -39,7 +39,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Add debug flags for scripts to consume
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
-		"NODE_OPTIONS": "--max_old_space_size=4096",
+		"NODE_OPTIONS": "--max_old_space_size=8192",
 
 		// Bundlesize configuration: https://github.com/siddharthkp/bundlesize2#build-status-and-checks-for-github
 		"CI_REPO_OWNER": "sourcegraph",
@@ -218,7 +218,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
 		// Executor VM image
-		if c.RunType.Is(MainBranch, ReleaseBranch) {
+		if c.RunType.Is(MainBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
 		}
 

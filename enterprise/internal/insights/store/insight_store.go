@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
@@ -49,6 +50,10 @@ type InsightQueryArgs struct {
 	UniqueID  string
 	UserID    []int
 	OrgID     []int
+
+	// This field will disable user level authorization checks on the insight views. This should only be used
+	// when fetching insights from a container that also has authorization checks, such as a dashboard.
+	WithoutAuthorization bool
 }
 
 // Get returns all matching viewable insight series.
@@ -65,7 +70,9 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
-	preds = append(preds, viewPermissionsQuery(args))
+	if !args.WithoutAuthorization {
+		preds = append(preds, viewPermissionsQuery(args))
+	}
 
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
@@ -255,7 +262,6 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.OldestHistoricalAt,
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
-			&temp.RecordingIntervalDays,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
 			&temp.Enabled,
@@ -289,9 +295,11 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.LastRecordedAt,
 			&temp.NextRecordingAfter,
 			&temp.BackfillQueuedAt,
-			&temp.RecordingIntervalDays,
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
+			pq.Array(&temp.Repositories),
+			&temp.SampleIntervalUnit,
+			&temp.SampleIntervalValue,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -407,7 +415,6 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.OldestHistoricalAt,
 		series.LastRecordedAt,
 		series.NextRecordingAfter,
-		series.RecordingIntervalDays,
 		series.LastSnapshotAt,
 		series.NextSnapshotAfter,
 	))
@@ -524,15 +531,15 @@ returning id;`
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            next_recording_after, last_snapshot_at, next_snapshot_after)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.recording_interval_days, i.last_snapshot_at, i.next_snapshot_after
+i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories, i.sample_interval_unit, i.sample_interval_value
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -543,6 +550,6 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, recording_interval_days, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
 WHERE %s
 `

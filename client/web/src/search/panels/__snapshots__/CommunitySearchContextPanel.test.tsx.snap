@@ -21,7 +21,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             alt=""
-            className="community-search-context-panel__icon mr-4"
+            className="mr-4 icon"
             src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png"
           />
           <div
@@ -41,7 +41,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             alt=""
-            className="community-search-context-panel__icon mr-4"
+            className="mr-4 icon"
             src="https://avatars.githubusercontent.com/u/56493103?s=200&v=4"
           />
           <div
@@ -61,7 +61,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             alt=""
-            className="community-search-context-panel__icon mr-4"
+            className="mr-4 icon"
             src="https://raw.githubusercontent.com/o3de/artwork/19b89e72e15824f20204a8977a007f53d5fcd5b8/o3de/03_O3DE%20Application%20Icon/SVG/O3DE-Circle-Icon.svg"
           />
           <div
@@ -81,7 +81,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             alt=""
-            className="community-search-context-panel__icon mr-4"
+            className="mr-4 icon"
             src="https://avatars.githubusercontent.com/u/4969009?s=200&v=4"
           />
           <div
@@ -101,7 +101,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             alt=""
-            className="community-search-context-panel__icon mr-4"
+            className="mr-4 icon"
             src="https://code.benco.io/icon-collection/logos/kubernetes.svg"
           />
           <div
@@ -121,7 +121,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
         >
           <img
             alt=""
-            className="community-search-context-panel__icon mr-4"
+            className="mr-4 icon"
             src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png"
           />
           <div
@@ -142,19 +142,19 @@ exports[`RepogroupPanel renders correctly 1`] = `
     title="Community search contexts"
   >
     <div
-      className="community-search-context-panel panel-container d-flex flex-column"
+      className="community-search-context-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Community search contexts
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <div
           className="mt-2 row"
@@ -165,7 +165,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               alt=""
-              className="community-search-context-panel__icon mr-4"
+              className="mr-4 icon"
               src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/icon/color/cncf-icon-color.png"
             />
             <div
@@ -192,7 +192,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               alt=""
-              className="community-search-context-panel__icon mr-4"
+              className="mr-4 icon"
               src="https://avatars.githubusercontent.com/u/56493103?s=200&v=4"
             />
             <div
@@ -219,7 +219,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               alt=""
-              className="community-search-context-panel__icon mr-4"
+              className="mr-4 icon"
               src="https://raw.githubusercontent.com/o3de/artwork/19b89e72e15824f20204a8977a007f53d5fcd5b8/o3de/03_O3DE%20Application%20Icon/SVG/O3DE-Circle-Icon.svg"
             />
             <div
@@ -246,7 +246,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               alt=""
-              className="community-search-context-panel__icon mr-4"
+              className="mr-4 icon"
               src="https://avatars.githubusercontent.com/u/4969009?s=200&v=4"
             />
             <div
@@ -273,7 +273,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               alt=""
-              className="community-search-context-panel__icon mr-4"
+              className="mr-4 icon"
               src="https://code.benco.io/icon-collection/logos/kubernetes.svg"
             />
             <div
@@ -300,7 +300,7 @@ exports[`RepogroupPanel renders correctly 1`] = `
           >
             <img
               alt=""
-              className="community-search-context-panel__icon mr-4"
+              className="mr-4 icon"
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Icons8_flat_graduation_cap.svg/120px-Icons8_flat_graduation_cap.svg.png"
             />
             <div

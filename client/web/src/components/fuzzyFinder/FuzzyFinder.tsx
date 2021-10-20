@@ -1,12 +1,10 @@
-import { ApolloClient, useApolloClient } from '@apollo/client'
-import { Shortcut } from '@slimsag/react-shortcuts'
+import { ApolloError, useQuery } from '@apollo/client'
 import React, { useState, Dispatch, SetStateAction } from 'react'
 
 import { gql, getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { FuzzySearch, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
 import { FileNamesResult, FileNamesVariables } from '../../graphql-operations'
-import { KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { parseBrowserRepoURL } from '../../util/url'
 
 import { FuzzyModal } from './FuzzyModal'
@@ -30,27 +28,23 @@ export interface FuzzyFinderProps {
 export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
     // The state machine of the fuzzy finder. See `FuzzyFSM` for more details
     // about the state transititions.
-    const apolloClient = useApolloClient()
     const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
     const { repoName = '', commitID = '' } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
+    const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID)
 
     return (
-        <>
-            <Shortcut
-                {...KEYBOARD_SHORTCUT_CLOSE_FUZZY_FINDER.keybindings[0]}
-                onMatch={() => props.setIsVisible(false)}
-            />
-            <FuzzyModal
-                repoName={repoName}
-                commitID={commitID}
-                initialMaxResults={DEFAULT_MAX_RESULTS}
-                initialQuery=""
-                downloadFilenames={() => downloadFilenamesGQL(repoName, commitID, apolloClient)}
-                onClose={() => props.setIsVisible(false)}
-                fsm={fsm}
-                setFsm={setFsm}
-            />
-        </>
+        <FuzzyModal
+            repoName={repoName}
+            commitID={commitID}
+            initialMaxResults={DEFAULT_MAX_RESULTS}
+            initialQuery=""
+            downloadFilenames={downloadFilename}
+            isLoading={isLoadingFilename}
+            isError={filenameError}
+            onClose={() => props.setIsVisible(false)}
+            fsm={fsm}
+            setFsm={setFsm}
+        />
     )
 }
 
@@ -106,20 +100,20 @@ const FILE_NAMES = gql`
     }
 `
 
-async function downloadFilenamesGQL(
-    repository: string,
-    commit: string,
-    client: ApolloClient<object>
-): Promise<string[]> {
-    const response = await client.query<FileNamesResult, FileNamesVariables>({
-        query: getDocumentNode(FILE_NAMES),
+interface FilenameResult {
+    downloadFilename: string[]
+    isLoadingFilename: boolean
+    filenameError: ApolloError | undefined
+}
+
+const useFilename = (repository: string, commit: string): FilenameResult => {
+    const { data, loading, error } = useQuery<FileNamesResult, FileNamesVariables>(getDocumentNode(FILE_NAMES), {
         variables: { repository, commit },
     })
 
-    const filenames = response.data?.repository?.commit?.fileNames
-
-    if (!filenames) {
-        throw new Error(JSON.stringify(response))
+    return {
+        downloadFilename: data?.repository?.commit?.fileNames || [],
+        isLoadingFilename: loading,
+        filenameError: error,
     }
-    return filenames
 }

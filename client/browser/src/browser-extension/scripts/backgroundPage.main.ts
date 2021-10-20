@@ -3,15 +3,14 @@ import '../../shared/polyfills'
 
 import { Endpoint } from 'comlink'
 import { without } from 'lodash'
-import { combineLatest, merge, Observable, of, Subject, Subscription, timer } from 'rxjs'
+import { combineLatest, Observable, Subject, Subscription, timer } from 'rxjs'
 import {
     bufferCount,
     filter,
     groupBy,
+    switchMap,
     map,
     mergeMap,
-    switchMap,
-    take,
     concatMap,
     mapTo,
     catchError,
@@ -110,20 +109,15 @@ const requestGraphQL = <T, V = object>({
 }: {
     request: string
     variables: V
-    sourcegraphURL?: string
+    sourcegraphURL: string
 }): Observable<GraphQLResult<T>> =>
-    (sourcegraphURL ? of(sourcegraphURL) : SourcegraphUrlService.observe(IS_EXTENSION)).pipe(
-        take(1),
-        switchMap(sourcegraphURL =>
-            requestGraphQLCommon<T, V>({
-                request,
-                variables,
-                baseUrl: sourcegraphURL,
-                headers: getHeaders(),
-                credentials: 'include',
-            })
-        )
-    )
+    requestGraphQLCommon<T, V>({
+        request,
+        variables,
+        baseUrl: sourcegraphURL,
+        headers: getHeaders(),
+        credentials: 'include',
+    })
 
 async function main(): Promise<void> {
     const subscriptions = new Subscription()
@@ -230,7 +224,7 @@ async function main(): Promise<void> {
         }: {
             request: string
             variables: V
-            sourcegraphURL?: string
+            sourcegraphURL: string
         }): Promise<GraphQLResult<T>> {
             return requestGraphQL<T, V>({ request, variables, sourcegraphURL }).toPromise()
         },
@@ -404,8 +398,8 @@ function handleBrowserPortPair(
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 main()
 
-function validateSite(): Observable<boolean> {
-    return fetchSite(requestGraphQL).pipe(
+function validateSite(sourcegraphURL: string): Observable<boolean> {
+    return fetchSite(options => requestGraphQL({ ...options, sourcegraphURL })).pipe(
         mapTo(true),
         catchError(() => [false])
     )
@@ -431,10 +425,10 @@ function observeCurrentTabPrivateCloudError(): Observable<boolean> {
 }
 
 function observeSourcegraphUrlValidation(): Observable<boolean> {
-    return merge(
-        // Whenever the URL was persisted to storage, we can assume it was validated before-hand
-        SourcegraphUrlService.observe().pipe(mapTo(true)),
-        timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(mergeMap(() => validateSite()))
+    // TODO: check if we need to check both URLs
+    return SourcegraphUrlService.getSelfHostedSourcegraphURL().pipe(
+        filter(url => !!url),
+        switchMap(url => timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(() => validateSite(url as string)))
     )
 }
 
