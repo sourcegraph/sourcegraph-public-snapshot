@@ -88,7 +88,7 @@ export async function createExtensionHostClientConnection(
 
     comlink.expose(clientAPI, endpoints.expose)
 
-    // TODO(tj): return MainThreadAPI and add to Controller interface
-    // to allow app to interact with APIs whose state lives in the main thread
+    // TODO(tj): return MainThreadAPI and ad d to Controller interface
+    // to allow app to interact with APIs wh ose state lives in the main thread
     return { subscription, api: proxy, mainThreadAPI: newAPI, exposedToClient }
 }

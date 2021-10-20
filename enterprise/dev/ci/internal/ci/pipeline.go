@@ -210,7 +210,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Append(publishFinalDockerImage(c, dockerImage, c.RunType.Is(MainBranch)))
 		}
 		// Executor VM image
-		if c.RunType.Is(MainBranch, ReleaseBranch) {
+		if c.RunType.Is(MainBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
 		}
 

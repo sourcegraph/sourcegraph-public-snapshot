@@ -9,6 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -24,6 +25,7 @@ var (
 
 type affiliatedRepositoriesConnection struct {
 	userID   int32
+	orgID    int32
 	codeHost int64
 	query    string
 
@@ -39,9 +41,12 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			svcs []*types.ExternalService
 			err  error
 		)
-		// get all external services for user, or for the specified external service
+		// get all external services for the user, the organization, or for the specified external service
 		if a.codeHost == 0 {
-			svcs, err = database.ExternalServices(a.db).List(ctx, database.ExternalServicesListOptions{NamespaceUserID: a.userID})
+			svcs, err = database.ExternalServices(a.db).List(ctx, database.ExternalServicesListOptions{
+				NamespaceUserID: a.userID,
+				NamespaceOrgID:  a.orgID,
+			})
 			if err != nil {
 				a.err = err
 				return
@@ -52,9 +57,10 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				a.err = err
 				return
 			}
-			// 🚨 SECURITY: if the user doesn't own this service, check they're site admin
-			if svc.NamespaceUserID != a.userID {
-				a.err = errors.New("external service must be owned by specified user")
+			// 🚨 SECURITY: check if user can access external service
+			err = backend.CheckExternalServiceAccess(ctx, a.db, svc.NamespaceUserID, svc.NamespaceOrgID)
+			if err != nil {
+				a.err = err
 				return
 			}
 			svcs = append(svcs, svc)
@@ -95,8 +101,8 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 			})
 		}
 
-		// are we allowed to show the user private repos?
-		allowPrivate, err := allowPrivate(ctx, a.db, a.userID)
+		// are we allowed to show the private repos?
+		allowPrivate, err := allowPrivate(ctx, a.db, a.userID, a.orgID)
 		if err != nil {
 			a.err = err
 			return
@@ -169,10 +175,17 @@ func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServ
 	}
 }
 
-func allowPrivate(ctx context.Context, db dbutil.DB, userID int32) (bool, error) {
-	mode, err := database.Users(db).UserAllowedExternalServices(ctx, userID)
-	if err != nil {
-		return false, err
+func allowPrivate(ctx context.Context, db dbutil.DB, userID, orgID int32) (bool, error) {
+	if userID > 0 {
+		mode, err := database.Users(db).UserAllowedExternalServices(ctx, userID)
+		if err != nil {
+			return false, err
+		}
+		return mode == conf.ExternalServiceModeAll, nil
 	}
-	return mode == conf.ExternalServiceModeAll, nil
+	if orgID > 0 {
+		return true, nil
+	}
+
+	return false, errors.New("either userID or orgID expected to be defined")
 }

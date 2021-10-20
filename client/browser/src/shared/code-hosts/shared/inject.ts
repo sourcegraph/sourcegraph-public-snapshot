@@ -5,7 +5,7 @@ import { isCloudSupportedCodehost, SourcegraphUrlService } from '../../platform/
 import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
 import { determineCodeHost, CodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
-import { RepoURLParseError } from './errors'
+import { RepoIsBlockedForCloudError } from './errors'
 import { logger } from './util/logger'
 
 function inject(codeHost: CodeHost, assetsURL: string, sourcegraphURL: string, isExtension: boolean): Subscription {
@@ -54,7 +54,7 @@ export async function injectCodeIntelligence(
     if (overrideSourcegraphURL) {
         return inject(codeHost, assetsURL, overrideSourcegraphURL, isExtension)
     }
-    logger.info(`Detected: codehost="${codeHost.type}"`)
+    logger.info(`Detected codehost="${codeHost.type}"`)
 
     try {
         const { rawRepoName } = codeHost.getContext?.() || {}
@@ -63,7 +63,7 @@ export async function injectCodeIntelligence(
             await SourcegraphUrlService.use(rawRepoName)
         }
     } catch (error) {
-        if (!(error instanceof RepoURLParseError)) {
+        if (error instanceof RepoIsBlockedForCloudError) {
             throw error
         }
     }

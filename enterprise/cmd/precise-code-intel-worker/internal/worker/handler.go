@@ -143,7 +143,7 @@ func (h *handler) handle(ctx context.Context, upload store.Upload) (requeued boo
 			// Find the date of the commit and store that in the upload record. We do this now as we
 			// will need to find the _oldest_ commit with code intelligence data to efficiently update
 			// the commit graph for the repository.
-			commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
+			_, commitDate, revisionExists, err := h.gitserverClient.CommitDate(ctx, upload.RepositoryID, upload.Commit)
 			if err != nil {
 				return errors.Wrap(err, "gitserverClient.CommitDate")
 			}

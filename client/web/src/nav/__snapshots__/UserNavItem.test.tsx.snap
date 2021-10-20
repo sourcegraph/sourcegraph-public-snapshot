@@ -237,7 +237,7 @@ exports[`UserNavItem simple 1`] = `
                         href="/users/alice/settings/repositories"
                         onClick={[Function]}
                       >
-                        Repositories 
+                        Your Repositories 
                         <Badge
                           className="ml-1"
                           status="beta"
@@ -363,7 +363,7 @@ exports[`UserNavItem simple 1`] = `
                       onClick={[Function]}
                       tabIndex="-1"
                     >
-                      Organizations
+                      Your organizations
                     </h6>
                   </DropdownItem>
                   <Link

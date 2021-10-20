@@ -73,7 +73,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
             </SidebarGroup>
             {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && (
                 <SidebarGroup>
-                    <SidebarGroupHeader label="Organizations" />
+                    <SidebarGroupHeader label="Your organizations" />
                     {props.user.organizations.nodes.map(org => (
                         <SidebarNavItem
                             key={org.id}

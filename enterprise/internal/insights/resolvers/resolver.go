@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
@@ -68,6 +70,27 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	return &dashboardConnectionResolver{
 		insightsDatabase: r.insightsDatabase,
 		dashboardStore:   store.NewDashboardStore(r.insightsDatabase),
+		orgStore:         database.Orgs(r.workerBaseStore.Handle().DB()),
 		args:             args,
 	}, nil
+}
+
+// 🚨 SECURITY
+// only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
+// dashboards with a global grant.
+func getUserPermissions(ctx context.Context, orgStore *database.OrgStore) (userIds []int, orgIds []int, err error) {
+	userId := actor.FromContext(ctx).UID
+	if userId != 0 {
+		var orgs []*types.Org
+		orgs, err = orgStore.GetByUserID(ctx, userId)
+		if err != nil {
+			return
+		}
+		userIds = []int{int(userId)}
+		orgIds = make([]int, 0, len(orgs))
+		for _, org := range orgs {
+			orgIds = append(orgIds, int(org.ID))
+		}
+	}
+	return
 }

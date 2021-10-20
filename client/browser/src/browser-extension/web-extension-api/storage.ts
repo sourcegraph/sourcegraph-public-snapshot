@@ -52,3 +52,25 @@ export const observeStorageKey = <A extends browser.storage.AreaName, K extends 
         )
     )
 }
+
+export async function getStorageKey<A extends browser.storage.AreaName, K extends keyof ExtensionStorageItems[A]>(
+    areaName: A,
+    key: K
+): Promise<ExtensionStorageItems[A][K] | undefined> {
+    if (!storage?.[areaName]) {
+        return Promise.resolve(undefined)
+    }
+    const result = await (storage[areaName] as browser.storage.StorageArea<ExtensionStorageItems[A]>).get(key)
+    return result[key]
+}
+
+export function setStorageKey<
+    A extends browser.storage.AreaName,
+    K extends keyof ExtensionStorageItems[A],
+    V extends ExtensionStorageItems[A][K]
+>(areaName: A, key: K, value: V): Promise<void> {
+    if (!storage?.[areaName]) {
+        return Promise.resolve()
+    }
+    return storage[areaName].set({ [key]: value })
+}

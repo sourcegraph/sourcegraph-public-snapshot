@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,8 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/buildkite/go-buildkite/v3/buildkite"
-	bk "github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 
@@ -46,25 +43,14 @@ type Config struct {
 
 // NewConfig computes configuration for the pipeline generator based on Buildkite environment
 // variables.
-func NewConfig(now time.Time) (Config, error) {
+func NewConfig(now time.Time) Config {
 	var (
 		commit = os.Getenv("BUILDKITE_COMMIT")
 		branch = os.Getenv("BUILDKITE_BRANCH")
 		tag    = os.Getenv("BUILDKITE_TAG")
-		token  = os.Getenv("BUILDKITE_API_TOKEN")
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
 	)
-
-	var bkClient *bk.Client
-	if token != "" {
-		bkConfig, err := bk.NewTokenConfig(token, false)
-		if err != nil {
-			return Config{}, err
-		}
-
-		bkClient = bk.NewClient(bkConfig.Client())
-	}
 
 	var mustIncludeCommits []string
 	if rawMustIncludeCommit := os.Getenv("MUST_INCLUDE_COMMIT"); rawMustIncludeCommit != "" {
@@ -75,9 +61,19 @@ func NewConfig(now time.Time) (Config, error) {
 	}
 
 	// detect changed files
-	changedFiles, commit, err := getChangedFiles(bkClient, branch, commit)
-	if err != nil {
-		return Config{}, err
+	var changedFiles []string
+	diffCommand := []string{"diff", "--name-only"}
+	if commit != "" {
+		diffCommand = append(diffCommand, "origin/main..."+commit)
+	} else {
+		diffCommand = append(diffCommand, "origin/main...")
+		// for testing
+		commit = "1234567890123456789012345678901234567890"
+	}
+	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
+		panic(err)
+	} else {
+		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
 	}
 
 	// evaluates what type of pipeline run this is
@@ -109,7 +105,7 @@ func NewConfig(now time.Time) (Config, error) {
 
 		// get flags from commit message
 		MessageFlags: parseMessageFlags(os.Getenv("BUILDKITE_MESSAGE")),
-	}, nil
+	}
 }
 
 func (c Config) shortCommit() string {
@@ -172,115 +168,4 @@ func parseMessageFlags(msg string) MessageFlags {
 		ProfilingEnabled: strings.Contains(msg, "[buildkite-enable-profiling]"),
 		SkipHashCompare:  strings.Contains(msg, "[skip-hash-compare]"),
 	}
-}
-
-func getChangedFiles(bkClient *buildkite.Client, branch, commit string) ([]string, string, error) {
-	var changedFiles []string
-
-	diffCommand, commit, err := buildDiffCommand(bkClient, branch, commit)
-	if err != nil {
-		return nil, commit, err
-	}
-
-	debugLog("Running git %s\n", strings.Join(diffCommand, " "))
-	cmd := exec.Command("git", diffCommand...)
-	cmd.Stderr = os.Stderr
-	if output, err := cmd.Output(); err != nil {
-		return nil, "", err
-	} else {
-		changedFiles = strings.Split(strings.TrimSpace(string(output)), "\n")
-	}
-
-	return changedFiles, commit, nil
-}
-
-func buildDiffCommand(bkClient *buildkite.Client, branch, commit string) (args []string, newCommit string, err error) {
-	diffCommand := []string{"diff", "--name-only"}
-	if commit == "" {
-		fmt.Fprintln(os.Stderr, "No commit. Comparing with main")
-		diffCommand = append(diffCommand, "origin/main...")
-		// for testing
-		commit = "1234567890123456789012345678901234567890"
-		return diffCommand, commit, nil
-	}
-
-	if bkClient == nil {
-		// if there is no builkite API client, run a diff with main
-		debugLog("BUILDKITE_API_TOKEN env var not found, comparing with main...")
-		return append(diffCommand, "origin/main..."+commit), commit, nil
-	}
-
-	// get the latest successful build for this branch and run a diff against that commit
-	builds, _, err := bkClient.Builds.ListByPipeline("sourcegraph", "sourcegraph", &buildkite.BuildsListOptions{
-		Branch: branch,
-		State:  []string{"passed"},
-		ListOptions: buildkite.ListOptions{
-			PerPage: 1,
-		},
-	})
-	if err != nil {
-		return
-	}
-
-	// if there are no previous builds diff with main
-	if len(builds) == 0 || builds[0].State == nil || *(builds[0].State) != "passed" {
-		fmt.Fprintln(os.Stderr, "No previous passing build. Comparing with main...")
-		return append(diffCommand, "origin/main..."+commit), commit, nil
-	}
-
-	build := builds[0]
-
-	// diff with the previous build commit
-	// after making sure the commit is in still in that branch
-	// (the branch may have been rebased)
-
-	// fetch the current branch
-	if out, err := exec.Command("git", "fetch", "origin", branch).CombinedOutput(); err != nil {
-		return nil, "", fmt.Errorf("error while fetching the current branch, err: %w, output: %q", err, string(out))
-	}
-	// checkout the current branch
-	if out, err := exec.Command("git", "checkout", branch).CombinedOutput(); err != nil {
-		return nil, "", fmt.Errorf("error while checking out the current branch, err: %w, output: %q", err, string(out))
-	}
-
-	defer func() {
-		// go back on the previous commit
-		if out, er := exec.Command("git", "checkout", "-").CombinedOutput(); er != nil {
-			err = multierror.Append(err, fmt.Errorf("error while checking out the current commit, err: %w, output: %q", err, string(out)))
-		}
-	}()
-
-	var buf bytes.Buffer
-	cmd := exec.Command("git", "branch", "--contains", *build.Commit)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = &buf
-	if err := cmd.Run(); err != nil {
-		return nil, "", err
-	}
-	debugLog("Previous build commit %q found in the following branches: %v\n", *build.Commit, buf.String())
-
-	var found bool
-	for _, b := range strings.Split(buf.String(), "\n") {
-		if strings.TrimSpace(strings.TrimLeft(b, "*")) == branch {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		debugLog("Previous build commit %q not found in current branch. Comparing with main...\n", *build.Commit)
-		return append(diffCommand, "origin/main..."+commit), commit, nil
-	}
-
-	fmt.Fprintln(os.Stderr, "Comparing with "+*build.Commit)
-	diffCommand = append(diffCommand, *build.Commit+"..."+branch)
-
-	return diffCommand, commit, nil
-}
-
-// debugLog logs on os.Stderr using fmt.Fprintf.
-// Node: os.Stdout cannot be used for logging, as it is read by
-// builkite to generate the pipeline.
-func debugLog(format string, a ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, a...)
 }

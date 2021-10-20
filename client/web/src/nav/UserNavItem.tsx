@@ -160,7 +160,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                         className="dropdown-item"
                     >
-                        Repositories <Badge className="ml-1" status="beta" />
+                        Your Repositories <Badge className="ml-1" status="beta" />
                     </Link>
                 )}
                 {props.showSearchContext && props.showSearchContextManagement && (
@@ -206,7 +206,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />
-                        <DropdownItem header={true}>Organizations</DropdownItem>
+                        <DropdownItem header={true}>Your organizations</DropdownItem>
                         {props.authenticatedUser.organizations.nodes.map(org => (
                             <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
                                 {org.displayName || org.name}

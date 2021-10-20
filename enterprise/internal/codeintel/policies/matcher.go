@@ -238,7 +238,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
 		if policy.Type == dbstore.GitObjectTypeCommit {
-			commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
+			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repositoryID, policy.Pattern)
 			if err != nil {
 				return errors.Wrap(err, "gitserver.CommitDate")
 			}
@@ -253,7 +253,7 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 			}
 
 			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
-				Name:           policy.Pattern,
+				Name:           commit,
 				PolicyID:       &policy.ID,
 				PolicyDuration: policyDuration,
 			})

@@ -59,29 +59,31 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     disabled={disabled}
                 >
                     <option value="">Select Git object type</option>
-                    {repoId && <option value={GitObjectType.GIT_COMMIT}>Commit</option>}
+                    <option value={GitObjectType.GIT_COMMIT}>HEAD</option>
                     <option value={GitObjectType.GIT_TAG}>Tag</option>
                     <option value={GitObjectType.GIT_TREE}>Branch</option>
                 </select>
                 <small className="form-text text-muted">Required.</small>
             </div>
 
-            <div className="form-group">
-                <label htmlFor="pattern">Pattern</label>
-                <input
-                    id="pattern"
-                    type="text"
-                    className="form-control text-monospace"
-                    value={policy.pattern}
-                    onChange={({ target: { value } }) => {
-                        setPolicy({ ...policy, pattern: value })
-                        debouncedSetPattern(value)
-                    }}
-                    disabled={disabled}
-                    required={true}
-                />
-                <small className="form-text text-muted">Required.</small>
-            </div>
+            {policy.type !== GitObjectType.GIT_COMMIT && (
+                <div className="form-group">
+                    <label htmlFor="pattern">Pattern</label>
+                    <input
+                        id="pattern"
+                        type="text"
+                        className="form-control text-monospace"
+                        value={policy.pattern}
+                        onChange={({ target: { value } }) => {
+                            setPolicy({ ...policy, pattern: value })
+                            debouncedSetPattern(value)
+                        }}
+                        disabled={disabled}
+                        required={true}
+                    />
+                    <small className="form-text text-muted">Required.</small>
+                </div>
+            )}
 
             {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}
         </div>

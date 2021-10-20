@@ -95,6 +95,7 @@ export const UserCodeHosts: React.FunctionComponent<UserCodeHosts> = ({
                     authProvidersByKind[kind] ? (
                         <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                             <CodeHostItem
+                                owner={{ id: user.id, type: 'user' }}
                                 service={services[kind]}
                                 kind={kind}
                                 name={defaultDisplayName}

@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -18,13 +19,13 @@ import (
 
 type DBStore interface {
 	With(other basestore.ShareableStore) DBStore
-	GetRepositoriesWithIndexConfiguration(ctx context.Context) ([]int, error)
-	GetAutoindexDisabledRepositories(ctx context.Context) ([]int, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	GetUploadByID(ctx context.Context, id int) (dbstore.Upload, bool, error)
 	ReferencesForUpload(ctx context.Context, uploadID int) (dbstore.PackageReferenceScanner, error)
 	InsertCloneableDependencyRepo(ctx context.Context, dependency precise.Package) (bool, error)
 	InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (int, error)
+	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	SelectRepositoriesForIndexScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
 }
 
 type DBStoreShim struct {
@@ -65,4 +66,8 @@ type GitserverClient interface {
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
 	QueueIndexesForPackage(ctx context.Context, pkg precise.Package) error
+}
+
+type PolicyMatcher interface {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]policies.PolicyMatch, error)
 }

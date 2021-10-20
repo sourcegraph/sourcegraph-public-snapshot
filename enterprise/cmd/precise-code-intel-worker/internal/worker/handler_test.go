@@ -55,7 +55,7 @@ func TestHandle(t *testing.T) {
 	}, nil)
 
 	expectedCommitDate := time.Unix(1587396557, 0).UTC()
-	gitserverClient.CommitDateFunc.SetDefaultReturn(expectedCommitDate, true, nil)
+	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", expectedCommitDate, true, nil)
 
 	handler := &handler{
 		dbStore:         mockDBStore,
@@ -192,7 +192,7 @@ func TestHandleError(t *testing.T) {
 	mockUploadStore.GetFunc.SetDefaultHook(copyTestDump)
 
 	// Supply non-nil commit date
-	gitserverClient.CommitDateFunc.SetDefaultReturn(time.Now(), true, nil)
+	gitserverClient.CommitDateFunc.SetDefaultReturn("deadbeef", time.Now(), true, nil)
 
 	// Set a different tip commit
 	mockDBStore.MarkRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
