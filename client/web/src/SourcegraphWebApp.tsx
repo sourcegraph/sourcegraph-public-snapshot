@@ -412,7 +412,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
 
             let subtitle: JSX.Element | undefined
             if (errorID) {
-                subtitle = <FeedbackText headerText="Sorry, there's been a problem." />
+                subtitle = <FeedbackText headerText="Sorry, there's been a problem!" />
             }
             if (errorMessage) {
                 subtitle = (
