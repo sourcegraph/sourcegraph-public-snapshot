@@ -1261,7 +1261,7 @@ func testSearchOther(t *testing.T) {
 			query           string
 			suggestionCount int
 		}{
-			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
+			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 12},
 			{query: `context:SuggestionSearchContext repo:`, suggestionCount: 3},
 			{query: `context:Empty`, suggestionCount: 1},
 		}

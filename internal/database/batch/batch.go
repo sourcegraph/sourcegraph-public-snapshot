@@ -23,6 +23,7 @@ type Inserter struct {
 	batch            []interface{}
 	queryPrefix      string
 	querySuffix      string
+	onConflictSuffix string
 	returningSuffix  string
 	returningScanner ReturningScanner
 }
@@ -82,11 +83,12 @@ func WithInserterWithReturn(
 	db dbutil.DB,
 	tableName string,
 	columnNames []string,
+	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,
 	f func(inserter *Inserter) error,
 ) (err error) {
-	inserter := NewInserterWithReturn(ctx, db, tableName, columnNames, returningColumnNames, returningScanner)
+	inserter := NewInserterWithReturn(ctx, db, tableName, columnNames, onConflictClause, returningColumnNames, returningScanner)
 	return with(ctx, inserter, f)
 }
 
@@ -103,7 +105,7 @@ func with(ctx context.Context, inserter *Inserter, f func(inserter *Inserter) er
 // NewInserter creates a new batch inserter using the given database handle, table name,
 // and column names. For performance and atomicity, handle should be a transaction.
 func NewInserter(ctx context.Context, db dbutil.DB, tableName string, columnNames ...string) *Inserter {
-	return NewInserterWithReturn(ctx, db, tableName, columnNames, nil, nil)
+	return NewInserterWithReturn(ctx, db, tableName, columnNames, "", nil, nil)
 }
 
 // NewInserterWithReturn creates a new batch inserter using the given database handle, table
@@ -117,6 +119,7 @@ func NewInserterWithReturn(
 	db dbutil.DB,
 	tableName string,
 	columnNames []string,
+	onConflictClause string,
 	returningColumnNames []string,
 	returningScanner ReturningScanner,
 ) *Inserter {
@@ -124,6 +127,7 @@ func NewInserterWithReturn(
 	maxBatchSize := getMaxBatchSize(numColumns)
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
 	querySuffix := makeQuerySuffix(numColumns)
+	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
 
 	return &Inserter{
@@ -133,6 +137,7 @@ func NewInserterWithReturn(
 		batch:            make([]interface{}, 0, maxBatchSize),
 		queryPrefix:      queryPrefix,
 		querySuffix:      querySuffix,
+		onConflictSuffix: onConflictSuffix,
 		returningSuffix:  returningSuffix,
 		returningScanner: returningScanner,
 	}
@@ -207,7 +212,7 @@ func (i *Inserter) makeQuery(numValues int) string {
 	suffixLength := numTuples*sizeOfTuple + numTuples - 1
 
 	// Construct the query
-	return i.queryPrefix + i.querySuffix[:suffixLength] + i.returningSuffix
+	return i.queryPrefix + i.querySuffix[:suffixLength] + i.onConflictSuffix + i.returningSuffix
 }
 
 // maxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
@@ -272,12 +277,23 @@ func makeQuerySuffix(numColumns int) string {
 	return querySuffix
 }
 
+// makeOnConflictSuffix creates a ON CONFLICT ... clause of the batch inserter statement, if
+// any on conflict command was supplied to the batch inserter.
+func makeOnConflictSuffix(command string) string {
+	if command == "" {
+		return ""
+	}
+
+	// Command assumed to be full clause
+	return fmt.Sprintf(" %s", command)
+}
+
 // makeReturningSuffix creates a RETURNING ... clause of the batch insert statement, if any
-// returning column names were supplied to the batcher inserter.
+// returning column names were supplied to the batch inserter.
 func makeReturningSuffix(columnNames []string) string {
 	if len(columnNames) == 0 {
 		return ""
 	}
 
-	return fmt.Sprintf("RETURNING %s", strings.Join(columnNames, ", "))
+	return fmt.Sprintf(" RETURNING %s", strings.Join(columnNames, ", "))
 }

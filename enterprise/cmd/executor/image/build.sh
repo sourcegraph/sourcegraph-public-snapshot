@@ -2,9 +2,11 @@
 set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
+export CNI_VERSION=v0.9.1
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
+export EXPORTER_EXPORTER_VERSION=0.4.5
 
 ## Install ops agent
 ## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
@@ -74,6 +76,9 @@ function install_ignite() {
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
+
+  mkdir -p /opt/cni/bin
+  curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
 
 ## Install and configure executor service
@@ -93,6 +98,7 @@ Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"
 Environment=SRC_LOG_LEVEL=dbug
+Environment=SRC_PROF_HTTP=127.0.0.1:6060
 Environment=EXECUTOR_FIRECRACKER_IMAGE="${EXECUTOR_FIRECRACKER_IMAGE}"
 
 [Install]
@@ -136,10 +142,8 @@ function install_node_exporter() {
   chown node_exporter:node_exporter /usr/local/bin/node_exporter
 
   cat <<EOF >/etc/systemd/system/node_exporter.service
-
 [Unit]
 Description=Node Exporter
-
 [Service]
 User=node_exporter
 ExecStart=/usr/local/bin/node_exporter \
@@ -147,23 +151,56 @@ ExecStart=/usr/local/bin/node_exporter \
   --collector.disable-defaults \
   --collector.cpu \
   --collector.diskstats \
-  --collector.exec \
   --collector.filesystem \
   --collector.meminfo \
-  --collector.cpu \
-  --collector.netclass
-  --collector.netdev
-  --collector.netstat
-  --collector.softnet
-  --collector.pressure
+  --collector.netclass \
+  --collector.netdev \
+  --collector.netstat \
+  --collector.softnet \
+  --collector.pressure \
   --collector.vmstat
-
 [Install]
 WantedBy=multi-user.target
 EOF
 
   systemctl daemon-reload
   systemctl enable node_exporter
+}
+
+function install_exporter_exporter() {
+  useradd --system --shell /bin/false exporter_exporter
+
+  wget https://github.com/QubitProducts/exporter_exporter/releases/download/v${EXPORTER_EXPORTER_VERSION}/exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64.tar.gz
+  tar xvfz exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64.tar.gz
+  mv exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64/exporter_exporter /usr/local/bin/exporter_exporter
+  rm -rf exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64 exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64.tar.gz
+
+  chown exporter_exporter:exporter_exporter /usr/local/bin/exporter_exporter
+
+  cat <<EOF >/usr/local/bin/exporter_exporter.yaml
+modules:
+  node:
+    method: http
+    http:
+      port: 9100
+  executor:
+    method: http
+    http:
+      port: 6060
+EOF
+
+  cat <<EOF >/etc/systemd/system/exporter_exporter.service
+[Unit]
+Description=Exporter Exporter
+[Service]
+User=exporter_exporter
+ExecStart=/usr/local/bin/exporter_exporter -config.file "/usr/local/bin/exporter_exporter.yaml"
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  systemctl daemon-reload
+  systemctl enable exporter_exporter
 }
 
 ## Build the ignite-ubuntu image for use in firecracker.
@@ -203,6 +240,7 @@ install_ignite
 # Services
 install_executor
 install_node_exporter
+install_exporter_exporter
 
 # Service prep and cleanup
 generate_ignite_base_image
