@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -22,6 +23,7 @@ import { OrgAreaPageProps } from '../../area/OrgArea'
 import { removeUserFromOrganization } from '../../backend'
 
 import { InviteForm } from './InviteForm'
+import styles from './OrgSettingsMembersPage.module.scss'
 
 interface UserNodeProps {
     /** The user to display in this list item. */
@@ -93,7 +95,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     public render(): JSX.Element | null {
         const loading = this.state.removalOrError === undefined
         return (
-            <li className="user-node__container list-group-item" data-test-username={this.props.node.username}>
+            <li
+                className={classNames(styles.container, 'list-group-item')}
+                data-test-username={this.props.node.username}
+            >
                 <div className="d-flex align-items-center justify-content-between">
                     <div>
                         <Link to={userURL(this.props.node.username)}>

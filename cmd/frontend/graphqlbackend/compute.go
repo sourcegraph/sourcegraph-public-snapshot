@@ -179,7 +179,7 @@ func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbu
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
 func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
-	pattern, err := compute.RegexpFromQuery(args.Query)
+	query, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +193,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
+	pattern := query.(*compute.MatchOnly).MatchPattern.(*compute.Regexp).Value
 	return toResultResolverList(pattern, results.Matches, db), nil
 }
 
