@@ -80,13 +80,10 @@ func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.
 }
 
 func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightIntervalTimeScope, error) {
-	if s.series.SampleIntervalUnit != nil && s.series.SampleIntervalValue != nil {
-		return &insightIntervalTimeScopeResolver{
-			unit:  *s.series.SampleIntervalUnit,
-			value: int32(*s.series.SampleIntervalValue),
-		}, nil
-	}
-	return &insightIntervalTimeScopeResolver{}, nil
+	return &insightIntervalTimeScopeResolver{
+		unit:  s.series.SampleIntervalUnit,
+		value: int32(s.series.SampleIntervalValue),
+	}, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
