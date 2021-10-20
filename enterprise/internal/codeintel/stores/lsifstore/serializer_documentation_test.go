@@ -106,3 +106,42 @@ func TestSerializeDocumentationPageData(t *testing.T) {
 		})
 	}
 }
+
+func TestSerializeDocumentationPathInfoData(t *testing.T) {
+	testCases := []struct {
+		pathInfo *precise.DocumentationPathInfoData
+		want autogold.Value
+	}{
+		{
+			pathInfo: &precise.DocumentationPathInfoData{
+				PathID: "/",
+				IsIndex: true,
+				Children: []string{"/sub", "/sub/pkg", "/sub/pkg/sub/pkg"},
+			},
+			want: autogold.Want("basic", nil),
+		},
+		{
+			pathInfo: &precise.DocumentationPathInfoData{
+				PathID: "/",
+				IsIndex: true,
+				Children: nil,
+			},
+			want: autogold.Want("nil children would be encoded as JSON array not null", nil),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			serializer := NewSerializer()
+			encoded, err := serializer.MarshalDocumentationPathInfoData(tc.pathInfo)
+			if err != nil {
+				t.Fatal(err)
+			}
+			decoded, err := serializer.UnmarshalDocumentationPathInfoData(encoded)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := decoded
+			tc.want.Equal(t, got)
+		})
+	}
+}
