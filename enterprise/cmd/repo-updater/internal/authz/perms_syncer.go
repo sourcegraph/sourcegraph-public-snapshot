@@ -386,6 +386,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		appendSpecs(extPerms, provider)
 	}
 
+	// TODO: only do this when the user is a member of any organization that has added code host connection, otherwise this is pure waste.
 	// Use code host connections to list all accessible repositories on code hosts.
 	svcs, err := database.ExternalServicesWith(s.reposStore).List(ctx,
 		database.ExternalServicesListOptions{
