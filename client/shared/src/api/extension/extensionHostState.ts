@@ -34,6 +34,8 @@ export function createExtensionHostState(
 
         roots: new BehaviorSubject<readonly ExtensionWorkspaceRoot[]>([]),
         rootChanges: new Subject<void>(),
+        versionContextChanges: new Subject<string | undefined>(),
+        versionContext: undefined,
         searchContextChanges: new Subject<string | undefined>(),
         searchContext: undefined,
 
@@ -109,6 +111,8 @@ export interface ExtensionHostState {
     // Workspace
     roots: BehaviorSubject<readonly ExtensionWorkspaceRoot[]>
     rootChanges: Subject<void>
+    versionContextChanges: Subject<string | undefined>
+    versionContext: string | undefined
     searchContextChanges: Subject<string | undefined>
     searchContext: string | undefined
 

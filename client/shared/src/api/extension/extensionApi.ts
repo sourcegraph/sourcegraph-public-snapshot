@@ -80,6 +80,9 @@ export function createExtensionAPIFactory(
         get roots() {
             return state.roots.value
         },
+        get versionContext() {
+            return state.versionContext
+        },
         get searchContext() {
             return state.searchContext
         },
@@ -87,6 +90,7 @@ export function createExtensionAPIFactory(
         openedTextDocuments: state.openedTextDocuments.asObservable(),
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
         rootChanges: state.rootChanges.asObservable(),
+        versionContextChanges: state.versionContextChanges.asObservable(),
         searchContextChanges: state.searchContextChanges.asObservable(),
     }
 
