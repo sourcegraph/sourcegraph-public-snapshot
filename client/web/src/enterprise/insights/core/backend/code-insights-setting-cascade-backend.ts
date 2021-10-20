@@ -25,6 +25,10 @@ import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/sub
 
 import { getBackendInsight } from './api/get-backend-insight'
 import { getBuiltInInsight } from './api/get-built-in-insight'
+import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
+import { getRepositorySuggestions } from './api/get-repository-suggestions'
+import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
+import { getSearchInsightContent } from './api/get-search-insight-content/get-search-insight-content'
 import { getSubjectSettings, updateSubjectSettings } from './api/subject-settings'
 import { CodeInsightsBackend } from './code-insights-backend'
 import {
@@ -32,9 +36,11 @@ import {
     DashboardDeleteInput,
     DashboardUpdateInput,
     FindInsightByNameInput,
+    GetLangStatsInsightContentInput,
+    GetSearchInsightContentInput,
     InsightCreateInput,
     InsightUpdateInput,
-    ReachableInsight
+    ReachableInsight,
 } from './code-insights-backend-types'
 import { persistChanges } from './utils/persist-changes'
 

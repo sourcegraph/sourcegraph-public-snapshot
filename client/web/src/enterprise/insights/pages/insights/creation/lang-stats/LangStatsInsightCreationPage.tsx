@@ -20,7 +20,6 @@ import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
 export interface InsightCreateEvent {
-    subjectId: string
     insight: LangStatsInsight
 }
 
@@ -72,15 +71,10 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
 
     const handleSubmit = useCallback<LangStatsInsightCreationContentProps['onSubmit']>(
         async values => {
-            const subjectID = values.visibility
-
             try {
                 const insight = getSanitizedLangStatsInsight(values)
 
-                await onInsightCreateRequest({
-                    subjectId: subjectID,
-                    insight,
-                })
+                await onInsightCreateRequest({ insight })
 
                 // Clear initial values if user successfully created search insight
                 setInitialFormValues(undefined)

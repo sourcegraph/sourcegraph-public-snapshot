@@ -46,11 +46,10 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
     const match = useRouteMatch()
 
-    const api = useMemo(() => {
-        console.log('recreate setting based api context')
-
-        return new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [platformContext, settingsCascade])
+    const api = useMemo(() => new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext), [
+        platformContext,
+        settingsCascade,
+    ])
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
@@ -72,12 +71,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
                     )}
                 />
 
-                <DashboardsRoutes
-                    authenticatedUser={authenticatedUser}
-                    telemetryService={telemetryService}
-                    platformContext={platformContext}
-                    settingsCascade={settingsCascade}
-                />
+                <DashboardsRoutes authenticatedUser={authenticatedUser} telemetryService={telemetryService} />
 
                 <Route component={NotFoundPage} key="hardcoded-key" />
             </Switch>

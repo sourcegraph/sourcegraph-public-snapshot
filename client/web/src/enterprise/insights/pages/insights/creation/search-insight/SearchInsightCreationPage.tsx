@@ -21,7 +21,6 @@ import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
 
 export interface InsightCreateEvent {
-    subjectId: string
     insight: SearchBasedInsight
 }
 
@@ -71,12 +70,10 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-            const subjectID = values.visibility
-
             try {
                 const insight = getSanitizedSearchInsight(values)
 
-                await onInsightCreateRequest({ subjectId: subjectID, insight })
+                await onInsightCreateRequest({ insight })
 
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 telemetryService.log(

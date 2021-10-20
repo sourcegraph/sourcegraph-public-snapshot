@@ -27,7 +27,6 @@ const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string 
 }
 
 interface InsightCreateEvent {
-    subjectId: string
     insight: Insight
 }
 
@@ -52,9 +51,9 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
     }
 
     const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<void> => {
-        const { insight, subjectId } = event
+        const { insight } = event
 
-        return createInsight({ insight, subjectId, dashboard }).toPromise()
+        return createInsight({ insight, dashboard }).toPromise()
     }
 
     const handleInsightSuccessfulCreation = (insight: Insight): void => {
