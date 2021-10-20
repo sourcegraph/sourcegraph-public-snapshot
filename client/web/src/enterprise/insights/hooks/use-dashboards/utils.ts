@@ -50,11 +50,9 @@ export function getInsightIdsFromSettings(settings: Settings): string[] {
  */
 export function getSubjectDashboards(subject: SupportedInsightSubject, settings: Settings): InsightDashboard[] {
     // Find all subject insights dashboards
-    const subjectDashboards = Object.keys(settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {})
+    return Object.keys(settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {})
         .map(dashboardKey => getSubjectDashboardByID(subject, settings, dashboardKey))
         .filter(isDefined)
-
-    return [...subjectDashboards]
 }
 
 /**

@@ -2,7 +2,6 @@ import { useAsyncInsightTitleValidator } from '../../../../../../../../component
 import { useField, useFieldAPI } from '../../../../../../../../components/form/hooks/useField'
 import { Form, FormChangeEvent, SubmissionErrors, useForm } from '../../../../../../../../components/form/hooks/useForm'
 import { createRequiredValidator } from '../../../../../../../../components/form/validators'
-import { isUserSubject, SupportedInsightSubject } from '../../../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries, InsightStep } from '../../../../types'
 import { INITIAL_INSIGHT_VALUES } from '../../initial-insight-values'
 import {
@@ -16,7 +15,6 @@ const titleRequiredValidator = createRequiredValidator('Title is a required fiel
 
 export interface UseInsightCreationFormProps {
     mode: 'creation' | 'edit'
-    subjects?: SupportedInsightSubject[]
     initialValue?: Partial<CreateInsightFormFields>
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
@@ -38,16 +36,14 @@ export interface InsightCreationForm {
  * validations, fields dependencies)
  */
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
-    const { mode, subjects = [], initialValue = {}, onSubmit, onChange } = props
+    const { mode, initialValue = {}, onSubmit, onChange } = props
 
     // Calculate initial value for visibility settings
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
     const isEdit = mode === 'edit'
 
     const form = useForm<CreateInsightFormFields>({
         initialValues: {
             ...INITIAL_INSIGHT_VALUES,
-            visibility: userSubjectID,
             ...initialValue,
         },
         onSubmit,

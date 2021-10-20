@@ -10,24 +10,8 @@ import {
     CodeInsightsBackendContext,
     FakeDefaultCodeInsightsBackend,
 } from '../../../../../../core/backend/code-insights-backend-context'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
-
-const USER_TEST_SUBJECT: SupportedInsightSubject = {
-    __typename: 'User' as const,
-    id: 'user_test_id',
-    username: 'testusername',
-    displayName: 'test',
-    viewerCanAdminister: true,
-}
-
-const SITE_TEST_SUBJECT: SupportedInsightSubject = {
-    __typename: 'Site' as const,
-    viewerCanAdminister: true,
-    allowSiteSettingsEdits: true,
-    id: 'global_id',
-}
 
 describe('CreateInsightContent', () => {
     class CodeInsightsTestBackend extends FakeDefaultCodeInsightsBackend {
@@ -40,7 +24,7 @@ describe('CreateInsightContent', () => {
         render(
             <MemoryRouter>
                 <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
-                    <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT, SITE_TEST_SUBJECT]} />
+                    <SearchInsightCreationContent {...props} />
                 </CodeInsightsBackendContext.Provider>
             </MemoryRouter>
         )

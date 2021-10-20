@@ -3,7 +3,6 @@ import React from 'react'
 import { noop } from 'rxjs'
 
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
 import { getSanitizedRepositories } from '../../utils/insight-sanitizer'
 import { SearchInsightLivePreview } from '../live-preview-chart/SearchInsightLivePreview'
@@ -17,7 +16,6 @@ export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
     mode?: 'creation' | 'edit'
 
-    subjects?: SupportedInsightSubject[]
     initialValue?: Partial<CreateInsightFormFields>
     className?: string
     dataTestId?: string
@@ -30,29 +28,18 @@ export interface SearchInsightCreationContentProps {
 }
 
 export const SearchInsightCreationContent: React.FunctionComponent<SearchInsightCreationContentProps> = props => {
-    const {
-        mode = 'creation',
-        subjects = [],
-        initialValue,
-        className,
-        dataTestId,
-        onSubmit,
-        onCancel = noop,
-        onChange = noop,
-    } = props
+    const { mode = 'creation', initialValue, className, dataTestId, onSubmit, onCancel = noop, onChange = noop } = props
 
     const {
         form: { values, formAPI, ref, handleSubmit },
         title,
         repositories,
         series,
-        visibility,
         step,
         stepValue,
         allReposMode,
     } = useInsightCreationForm({
         mode,
-        subjects,
         initialValue,
         onChange,
         onSubmit,
@@ -66,7 +53,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         repositories.input.onChange('')
         // Focus first element of the form
         repositories.input.ref.current?.focus()
-        visibility.input.onChange('personal')
         series.input.onChange([createDefaultEditSeries({ edit: true })])
         stepValue.input.onChange('2')
         step.input.onChange('months')
@@ -103,8 +89,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
                 title={title}
                 repositories={repositories}
                 allReposMode={allReposMode}
-                visibility={visibility}
-                subjects={subjects}
                 series={series}
                 step={step}
                 stepValue={stepValue}

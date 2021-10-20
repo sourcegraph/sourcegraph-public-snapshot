@@ -8,13 +8,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { WebStory } from '../../../../../../components/WebStory'
 import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
 import { CodeInsightsSettingsCascadeBackend } from '../../../../core/backend/code-insights-setting-cascade-backend'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
-import {
-    createGlobalSubject,
-    createOrgSubject,
-    createUserSubject,
-    SETTINGS_CASCADE_MOCK,
-} from '../../../../mocks/settings-cascade'
+import { SETTINGS_CASCADE_MOCK } from '../../../../mocks/settings-cascade'
 
 import { getRandomLangStatsMock } from './components/live-preview-chart/live-preview-mock-data'
 import { LangStatsInsightCreationPage } from './LangStatsInsightCreationPage'
@@ -58,18 +52,9 @@ class CodeInsightsStoryBackend extends CodeInsightsSettingsCascadeBackend {
 
 const codeInsightsBackend = new CodeInsightsStoryBackend(SETTINGS_CASCADE_MOCK, {} as any)
 
-const SUBJECTS = [
-    createUserSubject('Emir Kusturica'),
-    createOrgSubject('Warner Brothers'),
-    createOrgSubject('Jim Jarmusch Org'),
-    createGlobalSubject('Global'),
-] as SupportedInsightSubject[]
-
 add('Page', () => (
     <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
         <LangStatsInsightCreationPage
-            subjects={SUBJECTS}
-            visibility="user_test_id"
             telemetryService={NOOP_TELEMETRY_SERVICE}
             onInsightCreateRequest={fakeAPIRequest}
             onSuccessfulCreation={noop}

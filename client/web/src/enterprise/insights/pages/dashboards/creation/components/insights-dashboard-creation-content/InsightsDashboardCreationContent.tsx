@@ -10,7 +10,6 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../../components/form/validators'
-import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     isGlobalSubject,
@@ -92,7 +91,7 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     })
 
     // We always have user subject in our settings cascade
-    const userSubject = getUserSubject(subjects)
+    const userSubject = subjects.find(isUserSubject)!
     const organizationSubjects = subjects.filter(isOrganizationSubject)
 
     // We always have global subject in our settings cascade

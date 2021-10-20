@@ -3,7 +3,6 @@ import React, { useMemo } from 'react'
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { InsightType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
-import { SupportedInsightSubject } from '../../../../core/types/subjects'
 import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight/types'
@@ -11,13 +10,12 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    subjects: SupportedInsightSubject[]
     onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
 export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, subjects, onSubmit, onCancel } = props
+    const { insight, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
         if (insight.type === InsightType.Backend) {
@@ -64,7 +62,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             mode="edit"
             className="pb-5"
             initialValue={insightFormValues}
-            subjects={subjects}
             dataTestId="search-insight-edit-page-content"
             onSubmit={handleSubmit}
             onCancel={onCancel}

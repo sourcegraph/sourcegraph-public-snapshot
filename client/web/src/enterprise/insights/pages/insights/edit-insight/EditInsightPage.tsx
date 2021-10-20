@@ -32,14 +32,13 @@ export interface EditInsightPageProps {
 export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
     const { insightID, authenticatedUser } = props
 
-    const { getInsightSubjects, getInsightById } = useContext(CodeInsightsBackendContext)
+    const { getInsightById } = useContext(CodeInsightsBackendContext)
 
-    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
     const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
 
     const { handleSubmit, handleCancel } = useEditPageHandlers({ originalInsight: insight })
 
-    if (insight === undefined || subjects === undefined) {
+    if (insight === undefined) {
         return <LoadingSpinner />
     }
 
@@ -75,21 +74,11 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             </div>
 
             {isSearchBasedInsight(insight) && (
-                <EditSearchBasedInsight
-                    insight={insight}
-                    subjects={subjects}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                />
+                <EditSearchBasedInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
             )}
 
             {isLangStatsInsight(insight) && (
-                <EditLangStatsInsight
-                    insight={insight}
-                    subjects={subjects}
-                    onSubmit={handleSubmit}
-                    onCancel={handleCancel}
-                />
+                <EditLangStatsInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
             )}
         </Page>
     )

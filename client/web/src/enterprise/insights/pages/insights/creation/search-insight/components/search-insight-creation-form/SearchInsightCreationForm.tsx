@@ -11,7 +11,6 @@ import { FormRadioInput } from '../../../../../../components/form/form-radio-inp
 import { useFieldAPI } from '../../../../../../components/form/hooks/useField'
 import { FORM_ERROR, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { RepositoriesField } from '../../../../../../components/form/repositories-field/RepositoriesField'
-import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields, EditableDataSeries } from '../../types'
 import { FormSeries } from '../form-series/FormSeries'
 
@@ -32,9 +31,6 @@ interface CreationSearchInsightFormProps {
     title: useFieldAPI<CreateInsightFormFields['title']>
     repositories: useFieldAPI<CreateInsightFormFields['repositories']>
     allReposMode: useFieldAPI<CreateInsightFormFields['allRepos']>
-
-    visibility: useFieldAPI<CreateInsightFormFields['visibility']>
-    subjects: SupportedInsightSubject[]
 
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
@@ -61,7 +57,7 @@ interface CreationSearchInsightFormProps {
 }
 
 /**
- * Displays creation code insight form (title, visibility, series, etc.)
+ * Displays creation code insight form (title, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
  */
 export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchInsightFormProps> = props => {
@@ -75,8 +71,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
         title,
         repositories,
         allReposMode,
-        visibility,
-        subjects,
         series,
         stepValue,
         step,
