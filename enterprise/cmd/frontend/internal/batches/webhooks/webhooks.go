@@ -106,7 +106,7 @@ func (h Webhook) upsertChangesetEvent(
 	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
 	if err != nil {
 		log15.Warn("Webhook event could not be matched to repo", "err", err)
-		return err
+		return nil
 	}
 
 	var kind btypes.ChangesetEventKind
