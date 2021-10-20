@@ -351,7 +351,7 @@ const upsertLanguageNameQuery = `
 INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
 VALUES (%s, %s)
 -- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXClUDED.lang_name
+ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXCLUDED.lang_name
 RETURNING id
 `
 
