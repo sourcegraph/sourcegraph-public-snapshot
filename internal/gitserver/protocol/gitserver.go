@@ -7,7 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -42,7 +42,7 @@ type SearchEventDone struct {
 
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
-		var e domain.RepoNotExistError
+		var e gitdomain.RepoNotExistError
 		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
 			return &e
 		}
@@ -55,7 +55,7 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	event := SearchEventDone{
 		LimitHit: limitHit,
 	}
-	var notExistError *domain.RepoNotExistError
+	var notExistError *gitdomain.RepoNotExistError
 	if errors.As(err, &notExistError) {
 		b, _ := json.Marshal(notExistError)
 		event.Error = string(b)
@@ -339,5 +339,5 @@ type GetObjectRequest struct {
 }
 
 type GetObjectResponse struct {
-	Object domain.GitObject
+	Object gitdomain.GitObject
 }

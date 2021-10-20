@@ -6,11 +6,11 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
-func handleGetObject(getObject domain.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
+func handleGetObject(getObject gitdomain.GetObjectFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req protocol.GetObjectRequest
 

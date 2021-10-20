@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/globalstatedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -118,17 +118,17 @@ func TestNewCommon_repo_error(t *testing.T) {
 		code int
 	}{{
 		name: "cloning",
-		err:  &domain.RepoNotExistError{CloneInProgress: true},
+		err:  &gitdomain.RepoNotExistError{CloneInProgress: true},
 		code: 200,
 	}, {
 		name: "repo-404",
-		err:  &domain.RepoNotExistError{Repo: "repo-404"},
+		err:  &gitdomain.RepoNotExistError{Repo: "repo-404"},
 		want: "repository does not exist: repo-404",
 		code: 404,
 	}, {
 		name: "rev-404",
 		rev:  "@marco",
-		err:  &domain.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
+		err:  &gitdomain.RevisionNotFoundError{Repo: "rev-404", Spec: "marco"},
 		want: "revision not found: rev-404@marco",
 		code: 404,
 	}, {

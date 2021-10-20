@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -277,10 +277,10 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				if errors.Is(err, context.DeadlineExceeded) {
 					return Resolved{}, context.DeadlineExceeded
 				}
-				if errors.HasType(err, domain.BadCommitError{}) {
+				if errors.HasType(err, gitdomain.BadCommitError{}) {
 					return Resolved{}, err
 				}
-				if errors.HasType(err, &domain.RevisionNotFoundError{}) {
+				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -582,7 +582,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if errors.HasType(err, &domain.RevisionNotFoundError{}) || domain.IsRepoNotExist(err) {
+					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						continue
 					}
 
@@ -639,13 +639,13 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		status |= search.RepoStatusLimitHit
 	}
 
-	if domain.IsRepoNotExist(searchErr) {
-		if domain.IsCloneInProgress(searchErr) {
+	if gitdomain.IsRepoNotExist(searchErr) {
+		if gitdomain.IsCloneInProgress(searchErr) {
 			status |= search.RepoStatusCloning
 		} else {
 			status |= search.RepoStatusMissing
 		}
-	} else if errors.HasType(searchErr, &domain.RevisionNotFoundError{}) {
+	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

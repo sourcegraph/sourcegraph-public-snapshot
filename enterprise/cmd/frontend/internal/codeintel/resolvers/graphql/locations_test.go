@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
@@ -212,7 +212,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 	}
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
-		return "", &domain.RevisionNotFoundError{}
+		return "", &gitdomain.RevisionNotFoundError{}
 	}
 
 	commitResolver, err := NewCachedLocationResolver(db).Commit(context.Background(), 50, "deadbeef")
@@ -248,7 +248,7 @@ func TestResolveLocations(t *testing.T) {
 
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		if spec == "deadbeef3" {
-			return "", &domain.RevisionNotFoundError{}
+			return "", &gitdomain.RevisionNotFoundError{}
 		}
 		return api.CommitID(spec), nil
 	}

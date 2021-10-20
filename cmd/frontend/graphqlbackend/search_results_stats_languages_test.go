@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -51,12 +51,12 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	defer git.ResetMocks()
 
-	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*domain.GitObject, error) {
-		oid := domain.OID{} // empty is OK for this test
+	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+		oid := gitdomain.OID{} // empty is OK for this test
 		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
-		return &domain.GitObject{
+		return &gitdomain.GitObject{
 			ID:   oid,
-			Type: domain.ObjectTypeTree,
+			Type: gitdomain.ObjectTypeTree,
 		}, nil
 	}
 	defer gitserver.ResetClientMocks()

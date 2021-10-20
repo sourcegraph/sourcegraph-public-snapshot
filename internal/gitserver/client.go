@@ -32,7 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -45,7 +45,7 @@ var defaultDoer, _ = clientFactory.Doer()
 var DefaultClient = NewClient(defaultDoer)
 
 var ClientMocks, emptyClientMocks struct {
-	GetObject func(repo api.RepoName, objectName string) (*domain.GitObject, error)
+	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 }
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
@@ -151,7 +151,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
 		if strings.Contains(err.Error(), "Not a valid object") {
-			return 0, &domain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
+			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
 	return n, err
@@ -225,7 +225,7 @@ func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOpti
 		}
 		resp.Body.Close()
 		return nil, &badRequestError{
-			error: &domain.RepoNotExistError{
+			error: &gitdomain.RepoNotExistError{
 				Repo:            repo,
 				CloneInProgress: payload.CloneInProgress,
 				CloneProgress:   payload.CloneProgress,
@@ -283,7 +283,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		return nil, nil, &domain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
 
 	default:
 		resp.Body.Close()
@@ -1002,7 +1002,7 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 }
 
 // GetObject fetches git object data in the supplied repo
-func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*domain.GitObject, error) {
+func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
 	if ClientMocks.GetObject != nil {
 		return ClientMocks.GetObject(repo, objectName)
 	}

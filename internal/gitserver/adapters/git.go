@@ -10,7 +10,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
@@ -32,7 +32,7 @@ func (g *Git) RevParse(ctx context.Context, repo api.RepoName, rev string) (stri
 }
 
 // GetObjectType returns the object type given an objectID
-func (g *Git) GetObjectType(ctx context.Context, repo api.RepoName, objectID string) (domain.ObjectType, error) {
+func (g *Git) GetObjectType(ctx context.Context, repo api.RepoName, objectID string) (gitdomain.ObjectType, error) {
 	cmd := exec.CommandContext(ctx, "git", "cat-file", "-t", "--", objectID)
 	cmd.Dir = repoDir(repo, g.ReposDir)
 
@@ -41,7 +41,7 @@ func (g *Git) GetObjectType(ctx context.Context, repo api.RepoName, objectID str
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args, out))
 	}
 
-	objectType := domain.ObjectType(bytes.TrimSpace(out))
+	objectType := gitdomain.ObjectType(bytes.TrimSpace(out))
 	return objectType, nil
 }
 

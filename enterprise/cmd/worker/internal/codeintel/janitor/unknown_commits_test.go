@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/domain"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -31,7 +31,7 @@ func TestUnknownCommitsJanitor(t *testing.T) {
 func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if commit == "foo-y" || commit == "bar-x" || commit == "baz-z" {
-			return &domain.RevisionNotFoundError{}
+			return &gitdomain.RevisionNotFoundError{}
 		}
 
 		return nil
@@ -47,7 +47,7 @@ func TestUnknownCommitsJanitorUnknownCommit(t *testing.T) {
 func TestUnknownCommitsJanitorUnknownRepository(t *testing.T) {
 	resolveRevisionFunc := func(commit string) error {
 		if strings.HasPrefix(commit, "foo-") {
-			return &domain.RepoNotExistError{}
+			return &gitdomain.RepoNotExistError{}
 		}
 
 		return nil
