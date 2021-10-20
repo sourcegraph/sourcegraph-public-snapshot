@@ -11,8 +11,10 @@ import (
 )
 
 type documentationSearchCurrentJanitor struct {
-	lsifStore LSIFStore
-	metrics   *metrics
+	lsifStore                 LSIFStore
+	minimumTimeSinceLastCheck time.Duration
+	batchSize                 int
+	metrics                   *metrics
 }
 
 var _ goroutine.Handler = &documentationSearchCurrentJanitor{}
@@ -23,14 +25,16 @@ var _ goroutine.ErrorHandler = &documentationSearchCurrentJanitor{}
 // by the recent dump_id in the associated lsif_data_docs_search_current table.
 func NewDocumentationSearchCurrentJanitor(
 	lsifStore LSIFStore,
+	minimumTimeSinceLastCheck time.Duration,
+	batchSize int,
 	interval time.Duration,
 	metrics *metrics,
 ) goroutine.BackgroundRoutine {
-	interval = time.Second // TODO
-
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &documentationSearchCurrentJanitor{
-		lsifStore: lsifStore,
-		metrics:   metrics,
+		lsifStore:                 lsifStore,
+		minimumTimeSinceLastCheck: minimumTimeSinceLastCheck,
+		batchSize:                 batchSize,
+		metrics:                   metrics,
 	})
 }
 
@@ -41,9 +45,9 @@ func (j *documentationSearchCurrentJanitor) Handle(ctx context.Context) (err err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// TODO - return counts and make a dashboard for it
-	publicErr := tx.DeleteOldPublicSearchRecords(ctx, time.Second, 100)   // TODO - make configurable
-	privateErr := tx.DeleteOldPrivateSearchRecords(ctx, time.Second, 100) // TODO - make configurable
+	publicCount, publicErr := tx.DeleteOldPublicSearchRecords(ctx, j.minimumTimeSinceLastCheck, j.batchSize)
+	privateCount, privateErr := tx.DeleteOldPrivateSearchRecords(ctx, j.minimumTimeSinceLastCheck, j.batchSize)
+	j.metrics.numDocumentSearchRecordsRemoved.Add(float64(publicCount + privateCount))
 
 	if publicErr != nil {
 		if privateErr != nil {
