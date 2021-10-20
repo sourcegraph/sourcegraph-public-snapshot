@@ -49,23 +49,12 @@ export function getInsightIdsFromSettings(settings: Settings): string[] {
  * all insights from subject settings.
  */
 export function getSubjectDashboards(subject: SupportedInsightSubject, settings: Settings): InsightDashboard[] {
-    const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
-
-    const subjectBuiltInDashboard: InsightDashboard = {
-        owner,
-        id: owner.id,
-        builtIn: true,
-        title: owner.name,
-        type: dashboardType,
-        insightIds: getInsightIdsFromSettings(settings),
-    }
-
     // Find all subject insights dashboards
     const subjectDashboards = Object.keys(settings[INSIGHTS_DASHBOARDS_SETTINGS_KEY] ?? {})
         .map(dashboardKey => getSubjectDashboardByID(subject, settings, dashboardKey))
         .filter(isDefined)
 
-    return [subjectBuiltInDashboard, ...subjectDashboards]
+    return [...subjectDashboards]
 }
 
 /**
