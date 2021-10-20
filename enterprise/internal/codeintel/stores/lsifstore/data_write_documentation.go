@@ -358,6 +358,7 @@ func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix stri
 		name,
 		textSearchVector(name),
 		textSearchVector(reverse(name)),
+		name,
 	)))
 
 	return id, err
@@ -365,11 +366,16 @@ func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix stri
 
 const upsertRepositoryNameQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertRepositoryName
-INSERT INTO lsif_data_docs_search_repo_names_$SUFFIX (repo_name, tsv, reverse_tsv)
-VALUES (%s, %s, %s)
--- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (repo_name) DO UPDATE SET repo_name = EXCLUDED.repo_name
-RETURNING id
+WITH inserted AS (
+	INSERT INTO lsif_data_docs_search_repo_names_$SUFFIX (repo_name, tsv, reverse_tsv)
+	VALUES (%s, %s, %s)
+	ON CONFLICT DO NOTHING
+	RETURNING id
+)
+SELECT id FROM inserted
+UNION
+SELECT id FROM lsif_data_docs_search_repo_names_$SUFFIX WHERE repo_name = %s
+LIMIT 1
 `
 
 func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix string) (int, error) {
