@@ -216,20 +216,15 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboardID.isVirtualized() {
 		return nil, errors.New("unable to update a virtualized dashboard")
 	}
+	err = r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
 
-	// Make sure the user has permission to update this dashboard.
 	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
 	if err != nil {
 		return nil, errors.Wrap(err, "getUserPermissions")
 	}
-	hasPermissionToUpdate, err := r.dashboardStore.HasDashboardPermission(ctx, int(dashboardID.Arg), userIds, orgIds)
-	if err != nil {
-		return nil, errors.Wrap(err, "HasDashboardPermission")
-	}
-	if !hasPermissionToUpdate {
-		return nil, errors.New("this user does not have permission to update this dashboard")
-	}
-
 	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{
 		ID:     int(dashboardID.Arg),
 		Title:  args.Input.Title,
@@ -271,6 +266,21 @@ func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) (
 	return dashboardGrants, nil
 }
 
+func (r *Resolver) ensureDashboardPermission(ctx context.Context, dashboardId int) error {
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return errors.Wrap(err, "getUserPermissions")
+	}
+	hasPermissionToUpdate, err := r.dashboardStore.HasDashboardPermission(ctx, dashboardId, userIds, orgIds)
+	if err != nil {
+		return errors.Wrap(err, "HasDashboardPermission")
+	}
+	if !hasPermissionToUpdate {
+		return errors.New("this user does not have permission to modify this dashboard")
+	}
+	return nil
+}
+
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
@@ -280,6 +290,10 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 	}
 	if dashboardID.isVirtualized() {
 		return emptyResponse, nil
+	}
+	err = r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return emptyResponse, err
 	}
 
 	err = r.dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
@@ -299,7 +313,10 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
-
+	err = r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
 	exists, err := r.dashboardStore.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsViewOnDashboard")
@@ -312,7 +329,12 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
 	}
-	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg), UserID: userIds, OrgID: orgIds})
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
@@ -329,12 +351,20 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
+	err = r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
 
 	err = r.dashboardStore.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
 	if err != nil {
 		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
 	}
-	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg), UserID: userIds, OrgID: orgIds})
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
