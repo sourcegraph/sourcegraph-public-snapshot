@@ -122,15 +122,15 @@ func (i *insightsDashboardResolver) Views() graphqlbackend.InsightViewConnection
 func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
 	return &insightsPermissionGrantsResolver{
 		UserIdGrants: i.dashboard.UserIdGrants,
-		OrgIdGrants: i.dashboard.OrgIdGrants,
-		GlobalGrant: i.dashboard.GlobalGrant,
+		OrgIdGrants:  i.dashboard.OrgIdGrants,
+		GlobalGrant:  i.dashboard.GlobalGrant,
 	}
 }
 
 type insightsPermissionGrantsResolver struct {
-	UserIdGrants []int64;
-	OrgIdGrants []int64;
-	GlobalGrant bool;
+	UserIdGrants []int64
+	OrgIdGrants  []int64
+	GlobalGrant  bool
 }
 
 func (i *insightsPermissionGrantsResolver) Users() []graphql.ID {
@@ -138,7 +138,7 @@ func (i *insightsPermissionGrantsResolver) Users() []graphql.ID {
 	for _, userIdGrant := range i.UserIdGrants {
 		marshalledUserIds = append(marshalledUserIds, graphqlbackend.MarshalUserID(int32(userIdGrant)))
 	}
-	return marshalledUserIds;
+	return marshalledUserIds
 }
 
 func (i *insightsPermissionGrantsResolver) Organizations() []graphql.ID {
@@ -146,11 +146,11 @@ func (i *insightsPermissionGrantsResolver) Organizations() []graphql.ID {
 	for _, orgIdGrant := range i.OrgIdGrants {
 		marshalledOrgIds = append(marshalledOrgIds, graphqlbackend.MarshalOrgID(int32(orgIdGrant)))
 	}
-	return marshalledOrgIds;
+	return marshalledOrgIds
 }
 
 func (i *insightsPermissionGrantsResolver) Global() bool {
-	return i.GlobalGrant;
+	return i.GlobalGrant
 }
 
 type DashboardInsightViewConnectionResolver struct {
