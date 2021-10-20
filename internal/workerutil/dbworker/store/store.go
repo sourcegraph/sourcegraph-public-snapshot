@@ -297,7 +297,7 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
 	}
 
-	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions)
+	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions, alternateColumnNames)
 
 	for i, expression := range options.ColumnExpressions {
 		for _, match := range modifiedColumnExpressionMatches[i] {
@@ -956,6 +956,10 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 		for _, columnName := range columnsUpdatedByDequeue {
 			match := false
 			exact := false
+
+			if name, ok := alternateColumnNames[columnName]; ok {
+				columnName = name
+			}
 
 			for _, columnPrefix := range columnPrefixes {
 				if regexp.MustCompile(fmt.Sprintf(`^%s%s$`, columnPrefix, columnName)).MatchString(columnExpressionText) {
