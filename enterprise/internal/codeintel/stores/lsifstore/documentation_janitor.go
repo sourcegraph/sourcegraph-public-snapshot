@@ -42,7 +42,7 @@ func (s *Store) deleteOldSearchRecords(ctx context.Context, minimumTimeSinceLast
 }
 
 const deleteOldSearchRecordsQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/documentation_janitor.go:DeleteOldSearchRecords
+-- source: enterprise/internal/codeintel/stores/lsifstore/documentation_janitor.go:deleteOldSearchRecords
 WITH
 candidates AS (
 	SELECT repo_id, dump_root, lang_name_id, dump_id
