@@ -37,9 +37,9 @@ func TestGet(t *testing.T) {
 	}
 
 	_, err = timescale.Exec(`INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, recording_interval_days)
-                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1, 5),
-									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1, 6);`, now)
+                            next_recording_after, last_snapshot_at, next_snapshot_after)
+                            VALUES ('series-id-1', 'query-1', $1, $1, $1, $1, $1, $1),
+									('series-id-2', 'query-2', $1, $1, $1, $1, $1, $1);`, now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,52 +61,49 @@ func TestGet(t *testing.T) {
 		}
 		want := []types.InsightViewSeries{
 			{
-				UniqueID:              "unique-1",
-				SeriesID:              "series-id-1",
-				Title:                 "test title",
-				Description:           "test description",
-				Query:                 "query-1",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 5,
-				Label:                 "label1",
-				Stroke:                "color1",
+				UniqueID:           "unique-1",
+				SeriesID:           "series-id-1",
+				Title:              "test title",
+				Description:        "test description",
+				Query:              "query-1",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "label1",
+				Stroke:             "color1",
 			},
 			{
-				UniqueID:              "unique-1",
-				SeriesID:              "series-id-2",
-				Title:                 "test title",
-				Description:           "test description",
-				Query:                 "query-2",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 6,
-				Label:                 "label2",
-				Stroke:                "color2",
+				UniqueID:           "unique-1",
+				SeriesID:           "series-id-2",
+				Title:              "test title",
+				Description:        "test description",
+				Query:              "query-2",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "label2",
+				Stroke:             "color2",
 			},
 			{
-				UniqueID:              "unique-2",
-				SeriesID:              "series-id-2",
-				Title:                 "test title 2",
-				Description:           "test description 2",
-				Query:                 "query-2",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 6,
-				Label:                 "second-label-2",
-				Stroke:                "second-color-2",
+				UniqueID:           "unique-2",
+				SeriesID:           "series-id-2",
+				Title:              "test title 2",
+				Description:        "test description 2",
+				Query:              "query-2",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "second-label-2",
+				Stroke:             "second-color-2",
 			},
 		}
 
@@ -125,36 +122,34 @@ func TestGet(t *testing.T) {
 		t.Log(got)
 		want := []types.InsightViewSeries{
 			{
-				UniqueID:              "unique-1",
-				SeriesID:              "series-id-1",
-				Title:                 "test title",
-				Description:           "test description",
-				Query:                 "query-1",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 5,
-				Label:                 "label1",
-				Stroke:                "color1",
+				UniqueID:           "unique-1",
+				SeriesID:           "series-id-1",
+				Title:              "test title",
+				Description:        "test description",
+				Query:              "query-1",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "label1",
+				Stroke:             "color1",
 			},
 			{
-				UniqueID:              "unique-1",
-				SeriesID:              "series-id-2",
-				Title:                 "test title",
-				Description:           "test description",
-				Query:                 "query-2",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 6,
-				Label:                 "label2",
-				Stroke:                "color2",
+				UniqueID:           "unique-1",
+				SeriesID:           "series-id-2",
+				Title:              "test title",
+				Description:        "test description",
+				Query:              "query-2",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "label2",
+				Stroke:             "color2",
 			},
 		}
 
@@ -172,36 +167,34 @@ func TestGet(t *testing.T) {
 		t.Log(got)
 		want := []types.InsightViewSeries{
 			{
-				UniqueID:              "unique-1",
-				SeriesID:              "series-id-1",
-				Title:                 "test title",
-				Description:           "test description",
-				Query:                 "query-1",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 5,
-				Label:                 "label1",
-				Stroke:                "color1",
+				UniqueID:           "unique-1",
+				SeriesID:           "series-id-1",
+				Title:              "test title",
+				Description:        "test description",
+				Query:              "query-1",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "label1",
+				Stroke:             "color1",
 			},
 			{
-				UniqueID:              "unique-1",
-				SeriesID:              "series-id-2",
-				Title:                 "test title",
-				Description:           "test description",
-				Query:                 "query-2",
-				CreatedAt:             now,
-				OldestHistoricalAt:    now,
-				LastRecordedAt:        now,
-				NextRecordingAfter:    now,
-				LastSnapshotAt:        now,
-				NextSnapshotAfter:     now,
-				RecordingIntervalDays: 6,
-				Label:                 "label2",
-				Stroke:                "color2",
+				UniqueID:           "unique-1",
+				SeriesID:           "series-id-2",
+				Title:              "test title",
+				Description:        "test description",
+				Query:              "query-2",
+				CreatedAt:          now,
+				OldestHistoricalAt: now,
+				LastRecordedAt:     now,
+				NextRecordingAfter: now,
+				LastSnapshotAt:     now,
+				NextSnapshotAfter:  now,
+				Label:              "label2",
+				Stroke:             "color2",
 			},
 		}
 
@@ -226,15 +219,14 @@ func TestCreateSeries(t *testing.T) {
 	t.Run("test create series", func(t *testing.T) {
 
 		series := types.InsightSeries{
-			SeriesID:              "unique-1",
-			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			RecordingIntervalDays: 4,
-			Enabled:               true,
+			SeriesID:           "unique-1",
+			Query:              "query-1",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -243,17 +235,16 @@ func TestCreateSeries(t *testing.T) {
 		}
 
 		want := types.InsightSeries{
-			ID:                    1,
-			SeriesID:              "unique-1",
-			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			RecordingIntervalDays: 4,
-			CreatedAt:             now,
-			Enabled:               true,
+			ID:                 1,
+			SeriesID:           "unique-1",
+			Query:              "query-1",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			CreatedAt:          now,
+			Enabled:            true,
 		}
 
 		log15.Info("values", "want", want, "got", got)
@@ -322,16 +313,15 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		t.Fatal(err)
 	}
 	series, err := store.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:              "series1",
-		Query:                 "query1",
-		CreatedAt:             now,
-		OldestHistoricalAt:    now,
-		LastRecordedAt:        now,
-		NextRecordingAfter:    now,
-		LastSnapshotAt:        now,
-		NextSnapshotAfter:     now,
-		BackfillQueuedAt:      now,
-		RecordingIntervalDays: 0,
+		SeriesID:           "series1",
+		Query:              "query1",
+		CreatedAt:          now,
+		OldestHistoricalAt: now,
+		LastRecordedAt:     now,
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		BackfillQueuedAt:   now,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -395,16 +385,15 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 			t.Fatal(err)
 		}
 		series, err := store.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:              "globalseries",
-			Query:                 "global",
-			CreatedAt:             now,
-			OldestHistoricalAt:    now,
-			LastRecordedAt:        now,
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			BackfillQueuedAt:      now,
-			RecordingIntervalDays: 0,
+			SeriesID:           "globalseries",
+			Query:              "global",
+			CreatedAt:          now,
+			OldestHistoricalAt: now,
+			LastRecordedAt:     now,
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			BackfillQueuedAt:   now,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -449,16 +438,15 @@ func TestDeleteView(t *testing.T) {
 		t.Fatal(err)
 	}
 	series, err := store.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:              "series1",
-		Query:                 "query1",
-		CreatedAt:             now,
-		OldestHistoricalAt:    now,
-		LastRecordedAt:        now,
-		NextRecordingAfter:    now,
-		LastSnapshotAt:        now,
-		NextSnapshotAfter:     now,
-		BackfillQueuedAt:      now,
-		RecordingIntervalDays: 0,
+		SeriesID:           "series1",
+		Query:              "query1",
+		CreatedAt:          now,
+		OldestHistoricalAt: now,
+		LastRecordedAt:     now,
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		BackfillQueuedAt:   now,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -506,14 +494,13 @@ func TestAttachSeriesView(t *testing.T) {
 
 	t.Run("test attach and fetch", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:              "unique-1",
-			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			RecordingIntervalDays: 4,
+			SeriesID:           "unique-1",
+			Query:              "query-1",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
 		}
 		series, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -542,20 +529,19 @@ func TestAttachSeriesView(t *testing.T) {
 		}
 
 		want := []types.InsightViewSeries{{
-			UniqueID:              view.UniqueID,
-			SeriesID:              series.SeriesID,
-			Title:                 view.Title,
-			Description:           view.Description,
-			Query:                 series.Query,
-			CreatedAt:             series.CreatedAt,
-			OldestHistoricalAt:    series.OldestHistoricalAt,
-			LastRecordedAt:        series.LastRecordedAt,
-			NextRecordingAfter:    series.NextRecordingAfter,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			RecordingIntervalDays: series.RecordingIntervalDays,
-			Label:                 "my label",
-			Stroke:                "my stroke",
+			UniqueID:           view.UniqueID,
+			SeriesID:           series.SeriesID,
+			Title:              view.Title,
+			Description:        view.Description,
+			Query:              series.Query,
+			CreatedAt:          series.CreatedAt,
+			OldestHistoricalAt: series.OldestHistoricalAt,
+			LastRecordedAt:     series.LastRecordedAt,
+			NextRecordingAfter: series.NextRecordingAfter,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Label:              "my label",
+			Stroke:             "my stroke",
 		}}
 
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -587,15 +573,14 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 
 	t.Run("test create and get series", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:              "unique-1",
-			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			RecordingIntervalDays: 4,
-			Enabled:               true,
+			SeriesID:           "unique-1",
+			Query:              "query-1",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -627,15 +612,14 @@ func TestInsightStore_StampRecording(t *testing.T) {
 
 	t.Run("test create and update stamp", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:              "unique-1",
-			Query:                 "query-1",
-			OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			RecordingIntervalDays: 4,
-			Enabled:               true,
+			SeriesID:           "unique-1",
+			Query:              "query-1",
+			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			Enabled:            true,
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -669,15 +653,14 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 	}
 
 	series := types.InsightSeries{
-		SeriesID:              "unique-1",
-		Query:                 "query-1",
-		OldestHistoricalAt:    now.Add(-time.Hour * 24 * 365),
-		LastRecordedAt:        now.Add(-time.Hour * 24 * 365),
-		NextRecordingAfter:    now,
-		LastSnapshotAt:        now,
-		NextSnapshotAfter:     now,
-		RecordingIntervalDays: 4,
-		Enabled:               true,
+		SeriesID:           "unique-1",
+		Query:              "query-1",
+		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
+		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		NextRecordingAfter: now,
+		LastSnapshotAt:     now,
+		NextSnapshotAfter:  now,
+		Enabled:            true,
 	}
 	created, err := store.CreateSeries(ctx, series)
 	if err != nil {
@@ -868,16 +851,15 @@ func TestSetSeriesEnabled(t *testing.T) {
 
 	t.Run("start enabled set disabled set enabled", func(t *testing.T) {
 		created, err := store.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:              "series1",
-			Query:                 "quer1",
-			CreatedAt:             now,
-			OldestHistoricalAt:    now,
-			LastRecordedAt:        now,
-			NextRecordingAfter:    now,
-			LastSnapshotAt:        now,
-			NextSnapshotAfter:     now,
-			BackfillQueuedAt:      now,
-			RecordingIntervalDays: 0,
+			SeriesID:           "series1",
+			Query:              "quer1",
+			CreatedAt:          now,
+			OldestHistoricalAt: now,
+			LastRecordedAt:     now,
+			NextRecordingAfter: now,
+			LastSnapshotAt:     now,
+			NextSnapshotAfter:  now,
+			BackfillQueuedAt:   now,
 		})
 		if err != nil {
 			t.Fatal(err)

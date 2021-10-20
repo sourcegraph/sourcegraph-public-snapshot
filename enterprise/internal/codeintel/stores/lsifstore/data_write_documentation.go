@@ -6,6 +6,7 @@ import (
 	"fmt"
 	stdlog "log"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -265,16 +267,12 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}})
 	defer endObservation(1, observation.Args{})
 
+	now := timeutil.Now()
+
 	tableSuffix := "public"
 	if repo.Private {
 		tableSuffix = "private"
 	}
-
-	// This will not always produce a proper language name, e.g. if an indexer is not named after
-	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
-	// is the indexer name which is likely good enough since we use fuzzy search / partial text matching
-	// over it.
-	languageName := strings.ToLower(strings.TrimPrefix(upload.Indexer, "lsif-"))
 
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -284,28 +282,29 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 
 	repositoryNameID, err := tx.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "upsertRepositoryName")
 	}
 
-	languageNameID, err := tx.upsertLanguageName(ctx, languageName, tableSuffix)
+	languageNameID, err := tx.upsertLanguageName(ctx, upload.Indexer, tableSuffix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "upsertLanguageName")
 	}
 
+	// gatherTags sorts the tags we'll be dealing with, This ensures that we will always
+	// try to bulk-insert the tags in the same order, which should avoid deadlock situations
+	// where overlapping tags are updated in different orders from different processors.
 	tagIDs, err := tx.upsertTags(ctx, gatherTags(pages), tableSuffix)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "upsertTags")
 	}
 
-	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
-		return err
+	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix, now); err != nil {
+		return errors.Wrap(err, "replaceSearchRecords")
 	}
 
 	// Truncate the search index size if it exceeds our configured limit now.
-	for _, suffix := range []string{"public", "private"} {
-		if err := tx.truncateDocumentationSearchIndexSize(ctx, suffix); err != nil {
-			return errors.Wrap(err, "truncating documentation search index size")
-		}
+	if err := tx.truncateDocumentationSearchIndexSize(ctx, tableSuffix); err != nil {
+		return errors.Wrap(err, "truncateDocumentationSearchIndexSize")
 	}
 
 	return nil
@@ -331,11 +330,17 @@ ON CONFLICT (repo_name) DO UPDATE SET repo_name = EXCLUDED.repo_name
 RETURNING id
 `
 
-func (s *Store) upsertLanguageName(ctx context.Context, name, tableSuffix string) (int, error) {
+func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix string) (int, error) {
+	// This will not always produce a proper language name, e.g. if an indexer is not named after
+	// the language or is not in "lsif-$LANGUAGE" format. That's OK: in that case, the "language"
+	// is the indexer name which is likely good enough since we use fuzzy search / partial text
+	// matching over it.
+	languageName := strings.ToLower(strings.TrimPrefix(indexerName, "lsif-"))
+
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(upsertLanguageNameQuery, "$SUFFIX", tableSuffix),
-		name,
-		textSearchVector(name),
+		languageName,
+		textSearchVector(languageName),
 	)))
 
 	return id, err
@@ -346,13 +351,13 @@ const upsertLanguageNameQuery = `
 INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
 VALUES (%s, %s)
 -- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXClUDED.lang_name
+ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXCLUDED.lang_name
 RETURNING id
 `
 
-func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tableSuffix string) (map[string]int, error) {
+func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix string) (map[string]int, error) {
 	inserter := func(inserter *batch.Inserter) error {
-		for tags := range tagMap {
+		for _, tags := range tags {
 			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
 				return err
 			}
@@ -361,7 +366,7 @@ func (s *Store) upsertTags(ctx context.Context, tagMap map[string]struct{}, tabl
 		return nil
 	}
 
-	tagIDs := make(map[string]int, len(tagMap))
+	tagIDs := make(map[string]int, len(tags))
 	returningScanner := func(rows *sql.Rows) error {
 		var tagID int
 		var tags string
@@ -401,6 +406,7 @@ func (s *Store) replaceSearchRecords(
 	pages []*precise.DocumentationPageData,
 	tagIDs map[string]int,
 	tableSuffix string,
+	now time.Time,
 ) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -412,7 +418,7 @@ func (s *Store) replaceSearchRecords(
 	// the same value for the same upload. We'll insert these shared values all at once to save on query
 	// bandwidth.
 	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(insertSearchRecordsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
-		return err
+		return errors.Wrap(err, "creating temporary table")
 	}
 
 	inserter := func(inserter *batch.Inserter) error {
@@ -472,7 +478,7 @@ func (s *Store) replaceSearchRecords(
 		},
 		inserter,
 	); err != nil {
-		return err
+		return errors.Wrap(err, "bulk inserting search records")
 	}
 
 	// Insert the values from the temporary table into the target table. Here we insert
@@ -486,13 +492,15 @@ func (s *Store) replaceSearchRecords(
 		upload.Root,         // dump_root
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
-		// For deletion
+
+		// For current marker update
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
+		now,                 // last_cleanup_scan_at
 	)); err != nil {
-		return err
+		return errors.Wrap(err, "committing staged search records")
 	}
 
 	return nil
@@ -549,20 +557,17 @@ ins AS (
 		source.label_tsv,
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
-	RETURNING 1
-),
-del AS (
-	DELETE FROM lsif_data_docs_search_$SUFFIX
-	WHERE
-		repo_id = %s AND
-		dump_root = %s AND
-		lang_name_id = %s AND
-		dump_id != %s
-	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM ins) AS num_ins,
-	(SELECT COUNT(*) FROM del) AS num_del
+INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+	repo_id,
+	dump_root,
+	lang_name_id,
+	dump_id,
+	last_cleanup_scan_at
+)
+VALUES (%s, %s, %s, %s, %s)
+ON CONFLICT (repo_id, dump_root, lang_name_id)
+DO UPDATE SET dump_id = EXCLUDED.dump_id
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
@@ -581,7 +586,7 @@ func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise
 	return nil
 }
 
-func gatherTags(pages []*precise.DocumentationPageData) map[string]struct{} {
+func gatherTags(pages []*precise.DocumentationPageData) []string {
 	tagMap := map[string]struct{}{}
 	for _, page := range pages {
 		_ = walkDocumentationNode(page.Tree, func(node *precise.DocumentationNode) error {
@@ -593,7 +598,13 @@ func gatherTags(pages []*precise.DocumentationPageData) map[string]struct{} {
 		})
 	}
 
-	return tagMap
+	tags := make([]string, 0, len(tagMap))
+	for normalizedTags := range tagMap {
+		tags = append(tags, normalizedTags)
+	}
+	sort.Strings(tags)
+
+	return tags
 }
 
 func normalizeTags(tags []protocol.Tag) string {

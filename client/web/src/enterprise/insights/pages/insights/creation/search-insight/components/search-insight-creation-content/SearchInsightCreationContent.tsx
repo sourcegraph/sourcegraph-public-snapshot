@@ -2,8 +2,6 @@ import classnames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
 import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 import { CreateInsightFormFields } from '../../types'
@@ -18,22 +16,15 @@ import styles from './SearchInsightCreationContent.module.scss'
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
     mode?: 'creation' | 'edit'
-    /** Final settings cascade. Used for title field validation. */
-    settings?: Settings | null
 
-    /** List of all supportable insight subjects */
     subjects?: SupportedInsightSubject[]
-
-    /** Initial value for all form fields. */
     initialValue?: Partial<CreateInsightFormFields>
-    /** Custom class name for root form element. */
     className?: string
-    /** Test id for the root content element (form element). */
     dataTestId?: string
-    /** Submit handler for form element. */
+
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    /** Cancel handler. */
     onCancel?: () => void
+
     /** Change handlers is called every time when user changed any field within the form. */
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
@@ -42,7 +33,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
     const {
         mode = 'creation',
         subjects = [],
-        settings,
         initialValue,
         className,
         dataTestId,
@@ -50,8 +40,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         onCancel = noop,
         onChange = noop,
     } = props
-
-    const isEditMode = mode === 'edit'
 
     const {
         form: { values, formAPI, ref, handleSubmit },
@@ -63,10 +51,9 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         stepValue,
         allReposMode,
     } = useInsightCreationForm({
-        settings,
+        mode,
         subjects,
         initialValue,
-        touched: isEditMode,
         onChange,
         onSubmit,
     })

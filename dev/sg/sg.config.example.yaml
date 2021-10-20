@@ -89,7 +89,7 @@ commands:
     env:
       WEBPACK_DEV_SERVER: 1
       NODE_ENV: development
-      NODE_OPTIONS: "--max_old_space_size=4096"
+      NODE_OPTIONS: "--max_old_space_size=8192"
 
 checks:
   docker:

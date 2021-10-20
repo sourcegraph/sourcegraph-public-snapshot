@@ -63,12 +63,6 @@ export const org: IOrg = {
         totalCount: 0,
         pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
     },
-    campaigns: {
-        __typename: 'CampaignConnection',
-        nodes: [],
-        totalCount: 0,
-        pageInfo: { __typename: 'PageInfo', endCursor: null, hasNextPage: false },
-    },
     batchChanges: {
         __typename: 'BatchChangeConnection',
         nodes: [],
