@@ -480,6 +480,7 @@ Maps documentation path IDs to their corresponding integral documentationResult 
  search_indexed | boolean |           |          | false
 Indexes:
     "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
+    "lsif_data_documentation_pages_dump_id_unindexed" btree (dump_id) WHERE NOT search_indexed
 Triggers:
     lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete()
     lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert()
