@@ -6,7 +6,7 @@ Campaigns has changed name and is called **batch changes** from Sourcegraph 3.26
 
 - Campaigns is called **batch changes** from 3.26.
 - We recommend to migrate to the new name as soon as possible to benefit from new functionalities
-- There are no breaking changes in this release, and URLs, CLI commands, API endpoints using the previous name (campaigns) will still work. **These will be removed in Sourcegraph 3.34.**
+- There are no breaking changes in release 3.26 to 3.33, and URLs, CLI commands, API endpoints using the previous name (campaigns) will still work. **These will be removed in Sourcegraph 3.34.**
 
 ## What changes
 
@@ -17,7 +17,7 @@ Campaigns has changed name and is called **batch changes** from Sourcegraph 3.26
 
 ## Deprecation plan
 
-From 3.26:
+From 3.26 to 3.33 (inclusive):
 
 - all `<sourcegraph-instance>/campaigns/*` URLs are deprecated. They will still work, and will be removed in the future.
 - the CLI prompt `src campaigns` and its alias `src campaign` are deprecated. They will still work, and will be removed in the future.
