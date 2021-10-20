@@ -53,7 +53,7 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 			return nil, err
 		}
 		if strings.Contains(sha, "unknown revision") {
-			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
+			return nil, RevisionNotFoundError{Repo: repo, Spec: objectName}
 		}
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 			// We don't verify the existence of HEAD, but if HEAD doesn't point to anything
 			// git just returns `HEAD` as the output of rev-parse. An example where this
 			// occurs is an empty repository.
-			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
+			return nil, RevisionNotFoundError{Repo: repo, Spec: objectName}
 		}
 		return nil, BadCommitError{Spec: objectName, Commit: api.CommitID(sha), Repo: repo}
 	}
