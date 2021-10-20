@@ -1301,8 +1301,8 @@ func testSearchOther(t *testing.T) {
 					got = append(got, r.String())
 				}
 
-				// Note: we don't sort the want or got, since order is
-				// significant in Suggestions.
+				sort.Strings(test.want)
+				sort.Strings(got)
 
 				if d := cmp.Diff(test.want, got); d != "" {
 					t.Fatalf("mismatch (-want, +got)\n%s", d)
