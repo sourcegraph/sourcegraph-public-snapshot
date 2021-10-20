@@ -204,7 +204,27 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboardID.isVirtualized() {
 		return nil, errors.New("unable to update a virtualized dashboard")
 	}
-	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{ID: int(dashboardID.Arg), Title: args.Input.Title, Grants: dashboardGrants})
+
+	// Make sure the user has permission to update this dashboard.
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+	hasPermissionToUpdate, err := r.dashboardStore.HasDashboardPermission(ctx, int(dashboardID.Arg), userIds, orgIds)
+	if err != nil {
+		return nil, errors.Wrap(err, "HasDashboardPermission")
+	}
+	if !hasPermissionToUpdate {
+		return nil, errors.New("this user does not have permission to update this dashboard")
+	}
+
+	dashboard, err := r.dashboardStore.UpdateDashboard(ctx,
+		store.UpdateDashboardArgs{
+			ID:     int(dashboardID.Arg),
+			Title:  args.Input.Title,
+			Grants: dashboardGrants,
+			UserID: userIds,
+			OrgID:  orgIds})
 	if err != nil {
 		return nil, err
 	}

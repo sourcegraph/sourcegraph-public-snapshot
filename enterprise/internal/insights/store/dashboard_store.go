@@ -136,7 +136,7 @@ const getDashboardsSql = `
 SELECT db.id, db.title, t.uuid_array as insight_view_unique_ids,
 	array_remove(array_agg(dg.user_id), null) as userId_grants,
 	array_remove(array_agg(dg.org_id), null) as orgId_grants,
-	bool_and(dg.global is true) as global_grant
+	bool_or(dg.global is true) as global_grant
 FROM dashboard db
          JOIN dashboard_grants dg ON db.id = dg.dashboard_id
          LEFT JOIN (SELECT ARRAY_AGG(iv.unique_id) AS uuid_array, div.dashboard_id
@@ -190,6 +190,8 @@ type UpdateDashboardArgs struct {
 	ID     int
 	Title  *string
 	Grants []DashboardGrant
+	UserID []int // For dashboard permissions
+	OrgID  []int // For dashboard permissions
 }
 
 func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ types.Dashboard, err error) {
@@ -220,7 +222,7 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashb
 			return types.Dashboard{}, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: args.ID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: args.ID, UserID: args.UserID, OrgID: args.OrgID})
 	if err != nil {
 		return types.Dashboard{}, errors.Wrap(err, "GetDashboards")
 	}
@@ -269,6 +271,28 @@ func (s *DBDashboardStore) IsViewOnDashboard(ctx context.Context, dashboardId in
 
 func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId int) ([]*DashboardGrant, error) {
 	return scanDashboardGrants(s.Query(ctx, sqlf.Sprintf(getDashboardGrantsSql, dashboardId)))
+}
+
+func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error) {
+	var formattedUserIds, formattedOrgIds *sqlf.Query
+	if len(userIds) > 0 {
+		elems := make([]*sqlf.Query, 0, len(userIds))
+		for _, id := range userIds {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		formattedUserIds = sqlf.Join(elems, ",")
+	}
+	if len(orgIds) > 0 {
+		elems := make([]*sqlf.Query, 0, len(orgIds))
+		for _, id := range orgIds {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		formattedOrgIds = sqlf.Join(elems, ",")
+	}
+
+	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, formattedUserIds, formattedOrgIds)
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	return count != 0, err
 }
 
 func (s *DBDashboardStore) AddDashboardGrants(ctx context.Context, dashboardId int, grants []DashboardGrant) error {
@@ -340,9 +364,15 @@ const getDashboardGrantsSql = `
 SELECT * FROM dashboard_grants where dashboard_id = %s
 `
 
+const getDashboardGrantsByPermissionsSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
+SELECT COUNT(*) FROM dashboard_grants
+WHERE dashboard_id = %s AND (user_id in (%s) OR org_id in (%s) OR global is true)
+`
+
 const addDashboardGrantsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:AddDashboardGrants
-INSERT INTO dashboard_grants (dashboard_id, org_id, user_id, global)
+INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global)
 VALUES %s;
 `
 
@@ -351,4 +381,5 @@ type DashboardStore interface {
 	CreateDashboard(ctx context.Context, dashboard types.Dashboard, grants []DashboardGrant) (_ types.Dashboard, err error)
 	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
+	HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error)
 }
