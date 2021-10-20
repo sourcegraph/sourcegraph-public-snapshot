@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
@@ -93,18 +94,7 @@ func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 	return p.fetchRepoPerms(ctx, repo, opts)
 }
 
-// NOTE: With the latest set of changes, we will be relying on the external_service_repos
-//  table to satisfy repo permissions. That means we don't need to make the external
-//  service calls we currently do, because the data is already present.
-//
-//  We are choosing to _leave_ the current code and tests alone, since the new data
-//  is additive. All existing tests should pass, and this new test captures the new
-//  behavior. We will revisit the issue shortly and excise the old code.
-//
-//  In the test below, the external service has one repo that's visible due to a limited
-//  sign-in connection scope, but additional repositories in the external_service_repos
-//  table. At the end we expect a union of both sets of data.
-func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
+func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		id:          1,
 		serviceType: extsvc.TypeGitLab,
@@ -137,7 +127,7 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 		return []*extsvc.Account{&extAccount}, nil
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
-		wantIDs := []uint32{1, 2, 3, 4}
+		wantIDs := []uint32{1, 2, 3, 4, 5}
 		if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
 			return errors.Errorf("IDs mismatch (-want +got):\n%s", diff)
 		}
@@ -147,7 +137,13 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []types.RepoName{{ID: 1}}, nil
+
+		names := make([]types.RepoName, 0, len(args.ExternalRepos))
+		for _, r := range args.ExternalRepos {
+			id, _ := strconv.Atoi(r.ID)
+			names = append(names, types.RepoName{ID: api.RepoID(id)})
+		}
+		return names, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -176,7 +172,7 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 	}
 	p.fetchUserPermsByToken = func(ctx context.Context, s string) (*authz.ExternalUserPermissions, error) {
 		return &authz.ExternalUserPermissions{
-			Exacts: []extsvc.RepoID{"1"},
+			Exacts: []extsvc.RepoID{"5"},
 		}, nil
 	}
 
@@ -186,7 +182,7 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 	}
 }
 
-func TestPermsSyncer_syncUserPerms(t *testing.T) {
+func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	p := &mockProvider{
 		id:          1,
 		serviceType: extsvc.TypeGitLab,
