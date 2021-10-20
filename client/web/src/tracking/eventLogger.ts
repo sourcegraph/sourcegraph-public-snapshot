@@ -71,6 +71,13 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action or event.
      * Event labels should be specific and follow a ${noun}${verb} structure in pascal case, e.g. "ButtonClicked" or "SignInInitiated"
+     *
+     * @param eventLabel: the event name.
+     * @param eventProperties: event properties. These get logged to our database, but do not get
+     * sent to our analytics systems. This may contain private info such as repository names or search queries.
+     * @param publicArgument: event properties that include only public information. Do NOT
+     * include any private information, such as full URLs that may contain private repo names or
+     * search queries. The contents of this parameter are sent to our analytics systems.
      */
     public log(eventLabel: string, eventProperties?: any, publicArgument?: any): void {
         if (window.context?.userAgentIsBot || !eventLabel) {
@@ -78,7 +85,6 @@ export class EventLogger implements TelemetryService {
         }
         serverAdmin.trackAction(eventLabel, eventProperties, publicArgument)
         this.logToConsole(eventLabel, eventProperties)
-        this.eventID++
     }
 
     private logToConsole(eventLabel: string, object?: any): void {
@@ -126,14 +132,14 @@ export class EventLogger implements TelemetryService {
     // Insert ID is used to deduplicate events in Amplitude.
     // https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getInsertID(): string {
-        const insertID = this.getDeviceID() + Date.now().toString()
-        return insertID
+        return uuid.v4()
     }
 
     // Event ID is used to deduplicate events in Amplitude.
     // This is used in the case that multiple events with the same userID and timestamp
     // are sent. https://developers.amplitude.com/docs/http-api-v2#optional-keys
     public getEventID(): number {
+        this.eventID++
         return this.eventID
     }
 
@@ -153,14 +159,6 @@ export class EventLogger implements TelemetryService {
         }
     }
 
-    public getUserProperties(): string {
-        const userProps = localStorage.getItem('SOURCEGRAPH_USER_PROPERTIES')
-        if (userProps) {
-            return userProps
-        }
-
-        return JSON.stringify({})
-    }
     /**
      * Gets the anonymous user ID and cohort ID of the user from cookies.
      * If user doesn't have an anonymous user ID yet, a new one is generated, along with
@@ -190,7 +188,7 @@ export class EventLogger implements TelemetryService {
         let deviceID = cookies.get(DEVICE_ID_KEY)
         if (!deviceID) {
             deviceID = uuid.v4()
-            cookies.set(DEVICE_ID_KEY, deviceID)
+            cookies.set(DEVICE_ID_KEY, deviceID, this.cookieSettings)
         }
 
         this.anonymousUserID = anonymousUserID

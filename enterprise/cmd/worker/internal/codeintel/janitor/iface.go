@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -45,10 +46,27 @@ func (s *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
 }
 
 type LSIFStore interface {
+	Transact(ctx context.Context) (LSIFStore, error)
+	Done(err error) error
+
 	Clear(ctx context.Context, bundleIDs ...int) error
+	DeleteOldPublicSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int) (int, error)
+	DeleteOldPrivateSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int) (int, error)
 }
 
-type GitserverClient interface {
-	RefDescriptions(ctx context.Context, repositoryID int) (map[string][]gitserver.RefDescription, error)
-	BranchesContaining(ctx context.Context, repositoryID int, commit string) ([]string, error)
+type LSIFStoreShim struct {
+	*lsifstore.Store
+}
+
+func (s *LSIFStoreShim) Transact(ctx context.Context) (LSIFStore, error) {
+	store, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LSIFStoreShim{store}, nil
+}
+
+type PolicyMatcher interface {
+	CommitsDescribedByPolicy(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time) (map[string][]policies.PolicyMatch, error)
 }

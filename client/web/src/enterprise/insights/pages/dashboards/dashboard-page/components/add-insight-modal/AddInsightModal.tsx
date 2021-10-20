@@ -4,13 +4,12 @@ import classnames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '@sourcegraph/shared/src/util/errors'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { InsightsApiContext } from '../../../../../core/backend/api-provider'
-import { updateDashboardInsightIds } from '../../../../../core/settings-action/dashboards'
+import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import { SettingsBasedInsightDashboard } from '../../../../../core/types'
 
 import styles from './AddInsightModal.module.scss'
@@ -18,18 +17,19 @@ import {
     AddInsightFormValues,
     AddInsightModalContent,
 } from './components/add-insight-modal-content/AddInsightModalContent'
-import { useReachableInsights } from './hooks/use-reachable-insights'
 
-export interface AddInsightModalProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+export interface AddInsightModalProps {
     dashboard: SettingsBasedInsightDashboard
     onClose: () => void
 }
 
 export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = props => {
-    const { dashboard, settingsCascade, platformContext, onClose } = props
-    const { getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { dashboard, onClose } = props
+    const { getReachableInsights, updateDashboard } = useContext(CodeInsightsBackendContext)
 
-    const insights = useReachableInsights({ ownerId: dashboard.owner.id, settingsCascade })
+    const insights = useObservable(
+        useMemo(() => getReachableInsights(dashboard.owner.id), [dashboard.owner.id, getReachableInsights])
+    )
 
     const initialValues = useMemo<AddInsightFormValues>(
         () => ({
@@ -42,15 +42,27 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
-            const settings = await getSubjectSettings(dashboard.owner.id).toPromise()
 
-            const editedSettings = updateDashboardInsightIds(settings.contents, dashboard.settingsKey, insightIds)
-
-            await updateSubjectSettings(platformContext, dashboard.owner.id, editedSettings).toPromise()
+            await updateDashboard({
+                previousDashboard: dashboard,
+                nextDashboardInput: {
+                    name: dashboard.title,
+                    visibility: dashboard.owner.id,
+                    insightIds,
+                },
+            }).toPromise()
             onClose()
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
         }
+    }
+
+    if (insights === undefined) {
+        return (
+            <Dialog className={styles.modal} aria-label="Add insights to dashboard modal">
+                <LoadingSpinner />
+            </Dialog>
+        )
     }
 
     return (

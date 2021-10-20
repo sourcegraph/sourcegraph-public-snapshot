@@ -278,12 +278,9 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	mockAccessTokens := func(t *testing.T) {
-		database.Mocks.AccessTokens.DeleteByID = func(id int64, subjectUserID int32) error {
+		database.Mocks.AccessTokens.DeleteByID = func(id int64) error {
 			if want := int64(1); id != want {
 				t.Errorf("got %q, want %q", id, want)
-			}
-			if want := int32(2); subjectUserID != want {
-				t.Errorf("got %v, want %v", subjectUserID, want)
 			}
 			return nil
 		}

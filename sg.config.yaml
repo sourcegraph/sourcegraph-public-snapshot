@@ -15,9 +15,6 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  # The profiler is a GCP feature and so is not supported locally.
-  SRC_DISABLE_PROFILER: 'true'
-
   GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
@@ -81,7 +78,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: '--max_old_space_size=4096'
+  NODE_OPTIONS: '--max_old_space_size=8192'
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -92,8 +89,8 @@ env:
 
   # Required for frontend and executor to communicate
   EXECUTOR_FRONTEND_URL: http://localhost:3080
-  EXECUTOR_FRONTEND_USERNAME: executor
-  EXECUTOR_FRONTEND_PASSWORD: hunter2
+  # Must match the secret defined in the site config.
+  EXECUTOR_FRONTEND_PASSWORD: hunter2hunter2hunter2
 
   # Disable firecracker inside executor in dev
   EXECUTOR_USE_FIRECRACKER: false
@@ -114,7 +111,11 @@ env:
 commands:
   frontend:
     cmd: .bin/frontend
-    install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
     checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
@@ -131,7 +132,11 @@ commands:
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
       .bin/enterprise-frontend
-    install: go build -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
     checkBinary: .bin/enterprise-frontend
     env:
       CONFIGURATION_MODE: server
@@ -151,7 +156,11 @@ commands:
 
   gitserver:
     cmd: .bin/gitserver
-    install: go build -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/gitserver github.com/sourcegraph/sourcegraph/cmd/gitserver
     checkBinary: .bin/gitserver
     env:
       HOSTNAME: 127.0.0.1:3178
@@ -162,7 +171,11 @@ commands:
 
   github-proxy:
     cmd: .bin/github-proxy
-    install: go build -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/github-proxy github.com/sourcegraph/sourcegraph/cmd/github-proxy
     checkBinary: .bin/github-proxy
     env:
       HOSTNAME: 127.0.0.1:3178
@@ -173,7 +186,11 @@ commands:
 
   worker:
     cmd: .bin/worker
-    install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
@@ -181,7 +198,11 @@ commands:
 
   enterprise-worker:
     cmd: .bin/worker
-    install: go build -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
     watch:
       - lib
       - internal
@@ -191,7 +212,11 @@ commands:
 
   repo-updater:
     cmd: .bin/repo-updater
-    install: go build -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     watch:
       - lib
@@ -200,7 +225,11 @@ commands:
 
   enterprise-repo-updater:
     cmd: .bin/enterprise-repo-updater
-    install: go build -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
     checkBinary: .bin/enterprise-repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
@@ -214,7 +243,11 @@ commands:
 
   query-runner:
     cmd: .bin/query-runner
-    install: go build -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/query-runner github.com/sourcegraph/sourcegraph/cmd/query-runner
     checkBinary: .bin/query-runner
     watch:
       - lib
@@ -229,8 +262,12 @@ commands:
       rm -f libsqlite3-pcre.dylib || true
       rm -f libsqlite3-pcre.so || true
 
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+
       ./cmd/symbols/build-ctags.sh &&
-      go build -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
@@ -242,7 +279,11 @@ commands:
 
   searcher:
     cmd: .bin/searcher
-    install: go build -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/searcher github.com/sourcegraph/sourcegraph/cmd/searcher
     checkBinary: .bin/searcher
     watch:
       - lib
@@ -252,7 +293,7 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION}_$([[ "$(go env GOOS)" = "darwin" ]] && echo "mac" || echo "$(go env GOOS)")_$(go env GOARCH) run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
         linux)
@@ -262,8 +303,8 @@ commands:
           os="mac"
           ;;
       esac
-      name="caddy_${CADDY_VERSION}_${os}_amd64"
-      target="$PWD/.bin/caddy"
+      name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
+      target="$PWD/.bin/$name"
       url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
 
       if [ ! -f "${target}" ]; then
@@ -273,7 +314,7 @@ commands:
         chmod +x ${target}
       fi
     env:
-      CADDY_VERSION: 2.3.0
+      CADDY_VERSION: 2.4.5
 
   web:
     cmd: ./node_modules/.bin/gulp --color dev
@@ -292,27 +333,10 @@ commands:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
-  enterprise-web-standalone:
-    cmd: yarn workspace @sourcegraph/web serve:dev
-    install: yarn --no-progress
-    env:
-      ENTERPRISE: 1
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
   web-standalone-prod:
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
-      NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
-
-  enterprise-web-standalone-prod:
-    cmd: yarn workspace @sourcegraph/web serve:prod
-    install: yarn workspace @sourcegraph/web run build
-    env:
-      ENTERPRISE: 1
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
@@ -399,7 +423,10 @@ commands:
   precise-code-intel-worker:
     cmd: .bin/precise-code-intel-worker
     install: |
-      go build -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/precise-code-intel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
     checkBinary: .bin/precise-code-intel-worker
     watch:
       - lib
@@ -413,7 +440,10 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/executor-temp" .bin/executor
     install: |
-      go build -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/executor github.com/sourcegraph/sourcegraph/enterprise/cmd/executor &&
       mkdir -p $EXECUTOR_IMAGE_ARCHIVE_PATH
     checkBinary: .bin/executor
     env:
@@ -447,7 +477,7 @@ commands:
     <<: *executor_template
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_USERNAME,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
           .bin/executor
     env:
       EXECUTOR_USE_FIRECRACKER: true
@@ -653,6 +683,25 @@ commands:
     watch:
       - monitoring
     continueWatchOnExit: true
+
+  loki:
+    cmd: |
+      echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
+      docker run --rm --name=loki \
+        -p 3100:3100 -v $LOKI_DISK:/loki \
+        index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${LOKI_DISK}"
+      mkdir -p "$(dirname ${LOKI_LOG_FILE})"
+      docker pull index.docker.io/grafana/loki:$LOKI_VERSION
+    env:
+      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
+      LOKI_VERSION: "2.3.0"
+      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
+
+  storybook:
+    cmd: yarn storybook
+    install: yarn
 
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
@@ -864,6 +913,30 @@ commandsets:
       # For the alerting integration with frontend
       - enterprise-frontend
       - enterprise-web
+      - caddy
+
+  web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+    env:
+      ENTERPRISE: 1
+
+  oss-web-standalone:
+    commands:
+      - web-standalone
+      - caddy
+
+  web-standalone-prod:
+    commands:
+      - web-standalone-prod
+      - caddy
+    env:
+      ENTERPRISE: 1
+
+  oss-web-standalone-prod:
+    commands:
+      - web-standalone-prod
       - caddy
 
 tests:

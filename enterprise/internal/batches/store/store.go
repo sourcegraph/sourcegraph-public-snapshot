@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/dineshappavoo/basex"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -201,6 +202,7 @@ type operations struct {
 	deleteExpiredChangesetSpecs              *observation.Operation
 	getRewirerMappings                       *observation.Operation
 	listChangesetSpecsWithConflictingHeadRef *observation.Operation
+	deleteChangesetSpecs                     *observation.Operation
 
 	createChangeset                   *observation.Operation
 	deleteChangeset                   *observation.Operation
@@ -230,19 +232,23 @@ type operations struct {
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
 
-	createBatchSpecWorkspace *observation.Operation
-	getBatchSpecWorkspace    *observation.Operation
-	listBatchSpecWorkspaces  *observation.Operation
+	createBatchSpecWorkspace       *observation.Operation
+	getBatchSpecWorkspace          *observation.Operation
+	listBatchSpecWorkspaces        *observation.Operation
+	markSkippedBatchSpecWorkspaces *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJob  *observation.Operation
 	createBatchSpecWorkspaceExecutionJobs *observation.Operation
 	getBatchSpecWorkspaceExecutionJob     *observation.Operation
 	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJobs *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
 	listBatchSpecResolutionJobs  *observation.Operation
+
+	setBatchSpecWorkspaceExecutionJobAccessToken   *observation.Operation
+	resetBatchSpecWorkspaceExecutionJobAccessToken *observation.Operation
 }
 
 var (
@@ -319,6 +325,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetSpec:                         op("GetChangesetSpec"),
 			listChangesetSpecs:                       op("ListChangesetSpecs"),
 			deleteExpiredChangesetSpecs:              op("DeleteExpiredChangesetSpecs"),
+			deleteChangesetSpecs:                     op("DeleteChangesetSpecs"),
 			getRewirerMappings:                       op("GetRewirerMappings"),
 			listChangesetSpecsWithConflictingHeadRef: op("ListChangesetSpecsWithConflictingHeadRef"),
 
@@ -350,19 +357,23 @@ func newOperations(observationContext *observation.Context) *operations {
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
 
-			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
 			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
 			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
 			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
+			cancelBatchSpecWorkspaceExecutionJobs: op("CancelBatchSpecWorkspaceExecutionJobs"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
 			listBatchSpecResolutionJobs:  op("ListBatchSpecResolutionJobs"),
+
+			setBatchSpecWorkspaceExecutionJobAccessToken:   op("SetBatchSpecWorkspaceExecutionJobAccessToken"),
+			resetBatchSpecWorkspaceExecutionJobAccessToken: op("ResetBatchSpecWorkspaceExecutionJobAccessToken"),
 		}
 	})
 
@@ -453,4 +464,9 @@ func (o LimitOpts) ToDB() string {
 		limitClause = fmt.Sprintf("LIMIT %d", o.DBLimit())
 	}
 	return limitClause
+}
+
+func isUniqueConstraintViolation(err error, constraintName string) bool {
+	var e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
 }

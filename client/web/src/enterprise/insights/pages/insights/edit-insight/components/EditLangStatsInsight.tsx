@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { LangStatsInsight } from '../../../../core/types'
 import { SupportedInsightSubject } from '../../../../core/types/subjects'
@@ -11,14 +9,13 @@ import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/in
 
 export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
-    finalSettings: Settings
     subjects: SupportedInsightSubject[]
     onSubmit: (insight: LangStatsInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
 export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightProps> = props => {
-    const { insight, finalSettings, subjects, onSubmit, onCancel } = props
+    const { insight, subjects, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(
         () => ({
@@ -42,7 +39,6 @@ export const EditLangStatsInsight: React.FunctionComponent<EditLangStatsInsightP
             mode="edit"
             className="pb-5"
             initialValues={insightFormValues}
-            settings={finalSettings}
             subjects={subjects}
             onSubmit={handleSubmit}
             onCancel={onCancel}

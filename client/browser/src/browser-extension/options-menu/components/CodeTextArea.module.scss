@@ -1,0 +1,42 @@
+.container {
+    grid-template-columns: 3rem auto;
+    display: grid;
+    overflow: auto;
+    font-size: 0.75rem;
+
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--code-bg);
+}
+
+.textarea {
+    width: 100%;
+    border: none;
+    color: var(--search-query-text-color);
+    background: transparent;
+    font-family: var(--code-font-family);
+
+    &,
+    &:active,
+    &:focus {
+        outline: none;
+        box-shadow: none;
+    }
+
+    &::placeholder {
+        color: var(--text-disabled);
+    }
+}
+
+.gutter {
+    list-style-type: none;
+    padding: 0.125rem 1rem 0 1rem;
+    color: var(--line-number-color);
+
+    li {
+        height: 1.062rem;
+        padding: 0;
+        margin: 0;
+        text-align: right;
+    }
+}

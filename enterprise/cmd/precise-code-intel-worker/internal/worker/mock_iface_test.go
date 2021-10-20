@@ -7,8 +7,10 @@ import (
 	"sync"
 	"time"
 
+	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -1586,6 +1588,9 @@ type MockGitserverClient struct {
 	// CommitDateFunc is an instance of a mock function object controlling
 	// the behavior of the method CommitDate.
 	CommitDateFunc *GitserverClientCommitDateFunc
+	// DefaultBranchContainsFunc is an instance of a mock function object
+	// controlling the behavior of the method DefaultBranchContains.
+	DefaultBranchContainsFunc *GitserverClientDefaultBranchContainsFunc
 	// DirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method DirectoryChildren.
 	DirectoryChildrenFunc *GitserverClientDirectoryChildrenFunc
@@ -1600,8 +1605,13 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		CommitDateFunc: &GitserverClientCommitDateFunc{
-			defaultHook: func(context.Context, int, string) (time.Time, error) {
-				return time.Time{}, nil
+			defaultHook: func(context.Context, int, string) (string, time.Time, bool, error) {
+				return "", time.Time{}, false, nil
+			},
+		},
+		DefaultBranchContainsFunc: &GitserverClientDefaultBranchContainsFunc{
+			defaultHook: func(context.Context, int, string) (bool, error) {
+				return false, nil
 			},
 		},
 		DirectoryChildrenFunc: &GitserverClientDirectoryChildrenFunc{
@@ -1625,6 +1635,9 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 		CommitDateFunc: &GitserverClientCommitDateFunc{
 			defaultHook: i.CommitDate,
 		},
+		DefaultBranchContainsFunc: &GitserverClientDefaultBranchContainsFunc{
+			defaultHook: i.DefaultBranchContains,
+		},
 		DirectoryChildrenFunc: &GitserverClientDirectoryChildrenFunc{
 			defaultHook: i.DirectoryChildren,
 		},
@@ -1637,24 +1650,24 @@ func NewMockGitserverClientFrom(i GitserverClient) *MockGitserverClient {
 // GitserverClientCommitDateFunc describes the behavior when the CommitDate
 // method of the parent MockGitserverClient instance is invoked.
 type GitserverClientCommitDateFunc struct {
-	defaultHook func(context.Context, int, string) (time.Time, error)
-	hooks       []func(context.Context, int, string) (time.Time, error)
+	defaultHook func(context.Context, int, string) (string, time.Time, bool, error)
+	hooks       []func(context.Context, int, string) (string, time.Time, bool, error)
 	history     []GitserverClientCommitDateFuncCall
 	mutex       sync.Mutex
 }
 
 // CommitDate delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 int, v2 string) (time.Time, error) {
-	r0, r1 := m.CommitDateFunc.nextHook()(v0, v1, v2)
-	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
+func (m *MockGitserverClient) CommitDate(v0 context.Context, v1 int, v2 string) (string, time.Time, bool, error) {
+	r0, r1, r2, r3 := m.CommitDateFunc.nextHook()(v0, v1, v2)
+	m.CommitDateFunc.appendCall(GitserverClientCommitDateFuncCall{v0, v1, v2, r0, r1, r2, r3})
+	return r0, r1, r2, r3
 }
 
 // SetDefaultHook sets function that is called when the CommitDate method of
 // the parent MockGitserverClient instance is invoked and the hook queue is
 // empty.
-func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context, int, string) (time.Time, error)) {
+func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context, int, string) (string, time.Time, bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -1662,7 +1675,7 @@ func (f *GitserverClientCommitDateFunc) SetDefaultHook(hook func(context.Context
 // CommitDate method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int, string) (time.Time, error)) {
+func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int, string) (string, time.Time, bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1670,21 +1683,21 @@ func (f *GitserverClientCommitDateFunc) PushHook(hook func(context.Context, int,
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 time.Time, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (time.Time, error) {
-		return r0, r1
+func (f *GitserverClientCommitDateFunc) SetDefaultReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (string, time.Time, bool, error) {
+		return r0, r1, r2, r3
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *GitserverClientCommitDateFunc) PushReturn(r0 time.Time, r1 error) {
-	f.PushHook(func(context.Context, int, string) (time.Time, error) {
-		return r0, r1
+func (f *GitserverClientCommitDateFunc) PushReturn(r0 string, r1 time.Time, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, int, string) (string, time.Time, bool, error) {
+		return r0, r1, r2, r3
 	})
 }
 
-func (f *GitserverClientCommitDateFunc) nextHook() func(context.Context, int, string) (time.Time, error) {
+func (f *GitserverClientCommitDateFunc) nextHook() func(context.Context, int, string) (string, time.Time, bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1728,10 +1741,16 @@ type GitserverClientCommitDateFuncCall struct {
 	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 time.Time
+	Result0 string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 time.Time
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1743,6 +1762,122 @@ func (c GitserverClientCommitDateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientCommitDateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// GitserverClientDefaultBranchContainsFunc describes the behavior when the
+// DefaultBranchContains method of the parent MockGitserverClient instance
+// is invoked.
+type GitserverClientDefaultBranchContainsFunc struct {
+	defaultHook func(context.Context, int, string) (bool, error)
+	hooks       []func(context.Context, int, string) (bool, error)
+	history     []GitserverClientDefaultBranchContainsFuncCall
+	mutex       sync.Mutex
+}
+
+// DefaultBranchContains delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitserverClient) DefaultBranchContains(v0 context.Context, v1 int, v2 string) (bool, error) {
+	r0, r1 := m.DefaultBranchContainsFunc.nextHook()(v0, v1, v2)
+	m.DefaultBranchContainsFunc.appendCall(GitserverClientDefaultBranchContainsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DefaultBranchContains method of the parent MockGitserverClient instance
+// is invoked and the hook queue is empty.
+func (f *GitserverClientDefaultBranchContainsFunc) SetDefaultHook(hook func(context.Context, int, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DefaultBranchContains method of the parent MockGitserverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverClientDefaultBranchContainsFunc) PushHook(hook func(context.Context, int, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *GitserverClientDefaultBranchContainsFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *GitserverClientDefaultBranchContainsFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverClientDefaultBranchContainsFunc) nextHook() func(context.Context, int, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverClientDefaultBranchContainsFunc) appendCall(r0 GitserverClientDefaultBranchContainsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverClientDefaultBranchContainsFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverClientDefaultBranchContainsFunc) History() []GitserverClientDefaultBranchContainsFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverClientDefaultBranchContainsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverClientDefaultBranchContainsFuncCall is an object that describes
+// an invocation of method DefaultBranchContains on an instance of
+// MockGitserverClient.
+type GitserverClientDefaultBranchContainsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverClientDefaultBranchContainsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverClientDefaultBranchContainsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2042,7 +2177,7 @@ func NewMockLSIFStore() *MockLSIFStore {
 			},
 		},
 		WriteDocumentationPagesFunc: &LSIFStoreWriteDocumentationPagesFunc{
-			defaultHook: func(context.Context, int, chan *precise.DocumentationPageData) error {
+			defaultHook: func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error {
 				return nil
 			},
 		},
@@ -2543,24 +2678,24 @@ func (c LSIFStoreWriteDocumentationMappingsFuncCall) Results() []interface{} {
 // WriteDocumentationPages method of the parent MockLSIFStore instance is
 // invoked.
 type LSIFStoreWriteDocumentationPagesFunc struct {
-	defaultHook func(context.Context, int, chan *precise.DocumentationPageData) error
-	hooks       []func(context.Context, int, chan *precise.DocumentationPageData) error
+	defaultHook func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error
+	hooks       []func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error
 	history     []LSIFStoreWriteDocumentationPagesFuncCall
 	mutex       sync.Mutex
 }
 
 // WriteDocumentationPages delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLSIFStore) WriteDocumentationPages(v0 context.Context, v1 int, v2 chan *precise.DocumentationPageData) error {
-	r0 := m.WriteDocumentationPagesFunc.nextHook()(v0, v1, v2)
-	m.WriteDocumentationPagesFunc.appendCall(LSIFStoreWriteDocumentationPagesFuncCall{v0, v1, v2, r0})
+func (m *MockLSIFStore) WriteDocumentationPages(v0 context.Context, v1 dbstore.Upload, v2 *types.Repo, v3 bool, v4 chan *precise.DocumentationPageData) error {
+	r0 := m.WriteDocumentationPagesFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.WriteDocumentationPagesFunc.appendCall(LSIFStoreWriteDocumentationPagesFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the
 // WriteDocumentationPages method of the parent MockLSIFStore instance is
 // invoked and the hook queue is empty.
-func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.Context, int, chan *precise.DocumentationPageData) error) {
+func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error) {
 	f.defaultHook = hook
 }
 
@@ -2569,7 +2704,7 @@ func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Context, int, chan *precise.DocumentationPageData) error) {
+func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2578,7 +2713,7 @@ func (f *LSIFStoreWriteDocumentationPagesFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan *precise.DocumentationPageData) error {
+	f.SetDefaultHook(func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error {
 		return r0
 	})
 }
@@ -2586,12 +2721,12 @@ func (f *LSIFStoreWriteDocumentationPagesFunc) SetDefaultReturn(r0 error) {
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *LSIFStoreWriteDocumentationPagesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan *precise.DocumentationPageData) error {
+	f.PushHook(func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error {
 		return r0
 	})
 }
 
-func (f *LSIFStoreWriteDocumentationPagesFunc) nextHook() func(context.Context, int, chan *precise.DocumentationPageData) error {
+func (f *LSIFStoreWriteDocumentationPagesFunc) nextHook() func(context.Context, dbstore.Upload, *types.Repo, bool, chan *precise.DocumentationPageData) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2630,10 +2765,16 @@ type LSIFStoreWriteDocumentationPagesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 int
+	Arg1 dbstore.Upload
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan *precise.DocumentationPageData
+	Arg2 *types.Repo
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 chan *precise.DocumentationPageData
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -2642,7 +2783,7 @@ type LSIFStoreWriteDocumentationPagesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LSIFStoreWriteDocumentationPagesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

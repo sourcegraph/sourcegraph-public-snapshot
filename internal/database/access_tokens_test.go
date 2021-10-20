@@ -216,7 +216,7 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	}
 
 	// Delete a token and ensure Lookup fails on it.
-	if err := AccessTokens(db).DeleteByID(ctx, tid0, subject.ID); err != nil {
+	if err := AccessTokens(db).DeleteByID(ctx, tid0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := AccessTokens(db).Lookup(ctx, tv0, "a"); err == nil {

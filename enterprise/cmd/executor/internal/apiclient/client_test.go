@@ -402,7 +402,6 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		PathPrefix:   "/.executors/queue",
 		EndpointOptions: EndpointOptions{
 			URL:      ts.URL,
-			Username: "test",
 			Password: "hunter2",
 		},
 	}
@@ -418,10 +417,7 @@ func testServer(t *testing.T, spec routeSpec) *httptest.Server {
 			t.Errorf("unexpected method. want=%s have=%s", spec.expectedPath, r.URL.Path)
 		}
 
-		username, password, _ := r.BasicAuth()
-		if username != spec.expectedUsername {
-			t.Errorf("unexpected username. want=%s have=%s", spec.expectedUsername, username)
-		}
+		_, password, _ := r.BasicAuth()
 		if password != spec.expectedPassword {
 			t.Errorf("unexpected password. want=%s have=%s", spec.expectedPassword, password)
 		}

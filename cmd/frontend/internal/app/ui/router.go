@@ -18,7 +18,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -78,10 +77,9 @@ const (
 	routeViews                   = "views"
 	routeDevToolTime             = "devtooltime"
 
-	routeSearchQueryBuilder = "search.query-builder"
-	routeSearchStream       = "search.stream"
-	routeSearchConsole      = "search.console"
-	routeSearchNotebook     = "search.notebook"
+	routeSearchStream   = "search.stream"
+	routeSearchConsole  = "search.console"
+	routeSearchNotebook = "search.notebook"
 
 	// Legacy redirects
 	routeLegacyLogin                   = "login"
@@ -90,7 +88,6 @@ const (
 	routeLegacyOldRouteDefLanding      = "page.def.landing.old"
 	routeLegacyRepoLanding             = "page.repo.landing"
 	routeLegacyDefRedirectToDefLanding = "page.def.redirect"
-	routeLegacyCampaigns               = "campaigns"
 )
 
 // aboutRedirects contains map entries, each of which indicates that
@@ -136,7 +133,6 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/threads").Methods("GET").Name(routeThreads)
 	r.Path("/search").Methods("GET").Name(routeSearch)
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge)
-	r.Path("/search/query-builder").Methods("GET").Name(routeSearchQueryBuilder)
 	r.Path("/search/stream").Methods("GET").Name(routeSearchStream)
 	r.Path("/search/console").Methods("GET").Name(routeSearchConsole)
 	r.Path("/search/notebook").Methods("GET").Name(routeSearchNotebook)
@@ -178,7 +174,6 @@ func newRouter() *mux.Router {
 	// Legacy redirects
 	r.Path("/login").Methods("GET").Name(routeLegacyLogin)
 	r.Path("/careers").Methods("GET").Name(routeLegacyCareers)
-	r.Path("/campaigns{Path:(?:$|/.*)}").Methods("GET").Name(routeLegacyCampaigns)
 
 	// repo
 	repoRevPath := "/" + routevar.Repo + routevar.RepoRevSuffix
@@ -229,11 +224,6 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 	router.Get(routeHome).Handler(handler(serveHome))
 	router.Get(routeThreads).Handler(handler(serveBrandedPageString("Threads", nil, noIndex)))
 	router.Get(routeInsights).Handler(handler(serveBrandedPageString("Insights", nil, index)))
-	router.Get(routeLegacyCampaigns).Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = "/batch-changes" + mux.Vars(r)["Path"]
-		// Temporary redirect so at some point we can reuse the /campaigns path, if needed.
-		http.Redirect(w, r, auth.SafeRedirectURL(r.URL.String()), http.StatusTemporaryRedirect)
-	}))
 	router.Get(routeBatchChanges).Handler(handler(serveBrandedPageString("Batch Changes", nil, index)))
 	router.Get(routeCodeMonitoring).Handler(handler(serveBrandedPageString("Code Monitoring", nil, index)))
 	router.Get(routeContexts).Handler(handler(serveBrandedPageString("Search Contexts", nil, noIndex)))
@@ -271,7 +261,6 @@ func initRouter(db dbutil.DB, router *mux.Router, codeIntelResolver graphqlbacke
 	router.Get(routeUser).Handler(handler(serveBasicPage(func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(mux.Vars(r)["username"])
 	}, nil, noIndex)))
-	router.Get(routeSearchQueryBuilder).Handler(handler(serveBrandedPageString("Query builder", nil, index)))
 	router.Get(routeSearchConsole).Handler(handler(serveBrandedPageString("Search console", nil, index)))
 	router.Get(routeSearchNotebook).Handler(handler(serveBrandedPageString("Search Notebook", nil, index)))
 

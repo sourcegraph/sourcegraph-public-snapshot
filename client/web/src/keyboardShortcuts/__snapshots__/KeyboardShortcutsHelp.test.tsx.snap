@@ -2,7 +2,7 @@
 
 exports[`KeyboardShortcutsHelp  1`] = `
 <div
-  className="modal-body"
+  className="modal-body modal-body--full"
 >
   <ul
     className="list-group list-group-flush"

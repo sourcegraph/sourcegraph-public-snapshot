@@ -1,7 +1,9 @@
+import { ApolloError } from '@apollo/client'
 import * as H from 'history'
 import React, { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 
+import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
@@ -52,7 +54,24 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
         }
 
         const variables = repo?.id ? { ...policy, repositoryId: repo.id ?? null } : { ...policy }
-        return savePolicyConfiguration({ variables }).then(() => history.push('./'))
+        variables.pattern = variables.type === GitObjectType.GIT_COMMIT ? 'HEAD' : variables.pattern
+
+        return savePolicyConfiguration({ variables })
+            .then(() =>
+                history.push({
+                    pathname: './',
+                    state: { modal: 'SUCCESS', message: `Configuration for policy ${policy.name} has been saved.` },
+                })
+            )
+            .catch((error: ApolloError) =>
+                history.push({
+                    pathname: './',
+                    state: {
+                        modal: 'ERROR',
+                        message: `There was an error while saving policy: ${policy.name}. See error: ${error.message}`,
+                    },
+                })
+            )
     }, [policy, repo, savePolicyConfiguration, history])
 
     if (policyConfigError || policy === undefined) {
@@ -93,17 +112,16 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             setPolicy={setPolicy}
                             disabled={policy.protected}
                         />
-                    </Container>
 
-                    <RetentionSettings policy={policy} setPolicy={setPolicy} />
-                    {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+                        <RetentionSettings policy={policy} setPolicy={setPolicy} />
 
-                    <Container className="mt-2">
+                        {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+
                         <Button
                             type="submit"
                             variant="primary"
                             onClick={savePolicyConfig}
-                            disabled={isSaving || comparePolicies(policy, saved)}
+                            disabled={isSaving || !validatePolicy(policy) || comparePolicies(policy, saved)}
                         >
                             {policy.id === '' ? 'Create' : 'Update'} policy
                         </Button>
@@ -128,6 +146,21 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )}
         </>
     )
+}
+
+function validatePolicy(policy: CodeIntelligenceConfigurationPolicyFields): boolean {
+    const invalid =
+        false ||
+        // Required values
+        policy.name === '' ||
+        (policy.pattern === '' && policy.type !== GitObjectType.GIT_COMMIT) ||
+        // Required select values
+        ![GitObjectType.GIT_COMMIT, GitObjectType.GIT_TAG, GitObjectType.GIT_TREE].includes(policy.type) ||
+        // Numeric validation (optional)
+        (policy.retentionDurationHours && policy.retentionDurationHours <= 0) ||
+        (policy.indexCommitMaxAgeHours && policy.indexCommitMaxAgeHours <= 0)
+
+    return !invalid
 }
 
 function comparePolicies(

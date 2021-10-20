@@ -241,6 +241,11 @@ func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// organisations.
+	if err := backend.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
 	orgs, err := database.Orgs(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
@@ -314,7 +319,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, user.ID, "updated the password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password update", "error", err)
 		}
 	}
@@ -337,7 +342,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	}
 
 	if conf.CanSendEmail() {
-		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
+		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, user.ID, "created a password"); err != nil {
 			log15.Warn("Failed to send email to inform user of password creation", "error", err)
 		}
 	}
@@ -347,13 +352,6 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 // ViewerCanChangeUsername returns if the current user can change the username of the user.
 func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.db, r.user.ID)
-}
-
-// TODO(campaigns-deprecation):
-func (r *UserResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	id := r.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
 }
 
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
@@ -426,11 +424,6 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		indexed:    args.Indexed,
 		notIndexed: args.NotIndexed,
 	}, nil
-}
-
-func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
-	args.UserID = r.user.ID
-	return EnterpriseResolvers.batchChangesResolver.CampaignsCodeHosts(ctx, args)
 }
 
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {

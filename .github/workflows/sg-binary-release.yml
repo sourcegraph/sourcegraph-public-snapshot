@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - dev/sg
-      - .github/workflows/sg-binary-release.yml
+      - 'dev/sg/**'
+      - '.github/workflows/sg-binary-release.yml'
 
 env:
   GOFLAGS: -trimpath

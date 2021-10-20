@@ -26,7 +26,6 @@ type operations struct {
 	dirtyRepositories                      *observation.Operation
 	findClosestDumps                       *observation.Operation
 	findClosestDumpsFromGraphFragment      *observation.Operation
-	getAutoindexDisabledRepositories       *observation.Operation
 	getConfigurationPolicies               *observation.Operation
 	getConfigurationPolicyByID             *observation.Operation
 	getDumpsByIDs                          *observation.Operation
@@ -35,7 +34,6 @@ type operations struct {
 	getIndexes                             *observation.Operation
 	getIndexesByIDs                        *observation.Operation
 	getOldestCommitDate                    *observation.Operation
-	getRepositoriesWithIndexConfiguration  *observation.Operation
 	getUploadByID                          *observation.Operation
 	getUploads                             *observation.Operation
 	getUploadsByIDs                        *observation.Operation
@@ -44,8 +42,8 @@ type operations struct {
 	hasRepository                          *observation.Operation
 	indexQueueSize                         *observation.Operation
 	insertCloneableDependencyRepo          *observation.Operation
-	insertDependencySyncingJob             *observation.Operation
 	insertDependencyIndexingJob            *observation.Operation
+	insertDependencySyncingJob             *observation.Operation
 	insertIndex                            *observation.Operation
 	insertUpload                           *observation.Operation
 	isQueued                               *observation.Operation
@@ -63,6 +61,7 @@ type operations struct {
 	repoName                               *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
+	selectRepositoriesForIndexScan         *observation.Operation
 	selectRepositoriesForRetentionScan     *observation.Operation
 	softDeleteExpiredUploads               *observation.Operation
 	staleSourcedCommits                    *observation.Operation
@@ -118,7 +117,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		dirtyRepositories:                      op("DirtyRepositories"),
 		findClosestDumps:                       op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:      op("FindClosestDumpsFromGraphFragment"),
-		getAutoindexDisabledRepositories:       op("GetAutoindexDisabledRepositories"),
 		getConfigurationPolicies:               op("GetConfigurationPolicies"),
 		getConfigurationPolicyByID:             op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                          op("GetDumpsByIDs"),
@@ -127,7 +125,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		getIndexes:                             op("GetIndexes"),
 		getIndexesByIDs:                        op("GetIndexesByIDs"),
 		getOldestCommitDate:                    op("GetOldestCommitDate"),
-		getRepositoriesWithIndexConfiguration:  op("GetRepositoriesWithIndexConfiguration"),
 		getUploadByID:                          op("GetUploadByID"),
 		getUploads:                             op("GetUploads"),
 		getUploadsByIDs:                        op("GetUploadsByIDs"),
@@ -136,8 +133,8 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		hasRepository:                          op("HasRepository"),
 		indexQueueSize:                         op("IndexQueueSize"),
 		insertCloneableDependencyRepo:          op("InsertCloneableDependencyRepo"),
-		insertDependencySyncingJob:             op("InsertDependencySyncingJob"),
 		insertDependencyIndexingJob:            op("InsertDependencyIndexingJob"),
+		insertDependencySyncingJob:             op("InsertDependencySyncingJob"),
 		insertIndex:                            op("InsertIndex"),
 		insertUpload:                           op("InsertUpload"),
 		isQueued:                               op("IsQueued"),
@@ -155,6 +152,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		repoName:                               op("RepoName"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
+		selectRepositoriesForIndexScan:         op("SelectRepositoriesForIndexScan"),
 		selectRepositoriesForRetentionScan:     op("SelectRepositoriesForRetentionScan"),
 		softDeleteExpiredUploads:               op("SoftDeleteExpiredUploads"),
 		staleSourcedCommits:                    op("StaleSourcedCommits"),

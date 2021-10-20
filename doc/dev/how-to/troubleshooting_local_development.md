@@ -59,7 +59,7 @@ in the terminal.
 
 ## Increase maximum available file descriptors.
 
-`./dev/start.sh` may ask you to run ulimit to increase the maximum number
+`sg start` may ask you to run ulimit to increase the maximum number
 of available file descriptors for a process. You can make this setting
 permanent for every shell session by adding the following line to your
 `.*rc` file (usually `.bashrc` or `.zshrc`):
@@ -144,7 +144,7 @@ If you're running macOS 10.15.x (Catalina) reinstalling the Xcode Command Line T
 1. Uninstall the Command Line Tools with `rm -rf /Library/Developer/CommandLineTools`
 2. Reinstall it with `xcode-select --install`
 3. Go to `sourcegraph/sourcegraph`’s root directory and run `rm -rf node_modules`
-3. Re-run the launch script (`./dev/start.sh`)
+3. Re-start the dev environment (`sg start`)
 
 ## Permission errors for Grafana and Prometheus containers
 
@@ -163,14 +163,7 @@ prometheus | t=2021-05-26T10:05:26+0000 lvl=eror msg="command [/prometheus.sh --
 prometheus | t=2021-05-26T10:05:26+0000 lvl=eror msg="command [/alertmanager.sh --config.file=/sg_config_prometheus/alertmanag
 ```
 
-If you don't need these containers for your development work, the simplest solution
-is to start the development server without those containers:
-
-```sh
-./dev/start.sh --except grafana,prometheus
-```
-
-Otherwise, if files do not normally have group permissions in your environment
+If files do not normally have group permissions in your environment
 (e.g. if you set `umask 077`), then you need to
 
 1. Set group read permissions for the Grafana and Prometheus docker images, with
@@ -179,10 +172,10 @@ Otherwise, if files do not normally have group permissions in your environment
    chmod -R g=rX docker-images/{grafana,prometheus}
    ```
 
-2. Run `dev/start.sh` so that new files are group readable. If you have `umask`
-   set to a different value you can change that value just for this script by
+2. Run `sg start monitoring` so that new files are group readable. If you have `umask`
+   set to a different value you can change that value just for this command by
    starting it in a subshell:
 
    ```sh
-   (umask 027; ./dev/start.sh)
+   (umask 027; sg start monitoring)
    ```

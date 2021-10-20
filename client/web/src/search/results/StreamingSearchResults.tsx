@@ -10,7 +10,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
-import { updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
+import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -36,6 +36,7 @@ import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import { SearchBetaIcon } from '../CtaIcons'
 import { getSubmittedSearchesCount, submitSearch } from '../helpers'
 
+import { DidYouMean } from './DidYouMean'
 import { StreamingProgress } from './progress/StreamingProgress'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
@@ -64,6 +65,7 @@ export interface StreamingSearchResultsProps
     authenticatedUser: AuthenticatedUser | null
     location: H.Location
     history: H.History
+    isSourcegraphDotCom: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
@@ -90,6 +92,8 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
         authenticatedUser,
         telemetryService,
         codeInsightsEnabled,
+        isSourcegraphDotCom,
+        extensionsController: { extHostAPI: extensionHostAPI },
     } = props
 
     // Log view event on first load
@@ -104,37 +108,54 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
 
     // Log search query event when URL changes
     useEffect(() => {
-        telemetryService.log('SearchResultsQueried', {
-            code_search: {
-                query_data: {
-                    // 🚨 PRIVACY: never provide any private data in the `query` field,
-                    // which maps to { code_search: { query_data: { query } } } in the event logs,
-                    // and potentially exported in pings data.
+        const metrics = query ? collectMetrics(query) : undefined
 
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-                    query: query ? collectMetrics(query) : undefined,
-                    combined: query,
-                    empty: !query,
+        telemetryService.log(
+            'SearchResultsQueried',
+            {
+                code_search: {
+                    query_data: {
+                        query: metrics,
+                        combined: query,
+                        empty: !query,
+                    },
                 },
             },
-        })
-    }, [caseSensitive, query, telemetryService])
+            {
+                code_search: {
+                    query_data: {
+                        // 🚨 PRIVACY: never provide any private query data in the
+                        // { code_search: query_data: query } property,
+                        // which is also potentially exported in pings data.
+                        query: metrics,
+
+                        // 🚨 PRIVACY: Only collect the full query string for unauthenticated users
+                        // on Sourcegraph.com, and only after sanitizing to remove certain filters.
+                        combined:
+                            !authenticatedUser && isSourcegraphDotCom ? sanitizeQueryForTelemetry(query) : undefined,
+                        empty: !query,
+                    },
+                },
+            }
+        )
+        // Only log when the query changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [query])
 
     const trace = useMemo(() => new URLSearchParams(location.search).get('trace') ?? undefined, [location.search])
 
     const options: StreamSearchOptions = useMemo(
         () => ({
-            query,
             version: LATEST_VERSION,
             patternType: patternType ?? SearchPatternType.literal,
             caseSensitive,
             versionContext: resolveVersionContext(versionContext, availableVersionContexts),
             trace,
         }),
-        [availableVersionContexts, caseSensitive, patternType, query, trace, versionContext]
+        [availableVersionContexts, caseSensitive, patternType, trace, versionContext]
     )
 
-    const results = useCachedSearchResults(streamSearch, options, telemetryService)
+    const results = useCachedSearchResults(streamSearch, query, options, extensionHostAPI, telemetryService)
 
     // Log events when search completes or fails
     useEffect(() => {
@@ -272,6 +293,15 @@ export const StreamingSearchResults: React.FunctionComponent<StreamingSearchResu
                         showTrace={!!trace}
                     />
                 }
+            />
+
+            <DidYouMean
+                telemetryService={props.telemetryService}
+                parsedSearchQuery={props.parsedSearchQuery}
+                patternType={props.patternType}
+                caseSensitive={props.caseSensitive}
+                versionContext={props.versionContext}
+                selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 
             <div className={styles.streamingSearchResultsContainer}>

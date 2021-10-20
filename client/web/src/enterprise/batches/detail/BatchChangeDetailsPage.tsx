@@ -1,28 +1,30 @@
-import { subDays } from 'date-fns'
-import { isEqual } from 'lodash'
+import { subDays, startOfDay } from 'date-fns'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React, { useEffect, useMemo } from 'react'
-import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
+import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
-import { BatchChangeFields } from '../../../graphql-operations'
+import {
+    BatchChangeByNamespaceResult,
+    BatchChangeByNamespaceVariables,
+    BatchChangeFields,
+} from '../../../graphql-operations'
 import { Description } from '../Description'
 
 import {
-    fetchBatchChangeByNamespace as _fetchBatchChangeByNamespace,
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     deleteBatchChange as _deleteBatchChange,
-    queryBulkOperations as _queryBulkOperations,
     queryAllChangesetIDs as _queryAllChangesetIDs,
+    BATCH_CHANGE_BY_NAMESPACE,
 } from './backend'
 import { BatchChangeDetailsActionSection } from './BatchChangeDetailsActionSection'
 import { BatchChangeDetailsProps, BatchChangeDetailsTabs } from './BatchChangeDetailsTabs'
@@ -40,59 +42,72 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     /** The batch change name. */
     batchChangeName: BatchChangeFields['name']
     /** For testing only. */
-    fetchBatchChangeByNamespace?: typeof _fetchBatchChangeByNamespace
-    /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
-    /** For testing only. */
-    queryAllChangesetIDs?: typeof _queryAllChangesetIDs
 }
 
 /**
  * The area for a single batch change.
  */
 export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = props => {
-    const {
-        namespaceID,
-        batchChangeName,
-        history,
-        location,
-        telemetryService,
-        fetchBatchChangeByNamespace: fetchBatchChangeByNamespace = _fetchBatchChangeByNamespace,
-        deleteBatchChange,
-    } = props
+    const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
     }, [telemetryService])
 
-    const createdAfter = useMemo(() => subDays(new Date(), 3).toISOString(), [])
-    const batchChange: BatchChangeFields | null | undefined = useObservable(
-        useMemo(
-            () =>
-                fetchBatchChangeByNamespace(namespaceID, batchChangeName, createdAfter).pipe(
-                    repeatWhen(notifier => notifier.pipe(delay(5000))),
-                    distinctUntilChanged((a, b) => isEqual(a, b))
-                ),
-            [fetchBatchChangeByNamespace, namespaceID, batchChangeName, createdAfter]
-        )
+    // Query bulk operations created after this time.
+    const createdAfter = useMemo(() => subDays(startOfDay(new Date()), 3).toISOString(), [])
+
+    const { data, error, loading, refetch } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
+        BATCH_CHANGE_BY_NAMESPACE,
+        {
+            variables: { namespaceID, batchChange: batchChangeName, createdAfter },
+            // Cache this data but always re-request it in the background when we revisit
+            // this page to pick up newer changes.
+            fetchPolicy: 'cache-and-network',
+            // We continuously poll for changes to the batch change, in case the bulk
+            // operations, diff stats, or changeset stats are updated, or in case someone
+            // applied a new batch spec in the meantime. This isn't the most effective use
+            // of network bandwidth since many of these fields aren't changing and most of
+            // the time there will be no changes at all, but it's also the easiest way to
+            // keep this in sync for now at the cost of a bit of excess network resources.
+            pollInterval: 5000,
+            // For subsequent requests while this page is open, make additional network
+            // requests; this is necessary for `refetch` to actually use the network. (see
+            // https://github.com/apollographql/apollo-client/issues/5515)
+            nextFetchPolicy: 'network-only',
+        }
     )
 
-    // Is loading.
-    if (batchChange === undefined) {
+    // If we're loading and haven't received any data yet
+    if (loading && !data) {
         return (
             <div className="text-center">
                 <LoadingSpinner className="icon-inline mx-auto my-4" />
             </div>
         )
     }
-    // Batch change was not found.
-    if (batchChange === null) {
+    // If we received an error before we had received any data
+    if (error && !data) {
+        throw new Error(error.message)
+    }
+    // If there weren't any errors and we just didn't receive any data
+    if (!data || !data.batchChange) {
         return <HeroPage icon={AlertCircleIcon} title="Batch change not found" />
     }
+
+    const { batchChange } = data
 
     return (
         <>
             <PageTitle title={batchChange.name} />
+            {/* If we received an error after we already had data, we keep the
+                data on the page but also surface the error with an alert. */}
+            {error && (
+                <div className="alert alert-danger">
+                    <ErrorMessage error={error.message} />
+                </div>
+            )}
             <PageHeader
                 path={[
                     {
@@ -137,7 +152,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <Description description={batchChange.description} />
-            <BatchChangeDetailsTabs batchChange={batchChange} {...props} />
+            <BatchChangeDetailsTabs batchChange={batchChange} refetchBatchChange={refetch} {...props} />
         </>
     )
 }

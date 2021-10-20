@@ -525,6 +525,10 @@ type ReposListOptions struct {
 	// through external services. Mutually exclusive with the ExternalServiceIDs option.
 	UserID int32
 
+	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
+	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	OrgID int32
+
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
 	SearchContextID int64
@@ -605,6 +609,16 @@ type ReposListOptions struct {
 	// when last attempted. Specifically, this means that they have a non-null
 	// last_error value in the gitserver_repos table.
 	FailedFetch bool
+
+	// MinLastChanged finds repository metadata or data that has changed since
+	// MinLastChanged. It filters against repos.UpdatedAt and
+	// gitserver.LastChanged.
+	//
+	// LastChanged is the time of the last git fetch which changed refs
+	// stored. IE the last time any branch changed (not just HEAD).
+	//
+	// UpdatedAt is the last time the metadata changed for a repository.
+	MinLastChanged time.Time
 
 	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
 	// automatically or manually for different reasons, like being too big or having copyright issues.
@@ -905,6 +919,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
 	}
+	if !opt.MinLastChanged.IsZero() {
+		where = append(where, sqlf.Sprintf("(gr.last_changed >= %s OR repo.updated_at >= %s)", opt.MinLastChanged, opt.MinLastChanged))
+	}
 	if opt.NoPrivate {
 		where = append(where, sqlf.Sprintf("NOT private"))
 	}
@@ -947,8 +964,9 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 	}
 
-	if len(opt.ExternalServiceIDs) != 0 && opt.UserID != 0 {
-		return nil, errors.New("options ExternalServiceIDs and UserID are mutually exclusive")
+	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
+		(opt.UserID != 0 && opt.OrgID != 0) {
+		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
 	} else if opt.UserID != 0 {
@@ -958,13 +976,16 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
 		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+	} else if opt.OrgID != 0 {
+		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
+		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
 		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.joinGitserverRepos {
+	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
 		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 
@@ -972,10 +993,10 @@ func (s *RepoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	baseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
-		baseConds = sqlf.Sprintf("deleted_at IS NULL")
+		baseConds = sqlf.Sprintf("repo.deleted_at IS NULL")
 	}
 	if !opt.IncludeBlocked {
-		baseConds = sqlf.Sprintf("%s AND blocked IS NULL", baseConds)
+		baseConds = sqlf.Sprintf("%s AND repo.blocked IS NULL", baseConds)
 	}
 
 	whereConds := sqlf.Sprintf("TRUE")
@@ -1380,12 +1401,14 @@ insert_sources AS (
     external_service_id,
     repo_id,
     user_id,
+    org_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
     es.namespace_user_id,
+    es.namespace_org_id,
     clone_url
   FROM sources_list
   JOIN external_services es ON (es.id = external_service_id)

@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
@@ -97,7 +98,17 @@ func TestSearchFilesInRepos(t *testing.T) {
 		Zoekt:        zoekt,
 		SearcherURLs: endpoint.Static("test"),
 	}
-	matches, common, err := SearchFilesInReposBatch(context.Background(), args)
+
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	matches, common, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +139,16 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	_, _, err = SearchFilesInReposBatch(context.Background(), args)
+	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs = &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	_, _, err = SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
@@ -194,7 +214,16 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -265,7 +294,16 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	args.Repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	matches, _, err := SearchFilesInReposBatch(context.Background(), args)
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	searcherArgs := &search.SearcherParameters{
+		SearcherURLs:    args.SearcherURLs,
+		PatternInfo:     args.PatternInfo,
+		UseFullDeadline: args.UseFullDeadline,
+	}
+	matches, _, err := SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
 	if err != nil {
 		t.Fatal(err)
 	}

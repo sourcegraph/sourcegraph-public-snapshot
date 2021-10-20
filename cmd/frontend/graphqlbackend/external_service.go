@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -42,7 +43,7 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 		return nil, err
 	}
 
-	if err := checkExternalServiceAccess(ctx, db, es.NamespaceUserID); err != nil {
+	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
 	return &externalServiceResolver{db: db, externalService: es}, nil

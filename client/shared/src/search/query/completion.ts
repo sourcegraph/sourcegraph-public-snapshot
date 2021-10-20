@@ -5,9 +5,8 @@ import { first } from 'rxjs/operators'
 import { Omit } from 'utility-types'
 
 import { SymbolKind } from '../../graphql-operations'
-import { IRepository, IFile, ISymbol, ILanguage, IRepoGroup, ISearchContext } from '../../graphql/schema'
 import { isDefined } from '../../util/types'
-import { SearchSuggestion } from '../suggestions'
+import { MatchedSymbol, PathMatch, RepositoryMatch, SearchMatch } from '../stream'
 
 import { FilterType, isNegatableFilter, resolveFilter, FILTERS, escapeSpaces } from './filters'
 import { toMonacoSingleLineRange } from './monaco'
@@ -66,34 +65,34 @@ const FILTER_TYPE_COMPLETIONS: Omit<Monaco.languages.CompletionItem, 'range'>[] 
     }))
 
 const repositoryToCompletion = (
-    { name }: IRepository,
+    { repository }: RepositoryMatch,
     options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem => {
-    let insertText = options.globbing ? name : `^${escapeRegExp(name)}$`
+    let insertText = options.globbing ? repository : `^${escapeRegExp(repository)}$`
     insertText = escapeSpaces(insertText)
     insertText = (options.isFilterValue ? insertText : `${FilterType.repo}:${insertText}`) + ' '
     return {
-        label: name,
+        label: repository,
         kind: repositoryCompletionItemKind,
         insertText,
-        filterText: name,
+        filterText: repository,
         detail: options.isFilterValue ? undefined : 'Repository',
     }
 }
 
 const fileToCompletion = (
-    { name, path, repository, isDirectory }: IFile,
+    { path, repository }: PathMatch,
     options: { isFilterValue: boolean; globbing: boolean }
 ): PartialCompletionItem => {
     let insertText = options.globbing ? path : `^${escapeRegExp(path)}$`
     insertText = escapeSpaces(insertText)
     insertText = (options.isFilterValue ? insertText : `${FilterType.file}:${insertText}`) + ' '
     return {
-        label: name,
-        kind: isDirectory ? Monaco.languages.CompletionItemKind.Folder : Monaco.languages.CompletionItemKind.File,
+        label: path,
+        kind: Monaco.languages.CompletionItemKind.File,
         insertText,
-        filterText: name,
-        detail: `${path} - ${repository.name}`,
+        filterText: path,
+        detail: `${path} - ${repository}`,
     }
 }
 
@@ -130,57 +129,31 @@ const symbolKindToCompletionItemKind: Record<SymbolKind, Monaco.languages.Comple
     TYPEPARAMETER: Monaco.languages.CompletionItemKind.TypeParameter,
 }
 
-const symbolToCompletion = ({ name, kind, location }: ISymbol): PartialCompletionItem => ({
+const symbolToCompletion = (
+    { name, kind }: MatchedSymbol,
+    path: string,
+    repository: string
+): PartialCompletionItem => ({
     label: name,
     kind: symbolKindToCompletionItemKind[kind],
     insertText: name + ' ',
     filterText: name,
-    detail: `${startCase(kind.toLowerCase())} - ${location.resource.repository.name}`,
+    detail: `${startCase(kind.toLowerCase())} - ${path} - ${repository}`,
 })
 
-const languageToCompletion = ({ name }: ILanguage): PartialCompletionItem | undefined =>
-    name
-        ? {
-              label: name,
-              kind: Monaco.languages.CompletionItemKind.TypeParameter,
-              insertText: name + ' ',
-              filterText: name,
-          }
-        : undefined
-
-const repoGroupToCompletion = ({ name }: IRepoGroup): PartialCompletionItem => ({
-    label: name,
-    kind: repositoryCompletionItemKind,
-    insertText: name + ' ',
-    filterText: name,
-})
-
-const searchContextToCompletion = ({ spec, description }: ISearchContext): PartialCompletionItem => ({
-    label: spec,
-    kind: repositoryCompletionItemKind,
-    insertText: spec + ' ',
-    filterText: spec,
-    detail: description,
-})
-
-const suggestionToCompletionItem = (
-    suggestion: SearchSuggestion,
+const suggestionToCompletionItems = (
+    suggestion: SearchMatch,
     options: { isFilterValue: boolean; globbing: boolean }
-): PartialCompletionItem | undefined => {
-    switch (suggestion.__typename) {
-        case 'File':
-            return fileToCompletion(suggestion, options)
-        case 'Repository':
-            return repositoryToCompletion(suggestion, options)
-        case 'Symbol':
-            return symbolToCompletion(suggestion)
-        case 'Language':
-            return languageToCompletion(suggestion)
-        case 'RepoGroup':
-            return repoGroupToCompletion(suggestion)
-        case 'SearchContext':
-            return searchContextToCompletion(suggestion)
+): PartialCompletionItem[] => {
+    switch (suggestion.type) {
+        case 'path':
+            return [fileToCompletion(suggestion, options)]
+        case 'repo':
+            return [repositoryToCompletion(suggestion, options)]
+        case 'symbol':
+            return suggestion.symbols.map(symbol => symbolToCompletion(symbol, suggestion.path, suggestion.repository))
     }
+    return []
 }
 
 /**
@@ -211,7 +184,7 @@ const completeStart = (): Monaco.languages.CompletionList => ({
 })
 
 async function completeDefault(
-    dynamicSuggestions: Observable<SearchSuggestion[]>,
+    dynamicSuggestions: Observable<SearchMatch[]>,
     token: Token,
     globbing: boolean
 ): Promise<Monaco.languages.CompletionList> {
@@ -238,7 +211,7 @@ async function completeDefault(
         suggestions: [
             ...staticSuggestions,
             ...(await dynamicSuggestions.pipe(first()).toPromise())
-                .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: false, globbing }))
+                .flatMap(suggestion => suggestionToCompletionItems(suggestion, { isFilterValue: false, globbing }))
                 .filter(isDefined)
                 .map(completionItem => ({
                     ...completionItem,
@@ -253,7 +226,7 @@ async function completeDefault(
 }
 
 async function completeFilter(
-    serverSuggestions: Observable<SearchSuggestion[]>,
+    serverSuggestions: Observable<SearchMatch[]>,
     token: Filter,
     column: number,
     globbing: boolean,
@@ -297,10 +270,10 @@ async function completeFilter(
     if (resolvedFilter.definition.suggestions) {
         // If the filter definition has an associated dynamic suggestion type,
         // use it to retrieve dynamic suggestions from the backend.
-        const suggestions = await serverSuggestions.pipe(first()).toPromise()
+        const suggestions = await serverSuggestions.toPromise()
         dynamicSuggestions = suggestions
-            .filter(({ __typename }) => __typename === resolvedFilter.definition.suggestions)
-            .map(suggestion => suggestionToCompletionItem(suggestion, { isFilterValue: true, globbing }))
+            .filter(({ type }) => type === resolvedFilter.definition.suggestions)
+            .flatMap(suggestion => suggestionToCompletionItems(suggestion, { isFilterValue: true, globbing }))
             .filter(isDefined)
             .map((partialCompletionItem, index) => ({
                 ...partialCompletionItem,
@@ -322,9 +295,9 @@ async function completeFilter(
  * including both static and dynamically fetched suggestions.
  */
 export async function getCompletionItems(
-    tokens: Token[],
+    token: Token,
     { column }: Pick<Monaco.Position, 'column'>,
-    dynamicSuggestions: Observable<SearchSuggestion[]>,
+    dynamicSuggestions: Observable<SearchMatch[]>,
     globbing: boolean,
     isSourcegraphDotCom?: boolean
 ): Promise<Monaco.languages.CompletionList | null> {
@@ -332,11 +305,6 @@ export async function getCompletionItems(
         // Show all filter suggestions on the first column.
         return completeStart()
     }
-    const tokenAtColumn = tokens.find(({ range }) => range.start + 1 <= column && range.end + 1 >= column)
-    if (!tokenAtColumn) {
-        throw new Error('getCompletionItems: no token at column')
-    }
-    const token = tokenAtColumn
     // When the token at column is labeled as a pattern or whitespace, and none of filter,
     // operator, nor quoted value, show static filter type suggestions, followed by dynamic suggestions.
     if (token.type === 'pattern' || token.type === 'whitespace') {

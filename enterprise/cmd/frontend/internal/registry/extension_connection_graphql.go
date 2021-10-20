@@ -20,6 +20,10 @@ func listLocalRegistryExtensions(ctx context.Context, db dbutil.DB, args graphql
 		ids := filterStripLocalExtensionIDs(*args.PrioritizeExtensionIDs)
 		args.PrioritizeExtensionIDs = &ids
 	}
+	if args.ExtensionIDs != nil {
+		extids := filterStripLocalExtensionIDs(*args.ExtensionIDs)
+		args.ExtensionIDs = &extids
+	}
 	opt, err := toDBExtensionsListOptions(args)
 	if err != nil {
 		return nil, err

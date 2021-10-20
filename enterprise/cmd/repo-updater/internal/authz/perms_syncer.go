@@ -60,7 +60,7 @@ func NewPermsSyncer(
 		permsStore:          permsStore,
 		clock:               clock,
 		rateLimiterRegistry: rateLimiterRegistry,
-		scheduleInterval:    time.Minute,
+		scheduleInterval:    15 * time.Second,
 	}
 }
 
@@ -309,7 +309,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			return errors.Wrap(err, "wait for rate limiter")
 		}
 
-		extIDs, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
+		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
 		if err != nil {
 			// The "401 Unauthorized" is returned by code hosts when the token is no longer valid
 			unauthorized := errcode.IsUnauthorized(err)
@@ -348,42 +348,36 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			}
 		}
 
-		if extIDs == nil {
+		if extPerms == nil {
 			continue
 		}
 
-		if len(extIDs.Exacts) > 0 {
-			for _, exact := range extIDs.Exacts {
-				repoSpecs = append(repoSpecs,
-					api.ExternalRepoSpec{
-						ID:          string(exact),
-						ServiceType: provider.ServiceType(),
-						ServiceID:   provider.ServiceID(),
-					},
-				)
-			}
+		for _, exact := range extPerms.Exacts {
+			repoSpecs = append(repoSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(exact),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
 		}
-		if len(extIDs.IncludeContains) > 0 {
-			for _, includePrefix := range extIDs.IncludeContains {
-				includeContainsSpecs = append(includeContainsSpecs,
-					api.ExternalRepoSpec{
-						ID:          string(includePrefix),
-						ServiceType: provider.ServiceType(),
-						ServiceID:   provider.ServiceID(),
-					},
-				)
-			}
+		for _, includePrefix := range extPerms.IncludeContains {
+			includeContainsSpecs = append(includeContainsSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(includePrefix),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
 		}
-		if len(extIDs.ExcludeContains) > 0 {
-			for _, excludePrefix := range extIDs.ExcludeContains {
-				excludeContainsSpecs = append(excludeContainsSpecs,
-					api.ExternalRepoSpec{
-						ID:          string(excludePrefix),
-						ServiceType: provider.ServiceType(),
-						ServiceID:   provider.ServiceID(),
-					},
-				)
-			}
+		for _, excludePrefix := range extPerms.ExcludeContains {
+			excludeContainsSpecs = append(excludeContainsSpecs,
+				api.ExternalRepoSpec{
+					ID:          string(excludePrefix),
+					ServiceType: provider.ServiceType(),
+					ServiceID:   provider.ServiceID(),
+				},
+			)
 		}
 	}
 
@@ -431,7 +425,8 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	log15.Debug("PermsSyncer.syncUserPerms.synced",
 		"userID", user.ID,
 		"count", p.IDs.GetCardinality(),
-		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches)
+		"fetchOpts.invalidateCaches", fetchOpts.InvalidateCaches,
+	)
 	return nil
 }
 
@@ -674,8 +669,30 @@ func (s *PermsSyncer) runSync(ctx context.Context) {
 	}
 }
 
-// scheduleUsersWithNoPerms returns computed schedules for users who have no permissions
-// found in database.
+// scheduleUsersWithOutdatedPerms returns computed schedules for users who have
+// outdated permissions in database.
+func (s *PermsSyncer) scheduleUsersWithOutdatedPerms(ctx context.Context) ([]scheduledUser, error) {
+	results, err := s.permsStore.UserIDsWithOutdatedPerms(ctx)
+	if err != nil {
+		return nil, err
+	}
+	metricsOutdatedPerms.WithLabelValues("user").Set(float64(len(results)))
+
+	users := make([]scheduledUser, 0, len(results))
+	for id, t := range results {
+		users = append(users,
+			scheduledUser{
+				priority:   priorityLow,
+				userID:     id,
+				nextSyncAt: t,
+			},
+		)
+	}
+	return users, nil
+}
+
+// scheduleUsersWithNoPerms returns computed schedules for users who have no
+// permissions found in database.
 func (s *PermsSyncer) scheduleUsersWithNoPerms(ctx context.Context) ([]scheduledUser, error) {
 	ids, err := s.permsStore.UserIDsWithNoPerms(ctx)
 	if err != nil {
@@ -791,7 +808,13 @@ type scheduledRepo struct {
 func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 	schedule := new(schedule)
 
-	users, err := s.scheduleUsersWithNoPerms(ctx)
+	users, err := s.scheduleUsersWithOutdatedPerms(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "schedule users with outdated permissions")
+	}
+	schedule.Users = append(schedule.Users, users...)
+
+	users, err = s.scheduleUsersWithNoPerms(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "schedule users with no permissions")
 	}
@@ -835,16 +858,16 @@ func (s *PermsSyncer) schedule(ctx context.Context) (*schedule, error) {
 // isDisabled returns true if the background permissions syncing is not enabled.
 // It is not enabled if:
 //   - Permissions user mapping is enabled
-//   - No authz provider is configured
 //   - Not purchased with the current license
 //   - `disableAutoCodeHostSyncs` site setting is set to true
 func (s *PermsSyncer) isDisabled() bool {
 	return globals.PermissionsUserMapping().Enabled ||
-		len(s.providersByServiceID()) == 0 ||
 		(licensing.EnforceTiers && licensing.Check(licensing.FeatureACLs) != nil) ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
 
+// runSchedule periodically looks for least updated records and schedule syncs
+// for them.
 func (s *PermsSyncer) runSchedule(ctx context.Context) {
 	log15.Debug("PermsSyncer.runSchedule.started")
 	defer log15.Info("PermsSyncer.runSchedule.stopped")
@@ -860,6 +883,7 @@ func (s *PermsSyncer) runSchedule(ctx context.Context) {
 		}
 
 		if s.isDisabled() {
+			log15.Debug("PermsSyncer.runSchedule.disabled")
 			continue
 		}
 

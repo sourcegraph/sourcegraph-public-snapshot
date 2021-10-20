@@ -132,8 +132,8 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 To run integration tests for the web app:
 
 1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-  - Alternatively, `yarn build-web` will only build a bundle once.
-  - If you need to build an Enterprise bundle (to test Enterprise features such as Batch Changes), set `ENTERPRISE=1`
+    - Alternatively, `yarn build-web` will only build a bundle once.
+1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
 1. Run `yarn test-integration` in the repository root to run the tests.
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
@@ -306,6 +306,19 @@ When you submit the PR, Percy will fail until you approve the new snapshot.
 Flakiness in snapshot tests can be caused by the search response time, order of results, animations, premature snapshots while the page is still loading, etc.
 
 This can be solved with [Percy specific CSS](https://docs.percy.io/docs/percy-specific-css) that will be applied only when taking the snapshot and allow you to hide flaky elements with `display: none`. In simple cases, you can simply apply the `percy-hide` CSS class to the problematic element and it will be hidden from Percy.
+
+### Lighthouse tests
+
+We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
+
+
+#### Running the tests locally
+1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
+2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
+
+#### Running the tests in CI
+The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
+
 
 ## Continuous Integration
 

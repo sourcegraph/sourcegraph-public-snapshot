@@ -10,8 +10,8 @@ import { lazyComponent } from '../util/lazyComponent'
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) &&
-    !!settingsCascade.final?.experimentalFeatures?.showSearchContext &&
-    !!settingsCascade.final?.experimentalFeatures?.showSearchContextManagement
+    settingsCascade.final?.experimentalFeatures?.showSearchContext !== false &&
+    settingsCascade.final?.experimentalFeatures?.showSearchContextManagement !== false
 
 export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     {
@@ -29,10 +29,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         path: '/user/subscriptions/new',
         exact: true,
         render: () => <Redirect to="/subscriptions/new" />,
-    },
-    {
-        path: '/campaigns',
-        render: ({ match }) => <Redirect to={match.path.replace('/campaigns', '/batch-changes')} />,
     },
     {
         path: '/batch-changes',
@@ -78,7 +74,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         path: '/contexts/new',
         render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
         exact: true,
-
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {

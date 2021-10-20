@@ -11,7 +11,6 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Token } from '@sourcegraph/shared/src/search/query/token'
 
-import { daysActiveCount } from '../../marketing/util'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../../tracking/eventLogger'
 import { isMacPlatform } from '../../util'
@@ -60,6 +59,7 @@ const closeIconSvg =
 /**
  * Generates the content for the first step in the tour.
  *
+ * @param tour the Shepherd tour to attach the step to
  * @param languageButtonHandler the handler for the "search a language" button.
  * @param repositoryButtonHandler the handler for the "search a repository" button.
  */
@@ -72,8 +72,8 @@ function generateStep1(
     content.className = 'd-flex align-items-center'
     content.innerHTML = `
         <div class="tour-card__title">Get started</div>
-        <button class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
-        <button class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
+        <button type="button" class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
+        <button type="button" class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
     `
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
@@ -171,8 +171,11 @@ const generateStepContent = (title: string, description: string): HTMLElement =>
     return element
 }
 
-const useTourWithSteps = ({ setQueryState }: Pick<UseSearchOnboardingTourOptions, 'setQueryState'>): Tour => {
-    const tour = useMemo(() => new Shepherd.Tour(tourOptions), [])
+const useTourWithSteps = ({
+    setQueryState,
+    stepsContainer,
+}: Pick<UseSearchOnboardingTourOptions, 'setQueryState' | 'stepsContainer'>): Tour => {
+    const tour = useMemo(() => new Shepherd.Tour({ ...tourOptions, stepsContainer }), [stepsContainer])
     useEffect(() => {
         tour.addSteps([
             {
@@ -305,6 +308,11 @@ interface UseSearchOnboardingTourOptions {
     queryState: QueryState
     history: H.History
     location: H.Location
+
+    /**
+     * HTML element where the steps should be attached to
+     */
+    stepsContainer?: HTMLElement
 }
 
 /**
@@ -331,13 +339,16 @@ export const useSearchOnboardingTour = ({
     showOnboardingTour,
     queryState,
     setQueryState,
+    stepsContainer,
 }: UseSearchOnboardingTourOptions): UseSearchOnboardingTourReturnValue => {
-    const tour = useTourWithSteps({ setQueryState })
+    const tour = useTourWithSteps({ setQueryState, stepsContainer })
     // True when the user has manually cancelled the tour
     const [hasCancelledTour, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled', false)
+    const [daysActiveCount] = useTemporarySetting('user.daysActiveCount', 0)
 
     const shouldShowTour = useMemo(() => showOnboardingTour && daysActiveCount === 1 && !hasCancelledTour, [
         showOnboardingTour,
+        daysActiveCount,
         hasCancelledTour,
     ])
 

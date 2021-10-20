@@ -1,7 +1,6 @@
 import React, { FunctionComponent } from 'react'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { Container } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
@@ -13,7 +12,7 @@ export interface RetentionSettingsProps {
 }
 
 export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, setPolicy }) => (
-    <Container className="mt-2">
+    <div className="form-group">
         <h3>Retention</h3>
 
         <div className="form-group">
@@ -47,12 +46,12 @@ export const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ p
                     title="Enabled"
                     value={policy.retainIntermediateCommits}
                     onToggle={value => setPolicy({ ...policy, retainIntermediateCommits: value })}
-                    disabled={!policy.retentionEnabled}
+                    disabled={policy.protected || !policy.retentionEnabled}
                 />
                 <label htmlFor="retain-intermediate-commits" className="ml-2">
                     Retain intermediate commits
                 </label>
             </div>
         )}
-    </Container>
+    </div>
 )

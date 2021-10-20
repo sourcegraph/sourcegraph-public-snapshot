@@ -486,7 +486,9 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 }
 
 func TestCloneRepo(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
@@ -583,7 +585,9 @@ func TestCloneRepo(t *testing.T) {
 }
 
 func TestHandleRepoUpdate(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
@@ -638,8 +642,10 @@ func TestHandleRepoUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt")
+
 	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
 
@@ -666,7 +672,7 @@ func TestHandleRepoUpdate(t *testing.T) {
 	}
 
 	// We expect an error
-	if diff := cmp.Diff(want, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "UpdatedAt")); diff != "" {
+	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -892,7 +898,9 @@ func TestHostnameMatch(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	db := dbtesting.GetDB(t)
 	remoteDir := t.TempDir()
 

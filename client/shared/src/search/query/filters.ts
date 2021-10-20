@@ -1,6 +1,6 @@
 import { Omit } from 'utility-types'
 
-import { SearchSuggestion } from '../suggestions'
+import { SearchMatch } from '../stream'
 
 import { languageCompletion } from './languageFilter'
 import { predicateCompletion } from './predicates'
@@ -137,10 +137,10 @@ export interface Completion {
 }
 
 interface BaseFilterDefinition {
-    alias?: string
+    alias?: keyof typeof AliasedFilterType
     description: string
     discreteValues?: (value: Literal | undefined, isSourcegraphDotCom?: boolean) => Completion[]
-    suggestions?: SearchSuggestion['__typename']
+    suggestions?: SearchMatch['type']
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
     singular?: boolean
@@ -189,7 +189,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
     },
     [FilterType.before]: {
-        alias: 'unitl',
+        alias: 'until',
         description: 'Commits made before a certain date',
     },
     [FilterType.case]: {
@@ -213,7 +213,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.context]: {
         description: 'Search only repositories within a specified context',
         singular: true,
-        suggestions: 'SearchContext',
     },
     [FilterType.count]: {
         description: 'Number of results to fetch (integer) or "all"',
@@ -224,7 +223,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from files matching the given search pattern.`,
-        suggestions: 'File',
+        suggestions: 'path',
     },
     [FilterType.fork]: {
         discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
@@ -257,13 +256,12 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         ],
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
-        suggestions: 'Repository',
+        suggestions: 'repo',
     },
     [FilterType.repogroup]: {
         alias: 'g',
         description: 'group-name (include results from the named group)',
         singular: true,
-        suggestions: 'RepoGroup',
     },
     [FilterType.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',
@@ -275,7 +273,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
             `${negated ? 'Exclude' : 'Include only'} results from repos that contain a matching file`,
     },
     [FilterType.rev]: {
-        alias: 'rev',
+        alias: 'revision',
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
         singular: true,
     },

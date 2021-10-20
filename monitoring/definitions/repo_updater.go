@@ -238,10 +238,24 @@ func RepoUpdater() *monitoring.Container {
 							Owner:             monitoring.ObservableOwnerCoreApplication,
 							PossibleSolutions: "Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).",
 						},
+					},
+					{
 						{
 							Name:        "perms_syncer_no_perms",
 							Description: "number of entities with no permissions",
 							Query:       `max by (type) (src_repoupdater_perms_syncer_no_perms)`,
+							Warning:     monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
+							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
+							Owner:       monitoring.ObservableOwnerCoreApplication,
+							PossibleSolutions: `
+								- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+								- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+							`,
+						},
+						{
+							Name:        "perms_syncer_outdated_perms",
+							Description: "number of entities with outdated permissions",
+							Query:       `max by (type) (src_repoupdater_perms_syncer_outdated_perms)`,
 							Warning:     monitoring.Alert().GreaterOrEqual(100, nil).For(5 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{type}}").Unit(monitoring.Number),
 							Owner:       monitoring.ObservableOwnerCoreApplication,

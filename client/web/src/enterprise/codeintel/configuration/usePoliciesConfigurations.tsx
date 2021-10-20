@@ -152,7 +152,7 @@ const emptyPolicy: CodeIntelligenceConfigurationPolicyFields = {
     __typename: 'CodeIntelligenceConfigurationPolicy',
     id: '',
     name: '',
-    type: GitObjectType.GIT_COMMIT,
+    type: GitObjectType.GIT_UNKNOWN,
     pattern: '',
     protected: false,
     retentionEnabled: false,
@@ -183,7 +183,7 @@ export const usePolicyConfigurationByID = (id: string): UsePolicyConfigResult =>
 }
 
 // Mutations
-export type DeletePolicyResult = Promise<
+type DeletePolicyResult = Promise<
     | FetchResult<DeleteCodeIntelligenceConfigurationPolicyResult, Record<string, string>, Record<string, string>>
     | undefined
 >

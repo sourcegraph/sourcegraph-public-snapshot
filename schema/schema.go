@@ -53,12 +53,6 @@ type AWSKMSEncryptionKey struct {
 	Region          string `json:"region,omitempty"`
 	Type            string `json:"type"`
 }
-type AdditionalProperties struct {
-	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
-	Format string `json:"format,omitempty"`
-	// Value description: The value of the output, which can be a template string.
-	Value string `json:"value"`
-}
 
 // ApiRatelimit description: Configuration for API rate limiting
 type ApiRatelimit struct {
@@ -347,6 +341,26 @@ type BitbucketServerRateLimit struct {
 type BitbucketServerUsernameIdentity struct {
 	Type string `json:"type"`
 }
+type BranchChangesetSpec struct {
+	// BaseRef description: The full name of the Git ref in the base repository that this changeset is based on (and is proposing to be merged into). This ref must exist on the base repository.
+	BaseRef string `json:"baseRef"`
+	// BaseRepository description: The GraphQL ID of the repository that this changeset spec is proposing to change.
+	BaseRepository string `json:"baseRepository"`
+	// BaseRev description: The base revision this changeset is based on. It is the latest commit in baseRef at the time when the changeset spec was created.
+	BaseRev string `json:"baseRev"`
+	// Body description: The body (description) of the changeset on the code host.
+	Body string `json:"body"`
+	// Commits description: The Git commits with the proposed changes. These commits are pushed to the head ref.
+	Commits []*GitCommitDescription `json:"commits"`
+	// HeadRef description: The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.
+	HeadRef string `json:"headRef"`
+	// HeadRepository description: The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.
+	HeadRepository string `json:"headRepository"`
+	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host.
+	Published interface{} `json:"published,omitempty"`
+	// Title description: The title of the changeset on the code host.
+	Title string `json:"title"`
+}
 type BrandAssets struct {
 	// Logo description: The URL to the image used on the homepage. This will replace the Sourcegraph logo on the homepage. Maximum width: 320px. We recommend using the following file formats: SVG, PNG
 	Logo string `json:"logo,omitempty"`
@@ -525,6 +539,12 @@ type ExcludedGitoliteRepo struct {
 	// Pattern description: Regular expression which matches against the name of a Gitolite repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
 }
+type ExistingChangesetSpec struct {
+	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
+	BaseRepository string `json:"baseRepository"`
+	// ExternalID description: The ID that uniquely identifies the existing changeset on the code host
+	ExternalID string `json:"externalID"`
+}
 
 // ExpandedGitCommitDescription description: The Git commit to create with the changes.
 type ExpandedGitCommitDescription struct {
@@ -538,6 +558,8 @@ type ExpandedGitCommitDescription struct {
 type ExperimentalFeatures struct {
 	// AndOrQuery description: DEPRECATED: Interpret a search input query as an and/or query.
 	AndOrQuery string `json:"andOrQuery,omitempty"`
+	// ApidocsSearchIndexing description: Index API docs for search, see https://docs.sourcegraph.com/code_intelligence/apidocs
+	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
 	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
@@ -566,7 +588,9 @@ type ExperimentalFeatures struct {
 	StructuralSearch string `json:"structuralSearch,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
 	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
-	// VersionContexts description: JSON array of version context configuration
+	// VersionContexts description: DEPRECATED: Use search contexts instead.
+	//
+	// JSON array of version context configuration
 	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 
@@ -589,6 +613,22 @@ type ExternalIdentity struct {
 	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
+}
+
+// FusionClient description: Configuration for the experimental p4-fusion client
+type FusionClient struct {
+	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
+	Enabled bool `json:"enabled,omitempty"`
+	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
+	LookAhead int `json:"lookAhead"`
+	// NetworkThreads description: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
+	NetworkThreads int `json:"networkThreads,omitempty"`
+	// PrintBatch description: The p4 print batch size
+	PrintBatch int `json:"printBatch,omitempty"`
+	// Refresh description: How many times a connection should be reused before it is refreshed
+	Refresh int `json:"refresh,omitempty"`
+	// Retries description: How many times a command should be retried before the process exits in a failure
+	Retries int `json:"retries,omitempty"`
 }
 
 // GitCommitAuthor description: The author of the Git commit.
@@ -712,6 +752,8 @@ type GitHubWebhook struct {
 
 // GitLabAuthProvider description: Configures the GitLab OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitLab instance: https://docs.gitlab.com/ee/integration/oauth_provider.html. The application should have `api` and `read_user` scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/gitlab/callback".
 type GitLabAuthProvider struct {
+	// ApiScope description: The OAuth API scope that should be used
+	ApiScope string `json:"apiScope,omitempty"`
 	// ClientID description: The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
 	ClientID string `json:"clientID"`
 	// ClientSecret description: The Client Secret of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance).
@@ -1125,6 +1167,12 @@ type OtherExternalServiceConnection struct {
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	Url                   string `json:"url,omitempty"`
 }
+type OutputVariable struct {
+	// Format description: The expected format of the output. If set, the output is being parsed in that format before being stored in the var. If not set, 'text' is assumed to the format.
+	Format string `json:"format,omitempty"`
+	// Value description: The value of the output, which can be a template string.
+	Value string `json:"value"`
+}
 type Overrides struct {
 	// Key description: The key that we want to override for example a username
 	Key string `json:"key,omitempty"`
@@ -1147,6 +1195,8 @@ type PerforceConnection struct {
 	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
 	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
 	Depots []string `json:"depots,omitempty"`
+	// FusionClient description: Configuration for the experimental p4-fusion client
+	FusionClient *FusionClient `json:"fusionClient,omitempty"`
 	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
 	MaxChanges float64 `json:"maxChanges,omitempty"`
 	// P4Client description: Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')
@@ -1165,6 +1215,8 @@ type PerforceConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
+	// UseFusionClient description: EXPERIMENTAL: Use the p4-fusion client to clone and fetch repos
+	UseFusionClient bool `json:"useFusionClient,omitempty"`
 }
 
 // PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
@@ -1376,7 +1428,9 @@ type Settings struct {
 	SearchIncludeForks *bool `json:"search.includeForks,omitempty"`
 	// SearchMigrateParser description: REMOVED. Previously, a flag to enable and/or-expressions in queries as an aid transition to new language features in versions <= 3.24.0.
 	SearchMigrateParser *bool `json:"search.migrateParser,omitempty"`
-	// SearchRepositoryGroups description: Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
+	// SearchRepositoryGroups description: DEPRECATED: Use search contexts instead.
+	//
+	// Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a "regex" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.
 	SearchRepositoryGroups map[string][]interface{} `json:"search.repositoryGroups,omitempty"`
 	// SearchSavedQueries description: DEPRECATED: Saved search queries
 	SearchSavedQueries []*SearchSavedQueries `json:"search.savedQueries,omitempty"`
@@ -1422,7 +1476,7 @@ type SettingsExperimentalFeatures struct {
 	ShowMultilineSearchConsole *bool `json:"showMultilineSearchConsole,omitempty"`
 	// ShowOnboardingTour description: Enables the onboarding tour.
 	ShowOnboardingTour *bool `json:"showOnboardingTour,omitempty"`
-	// ShowQueryBuilder description: Enables the search query builder page at search/query-builder
+	// ShowQueryBuilder description: REMOVED. Previously, enabled the search query builder page. This page has been removed.
 	ShowQueryBuilder *bool `json:"showQueryBuilder,omitempty"`
 	// ShowRepogroupHomepage description: Enables the repository group homepage
 	ShowRepogroupHomepage *bool `json:"showRepogroupHomepage,omitempty"`
@@ -1438,6 +1492,8 @@ type SettingsExperimentalFeatures struct {
 type SiteConfiguration struct {
 	// ApiRatelimit description: Configuration for API rate limiting
 	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
+	// ApidocsSearchIndexSizeLimitFactor description: Limit factor for API docs search index size. A multiple of 250 million symbols. 1.0 indicates 250 million symbols (approx 12.5k repos) can be indexed. 2.0 indicates double that, and so on. See https://docs.sourcegraph.com/code_intelligence/apidocs
+	ApidocsSearchIndexSizeLimitFactor float64 `json:"apidocs.search.index-size-limit-factor,omitempty"`
 	// AuthAccessTokens description: Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.
 	AuthAccessTokens *AuthAccessTokens `json:"auth.accessTokens,omitempty"`
 	// AuthEnableUsernameChanges description: Enables users to change their username after account creation. Warning: setting this to be true has security implications if you have enabled (or will at any point in the future enable) repository permissions with an option that relies on username equivalency between Sourcegraph and an external service or authentication provider. Do NOT set this to true if you are using non-built-in authentication OR rely on username equivalency for repository permissions.
@@ -1478,9 +1534,9 @@ type SiteConfiguration struct {
 	//
 	// Only available in Sourcegraph Enterprise.
 	Branding *Branding `json:"branding,omitempty"`
-	// CampaignsEnabled description: DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.
+	// CampaignsEnabled description: DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.
 	CampaignsEnabled *bool `json:"campaigns.enabled,omitempty"`
-	// CampaignsRestrictToAdmins description: DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.
+	// CampaignsRestrictToAdmins description: DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.
 	CampaignsRestrictToAdmins *bool `json:"campaigns.restrictToAdmins,omitempty"`
 	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`
@@ -1508,6 +1564,8 @@ type SiteConfiguration struct {
 	EmailSmtp *SMTPServerConfig `json:"email.smtp,omitempty"`
 	// EncryptionKeys description: Configuration for encryption keys used to encrypt data at rest in the database.
 	EncryptionKeys *EncryptionKeys `json:"encryption.keys,omitempty"`
+	// ExecutorsAccessToken description: The shared secret between Sourcegraph and executors.
+	ExecutorsAccessToken string `json:"executors.accessToken,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
@@ -1609,7 +1667,7 @@ type Step struct {
 	// If description: A condition to check before executing steps. Supports templating. The value 'true' is interpreted as true.
 	If interface{} `json:"if,omitempty"`
 	// Outputs description: Output variables of this step that can be referenced in the changesetTemplate or other steps via outputs.<name-of-output>
-	Outputs map[string]AdditionalProperties `json:"outputs,omitempty"`
+	Outputs map[string]OutputVariable `json:"outputs,omitempty"`
 	// Run description: The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 	Run string `json:"run"`
 }
@@ -1626,7 +1684,15 @@ type TlsExternal struct {
 // TransformChanges description: Optional transformations to apply to the changes produced in each repository.
 type TransformChanges struct {
 	// Group description: A list of groups of changes in a repository that each create a separate, additional changeset for this repository, with all ungrouped changes being in the default changeset.
-	Group []interface{} `json:"group,omitempty"`
+	Group []*TransformChangesGroup `json:"group,omitempty"`
+}
+type TransformChangesGroup struct {
+	// Branch description: The branch on the repository to propose changes to. If unset, the repository's default branch is used.
+	Branch string `json:"branch"`
+	// Directory description: The directory path (relative to the repository root) of the changes to include in this group.
+	Directory string `json:"directory"`
+	// Repository description: Only apply this transformation in the repository with this name (as it is known to Sourcegraph).
+	Repository string `json:"repository,omitempty"`
 }
 type UpdateIntervalRule struct {
 	// Interval description: An integer representing the number of minutes to wait until the next update

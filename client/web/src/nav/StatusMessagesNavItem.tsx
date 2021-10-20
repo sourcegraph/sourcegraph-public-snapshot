@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import { isEqual } from 'lodash'
+import { isEqual, upperFirst } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
 import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
@@ -26,6 +26,9 @@ import { ErrorAlert } from '../components/alerts'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
 import { queryExternalServices } from '../components/externalServices/backend'
 import { StatusMessagesResult } from '../graphql-operations'
+import { eventLogger } from '../tracking/eventLogger'
+
+import styles from './StatusMessagesNavItem.module.scss'
 
 function fetchAllStatusMessages(): Observable<StatusMessagesResult['statusMessages']> {
     return requestGraphQL<StatusMessagesResult>(
@@ -85,74 +88,89 @@ interface StatusMessageEntryProps {
 
 function entryIcon(entryType: EntryType): JSX.Element {
     switch (entryType) {
-        case 'error': {
-            return <InformationCircleIcon size={14} className="text-danger status-messages-nav-item__entry-icon" />
-        }
+        case 'error':
+            return <InformationCircleIcon size={14} className={classNames('text-danger', styles.icon)} />
         case 'warning':
-            return <AlertIcon size={14} className="text-warning status-messages-nav-item__entry-icon" />
+            return <AlertIcon size={14} className={classNames('text-warning', styles.icon)} />
         case 'success':
-            return <CheckboxCircleIcon size={14} className="text-success status-messages-nav-item__entry-icon" />
+            return <CheckboxCircleIcon size={14} className={classNames('text-success', styles.icon)} />
         case 'progress':
-            return <SyncIcon size={14} className="text-primary status-messages-nav-item__entry-icon" />
+            return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
         case 'not-active':
-            return (
-                <CircleDashedIcon
-                    size={16}
-                    className="status-messages-nav-item__entry-icon status-messages-nav-item__entry-icon--off"
-                />
-            )
+            return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
     }
 }
 
 const getMessageColor = (entryType: EntryType): string => {
-    const messageClass = 'status-messages-nav-item__entry-message'
     switch (entryType) {
         case 'error':
-            return `${messageClass}--error`
+            return styles.messageError
         case 'warning':
-            return `${messageClass}--warning`
+            return styles.messageWarning
+        default:
+            return ''
     }
-
-    return ''
 }
 
-const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => (
-    <div key={props.message} className="status-messages-nav-item__entry">
-        <h4 className="d-flex align-items-center mb-0">
-            {entryIcon(props.entryType)}
-            {props.title ? props.title : 'Your repositories'}
-        </h4>
-        {props.entryType === 'not-active' ? (
-            <div className="status-messages-nav-item__entry-card status-messages-nav-item__entry-card--inactive border-0">
-                <p className="text-muted status-messages-nav-item__entry-message">{props.message}</p>
-                <Link className="text-primary" to={props.linkTo} onClick={props.linkOnClick}>
-                    {props.linkText}
-                </Link>
-            </div>
-        ) : (
-            <div
-                className={classNames(
-                    'status-messages-nav-item__entry-card status-messages-nav-item__entry-card--active',
-                    `status-messages-nav-item__entry--border-${props.entryType}`
-                )}
-            >
-                <p className={classNames('status-messages-nav-item__entry-message', getMessageColor(props.entryType))}>
-                    {props.message}
-                </p>
-                {props.messageHint && (
-                    <>
-                        <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
-                        <br />
-                    </>
-                )}
-                <Link className="text-primary" to={props.linkTo} onClick={props.linkOnClick}>
-                    {props.linkText}
-                </Link>
-            </div>
-        )}
-        {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
-    </div>
-)
+const getBorderClassname = (entryType: EntryType): string => {
+    switch (entryType) {
+        case 'error':
+            return styles.entryBorderError
+        case 'warning':
+            return styles.entryBorderWarning
+        case 'success':
+            return styles.entryBorderSuccess
+        case 'progress':
+            return styles.entryBorderProgress
+        default:
+            return ''
+    }
+}
+
+const StatusMessagesNavItemEntry: React.FunctionComponent<StatusMessageEntryProps> = props => {
+    const onLinkClick = (event: React.MouseEvent<HTMLAnchorElement, MouseEvent>): void => {
+        const payload = { notificationType: props.entryType }
+        eventLogger.log('UserNotificationsLinkClicked', payload, payload)
+        props.linkOnClick(event)
+    }
+
+    return (
+        <div key={props.message} className={styles.entry}>
+            <h4 className="d-flex align-items-center mb-0">
+                {entryIcon(props.entryType)}
+                {props.title ? props.title : 'Your repositories'}
+            </h4>
+            {props.entryType === 'not-active' ? (
+                <div className={classNames('status-messages-nav-item__entry-card border-0', styles.cardInactive)}>
+                    <p className={classNames('text-muted', styles.message)}>{props.message}</p>
+                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
+                        {props.linkText}
+                    </Link>
+                </div>
+            ) : (
+                <div
+                    className={classNames(
+                        'status-messages-nav-item__entry-card',
+                        styles.cardActive,
+                        getBorderClassname(props.entryType)
+                    )}
+                >
+                    <p className={classNames(styles.message, getMessageColor(props.entryType))}>{props.message}</p>
+                    {props.messageHint && (
+                        <>
+                            <small className="text-muted d-inline-block mb-1">{props.messageHint}</small>
+                            <br />
+                        </>
+                    )}
+                    <Link className="text-primary" to={props.linkTo} onClick={onLinkClick}>
+                        {props.linkText}
+                    </Link>
+                </div>
+            )}
+            {props.progressHint && <small className="text-muted">{props.progressHint}</small>}
+        </div>
+    )
+}
 
 interface User {
     id: string
@@ -167,8 +185,8 @@ interface Props {
 }
 
 enum ExternalServiceNoActivityReasons {
-    NO_CODEHOSTS = 'NO_CODEHOSTS',
-    NO_REPOS = 'NO_REPOS',
+    NoCodehosts = 'NoCodehosts',
+    NoRepos = 'NoRepos',
 }
 
 type ExternalServiceNoActivityReason = keyof typeof ExternalServiceNoActivityReasons
@@ -195,9 +213,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
     public state: State = { isOpen: false, messagesOrError: [] }
 
-    private toggleIsOpen = (): void => this.setState(previousState => ({ isOpen: !previousState.isOpen }))
+    private toggleIsOpen = (): void => {
+        this.setState(previousState => ({ isOpen: !previousState.isOpen }))
+    }
 
     public componentDidMount(): void {
+        let first = true
         this.subscriptions.add(
             queryExternalServices({
                 namespace: this.props.user.id,
@@ -208,14 +229,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     switchMap(({ nodes: services }) => {
                         if (!this.props.user.isSiteAdmin) {
                             if (services.length === 0) {
-                                return of(ExternalServiceNoActivityReasons.NO_CODEHOSTS)
+                                return of(ExternalServiceNoActivityReasons.NoCodehosts)
                             }
 
                             if (
                                 !services.some(service => service.repoCount !== 0) &&
                                 services.every(service => service.lastSyncError === null && service.warning === null)
                             ) {
-                                return of(ExternalServiceNoActivityReasons.NO_REPOS)
+                                return of(ExternalServiceNoActivityReasons.NoRepos)
                             }
                         }
 
@@ -229,6 +250,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                 )
                 .subscribe(messagesOrError => {
                     this.setState({ messagesOrError })
+
+                    if (first) {
+                        this.trackUserNotificationsEvent('loaded')
+                        first = false
+                    }
                 })
         )
     }
@@ -275,7 +301,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
 
         // no code hosts or no repos
         if (isNoActivityReason(noActivityOrStatus)) {
-            if (noActivityOrStatus === ExternalServiceNoActivityReasons.NO_REPOS) {
+            if (noActivityOrStatus === ExternalServiceNoActivityReasons.NoRepos) {
                 return (
                     <StatusMessagesNavItemEntry
                         key={noActivityOrStatus}
@@ -313,7 +339,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={status.message}
                             message={status.message}
-                            messageHint="Your repositories may not be up to date."
+                            messageHint="Your repositories may not be up-to-date."
                             linkTo={links.viewRepositories}
                             linkText="View status"
                             linkOnClick={this.toggleIsOpen}
@@ -350,7 +376,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={status.message}
                             message={status.message}
-                            messageHint="Your repositories may not be up to date."
+                            messageHint="Your repositories may not be up-to-date."
                             linkTo={links.viewRepositories}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
@@ -362,7 +388,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                         <StatusMessagesNavItemEntry
                             key={status.message}
                             message={status.message}
-                            messageHint="Your repositories are up to date, but search speed may be slower than usual."
+                            messageHint="Your repositories are up-to-date, but search speed may be slower than usual."
                             linkTo={links.viewRepositories}
                             linkText="Troubleshoot"
                             linkOnClick={this.toggleIsOpen}
@@ -390,7 +416,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     data-tooltip={
                         this.state.isOpen
                             ? undefined
-                            : this.state.messagesOrError === 'NO_CODEHOSTS'
+                            : this.state.messagesOrError === ExternalServiceNoActivityReasons.NoCodehosts
                             ? 'No code host connections'
                             : 'No repositories'
                     }
@@ -419,12 +445,36 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         return (
             <CloudCheckIconRefresh
                 className="icon-inline-md"
-                data-tooltip={this.state.isOpen ? undefined : 'Repositories up to date'}
+                data-tooltip={this.state.isOpen ? undefined : 'Repositories up-to-date'}
             />
         )
     }
 
+    private getOpenedNotificationsPayload(messagesOrError: MessageOrError): { status: string[] } {
+        const messageTypes =
+            typeof messagesOrError === 'string'
+                ? [messagesOrError]
+                : isErrorLike(messagesOrError)
+                ? ['error']
+                : messagesOrError.map(message => message.type)
+
+        return { status: messageTypes.length === 0 ? ['success'] : messageTypes }
+    }
+
+    private trackUserNotificationsEvent(eventName: string): void {
+        if (window.context.sourcegraphDotComMode && this.state.messagesOrError) {
+            const payload = this.getOpenedNotificationsPayload(this.state.messagesOrError)
+            eventLogger.log(`UserNotifications${upperFirst(eventName)}`, payload, payload)
+        }
+    }
+
     public render(): JSX.Element | null {
+        const { isOpen } = this.state
+
+        if (isOpen) {
+            this.trackUserNotificationsEvent('opened')
+        }
+
         return (
             <ButtonDropdown
                 isOpen={this.state.isOpen}
@@ -435,14 +485,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                     {this.renderIcon()}
                 </DropdownToggle>
 
-                <DropdownMenu right={true} className="status-messages-nav-item__dropdown-menu p-0">
-                    <div className="status-messages-nav-item__dropdown-menu-content">
-                        <small className="d-inline-block text-muted status-messages-nav-item__entry-sync">
-                            Code sync status
-                        </small>
+                <DropdownMenu right={true} className={classNames('p-0', styles.dropdownMenu)}>
+                    <div className={styles.dropdownMenuContent}>
+                        <small className={classNames('d-inline-block text-muted', styles.sync)}>Code sync status</small>
                         {isErrorLike(this.state.messagesOrError) ? (
                             <ErrorAlert
-                                className="status-messages-nav-item__entry"
+                                className={styles.entry}
                                 prefix="Failed to load status messages"
                                 error={this.state.messagesOrError}
                             />

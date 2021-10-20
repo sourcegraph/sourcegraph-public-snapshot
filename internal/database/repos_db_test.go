@@ -59,7 +59,15 @@ func createRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo)
 	}
 }
 
-func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo, cloneStatus types.CloneStatus) []*types.Repo {
+func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo) []*types.Repo {
+	t.Helper()
+
+	return mustCreateGitserverRepo(ctx, t, db, repo, types.GitserverRepo{
+		CloneStatus: types.CloneStatusNotCloned,
+	})
+}
+
+func mustCreateGitserverRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo, gitserver types.GitserverRepo) []*types.Repo {
 	t.Helper()
 
 	var createdRepos []*types.Repo
@@ -70,12 +78,13 @@ func mustCreate(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo,
 	}
 	createdRepos = append(createdRepos, repo)
 
+	gitserver.RepoID = repo.ID
+	if gitserver.ShardID == "" {
+		gitserver.ShardID = "test"
+	}
+
 	// Add a row in gitserver_repos
-	if err := GitserverRepos(db).Upsert(ctx, &types.GitserverRepo{
-		RepoID:      repo.ID,
-		ShardID:     "test",
-		CloneStatus: cloneStatus,
-	}); err != nil {
+	if err := GitserverRepos(db).Upsert(ctx, &gitserver); err != nil {
 		t.Fatal(err)
 	}
 
@@ -257,7 +266,7 @@ func TestRepos_Get(t *testing.T) {
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
-	}, types.CloneStatusCloned)
+	})
 
 	repo, err := Repos(db).Get(ctx, want[0].ID)
 	if err != nil {
@@ -284,7 +293,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 			ServiceType: "b",
 			ServiceID:   "c",
 		},
-	}, types.CloneStatusNotCloned)
+	})
 
 	repos, err := Repos(db).GetByIDs(ctx, want[0].ID, 404)
 	if err != nil {
@@ -349,7 +358,7 @@ func TestRepos_List(t *testing.T) {
 				CloneURL: "git@github.com:foo/bar.git",
 			},
 		},
-	}, types.CloneStatusCloned)
+	})
 
 	repos, err := Repos(db).List(ctx, ReposListOptions{})
 	if err != nil {
@@ -443,6 +452,82 @@ func TestRepos_ListRepoNames_userID(t *testing.T) {
 	}
 }
 
+func TestRepos_ListRepoNames_orgID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	// Create an org
+	displayName := "Acme Corp"
+	org, err := Orgs(db).Create(ctx, "acme", &displayName)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now()
+
+	// Create an external service
+	service := types.ExternalService{
+		Kind:           extsvc.KindGitHub,
+		DisplayName:    "Github - Test",
+		Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`,
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		NamespaceOrgID: org.ID,
+	}
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	err = ExternalServices(db).Create(ctx, confGet, &service)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repo := &types.Repo{
+		ExternalRepo: api.ExternalRepoSpec{
+			ID:          "r",
+			ServiceType: extsvc.TypeGitHub,
+			ServiceID:   "https://github.com",
+		},
+		Name:        "github.com/sourcegraph/sourcegraph",
+		Private:     true,
+		URI:         "uri",
+		Description: "description",
+		Fork:        true,
+		Archived:    true,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		Metadata:    new(github.Repository),
+		Sources: map[string]*types.SourceInfo{
+			service.URN(): {
+				ID:       service.URN(),
+				CloneURL: "git@github.com:foo/bar.git",
+			},
+		},
+	}
+	err = Repos(db).Create(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := []types.RepoName{
+		{ID: repo.ID, Name: repo.Name},
+	}
+
+	have, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OrgID: org.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Fatalf(diff)
+	}
+}
+
 func TestRepos_List_fork(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -452,8 +537,8 @@ func TestRepos_List_fork(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false}, types.CloneStatusNotCloned)
-	yours := mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true}, types.CloneStatusNotCloned)
+	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false})
+	yours := mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true})
 
 	{
 		repos, err := Repos(db).List(ctx, ReposListOptions{OnlyForks: true})
@@ -494,7 +579,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	created := mustCreate(ctx, t, db, &types.Repo{Name: "repo1"}, types.CloneStatusCloned)
+	created := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "repo1"}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 	assertCount := func(t *testing.T, opts ReposListOptions, want int) {
 		t.Helper()
 		count, err := Repos(db).Count(ctx, opts)
@@ -524,8 +609,8 @@ func TestRepos_List_cloned(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r"}, types.CloneStatusNotCloned)
-	yours := mustCreate(ctx, t, db, &types.Repo{Name: "b/r"}, types.CloneStatusCloned)
+	mine := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "a/r"}, types.GitserverRepo{CloneStatus: types.CloneStatusNotCloned})
+	yours := mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "b/r"}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	tests := []struct {
 		name string
@@ -549,6 +634,89 @@ func TestRepos_List_cloned(t *testing.T) {
 	}
 }
 
+func TestRepos_List_LastChanged(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	db := dbtest.NewDB(t, "")
+	ctx := actor.WithInternalActor(context.Background())
+
+	repos := Repos(db)
+
+	// Insert a repo which should never be returned since we always specify
+	// OnlyCloned.
+	if err := repos.Upsert(ctx, InsertRepoOp{Name: "not-on-gitserver"}); err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now().UTC()
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "old"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-time.Hour),
+	})
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "new"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now,
+	})
+
+	// Our test helpers don't do updated_at, so manually doing it.
+	_, err := db.Exec("update repo set updated_at = $1", now.Add(-24*time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// will have update_at set to now, so should be included as often as new.
+	mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "newMeta"}, types.GitserverRepo{
+		CloneStatus: types.CloneStatusCloned,
+		LastChanged: now.Add(-24 * time.Hour),
+	})
+	_, err = db.Exec("update repo set updated_at = $1 where name = 'newMeta'", now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		Name           string
+		MinLastChanged time.Time
+		Want           []string
+	}{{
+		Name: "not specified",
+		Want: []string{"old", "new", "newMeta"},
+	}, {
+		Name:           "old",
+		MinLastChanged: now.Add(-24 * time.Hour),
+		Want:           []string{"old", "new", "newMeta"},
+	}, {
+		Name:           "new",
+		MinLastChanged: now.Add(-time.Minute),
+		Want:           []string{"new", "newMeta"},
+	}, {
+		Name:           "none",
+		MinLastChanged: now.Add(time.Minute),
+	}}
+
+	for _, test := range tests {
+		t.Run(test.Name, func(t *testing.T) {
+			repos, err := repos.List(ctx, ReposListOptions{
+				OnlyCloned:     true,
+				MinLastChanged: test.MinLastChanged,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var got []string
+			for _, r := range repos {
+				got = append(got, string(r.Name))
+			}
+			if d := cmp.Diff(test.Want, got); d != "" {
+				t.Fatalf("mismatch (-want, +got):\n%s", d)
+			}
+		})
+	}
+}
+
 func TestRepos_List_ids(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -558,10 +726,10 @@ func TestRepos_List_ids(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo(), types.CloneStatusNotCloned))
-	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo(), types.CloneStatusNotCloned)...)
+	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo()))
+	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo())...)
 
-	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo(), types.CloneStatusNotCloned))
+	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -594,9 +762,9 @@ func TestRepos_List_serviceTypes(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, types.MakeGithubRepo(), types.CloneStatusNotCloned)
-	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo(), types.CloneStatusNotCloned)
-	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo(), types.CloneStatusNotCloned)
+	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
+	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo())
+	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo())
 	both := append(mine, yours...)
 	all := append(both, others...)
 
@@ -637,7 +805,7 @@ func TestRepos_List_pagination(t *testing.T) {
 		{Name: "r3"},
 	}
 	for _, repo := range createdRepos {
-		mustCreate(ctx, t, db, repo, types.CloneStatusNotCloned)
+		mustCreate(ctx, t, db, repo)
 	}
 
 	type testcase struct {
@@ -1065,11 +1233,11 @@ func TestRepos_List_useOr(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
-	archived = mustCreate(ctx, t, db, archived[0], types.CloneStatusNotCloned)
+	archived = mustCreate(ctx, t, db, archived[0])
 	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
-	forks = mustCreate(ctx, t, db, forks[0], types.CloneStatusNotCloned)
+	forks = mustCreate(ctx, t, db, forks[0])
 	cloned := types.Repos{types.MakeGithubRepo()}
-	cloned = mustCreate(ctx, t, db, cloned[0], types.CloneStatusCloned)
+	cloned = mustCreateGitserverRepo(ctx, t, db, cloned[0], types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	archivedAndForks := append(archived, forks...)
 	sort.Sort(archivedAndForks)
@@ -1181,7 +1349,7 @@ func TestRepos_ListRepoNames(t *testing.T) {
 
 	repo := mustCreate(ctx, t, db, &types.Repo{
 		Name: "name",
-	}, types.CloneStatusNotCloned)
+	})
 	want := []types.RepoName{{ID: repo[0].ID, Name: repo[0].Name}}
 
 	repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{})
@@ -1202,8 +1370,8 @@ func TestRepos_ListRepoNames_fork(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false}, types.CloneStatusNotCloned))
-	yours := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true}, types.CloneStatusNotCloned))
+	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false}))
+	yours := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "b/r", Fork: true}))
 
 	{
 		repos, err := Repos(db).ListRepoNames(ctx, ReposListOptions{OnlyForks: true})
@@ -1244,8 +1412,8 @@ func TestRepos_ListRepoNames_cloned(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r"}, types.CloneStatusNotCloned))
-	yours := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "b/r"}, types.CloneStatusCloned))
+	mine := repoNamesFromRepos(mustCreate(ctx, t, db, &types.Repo{Name: "a/r"}))
+	yours := repoNamesFromRepos(mustCreateGitserverRepo(ctx, t, db, &types.Repo{Name: "b/r"}, types.GitserverRepo{CloneStatus: types.CloneStatusCloned}))
 
 	tests := []struct {
 		name string
@@ -1278,10 +1446,10 @@ func TestRepos_ListRepoNames_ids(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo(), types.CloneStatusNotCloned))
-	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo(), types.CloneStatusNotCloned)...)
+	mine := types.Repos(mustCreate(ctx, t, db, types.MakeGithubRepo()))
+	mine = append(mine, mustCreate(ctx, t, db, types.MakeGitlabRepo())...)
 
-	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo(), types.CloneStatusNotCloned))
+	yours := types.Repos(mustCreate(ctx, t, db, types.MakeGitoliteRepo()))
 	all := append(mine, yours...)
 
 	tests := []struct {
@@ -1314,9 +1482,9 @@ func TestRepos_ListRepoNames_serviceTypes(t *testing.T) {
 	db := dbtest.NewDB(t, "")
 	ctx := actor.WithInternalActor(context.Background())
 
-	mine := mustCreate(ctx, t, db, types.MakeGithubRepo(), types.CloneStatusNotCloned)
-	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo(), types.CloneStatusNotCloned)
-	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo(), types.CloneStatusNotCloned)
+	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
+	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo())
+	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo())
 	both := append(mine, yours...)
 	all := append(both, others...)
 
@@ -1357,7 +1525,7 @@ func TestRepos_ListRepoNames_pagination(t *testing.T) {
 		{Name: "r3"},
 	}
 	for _, repo := range createdRepos {
-		mustCreate(ctx, t, db, repo, types.CloneStatusNotCloned)
+		mustCreate(ctx, t, db, repo)
 	}
 
 	type testcase struct {
@@ -1749,7 +1917,7 @@ func TestRepos_ListRepoNames_queryAndPatternsMutuallyExclusive(t *testing.T) {
 
 func TestRepos_ListRepoNames_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "options ExternalServiceIDs and UserID are mutually exclusive"
+	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
 
 	t.Parallel()
 	db := dbtest.NewDB(t, "")
@@ -1769,11 +1937,11 @@ func TestRepos_ListRepoNames_useOr(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := types.Repos{types.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })
-	archived = mustCreate(ctx, t, db, archived[0], types.CloneStatusNotCloned)
+	archived = mustCreate(ctx, t, db, archived[0])
 	forks := types.Repos{types.MakeGitoliteRepo()}.With(func(r *types.Repo) { r.Fork = true })
-	forks = mustCreate(ctx, t, db, forks[0], types.CloneStatusNotCloned)
+	forks = mustCreate(ctx, t, db, forks[0])
 	cloned := types.Repos{types.MakeGithubRepo()}
-	cloned = mustCreate(ctx, t, db, cloned[0], types.CloneStatusCloned)
+	cloned = mustCreateGitserverRepo(ctx, t, db, cloned[0], types.GitserverRepo{CloneStatus: types.CloneStatusCloned})
 
 	archivedAndForks := append(archived, forks...)
 	sort.Sort(archivedAndForks)
@@ -2329,7 +2497,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 }
 
 func initUserAndRepo(t *testing.T, ctx context.Context, db dbutil.DB) (*types.User, *types.Repo) {
-	id := rand.String(3)
+	id := rand.String(8)
 	user, err := Users(db).Create(ctx, NewUser{
 		Email:                 id + "@example.com",
 		Username:              "u" + id,

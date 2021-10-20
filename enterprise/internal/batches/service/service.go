@@ -60,6 +60,7 @@ type operations struct {
 	createBatchSpecFromRaw               *observation.Operation
 	enqueueBatchSpecResolution           *observation.Operation
 	executeBatchSpec                     *observation.Operation
+	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
 	createChangesetSpec                  *observation.Operation
 	getBatchChangeMatchingBatchSpec      *observation.Operation
@@ -107,6 +108,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			createBatchSpecFromRaw:               op("CreateBatchSpecFromRaw"),
 			enqueueBatchSpecResolution:           op("EnqueueBatchSpecResolution"),
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
+			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
 			getBatchChangeMatchingBatchSpec:      op("GetBatchChangeMatchingBatchSpec"),
@@ -269,8 +271,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 
 type createBatchSpecForExecutionOpts struct {
 	spec             *btypes.BatchSpec
-	allowIgnored     bool
 	allowUnsupported bool
+	allowIgnored     bool
 }
 
 // createBatchSpecForExecution persists the given BatchSpec in the given
@@ -278,6 +280,10 @@ type createBatchSpecForExecutionOpts struct {
 // importChangesets statements, and finally creating a BatchSpecResolutionJob.
 func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Store, opts createBatchSpecForExecutionOpts) error {
 	reposStore := tx.Repos()
+
+	opts.spec.CreatedFromRaw = true
+	opts.spec.AllowIgnored = opts.allowIgnored
+	opts.spec.AllowUnsupported = opts.allowUnsupported
 
 	if err := tx.CreateBatchSpec(ctx, opts.spec); err != nil {
 		return err
@@ -336,10 +342,8 @@ func (s *Service) createBatchSpecForExecution(ctx context.Context, tx *store.Sto
 
 	// Return spec and enqueue resolution
 	return tx.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:            btypes.BatchSpecResolutionJobStateQueued,
-		BatchSpecID:      opts.spec.ID,
-		AllowIgnored:     opts.allowIgnored,
-		AllowUnsupported: opts.allowUnsupported,
+		State:       btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID: opts.spec.ID,
 	})
 }
 
@@ -356,10 +360,8 @@ func (s *Service) EnqueueBatchSpecResolution(ctx context.Context, opts EnqueueBa
 	defer endObservation(1, observation.Args{})
 
 	return s.store.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-		State:            btypes.BatchSpecResolutionJobStateQueued,
-		BatchSpecID:      opts.BatchSpecID,
-		AllowIgnored:     opts.AllowIgnored,
-		AllowUnsupported: opts.AllowUnsupported,
+		State:       btypes.BatchSpecResolutionJobStateQueued,
+		BatchSpecID: opts.BatchSpecID,
 	})
 }
 
@@ -386,7 +388,9 @@ type ExecuteBatchSpecOpts struct {
 // It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
 // successfully.
 func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
-	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{})
+	ctx, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
@@ -421,11 +425,65 @@ func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpt
 		return nil, ErrBatchSpecResolutionErrored{resolutionJob.FailureMessage}
 
 	case btypes.BatchSpecResolutionJobStateCompleted:
-		return batchSpec, tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+		err = tx.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+		err = tx.MarkSkippedBatchSpecWorkspaces(ctx, batchSpec.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		return batchSpec, nil
 
 	default:
 		return nil, ErrBatchSpecResolutionIncomplete
 	}
+}
+
+var ErrBatchSpecNotCancelable = errors.New("batch spec is not in cancelable state")
+
+type CancelBatchSpecOpts struct {
+	BatchSpecRandID string
+}
+
+// CancelBatchSpec cancels all BatchSpecWorkspaceExecutionJobs associated with
+// the BatchSpec.
+func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
+	ctx, endObservation := s.operations.cancelBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	batchSpec, err = s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{RandID: opts.BatchSpecRandID})
+	if err != nil {
+		return nil, err
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.CheckNamespaceAccess(ctx, batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	state, err := computeBatchSpecState(ctx, tx, batchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if !state.Cancelable() {
+		return nil, ErrBatchSpecNotCancelable
+	}
+
+	cancelOpts := store.CancelBatchSpecWorkspaceExecutionJobsOpts{BatchSpecID: batchSpec.ID}
+	_, err = tx.CancelBatchSpecWorkspaceExecutionJobs(ctx, cancelOpts)
+	return batchSpec, err
 }
 
 type ReplaceBatchSpecInputOpts struct {
@@ -469,6 +527,12 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	}
 	defer func() { err = tx.Done(err) }()
 
+	// Delete ChangesetSpecs that are associated with BatchSpec.
+	err = tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		return nil, err
+	}
+
 	// Delete the previous batch spec, which should delete
 	// - batch_spec_resolution_jobs
 	// - batch_spec_workspaces
@@ -486,8 +550,8 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
-		allowIgnored:     opts.AllowIgnored,
 		allowUnsupported: opts.AllowUnsupported,
+		allowIgnored:     opts.AllowIgnored,
 	})
 }
 
@@ -1051,4 +1115,22 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 	return fmt.Sprintf(
 		"%d errors when validating changeset specs:\n%s\n",
 		len(es), strings.Join(points, "\n"))
+}
+
+func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	return computeBatchSpecState(ctx, s.store, batchSpec)
+}
+
+func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	statsMap, err := s.GetBatchSpecStats(ctx, []int64{spec.ID})
+	if err != nil {
+		return "", err
+	}
+
+	stats, ok := statsMap[spec.ID]
+	if !ok {
+		return "", store.ErrNoResults
+	}
+
+	return btypes.ComputeBatchSpecState(spec, stats), nil
 }

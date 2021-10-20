@@ -1,9 +1,11 @@
-import React, { FunctionComponent, useState } from 'react'
+import { debounce } from 'lodash'
+import React, { FunctionComponent, useState, useMemo } from 'react'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
 import { GitObjectPreview } from './GitObjectPreview'
 
+const DEBOUNCED_WAIT = 250
 export interface BranchTargetSettingsProps {
     repoId?: string
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -18,9 +20,10 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     disabled = false,
 }) => {
     const [pattern, setPattern] = useState(policy.pattern)
+    const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [])
 
     return (
-        <>
+        <div className="form-group">
             <div className="form-group">
                 <label htmlFor="name">Name</label>
                 <input
@@ -30,7 +33,9 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     value={policy.name}
                     onChange={({ target: { value } }) => setPolicy({ ...policy, name: value })}
                     disabled={disabled}
+                    required={true}
                 />
+                <small className="form-text text-muted">Required.</small>
             </div>
 
             <div className="form-group">
@@ -54,27 +59,33 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     disabled={disabled}
                 >
                     <option value="">Select Git object type</option>
-                    {repoId && <option value={GitObjectType.GIT_COMMIT}>Commit</option>}
+                    <option value={GitObjectType.GIT_COMMIT}>HEAD</option>
                     <option value={GitObjectType.GIT_TAG}>Tag</option>
                     <option value={GitObjectType.GIT_TREE}>Branch</option>
                 </select>
-            </div>
-            <div className="form-group">
-                <label htmlFor="pattern">Pattern</label>
-                <input
-                    id="pattern"
-                    type="text"
-                    className="form-control text-monospace"
-                    value={policy.pattern}
-                    onChange={({ target: { value } }) => {
-                        setPolicy({ ...policy, pattern: value })
-                        setPattern(value)
-                    }}
-                    disabled={disabled}
-                />
+                <small className="form-text text-muted">Required.</small>
             </div>
 
+            {policy.type !== GitObjectType.GIT_COMMIT && (
+                <div className="form-group">
+                    <label htmlFor="pattern">Pattern</label>
+                    <input
+                        id="pattern"
+                        type="text"
+                        className="form-control text-monospace"
+                        value={policy.pattern}
+                        onChange={({ target: { value } }) => {
+                            setPolicy({ ...policy, pattern: value })
+                            debouncedSetPattern(value)
+                        }}
+                        disabled={disabled}
+                        required={true}
+                    />
+                    <small className="form-text text-muted">Required.</small>
+                </div>
+            )}
+
             {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}
-        </>
+        </div>
     )
 }

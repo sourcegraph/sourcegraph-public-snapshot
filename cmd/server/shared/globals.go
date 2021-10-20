@@ -10,7 +10,7 @@ package shared
 //
 // The same data is currently reflected in the following (and should be kept in-sync):
 //   - the SRC_PROF_SERVICES envvar when using sg
-//   - the file dev/src-prof-services.json when using by using start.sh
+//   - the file dev/src-prof-services.json when using by using `sg start`
 var SrcProfServices = []map[string]string{
 	{"Name": "frontend", "Host": "127.0.0.1:6063"},
 	{"Name": "gitserver", "Host": "127.0.0.1:6068"},

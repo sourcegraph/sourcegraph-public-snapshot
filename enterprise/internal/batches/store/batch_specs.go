@@ -6,6 +6,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -24,6 +25,9 @@ var batchSpecColumns = []*sqlf.Query{
 	sqlf.Sprintf("batch_specs.namespace_user_id"),
 	sqlf.Sprintf("batch_specs.namespace_org_id"),
 	sqlf.Sprintf("batch_specs.user_id"),
+	sqlf.Sprintf("batch_specs.created_from_raw"),
+	sqlf.Sprintf("batch_specs.allow_unsupported"),
+	sqlf.Sprintf("batch_specs.allow_ignored"),
 	sqlf.Sprintf("batch_specs.created_at"),
 	sqlf.Sprintf("batch_specs.updated_at"),
 }
@@ -37,11 +41,14 @@ var batchSpecInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("namespace_user_id"),
 	sqlf.Sprintf("namespace_org_id"),
 	sqlf.Sprintf("user_id"),
+	sqlf.Sprintf("created_from_raw"),
+	sqlf.Sprintf("allow_unsupported"),
+	sqlf.Sprintf("allow_ignored"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 }
 
-const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s)`
+const batchSpecInsertColsFmt = `(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)`
 
 // CreateBatchSpec creates the given BatchSpec.
 func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
@@ -90,6 +97,9 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
+		c.CreatedFromRaw,
+		c.AllowUnsupported,
+		c.AllowIgnored,
 		c.CreatedAt,
 		c.UpdatedAt,
 		sqlf.Join(batchSpecColumns, ", "),
@@ -137,6 +147,9 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		nullInt32Column(c.NamespaceUserID),
 		nullInt32Column(c.NamespaceOrgID),
 		nullInt32Column(c.UserID),
+		c.CreatedFromRaw,
+		c.AllowUnsupported,
+		c.AllowIgnored,
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
@@ -416,6 +429,64 @@ func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
 	return s.Store.Exec(ctx, q)
 }
 
+func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[int64]btypes.BatchSpecStats, err error) {
+	stats = make(map[int64]btypes.BatchSpecStats)
+	q := getBatchSpecStatsQuery(ids)
+	err = s.query(ctx, q, func(sc scanner) error {
+		var (
+			s  btypes.BatchSpecStats
+			id int64
+		)
+		if err := sc.Scan(
+			&id,
+			&s.Workspaces,
+			&s.Executions,
+			&s.Completed,
+			&s.Processing,
+			&s.Queued,
+			&s.Failed,
+			&s.Canceled,
+			&s.Canceling,
+		); err != nil {
+			return err
+		}
+		stats[id] = s
+		return nil
+	})
+	return stats, err
+}
+
+func getBatchSpecStatsQuery(ids []int64) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("batch_specs.id = ANY(%s)", pq.Array(ids)),
+	}
+
+	return sqlf.Sprintf(
+		getBatchSpecStatsFmtstr,
+		sqlf.Join(preds, " AND "),
+	)
+}
+
+const getBatchSpecStatsFmtstr = `
+-- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpecStats
+SELECT
+	batch_specs.id AS batch_spec_id,
+	COUNT(ws.id) AS workspaces,
+	COUNT(jobs.id) AS executions,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'queued') AS queued,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = FALSE) AS failed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = TRUE) AS canceled,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
+FROM batch_specs
+LEFT JOIN batch_spec_workspaces ws ON ws.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_workspace_execution_jobs jobs ON jobs.batch_spec_workspace_id = ws.id
+WHERE
+	%s
+GROUP BY batch_specs.id
+`
+
 var deleteExpiredBatchSpecsQueryFmtstr = `
 -- source: enterprise/internal/batches/store.go:DeleteExpiredBatchSpecs
 DELETE FROM
@@ -441,6 +512,9 @@ func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
 		&dbutil.NullInt32{N: &c.NamespaceUserID},
 		&dbutil.NullInt32{N: &c.NamespaceOrgID},
 		&dbutil.NullInt32{N: &c.UserID},
+		&c.CreatedFromRaw,
+		&c.AllowUnsupported,
+		&c.AllowIgnored,
 		&c.CreatedAt,
 		&c.UpdatedAt,
 	)

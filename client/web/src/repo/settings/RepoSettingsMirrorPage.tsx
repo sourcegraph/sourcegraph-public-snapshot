@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import LockIcon from 'mdi-react/LockIcon'
 import * as React from 'react'
@@ -22,6 +23,7 @@ import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
 import { fetchSettingsAreaRepository } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
+import styles from './RepoSettingsMirrorPage.module.scss'
 
 interface UpdateMirrorRepositoryActionContainerProps {
     repo: SettingsAreaRepositoryFields
@@ -68,7 +70,7 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
                 </span>
             )
             buttonDisabled = true
-            info = <DirectImportRepoAlert className="action-container__alert" />
+            info = <DirectImportRepoAlert className={styles.alert} />
         } else if (this.props.repo.mirrorInfo.cloned) {
             const updateSchedule = this.props.repo.mirrorInfo.updateSchedule
             title = (
@@ -207,23 +209,23 @@ class CheckMirrorRepositoryConnectionActionContainer extends React.PureComponent
                 details={
                     <>
                         {this.state.errorDescription && (
-                            <ErrorAlert className="action-container__alert" error={this.state.errorDescription} />
+                            <ErrorAlert className={styles.alert} error={this.state.errorDescription} />
                         )}
                         {this.state.loading && (
-                            <div className="alert alert-primary action-container__alert mb-0">
+                            <div className={classNames('alert alert-primary mb-0', styles.alert)}>
                                 <LoadingSpinner className="icon-inline" /> Checking connection...
                             </div>
                         )}
                         {this.state.result &&
                             (this.state.result.error === null ? (
-                                <div className="alert alert-success action-container__alert mb-0">
+                                <div className={classNames('alert alert-success mb-0', styles.alert)}>
                                     The remote repository is reachable.
                                 </div>
                             ) : (
-                                <div className="alert alert-danger action-container__alert mb-0">
+                                <div className={classNames('alert alert-danger mb-0', styles.alert)}>
                                     <p>The remote repository is unreachable. Logs follow.</p>
                                     <div>
-                                        <pre className="check-mirror-repository-connection-action-container__log">
+                                        <pre className={styles.log}>
                                             <code>{this.state.result.error}</code>
                                         </pre>
                                     </div>
@@ -337,14 +339,14 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                         history={this.props.history}
                     />
                     {typeof this.state.reachable === 'boolean' && !this.state.reachable && (
-                        <div className="alert alert-info repo-settings-mirror-page__troubleshooting">
+                        <div className="alert alert-info">
                             Problems cloning or updating this repository?
-                            <ul className="repo-settings-mirror-page__steps">
-                                <li className="repo-settings-mirror-page__step">
+                            <ul className={styles.steps}>
+                                <li className={styles.step}>
                                     Inspect the <strong>Check connection</strong> error log output to see why the remote
                                     repository is not reachable.
                                 </li>
-                                <li className="repo-settings-mirror-page__step">
+                                <li className={styles.step}>
                                     <code>
                                         <strong>No ECDSA host key is known ... Host key verification failed?</strong>
                                     </code>{' '}
@@ -355,12 +357,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     for how to provide an SSH <code>known_hosts</code> file with the remote host's SSH
                                     host key.
                                 </li>
-                                <li className="repo-settings-mirror-page__step">
+                                <li className={styles.step}>
                                     Consult{' '}
                                     <Link to="/help/admin/repo/add">Sourcegraph repositories documentation</Link> for
                                     resolving other authentication issues (such as HTTPS certificates and SSH keys).
                                 </li>
-                                <li className="repo-settings-mirror-page__step">
+                                <li className={styles.step}>
                                     <FeedbackText headerText="Questions?" />
                                 </li>
                             </ul>

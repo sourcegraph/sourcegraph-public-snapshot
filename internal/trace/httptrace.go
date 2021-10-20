@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
+
 	"github.com/cockroachdb/errors"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
@@ -129,6 +131,11 @@ var slowPaths = map[string]time.Duration{
 	"/repo-update": 5 * time.Second,
 }
 
+var (
+	minDuration = env.MustGetDuration("SRC_HTTP_LOG_MIN_DURATION", 2*time.Second, "min duration before slow http requests are logged")
+	minCode     = env.MustGetInt("SRC_HTTP_LOG_MIN_CODE", 500, "min http code before http responses are logged")
+)
+
 // HTTPTraceMiddleware captures and exports metrics to Prometheus, etc.
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
@@ -207,15 +214,6 @@ func HTTPTraceMiddleware(next http.Handler) http.Handler {
 			return !gqlErr
 		})
 
-		minCode, _ := strconv.Atoi(os.Getenv("SRC_HTTP_LOG_MIN_CODE"))
-		if minCode == 0 {
-			minCode = 500
-		}
-
-		minDuration, _ := time.ParseDuration(os.Getenv("SRC_HTTP_LOG_MIN_DURATION"))
-		if minDuration == 0 {
-			minDuration = time.Second
-		}
 		if customDuration, ok := slowPaths[r.URL.Path]; ok {
 			minDuration = customDuration
 		}

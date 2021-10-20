@@ -185,9 +185,8 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			if opt2.LimitOffset == nil {
 				break
 			} else {
-				// check if we filtered some repos and if
-				// we need to get more from the DB
-				if len(repos) >= r.opt.Limit || reposFromDB < r.opt.Limit {
+				// check if we filtered some repos and if we need to get more from the DB
+				if len(repos) >= opt2.Limit || reposFromDB < opt2.Limit {
 					break
 				}
 				opt2.Offset += opt2.Limit
@@ -218,6 +217,10 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	if r.opt.UserID != 0 {
 		// 🚨 SECURITY: If filtering by user, restrict to that user
 		if err := backend.CheckSameUser(ctx, r.opt.UserID); err != nil {
+			return nil, err
+		}
+	} else if r.opt.OrgID != 0 {
+		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {

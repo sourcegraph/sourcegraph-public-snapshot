@@ -120,7 +120,7 @@ export const parseAnd = (tokens: Token[]): State => {
         return { result: left.result, tokens }
     }
     if (left.tokens[0] === undefined) {
-        return { result: left.result, tokens }
+        return { result: left.result, tokens: [] }
     }
     if (!(left.tokens[0].type === 'keyword' && left.tokens[0].kind === KeywordKind.And)) {
         return { result: left.result, tokens: left.tokens }
@@ -146,7 +146,7 @@ export const parseOr = (tokens: Token[]): State => {
         return { result: left.result, tokens }
     }
     if (left.tokens[0] === undefined) {
-        return { result: left.result, tokens }
+        return { result: left.result, tokens: [] }
     }
     if (!(left.tokens[0].type === 'keyword' && left.tokens[0].kind === KeywordKind.Or)) {
         return { result: left.result, tokens: left.tokens }

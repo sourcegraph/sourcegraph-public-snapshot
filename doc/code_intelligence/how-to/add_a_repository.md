@@ -22,7 +22,7 @@ img.screenshot {
     <img src="https://sourcegraphstatic.com/docs/images/code-intelligence/add-repo-site-admin.png" class="screenshot">
     
 
-2. In the **_Repositories_** section in the left bar, click on **_Manage repositories_**. If you have already configured a GitHub code host connection, click on the **_Edit_** button and skip to **step 5**. If you haven’t, click on **_Add repositories_**.
+2. In the **_Repositories_** section in the left bar, click on **_Manage code hosts_**. If you have already configured a GitHub code host connection, click on the **_Edit_** button and skip to **step 5**. If you haven’t, click on **_Add code host_**.
     <img src="https://sourcegraphstatic.com/docs/images/code-intelligence/manage-repositories.png" class="screenshot">
 
 3. Click on the **_Github_** option. 

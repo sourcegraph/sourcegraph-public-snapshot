@@ -17,15 +17,7 @@ type MatchedCommit struct {
 }
 
 // Merge merges another CommitHighlights into this one, returning the result.
-func (c *MatchedCommit) Merge(other *MatchedCommit) *MatchedCommit {
-	if c == nil {
-		return other
-	}
-
-	if other == nil {
-		return c
-	}
-
+func (c MatchedCommit) Merge(other MatchedCommit) MatchedCommit {
 	c.Message = c.Message.Merge(other.Message)
 
 	if c.Diff == nil {
@@ -37,6 +29,16 @@ func (c *MatchedCommit) Merge(other *MatchedCommit) *MatchedCommit {
 	}
 
 	return c
+}
+
+// ConstrainToMatched constrains a MatchedCommit by deleting any match ranges for file
+// diffs not included in the provided matchedFileDiffs.
+func (c *MatchedCommit) ConstrainToMatched(matchedFileDiffs map[int]struct{}) {
+	for i := range c.Diff {
+		if _, ok := matchedFileDiffs[i]; !ok {
+			delete(c.Diff, i)
+		}
+	}
 }
 
 type MatchedFileDiff struct {
