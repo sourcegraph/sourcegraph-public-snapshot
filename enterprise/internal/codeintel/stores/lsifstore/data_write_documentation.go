@@ -272,7 +272,7 @@ func (s *Store) WriteDocumentationSearchPrework(ctx context.Context, upload dbst
 		return 0, 0, nil
 	}
 
-	if conf.APIDocsSearchIndexingEnabled() {
+	if !conf.APIDocsSearchIndexingEnabled() {
 		// We will not use these values within WriteDocumentationPages
 		return 0, 0, nil
 	}
