@@ -272,7 +272,7 @@ func createGitHubExternalService(t *testing.T, db dbutil.DB, userID int32) *type
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
+func TestRepos_List_checkPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -531,7 +531,7 @@ VALUES
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
+func TestRepos_List_permissionsUserMapping(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
