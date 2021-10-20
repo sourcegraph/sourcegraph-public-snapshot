@@ -248,10 +248,10 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 	if opts.Type != "" {
 		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
 			// Check that externalID is not empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL"))
 		} else {
 			// Check that externalID is empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL"))
 		}
 	}
 
@@ -396,10 +396,10 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	if opts.Type != "" {
 		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
 			// Check that externalID is not empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL"))
 		} else {
 			// Check that externalID is empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL"))
 		}
 	}
 

@@ -615,6 +615,22 @@ type ExternalIdentity struct {
 	Type           string `json:"type"`
 }
 
+// FusionClient description: Configuration for the experimental p4-fusion client
+type FusionClient struct {
+	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
+	Enabled bool `json:"enabled,omitempty"`
+	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
+	LookAhead int `json:"lookAhead"`
+	// NetworkThreads description: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
+	NetworkThreads int `json:"networkThreads,omitempty"`
+	// PrintBatch description: The p4 print batch size
+	PrintBatch int `json:"printBatch,omitempty"`
+	// Refresh description: How many times a connection should be reused before it is refreshed
+	Refresh int `json:"refresh,omitempty"`
+	// Retries description: How many times a command should be retried before the process exits in a failure
+	Retries int `json:"retries,omitempty"`
+}
+
 // GitCommitAuthor description: The author of the Git commit.
 type GitCommitAuthor struct {
 	// Email description: The Git commit author email.
@@ -1179,6 +1195,8 @@ type PerforceConnection struct {
 	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
 	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
 	Depots []string `json:"depots,omitempty"`
+	// FusionClient description: Configuration for the experimental p4-fusion client
+	FusionClient *FusionClient `json:"fusionClient,omitempty"`
 	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
 	MaxChanges float64 `json:"maxChanges,omitempty"`
 	// P4Client description: Client specified as an option for p4 CLI (P4CLIENT, also enables '--use-client-spec')
