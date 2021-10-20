@@ -58,7 +58,10 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
-    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting('signup.finishedWelcomeFlow', false)
+    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
+        'signup.finishedWelcomeFlow',
+        false
+    )
 
     const isOAuthCall = useRef(false)
     const location = useLocation()
@@ -72,7 +75,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
 
     // if the welcome flow was already finished - navigate to search
     if (didUserFinishWelcomeFlow) {
-         goToSearch()
+        goToSearch()
     }
 
     const finishWelcomeFlow: FinishWelcomeFlow = (event, { eventName, tabNumber }) => {
