@@ -32,7 +32,7 @@ const migrations: Migration[] = [
     },
     {
         localStorageKey: 'finished-welcome-flow',
-        temporarySettingsKey: 'auth.finishedSignupFlow',
+        temporarySettingsKey: 'signup.finishedWelcomeFlow',
         type: 'boolean',
     },
 ]

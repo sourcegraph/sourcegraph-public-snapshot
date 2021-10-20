@@ -58,7 +58,7 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
-    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting('auth.finishedSignupFlow', false)
+    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting('signup.finishedWelcomeFlow', false)
 
     const isOAuthCall = useRef(false)
     const location = useLocation()
