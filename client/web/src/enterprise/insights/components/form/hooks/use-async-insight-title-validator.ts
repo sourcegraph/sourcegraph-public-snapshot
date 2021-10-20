@@ -6,19 +6,28 @@ import { AsyncValidator } from './utils/use-async-validation'
 
 interface Props {
     initialTitle?: string
+    mode: 'creation' | 'edit'
 }
 
 export function useAsyncInsightTitleValidator(props: Props): AsyncValidator<string> {
-    const { initialTitle } = props
+    const { initialTitle, mode } = props
     const { findInsightByName } = useContext(CodeInsightsBackendContext)
 
     return useCallback<AsyncValidator<string>>(
-        async title => {
-            if (!title || title.trim() === '' || title === initialTitle) {
+        async value => {
+            const insightTitle = value?.trim() ?? ''
+
+            if (insightTitle === '') {
                 return
             }
 
-            const possibleInsight = await findInsightByName({ name: title }).toPromise()
+            // If a user edits existing insight it's ok if they save insight
+            // with the same name
+            if (mode === 'edit' && insightTitle === initialTitle) {
+                return
+            }
+
+            const possibleInsight = await findInsightByName({ name: insightTitle }).toPromise()
 
             if (possibleInsight) {
                 return 'An insight with this name already exists. Please set a different name for the new insight.'
@@ -26,6 +35,6 @@ export function useAsyncInsightTitleValidator(props: Props): AsyncValidator<stri
 
             return
         },
-        [findInsightByName, initialTitle]
+        [mode, initialTitle, findInsightByName]
     )
 }
