@@ -92,7 +92,6 @@ OR  (                             -- Restricted repositories require checking pe
 		WHERE repo_id = repo.id
 		AND (
 				user_id IS NULL
-			OR  user_id = 0
 			OR  user_id = %s
 		)
 	)
