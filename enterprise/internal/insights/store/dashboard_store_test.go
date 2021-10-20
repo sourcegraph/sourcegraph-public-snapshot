@@ -265,8 +265,11 @@ func TestDeleteDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterDelete", []*types.Dashboard{{
-			ID:    2,
-			Title: "test dashboard 2",
+			ID:           2,
+			Title:        "test dashboard 2",
+			UserIdGrants: []int64{},
+			OrgIdGrants:  []int64{},
+			GlobalGrant:  true,
 		}}).Equal(t, got)
 	})
 }
