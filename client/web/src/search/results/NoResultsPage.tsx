@@ -6,6 +6,7 @@ import React, { useCallback } from 'react'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
@@ -46,49 +47,55 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     showSearchContext,
     query,
     patternType = SearchPatternType.literal,
-}) => (
-    <div className={styles.searchInputExample}>
-        <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchBox)}>
-            <div
-                className={classNames(
-                    searchBoxStyle.searchBoxBackgroundContainer,
-                    styles.fakeSearchBoxBackgroundContainer,
-                    'flex-shrink-past-contents'
-                )}
-            >
-                {showSearchContext && <SearchContext />}
+}) => {
+    const builtURLQuery = buildSearchURLQuery(query, patternType, false, undefined, 'global')
+    return (
+        <div className={styles.searchInputExample}>
+            <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchBox)}>
                 <div
                     className={classNames(
-                        searchBoxStyle.searchBoxFocusContainer,
-                        styles.fakeSearchBoxFocusContainer,
+                        searchBoxStyle.searchBoxBackgroundContainer,
+                        styles.fakeSearchBoxBackgroundContainer,
                         'flex-shrink-past-contents'
                     )}
                 >
+                    {showSearchContext && <SearchContext />}
                     <div
                         className={classNames(
-                            searchBoxStyle.searchBoxInput,
-                            styles.fakeSearchInput,
+                            searchBoxStyle.searchBoxFocusContainer,
+                            styles.fakeSearchBoxFocusContainer,
                             'flex-shrink-past-contents'
                         )}
                     >
-                        <SyntaxHighlightedSearchQuery query={query} />
+                        <div
+                            className={classNames(
+                                searchBoxStyle.searchBoxInput,
+                                styles.fakeSearchInput,
+                                'flex-shrink-past-contents'
+                            )}
+                        >
+                            <SyntaxHighlightedSearchQuery query={query} />
+                        </div>
+                    </div>
+                    <div className={styles.fakeSearchBoxToggles}>
+                        <Toggles
+                            navbarSearchQuery={query}
+                            caseSensitive={false}
+                            patternType={patternType}
+                            setCaseSensitivity={noop}
+                            setPatternType={noop}
+                            settingsCascade={{ subjects: null, final: {} }}
+                            versionContext={undefined}
+                        />
                     </div>
                 </div>
-                <div className={styles.fakeSearchBoxToggles}>
-                    <Toggles
-                        navbarSearchQuery={query}
-                        caseSensitive={false}
-                        patternType={patternType}
-                        setCaseSensitivity={noop}
-                        setPatternType={noop}
-                        settingsCascade={{ subjects: null, final: {} }}
-                        versionContext={undefined}
-                    />
-                </div>
             </div>
+            <Link className="ml-1" to={{ pathname: '/search', search: builtURLQuery }}>
+                Run&nbsp;Search
+            </Link>
         </div>
-    </div>
-)
+    )
+}
 
 interface ContainerProps {
     sectionID?: SectionID

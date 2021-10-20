@@ -13,9 +13,6 @@
     margin-right: 1rem;
 }
 
-.container {
-}
-
 .videoContainer figcaption {
     text-align: center;
 }
@@ -60,6 +57,19 @@
 .searchInputExample {
     display: flex;
     margin-bottom: 1rem;
+    align-items: center;
+
+    @media (--xs-breakpoint-down) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.fakeSearchBox {
+    @media (--xs-breakpoint-down) {
+        background-color: var(--body-bg);
+        margin-bottom: 0.25rem;
+    }
 }
 
 .searchContext {
@@ -77,18 +87,14 @@
     }
 }
 
-.fakeSearchBox {
-    @media (--xs-breakpoint-down) {
-        background-color: var(--body-bg);
-    }
-}
-
 .fakeSearchBoxBackgroundContainer {
     background-color: var(--body-bg);
+    border-right-color: var(--input-border-color);
+    border-radius: 3px;
 
     @media (--sm-breakpoint-up) {
         display: flex;
-        padding: 0.25rem 0;
+        padding: 0.25rem 0.5rem 0.25rem 0;
     }
 }
 
@@ -105,7 +111,8 @@
 
     @media (--xs-breakpoint-down) {
         background-color: var(--input-bg);
-        display: block;
+        white-space: inherit;
+        overflow-x: inherit;
     }
 }
 
