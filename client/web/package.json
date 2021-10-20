@@ -38,8 +38,18 @@
   },
   "bundlesize": [
     {
-      "path": "../../ui/assets/scripts/*.bundle.js",
+      "path": "../../ui/assets/scripts/app.*.js",
       "maxSize": "600kb",
+      "compression": "brotli"
+    },
+    {
+      "path": "../../ui/assets/scripts/runtime.*.js",
+      "maxSize": "10kb",
+      "compression": "brotli"
+    },
+    {
+      "path": "../../ui/assets/scripts/npm.*.js",
+      "maxSize": "200kb",
       "compression": "brotli"
     },
     {

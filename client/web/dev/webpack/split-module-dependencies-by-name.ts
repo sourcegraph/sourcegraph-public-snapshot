@@ -10,5 +10,5 @@ export const splitModuleDependenciesByName = (module: Module): string => {
     }
 
     // npm package names are URL-safe, but some servers don't like @ symbols
-    return `npm.${packageName[1].replace('@', '')}`
+    return `npm.${packageName.replace('@', '')}`
 }
