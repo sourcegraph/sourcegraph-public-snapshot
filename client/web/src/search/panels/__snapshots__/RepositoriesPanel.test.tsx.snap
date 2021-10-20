@@ -14,8 +14,8 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
   <PanelContainer
     className="repositories-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -54,7 +54,7 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
             />
           </p>
         </small>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -106,19 +106,19 @@ exports[`RepositoriesPanel Both r: and repo: filters are tracked 1`] = `
     title="Repositories"
   >
     <div
-      className="repositories-panel panel-container d-flex flex-column"
+      className="repositories-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Repositories
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <div
           className="mt-2"
@@ -215,8 +215,8 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
   <PanelContainer
     className="repositories-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -255,7 +255,7 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
             />
           </p>
         </small>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -325,19 +325,19 @@ exports[`RepositoriesPanel Show More button is shown if more pages are available
     title="Repositories"
   >
     <div
-      className="repositories-panel panel-container d-flex flex-column"
+      className="repositories-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Repositories
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <div
           className="mt-2"
@@ -483,8 +483,8 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
   <PanelContainer
     className="repositories-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -523,7 +523,7 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
             />
           </p>
         </small>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -631,19 +631,19 @@ exports[`RepositoriesPanel Show More button loads more items 1`] = `
     title="Repositories"
   >
     <div
-      className="repositories-panel panel-container d-flex flex-column"
+      className="repositories-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Repositories
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <div
           className="mt-2"
@@ -868,8 +868,8 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
   <PanelContainer
     className="repositories-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -908,7 +908,7 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
             />
           </p>
         </small>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -960,19 +960,19 @@ exports[`RepositoriesPanel consecutive searches with identical repo filters are 
     title="Repositories"
   >
     <div
-      className="repositories-panel panel-container d-flex flex-column"
+      className="repositories-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Repositories
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <div
           className="mt-2"
