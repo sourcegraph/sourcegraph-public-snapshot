@@ -29,6 +29,7 @@
   "scripts": {
     "eslint": "eslint --cache '**/*.[jt]s?(x)'",
     "build": "webpack",
+    "watch": "webpack --watch",
     "test": "echo \"No tests exist yet\" && exit 1"
   }
 }

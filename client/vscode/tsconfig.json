@@ -2,8 +2,8 @@
   "extends": "@sourcegraph/tsconfig",
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es6",
-    "lib": ["es6"],
+    "target": "es2020",
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
     "sourceMap": true,
     "sourceRoot": "src",
     "baseUrl": "./src",

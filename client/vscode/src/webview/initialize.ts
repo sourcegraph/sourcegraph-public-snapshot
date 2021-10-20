@@ -4,15 +4,23 @@ import * as Comlink from 'comlink'
 import vscode from 'vscode'
 
 import { SourcegraphVSCodeExtensionAPI, SourcegraphVSCodeWebviewAPI } from './contract'
+import { vscodeExtensionEndpoint } from './platform/extensionEndpoint'
 
 interface SourcegraphWebviewConfig {
     extensionPath: string
     route: 'search'
     id: string
     title: string
+    sourcegraphVSCodeExtensionAPI: SourcegraphVSCodeExtensionAPI
 }
 
-export function initializeWebview({ extensionPath, route, id, title }: SourcegraphWebviewConfig): void {
+export function initializeWebview({
+    extensionPath,
+    route,
+    id,
+    title,
+    sourcegraphVSCodeExtensionAPI,
+}: SourcegraphWebviewConfig): void {
     const panel = vscode.window.createWebviewPanel(id, title, vscode.ViewColumn.One, {
         enableScripts: true,
     })
@@ -29,13 +37,7 @@ export function initializeWebview({ extensionPath, route, id, title }: Sourcegra
     )
 
     // Expose the Sourcegraph VS Code Extension API to the Webview.
-    const sourcegraphVSCodeExtensionAPI: SourcegraphVSCodeExtensionAPI = {
-        ping: () => 'pong!',
-    }
-
     Comlink.expose(sourcegraphVSCodeExtensionAPI, vscodeExtensionEndpoint(panel, 'extension'))
-
-    console.log('msgchan', globalThis.MessageChannel)
 
     // TODO security
     panel.webview.html = `<!DOCTYPE html>
@@ -43,7 +45,7 @@ export function initializeWebview({ extensionPath, route, id, title }: Sourcegra
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta http-equiv="Content-Security-Policy" content="default-src self; img-src vscode-resource:; script-src vscode-resource: 'self' 'unsafe-inline'; style-src vscode-resource: 'self' 'unsafe-inline'; "/>
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src vscode-resource:;style-src vscode-resource: 'unsafe-inline' http: https: data:; connect-src 'self' http: https:;">
         <title>Sourcegraph Search</title>
         <link rel="stylesheet" href="${styleSource.toString()}" />
         <link rel="stylesheet" href="${cssModuleSource.toString()}" />
@@ -58,37 +60,4 @@ export function initializeWebview({ extensionPath, route, id, title }: Sourcegra
         () => {},
         () => {}
     )
-}
-
-/**
- * TODO explain
- */
-function vscodeExtensionEndpoint(
-    panel: vscode.WebviewPanel,
-    connectionType: 'webview' | 'extension'
-): Comlink.Endpoint {
-    // TODO return endpoint and disposable fn to add to top level disposable?
-    const listenerDisposables = new WeakMap<EventListenerOrEventListenerObject, vscode.Disposable>()
-
-    return {
-        postMessage: (message: any) => panel.webview.postMessage({ ...message, connectionType }),
-        addEventListener: (type, listener) => {
-            function onMessage(message: any): void {
-                if (message?.connectionType === connectionType) {
-                    // Comlink is listening for a message event, only uses the `data` property.
-                    const messageEvent = {
-                        data: message,
-                    } as MessageEvent
-
-                    return typeof listener === 'function' ? listener(messageEvent) : listener.handleEvent(messageEvent)
-                }
-            }
-
-            const disposable = panel.webview.onDidReceiveMessage(onMessage)
-            listenerDisposables.set(listener, disposable)
-        },
-        removeEventListener: (type, listener) => {
-            listenerDisposables.delete(listener)
-        },
-    }
 }

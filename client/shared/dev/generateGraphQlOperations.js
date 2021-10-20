@@ -8,6 +8,7 @@ const ROOT_FOLDER = path.resolve(__dirname, '../../../')
 
 const WEB_FOLDER = path.resolve(ROOT_FOLDER, './client/web')
 const BROWSER_FOLDER = path.resolve(ROOT_FOLDER, './client/browser')
+const VSCODE_FOLDER = path.resolve(ROOT_FOLDER, './client/vscode')
 const SHARED_FOLDER = path.resolve(ROOT_FOLDER, './client/shared')
 const SCHEMA_PATH = path.join(ROOT_FOLDER, './cmd/frontend/graphqlbackend/*.graphql')
 
@@ -29,8 +30,12 @@ const BROWSER_DOCUMENTS_GLOB = [
   '!**/*.d.ts',
 ]
 
+const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
+
 // Define ALL_DOCUMENTS_GLOB as the union of the previous glob arrays.
-const ALL_DOCUMENTS_GLOB = [...new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB])]
+const ALL_DOCUMENTS_GLOB = [
+  ...new Set([...SHARED_DOCUMENTS_GLOB, ...WEB_DOCUMENTS_GLOB, ...BROWSER_DOCUMENTS_GLOB, ...VSCODE_DOCUMENTS_GLOB]),
+]
 
 const SHARED_PLUGINS = [
   `${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`,
@@ -105,6 +110,17 @@ async function generateGraphQlOperations() {
             interfaceNameForOperations: 'SharedGraphQlOperations',
           },
           plugins: [...SHARED_PLUGINS, 'typescript-apollo-client-helpers'],
+        },
+
+        [path.join(VSCODE_FOLDER, './src/graphql-operations.ts')]: {
+          documents: VSCODE_DOCUMENTS_GLOB,
+          config: {
+            onlyOperationTypes: true,
+            noExport: false,
+            enumValues: '@sourcegraph/shared/src/graphql-operations',
+            interfaceNameForOperations: 'VSCodeGraphQlOperations',
+          },
+          plugins: SHARED_PLUGINS,
         },
       },
     },
