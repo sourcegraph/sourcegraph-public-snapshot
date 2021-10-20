@@ -73,7 +73,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	)
 	numDocumentSearchRecordsRemoved := counter(
 		"src_codeintel_background_documentation_search_records_removed_total",
-		"The number of documentation search records were removed.",
+		"The number of documentation search records removed.",
 	)
 	numErrors := counter(
 		"src_codeintel_background_errors_total",
