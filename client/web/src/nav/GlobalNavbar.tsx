@@ -3,7 +3,6 @@ import * as H from 'history'
 import BarChartIcon from 'mdi-react/BarChartIcon'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import React, { useEffect, useMemo } from 'react'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
@@ -223,8 +222,9 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
             >
                 <NavGroup>
                     <NavDropdown
+                        toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
                         items={[
-                            { path: '/search', content: 'Code Search', icon: MagnifyIcon },
+                            { path: '/search', content: 'Search home' },
                             {
                                 path: '/contexts',
                                 content: (
@@ -232,7 +232,6 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                                         Contexts <Badge className="ml-1" status="new" />
                                     </>
                                 ),
-                                icon: SourceRepositoryMultipleIcon,
                             },
                         ]}
                     />

@@ -12,21 +12,20 @@ import navItemStyles from './NavItem.module.scss'
 import { NavItem, NavLink } from '.'
 
 interface NavDropdownItem {
-    icon: React.ComponentType<{ className?: string }>
     content: React.ReactNode | string
     path: string
 }
 
 interface NavDropdownProps {
-    // Items to display in the dropdown. The first item will be used as the dropdown toggle.
+    toggleItem: NavDropdownItem & { icon: React.ComponentType<{ className?: string }> }
+    // Items to display in the dropdown.
     items: NavDropdownItem[]
 }
 
-export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ items }) => {
+export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, items }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggle = (): void => setIsDropdownOpen(!isDropdownOpen)
 
-    const toggleItem = items[0]
     const location = useLocation()
     const isItemSelected = useMemo(() => items.some(item => location.pathname.startsWith(item.path)), [
         items,
@@ -63,14 +62,14 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ items }
                         </span>
                     </DropdownToggle>
                     <DropdownMenu>
-                        {items.map(item => (
+                        {items.map((item, index) => (
                             <Link
                                 key={item.path}
                                 to={item.path}
                                 className="dropdown-item"
                                 onClick={() => setIsDropdownOpen(false)}
                             >
-                                <item.icon className="icon-inline" /> {item.content}
+                                <span className={classNames(index !== 0 && 'pl-2')}>{item.content}</span>
                             </Link>
                         ))}
                     </DropdownMenu>
@@ -83,7 +82,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ items }
             </NavItem>
             {/* Render the rest of the items and indent them to indicate a hierarchical structure */}
             {items.slice(1).map(item => (
-                <NavItem key={item.path} icon={item.icon} className="d-flex d-md-none">
+                <NavItem key={item.path} className="d-flex d-md-none">
                     <NavLink to={item.path} className="pl-2">
                         {item.content}
                     </NavLink>
