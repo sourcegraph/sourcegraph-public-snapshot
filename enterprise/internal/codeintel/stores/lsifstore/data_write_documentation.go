@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -266,6 +267,8 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}})
 	defer endObservation(1, observation.Args{})
 
+	now := timeutil.Now()
+
 	tableSuffix := "public"
 	if repo.Private {
 		tableSuffix = "private"
@@ -295,7 +298,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return errors.Wrap(err, "upsertTags")
 	}
 
-	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix); err != nil {
+	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix, now); err != nil {
 		return errors.Wrap(err, "replaceSearchRecords")
 	}
 
@@ -403,6 +406,7 @@ func (s *Store) replaceSearchRecords(
 	pages []*precise.DocumentationPageData,
 	tagIDs map[string]int,
 	tableSuffix string,
+	now time.Time,
 ) error {
 	tx, err := s.Transact(ctx)
 	if err != nil {
@@ -488,11 +492,13 @@ func (s *Store) replaceSearchRecords(
 		upload.Root,         // dump_root
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
-		// For deletion
+
+		// For current marker update
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
+		now,                 // last_cleanup_scan_at
 	)); err != nil {
 		return errors.Wrap(err, "committing staged search records")
 	}
@@ -551,29 +557,17 @@ ins AS (
 		source.label_tsv,
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
-	RETURNING 1
-),
-deletion_candidates AS (
-	SELECT id
-	FROM lsif_data_docs_search_$SUFFIX
-	WHERE
-		repo_id = %s AND
-		dump_root = %s AND
-		lang_name_id = %s AND
-		dump_id != %s
-
-	-- Lock these rows in a deterministic order so that we don't deadlock with other processes
-	-- updating the lsif_data_docs_search_* tables.
-	ORDER BY id FOR UPDATE
-),
-del AS (
-	DELETE FROM lsif_data_docs_search_$SUFFIX
-	WHERE id IN (SELECT id FROM deletion_candidates)
-	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM ins) AS num_ins,
-	(SELECT COUNT(*) FROM del) AS num_del
+INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+	repo_id,
+	dump_root,
+	lang_name_id,
+	dump_id,
+	last_cleanup_scan_at
+)
+VALUES (%s, %s, %s, %s, %s)
+ON CONFLICT (repo_id, dump_root, lang_name_id)
+DO UPDATE SET dump_id = EXCLUDED.dump_id
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
