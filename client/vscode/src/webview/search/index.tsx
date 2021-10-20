@@ -40,11 +40,6 @@ const searchQuery = gql`
 `
 
 export const SearchPage: React.FC<SearchPageProps> = ({ platformContext }) => {
-    console.log('test', window.location.pathname)
-
-    // TODO: Can't use streaming search without CORS proxy (can't take access token header)
-    // No cookies in webview.
-
     const searchResults = useObservable(
         useMemo(
             () =>
@@ -62,7 +57,8 @@ export const SearchPage: React.FC<SearchPageProps> = ({ platformContext }) => {
     return (
         <div className={styles.title}>
             <h1>SearchWebview</h1>
-            <input type="text" placeholder="NEW SEARCH" />
+            <input type="text" placeholder="Search" />
+
             <SearchResults />
         </div>
     )

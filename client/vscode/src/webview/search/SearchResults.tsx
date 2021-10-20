@@ -3,11 +3,11 @@ import React from 'react'
 import styles from './SearchResults.module.scss'
 
 export const SearchResults: React.FC = () => {
-    console.log('test results')
+    console.log('')
 
     return (
         <div className={styles.result}>
-            <p>test results</p>
+            <p>Search results</p>
         </div>
     )
 }

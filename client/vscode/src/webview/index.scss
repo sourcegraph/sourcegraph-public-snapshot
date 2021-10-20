@@ -1,3 +1,5 @@
+@import '../../../branded/src/global-styles/colors';
+
 h1 {
-    color: blue;
+    color: var(--primary);
 }
