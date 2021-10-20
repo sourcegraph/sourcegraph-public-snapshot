@@ -81,7 +81,7 @@ export function createExtensionAPIFactory(
             return state.roots.value
         },
         get versionContext() {
-            return state.versionContext
+            return undefined
         },
         get searchContext() {
             return state.searchContext

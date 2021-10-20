@@ -1,5 +1,5 @@
 import { proxy } from 'comlink'
-import { castArray, groupBy, identity, isEqual } from 'lodash'
+import { castArray, groupBy, identity, isEqual, noop } from 'lodash'
 import { combineLatest, concat, EMPTY, from, Observable, of, Subscribable, throwError } from 'rxjs'
 import {
     catchError,
@@ -104,10 +104,7 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             state.roots.next(Object.freeze(state.roots.value.filter(workspace => workspace.uri.href !== uri)))
             state.rootChanges.next()
         },
-        setVersionContext: context => {
-            state.versionContext = context
-            state.versionContextChanges.next(context)
-        },
+        setVersionContext: noop,
         setSearchContext: context => {
             state.searchContext = context
             state.searchContextChanges.next(context)
