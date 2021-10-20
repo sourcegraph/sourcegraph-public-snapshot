@@ -94,9 +94,9 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 ### Org-visible insights count (Total) 
 
-**Intended purpose:** To track how many insights are visible by more than just te creator of the insight. 
+**Intended purpose:** To track how many insights are visible by more than just the creator of the insight. 
 
-**Functional implementation:** TODO
+**Functional implementation:** we pull this out of the organization settings files (but this will change after the migration out of settings files). 
 
 **Other considerations:** We should migrate this ping to use the new database after we finish the settings migration. 
 
