@@ -110,23 +110,33 @@ func TestSerializeDocumentationPageData(t *testing.T) {
 func TestSerializeDocumentationPathInfoData(t *testing.T) {
 	testCases := []struct {
 		pathInfo *precise.DocumentationPathInfoData
-		want autogold.Value
+		want     autogold.Value
 	}{
 		{
 			pathInfo: &precise.DocumentationPathInfoData{
-				PathID: "/",
-				IsIndex: true,
+				PathID:   "/",
+				IsIndex:  true,
 				Children: []string{"/sub", "/sub/pkg", "/sub/pkg/sub/pkg"},
 			},
-			want: autogold.Want("basic", nil),
+			want: autogold.Want("basic", &precise.DocumentationPathInfoData{
+				PathID: "/", IsIndex: true,
+				Children: []string{
+					"/sub",
+					"/sub/pkg",
+					"/sub/pkg/sub/pkg",
+				},
+			}),
 		},
 		{
 			pathInfo: &precise.DocumentationPathInfoData{
-				PathID: "/",
-				IsIndex: true,
+				PathID:   "/",
+				IsIndex:  true,
 				Children: nil,
 			},
-			want: autogold.Want("nil children would be encoded as JSON array not null", nil),
+			want: autogold.Want("nil children would be encoded as JSON array not null", &precise.DocumentationPathInfoData{
+				PathID: "/", IsIndex: true,
+				Children: []string{},
+			}),
 		},
 	}
 	for _, tc := range testCases {
