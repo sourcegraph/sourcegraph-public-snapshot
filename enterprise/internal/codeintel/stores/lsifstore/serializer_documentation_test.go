@@ -5,8 +5,8 @@ import (
 
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Note: You can `go test ./pkg -update` to update the expected `want` values in these tests.
@@ -38,25 +38,56 @@ func TestSerializeDocumentationPageData(t *testing.T) {
 					},
 				},
 			},
-			want: autogold.Want("basic", nil),
+			want: autogold.Want("basic", &precise.DocumentationPageData{Tree: &precise.DocumentationNode{
+				PathID:        "/",
+				Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
+				Children: []precise.DocumentationNodeChild{
+					precise.DocumentationNodeChild{PathID: "/somelinkedpage"},
+					precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						PathID: "/#main",
+						Documentation: protocol.Documentation{
+							Tags: []protocol.Tag{},
+						},
+						Children: []precise.DocumentationNodeChild{},
+					}},
+					precise.DocumentationNodeChild{PathID: "/somelinkedpage2"},
+					precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						PathID:        "/subpkg",
+						Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
+						Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+							PathID:        "/subpkg#Router",
+							Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
+							Children:      []precise.DocumentationNodeChild{},
+						}}},
+					}},
+				},
+			}}),
 		},
 		{
 			page: &precise.DocumentationPageData{
 				Tree: &precise.DocumentationNode{
-					PathID: "/",
+					PathID:   "/",
 					Children: nil,
 				},
 			},
-			want: autogold.Want("nil children would be encoded as JSON array not null", nil),
+			want: autogold.Want("nil children would be encoded as JSON array not null", &precise.DocumentationPageData{Tree: &precise.DocumentationNode{
+				PathID:        "/",
+				Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
+				Children:      []precise.DocumentationNodeChild{},
+			}}),
 		},
 		{
 			page: &precise.DocumentationPageData{
 				Tree: &precise.DocumentationNode{
-					PathID: "/",
+					PathID:        "/",
 					Documentation: protocol.Documentation{},
 				},
 			},
-			want: autogold.Want("nil Documentation.Tags would be encoded as JSON array not null", nil),
+			want: autogold.Want("nil Documentation.Tags would be encoded as JSON array not null", &precise.DocumentationPageData{Tree: &precise.DocumentationNode{
+				PathID:        "/",
+				Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
+				Children:      []precise.DocumentationNodeChild{},
+			}}),
 		},
 	}
 	for _, tc := range testCases {
