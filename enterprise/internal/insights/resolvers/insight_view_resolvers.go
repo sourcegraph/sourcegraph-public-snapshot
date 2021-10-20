@@ -17,6 +17,7 @@ var _ graphqlbackend.LineChartDataSeriesPresentationResolver = &lineChartDataSer
 var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
+var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -27,7 +28,19 @@ func (i *insightViewResolver) ID() graphql.ID {
 }
 
 func (i *insightViewResolver) DefaultFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
-	panic("implement me")
+	return &insightViewFiltersResolver{view: i.view}, nil
+}
+
+type insightViewFiltersResolver struct {
+	view *types.Insight
+}
+
+func (i *insightViewFiltersResolver) IncludeRepoRegex(ctx context.Context) (*string, error) {
+	return i.view.Filters.IncludeRepoRegex, nil
+}
+
+func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*string, error) {
+	return i.view.Filters.ExcludeRepoRegex, nil
 }
 
 func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
