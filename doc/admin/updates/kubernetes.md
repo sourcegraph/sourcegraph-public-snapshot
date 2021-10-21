@@ -12,7 +12,7 @@ and any manual migration steps you must perform.
 
 ## 3.32 -> 3.33
 
-TODO
+No manual migration is required - follow the [standard upgrade procedure](../install/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
 
