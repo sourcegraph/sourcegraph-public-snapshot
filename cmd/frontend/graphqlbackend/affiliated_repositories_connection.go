@@ -168,8 +168,8 @@ func (r *codeHostRepositoryResolver) Private() bool {
 	return r.repo.Private
 }
 
-func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
-	return &externalServiceResolver{
+func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *ExternalServiceResolver {
+	return &ExternalServiceResolver{
 		db:              r.db,
 		externalService: r.codeHost,
 	}

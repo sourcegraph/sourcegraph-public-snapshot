@@ -76,12 +76,12 @@ func (r *statusMessageResolver) Message() (string, error) {
 	return "", errors.New("status message is of unknown type")
 }
 
-func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
+func (r *statusMessageResolver) ExternalService(ctx context.Context) (*ExternalServiceResolver, error) {
 	id := r.message.ExternalServiceSyncError.ExternalServiceId
 	externalService, err := database.ExternalServices(r.db).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalServiceResolver{db: r.db, externalService: externalService}, nil
+	return &ExternalServiceResolver{db: r.db, externalService: externalService}, nil
 }
