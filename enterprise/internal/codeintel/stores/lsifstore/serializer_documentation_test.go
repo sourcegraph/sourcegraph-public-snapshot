@@ -42,19 +42,19 @@ func TestSerializeDocumentationPageData(t *testing.T) {
 				PathID:        "/",
 				Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
 				Children: []precise.DocumentationNodeChild{
-					precise.DocumentationNodeChild{PathID: "/somelinkedpage"},
-					precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					{PathID: "/somelinkedpage"},
+					{Node: &precise.DocumentationNode{
 						PathID: "/#main",
 						Documentation: protocol.Documentation{
 							Tags: []protocol.Tag{},
 						},
 						Children: []precise.DocumentationNodeChild{},
 					}},
-					precise.DocumentationNodeChild{PathID: "/somelinkedpage2"},
-					precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+					{PathID: "/somelinkedpage2"},
+					{Node: &precise.DocumentationNode{
 						PathID:        "/subpkg",
 						Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
-						Children: []precise.DocumentationNodeChild{precise.DocumentationNodeChild{Node: &precise.DocumentationNode{
+						Children: []precise.DocumentationNodeChild{{Node: &precise.DocumentationNode{
 							PathID:        "/subpkg#Router",
 							Documentation: protocol.Documentation{Tags: []protocol.Tag{}},
 							Children:      []precise.DocumentationNodeChild{},
