@@ -296,8 +296,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--port", host,
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--bare", "true")
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -340,9 +339,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--port", host,
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--autoResume", "true",
-			"--bare", "true")
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
