@@ -503,11 +503,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	commitAfter, _ := q.StringValue(query.FieldRepoHasCommitAfter)
 	searchContextSpec, _ := q.StringValue(query.FieldContext)
 
-	var versionContextName string
-	if r.VersionContext != nil {
-		versionContextName = *r.VersionContext
-	}
-
 	var CacheLookup bool
 	if len(opts.effectiveRepoFieldValues) == 0 && opts.limit == 0 {
 		// indicates resolving repositories should cache DB lookups
@@ -515,31 +510,27 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	}
 
 	return search.RepoOptions{
-		RepoFilters:        repoFilters,
-		MinusRepoFilters:   minusRepoFilters,
-		RepoGroupFilters:   repoGroupFilters,
-		VersionContextName: versionContextName,
-		SearchContextSpec:  searchContextSpec,
-		UserSettings:       r.UserSettings,
-		OnlyForks:          fork == query.Only,
-		NoForks:            fork == query.No,
-		OnlyArchived:       archived == query.Only,
-		NoArchived:         archived == query.No,
-		Visibility:         visibility,
-		CommitAfter:        commitAfter,
-		Query:              q,
-		Ranked:             true,
-		Limit:              opts.limit,
-		CacheLookup:        CacheLookup,
+		RepoFilters:       repoFilters,
+		MinusRepoFilters:  minusRepoFilters,
+		RepoGroupFilters:  repoGroupFilters,
+		SearchContextSpec: searchContextSpec,
+		UserSettings:      r.UserSettings,
+		OnlyForks:         fork == query.Only,
+		NoForks:           fork == query.No,
+		OnlyArchived:      archived == query.Only,
+		NoArchived:        archived == query.No,
+		Visibility:        visibility,
+		CommitAfter:       commitAfter,
+		Query:             q,
+		Ranked:            true,
+		Limit:             opts.limit,
+		CacheLookup:       CacheLookup,
 	}
 }
 
-func withMode(args search.TextParameters, st query.SearchType, versionContext *string) search.TextParameters {
+func withMode(args search.TextParameters, st query.SearchType) search.TextParameters {
 	isGlobalSearch := func() bool {
 		if st == query.SearchTypeStructural {
-			return false
-		}
-		if versionContext != nil && *versionContext != "" {
 			return false
 		}
 
@@ -628,7 +619,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		SearcherURLs: r.searcherURLs,
 	}
 	args = withResultTypes(args, forceResultTypes)
-	args = withMode(args, r.PatternType, r.VersionContext)
+	args = withMode(args, r.PatternType)
 
 	var jobs []run.Job
 	{

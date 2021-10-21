@@ -1021,20 +1021,17 @@ func TestIsGlobalSearch(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	versionContext := "versionCtx"
 	tts := []struct {
-		name           string
-		searchQuery    string
-		versionContext *string
-		patternType    query.SearchType
-		mode           search.GlobalSearchMode
+		name        string
+		searchQuery string
+		patternType query.SearchType
+		mode        search.GlobalSearchMode
 	}{
 		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
 		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
-		{name: "version context", searchQuery: "foo", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repogroup", searchQuery: "foo repogroup:grp", versionContext: &versionContext, mode: search.DefaultMode},
-		{name: "repohasfile", searchQuery: "foo repohasfile:bar", versionContext: &versionContext, mode: search.DefaultMode},
+		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", mode: search.DefaultMode},
+		{name: "repogroup", searchQuery: "foo repogroup:grp", mode: search.DefaultMode},
+		{name: "repohasfile", searchQuery: "foo repohasfile:bar", mode: search.DefaultMode},
 		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
 		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
 	}
@@ -1048,10 +1045,9 @@ func TestIsGlobalSearch(t *testing.T) {
 
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
-					Query:          qinfo,
-					UserSettings:   &schema.Settings{},
-					PatternType:    tt.patternType,
-					VersionContext: tt.versionContext,
+					Query:        qinfo,
+					UserSettings: &schema.Settings{},
+					PatternType:  tt.patternType,
 				},
 			}
 
