@@ -1,6 +1,13 @@
 import { Observable, throwError, of } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
+import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
+
+import { requestGraphQL } from '../../../../backend/graphql'
+import { InsightsDashboardsResult } from '../../../../graphql-operations'
+import { InsightDashboard } from '../types'
+import { InsightsDashboardType } from '../types/dashboard/core'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { CodeInsightsBackend } from './code-insights-backend'
@@ -27,7 +34,51 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public deleteInsight = errorMockMethod('deleteInsight')
 
     // Dashboards
-    public getDashboards = errorMockMethod('getDashboards')
+    public getDashboards = (): Observable<InsightDashboard[]> =>
+        requestGraphQL<InsightsDashboardsResult>(
+            gql`
+                query InsightsDashboards {
+                    insightsDashboards {
+                        nodes {
+                            id
+                            title
+                            views {
+                                nodes {
+                                    id
+                                    dataSeries {
+                                        label
+                                        points {
+                                            dateTime
+                                            value
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            `,
+            {}
+        ).pipe(
+            map(dataOrThrowErrors),
+            // TODO: Update this once we no longer support the settings api
+            // Remove owner, builtIn, settingsKey
+            // Update type? Still need insightIds like this?
+            map(data =>
+                data.insightsDashboards.nodes.map(dashboard => ({
+                    id: dashboard.id,
+                    title: dashboard.title,
+                    owner: {
+                        id: '',
+                        name: '',
+                    },
+                    builtIn: false,
+                    settingsKey: '',
+                    type: InsightsDashboardType.Personal,
+                    insightIds: dashboard.views?.nodes.map(view => view.id),
+                }))
+            )
+        )
     public getDashboardById = errorMockMethod('getDashboardById')
     public findDashboardByName = errorMockMethod('findDashboardByName')
     public createDashboard = errorMockMethod('createDashboard')
