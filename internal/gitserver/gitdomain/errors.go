@@ -8,6 +8,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
+// TODO: We should consistently make all the errors pointer receivers. By being
+// pointer receivers it's a compile time error to return them as values and then
+// use them as an error type.
+
 // RevisionNotFoundError is an error that reports a revision doesn't exist.
 type RevisionNotFoundError struct {
 	Repo api.RepoName
