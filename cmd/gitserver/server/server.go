@@ -41,6 +41,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -356,6 +358,26 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
+
+	// Migration to hexagonal architecture starting here:
+
+	gitAdapter := &adapters.Git{
+		ReposDir: s.ReposDir,
+	}
+	getObjectService := gitdomain.GetObjectService{
+		RevParse:      gitAdapter.RevParse,
+		GetObjectType: gitAdapter.GetObjectType,
+	}
+	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+		// Tracing is server concern, so add it here. Once generics lands we should be
+		// able to create some simple wrappers
+		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
+		span.SetTag("objectName", objectName)
+		defer span.Finish()
+		return getObjectService.GetObject(ctx, repo, objectName)
+	})
+
+	mux.HandleFunc("/commands/get-object", handleGetObject(getObjectFunc))
 
 	return mux
 }
@@ -925,7 +947,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 				Repo: args.Repo,
 			}))
 			return
@@ -933,7 +955,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
@@ -944,14 +966,14 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
 			}))
 			return
 		}
 
-		eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+		eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,

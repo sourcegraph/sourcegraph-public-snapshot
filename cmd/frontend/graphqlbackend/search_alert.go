@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -27,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 type searchAlert struct {
@@ -560,7 +560,7 @@ func errorToAlert(err error) (*searchAlert, error) {
 	}
 
 	{
-		var e git.BadCommitError
+		var e gitdomain.BadCommitError
 		if errors.As(err, &e) {
 			return alertForInvalidRevision(e.Spec), nil
 		}
