@@ -396,6 +396,7 @@ func serverE2E(candidateTag string) operations.Operation {
 
 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
 
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
