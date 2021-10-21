@@ -598,7 +598,7 @@ func (s *Store) replaceSearchRecords(
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
 
-		// For metadata insert
+		// For current marker insert
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
