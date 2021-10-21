@@ -52,7 +52,7 @@ INCLUDE (dump_id);
 CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_private_last_cleanup_scan_at ON lsif_data_docs_search_current_private(last_cleanup_scan_at);
 
 -- Drop existing primary key
-ALTER TABLE lsif_data_docs_search_current_private DROP CONSTRAINT iF EXISTS lsif_data_docs_search_current_private_pkey;
+ALTER TABLE lsif_data_docs_search_current_private DROP CONSTRAINT IF EXISTS lsif_data_docs_search_current_private_pkey;
 
 -- Create new serial primary key
 ALTER TABLE lsif_data_docs_search_current_private ADD COLUMN IF NOT EXISTS id SERIAL PRIMARY KEY;
