@@ -783,7 +783,7 @@ To disable Jaeger entirely, do:
    configuration](https://docs.sourcegraph.com/admin/config/site_config) to remove the
    `observability.tracing` field.
 1. Remove the `base/jaeger` directory: `rm -rf base/jaeger`
-1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.ayml` file.
+1. Remove the jaeger agent containers from each `*.Deployment.yaml` and `*.StatefulSet.yaml` file.
 1. Apply these changes to the cluster.
 
 ### Upgrading from 3.14 and earlier to 3.15 or later
