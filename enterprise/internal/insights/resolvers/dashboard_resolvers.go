@@ -15,8 +15,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -200,7 +198,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboard == nil {
 		return nil, nil
 	}
-	return &insightsDashboardPayloadResolver{dashboard}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
@@ -235,7 +233,7 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboard == nil {
 		return nil, nil
 	}
-	return &insightsDashboardPayloadResolver{dashboard}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {
