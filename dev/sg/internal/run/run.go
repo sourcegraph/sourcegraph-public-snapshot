@@ -52,13 +52,14 @@ func Commands(ctx context.Context, globalEnv map[string]string, verbose bool, cm
 			var err error
 			for first := true; cmd.ContinueWatchOnExit || first; first = false {
 				if err = runWatch(ctx, cmd, root, globalEnv, ch, verbose); err != nil {
-					if err != ctx.Err() {
-						if cmd.ContinueWatchOnExit {
-							printCmdError(stdout.Out, cmd.Name, err)
-							time.Sleep(time.Second * 10) // backoff
-						} else {
-							failures <- failedRun{cmdName: cmd.Name, err: err}
-						}
+					if errors.Is(err, ctx.Err()) { // if error caused by context, terminate
+						return
+					}
+					if cmd.ContinueWatchOnExit {
+						printCmdError(stdout.Out, cmd.Name, err)
+						time.Sleep(time.Second * 10) // backoff
+					} else {
+						failures <- failedRun{cmdName: cmd.Name, err: err}
 					}
 				}
 			}

@@ -74,7 +74,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := apitest.BatchSpecWorkspace{
+	wantTmpl := apitest.BatchSpecWorkspace{
 		Typename: "BatchSpecWorkspace",
 		ID:       apiID,
 
@@ -105,11 +105,29 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 				Container: workspace.Steps[0].Container,
 			},
 		},
-
-		State: "PENDING",
 	}
 
-	queryAndAssertBatchSpecWorkspace(t, adminCtx, s, apiID, want)
+	t.Run("Pending", func(t *testing.T) {
+		want := wantTmpl
+
+		want.State = "PENDING"
+
+		queryAndAssertBatchSpecWorkspace(t, adminCtx, s, apiID, want)
+	})
+	t.Run("Queued", func(t *testing.T) {
+		job := &btypes.BatchSpecWorkspaceExecutionJob{
+			BatchSpecWorkspaceID: workspace.ID,
+		}
+		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+			t.Fatal(err)
+		}
+
+		want := wantTmpl
+		want.State = "QUEUED"
+		want.PlaceInQueue = 1
+
+		queryAndAssertBatchSpecWorkspace(t, adminCtx, s, apiID, want)
+	})
 }
 
 func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpecWorkspace) {
@@ -161,6 +179,7 @@ query($batchSpecWorkspace: ID!) {
       }
 
       state
+      placeInQueue
     }
   }
 }

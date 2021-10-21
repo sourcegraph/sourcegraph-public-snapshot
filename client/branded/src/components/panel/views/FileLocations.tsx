@@ -13,7 +13,6 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { FileMatch } from '@sourcegraph/shared/src/components/FileMatch'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -38,7 +37,7 @@ export const FileLocationsNoGroupSelected: React.FunctionComponent = () => (
     </div>
 )
 
-interface Props extends SettingsCascadeProps, VersionContextProps, TelemetryProps {
+interface Props extends SettingsCascadeProps, TelemetryProps {
     location: H.Location
     /**
      * The observable that emits the locations.

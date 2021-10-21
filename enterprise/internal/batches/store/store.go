@@ -237,7 +237,6 @@ type operations struct {
 	listBatchSpecWorkspaces        *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
 
-	createBatchSpecWorkspaceExecutionJob  *observation.Operation
 	createBatchSpecWorkspaceExecutionJobs *observation.Operation
 	getBatchSpecWorkspaceExecutionJob     *observation.Operation
 	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
@@ -362,7 +361,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
-			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
 			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
 			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
 			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
@@ -380,14 +378,9 @@ func newOperations(observationContext *observation.Context) *operations {
 	return singletonOperations
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...interface{}) error
-}
-
-// a scanFunc scans one or more rows from a scanner, returning
+// a scanFunc scans one or more rows from a dbutil.Scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+type scanFunc func(dbutil.Scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()

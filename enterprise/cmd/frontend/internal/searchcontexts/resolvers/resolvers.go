@@ -3,22 +3,17 @@ package resolvers
 import (
 	"context"
 
-	"github.com/cockroachdb/errors"
-
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewResolver(db dbutil.DB) graphqlbackend.SearchContextsResolver {
@@ -313,31 +308,6 @@ func (r *Resolver) IsSearchContextAvailable(ctx context.Context, args graphqlbac
 		}
 		return false, nil
 	}
-}
-
-func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
-	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
-		if vc.Name == versionContext {
-			return vc, nil
-		}
-	}
-	return nil, errors.New("version context not found")
-}
-
-func (r *Resolver) ConvertVersionContextToSearchContext(ctx context.Context, args graphqlbackend.ConvertVersionContextToSearchContextArgs) (graphqlbackend.SearchContextResolver, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, errors.New("converting a version context to a search context is limited to site admins")
-	}
-	versionContext, err := resolveVersionContext(args.Name)
-	if err != nil {
-		return nil, err
-	}
-
-	searchContext, err := searchcontexts.ConvertVersionContextToSearchContext(ctx, r.db, versionContext)
-	if err != nil {
-		return nil, err
-	}
-	return &searchContextResolver{searchContext, r.db}, nil
 }
 
 func (r *Resolver) SearchContextByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchContextResolver, error) {

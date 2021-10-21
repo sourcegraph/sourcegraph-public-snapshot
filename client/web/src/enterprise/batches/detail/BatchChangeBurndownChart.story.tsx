@@ -4,8 +4,8 @@ import { addSeconds, isBefore } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { ChangesetCountsOverTimeFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { BatchChangeBurndownChart } from './BatchChangeBurndownChart'
 
@@ -166,7 +166,7 @@ add('All states', () => {
         })
     }, [])
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeBurndownChart
                     {...props}
@@ -174,6 +174,6 @@ add('All states', () => {
                     queryChangesetCountsOverTime={() => of(changesetCounts)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

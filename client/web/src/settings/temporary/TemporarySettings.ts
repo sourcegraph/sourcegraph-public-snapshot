@@ -15,6 +15,7 @@ export interface TemporarySettingsSchema {
     'npsSurvey.hasPermanentlyDismissed': boolean
     'user.lastDayActive': string | null
     'user.daysActiveCount': number
+    'signup.finishedWelcomeFlow': boolean
 }
 
 /**

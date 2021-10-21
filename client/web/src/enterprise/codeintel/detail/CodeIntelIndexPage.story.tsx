@@ -4,8 +4,8 @@ import { of } from 'rxjs'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
 
+import { WebStory } from '../../../components/WebStory'
 import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelIndexPage, CodeIntelIndexPageProps } from './CodeIntelIndexPage'
 
@@ -403,7 +403,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelIndexPageProps> = args => (
-    <EnterpriseWebStory>{props => <CodeIntelIndexPage {...props} {...args} />}</EnterpriseWebStory>
+    <WebStory>{props => <CodeIntelIndexPage {...props} {...args} />}</WebStory>
 )
 
 const defaults: Partial<CodeIntelIndexPageProps> = {

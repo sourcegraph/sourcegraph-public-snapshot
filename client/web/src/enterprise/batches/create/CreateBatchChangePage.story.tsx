@@ -7,7 +7,7 @@ import {
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { CreateBatchChangePage } from './CreateBatchChangePage'
 
@@ -32,13 +32,13 @@ const FIXTURE_USER: SettingsUserSubject = {
 }
 
 add('experimental execution disabled', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => <CreateBatchChangePage headingElement="h1" {...props} settingsCascade={EMPTY_SETTINGS_CASCADE} />}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('experimental execution enabled', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <CreateBatchChangePage
                 headingElement="h1"
@@ -55,5 +55,5 @@ add('experimental execution enabled', () => (
                 }}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

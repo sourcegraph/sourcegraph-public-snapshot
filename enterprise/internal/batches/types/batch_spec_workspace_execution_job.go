@@ -54,6 +54,8 @@ type BatchSpecWorkspaceExecutionJob struct {
 	WorkerHostname  string
 	Cancel          bool
 
+	PlaceInQueue int64
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

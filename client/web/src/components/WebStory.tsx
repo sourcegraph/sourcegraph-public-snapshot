@@ -16,7 +16,6 @@ export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProvid
     children: React.FunctionComponent<
         ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
-    additionalWebStyles?: string
 }
 
 /**
@@ -25,7 +24,6 @@ export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProvid
  */
 export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
-    additionalWebStyles,
     mocks,
     useStrictMocking,
     ...memoryRouterProps
@@ -34,7 +32,6 @@ export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     const breadcrumbSetters = useBreadcrumbs()
     const Children = useMemo(() => withRouter(children), [children])
 
-    usePrependStyles('additional-web-styles', additionalWebStyles)
     usePrependStyles('web-styles', webStyles)
 
     return (

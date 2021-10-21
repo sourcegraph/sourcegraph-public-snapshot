@@ -3,8 +3,8 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of, Observable } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { filterPublishableIDs } from '../utils'
 
@@ -44,7 +44,7 @@ add('PreviewList', () => {
         of(filterPublishableIDs(Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet))))
 
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <MultiSelectContextProvider>
                     <PreviewList
@@ -62,6 +62,6 @@ add('PreviewList', () => {
                     />
                 </MultiSelectContextProvider>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

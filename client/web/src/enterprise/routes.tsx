@@ -61,16 +61,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: '/contexts/convert-version-contexts',
-        render: lazyComponent(
-            () => import('./searchContexts/ConvertVersionContextsPage'),
-            'ConvertVersionContextsPage'
-        ),
-        exact: true,
-        condition: props =>
-            isSearchContextsManagementEnabled(props.settingsCascade) && !!props.authenticatedUser?.siteAdmin,
-    },
-    {
         path: '/contexts/new',
         render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
         exact: true,
