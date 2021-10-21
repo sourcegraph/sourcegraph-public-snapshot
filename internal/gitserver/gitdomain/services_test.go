@@ -66,7 +66,7 @@ func TestGetObjectService(t *testing.T) {
 			repo:       repoName,
 			objectName: "abc",
 			wantObject: nil,
-			wantError: RevisionNotFoundError{
+			wantError: &RevisionNotFoundError{
 				Repo: repoName,
 				Spec: "abc",
 			},
@@ -82,7 +82,7 @@ func TestGetObjectService(t *testing.T) {
 			repo:       repoName,
 			objectName: "abc",
 			wantObject: nil,
-			wantError: RevisionNotFoundError{
+			wantError: &RevisionNotFoundError{
 				Repo: repoName,
 				Spec: "abc",
 			},

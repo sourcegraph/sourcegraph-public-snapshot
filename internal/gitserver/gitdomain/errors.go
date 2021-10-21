@@ -14,11 +14,11 @@ type RevisionNotFoundError struct {
 	Spec string
 }
 
-func (e RevisionNotFoundError) Error() string {
+func (e *RevisionNotFoundError) Error() string {
 	return fmt.Sprintf("revision not found: %s@%s", e.Repo, e.Spec)
 }
 
-func (e RevisionNotFoundError) HTTPStatusCode() int {
+func (e *RevisionNotFoundError) HTTPStatusCode() int {
 	return 404
 }
 
@@ -49,7 +49,7 @@ type RepoNotExistError struct {
 
 func (RepoNotExistError) NotFound() bool { return true }
 
-func (e RepoNotExistError) Error() string {
+func (e *RepoNotExistError) Error() string {
 	if e.CloneInProgress {
 		return "repository does not exist (clone in progress): " + string(e.Repo)
 	}
