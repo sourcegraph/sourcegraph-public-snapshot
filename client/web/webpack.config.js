@@ -16,7 +16,6 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 const { getCSSLoaders } = require('./dev/webpack/get-css-loaders')
 const { getHTMLWebpackPlugins } = require('./dev/webpack/get-html-webpack-plugins')
 const { MONACO_LANGUAGES_AND_FEATURES } = require('./dev/webpack/monacoWebpack')
-const { splitModuleDependenciesByName } = require('./dev/webpack/split-module-dependencies-by-name')
 const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development'
@@ -109,20 +108,20 @@ const config = {
       }),
       new CssMinimizerWebpackPlugin(),
     ],
-    ...(isProduction && {
-      runtimeChunk: 'single',
-      splitChunks: {
-        chunks: 'all',
-        maxInitialRequests: Infinity,
-        minSize: 0,
-        cacheGroups: {
-          vendor: {
-            test: /[/\\]node_modules[/\\]/,
-            name: splitModuleDependenciesByName,
-          },
+    splitChunks: {
+      cacheGroups: {
+        react: {
+          test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
+          name: 'react',
+          chunks: 'all',
+        },
+        monaco: {
+          test: /[/\\]node_modules[/\\](monaco-editor)[/\\]/,
+          name: 'monaco',
+          chunks: 'all',
         },
       },
-    }),
+    },
     ...(isDevelopment && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
@@ -141,7 +140,7 @@ const config = {
     path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
-    chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
+    chunkFilename: mode === 'production' ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
