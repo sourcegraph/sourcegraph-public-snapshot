@@ -247,7 +247,13 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
-
+	isOnlyMember, err := database.OrgMembers(r.db).IsOnlyMember(ctx, orgID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if isOnlyMember {
+		return nil, errors.Errorf("You can’t remove the only member of an organization")
+	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
 	return nil, database.OrgMembers(r.db).Remove(ctx, orgID, userID)
 }
