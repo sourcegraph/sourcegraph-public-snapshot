@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -193,7 +194,13 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
-	pattern := query.Command.(*compute.MatchOnly).MatchPattern.(*compute.Regexp).Value
+	var pattern *regexp.Regexp
+	switch c := query.Command.(type) {
+	case *compute.MatchOnly:
+		pattern = c.MatchPattern.(*compute.Regexp).Value
+	default:
+		return nil, errors.Errorf("unsupported compute command %T", c)
+	}
 	return toResultResolverList(pattern, results.Matches, db), nil
 }
 
