@@ -168,6 +168,7 @@ const batchChangeFragment = gql`
 
 const changesetLabelFragment = gql`
     fragment ChangesetLabelFields on ChangesetLabel {
+        __typename
         color
         description
         text
@@ -280,6 +281,9 @@ export const changesetFieldsFragment = gql`
     ${externalChangesetFieldsFragment}
 `
 
+// TODO: This has been superseded by CHANGESETS below, but the "Close" page still uses
+// this older `requestGraphQL` one. The variables and result types are the same, so
+// eventually this can just go away when we refactor the requests from the "Close" page.
 export const queryChangesets = ({
     batchChange,
     first,
@@ -295,7 +299,7 @@ export const queryChangesets = ({
 > =>
     requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(
         gql`
-            query BatchChangeChangesets(
+            query BatchChangeChangesetsOLD(
                 $batchChange: ID!
                 $first: Int
                 $after: String
@@ -357,6 +361,57 @@ export const queryChangesets = ({
             return node.changesets
         })
     )
+
+export const CHANGESETS = gql`
+    query BatchChangeChangesets(
+        $batchChange: ID!
+        $first: Int
+        $after: String
+        $state: ChangesetState
+        $reviewState: ChangesetReviewState
+        $checkState: ChangesetCheckState
+        $onlyPublishedByThisBatchChange: Boolean
+        $search: String
+        $onlyArchived: Boolean
+    ) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                changesets(
+                    first: $first
+                    after: $after
+                    state: $state
+                    reviewState: $reviewState
+                    checkState: $checkState
+                    onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
+                    search: $search
+                    onlyArchived: $onlyArchived
+                ) {
+                    __typename
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                    nodes {
+                        # NOTE: Apollo typename resolution fails if we form a fragment on a union type (e.g. "on Changeset")
+                        __typename
+                        ... on HiddenExternalChangeset {
+                            ...HiddenExternalChangesetFields
+                        }
+                        ... on ExternalChangeset {
+                            ...ExternalChangesetFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ${hiddenExternalChangesetFieldsFragment}
+
+    ${externalChangesetFieldsFragment}
+`
 
 export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<SyncChangesetResult, SyncChangesetVariables>(
@@ -552,7 +607,6 @@ const changesetDiffFragment = gql`
         currentSpec {
             description {
                 ... on GitBranchChangesetDescription {
-                    __typename
                     commits {
                         diff
                     }
