@@ -21,9 +21,13 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 				} else {
 					annotation.Labels.set(Literal)
 				}
+				annotation.Labels.set(IsAlias)
 				return Pattern{Value: value, Negated: negated, Annotation: annotation}
 			}
-			field = resolveFieldAlias(field)
+			if canonical, ok := aliases[field]; ok {
+				annotation.Labels.set(IsAlias)
+				field = canonical
+			}
 			return Parameter{Field: field, Value: value, Negated: negated, Annotation: annotation}
 		})
 	}
