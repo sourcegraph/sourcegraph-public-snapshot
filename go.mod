@@ -314,6 +314,7 @@ require (
 	github.com/golang/glog v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gosimple/unidecode v1.0.0 // indirect
+	github.com/segmentio/ksuid v1.0.4 // indirect
 	k8s.io/klog/v2 v2.20.0 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.2 // indirect
 )

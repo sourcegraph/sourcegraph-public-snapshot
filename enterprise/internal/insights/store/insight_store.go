@@ -339,6 +339,8 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.Title,
 		view.Description,
 		view.UniqueID,
+		view.Filters.IncludeRepoRegex,
+		view.Filters.ExcludeRepoRegex,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
@@ -425,6 +427,9 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.NextRecordingAfter,
 		series.LastSnapshotAt,
 		series.NextSnapshotAfter,
+		pq.Array(series.Repositories),
+		series.SampleIntervalUnit,
+		series.SampleIntervalValue,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -532,15 +537,16 @@ VALUES (%s, %s, %s, %s);
 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
-INSERT INTO insight_view (title, description, unique_id)
-VALUES (%s, %s, %s)
+INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
+VALUES (%s, %s, %s, %s, %s)
 returning id;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
+							sample_interval_unit, sample_interval_value)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
