@@ -605,7 +605,7 @@ func (s *Store) replaceSearchRecords(
 		upload.ID,           // dump_id
 		now,                 // last_cleanup_scan_at
 
-		// For metadata update
+		// For current marker update
 		upload.ID,           // dump_id
 		now,                 // last_cleanup_scan_at
 		upload.RepositoryID, // repo_id
