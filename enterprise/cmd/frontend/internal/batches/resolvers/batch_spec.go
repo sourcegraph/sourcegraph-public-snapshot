@@ -380,7 +380,7 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 
 	state, err := r.computeState(ctx)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	if !state.Started() {
@@ -405,7 +405,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 
 	state, err := r.computeState(ctx)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	if !state.Finished() {

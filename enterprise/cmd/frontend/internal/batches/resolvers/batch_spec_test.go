@@ -597,8 +597,8 @@ query($batchSpec: ID!) {
       workspaceResolution {
         state
       }
-	  startedAt
-	  finishedAt
+      startedAt
+      finishedAt
     }
   }
 }

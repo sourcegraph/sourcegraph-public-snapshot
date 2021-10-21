@@ -474,8 +474,8 @@ const getBatchSpecStatsFmtstr = `
 SELECT
 	batch_specs.id AS batch_spec_id,
 	COUNT(ws.id) AS workspaces,
-    MIN(jobs.started_at) AS started_at,
-    MAX(jobs.finished_at) AS finished_at,
+	MIN(jobs.started_at) AS started_at,
+	MAX(jobs.finished_at) AS finished_at,
 	COUNT(jobs.id) AS executions,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,

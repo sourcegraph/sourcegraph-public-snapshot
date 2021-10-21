@@ -1121,8 +1121,8 @@ func (s *Service) LoadBatchSpecStats(ctx context.Context, batchSpec *btypes.Batc
 	return loadBatchSpecStats(ctx, s.store, batchSpec)
 }
 
-func loadBatchSpecStats(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecStats, error) {
-	statsMap, err := s.GetBatchSpecStats(ctx, []int64{spec.ID})
+func loadBatchSpecStats(ctx context.Context, bstore *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecStats, error) {
+	statsMap, err := bstore.GetBatchSpecStats(ctx, []int64{spec.ID})
 	if err != nil {
 		return btypes.BatchSpecStats{}, err
 	}
