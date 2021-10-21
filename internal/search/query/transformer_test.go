@@ -82,9 +82,9 @@ func TestSubstituteAliases(t *testing.T) {
 		want       string
 	}{
 		{
-			input:      "r:repo g:repogroup f:file",
+			input:      "r:repo f:file",
 			searchType: SearchTypeRegex,
-			want:       `[{"and":[{"field":"repo","value":"repo","negated":false},{"field":"repogroup","value":"repogroup","negated":false},{"field":"file","value":"file","negated":false}]}]`,
+			want:       `[{"and":[{"field":"repo","value":"repo","negated":false},{"field":"file","value":"file","negated":false}]}]`,
 		},
 		{
 			input:      "r:repo content:^a-regexp:tbf$",

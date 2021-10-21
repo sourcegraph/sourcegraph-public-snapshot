@@ -300,7 +300,6 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		FieldRepo:
 		return satisfies(isValidRegexp)
 	case
-		FieldRepoGroup,
 		FieldContext:
 		return satisfies(isSingular, isNotNegated)
 	case
