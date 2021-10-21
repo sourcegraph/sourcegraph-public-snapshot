@@ -148,13 +148,13 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
 // listing batch spec workspace execution jobs.
 type ListBatchSpecWorkspaceExecutionJobsOpts struct {
-	Cancel                *bool
-	State                 btypes.BatchSpecWorkspaceExecutionJobState
-	WorkerHostname        string
-	BatchSpecWorkspaceIDs []int64
-	IDs                   []int64
-	WithFailureMessage    bool
-	BatchSpecID           int64
+	Cancel                 *bool
+	State                  btypes.BatchSpecWorkspaceExecutionJobState
+	WorkerHostname         string
+	BatchSpecWorkspaceIDs  []int64
+	IDs                    []int64
+	OnlyWithFailureMessage bool
+	BatchSpecID            int64
 }
 
 // ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
@@ -213,7 +213,7 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
 
-	if opts.WithFailureMessage {
+	if opts.OnlyWithFailureMessage {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state IN ('errored', 'failed')"))
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.failure_message IS NOT NULL"))
 	}

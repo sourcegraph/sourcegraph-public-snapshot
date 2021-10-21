@@ -184,7 +184,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			wantIDs := []int64{jobs[0].ID, jobs[2].ID}
 
 			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				WithFailureMessage: true,
+				OnlyWithFailureMessage: true,
 			})
 			if err != nil {
 				t.Fatal(err)
