@@ -248,6 +248,11 @@ type InsightsDashboard implements Node {
     The list of associated insights to the dashboard.
     """
     views: InsightViewConnection
+
+    """
+    The permission grants assossiated with the dashboard.
+    """
+    grants: InsightsPermissionGrants!
 }
 
 """
@@ -261,7 +266,7 @@ input CreateInsightsDashboardInput {
     """
     Permissions to grant to the dashboard.
     """
-    grants: InsightsPermissionGrants!
+    grants: InsightsPermissionGrantsInput!
 }
 
 """
@@ -275,13 +280,31 @@ input UpdateInsightsDashboardInput {
     """
     Permissions to grant to the dashboard.
     """
-    grants: InsightsPermissionGrants
+    grants: InsightsPermissionGrantsInput
+}
+
+"""
+Permissions object. Note: only organizations the user has access to will be included.
+"""
+type InsightsPermissionGrants {
+    """
+    Specific users that have permission.
+    """
+    users: [ID!]!
+    """
+    Organizations that have permission.
+    """
+    organizations: [ID!]!
+    """
+    True if the permission is set to global.
+    """
+    global: Boolean!
 }
 
 """
 Input object for permissions to grant.
 """
-input InsightsPermissionGrants {
+input InsightsPermissionGrantsInput {
     """
     Specific users to grant permissions to.
     """

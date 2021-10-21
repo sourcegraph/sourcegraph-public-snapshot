@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -18,11 +17,8 @@ const { add } = storiesOf('web/search/input/SearchBox', module)
     .addParameters({ chromatic: { viewports: [575, 700] } })
     .addDecorator(story => <div className="w-100 d-flex">{story()}</div>)
 
-const history = createMemoryHistory()
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    location: history.location,
-    history,
     settingsCascade: {
         final: null,
         subjects: null,
@@ -35,9 +31,6 @@ const defaultProps: SearchBoxProps = {
     setPatternType: () => {},
     caseSensitive: false,
     setCaseSensitivity: () => {},
-    versionContext: undefined,
-    availableVersionContexts: [],
-    setVersionContext: () => Promise.resolve(undefined),
     searchContextsEnabled: true,
     showSearchContext: false,
     showSearchContextManagement: false,
@@ -143,63 +136,6 @@ add(
                     isLightTheme={props.isLightTheme}
                     queryState={{ query: 'hello context:global' }}
                     selectedSearchContextSpec="@username"
-                />
-            )}
-        </WebStory>
-    ),
-    {}
-)
-
-add(
-    'with version contexts, none selected',
-    () => (
-        <WebStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    showSearchContext={true}
-                    isLightTheme={props.isLightTheme}
-                    queryState={{ query: 'hello' }}
-                    availableVersionContexts={[{ name: 'test version context', revisions: [] }]}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
-)
-
-add(
-    'with version contexts, one selected',
-    () => (
-        <WebStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    showSearchContext={true}
-                    isLightTheme={props.isLightTheme}
-                    queryState={{ query: 'hello' }}
-                    versionContext="test version context"
-                    availableVersionContexts={[{ name: 'test version context', revisions: [] }]}
-                />
-            )}
-        </WebStory>
-    ),
-    {}
-)
-
-add(
-    'with very long context names',
-    () => (
-        <WebStory>
-            {props => (
-                <SearchBox
-                    {...defaultProps}
-                    showSearchContext={true}
-                    isLightTheme={props.isLightTheme}
-                    queryState={{ query: 'hello' }}
-                    selectedSearchContextSpec="@username/verylongcontextname"
-                    versionContext="test version context very long"
-                    availableVersionContexts={[{ name: 'test version context very long', revisions: [] }]}
                 />
             )}
         </WebStory>

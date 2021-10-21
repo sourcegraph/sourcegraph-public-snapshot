@@ -15,7 +15,6 @@ import {
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -59,7 +58,6 @@ export interface RepoRevisionContainerContext
         Omit<RepoContainerContext, 'onDidUpdateExternalLinks'>,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters,
@@ -96,7 +94,6 @@ interface RepoRevisionContainerProps
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         RevisionSpec,
         BreadcrumbSetters,

@@ -4,7 +4,7 @@ import React from 'react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { ManageCodeMonitorPage } from './ManageCodeMonitorPage'
 import { mockCodeMonitor, mockUser } from './testing/util'
@@ -18,7 +18,7 @@ const { add } = storiesOf('web/enterprise/code-monitoring/ManageCodeMonitorPage'
 })
 
 add('Example', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <ManageCodeMonitorPage
                 {...props}
@@ -28,7 +28,7 @@ add('Example', () => (
                 deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Disabled toggles', () => {
@@ -38,7 +38,7 @@ add('Disabled toggles', () => {
     monitor.node.actions.nodes[0].enabled = false
 
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <ManageCodeMonitorPage
                     {...props}
@@ -48,6 +48,6 @@ add('Disabled toggles', () => {
                     deleteCodeMonitor={sinon.fake((id: string) => NEVER)}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

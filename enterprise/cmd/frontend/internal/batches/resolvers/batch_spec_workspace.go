@@ -209,8 +209,15 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 }
 
 func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
-	// TODO(ssbc): not implemented
-	return nil
+	if r.execution == nil {
+		return nil
+	}
+	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateQueued {
+		return nil
+	}
+
+	i32 := int32(r.execution.PlaceInQueue)
+	return &i32
 }
 
 type batchSpecWorkspaceStagesResolver struct {

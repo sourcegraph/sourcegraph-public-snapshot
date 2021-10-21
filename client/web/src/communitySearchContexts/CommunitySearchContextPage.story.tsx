@@ -110,14 +110,8 @@ const commonProps = () =>
         platformContext: PLATFORM_CONTEXT,
         keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
-        versionContext: undefined,
         activation: undefined,
         isSourcegraphDotCom: true,
-        setVersionContext: () => {
-            action('setVersionContext')
-            return Promise.resolve()
-        },
-        availableVersionContexts: [],
         showSearchContext: true,
         searchContextsEnabled: true,
         showSearchContextManagement: false,

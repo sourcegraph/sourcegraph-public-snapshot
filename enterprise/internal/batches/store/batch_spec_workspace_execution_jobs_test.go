@@ -27,8 +27,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for _, job := range jobs {
-			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+		for idx, job := range jobs {
+			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
 			}
 
@@ -44,6 +44,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
+
+			job.PlaceInQueue = int64(idx + 1)
 		}
 	})
 
@@ -97,15 +99,16 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			case 0:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateQueued
 				job.Cancel = true
+				job.PlaceInQueue = 1
 			case 1:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+				job.PlaceInQueue = 0
 			case 2:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+				job.PlaceInQueue = 0
 			}
 
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s, cancel = %s WHERE id = %s", job.WorkerHostname, job.State, job.Cancel, job.ID)); err != nil {
-				t.Fatal(err)
-			}
+			ct.UpdateJobState(t, ctx, s, job)
 		}
 
 		t.Run("All", func(t *testing.T) {
@@ -254,7 +257,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				}
 
 				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
-				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 				specJobIDs = append(specJobIDs, job.ID)

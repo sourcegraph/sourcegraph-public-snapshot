@@ -3,7 +3,7 @@ import { useState } from '@storybook/addons'
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 
@@ -19,7 +19,7 @@ add('Has open changesets', () => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     const totalCount = number('totalCount', 10)
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeCloseAlert
                     {...props}
@@ -32,13 +32,13 @@ add('Has open changesets', () => {
                     closeBatchChange={() => Promise.resolve()}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 add('No open changesets', () => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeCloseAlert
                     {...props}
@@ -51,6 +51,6 @@ add('No open changesets', () => {
                     closeBatchChange={() => Promise.resolve()}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

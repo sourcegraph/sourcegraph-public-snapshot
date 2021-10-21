@@ -26,8 +26,6 @@ import {
     Scalars,
     FetchSearchContextResult,
     FetchSearchContextVariables,
-    ConvertVersionContextToSearchContextResult,
-    ConvertVersionContextToSearchContextVariables,
     CreateSearchContextResult,
     CreateSearchContextVariables,
     UpdateSearchContextVariables,
@@ -64,25 +62,6 @@ const searchContextFragment = gql`
         }
     }
 `
-
-export function convertVersionContextToSearchContext(
-    name: string
-): Observable<ConvertVersionContextToSearchContextResult['convertVersionContextToSearchContext']> {
-    return requestGraphQL<ConvertVersionContextToSearchContextResult, ConvertVersionContextToSearchContextVariables>(
-        gql`
-            mutation ConvertVersionContextToSearchContext($name: String!) {
-                convertVersionContextToSearchContext(name: $name) {
-                    id
-                    spec
-                }
-            }
-        `,
-        { name }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(data => data.convertVersionContextToSearchContext)
-    )
-}
 
 export function fetchAutoDefinedSearchContexts(): Observable<
     AutoDefinedSearchContextsResult['autoDefinedSearchContexts']
