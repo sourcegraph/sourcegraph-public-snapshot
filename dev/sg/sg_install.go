@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -29,7 +30,21 @@ var (
 )
 
 func installExec(ctx context.Context, args []string) error {
-	const location = "/usr/local/bin/sg"
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
+	var location string
+
+	switch runtime.GOOS {
+	case "linux":
+		location = filepath.Join(homeDir, ".local", "bin", "sg")
+	case "darwin":
+		location = "/usr/local/bin/sg"
+	default:
+		err = fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+	}
 
 	var logoOut bytes.Buffer
 	printLogo(&logoOut)
@@ -75,29 +90,71 @@ func installExec(ctx context.Context, args []string) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return err
+	sgDir := filepath.Dir(location)
+	paths := []struct {
+		path              string
+		createIfNotExists bool
+		install           bool
+	}{
+		{path: filepath.Join(homeDir, ".zshenv"), createIfNotExists: false},
+		{path: filepath.Join(homeDir, ".bashrc"), createIfNotExists: false},
+		{path: filepath.Join(homeDir, ".profile"), createIfNotExists: true},
 	}
 
-	paths := []string{
-		filepath.Join(homeDir, ".profile"),
-		filepath.Join(homeDir, ".bashrc"),
-		filepath.Join(homeDir, ".zshenv"),
+	for i, p := range paths {
+		// If the file is not .profile and doesn't exist we don't want to append/create
+		if _, err := os.Stat(p.path); !p.createIfNotExists && os.IsNotExist(err) {
+			continue
+		}
+		paths[i].install = true
 	}
 
 	stdout.Out.Write("")
-	stdout.Out.Writef("The path %s%s%s will be added to your %sPATH%s environment variable by", output.StyleBold, filepath.Dir(location), output.StyleReset, output.StyleBold, output.StyleReset)
+	stdout.Out.Writef("The path %s%s%s will be added to your %sPATH%s environment variable by", output.StyleBold, sgDir, output.StyleReset, output.StyleBold, output.StyleReset)
 	stdout.Out.Writef("modifying the profile files located at:")
 	stdout.Out.Write("")
 	for _, p := range paths {
-		stdout.Out.Writef("  %s%s", output.StyleBold, p)
+		if !p.install {
+			continue
+		}
+		stdout.Out.Writef("  %s%s", output.StyleBold, p.path)
 	}
 
 	addToShellOkay := getBool()
 	if !addToShellOkay {
-		return errors.New("user not happy with adding stuff to shell:(")
+		stdout.Out.Write("Done")
+		return nil
 	}
+
+	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
+	lineWrittenTo := []string{}
+	for _, p := range paths {
+		if !p.install {
+			continue
+		}
+
+		f, err := os.OpenFile(p.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return errors.Wrapf(err, "failed to open %s", p.path)
+		}
+		defer f.Close()
+
+		if _, err := f.WriteString(exportLine); err != nil {
+			return errors.Wrapf(err, "failed to write to %s", p.path)
+		}
+
+		lineWrittenTo = append(lineWrittenTo, p.path)
+	}
+
+	stdout.Out.Write("")
+	stdout.Out.Writef("Modified the following files:")
+	stdout.Out.Write("")
+	for _, p := range lineWrittenTo {
+		stdout.Out.Writef("  %s%s", output.StyleBold, p)
+	}
+
+	stdout.Out.Write("")
+	stdout.Out.Writef("Restart your shell and run 'sg logo' to make sure it worked!")
 
 	return nil
 }
