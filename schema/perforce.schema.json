@@ -29,7 +29,10 @@
     "depots": {
       "description": "Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.",
       "type": "array",
-      "items": { "type": "string", "pattern": "^\\/[\\/\\S]+\\/$" },
+      "items": {
+        "type": "string",
+        "pattern": "^\\/[\\/\\S]+\\/$"
+      },
       "examples": [["//Sourcegraph/", "//Engineering/Cloud/"]]
     },
     "maxChanges": {
@@ -75,7 +78,51 @@
     "useFusionClient": {
       "description": "EXPERIMENTAL: Use the p4-fusion client to clone and fetch repos",
       "type": "boolean",
-      "default": false
+      "default": false,
+      "deprecationMessage": "Deprecated in favour of the fusionClient property"
+    },
+    "fusionClient": {
+      "type": "object",
+      "description": "Configuration for the experimental p4-fusion client",
+      "additionalProperties": false,
+      "required": ["lookAhead"],
+      "properties": {
+        "enabled": {
+          "description": "Enable the p4-fusion client for cloning and fetching repos",
+          "type": "boolean",
+          "default": false
+        },
+        "networkThreads": {
+          "description": "The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.",
+          "type": "integer",
+          "default": 12,
+          "minimum": 1
+        },
+        "printBatch": {
+          "description": "The p4 print batch size",
+          "type": "integer",
+          "default": 10,
+          "minimum": 1
+        },
+        "retries": {
+          "description": "How many times a command should be retried before the process exits in a failure",
+          "type": "integer",
+          "default": 10,
+          "minimum": 1
+        },
+        "refresh": {
+          "description": "How many times a connection should be reused before it is refreshed",
+          "type": "integer",
+          "default": 100,
+          "minimum": 1
+        },
+        "lookAhead": {
+          "description": "How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them",
+          "type": "integer",
+          "default": 2000,
+          "minimum": 1
+        }
+      }
     }
   }
 }

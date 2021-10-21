@@ -78,7 +78,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: '--max_old_space_size=4096'
+  NODE_OPTIONS: '--max_old_space_size=8192'
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -293,7 +293,7 @@ commands:
   caddy:
     ignoreStdout: true
     ignoreStderr: true
-    cmd: .bin/caddy run --watch --config=dev/Caddyfile
+    cmd: .bin/caddy_${CADDY_VERSION}_$([[ "$(go env GOOS)" = "darwin" ]] && echo "mac" || echo "$(go env GOOS)")_$(go env GOARCH) run --watch --config=dev/Caddyfile
     install: |
       case "$(go env GOOS)" in
         linux)
@@ -303,8 +303,8 @@ commands:
           os="mac"
           ;;
       esac
-      name="caddy_${CADDY_VERSION}_${os}_amd64"
-      target="$PWD/.bin/caddy"
+      name="caddy_${CADDY_VERSION}_${os}_$(go env GOARCH)"
+      target="$PWD/.bin/$name"
       url="https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/${name}.tar.gz"
 
       if [ ! -f "${target}" ]; then
@@ -314,7 +314,7 @@ commands:
         chmod +x ${target}
       fi
     env:
-      CADDY_VERSION: 2.3.0
+      CADDY_VERSION: 2.4.5
 
   web:
     cmd: ./node_modules/.bin/gulp --color dev
@@ -698,6 +698,10 @@ commands:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
       LOKI_VERSION: "2.3.0"
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
+
+  storybook:
+    cmd: yarn storybook
+    install: yarn
 
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.

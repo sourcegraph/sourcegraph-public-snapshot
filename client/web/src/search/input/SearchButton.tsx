@@ -1,6 +1,8 @@
+import classNames from 'classnames'
 import SearchIcon from 'mdi-react/SearchIcon'
 import React from 'react'
 
+import styles from './SearchButton.module.scss'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 
 interface Props {
@@ -15,7 +17,12 @@ interface Props {
  */
 export const SearchButton: React.FunctionComponent<Props> = ({ hideHelpButton, className }) => (
     <div className={className}>
-        <button className="btn btn-primary search-button__btn test-search-button" type="submit" aria-label="Search">
+        <button
+            data-testid="search-button"
+            className={classNames('btn btn-primary test-search-button', styles.btn)}
+            type="submit"
+            aria-label="Search"
+        >
             <SearchIcon className="icon-inline" aria-hidden="true" />
         </button>
         {!hideHelpButton && <SearchHelpDropdownButton />}

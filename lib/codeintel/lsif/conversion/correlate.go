@@ -388,6 +388,10 @@ func correlateNextEdge(state *wrappedState, id int, edge Edge) error {
 }
 
 func correlateItemEdge(state *wrappedState, id int, edge Edge) error {
+	if edge.Document == 0 {
+		return malformedDump(id, edge.OutV, "document")
+	}
+
 	if documentMap, ok := state.DefinitionData[edge.OutV]; ok {
 		for _, inV := range edge.InVs {
 			if _, ok := state.RangeData[inV]; !ok {

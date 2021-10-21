@@ -108,6 +108,7 @@ func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJ
 		s.Handle().DB(),
 		"changeset_jobs",
 		changesetJobInsertColumns,
+		"",
 		ChangesetJobColumns,
 		func(rows *sql.Rows) error {
 			i++

@@ -480,7 +480,9 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	)
 
 	// Set them up in the DB
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	db := dbtesting.GetDB(t)
 
 	idMapping := make(map[api.RepoName]api.RepoID)

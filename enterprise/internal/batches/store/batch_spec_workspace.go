@@ -130,6 +130,7 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 		s.Handle().DB(),
 		"batch_spec_workspaces",
 		batchSpecWorkspaceInsertColumns,
+		"",
 		BatchSpecWorkspaceColums,
 		func(rows *sql.Rows) error {
 			i++

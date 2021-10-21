@@ -8,7 +8,7 @@ export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = 
     [ExternalServiceKind.GITHUB]: (
         <small>
             <Link
-                to="https://github.com/settings/tokens/new?description=Sourcergaph&scopes=user:email,repo,read:org"
+                to="https://github.com/settings/tokens/new?description=Sourcegraph.com&scopes=user:email,repo,read:org"
                 target="_blank"
                 rel="noopener noreferrer"
             >
@@ -29,13 +29,9 @@ export const hints: Partial<Record<ExternalServiceKind, React.ReactFragment>> = 
             </Link>
             <span className="text-muted">
                 {' '}
-                {/* eslint-disable-next-line react/forbid-dom-props */}
-                with <span style={{ color: 'red' }}>which???</span>{' '}
-                {/* <code className="user-code-hosts-page__code--inline">read_user</code>,{' '}
+                with <code className="user-code-hosts-page__code--inline">read_user</code>,{' '}
                 <code className="user-code-hosts-page__code--inline">read_api</code> and{' '}
-                <code className="user-code-hosts-page__code--inline">read_repository</code>
-                 */}
-                scopes.
+                <code className="user-code-hosts-page__code--inline">read_repository</code> scopes.
             </span>
         </small>
     ),
