@@ -3,7 +3,7 @@ import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts, ViewProviderResult } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { Insight, InsightDashboard } from '../types'
+import { Insight, InsightDashboardSettingsApi } from '../types'
 import { SearchBackendBasedInsight } from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
 
@@ -32,11 +32,11 @@ export interface CodeInsightsBackend {
      * Returns all accessible code insights dashboards for the current user.
      * This includes virtual (like "all insights") and real dashboards.
      */
-    getDashboards: () => Observable<InsightDashboard[]>
+    getDashboards: () => Observable<InsightDashboardSettingsApi[]>
 
-    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
+    getDashboardById: (dashboardId?: string) => Observable<InsightDashboardSettingsApi | null>
 
-    findDashboardByName: (name: string) => Observable<InsightDashboard | null>
+    findDashboardByName: (name: string) => Observable<InsightDashboardSettingsApi | null>
 
     createDashboard: (input: DashboardCreateInput) => Observable<void>
 

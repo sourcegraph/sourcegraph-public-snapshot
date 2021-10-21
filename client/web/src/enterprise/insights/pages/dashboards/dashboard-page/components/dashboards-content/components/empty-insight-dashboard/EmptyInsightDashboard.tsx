@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { Button } from '@sourcegraph/wildcard'
 
-import { InsightDashboard } from '../../../../../../../core/types'
+import { InsightDashboardSettingsApi } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
 import { getTooltipMessage, useDashboardPermissions } from '../../../../hooks/use-dashboard-permissions'
 import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
@@ -13,7 +13,7 @@ import { isDashboardConfigurable } from '../../utils/is-dashboard-configurable'
 import styles from './EmptyInsightDashboard.module.scss'
 
 interface EmptyInsightDashboardProps {
-    dashboard: InsightDashboard
+    dashboard: InsightDashboardSettingsApi
     subjects?: SupportedInsightSubject[]
     onAddInsight: () => void
 }
@@ -33,7 +33,7 @@ export const EmptyInsightDashboard: React.FunctionComponent<EmptyInsightDashboar
  * Since all insights within built-in dashboards are calculated there's no ability to add insight to
  * this type of dashboard.
  */
-export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboard }> = props => (
+export const EmptyBuiltInDashboard: React.FunctionComponent<{ dashboard: InsightDashboardSettingsApi }> = props => (
     <section className={styles.emptySection}>
         <Link to={`/insights/create?dashboardId=${props.dashboard.id}`} className={classnames(styles.itemCard, 'card')}>
             <PlusIcon size="2rem" />

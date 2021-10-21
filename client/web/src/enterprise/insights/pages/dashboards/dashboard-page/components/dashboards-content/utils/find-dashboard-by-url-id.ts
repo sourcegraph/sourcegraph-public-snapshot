@@ -1,4 +1,4 @@
-import { InsightDashboard, isVirtualDashboard } from '../../../../../../core/types'
+import { InsightDashboardSettingsApi, isVirtualDashboard } from '../../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
@@ -8,9 +8,9 @@ import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/d
  * @param dashboardID - possible dashboard id from the URL query param.
  */
 export function findDashboardByUrlId(
-    dashboards: InsightDashboard[],
+    dashboards: InsightDashboardSettingsApi[],
     dashboardID: string
-): InsightDashboard | undefined {
+): InsightDashboardSettingsApi | undefined {
     return dashboards.find(dashboard => {
         if (isVirtualDashboard(dashboard)) {
             return (

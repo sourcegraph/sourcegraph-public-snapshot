@@ -6,14 +6,14 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { InsightsApiContext } from '../../../../../core/backend/api-provider'
 import { addInsightToDashboard } from '../../../../../core/settings-action/dashboards'
 import { addInsightToSettings } from '../../../../../core/settings-action/insights'
-import { InsightDashboard, InsightTypePrefix, isVirtualDashboard } from '../../../../../core/types'
+import { InsightDashboardSettingsApi, InsightTypePrefix, isVirtualDashboard } from '../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../core/types/dashboard/real-dashboard'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../../core/types/insight/search-insight'
 
 interface CreateInsightInputs {
     insightName: string
     originalInsight: SearchBackendBasedInsight
-    dashboard: InsightDashboard
+    dashboard: InsightDashboardSettingsApi
     filters: SearchBasedBackendFilters
 }
 

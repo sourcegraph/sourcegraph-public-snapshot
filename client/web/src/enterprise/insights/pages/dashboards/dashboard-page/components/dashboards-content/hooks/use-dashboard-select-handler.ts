@@ -1,9 +1,9 @@
 import { useHistory } from 'react-router-dom'
 
-import { InsightDashboard, isVirtualDashboard } from '../../../../../../core/types'
+import { InsightDashboardSettingsApi, isVirtualDashboard } from '../../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
-type SelectHandler = (dashboard: InsightDashboard) => void
+type SelectHandler = (dashboard: InsightDashboardSettingsApi) => void
 
 /**
  * Hook for managing URL of the dashboard page whenever the user picks
@@ -12,7 +12,7 @@ type SelectHandler = (dashboard: InsightDashboard) => void
 export function useDashboardSelectHandler(): SelectHandler {
     const history = useHistory()
 
-    return (dashboard: InsightDashboard): void => {
+    return (dashboard: InsightDashboardSettingsApi): void => {
         if (isVirtualDashboard(dashboard)) {
             history.push(`/insights/dashboards/${dashboard.type}`)
 

@@ -6,7 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
-import { InsightDashboard, isVirtualDashboard, Insight } from '../../../core/types'
+import { InsightDashboardSettingsApi, isVirtualDashboard, Insight } from '../../../core/types'
 import { isUserSubject } from '../../../core/types/subjects'
 import { useQueryParameters } from '../../../hooks/use-query-parameters'
 
@@ -18,7 +18,7 @@ export enum InsightCreationPageType {
     Search = 'search-based',
 }
 
-const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string | undefined => {
+const getVisibilityFromDashboard = (dashboard: InsightDashboardSettingsApi | null): string | undefined => {
     if (!dashboard || isVirtualDashboard(dashboard)) {
         return undefined
     }

@@ -5,7 +5,7 @@ import { Settings } from '../../../../schema/settings.schema'
 import {
     INSIGHTS_DASHBOARDS_SETTINGS_KEY,
     InsightsDashboardType,
-    InsightDashboard,
+    InsightDashboardSettingsApi,
     isInsightSettingKey,
     SettingsBasedInsightDashboard,
     InsightDashboardOwner,
@@ -48,10 +48,13 @@ export function getInsightIdsFromSettings(settings: Settings): string[] {
  * Returns all subject dashboards and one special (built-in) dashboard that includes
  * all insights from subject settings.
  */
-export function getSubjectDashboards(subject: SupportedInsightSubject, settings: Settings): InsightDashboard[] {
+export function getSubjectDashboards(
+    subject: SupportedInsightSubject,
+    settings: Settings
+): InsightDashboardSettingsApi[] {
     const { dashboardType, ...owner } = getDashboardOwnerInfo(subject)
 
-    const subjectBuiltInDashboard: InsightDashboard = {
+    const subjectBuiltInDashboard: InsightDashboardSettingsApi = {
         owner,
         id: owner.id,
         builtIn: true,

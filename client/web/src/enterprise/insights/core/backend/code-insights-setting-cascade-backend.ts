@@ -19,7 +19,7 @@ import { findDashboardByUrlId } from '../../pages/dashboards/dashboard-page/comp
 import { getUpdatedSubjectSettings } from '../../pages/insights/edit-insight/hooks/use-update-settings-subjects/get-updated-subject-settings'
 import { addDashboardToSettings, removeDashboardFromSettings } from '../settings-action/dashboards'
 import { addInsight } from '../settings-action/insights'
-import { Insight, InsightDashboard, InsightTypePrefix, isRealDashboard } from '../types'
+import { Insight, InsightDashboardSettingsApi, InsightTypePrefix, isRealDashboard } from '../types'
 import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
 import { isSubjectInsightSupported, SupportedInsightSubject } from '../types/subjects'
 
@@ -138,18 +138,18 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     }
 
     // Dashboards
-    public getDashboards = (): Observable<InsightDashboard[]> => {
+    public getDashboards = (): Observable<InsightDashboardSettingsApi[]> => {
         const { subjects, final } = this.settingCascade
 
         return of(getInsightsDashboards(subjects, final))
     }
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboardSettingsApi | null> =>
         this.getDashboards().pipe(
             switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? '') ?? null))
         )
 
-    public findDashboardByName = (name: string): Observable<InsightDashboard | null> =>
+    public findDashboardByName = (name: string): Observable<InsightDashboardSettingsApi | null> =>
         this.getDashboards().pipe(
             switchMap(dashboards => {
                 const possibleDashboard = dashboards

@@ -2,7 +2,7 @@ import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
 import { WebStory } from '../../../../../../../components/WebStory'
-import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
+import { InsightDashboardSettingsApi, InsightsDashboardType } from '../../../../../core/types'
 
 import { DashboardSelect } from './DashboardSelect'
 
@@ -14,7 +14,7 @@ const { add } = storiesOf('web/insights/DashboardSelect', module)
         },
     })
 
-const DASHBOARDS: InsightDashboard[] = [
+const DASHBOARDS: InsightDashboardSettingsApi[] = [
     {
         type: InsightsDashboardType.Personal,
         id: '101',

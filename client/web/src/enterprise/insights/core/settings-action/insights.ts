@@ -5,7 +5,7 @@ import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
 import {
     Insight,
-    InsightDashboard,
+    InsightDashboardSettingsApi,
     INSIGHTS_ALL_REPOS_SETTINGS_KEY,
     InsightType,
     InsightTypePrefix,
@@ -40,7 +40,11 @@ const getInsightSettingKey = (insight: Insight): string[] => {
     }
 }
 
-export const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
+export const addInsight = (
+    settings: string,
+    insight: Insight,
+    dashboard: InsightDashboardSettingsApi | null
+): string => {
     const dashboardSettingKey =
         !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
             ? dashboard.settingsKey

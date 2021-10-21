@@ -6,7 +6,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { SmartInsightsViewGrid } from '../../../../../../../components/insights-view-grid/SmartInsightsViewGrid'
 import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
-import { InsightDashboard } from '../../../../../../../core/types'
+import { InsightDashboardSettingsApi } from '../../../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../../../core/types/subjects'
 import { useDistinctValue } from '../../../../../../../hooks/use-distinct-value'
 import { EmptyInsightDashboard } from '../empty-insight-dashboard/EmptyInsightDashboard'
@@ -16,7 +16,7 @@ import { DashboardInsightsContext } from './DashboardInsightsContext'
 const DEFAULT_INSIGHT_IDS: string[] = []
 
 interface DashboardInsightsProps extends TelemetryProps {
-    dashboard: InsightDashboard
+    dashboard: InsightDashboardSettingsApi
     subjects?: SupportedInsightSubject[]
     onAddInsightRequest: () => void
 }

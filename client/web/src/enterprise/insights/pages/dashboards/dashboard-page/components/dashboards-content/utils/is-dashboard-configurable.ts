@@ -1,4 +1,8 @@
-import { InsightDashboard, isRealDashboard, SettingsBasedInsightDashboard } from '../../../../../../core/types'
+import {
+    InsightDashboardSettingsApi,
+    isRealDashboard,
+    SettingsBasedInsightDashboard,
+} from '../../../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/dashboard/real-dashboard'
 
 /**
@@ -8,6 +12,6 @@ import { isSettingsBasedInsightsDashboard } from '../../../../../../core/types/d
  * they can't be edited in any way (add/remove insights, delete)
  */
 export const isDashboardConfigurable = (
-    currentDashboard: InsightDashboard | undefined
+    currentDashboard: InsightDashboardSettingsApi | undefined
 ): currentDashboard is SettingsBasedInsightDashboard =>
     isRealDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)

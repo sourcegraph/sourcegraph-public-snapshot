@@ -4,7 +4,7 @@ import { ConfiguredSubjectOrError, SettingsCascadeOrError } from '@sourcegraph/s
 import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { Settings } from '../../../../schema/settings.schema'
-import { InsightDashboard, InsightsDashboardType } from '../../core/types'
+import { InsightDashboardSettingsApi, InsightsDashboardType } from '../../core/types'
 import { isSubjectInsightSupported } from '../../core/types/subjects'
 
 import { getInsightIdsFromSettings, getSubjectDashboards } from './utils'
@@ -12,7 +12,7 @@ import { getInsightIdsFromSettings, getSubjectDashboards } from './utils'
 /**
  * Special virtual dashboard - "All Insights"
  */
-export const ALL_INSIGHTS_DASHBOARD: InsightDashboard = {
+export const ALL_INSIGHTS_DASHBOARD: InsightDashboardSettingsApi = {
     id: 'all',
     type: InsightsDashboardType.All,
     insightIds: [],
@@ -21,7 +21,7 @@ export const ALL_INSIGHTS_DASHBOARD: InsightDashboard = {
 /**
  * React hook that returns all valid and available insights dashboards.
  */
-export function useDashboards(settingsCascade: SettingsCascadeOrError): InsightDashboard[] {
+export function useDashboards(settingsCascade: SettingsCascadeOrError): InsightDashboardSettingsApi[] {
     const { subjects, final } = settingsCascade
 
     return useMemo(() => getInsightsDashboards(subjects, final), [subjects, final])
@@ -33,7 +33,7 @@ export function useDashboards(settingsCascade: SettingsCascadeOrError): InsightD
 export function getInsightsDashboards(
     subjects: ConfiguredSubjectOrError<Settings>[] | null,
     final: Settings | ErrorLike | null
-): InsightDashboard[] {
+): InsightDashboardSettingsApi[] {
     if (subjects === null) {
         return []
     }

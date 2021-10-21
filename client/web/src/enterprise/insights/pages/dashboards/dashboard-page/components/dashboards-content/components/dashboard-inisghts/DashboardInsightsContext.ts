@@ -1,9 +1,9 @@
 import { createContext } from 'react'
 
-import { InsightDashboard } from '../../../../../../../core/types'
+import { InsightDashboardSettingsApi } from '../../../../../../../core/types'
 
 export interface DashboardInsightsContextData {
-    dashboard: InsightDashboard | null
+    dashboard: InsightDashboardSettingsApi | null
 }
 
 export const DEFAULT_DASHBOARD_CONTEXT: DashboardInsightsContextData = {

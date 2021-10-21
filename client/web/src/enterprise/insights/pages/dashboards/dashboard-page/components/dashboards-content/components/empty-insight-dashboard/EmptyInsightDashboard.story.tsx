@@ -3,7 +3,7 @@ import { noop } from 'lodash'
 import React from 'react'
 
 import { EnterpriseWebStory } from '../../../../../../../../components/EnterpriseWebStory'
-import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
+import { InsightDashboardSettingsApi, InsightsDashboardType } from '../../../../../../../core/types'
 
 import { EmptyInsightDashboard } from './EmptyInsightDashboard'
 
@@ -16,7 +16,7 @@ const { add } = storiesOf('web/insights/EmptyInsightDashboard', module)
     })
 
 add('EmptyInsightDashboard', () => {
-    const dashboard: InsightDashboard = {
+    const dashboard: InsightDashboardSettingsApi = {
         type: InsightsDashboardType.Personal,
         id: '101',
         title: 'Personal',

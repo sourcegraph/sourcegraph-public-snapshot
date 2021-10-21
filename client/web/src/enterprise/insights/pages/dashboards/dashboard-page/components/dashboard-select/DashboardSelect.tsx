@@ -4,7 +4,7 @@ import classnames from 'classnames'
 import React from 'react'
 
 import {
-    InsightDashboard,
+    InsightDashboardSettingsApi,
     InsightsDashboardType,
     isGlobalDashboard,
     isOrganizationDashboard,
@@ -20,9 +20,9 @@ const LABEL_ID = 'insights-dashboards--select'
 
 export interface DashboardSelectProps {
     value: string | undefined
-    dashboards: InsightDashboard[]
+    dashboards: InsightDashboardSettingsApi[]
 
-    onSelect: (dashboard: InsightDashboard) => void
+    onSelect: (dashboard: InsightDashboardSettingsApi) => void
     className?: string
 }
 
@@ -120,7 +120,7 @@ interface DashboardOrganizationGroup {
 /**
  * Returns organization dashboards grouped by dashboard owner id
  */
-const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): DashboardOrganizationGroup[] => {
+const getDashboardOrganizationsGroups = (dashboards: InsightDashboardSettingsApi[]): DashboardOrganizationGroup[] => {
     const groupsDictionary = dashboards
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {

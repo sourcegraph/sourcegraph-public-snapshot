@@ -3,7 +3,7 @@ import { LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
-import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
+import { ExtensionInsight, Insight, InsightDashboardSettingsApi, SettingsBasedInsightDashboard } from '../types'
 import { SearchBasedInsightSeries } from '../types/insight/search-insight'
 
 export interface DashboardCreateInput {
@@ -28,7 +28,7 @@ export interface FindInsightByNameInput {
 
 export interface InsightCreateInput {
     insight: Insight
-    dashboard: InsightDashboard | null
+    dashboard: InsightDashboardSettingsApi | null
 }
 
 export interface InsightUpdateInput {

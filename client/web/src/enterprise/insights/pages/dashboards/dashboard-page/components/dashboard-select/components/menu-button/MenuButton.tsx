@@ -4,7 +4,7 @@ import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React from 'react'
 
-import { InsightDashboard, InsightsDashboardType } from '../../../../../../../core/types'
+import { InsightDashboardSettingsApi, InsightsDashboardType } from '../../../../../../../core/types'
 import { getDashboardOwnerName, getDashboardTitle } from '../../helpers/get-dashboard-title'
 import { Badge } from '../badge/Badge'
 import { TruncatedText } from '../trancated-text/TrancatedText'
@@ -12,7 +12,7 @@ import { TruncatedText } from '../trancated-text/TrancatedText'
 import styles from './MenuButton.module.scss'
 
 interface MenuButtonProps {
-    dashboards: InsightDashboard[]
+    dashboards: InsightDashboardSettingsApi[]
     className?: string
 }
 

@@ -1,4 +1,9 @@
-import { InsightDashboard, InsightsDashboardType, isRealDashboard, isVirtualDashboard } from '../../../../core/types'
+import {
+    InsightDashboardSettingsApi,
+    InsightsDashboardType,
+    isRealDashboard,
+    isVirtualDashboard,
+} from '../../../../core/types'
 import { isSettingsBasedInsightsDashboard } from '../../../../core/types/dashboard/real-dashboard'
 import { isGlobalSubject, SupportedInsightSubject } from '../../../../core/types/subjects'
 
@@ -24,7 +29,7 @@ const DEFAULT_DASHBOARD_PERMISSIONS: DashboardPermissions = {
 }
 
 export function useDashboardPermissions(
-    dashboard: InsightDashboard | undefined,
+    dashboard: InsightDashboardSettingsApi | undefined,
     supportedSubjects?: SupportedInsightSubject[]
 ): DashboardPermissions {
     if (isVirtualDashboard(dashboard)) {
@@ -76,7 +81,7 @@ export function useDashboardPermissions(
 }
 
 export function getTooltipMessage(
-    dashboard: InsightDashboard | undefined,
+    dashboard: InsightDashboardSettingsApi | undefined,
     permissions: DashboardPermissions
 ): string | undefined {
     if (!dashboard) {

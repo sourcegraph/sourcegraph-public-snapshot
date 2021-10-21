@@ -4,7 +4,7 @@ import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 import React from 'react'
 
 import { positionBottomRight } from '../../../../../components/context-menu/utils'
-import { InsightDashboard } from '../../../../../core/types'
+import { InsightDashboardSettingsApi } from '../../../../../core/types'
 import { SupportedInsightSubject } from '../../../../../core/types/subjects'
 import { getTooltipMessage, useDashboardPermissions } from '../../hooks/use-dashboard-permissions'
 
@@ -20,7 +20,7 @@ export enum DashboardMenuAction {
 export interface DashboardMenuProps {
     innerRef: React.Ref<HTMLButtonElement>
     subjects?: SupportedInsightSubject[]
-    dashboard?: InsightDashboard
+    dashboard?: InsightDashboardSettingsApi
     onSelect?: (action: DashboardMenuAction) => void
     tooltipText?: string
 }
