@@ -108,10 +108,6 @@ const config = {
       }),
       new CssMinimizerWebpackPlugin(),
     ],
-    ...(useNamedChunks && {
-      moduleIds: 'named',
-      chunkIds: 'named',
-    }),
     ...(isDevelopment && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
