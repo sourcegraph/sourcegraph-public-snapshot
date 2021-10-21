@@ -104,14 +104,15 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
 
 # Table "public.lsif_data_docs_search_current_private"
 ```
-    Column    |           Type           | Collation | Nullable |                              Default                              
---------------+--------------------------+-----------+----------+-------------------------------------------------------------------
- repo_id      | integer                  |           | not null | 
- dump_root    | text                     |           | not null | 
- lang_name_id | integer                  |           | not null | 
- dump_id      | integer                  |           | not null | 
- created_at   | timestamp with time zone |           | not null | now()
- id           | integer                  |           | not null | nextval('lsif_data_docs_search_current_private_id_seq'::regclass)
+        Column        |           Type           | Collation | Nullable |                              Default                              
+----------------------+--------------------------+-----------+----------+-------------------------------------------------------------------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+ id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_private_id_seq'::regclass)
 Indexes:
     "lsif_data_docs_search_current_private_pkey" PRIMARY KEY, btree (id)
     "lsif_data_docs_search_current_private_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
@@ -128,18 +129,21 @@ A table indicating the most current search index for a unique repository, root, 
 
 **lang_name_id**: The interned index name of the associated dump.
 
+**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
+
 **repo_id**: The repository identifier of the associated dump.
 
 # Table "public.lsif_data_docs_search_current_public"
 ```
-    Column    |           Type           | Collation | Nullable |                             Default                              
---------------+--------------------------+-----------+----------+------------------------------------------------------------------
- repo_id      | integer                  |           | not null | 
- dump_root    | text                     |           | not null | 
- lang_name_id | integer                  |           | not null | 
- dump_id      | integer                  |           | not null | 
- created_at   | timestamp with time zone |           | not null | now()
- id           | integer                  |           | not null | nextval('lsif_data_docs_search_current_public_id_seq'::regclass)
+        Column        |           Type           | Collation | Nullable |                             Default                              
+----------------------+--------------------------+-----------+----------+------------------------------------------------------------------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+ id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_public_id_seq'::regclass)
 Indexes:
     "lsif_data_docs_search_current_public_pkey" PRIMARY KEY, btree (id)
     "lsif_data_docs_search_current_public_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
@@ -155,6 +159,8 @@ A table indicating the most current search index for a unique repository, root, 
 **dump_root**: The root of the associated dump.
 
 **lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
 
 **repo_id**: The repository identifier of the associated dump.
 
