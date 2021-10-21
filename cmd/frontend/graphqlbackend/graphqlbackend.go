@@ -47,14 +47,14 @@ var (
 )
 
 type prometheusTracer struct {
-	trace.OpenTracingTracer
+	tracer trace.OpenTracingTracer
 }
 
 func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
-		ctx, finish = t.OpenTracingTracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
@@ -145,7 +145,7 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
 	var finish trace.TraceValidationFinishFunc
 	if ot.ShouldTrace(ctx) {
-		finish = t.OpenTracingTracer.TraceValidation(ctx)
+		finish = t.tracer.TraceValidation(ctx)
 	}
 	return func(queryErrors []*gqlerrors.QueryError) {
 		if finish != nil {
