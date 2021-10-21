@@ -26,6 +26,9 @@ const isProduction = mode === 'production'
 const isCI = process.env.CI === 'true'
 const isCacheEnabled = isDevelopment && !isCI
 
+/** Allow overriding default Webpack naming behavior for debugging */
+const useNamedChunks = process.env.WEBPACK_USE_NAMED_CHUNKS === 'true'
+
 const devtool = isProduction ? 'source-map' : 'eval-cheap-module-source-map'
 
 const shouldServeIndexHTML = process.env.WEBPACK_SERVE_INDEX === 'true'
@@ -105,6 +108,10 @@ const config = {
       }),
       new CssMinimizerWebpackPlugin(),
     ],
+    ...(useNamedChunks && {
+      moduleIds: 'named',
+      chunkIds: 'named',
+    }),
     ...(isDevelopment && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
@@ -122,8 +129,10 @@ const config = {
   output: {
     path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-    filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
-    chunkFilename: mode === 'production' ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
+    filename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
+    chunkFilename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
