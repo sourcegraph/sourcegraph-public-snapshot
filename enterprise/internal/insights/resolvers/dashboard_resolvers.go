@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/cockroachdb/errors"
@@ -12,8 +14,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
@@ -28,10 +28,10 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	dashboardStore store.DashboardStore
-	insightStore   *store.InsightStore
-	orgStore       *database.OrgStore
-	args           *graphqlbackend.InsightsDashboardsArgs
+	orgStore *database.OrgStore
+	args     *graphqlbackend.InsightsDashboardsArgs
+
+	baseInsightResolver
 
 	// Cache results because they are used by multiple fields
 	once       sync.Once
@@ -84,7 +84,7 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
 	for _, dashboard := range dashboards {
 		id := newRealDashboardID(int64(dashboard.ID))
-		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id, insightStore: d.insightStore})
+		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id, baseInsightResolver: d.baseInsightResolver})
 	}
 	return resolvers, nil
 }
@@ -104,7 +104,7 @@ type insightsDashboardResolver struct {
 	dashboard *types.Dashboard
 	id        *dashboardID
 
-	insightStore *store.InsightStore
+	baseInsightResolver
 }
 
 func (i *insightsDashboardResolver) Title() string {
@@ -116,7 +116,7 @@ func (i *insightsDashboardResolver) ID() graphql.ID {
 }
 
 func (i *insightsDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
-	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, insightStore: i.insightStore, dashboard: i.dashboard}
+	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, dashboard: i.dashboard, baseInsightResolver: i.baseInsightResolver}
 }
 
 func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
@@ -154,9 +154,10 @@ func (i *insightsPermissionGrantsResolver) Global() bool {
 }
 
 type DashboardInsightViewConnectionResolver struct {
-	insightStore *store.InsightStore
-	ids          []string
-	dashboard    *types.Dashboard
+	baseInsightResolver
+
+	ids       []string
+	dashboard *types.Dashboard
 }
 
 func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
@@ -166,7 +167,7 @@ func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]g
 		return nil, err
 	}
 	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i]})
+		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
 	}
 	return resolvers, nil
 }
@@ -197,7 +198,7 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboard == nil {
 		return nil, nil
 	}
-	return &insightsDashboardPayloadResolver{dashboard}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
@@ -232,7 +233,7 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboard == nil {
 		return nil, nil
 	}
-	return &insightsDashboardPayloadResolver{dashboard}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {
@@ -331,7 +332,7 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
@@ -357,11 +358,13 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 type insightsDashboardPayloadResolver struct {
 	dashboard *types.Dashboard
+
+	baseInsightResolver
 }
 
 func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
