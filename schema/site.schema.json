@@ -376,6 +376,12 @@
         }
       }
     },
+    "batchChanges.disableWebhooksWarning": {
+      "description": "Hides Batch Changes warnings about webhooks not being configured.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.",
       "type": "boolean",
