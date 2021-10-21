@@ -563,11 +563,11 @@ describe('Search contexts', () => {
 
         // Open dropdown menu
         await driver.page.click('.test-search-context-dropdown')
-        await driver.page.waitForSelector('.search-context-menu__item', { visible: true })
+        await driver.page.waitForSelector('[data-testid="search-context-menu-item"]', { visible: true })
 
         // Scroll to the bottom of the list
         await driver.page.evaluate(() => {
-            const scrollableSection = document.querySelector<HTMLDivElement>('.search-context-menu__list')
+            const scrollableSection = document.querySelector<HTMLDivElement>('[data-testid="search-context-menu-list"]')
             if (scrollableSection) {
                 scrollableSection.scrollTop = scrollableSection.offsetHeight
             }
@@ -576,7 +576,8 @@ describe('Search contexts', () => {
         // Wait for correct number of total elements to load
         await driver.page.waitFor(
             searchContextsCount =>
-                document.querySelectorAll('.search-context-menu__item-name').length === searchContextsCount,
+                document.querySelectorAll('[data-testid="search-context-menu-item-name"]').length ===
+                searchContextsCount,
             {},
             searchContextsCount
         )
