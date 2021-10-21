@@ -7,10 +7,9 @@
 package buildkite
 
 import (
+	"encoding/json"
 	"io"
 	"strings"
-
-	"github.com/ghodss/yaml"
 )
 
 type Pipeline struct {
@@ -101,7 +100,7 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 }
 
 func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
-	output, err := yaml.Marshal(p)
+	output, err := json.MarshalIndent(p, "", "  ")
 	if err != nil {
 		return 0, err
 	}
