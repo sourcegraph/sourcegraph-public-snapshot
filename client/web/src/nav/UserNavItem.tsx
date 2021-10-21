@@ -160,7 +160,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                         className="dropdown-item"
                     >
-                        Your Repositories <Badge className="ml-1" status="beta" />
+                        Your repositories
                     </Link>
                 )}
                 <Link to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
