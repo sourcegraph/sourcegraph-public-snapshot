@@ -13,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
 import { AuthenticatedUser } from '../auth'
-import { Badge } from '../components/Badge'
 import { SearchContextProps } from '../search'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
