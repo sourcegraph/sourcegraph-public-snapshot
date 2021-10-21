@@ -427,6 +427,9 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 		WithFailureMessage: true,
 		BatchSpecID:        r.batchSpec.ID,
 	})
+	if err != nil {
+		return nil, err
+	}
 	if len(failedJobs) == 0 {
 		return nil, nil
 	}
