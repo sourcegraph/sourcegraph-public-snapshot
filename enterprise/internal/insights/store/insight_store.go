@@ -223,6 +223,7 @@ type GetDataSeriesArgs struct {
 	IncludeDeleted      bool
 	BackfillIncomplete  bool
 	SeriesID            string
+	GlobalOnly          bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -245,6 +246,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
+	}
+	if args.GlobalOnly {
+		preds = append(preds, sqlf.Sprintf("repositories is null"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
