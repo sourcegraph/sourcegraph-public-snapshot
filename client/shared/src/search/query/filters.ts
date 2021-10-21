@@ -23,7 +23,6 @@ export enum FilterType {
     message = 'message',
     patterntype = 'patterntype',
     repo = 'repo',
-    repogroup = 'repogroup',
     repohascommitafter = 'repohascommitafter',
     repohasfile = 'repohasfile',
     // eslint-disable-next-line unicorn/prevent-abbreviations
@@ -37,7 +36,6 @@ export enum FilterType {
 /* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     f = 'file',
-    g = 'repogroup',
     l = 'lang',
     language = 'lang',
     m = 'message',
@@ -51,7 +49,6 @@ export enum AliasedFilterType {
 
 export const ALIASES: Record<string, string> = {
     r: 'repo',
-    g: 'repogroup',
     f: 'file',
     l: 'lang',
     language: 'language',
@@ -257,11 +254,6 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from repositories matching the given search pattern.`,
         suggestions: 'repo',
-    },
-    [FilterType.repogroup]: {
-        alias: 'g',
-        description: 'group-name (include results from the named group)',
-        singular: true,
     },
     [FilterType.repohascommitafter]: {
         description: '"string specifying time frame" (filter out stale repositories without recent commits)',

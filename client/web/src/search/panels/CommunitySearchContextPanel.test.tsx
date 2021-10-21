@@ -5,7 +5,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 
-describe('RepogroupPanel', () => {
+describe('CommunitySearchContextPanel', () => {
     test('renders correctly', () => {
         const props = {
             authenticatedUser: null,

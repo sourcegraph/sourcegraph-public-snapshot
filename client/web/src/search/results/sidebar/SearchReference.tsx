@@ -166,12 +166,6 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         ],
     },
     {
-        ...createQueryExampleFromString('{group-name}'),
-        field: FilterType.repogroup,
-        description:
-            'Only include results from the named group of repositories (defined by the server admin). Same as using a repo: keyword that matches all of the group’s repositories. Use repo: unless you know that the group exists.',
-    },
-    {
         ...createQueryExampleFromString('contains.file({path})'),
         field: FilterType.repo,
         description: 'Search only inside repositories that contain a file path matching the regular expression.',

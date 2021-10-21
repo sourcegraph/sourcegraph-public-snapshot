@@ -7,7 +7,7 @@ import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 import { CommunitySearchContextsPanel } from './CommunitySearchContextPanel'
 import { _fetchRecentSearches } from './utils'
 
-const { add } = storiesOf('web/search/panels/RepogroupPanel', module)
+const { add } = storiesOf('web/search/panels/CommunitySearchContextPanel', module)
     .addParameters({
         design: {
             type: 'figma',
