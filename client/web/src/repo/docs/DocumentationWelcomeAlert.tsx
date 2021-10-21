@@ -1,10 +1,16 @@
+import classNames from 'classnames'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
 
+import styles from './DocumentationWelcomeAlert.module.scss'
+
 export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
-    <DismissibleAlert className="documentation-welcome-alert mt-3" partialStorageKey="apidocs-welcome">
+    <DismissibleAlert
+        className={classNames('mt-3', styles.documentationWelcomeAlert)}
+        partialStorageKey="apidocs-welcome"
+    >
         <div className="card">
             <div className="card-body p-3">
                 <h1>
