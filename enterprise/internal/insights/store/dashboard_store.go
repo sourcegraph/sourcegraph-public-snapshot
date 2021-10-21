@@ -134,9 +134,9 @@ func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err er
 const getDashboardsSql = `
 -- source: enterprise/internal/insights/store/dashboard_store.go:GetDashboards
 SELECT db.id, db.title, t.uuid_array as insight_view_unique_ids,
-	array_remove(array_agg(dg.user_id), null) as userId_grants,
-	array_remove(array_agg(dg.org_id), null) as orgId_grants,
-	bool_or(dg.global is true) as global_grant
+	ARRAY_REMOVE(ARRAY_AGG(dg.user_id), NULL) AS granted_users,
+	ARRAY_REMOVE(ARRAY_AGG(dg.org_id), NULL)  AS granted_orgs,
+	BOOL_OR(dg.global IS TRUE)                AS granted_global
 FROM dashboard db
          JOIN dashboard_grants dg ON db.id = dg.dashboard_id
          LEFT JOIN (SELECT ARRAY_AGG(iv.unique_id) AS uuid_array, div.dashboard_id
