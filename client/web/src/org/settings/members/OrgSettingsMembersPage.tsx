@@ -30,13 +30,14 @@ interface UserNodeProps {
     node: GQL.IUser
 
     /** The organization being displayed. */
-    org: OrgAreaOrganizationFields
+    org: OrgAreaOrganizationFields & { viewerIsOnlyMember: boolean }
 
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
     onDidUpdate?: () => void
+    onAttemptedToRemoveOnlyMember?: () => void
     history: H.History
 }
 
@@ -61,11 +62,17 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         this.subscriptions.add(
             this.removes
                 .pipe(
-                    filter(() =>
-                        window.confirm(
+                    filter(() => {
+                        if (this.isSelf && this.props.org.viewerIsOnlyMember) {
+                            if (this.props.onAttemptedToRemoveOnlyMember) {
+                                this.props.onAttemptedToRemoveOnlyMember()
+                            }
+                            return false
+                        }
+                        return window.confirm(
                             this.isSelf ? 'Leave the organization?' : `Remove the user ${this.props.node.username}?`
                         )
-                    ),
+                    }),
                     switchMap(() =>
                         removeUserFromOrganization({ user: this.props.node.id, organization: this.props.org.id }).pipe(
                             catchError(error => [asError(error)]),
@@ -145,6 +152,14 @@ interface State {
      * they removed themselves and they are not a site admin).
      */
     viewerCanAdminister: boolean
+    /**
+     * Whether the viewer is the only org member (and cannot delete their membership)
+     */
+    viewerIsOnlyMember: boolean
+    /**
+     * Whether the viewer is the only org member (and cannot delete their membership)
+     */
+    onlyMemberRemovalAttempted: boolean
 }
 
 /**
@@ -157,7 +172,11 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = { viewerCanAdminister: props.org.viewerCanAdminister }
+        this.state = {
+            viewerCanAdminister: props.org.viewerCanAdminister,
+            viewerIsOnlyMember: false,
+            onlyMemberRemovalAttempted: false,
+        }
     }
 
     public componentDidMount(): void {
@@ -186,9 +205,15 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const nodeProps: Omit<UserNodeProps, 'node'> = {
-            org: { ...this.props.org, viewerCanAdminister: this.state.viewerCanAdminister },
+            org: {
+                ...this.props.org,
+                viewerCanAdminister: this.state.viewerCanAdminister,
+                viewerIsOnlyMember: this.state.viewerIsOnlyMember,
+            },
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
+            onAttemptedToRemoveOnlyMember: () => this.setState({ onlyMemberRemovalAttempted: true }),
+
             history: this.props.history,
         }
 
@@ -197,6 +222,9 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 <PageTitle title={`Members - ${this.props.org.name}`} />
                 <PageHeader path={[{ text: 'Organization members' }]} headingElement="h2" className="mb-3" />
                 <Container>
+                    {this.state.onlyMemberRemovalAttempted && (
+                        <div className="alert alert-warning">You can’t remove the only member of an organization</div>
+                    )}
                     {this.state.viewerCanAdminister && (
                         <InviteForm
                             orgID={this.props.org.id}
@@ -251,15 +279,19 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
-                    this.setState({ viewerCanAdminister: false })
+                    this.setState({ viewerCanAdminister: false, viewerIsOnlyMember: false })
                     throw createAggregateError(errors)
                 }
                 const org = data.node as GQL.IOrg
                 if (!org.members) {
-                    this.setState({ viewerCanAdminister: false })
+                    this.setState({ viewerCanAdminister: false, viewerIsOnlyMember: false })
                     throw createAggregateError(errors)
                 }
-                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
+                this.setState({
+                    viewerCanAdminister: org.viewerCanAdminister,
+                    viewerIsOnlyMember:
+                        org.members.totalCount === 1 && org.members.nodes[0].id === this.props.authenticatedUser?.id,
+                })
                 return org.members
             })
         )
