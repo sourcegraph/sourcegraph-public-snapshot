@@ -483,6 +483,7 @@ describe('Batches', () => {
                     ...batchChangesListResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
+                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
                 })
@@ -518,6 +519,7 @@ describe('Batches', () => {
                     ...batchChangeLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
                     BatchChangeChangesets,
+                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
                     DeleteBatchChange: () => ({
@@ -532,7 +534,8 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
                 )
 
                 // Delete the closed batch change.
@@ -567,6 +570,7 @@ describe('Batches', () => {
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
+                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     BatchSpecByID: () => ({
                         node: {
                             __typename: 'BatchSpec',
@@ -758,6 +762,7 @@ describe('Batches', () => {
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
+                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     ExternalChangesetFileDiffs,
                     CloseBatchChange: () => ({
                         closeBatchChange: {
