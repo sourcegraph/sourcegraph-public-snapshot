@@ -253,34 +253,6 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
-                    to="/contexts"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/contexts"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/contexts"
-                        onClick={[Function]}
-                      >
-                        Search contexts 
-                        <Badge
-                          className="ml-1"
-                          status="new"
-                        >
-                          <span
-                            className="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                          >
-                            new
-                          </span>
-                        </Badge>
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <Link
-                    className="dropdown-item"
                     to="/users/alice/searches"
                   >
                     <LinkAnchor

@@ -1,5 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import PlusIcon from 'mdi-react/PlusIcon'
 import React, { useCallback, useState } from 'react'
 
@@ -69,11 +70,15 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                 <PageHeader
                     path={[
                         {
-                            text: 'Search contexts',
+                            icon: MagnifyIcon,
+                            to: '/search',
+                        },
+                        {
+                            text: 'Contexts',
                         },
                     ]}
                     actions={
-                        <Link to="/contexts/new" className="btn btn-secondary">
+                        <Link to="/contexts/new" className="btn btn-primary">
                             <PlusIcon className="icon-inline" />
                             Create search context
                         </Link>
