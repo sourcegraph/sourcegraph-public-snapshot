@@ -1,6 +1,9 @@
 #!/bin/sh
 # shellcheck shell=dash
 
+# bootstrap.sh downloads the latest release of `sg` into a temp location and
+# runs `sg install`.
+
 set -u
 
 usage() {
@@ -28,6 +31,8 @@ main() {
   local _arch="$RETVAL"
   assert_nz "$_arch" "arch"
 
+  printf '%s\n' 'determining latest release of sg' 1>&2
+
   local _location_header
   _location_header="$(curl --silent -I "https://github.com/sourcegraph/sg/releases/latest" | grep "location:" | tr -d '\r')"
 
@@ -42,39 +47,7 @@ main() {
   _dir="$(ensure mktemp -d)"
   local _file="${_dir}/sg"
 
-  local _ansi_escapes_are_valid=false
-  if [ -t 2 ]; then
-    if [ "${TERM+set}" = 'set' ]; then
-      case "$TERM" in
-      xterm* | rxvt* | urxvt* | linux* | vt*)
-        _ansi_escapes_are_valid=true
-        ;;
-      esac
-    fi
-  fi
-
-  # check if we have to use /dev/tty to prompt the user
-  local need_tty=yes
-  for arg in "$@"; do
-    case "$arg" in
-    -h | --help)
-      usage
-      exit 0
-      ;;
-    -y)
-      # user wants to skip the prompt -- we don't need /dev/tty
-      need_tty=no
-      ;;
-    *) ;;
-
-    esac
-  done
-
-  if $_ansi_escapes_are_valid; then
-    printf "\33[1minfo:\33[0m downloading sg\n" 1>&2
-  else
-    printf '%s\n' 'info: downloading sg' 1>&2
-  fi
+  printf '%s\n' 'downloading sg...' 1>&2
 
   ensure mkdir -p "$_dir"
   ensure download "$_url" "$_file" "$_arch"
@@ -85,6 +58,7 @@ main() {
     exit 1
   fi
 
+  printf '%s\n' 'running sg install' 1>&2
   exec "$_file" install
 }
 
@@ -237,7 +211,7 @@ check_help_for() {
   esac
 
   for _arg in "$@"; do
-    if ! "$_cmd" --help $_category | grep -q -- "$_arg"; then
+    if ! "$_cmd" --help "$_category" | grep -q -- "$_arg"; then
       return 1
     fi
   done
@@ -283,7 +257,6 @@ get_ciphersuites_for_curl() {
 
   RETVAL="$_cs"
 }
-
 
 # Return strong TLS 1.2-1.3 cipher suites in OpenSSL or GnuTLS syntax. TLS 1.2
 # excludes non-ECDHE and non-AEAD cipher suites. DHE is excluded due to bad
