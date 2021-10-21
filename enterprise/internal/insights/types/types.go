@@ -77,10 +77,13 @@ type DirtyQueryAggregate struct {
 }
 
 type Dashboard struct {
-	ID         int
-	Title      string
-	InsightIDs []string // shallow references
-	Save       bool     // temporarily save dashboards from being cleared during setting migration
+	ID           int
+	Title        string
+	InsightIDs   []string // shallow references
+	UserIdGrants []int64
+	OrgIdGrants  []int64
+	GlobalGrant  bool
+	Save         bool // temporarily save dashboards from being cleared during setting migration
 }
 
 type InsightSeriesStatus struct {
