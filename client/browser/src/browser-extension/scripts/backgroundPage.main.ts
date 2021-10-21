@@ -134,7 +134,7 @@ async function main(): Promise<void> {
         observeStorageKey('managed', 'sourcegraphURL')
             .pipe(
                 filter(isDefined),
-                concatMap(sourcegraphURL => SourcegraphUrlService.setSelfHostedSourcegraphURL(sourcegraphURL))
+                concatMap(sourcegraphURL => SourcegraphUrlService.setSelfHostedURL(sourcegraphURL))
             )
             .subscribe()
     )
@@ -144,7 +144,7 @@ async function main(): Promise<void> {
 
         // Configure the omnibox when the sourcegraphURL changes.
         subscriptions.add(
-            SourcegraphUrlService.observeSelfHostedOrCloud().subscribe(sourcegraphURL => {
+            SourcegraphUrlService.observe().subscribe(sourcegraphURL => {
                 configureOmnibox(sourcegraphURL)
             })
         )
@@ -424,9 +424,9 @@ function observeCurrentTabPrivateCloudError(): Observable<boolean> {
 
 function observeSourcegraphUrlValidation(): Observable<boolean> {
     // TODO: check if we need to check both URLs
-    return SourcegraphUrlService.getSelfHostedSourcegraphURL().pipe(
+    return SourcegraphUrlService.observe().pipe(
         filter(url => !!url),
-        switchMap(url => timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(() => validateSite(url as string)))
+        switchMap(url => timer(0, INTERVAL_FOR_SOURCEGRPAH_URL_CHECK).pipe(() => validateSite(url)))
     )
 }
 

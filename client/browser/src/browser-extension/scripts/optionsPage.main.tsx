@@ -4,7 +4,7 @@ import '../../shared/polyfills'
 import React, { useEffect, useState } from 'react'
 import { render } from 'react-dom'
 import { from, noop, Observable, combineLatest } from 'rxjs'
-import { catchError, map, mapTo } from 'rxjs/operators'
+import { catchError, distinctUntilChanged, map, mapTo } from 'rxjs/operators'
 import { Optional } from 'utility-types'
 
 import { AnchorLink, setLinkComponent } from '@sourcegraph/shared/src/components/Link'
@@ -119,7 +119,8 @@ const observeOptionFlagsWithValues = (): Observable<OptionFlagWithValue[]> => {
                 return definitions.filter(flag => flag.key !== 'sendTelemetry')
             }
             return definitions
-        })
+        }),
+        distinctUntilChanged()
     )
 }
 
@@ -137,7 +138,7 @@ function onChangeOptionFlag(key: string, value: boolean): void {
 }
 
 function handleSelfHostedSourcegraphURLChange(sourcegraphURL?: string): void {
-    SourcegraphUrlService.setSelfHostedSourcegraphURL(sourcegraphURL).catch(console.error)
+    SourcegraphUrlService.setSelfHostedURL(sourcegraphURL).catch(console.error)
 }
 
 function onBlocklistChange(enabled: boolean, content: string): void {
@@ -155,10 +156,10 @@ function buildRequestPermissionsHandler({ protocol, host }: TabStatus) {
 
 const Options: React.FunctionComponent = () => {
     const sourcegraphURL = useObservable(SourcegraphUrlService.observe())
-    const selfHostedSourcegraphURL = useObservable(SourcegraphUrlService.getSelfHostedSourcegraphURL())
-    const blocklist = useObservable(SourcegraphUrlService.getBlocklist())
+    const selfHostedSourcegraphURL = useObservable(SourcegraphUrlService.observeSelfHostedURL())
+    const blocklist = useObservable(SourcegraphUrlService.observeBlocklist())
     const isActivated = useObservable(observingIsActivated)
-    const optionFlags = useObservable(observingOptionFlagsWithValues) || []
+    const optionFlags = useObservable(observingOptionFlagsWithValues)
     const [currentTabStatus, setCurrentTabStatus] = useState<
         { status: TabStatus; handler: React.MouseEventHandler } | undefined
     >()
@@ -192,7 +193,7 @@ const Options: React.FunctionComponent = () => {
                 value={{
                     blocklist,
                     onBlocklistChange,
-                    optionFlags,
+                    optionFlags: optionFlags || [],
                     onChangeOptionFlag,
                 }}
             >

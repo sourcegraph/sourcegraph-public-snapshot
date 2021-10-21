@@ -1,8 +1,9 @@
 /**
  * Checks if rawRepoName is in blocklistContent
  */
-export const isInBlocklist = (blocklistContent: string, rawRepoName: string): boolean =>
-    blocklistContent
+export const isInBlocklist = (rawRepoName: string, { enabled = false, content = '' } = {}): boolean =>
+    enabled &&
+    content
         .split(/\n+/)
         .filter(Boolean)
         .some(pattern => {

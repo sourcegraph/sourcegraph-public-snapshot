@@ -1,13 +1,18 @@
+import { last } from 'lodash'
 import { Observable, of, BehaviorSubject } from 'rxjs'
-import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 
-import { observeStorageKey, setStorageKey, storage } from '../../../browser-extension/web-extension-api/storage'
+import {
+    isStorageAvailable as originalIsStorageAvailable,
+    observeStorageKey as originalObserveStorageKey,
+    setStorageKey as originalSetStorageKey,
+} from '../../../browser-extension/web-extension-api/storage'
 import { SyncStorageItems } from '../../../browser-extension/web-extension-api/types'
 import { RepoIsBlockedForCloudError } from '../../code-hosts/shared/errors'
 import { CLOUD_SOURCEGRAPH_URL, isCloudSourcegraphUrl } from '../../util/context'
 
-import { isInBlocklist } from './lib/isInBlocklist'
-import { isRepoCloned } from './lib/isRepoCloned'
+import { isInBlocklist as originalIsInBlocklist } from './lib/isInBlocklist'
+import { isRepoCloned as originalIsRepoCloned } from './lib/isRepoCloned'
 
 const CLOUD_SUPPORTED_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
 const STORAGE_AREA = 'sync'
@@ -29,94 +34,103 @@ export const isCloudSupportedCodehost = (sourcegraphURL: string): boolean => {
 }
 
 /**
- * Checks if rawRepoName is blocked
+ * @description exporting for unit testing purposes only
  */
-const isBlocked = (rawRepoName: string, blocklist?: SyncStorageItems['blocklist']): boolean => {
-    const { enabled = false, content = '' } = blocklist ?? {}
-
-    return enabled && isInBlocklist(content, rawRepoName)
-}
-
-// todo: add tests
-export const SourcegraphUrlService = (() => {
-    const selfHostedSourcegraphURL = new BehaviorSubject<string | undefined>(undefined)
-    const currentSourcegraphURL = new BehaviorSubject<string>(CLOUD_SOURCEGRAPH_URL)
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const createSourcegraphUrlService = ({
+    isInBlocklist = originalIsInBlocklist,
+    setStorageKey = originalSetStorageKey,
+    observeStorageKey = originalObserveStorageKey,
+    isStorageAvailable = originalIsStorageAvailable,
+    isRepoCloned = originalIsRepoCloned,
+} = {}) => {
+    const selfHostedURL = new BehaviorSubject<string | undefined>(undefined)
     const blocklist = new BehaviorSubject<SyncStorageItems['blocklist'] | undefined>(undefined)
+    const currentSourcegraphURL = new BehaviorSubject<string | undefined>(undefined)
 
-    if (storage?.sync) {
+    if (isStorageAvailable()) {
         observeStorageKey(STORAGE_AREA, 'sourcegraphURL')
             // filter since cloud url is already included
             .pipe(filter(sgURL => sgURL !== CLOUD_SOURCEGRAPH_URL))
             // eslint-disable-next-line rxjs/no-ignored-subscription
-            .subscribe(selfHostedSourcegraphURL)
-        // eslint-disable-next-line rxjs/no-ignored-subscription
-        observeStorageKey(STORAGE_AREA, 'blocklist').subscribe(blocklist)
+            .subscribe(selfHostedURL)
+
+        observeStorageKey(STORAGE_AREA, 'blocklist')
+            // eslint-disable-next-line rxjs/no-ignored-subscription
+            .subscribe(blocklist)
     }
+
+    /**
+     * Observe sourcegraphURL
+     */
+    const observe = (isExtension: boolean = true): Observable<string> => {
+        if (!isExtension) {
+            return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || CLOUD_SOURCEGRAPH_URL)
+        }
+
+        return currentSourcegraphURL.asObservable().pipe(
+            map(currentUrl => currentUrl || selfHostedURL.value || CLOUD_SOURCEGRAPH_URL),
+            distinctUntilChanged()
+        )
+    }
+
+    /**
+     * Updates current sourcegraphURL based on the rawRepoName, self-hosted URL, blocklist
+     */
+    const use = async (rawRepoName: string): Promise<void> => {
+        const instanceURLs = [
+            selfHostedURL.value,
+            ...(isInBlocklist(rawRepoName, blocklist.value) ? [] : [CLOUD_SOURCEGRAPH_URL]),
+        ].filter(Boolean) as string[]
+
+        let detectedURL: string | undefined
+
+        for (const instanceURL of instanceURLs) {
+            if (await isRepoCloned(instanceURL, rawRepoName)) {
+                detectedURL = instanceURL
+                break
+            }
+        }
+
+        detectedURL ??= last(instanceURLs)
+        if (!detectedURL) {
+            throw new RepoIsBlockedForCloudError('Repository is in blocklist.')
+        }
+        currentSourcegraphURL.next(detectedURL)
+    }
+
+    /**
+     * Set self-hosted Sourcegraph URL
+     */
+    const setSelfHostedURL = (sourcegraphURL?: string): Promise<void> =>
+        setStorageKey(STORAGE_AREA, 'sourcegraphURL', sourcegraphURL)
+
+    /**
+     * Save blocklist to storage
+     */
+    const setBlocklist = async (blocklist: SyncStorageItems['blocklist']): Promise<void> =>
+        setStorageKey(STORAGE_AREA, 'blocklist', blocklist)
+
+    /**
+     * Observe self-hosted Sourcegraph URL
+     */
+    const observeSelfHostedURL = (): Observable<string | undefined> => selfHostedURL.asObservable()
+
+    /**
+     * Get blocklist from storage
+     */
+    const observeBlocklist = (): Observable<SyncStorageItems['blocklist'] | undefined> => blocklist.asObservable()
 
     return {
-        /**
-         * Observe sourcegraphURL
-         *
-         * @returns sourcegraphURL
-         */
-        observe: (isExtension: boolean = true): Observable<string> => {
-            if (!isExtension) {
-                return of(
-                    window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || CLOUD_SOURCEGRAPH_URL
-                )
-            }
+        observe,
+        observeBlocklist,
+        observeSelfHostedURL,
 
-            return currentSourcegraphURL.asObservable().pipe(distinctUntilChanged())
-        },
-        /**
-         * Updates sourcegraphURL to use based on the rawRepoName, blocklist, self-hosted URL
-         */
-        use: async (rawRepoName: string): Promise<void> => {
-            const selfHostedUrl = selfHostedSourcegraphURL.value
+        use,
 
-            // 1. repo is in blocklist for cloud
-            if (isBlocked(rawRepoName, blocklist.value)) {
-                if (selfHostedUrl) {
-                    // 1.1. use self-hosted if it exist
-                    currentSourcegraphURL.next(selfHostedUrl)
-                } else {
-                    // 1.2 throw error otherwise
-                    throw new RepoIsBlockedForCloudError('Repository is in blocklist.')
-                }
-            } else if (await isRepoCloned(CLOUD_SOURCEGRAPH_URL, rawRepoName)) {
-                // 3. repo exist in cloud
-                currentSourcegraphURL.next(CLOUD_SOURCEGRAPH_URL)
-            } else if (selfHostedUrl && (await isRepoCloned(selfHostedUrl, rawRepoName))) {
-                // 4. repo exist in self-hosted
-                currentSourcegraphURL.next(selfHostedUrl)
-            } else {
-                // 5. default use cloud
-                currentSourcegraphURL.next(CLOUD_SOURCEGRAPH_URL)
-            }
-        },
-        observeSelfHostedOrCloud: () =>
-            selfHostedSourcegraphURL
-                .asObservable()
-                .pipe(
-                    switchMap(selfHostedUrl => (selfHostedUrl ? of(selfHostedUrl) : SourcegraphUrlService.observe()))
-                ),
-        /**
-         * Get self-hosted Sourcegraph URL
-         */
-        getSelfHostedSourcegraphURL: () => selfHostedSourcegraphURL.asObservable(),
-        /**
-         * Set self-hosted Sourcegraph URL
-         */
-        setSelfHostedSourcegraphURL: (sourcegraphURL?: string): Promise<void> =>
-            setStorageKey(STORAGE_AREA, 'sourcegraphURL', sourcegraphURL),
-        /**
-         * Get blocklist from storage
-         */
-        getBlocklist: () => blocklist.asObservable(),
-        /**
-         * Save blocklist to storage
-         */
-        setBlocklist: (blocklist: SyncStorageItems['blocklist']): Promise<void> =>
-            setStorageKey(STORAGE_AREA, 'blocklist', blocklist),
+        setBlocklist,
+        setSelfHostedURL,
     }
-})()
+}
+
+export const SourcegraphUrlService = createSourcegraphUrlService()

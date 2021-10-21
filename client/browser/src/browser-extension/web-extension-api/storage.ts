@@ -6,7 +6,7 @@ import { getPlatformName } from '../../shared/util/context'
 import { fromBrowserEvent } from './fromBrowserEvent'
 import { LocalStorageItems, SyncStorageItems, ManagedStorageItems } from './types'
 
-interface ExtensionStorageItems {
+export interface ExtensionStorageItems {
     local: LocalStorageItems
     sync: SyncStorageItems
     managed: ManagedStorageItems
@@ -27,6 +27,8 @@ export const storage: {
         ) => void
     >
 } = globalThis.browser && browser.storage
+
+export const isStorageAvailable = (): boolean => !!storage
 
 export const observeStorageKey = <A extends browser.storage.AreaName, K extends keyof ExtensionStorageItems[A]>(
     areaName: A,
