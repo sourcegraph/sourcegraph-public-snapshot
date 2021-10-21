@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetSpecOperation,
     ChangesetState,
@@ -12,7 +13,6 @@ import {
     Scalars,
     VisibleChangesetApplyPreviewFields,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import styles from './PreviewList.module.scss'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
@@ -657,7 +657,7 @@ const stories = visibleChangesetApplyPreviewNodeStories(true)
 
 for (const storyName of Object.keys(stories)) {
     add(storyName, () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <VisibleChangesetApplyPreviewNode
                     {...props}
@@ -671,6 +671,6 @@ for (const storyName of Object.keys(stories)) {
                     queryChangesetSpecFileDiffs={queryEmptyFileDiffs}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ))
 }
