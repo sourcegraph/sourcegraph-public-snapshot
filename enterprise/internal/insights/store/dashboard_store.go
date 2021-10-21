@@ -283,23 +283,7 @@ func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId i
 }
 
 func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error) {
-	var formattedUserIds, formattedOrgIds *sqlf.Query
-	if len(userIds) > 0 {
-		elems := make([]*sqlf.Query, 0, len(userIds))
-		for _, id := range userIds {
-			elems = append(elems, sqlf.Sprintf("%s", id))
-		}
-		formattedUserIds = sqlf.Join(elems, ",")
-	}
-	if len(orgIds) > 0 {
-		elems := make([]*sqlf.Query, 0, len(orgIds))
-		for _, id := range orgIds {
-			elems = append(elems, sqlf.Sprintf("%s", id))
-		}
-		formattedOrgIds = sqlf.Join(elems, ",")
-	}
-
-	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, formattedUserIds, formattedOrgIds)
+	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, dashboardPermissionsQuery(DashboardQueryArgs{UserID: userIds, OrgID: orgIds}))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return count != 0, err
 }
@@ -375,8 +359,8 @@ SELECT * FROM dashboard_grants where dashboard_id = %s
 
 const getDashboardGrantsByPermissionsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
-SELECT COUNT(*) FROM dashboard_grants
-WHERE dashboard_id = %s AND (user_id in (%s) OR org_id in (%s) OR global is true)
+SELECT COUNT(*) FROM dashboard_grants as dg
+WHERE dg.dashboard_id = %s AND %s
 `
 
 const addDashboardGrantsSql = `
