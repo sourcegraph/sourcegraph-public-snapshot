@@ -56,6 +56,10 @@ type batchSpecResolver struct {
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
+	statsOnce sync.Once
+	stats     btypes.BatchSpecStats
+	statsErr  error
+
 	stateOnce sync.Once
 	state     btypes.BatchSpecState
 	stateErr  error
@@ -353,41 +357,53 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 }
 
 func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	resolution, err := r.computeResolutionJob(ctx)
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution == nil {
+
+	if !state.Started() {
 		return nil, nil
 	}
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+
+	stats, err := r.computeStats(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspaces) == 0 {
+	if stats.StartedAt.IsZero() {
 		return nil, nil
 	}
-	// TODO: Look at earliest started_at time among all workspaces.
-	return nil, nil
+
+	return graphqlbackend.DateTimeOrNil(&stats.StartedAt), nil
 }
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	resolution, err := r.computeResolutionJob(ctx)
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution == nil {
+
+	if !state.Finished() {
 		return nil, nil
 	}
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+
+	stats, err := r.computeStats(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspaces) == 0 {
+	if stats.FinishedAt.IsZero() {
 		return nil, nil
 	}
-	// TODO: Look at latest finished_at time among all workspaces, and ensure all are in a final state.
-	return nil, nil
+
+	return graphqlbackend.DateTimeOrNil(&stats.FinishedAt), nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
@@ -521,14 +537,23 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 	return r.workspaces, r.workspacesErr
 }
 
+func (r *batchSpecResolver) computeStats(ctx context.Context) (btypes.BatchSpecStats, error) {
+	r.statsOnce.Do(func() {
+		svc := service.New(r.store)
+		r.stats, r.statsErr = svc.LoadBatchSpecStats(ctx, r.batchSpec)
+	})
+	return r.stats, r.statsErr
+}
+
 func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
 	r.stateOnce.Do(func() {
 		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
-			svc := service.New(r.store)
-			state, err := svc.ComputeBatchSpecState(ctx, r.batchSpec)
+			stats, err := r.computeStats(ctx)
 			if err != nil {
-				return state, err
+				return "", err
 			}
+
+			state := btypes.ComputeBatchSpecState(r.batchSpec, stats)
 
 			// If the BatchSpec finished execution successfully, we validate
 			// the changeset specs.
