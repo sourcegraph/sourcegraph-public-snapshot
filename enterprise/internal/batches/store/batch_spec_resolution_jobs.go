@@ -68,7 +68,7 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.Bat
 
 	q := s.createBatchSpecResolutionJobQuery(wj)
 
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpecResolutionJob(wj, sc)
 	})
 	if err != nil && isUniqueConstraintViolation(err, "batch_spec_resolution_jobs_batch_spec_id_unique") {
@@ -125,7 +125,7 @@ func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpec
 
 	q := getBatchSpecResolutionJobQuery(&opts)
 	var c btypes.BatchSpecResolutionJob
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpecResolutionJob(&c, sc)
 	})
 	if err != nil {
@@ -179,7 +179,7 @@ func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchS
 	q := listBatchSpecResolutionJobsQuery(opts)
 
 	cs = make([]*btypes.BatchSpecResolutionJob, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpecResolutionJob
 		if err := scanBatchSpecResolutionJob(&c, sc); err != nil {
 			return err
@@ -220,7 +220,7 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 	)
 }
 
-func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s scanner) error {
+func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
 
@@ -268,7 +268,7 @@ func scanBatchSpecResolutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.Batc
 
 	var jobs []*btypes.BatchSpecResolutionJob
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.BatchSpecResolutionJob
 		if err = scanBatchSpecResolutionJob(&j, sc); err != nil {
 			return err
