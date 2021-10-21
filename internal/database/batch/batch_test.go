@@ -68,6 +68,28 @@ func TestBatchInserterWithReturn(t *testing.T) {
 	}
 }
 
+func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	setupTestTable(t, db)
+
+	tableSizeFactor := 2
+	duplicationFactor := 2
+	numRows := maxNumParameters * tableSizeFactor
+	expectedValues := makeTestValues(tableSizeFactor, 0)
+
+	var expectedIDs []int
+	for i := 0; i < numRows; i++ {
+		expectedIDs = append(expectedIDs, i+1)
+	}
+
+	if diff := cmp.Diff(expectedIDs, testInsertWithReturnWithConflicts(t, db, duplicationFactor, expectedValues)); diff != "" {
+		t.Errorf("unexpected returned ids (-want +got):\n%s", diff)
+	}
+}
+
 func BenchmarkBatchInserter(b *testing.B) {
 	db := dbtesting.GetDB(b)
 	setupTestTable(b, db)
@@ -101,7 +123,7 @@ func setupTestTable(t testing.TB, db *sql.DB) {
 		createTableQuery := `
 			CREATE TABLE batch_inserter_test (
 				id SERIAL,
-				col1 integer NOT NULL,
+				col1 integer NOT NULL UNIQUE,
 				col2 integer NOT NULL,
 				col3 integer NOT NULL,
 				col4 integer NOT NULL,
@@ -161,6 +183,7 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 		db,
 		"batch_inserter_test",
 		[]string{"col1", "col2", "col3", "col4", "col5"},
+		"",
 		[]string{"id"},
 		func(rows *sql.Rows) error {
 			var id int
@@ -176,6 +199,42 @@ func testInsertWithReturn(t testing.TB, db *sql.DB, expectedValues [][]interface
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
+
+	return insertedIDs
+}
+
+func testInsertWithReturnWithConflicts(t testing.TB, db *sql.DB, n int, expectedValues [][]interface{}) (insertedIDs []int) {
+	ctx := context.Background()
+
+	inserter := NewInserterWithReturn(
+		ctx,
+		db,
+		"batch_inserter_test",
+		[]string{"id", "col1", "col2", "col3", "col4", "col5"},
+		"ON CONFLICT DO NOTHING",
+		[]string{"id"},
+		func(rows *sql.Rows) error {
+			var id int
+			if err := rows.Scan(&id); err != nil {
+				return err
+			}
+
+			insertedIDs = append(insertedIDs, id)
+			return nil
+		},
+	)
+
+	for i := 0; i < n; i++ {
+		for j, values := range expectedValues {
+			if err := inserter.Insert(ctx, append([]interface{}{j + 1}, values...)...); err != nil {
+				t.Fatalf("unexpected error inserting values: %s", err)
+			}
 		}
 	}
 

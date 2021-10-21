@@ -102,6 +102,58 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
 
 **min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
 
+# Table "public.lsif_data_docs_search_current_private"
+```
+        Column        |           Type           | Collation | Nullable | Default 
+----------------------+--------------------------+-----------+----------+---------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_data_docs_search_current_private_pkey" PRIMARY KEY, btree (repo_id, dump_root, lang_name_id)
+
+```
+
+A table indicating the most current search index for a unique repository, root, and language.
+
+**dump_id**: The most recent dump identifier for this key. See associated content in the lsif_data_docs_search_private table.
+
+**dump_root**: The root of the associated dump.
+
+**lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time outdated records in the lsif_data_docs_search_private table have been cleaned.
+
+**repo_id**: The repository identifier of the associated dump.
+
+# Table "public.lsif_data_docs_search_current_public"
+```
+        Column        |           Type           | Collation | Nullable | Default 
+----------------------+--------------------------+-----------+----------+---------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | 
+Indexes:
+    "lsif_data_docs_search_current_public_pkey" PRIMARY KEY, btree (repo_id, dump_root, lang_name_id)
+
+```
+
+A table indicating the most current search index for a unique repository, root, and language.
+
+**dump_id**: The most recent dump identifier for this key. See associated content in the lsif_data_docs_search_public table.
+
+**dump_root**: The root of the associated dump.
+
+**lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time outdated records in the lsif_data_docs_search_public table have been cleaned.
+
+**repo_id**: The repository identifier of the associated dump.
+
 # Table "public.lsif_data_docs_search_lang_names_private"
 ```
   Column   |   Type   | Collation | Nullable |                               Default                                
@@ -428,6 +480,7 @@ Maps documentation path IDs to their corresponding integral documentationResult 
  search_indexed | boolean |           |          | false
 Indexes:
     "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
+    "lsif_data_documentation_pages_dump_id_unindexed" btree (dump_id) WHERE NOT search_indexed
 Triggers:
     lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete()
     lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert()

@@ -486,7 +486,9 @@ func makeTestServer(ctx context.Context, repoDir, remote string, db dbutil.DB) *
 }
 
 func TestCloneRepo(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
@@ -583,7 +585,9 @@ func TestCloneRepo(t *testing.T) {
 }
 
 func TestHandleRepoUpdate(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	remote := t.TempDir()
 	repoName := api.RepoName("example.com/foo/bar")
 	db := dbtesting.GetDB(t)
@@ -894,7 +898,9 @@ func TestHostnameMatch(t *testing.T) {
 }
 
 func TestSyncRepoState(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	db := dbtesting.GetDB(t)
 	remoteDir := t.TempDir()
 

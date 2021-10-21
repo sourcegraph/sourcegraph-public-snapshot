@@ -243,7 +243,7 @@
       }
     },
     "search.repositoryGroups": {
-      "description": "Named groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
+      "description": "DEPRECATED: Use search contexts instead.\n\nNamed groups of repositories that can be referenced in a search query using the `repogroup:` operator. The list can contain string literals (to include single repositories) and JSON objects with a \"regex\" field (to include all repositories matching the regular expression). Retrieving repogroups via the GQL interface will currently exclude repositories matched by regex patterns. #14208.",
       "type": "object",
       "additionalProperties": {
         "type": "array",

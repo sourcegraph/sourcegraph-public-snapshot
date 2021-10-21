@@ -43,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
+	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1527,7 +1528,24 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, &argsIndexed)
+				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(argsIndexed.PatternInfo.FileMatchLimit))
+				defer cleanup()
+
+				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
+				if err != nil {
+					agg.Error(err)
+					return
+				}
+
+				searcherArgs := &search.SearcherParameters{
+					SearcherURLs:    argsIndexed.SearcherURLs,
+					PatternInfo:     argsIndexed.PatternInfo,
+					UseFullDeadline: argsIndexed.UseFullDeadline,
+				}
+
+				notSearcherOnly := argsIndexed.Mode != search.SearcherOnly
+
+				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
 			})
 		}
 
@@ -1611,7 +1629,25 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoFilePathSearch(ctx, args)
+
+				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(args.PatternInfo.FileMatchLimit))
+				defer cleanup()
+
+				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
+				if err != nil {
+					agg.Error(err)
+					return
+				}
+
+				searcherArgs := &search.SearcherParameters{
+					SearcherURLs:    args.SearcherURLs,
+					PatternInfo:     args.PatternInfo,
+					UseFullDeadline: args.UseFullDeadline,
+				}
+
+				notSearcherOnly := args.Mode != search.SearcherOnly
+
+				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
 			})
 		}
 	}

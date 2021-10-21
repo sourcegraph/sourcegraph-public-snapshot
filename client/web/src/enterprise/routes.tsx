@@ -31,10 +31,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         render: () => <Redirect to="/subscriptions/new" />,
     },
     {
-        path: '/campaigns',
-        render: ({ match }) => <Redirect to={match.path.replace('/campaigns', '/batch-changes')} />,
-    },
-    {
         path: '/batch-changes',
         render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
         // We also render this route on sourcegraph.com as a precaution in case anyone

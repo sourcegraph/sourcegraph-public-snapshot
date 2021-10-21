@@ -257,11 +257,10 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 
 	for i, timeSeries := range from.Series {
 		temp := types.InsightSeries{
-			SeriesID:              Encode(timeSeries),
-			Query:                 timeSeries.Query,
-			RecordingIntervalDays: 1,
-			NextRecordingAfter:    insights.NextRecording(time.Now()),
-			NextSnapshotAfter:     insights.NextSnapshot(time.Now()),
+			SeriesID:           Encode(timeSeries),
+			Query:              timeSeries.Query,
+			NextRecordingAfter: insights.NextRecording(time.Now()),
+			NextSnapshotAfter:  insights.NextSnapshot(time.Now()),
 		}
 		var series types.InsightSeries
 		// first check if this data series already exists (somebody already created an insight of this query), in which case we just need to attach the view to this data series
