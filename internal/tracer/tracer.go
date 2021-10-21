@@ -157,7 +157,7 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, io.Closer, error) {
 		cfg.Sampler.Param = 1
 	}
 	tracer, closer, err := cfg.NewTracer(
-		jaegercfg.Logger(jaeger.NullLogger),
+		jaegercfg.Logger(log15Logger{}),
 		jaegercfg.Metrics(jaegermetrics.NullFactory),
 	)
 	if err != nil {
@@ -167,7 +167,6 @@ func newTracer(opts *jaegerOpts) (opentracing.Tracer, io.Closer, error) {
 	return tracer, closer, nil
 }
 
-/*
 type log15Logger struct{}
 
 func (l log15Logger) Error(msg string) { log15.Error(msg) }
@@ -175,7 +174,6 @@ func (l log15Logger) Error(msg string) { log15.Error(msg) }
 func (l log15Logger) Infof(msg string, args ...interface{}) {
 	log15.Info(fmt.Sprintf(msg, args...))
 }
-*/
 
 // switchableTracer implements opentracing.Tracer. The underlying tracer used is switchable (set via
 // the `set` method).
