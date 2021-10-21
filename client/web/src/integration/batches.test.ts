@@ -170,6 +170,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
     node: {
         __typename: 'BatchChange',
         changesets: {
+            __typename: 'ChangesetConnection',
             totalCount: 1,
             pageInfo: {
                 endCursor: null,
@@ -198,6 +199,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     id: 'changeset123',
                     labels: [
                         {
+                            __typename: 'ChangesetLabel',
                             color: '93ba13',
                             description: null,
                             text: 'Abc label',
