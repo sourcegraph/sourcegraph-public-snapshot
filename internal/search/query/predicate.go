@@ -25,7 +25,7 @@ type Predicate interface {
 	Plan(parent Basic) (Plan, error)
 }
 
-var DefaultPredicateRegistry = predicateRegistry{
+var DefaultPredicateRegistry = PredicateRegistry{
 	FieldRepo: {
 		"contains":              func() Predicate { return &RepoContainsPredicate{} },
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
@@ -41,12 +41,12 @@ var DefaultPredicateRegistry = predicateRegistry{
 // PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
 type PredicateTable map[string]func() Predicate
 
-// predicateRegistry is a lookup map of predicate tables associated with all fields.
-type predicateRegistry map[string]PredicateTable
+// PredicateRegistry is a lookup map of predicate tables associated with all fields.
+type PredicateRegistry map[string]PredicateTable
 
 // Get returns a predicate for the given field with the given name. It assumes
 // it exists, and panics otherwise.
-func (pr predicateRegistry) Get(field, name string) Predicate {
+func (pr PredicateRegistry) Get(field, name string) Predicate {
 	fieldPredicates, ok := pr[field]
 	if !ok {
 		panic("predicate lookup for " + field + " is invalid")
