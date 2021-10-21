@@ -576,7 +576,13 @@ const positionString = (position: Position): string =>
  * `%`-encoding for URLs.
  */
 export const encodeURIPathComponent = (component: string): string =>
-    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
+    component
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/')
+        .replace(/%2B/g, '+')
+        .replace(/%5B/g, '[')
+        .replace(/%5D/g, ']')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.

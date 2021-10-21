@@ -746,6 +746,47 @@ func TestServer_handleSchedulePermsSync(t *testing.T) {
 	}
 }
 
+func TestServer_handleExternalServiceSync(t *testing.T) {
+
+	tests := []struct {
+		name        string
+		err         error
+		wantErrCode int
+	}{
+		{
+			name:        "unauthorized",
+			err:         &repoupdater.ErrUnauthorized{NoAuthz: true},
+			wantErrCode: 401,
+		},
+		{
+			name:        "forbidden",
+			err:         repos.ErrForbidden{},
+			wantErrCode: 403,
+		},
+		{
+			name:        "other",
+			err:         errors.Errorf("Any error"),
+			wantErrCode: 500,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			src := testSource{
+				fn: func() error {
+					return test.err
+				},
+			}
+			r := httptest.NewRequest("POST", "/sync-external-service", strings.NewReader(`{"ExternalService": {"ID":1,"kind":"GITHUB"}}}`))
+			w := httptest.NewRecorder()
+			s := &Server{Syncer: &repos.Syncer{Sourcer: repos.NewFakeSourcer(nil, src)}}
+			s.handleExternalServiceSync(w, r)
+			if w.Code != test.wantErrCode {
+				t.Errorf("Code: want %v but got %v", test.wantErrCode, w.Code)
+			}
+		})
+	}
+}
+
 func TestExternalServiceValidate_ValidatesToken(t *testing.T) {
 	var (
 		src    repos.Source

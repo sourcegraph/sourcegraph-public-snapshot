@@ -1425,7 +1425,7 @@ func (s *PermsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]ti
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOutdatedPerms
 SELECT
-	external_services.namespace_user_id,
+	DISTINCT(external_services.namespace_user_id),
 	user_permissions.synced_at
 FROM external_services
 JOIN user_permissions ON user_permissions.user_id = external_services.namespace_user_id

@@ -1,27 +1,24 @@
 import classnames from 'classnames'
-import { cloneDeep } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import React, { useMemo, useState } from 'react'
+import React, { useContext, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
-import { INSIGHTS_ALL_REPOS_SETTINGS_KEY, isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
-import { useInsightSubjects } from '../../../hooks/use-insight-subjects/use-insight-subjects'
-import { findInsightById } from '../../../hooks/use-insight/use-insight'
+import { CodeInsightsBackendContext } from '../../../core/backend/code-insights-backend-context'
+import { isLangStatsInsight, isSearchBasedInsight } from '../../../core/types'
 
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import styles from './EditInsightPage.module.scss'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
 
-export interface EditInsightPageProps extends SettingsCascadeProps, PlatformContextProps<'updateSettings'> {
+export interface EditInsightPageProps {
     /** Normalized insight id <type insight>.insight.<name of insight> */
     insightID: string
 
@@ -33,42 +30,18 @@ export interface EditInsightPageProps extends SettingsCascadeProps, PlatformCont
 }
 
 export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = props => {
-    const { insightID, settingsCascade, authenticatedUser, platformContext } = props
+    const { insightID, authenticatedUser } = props
 
-    const subjects = useInsightSubjects({ settingsCascade })
+    const { getInsightSubjects, getInsightById } = useContext(CodeInsightsBackendContext)
 
-    // We need to catch the settings only once during the first render otherwise
-    // if we used useMemo then after we update the settings further in the submit
-    // handler we will again try to find an insight that may no longer exist and
-    // (if user changed visibility we remove insight first from previous subject)
-    // show the wrong visual state.
-    const [insight] = useState(() => findInsightById(settingsCascade, insightID))
-    const { handleSubmit, handleCancel } = useEditPageHandlers({
-        originalInsight: insight,
-        settingsCascade,
-        platformContext,
-    })
+    const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
+    const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
 
-    const finalSettings = useMemo(() => {
-        if (!insight || !settingsCascade.final || isErrorLike(settingsCascade.final)) {
-            return {}
-        }
+    const { handleSubmit, handleCancel } = useEditPageHandlers({ originalInsight: insight })
 
-        const newSettings: Settings = cloneDeep(settingsCascade.final)
-
-        // Final settings used below as a store of all existing insights
-        // Usually we have validation for title of insight because user can't
-        // have two insights with the same name/id.
-        // In edit mode we should allow users to have insight with id (camelCase(insight title))
-        // which already exists in the setting store. For turning it off (this id/title validation)
-        // we remove current insight from the final settings.
-        delete newSettings[insightID]
-
-        // Also remove settings key from all repos insights map
-        delete newSettings[INSIGHTS_ALL_REPOS_SETTINGS_KEY]?.[insightID]
-
-        return newSettings
-    }, [settingsCascade.final, insight, insightID])
+    if (insight === undefined || subjects === undefined) {
+        return <LoadingSpinner />
+    }
 
     if (!insight) {
         return (
@@ -104,7 +77,6 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             {isSearchBasedInsight(insight) && (
                 <EditSearchBasedInsight
                     insight={insight}
-                    finalSettings={finalSettings}
                     subjects={subjects}
                     onSubmit={handleSubmit}
                     onCancel={handleCancel}
@@ -114,7 +86,6 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
             {isLangStatsInsight(insight) && (
                 <EditLangStatsInsight
                     insight={insight}
-                    finalSettings={finalSettings}
                     subjects={subjects}
                     onSubmit={handleSubmit}
                     onCancel={handleCancel}

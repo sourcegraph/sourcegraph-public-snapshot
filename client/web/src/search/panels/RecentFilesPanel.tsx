@@ -10,6 +10,7 @@ import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { AuthenticatedUser } from '../../auth'
 import { EventLogResult } from '../backend'
 
+import { EmptyPanelContainer } from './EmptyPanelContainer'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
@@ -63,10 +64,10 @@ export const RecentFilesPanel: React.FunctionComponent<Props> = ({
     const loadingDisplay = <LoadingPanelView text="Loading recent files" />
 
     const emptyDisplay = (
-        <div className="panel-container__empty-container align-items-center text-muted">
+        <EmptyPanelContainer className="align-items-center text-muted">
             <FileCodeIcon className="mb-2" size="2rem" />
             <small className="mb-2">This panel will display your most recently viewed files.</small>
-        </div>
+        </EmptyPanelContainer>
     )
 
     function loadMoreItems(): void {

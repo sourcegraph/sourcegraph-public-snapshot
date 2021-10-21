@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	policies "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	dbstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,14 +25,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
 // used for unit testing.
 type MockDBStore struct {
-	// GetAutoindexDisabledRepositoriesFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetAutoindexDisabledRepositories.
-	GetAutoindexDisabledRepositoriesFunc *DBStoreGetAutoindexDisabledRepositoriesFunc
-	// GetRepositoriesWithIndexConfigurationFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetRepositoriesWithIndexConfiguration.
-	GetRepositoriesWithIndexConfigurationFunc *DBStoreGetRepositoriesWithIndexConfigurationFunc
+	// GetConfigurationPoliciesFunc is an instance of a mock function object
+	// controlling the behavior of the method GetConfigurationPolicies.
+	GetConfigurationPoliciesFunc *DBStoreGetConfigurationPoliciesFunc
 	// GetUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUploadByID.
 	GetUploadByIDFunc *DBStoreGetUploadByIDFunc
@@ -49,6 +45,10 @@ type MockDBStore struct {
 	// ReferencesForUploadFunc is an instance of a mock function object
 	// controlling the behavior of the method ReferencesForUpload.
 	ReferencesForUploadFunc *DBStoreReferencesForUploadFunc
+	// SelectRepositoriesForIndexScanFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SelectRepositoriesForIndexScan.
+	SelectRepositoriesForIndexScanFunc *DBStoreSelectRepositoriesForIndexScanFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *DBStoreWithFunc
@@ -58,13 +58,8 @@ type MockDBStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockDBStore() *MockDBStore {
 	return &MockDBStore{
-		GetAutoindexDisabledRepositoriesFunc: &DBStoreGetAutoindexDisabledRepositoriesFunc{
-			defaultHook: func(context.Context) ([]int, error) {
-				return nil, nil
-			},
-		},
-		GetRepositoriesWithIndexConfigurationFunc: &DBStoreGetRepositoriesWithIndexConfigurationFunc{
-			defaultHook: func(context.Context) ([]int, error) {
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
 				return nil, nil
 			},
 		},
@@ -93,6 +88,11 @@ func NewMockDBStore() *MockDBStore {
 				return nil, nil
 			},
 		},
+		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
+			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
+				return nil, nil
+			},
+		},
 		WithFunc: &DBStoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) DBStore {
 				return nil
@@ -105,11 +105,8 @@ func NewMockDBStore() *MockDBStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 	return &MockDBStore{
-		GetAutoindexDisabledRepositoriesFunc: &DBStoreGetAutoindexDisabledRepositoriesFunc{
-			defaultHook: i.GetAutoindexDisabledRepositories,
-		},
-		GetRepositoriesWithIndexConfigurationFunc: &DBStoreGetRepositoriesWithIndexConfigurationFunc{
-			defaultHook: i.GetRepositoriesWithIndexConfiguration,
+		GetConfigurationPoliciesFunc: &DBStoreGetConfigurationPoliciesFunc{
+			defaultHook: i.GetConfigurationPolicies,
 		},
 		GetUploadByIDFunc: &DBStoreGetUploadByIDFunc{
 			defaultHook: i.GetUploadByID,
@@ -126,43 +123,46 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		ReferencesForUploadFunc: &DBStoreReferencesForUploadFunc{
 			defaultHook: i.ReferencesForUpload,
 		},
+		SelectRepositoriesForIndexScanFunc: &DBStoreSelectRepositoriesForIndexScanFunc{
+			defaultHook: i.SelectRepositoriesForIndexScan,
+		},
 		WithFunc: &DBStoreWithFunc{
 			defaultHook: i.With,
 		},
 	}
 }
 
-// DBStoreGetAutoindexDisabledRepositoriesFunc describes the behavior when
-// the GetAutoindexDisabledRepositories method of the parent MockDBStore
-// instance is invoked.
-type DBStoreGetAutoindexDisabledRepositoriesFunc struct {
-	defaultHook func(context.Context) ([]int, error)
-	hooks       []func(context.Context) ([]int, error)
-	history     []DBStoreGetAutoindexDisabledRepositoriesFuncCall
+// DBStoreGetConfigurationPoliciesFunc describes the behavior when the
+// GetConfigurationPolicies method of the parent MockDBStore instance is
+// invoked.
+type DBStoreGetConfigurationPoliciesFunc struct {
+	defaultHook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	hooks       []func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)
+	history     []DBStoreGetConfigurationPoliciesFuncCall
 	mutex       sync.Mutex
 }
 
-// GetAutoindexDisabledRepositories delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) GetAutoindexDisabledRepositories(v0 context.Context) ([]int, error) {
-	r0, r1 := m.GetAutoindexDisabledRepositoriesFunc.nextHook()(v0)
-	m.GetAutoindexDisabledRepositoriesFunc.appendCall(DBStoreGetAutoindexDisabledRepositoriesFuncCall{v0, r0, r1})
+// GetConfigurationPolicies delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDBStore) GetConfigurationPolicies(v0 context.Context, v1 dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
+	r0, r1 := m.GetConfigurationPoliciesFunc.nextHook()(v0, v1)
+	m.GetConfigurationPoliciesFunc.appendCall(DBStoreGetConfigurationPoliciesFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// GetAutoindexDisabledRepositories method of the parent MockDBStore
-// instance is invoked and the hook queue is empty.
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
+// GetConfigurationPolicies method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetAutoindexDisabledRepositories method of the parent MockDBStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) PushHook(hook func(context.Context) ([]int, error)) {
+// GetConfigurationPolicies method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreGetConfigurationPoliciesFunc) PushHook(hook func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -170,21 +170,21 @@ func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]int, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context) ([]int, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
 		return r0, r1
 	})
 }
 
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) nextHook() func(context.Context) ([]int, error) {
+func (f *DBStoreGetConfigurationPoliciesFunc) nextHook() func(context.Context, dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -197,34 +197,36 @@ func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) nextHook() func(context.Co
 	return hook
 }
 
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) appendCall(r0 DBStoreGetAutoindexDisabledRepositoriesFuncCall) {
+func (f *DBStoreGetConfigurationPoliciesFunc) appendCall(r0 DBStoreGetConfigurationPoliciesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// DBStoreGetAutoindexDisabledRepositoriesFuncCall objects describing the
-// invocations of this function.
-func (f *DBStoreGetAutoindexDisabledRepositoriesFunc) History() []DBStoreGetAutoindexDisabledRepositoriesFuncCall {
+// History returns a sequence of DBStoreGetConfigurationPoliciesFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreGetConfigurationPoliciesFunc) History() []DBStoreGetConfigurationPoliciesFuncCall {
 	f.mutex.Lock()
-	history := make([]DBStoreGetAutoindexDisabledRepositoriesFuncCall, len(f.history))
+	history := make([]DBStoreGetConfigurationPoliciesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBStoreGetAutoindexDisabledRepositoriesFuncCall is an object that
-// describes an invocation of method GetAutoindexDisabledRepositories on an
-// instance of MockDBStore.
-type DBStoreGetAutoindexDisabledRepositoriesFuncCall struct {
+// DBStoreGetConfigurationPoliciesFuncCall is an object that describes an
+// invocation of method GetConfigurationPolicies on an instance of
+// MockDBStore.
+type DBStoreGetConfigurationPoliciesFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 dbstore.GetConfigurationPoliciesOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []int
+	Result0 []dbstore.ConfigurationPolicy
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -232,124 +234,13 @@ type DBStoreGetAutoindexDisabledRepositoriesFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBStoreGetAutoindexDisabledRepositoriesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+func (c DBStoreGetConfigurationPoliciesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBStoreGetAutoindexDisabledRepositoriesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreGetRepositoriesWithIndexConfigurationFunc describes the behavior
-// when the GetRepositoriesWithIndexConfiguration method of the parent
-// MockDBStore instance is invoked.
-type DBStoreGetRepositoriesWithIndexConfigurationFunc struct {
-	defaultHook func(context.Context) ([]int, error)
-	hooks       []func(context.Context) ([]int, error)
-	history     []DBStoreGetRepositoriesWithIndexConfigurationFuncCall
-	mutex       sync.Mutex
-}
-
-// GetRepositoriesWithIndexConfiguration delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockDBStore) GetRepositoriesWithIndexConfiguration(v0 context.Context) ([]int, error) {
-	r0, r1 := m.GetRepositoriesWithIndexConfigurationFunc.nextHook()(v0)
-	m.GetRepositoriesWithIndexConfigurationFunc.appendCall(DBStoreGetRepositoriesWithIndexConfigurationFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetRepositoriesWithIndexConfiguration method of the parent MockDBStore
-// instance is invoked and the hook queue is empty.
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultHook(hook func(context.Context) ([]int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetRepositoriesWithIndexConfiguration method of the parent MockDBStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) PushHook(hook func(context.Context) ([]int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) SetDefaultReturn(r0 []int, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) PushReturn(r0 []int, r1 error) {
-	f.PushHook(func(context.Context) ([]int, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) nextHook() func(context.Context) ([]int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) appendCall(r0 DBStoreGetRepositoriesWithIndexConfigurationFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// DBStoreGetRepositoriesWithIndexConfigurationFuncCall objects describing
-// the invocations of this function.
-func (f *DBStoreGetRepositoriesWithIndexConfigurationFunc) History() []DBStoreGetRepositoriesWithIndexConfigurationFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreGetRepositoriesWithIndexConfigurationFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreGetRepositoriesWithIndexConfigurationFuncCall is an object that
-// describes an invocation of method GetRepositoriesWithIndexConfiguration
-// on an instance of MockDBStore.
-type DBStoreGetRepositoriesWithIndexConfigurationFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreGetRepositoriesWithIndexConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreGetRepositoriesWithIndexConfigurationFuncCall) Results() []interface{} {
+func (c DBStoreGetConfigurationPoliciesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -913,6 +804,122 @@ func (c DBStoreReferencesForUploadFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreReferencesForUploadFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreSelectRepositoriesForIndexScanFunc describes the behavior when the
+// SelectRepositoriesForIndexScan method of the parent MockDBStore instance
+// is invoked.
+type DBStoreSelectRepositoriesForIndexScanFunc struct {
+	defaultHook func(context.Context, time.Duration, int) ([]int, error)
+	hooks       []func(context.Context, time.Duration, int) ([]int, error)
+	history     []DBStoreSelectRepositoriesForIndexScanFuncCall
+	mutex       sync.Mutex
+}
+
+// SelectRepositoriesForIndexScan delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) SelectRepositoriesForIndexScan(v0 context.Context, v1 time.Duration, v2 int) ([]int, error) {
+	r0, r1 := m.SelectRepositoriesForIndexScanFunc.nextHook()(v0, v1, v2)
+	m.SelectRepositoriesForIndexScanFunc.appendCall(DBStoreSelectRepositoriesForIndexScanFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SelectRepositoriesForIndexScan method of the parent MockDBStore instance
+// is invoked and the hook queue is empty.
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SelectRepositoriesForIndexScan method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushHook(hook func(context.Context, time.Duration, int) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, int) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) nextHook() func(context.Context, time.Duration, int) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) appendCall(r0 DBStoreSelectRepositoriesForIndexScanFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreSelectRepositoriesForIndexScanFuncCall objects describing the
+// invocations of this function.
+func (f *DBStoreSelectRepositoriesForIndexScanFunc) History() []DBStoreSelectRepositoriesForIndexScanFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreSelectRepositoriesForIndexScanFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreSelectRepositoriesForIndexScanFuncCall is an object that describes
+// an invocation of method SelectRepositoriesForIndexScan on an instance of
+// MockDBStore.
+type DBStoreSelectRepositoriesForIndexScanFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreSelectRepositoriesForIndexScanFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreSelectRepositoriesForIndexScanFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -2744,6 +2751,158 @@ func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Args() []interface
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c IndexingSettingStoreGetLastestSchemaSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockPolicyMatcher is a mock implementation of the PolicyMatcher interface
+// (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing)
+// used for unit testing.
+type MockPolicyMatcher struct {
+	// CommitsDescribedByPolicyFunc is an instance of a mock function object
+	// controlling the behavior of the method CommitsDescribedByPolicy.
+	CommitsDescribedByPolicyFunc *PolicyMatcherCommitsDescribedByPolicyFunc
+}
+
+// NewMockPolicyMatcher creates a new mock of the PolicyMatcher interface.
+// All methods return zero values for all results, unless overwritten.
+func NewMockPolicyMatcher() *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
+			defaultHook: func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+				return nil, nil
+			},
+		},
+	}
+}
+
+// NewMockPolicyMatcherFrom creates a new mock of the MockPolicyMatcher
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockPolicyMatcherFrom(i PolicyMatcher) *MockPolicyMatcher {
+	return &MockPolicyMatcher{
+		CommitsDescribedByPolicyFunc: &PolicyMatcherCommitsDescribedByPolicyFunc{
+			defaultHook: i.CommitsDescribedByPolicy,
+		},
+	}
+}
+
+// PolicyMatcherCommitsDescribedByPolicyFunc describes the behavior when the
+// CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
+// is invoked.
+type PolicyMatcherCommitsDescribedByPolicyFunc struct {
+	defaultHook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error)
+	hooks       []func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error)
+	history     []PolicyMatcherCommitsDescribedByPolicyFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitsDescribedByPolicy delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPolicyMatcher) CommitsDescribedByPolicy(v0 context.Context, v1 int, v2 []dbstore.ConfigurationPolicy, v3 time.Time) (map[string][]policies.PolicyMatch, error) {
+	r0, r1 := m.CommitsDescribedByPolicyFunc.nextHook()(v0, v1, v2, v3)
+	m.CommitsDescribedByPolicyFunc.appendCall(PolicyMatcherCommitsDescribedByPolicyFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
+// is invoked and the hook queue is empty.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultHook(hook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitsDescribedByPolicy method of the parent MockPolicyMatcher instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushHook(hook func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) SetDefaultReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) PushReturn(r0 map[string][]policies.PolicyMatch, r1 error) {
+	f.PushHook(func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+		return r0, r1
+	})
+}
+
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) nextHook() func(context.Context, int, []dbstore.ConfigurationPolicy, time.Time) (map[string][]policies.PolicyMatch, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) appendCall(r0 PolicyMatcherCommitsDescribedByPolicyFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PolicyMatcherCommitsDescribedByPolicyFuncCall objects describing the
+// invocations of this function.
+func (f *PolicyMatcherCommitsDescribedByPolicyFunc) History() []PolicyMatcherCommitsDescribedByPolicyFuncCall {
+	f.mutex.Lock()
+	history := make([]PolicyMatcherCommitsDescribedByPolicyFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PolicyMatcherCommitsDescribedByPolicyFuncCall is an object that describes
+// an invocation of method CommitsDescribedByPolicy on an instance of
+// MockPolicyMatcher.
+type PolicyMatcherCommitsDescribedByPolicyFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []dbstore.ConfigurationPolicy
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string][]policies.PolicyMatch
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PolicyMatcherCommitsDescribedByPolicyFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PolicyMatcherCommitsDescribedByPolicyFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

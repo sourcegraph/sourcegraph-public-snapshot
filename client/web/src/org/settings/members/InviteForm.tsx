@@ -26,6 +26,8 @@ import {
 } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
+import styles from './InviteForm.module.scss'
+
 const emailInvitesEnabled = window.context.emailEnabled
 
 interface Invited extends InviteUserToOrganizationFields {
@@ -101,8 +103,8 @@ export const InviteForm: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="invite-form">
-            <div className="invite-form__container">
+        <div>
+            <div className={styles.container}>
                 <label htmlFor="invite-form__username">
                     {viewerCanAddUserToOrganization ? 'Add or invite member' : 'Invite member'}
                 </label>
@@ -179,11 +181,11 @@ export const InviteForm: React.FunctionComponent<Props> = ({
                 <InvitedNotification
                     key={index}
                     {...invite}
-                    className="alert alert-success invite-form__alert"
+                    className={classNames('alert alert-success', styles.alert)}
                     onDismiss={() => dismissNotification(index)}
                 />
             ))}
-            {isErrorLike(loading) && <ErrorAlert className="invite-form__alert" error={loading} />}
+            {isErrorLike(loading) && <ErrorAlert className={styles.alert} error={loading} />}
         </div>
     )
 }
@@ -264,8 +266,8 @@ const InvitedNotification: React.FunctionComponent<InvitedNotificationProps> = (
     invitationURL,
     onDismiss,
 }) => (
-    <div className={classNames('invited-notification', className)}>
-        <div className="invited-notification__message">
+    <div className={classNames(styles.invitedNotification, className)}>
+        <div className={styles.message}>
             {sentInvitationEmail ? (
                 <>
                     Invitation sent to {username}. You can also send {username} the invitation link directly:

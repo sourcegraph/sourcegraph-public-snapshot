@@ -1,14 +1,12 @@
 import classnames from 'classnames'
+import { camelCase } from 'lodash'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { Settings } from '../../../../../../schema/settings.schema'
 import {
     ViewCard,
     ViewContent,
@@ -16,9 +14,9 @@ import {
     ViewLoadingContent,
     LineChartSettingsContext,
 } from '../../../../../../views'
-import { InsightsApiContext } from '../../../../core/backend/api-provider'
 import { InsightStillProcessingError } from '../../../../core/backend/api/get-backend-insight'
-import { addInsightToSettings } from '../../../../core/settings-action/insights'
+import { CodeInsightsBackendContext } from '../../../../core/backend/code-insights-backend-context'
+import { InsightTypePrefix } from '../../../../core/types'
 import { SearchBackendBasedInsight, SearchBasedBackendFilters } from '../../../../core/types/insight/search-insight'
 import { useDeleteInsight } from '../../../../hooks/use-delete-insight/use-delete-insight'
 import { useDistinctValue } from '../../../../hooks/use-distinct-value'
@@ -32,12 +30,9 @@ import styles from './BackendInsight.module.scss'
 import { DrillDownFiltersAction } from './components/drill-down-filters-action/DrillDownFiltersPanel'
 import { DrillDownInsightCreationFormValues } from './components/drill-down-filters-panel/components/drill-down-insight-creation-form/DrillDownInsightCreationForm'
 import { EMPTY_DRILLDOWN_FILTERS } from './components/drill-down-filters-panel/utils'
-import { useInsightFilterCreation } from './hooks/use-insight-filter-creation'
 
 interface BackendInsightProps
     extends TelemetryProps,
-        SettingsCascadeProps<Settings>,
-        PlatformContextProps<'updateSettings'>,
         React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
     insight: SearchBackendBasedInsight
 }
@@ -46,10 +41,10 @@ interface BackendInsightProps
  * Renders BE search based insight. Fetches insight data by gql api handler.
  */
 export const BackendInsight: React.FunctionComponent<BackendInsightProps> = props => {
-    const { telemetryService, insight, platformContext, settingsCascade, ref, ...otherProps } = props
+    const { telemetryService, insight, ref, ...otherProps } = props
 
     const { dashboard } = useContext(DashboardInsightsContext)
-    const { getBackendInsight, getSubjectSettings, updateSubjectSettings } = useContext(InsightsApiContext)
+    const { getBackendInsightData, createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
@@ -76,31 +71,22 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
     const { data, loading, error } = useParallelRequests(
         useCallback(
             () =>
-                getBackendInsight({
+                getBackendInsightData({
                     ...cachedInsight,
                     filters: debouncedFilters,
                 }),
-            [cachedInsight, debouncedFilters, getBackendInsight]
+            [cachedInsight, debouncedFilters, getBackendInsightData]
         )
     )
 
     // Handle insight delete action
-    const { loading: isDeleting, delete: handleDelete } = useDeleteInsight({
-        settingsCascade,
-        platformContext,
-    })
-
-    const { create: creteInsightWithFilters } = useInsightFilterCreation({ platformContext })
+    const { loading: isDeleting, delete: handleDelete } = useDeleteInsight()
 
     const handleFilterSave = async (filters: SearchBasedBackendFilters): Promise<SubmissionErrors> => {
-        const subjectId = insight.visibility
-
         try {
-            const settings = await getSubjectSettings(subjectId).toPromise()
             const insightWithNewFilters: SearchBackendBasedInsight = { ...insight, filters }
-            const editedSettings = addInsightToSettings(settings.contents, insightWithNewFilters)
 
-            await updateSubjectSettings(platformContext, subjectId, editedSettings).toPromise()
+            await updateInsight({ oldInsight: insight, newInsight: insightWithNewFilters }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterUpdating')
 
@@ -123,12 +109,17 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
         }
 
         try {
-            await creteInsightWithFilters({
-                insightName,
+            const newInsight: SearchBackendBasedInsight = {
+                ...insight,
+                id: `${InsightTypePrefix.search}.${camelCase(insightName)}`,
+                title: insightName,
                 filters,
+            }
+
+            await createInsight({
+                insight: newInsight,
                 dashboard,
-                originalInsight: insight,
-            })
+            }).toPromise()
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
             setOriginalInsightFilters(filters)
@@ -156,7 +147,6 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
             actions={
                 <DrillDownFiltersAction
                     isOpen={isFiltersOpen}
-                    settings={settingsCascade.final ?? {}}
                     popoverTargetRef={insightCardReference}
                     initialFiltersValue={filters}
                     originalFiltersValue={originalInsightFilters}
