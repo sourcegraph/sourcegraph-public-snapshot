@@ -25,6 +25,13 @@ type BuildOptions struct {
 	Env      map[string]string      `json:"env,omitempty"`
 }
 
+func (bo BuildOptions) MarshalJSON() ([]byte, error) {
+	type buildOptions BuildOptions
+	boCopy := buildOptions(bo)
+	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `\$`)
+	return json.Marshal(boCopy)
+}
+
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
@@ -105,9 +112,7 @@ func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
 		return 0, err
 	}
 
-	cleanedOutput := strings.ReplaceAll(string(output), "$", `\$`)
-
-	n, err := w.Write([]byte(cleanedOutput))
+	n, err := w.Write([]byte(output))
 	return int64(n), err
 }
 
