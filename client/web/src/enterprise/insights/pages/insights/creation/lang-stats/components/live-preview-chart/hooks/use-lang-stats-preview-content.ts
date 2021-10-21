@@ -4,7 +4,7 @@ import { PieChartContent } from 'sourcegraph'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useDebounce } from '@sourcegraph/wildcard'
 
-import { InsightsApiContext } from '../../../../../../../core/backend/api-provider'
+import { CodeInsightsBackendContext } from '../../../../../../../core/backend/code-insights-backend-context'
 
 export interface UseLangStatsPreviewContentProps {
     /** Prop to turn off fetching and reset data for live preview chart. */
@@ -28,7 +28,7 @@ export interface UseLangStatsPreviewContentAPI {
 export function useLangStatsPreviewContent(props: UseLangStatsPreviewContentProps): UseLangStatsPreviewContentAPI {
     const { disabled, previewSetting } = props
 
-    const { getLangStatsInsightContent } = useContext(InsightsApiContext)
+    const { getLangStatsInsightContent } = useContext(CodeInsightsBackendContext)
 
     const [loading, setLoading] = useState<boolean>(false)
     const [dataOrError, setDataOrError] = useState<PieChartContent<any> | Error | undefined>()
@@ -49,7 +49,7 @@ export function useLangStatsPreviewContent(props: UseLangStatsPreviewContentProp
             return
         }
 
-        getLangStatsInsightContent(liveDebouncedSettings, { where: 'insightsPage', context: {} })
+        getLangStatsInsightContent({ insight: liveDebouncedSettings, options: { where: 'insightsPage', context: {} } })
             .then(data => !hasRequestCanceled && setDataOrError(data))
             .catch(error => !hasRequestCanceled && setDataOrError(asError(error)))
             .finally(() => !hasRequestCanceled && setLoading(false))

@@ -39,15 +39,13 @@ export interface InsightCreationForm {
  */
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
     const { mode, subjects = [], initialValue = {}, onSubmit, onChange } = props
-
-    // Calculate initial value for visibility settings
-    const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
     const isEdit = mode === 'edit'
 
     const form = useForm<CreateInsightFormFields>({
         initialValues: {
             ...INITIAL_INSIGHT_VALUES,
-            visibility: userSubjectID,
+            // Calculate initial value for visibility settings
+            visibility: subjects.find(isUserSubject)?.id ?? '',
             ...initialValue,
         },
         onSubmit,
