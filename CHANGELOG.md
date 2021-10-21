@@ -23,14 +23,11 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Since 3.28.0, Batch Changes webhooks would not update changesets opened in private repositories. This has been fixed. [#26380](https://github.com/sourcegraph/sourcegraph/issues/26380)
-- Reconciling batch changes could stall when updating the state of a changeset that already existed. This has been fixed. [#26386](https://github.com/sourcegraph/sourcegraph/issues/26386)
+-
 
 ### Removed
 
-- The deprecated Campaigns GraphQL APIs have been removed. Please use Batch Changes APIs going forward.
-- The deprecated Campaigns URLs have been removed.
-- The deprecated `campaigns.restrictToAdmins` and `campaigns.enable` config options have been rendered non-functional. Please use `batchChanges.restrictToAdmins` and `batchChanges.enabled` instead.
+-
 
 ## 3.33.0
 
@@ -67,6 +64,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed primary email bug where users with no primary email set would break the email setting page when trying to add a new email. [#25008](https://github.com/sourcegraph/sourcegraph/pull/25008)
 - An issue where keywords like `and`, `or`, `not` would not be highlighted properly in the search bar due to the presence of quotes. [#26135](https://github.com/sourcegraph/sourcegraph/pull/26135)
 - An issue where frequent search indexing operations led to incoming search queries timing out. When these timeouts happened in quick succession, `zoekt-webserver` processes would shut themselves down via their `watchdog` routine. This should now only happen when a given `zoekt-webserver` is under-provisioned on CPUs. [#25872](https://github.com/sourcegraph/sourcegraph/issues/25872)
+- Since 3.28.0, Batch Changes webhooks would not update changesets opened in private repositories. This has been fixed. [#26380](https://github.com/sourcegraph/sourcegraph/issues/26380)
+- Reconciling batch changes could stall when updating the state of a changeset that already existed. This has been fixed. [#26386](https://github.com/sourcegraph/sourcegraph/issues/26386)
 
 ### Removed
 
