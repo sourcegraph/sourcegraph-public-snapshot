@@ -91,7 +91,7 @@ OR  (                             -- Restricted repositories require checking pe
 		FROM external_service_repos
 		WHERE repo_id = repo.id
 		AND (
-				user_id IS NULL
+			(user_id IS NULL AND org_id IS NULL)
 			OR  user_id = %s
 		)
 	)
