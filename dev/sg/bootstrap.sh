@@ -68,31 +68,31 @@ get_architecture() {
   _cputype="$(uname -m)"
 
   case "$_ostype" in
-  Darwin)
-    _ostype=darwin
-    ;;
+    Darwin)
+      _ostype=darwin
+      ;;
 
-  Linux)
-    _ostype=linux
-    ;;
-  *)
-    err "unrecognized or unsupported OS type: $_ostype"
-    ;;
+    Linux)
+      _ostype=linux
+      ;;
+    *)
+      err "unrecognized or unsupported OS type: $_ostype"
+      ;;
 
   esac
 
   case "$_cputype" in
-  aarch64 | arm64)
-    _cputype=arm64
-    ;;
+    aarch64 | arm64)
+      _cputype=arm64
+      ;;
 
-  x86_64 | x86-64 | x64 | amd64)
-    _cputype=amd64
-    ;;
+    x86_64 | x86-64 | x64 | amd64)
+      _cputype=amd64
+      ;;
 
-  *)
-    err "unknown or unsupported CPU type: $_cputype"
-    ;;
+    *)
+      err "unknown or unsupported CPU type: $_cputype"
+      ;;
   esac
 
   _arch="${_ostype}_${_cputype}"
@@ -184,29 +184,29 @@ check_help_for() {
 
   case "$_arch" in
 
-  *darwin*)
-    if check_cmd sw_vers; then
-      case $(sw_vers -productVersion) in
-      10.*)
-        # If we're running on macOS, older than 10.13, then we always
-        # fail to find these options to force fallback
-        if [ "$(sw_vers -productVersion | cut -d. -f2)" -lt 13 ]; then
-          # Older than 10.13
-          echo "Warning: Detected macOS platform older than 10.13"
-          return 1
-        fi
-        ;;
-      11.*)
-        # We assume Big Sur will be OK for now
-        ;;
-      *)
-        # Unknown product version, warn and continue
-        echo "Warning: Detected unknown macOS major version: $(sw_vers -productVersion)"
-        echo "Warning TLS capabilities detection may fail"
-        ;;
-      esac
-    fi
-    ;;
+    *darwin*)
+      if check_cmd sw_vers; then
+        case $(sw_vers -productVersion) in
+          10.*)
+            # If we're running on macOS, older than 10.13, then we always
+            # fail to find these options to force fallback
+            if [ "$(sw_vers -productVersion | cut -d. -f2)" -lt 13 ]; then
+              # Older than 10.13
+              echo "Warning: Detected macOS platform older than 10.13"
+              return 1
+            fi
+            ;;
+          11.*)
+            # We assume Big Sur will be OK for now
+            ;;
+          *)
+            # Unknown product version, warn and continue
+            echo "Warning: Detected unknown macOS major version: $(sw_vers -productVersion)"
+            echo "Warning TLS capabilities detection may fail"
+            ;;
+        esac
+      fi
+      ;;
 
   esac
 
