@@ -129,7 +129,7 @@ A table indicating the most current search index for a unique repository, root, 
 
 **lang_name_id**: The interned index name of the associated dump.
 
-**last_cleanup_scan_at**: The last time outdated records in the lsif_data_docs_search_private table have been cleaned.
+**last_cleanup_scan_at**: The last time associated records in the lsif_data_docs_search_public table have been cleaned.
 
 **repo_id**: The repository identifier of the associated dump.
 
@@ -160,7 +160,7 @@ A table indicating the most current search index for a unique repository, root, 
 
 **lang_name_id**: The interned index name of the associated dump.
 
-**last_cleanup_scan_at**: The last time outdated records in the lsif_data_docs_search_public table have been cleaned.
+**last_cleanup_scan_at**: The last time associated records in the lsif_data_docs_search_public table have been cleaned.
 
 **repo_id**: The repository identifier of the associated dump.
 
