@@ -31,7 +31,18 @@ import (
 )
 
 // WriteDocumentationPages is called (transactionally) from the precise-code-intel-worker.
-func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData) (err error) {
+//
+// The repository name and language name identifiers should be created from a previous invocation of the
+// WriteDocumentationSearchPrework method with the same parameters.
+func (s *Store) WriteDocumentationPages(
+	ctx context.Context,
+	upload dbstore.Upload,
+	repo *types.Repo,
+	isDefaultBranch bool,
+	documentationPages chan *precise.DocumentationPageData,
+	repositoryNameID int,
+	languageNameID int,
+) (err error) {
 	ctx, traceLog, endObservation := s.operations.writeDocumentationPages.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", upload.ID),
 		log.String("repo", upload.RepositoryName),
@@ -49,18 +60,8 @@ func (s *Store) WriteDocumentationPages(ctx context.Context, upload dbstore.Uplo
 		}
 	}()
 
-	return s.doWriteDocumentationPages(ctx, upload, repo, isDefaultBranch, documentationPages, traceLog)
-}
-
-func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentationPages chan *precise.DocumentationPageData, traceLog observation.TraceLogger) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	// Create temporary table symmetric to lsif_data_documentation_pages without the dump id
-	if err := tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesTemporaryTableQuery)); err != nil {
+	if err := s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesTemporaryTableQuery)); err != nil {
 		return err
 	}
 
@@ -86,7 +87,7 @@ func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Up
 	// Bulk insert all the unique column values into the temporary table
 	if err := withBatchInserter(
 		ctx,
-		tx.Handle().DB(),
+		s.Handle().DB(),
 		"t_lsif_data_documentation_pages",
 		[]string{"path_id", "data"},
 		inserter,
@@ -99,14 +100,14 @@ func (s *Store) doWriteDocumentationPages(ctx context.Context, upload dbstore.Up
 	// indexed even if it is turned back on. Only future uploads would be.
 	if conf.APIDocsSearchIndexingEnabled() {
 		// Perform search indexing for API docs pages.
-		if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages); err != nil {
+		if err := s.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages, repositoryNameID, languageNameID); err != nil {
 			return errors.Wrap(err, "WriteDocumentationSearch")
 		}
 	}
 
 	// Insert the values from the temporary table into the target table. We select a
 	// parameterized dump id here since it is the same for all rows in this operation.
-	return tx.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
+	return s.Exec(ctx, sqlf.Sprintf(writeDocumentationPagesInsertQuery, upload.ID))
 }
 
 const writeDocumentationPagesTemporaryTableQuery = `
@@ -253,13 +254,61 @@ SELECT %s, source.path_id, source.result_id, source.file_path
 FROM t_lsif_data_documentation_mappings source
 `
 
-// WriteDocumentationSearch is called (within a transaction) to write the search index for a given documentation page.
-func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, pages []*precise.DocumentationPageData) (err error) {
+// WriteDocumentationSearchPrework upserts the repository name and language name identifiers into the
+// appropriate tables. These values should be passed to a later invocation of WriteDocumentationSearch.
+//
+// Since these values are interned and heavily shared, we recommended upserting both of these values
+// outside of a long-running transaction to reduce lock contention between shared rows being held longer
+// than necessary.
+func (s *Store) WriteDocumentationSearchPrework(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool) (_ int, _ int, err error) {
+	ctx, endObservation := s.operations.writeDocumentationSearchPrework.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repo", upload.RepositoryName),
+		log.Int("bundleID", upload.ID),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if !isDefaultBranch {
 		// We do not index non-default branches for API docs search.
-		return nil
+		return 0, 0, nil
 	}
 
+	if !conf.APIDocsSearchIndexingEnabled() {
+		// We will not use these values within WriteDocumentationPages
+		return 0, 0, nil
+	}
+
+	tableSuffix := "public"
+	if repo.Private {
+		tableSuffix = "private"
+	}
+
+	repositoryNameID, err := s.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "upsertRepositoryName")
+	}
+
+	languageNameID, err := s.upsertLanguageName(ctx, upload.Indexer, tableSuffix)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "upsertLanguageName")
+	}
+
+	return repositoryNameID, languageNameID, nil
+}
+
+// WriteDocumentationSearch is called to write the search index for a given documentation page. This method
+// is called from transactionally from the precise-code-intel worker as well as from the apiDocsSearchMigrator.
+//
+// The repository name and language name identifiers should be created from a previous invocation of the
+// WriteDocumentationSearchPrework method with the same parameters.
+func (s *Store) WriteDocumentationSearch(
+	ctx context.Context,
+	upload dbstore.Upload,
+	repo *types.Repo,
+	isDefaultBranch bool,
+	pages []*precise.DocumentationPageData,
+	repositoryNameID int,
+	languageNameID int,
+) (err error) {
 	ctx, endObservation := s.operations.writeDocumentationSearch.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", upload.RepositoryName),
 		log.Int("bundleID", upload.ID),
@@ -267,7 +316,10 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}})
 	defer endObservation(1, observation.Args{})
 
-	now := timeutil.Now()
+	if !isDefaultBranch {
+		// We do not index non-default branches for API docs search.
+		return nil
+	}
 
 	tableSuffix := "public"
 	if repo.Private {
@@ -280,16 +332,6 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 	}
 	defer func() { err = tx.Done(err) }()
 
-	repositoryNameID, err := tx.upsertRepositoryName(ctx, upload.RepositoryName, tableSuffix)
-	if err != nil {
-		return errors.Wrap(err, "upsertRepositoryName")
-	}
-
-	languageNameID, err := tx.upsertLanguageName(ctx, upload.Indexer, tableSuffix)
-	if err != nil {
-		return errors.Wrap(err, "upsertLanguageName")
-	}
-
 	// gatherTags sorts the tags we'll be dealing with, This ensures that we will always
 	// try to bulk-insert the tags in the same order, which should avoid deadlock situations
 	// where overlapping tags are updated in different orders from different processors.
@@ -298,7 +340,7 @@ func (s *Store) WriteDocumentationSearch(ctx context.Context, upload dbstore.Upl
 		return errors.Wrap(err, "upsertTags")
 	}
 
-	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix, now); err != nil {
+	if err := tx.replaceSearchRecords(ctx, upload, repositoryNameID, languageNameID, pages, tagIDs, tableSuffix, timeutil.Now()); err != nil {
 		return errors.Wrap(err, "replaceSearchRecords")
 	}
 
@@ -316,6 +358,7 @@ func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix stri
 		name,
 		textSearchVector(name),
 		textSearchVector(reverse(name)),
+		name,
 	)))
 
 	return id, err
@@ -323,11 +366,16 @@ func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix stri
 
 const upsertRepositoryNameQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertRepositoryName
-INSERT INTO lsif_data_docs_search_repo_names_$SUFFIX (repo_name, tsv, reverse_tsv)
-VALUES (%s, %s, %s)
--- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (repo_name) DO UPDATE SET repo_name = EXCLUDED.repo_name
-RETURNING id
+WITH inserted AS (
+	INSERT INTO lsif_data_docs_search_repo_names_$SUFFIX (repo_name, tsv, reverse_tsv)
+	VALUES (%s, %s, %s)
+	ON CONFLICT DO NOTHING
+	RETURNING id
+)
+SELECT id FROM inserted
+UNION
+SELECT id FROM lsif_data_docs_search_repo_names_$SUFFIX WHERE repo_name = %s
+LIMIT 1
 `
 
 func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix string) (int, error) {
@@ -341,6 +389,7 @@ func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix
 		strings.ReplaceAll(upsertLanguageNameQuery, "$SUFFIX", tableSuffix),
 		languageName,
 		textSearchVector(languageName),
+		languageName,
 	)))
 
 	return id, err
@@ -348,14 +397,32 @@ func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix
 
 const upsertLanguageNameQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertLanguageName
-INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
-VALUES (%s, %s)
--- Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-ON CONFLICT (lang_name) DO UPDATE SET lang_name = EXClUDED.lang_name
-RETURNING id
+WITH inserted AS (
+	INSERT INTO lsif_data_docs_search_lang_names_$SUFFIX (lang_name, tsv)
+	VALUES (%s, %s)
+	ON CONFLICT DO NOTHING
+	RETURNING id
+)
+SELECT id FROM inserted
+UNION
+SELECT id FROM lsif_data_docs_search_lang_names_$SUFFIX WHERE lang_name = %s
+LIMIT 1
 `
 
 func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix string) (map[string]int, error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Create temporary table symmetric to lsif_data_docs_search_tags_$SUFFIX. We'll use this
+	// as a staging table so that we can insert only the values that don't already exist in the
+	// target table..
+	if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(upsertTagsTemporaryTableQuery, "$SUFFIX", tableSuffix))); err != nil {
+		return nil, errors.Wrap(err, "creating temporary table")
+	}
+
 	inserter := func(inserter *batch.Inserter) error {
 		for _, tags := range tags {
 			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
@@ -366,36 +433,74 @@ func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix strin
 		return nil
 	}
 
-	tagIDs := make(map[string]int, len(tags))
-	returningScanner := func(rows *sql.Rows) error {
-		var tagID int
-		var tags string
-		if err := rows.Scan(&tagID, &tags); err != nil {
-			return err
-		}
-
-		// Correlate id and tags of each upserted row
-		tagIDs[tags] = tagID
-		return nil
-	}
-
-	if err := batch.WithInserterWithReturn(
+	// Bulk insert tag values into the temporary table
+	if err := batch.WithInserter(
 		ctx,
-		s.Handle().DB(),
-		"lsif_data_docs_search_tags_"+tableSuffix,
+		tx.Handle().DB(),
+		"t_lsif_data_docs_search_tags_"+tableSuffix,
 		[]string{"tags", "tsv"},
-		// Make no-op DO UPDATE to force RETURNING to fire on unchanged rows
-		"ON CONFLICT (tags) DO UPDATE SET tags = EXCLUDED.tags",
-		// Return id and tags on each row so we can correlate ids, either
-		// existing or new, for each row we sent to be inserted.
-		[]string{"id", "tags"},
-		returningScanner,
 		inserter,
 	); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "bulk inserting tags")
+	}
+
+	// Upsert the values from the temporary table into the target table. Here we insert
+	// only values that are not yet present. This query also selects the ids of each of
+	// the pre-existing tags so that we don't need a second fetch.
+	tagIDs, err := scanStringIntPairs(tx.Query(ctx, sqlf.Sprintf(strings.ReplaceAll(upsertTagsInsertQuery, "$SUFFIX", tableSuffix))))
+	if err != nil {
+		return nil, errors.Wrap(err, "committing staged tags")
 	}
 
 	return tagIDs, nil
+}
+
+const upsertTagsTemporaryTableQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertTags
+CREATE TEMPORARY TABLE t_lsif_data_docs_search_tags_$SUFFIX (
+	tags TEXT NOT NULL,
+	tsv TSVECTOR NOT NULL
+) ON COMMIT DROP
+`
+
+const upsertTagsInsertQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:upsertTags
+WITH
+inserted AS (
+	INSERT INTO lsif_data_docs_search_tags_$SUFFIX (tags, tsv)
+	SELECT source.tags, source.tsv
+	FROM t_lsif_data_docs_search_tags_$SUFFIX source
+	WHERE source.tags NOT IN (SELECT tags FROM lsif_data_docs_search_tags_$SUFFIX)
+	RETURNING id, tags
+),
+existing AS (
+	SELECT source.id, source.tags
+	FROM lsif_data_docs_search_tags_$SUFFIX source
+	WHERE source.tags IN (SELECT tags FROM t_lsif_data_docs_search_tags_$SUFFIX)
+)
+SELECT tags, id FROM inserted
+UNION
+SELECT tags, id FROM existing
+`
+
+func scanStringIntPairs(rows *sql.Rows, queryErr error) (_ map[string]int, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	values := map[string]int{}
+	for rows.Next() {
+		var value1 string
+		var value2 int
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return nil, err
+		}
+
+		values[value1] = value2
+	}
+
+	return values, nil
 }
 
 func (s *Store) replaceSearchRecords(
@@ -493,12 +598,19 @@ func (s *Store) replaceSearchRecords(
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
 
-		// For current marker update
+		// For current marker insert
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
 		now,                 // last_cleanup_scan_at
+
+		// For current marker update
+		upload.ID,           // dump_id
+		now,                 // last_cleanup_scan_at
+		upload.RepositoryID, // repo_id
+		upload.Root,         // dump_root
+		languageNameID,      // lang_name_id
 	)); err != nil {
 		return errors.Wrap(err, "committing staged search records")
 	}
@@ -524,7 +636,7 @@ CREATE TEMPORARY TABLE t_lsif_data_docs_search_$SUFFIX (
 const insertSearchRecordsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
 WITH
-ins AS (
+insert_data AS (
 	INSERT INTO lsif_data_docs_search_$SUFFIX (
 		repo_id,
 		dump_id,
@@ -557,17 +669,29 @@ ins AS (
 		source.label_tsv,
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
+),
+insert_current AS (
+	INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+		repo_id,
+		dump_root,
+		lang_name_id,
+		dump_id,
+		last_cleanup_scan_at
+	)
+	VALUES (%s, %s, %s, %s, %s)
+	ON CONFLICT DO NOTHING
+),
+update_current AS (
+	UPDATE lsif_data_docs_search_current_$SUFFIX
+	SET
+		dump_id = %s,
+		last_cleanup_scan_at = %s
+	WHERE
+		repo_id = %s AND
+		dump_root = %s AND
+		lang_name_id = %s
 )
-INSERT INTO lsif_data_docs_search_current_$SUFFIX (
-	repo_id,
-	dump_root,
-	lang_name_id,
-	dump_id,
-	last_cleanup_scan_at
-)
-VALUES (%s, %s, %s, %s, %s)
-ON CONFLICT (repo_id, dump_root, lang_name_id)
-DO UPDATE SET dump_id = EXCLUDED.dump_id
+SELECT 1
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {

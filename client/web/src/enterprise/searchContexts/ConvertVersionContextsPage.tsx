@@ -1,20 +1,20 @@
+import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { combineLatest, concat, from, Observable, of, Subject } from 'rxjs'
 import { catchError, concatMap, delay, map, mergeMap, reduce, startWith, tap, toArray } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { Link } from '@sourcegraph/shared/src/components/Link'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable, useObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageTitle } from '@sourcegraph/web/src/components/PageTitle'
+import { PageHeader } from '@sourcegraph/wildcard'
 
 import { VersionContext } from '../../schema/site.schema'
 import { SearchContextProps } from '../../search'
 
 import { ConvertVersionContextNode } from './ConvertVersionContextNode'
-import styles from './ConvertVersionContextsPage.module.scss'
 
 export interface ConvertVersionContextsPageProps
     extends Pick<SearchContextProps, 'convertVersionContextToSearchContext' | 'isSearchContextSpecAvailable'> {
@@ -120,25 +120,34 @@ export const ConvertVersionContextsPage: React.FunctionComponent<ConvertVersionC
             <Page>
                 <div className="container col-8">
                     <PageTitle title="Convert version contexts" />
-                    <div>
-                        <Link to="/contexts">
-                            « <span className={styles.backLabel}>Back</span>
-                        </Link>
-                        <div className="page-header d-flex flex-wrap align-items-center mt-2">
-                            <h2 className="flex-grow-1">Convert version contexts</h2>
-                        </div>
-                        <div className="text-muted">
-                            Convert existing version contexts defined in site config into search contexts.{' '}
-                            <a
-                                href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                Learn more
-                            </a>
-                        </div>
-                        <div className="d-flex flex-row justify-content-between align-items-center mt-4">
-                            <h3>Available version contexts</h3>
+                    <PageHeader
+                        path={[
+                            {
+                                icon: MagnifyIcon,
+                                to: '/search',
+                            },
+                            {
+                                to: '/contexts',
+                                text: 'Contexts',
+                            },
+                            { text: 'Convert version contexts' },
+                        ]}
+                        description={
+                            <div className="text-muted">
+                                Convert existing version contexts defined in site config into search contexts.{' '}
+                                <a
+                                    href="https://docs.sourcegraph.com/code_search/explanations/features#search-contexts"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Learn more
+                                </a>
+                            </div>
+                        }
+                    />
+                    <div className="convert-version-contexts-page">
+                        <div className="convert-version-contexts-page__header d-flex flex-row justify-content-between align-items-center mt-4">
+                            <h3 className="convert-version-contexts-page__header-title">Available version contexts</h3>
                             <button
                                 type="button"
                                 className="btn btn-outline-primary test-convert-all-search-contexts-btn"

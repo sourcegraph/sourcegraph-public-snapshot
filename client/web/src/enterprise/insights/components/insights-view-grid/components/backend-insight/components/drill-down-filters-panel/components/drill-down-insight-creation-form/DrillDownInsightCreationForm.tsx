@@ -37,6 +37,7 @@ export const DrillDownInsightCreationForm: React.FunctionComponent<DrillDownInsi
 
     const titleDuplicationValidator = useAsyncInsightTitleValidator({
         initialTitle: '',
+        mode: 'creation',
     })
 
     const insightName = useField({
