@@ -14,6 +14,9 @@ DELETE FROM lsif_data_docs_search_current_public WHERE id NOT IN (
 ALTER TABLE lsif_data_docs_search_current_public DROP COLUMN IF EXISTS id;
 ALTER TABLE lsif_data_docs_search_current_public DROP COLUMN IF EXISTS created_at;
 
+-- Drop new index
+DROP INDEX IF EXISTS lsif_data_docs_search_current_public_last_cleanup_scan_at;
+
 -- Re-create old primary key
 ALTER TABLE lsif_data_docs_search_current_public ADD PRIMARY KEY (repo_id, dump_root, lang_name_id);
 
@@ -37,6 +40,9 @@ DELETE FROM lsif_data_docs_search_current_private WHERE id NOT IN (
 -- Drop new columns
 ALTER TABLE lsif_data_docs_search_current_private DROP COLUMN IF EXISTS id;
 ALTER TABLE lsif_data_docs_search_current_private DROP COLUMN IF EXISTS created_at;
+
+-- Drop new index
+DROP INDEX IF EXISTS lsif_data_docs_search_current_private_last_cleanup_scan_at;
 
 -- Re-create old primary key
 ALTER TABLE lsif_data_docs_search_current_private ADD PRIMARY KEY (repo_id, dump_root, lang_name_id);

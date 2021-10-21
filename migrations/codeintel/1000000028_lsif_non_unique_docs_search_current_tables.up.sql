@@ -14,10 +14,12 @@ COMMENT ON COLUMN lsif_data_docs_search_current_public.created_at IS 'The time t
 ALTER TABLE lsif_data_docs_search_current_public ALTER COLUMN last_cleanup_scan_at SET DEFAULT NOW();
 COMMENT ON COLUMN lsif_data_docs_search_current_public.last_cleanup_scan_at IS 'The last time this record was checked as part of a data retention scan.';
 
--- Create new index
+-- Create new indexes
 CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_public_lookup
 ON lsif_data_docs_search_current_public(repo_id, dump_root, lang_name_id, created_at)
 INCLUDE (dump_id);
+
+CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_public_last_cleanup_scan_at ON lsif_data_docs_search_current_public(last_cleanup_scan_at);
 
 -- Drop existing primary key
 ALTER TABLE lsif_data_docs_search_current_public DROP CONSTRAINT iF EXISTS lsif_data_docs_search_current_public_pkey;
@@ -39,10 +41,15 @@ COMMENT ON COLUMN lsif_data_docs_search_current_private.created_at IS 'The time 
 ALTER TABLE lsif_data_docs_search_current_private ALTER COLUMN last_cleanup_scan_at SET DEFAULT NOW();
 COMMENT ON COLUMN lsif_data_docs_search_current_private.last_cleanup_scan_at IS 'The last time this record was checked as part of a data retention scan.';
 
--- Create new index
+-- Add index to last_cleanup_scan_at
+
+
+-- Create new indexes
 CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_private_lookup
 ON lsif_data_docs_search_current_private(repo_id, dump_root, lang_name_id, created_at)
 INCLUDE (dump_id);
+
+CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_private_last_cleanup_scan_at ON lsif_data_docs_search_current_private(last_cleanup_scan_at);
 
 -- Drop existing primary key
 ALTER TABLE lsif_data_docs_search_current_private DROP CONSTRAINT iF EXISTS lsif_data_docs_search_current_private_pkey;
