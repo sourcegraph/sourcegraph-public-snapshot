@@ -5,6 +5,7 @@ import { noop } from 'lodash'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../../components/WebStory'
 import {
     ChangesetFields,
     ChangesetCheckState,
@@ -12,7 +13,6 @@ import {
     ChangesetSpecType,
     ChangesetState,
 } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 import { queryExternalChangesetWithFileDiffs } from '../backend'
 
 import { BatchChangeChangesets } from './BatchChangeChangesets'
@@ -104,7 +104,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 }
 
 add('List of changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeChangesets
                 {...props}
@@ -117,11 +117,11 @@ add('List of changesets', () => (
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('List of expanded changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeChangesets
                 {...props}
@@ -135,5 +135,5 @@ add('List of expanded changesets', () => (
                 expandByDefault={true}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
