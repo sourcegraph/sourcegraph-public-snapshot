@@ -3,11 +3,15 @@ BEGIN;
 --
 -- Public
 
+-- Change comment
+COMMENT ON COLUMN lsif_data_docs_search_current_public.dump_id IS 'The associated dump identifier.';
+
 -- Create new created_at column to decide a leader
 ALTER TABLE lsif_data_docs_search_current_public ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
-COMMENT ON COLUMN lsif_data_docs_search_current_public.dump_id IS 'The associated dump identifier.';
-COMMENT ON COLUMN lsif_data_docs_search_current_public.last_cleanup_scan_at IS 'The last time associated records in the lsif_data_docs_search_public table have been cleaned.';
 COMMENT ON COLUMN lsif_data_docs_search_current_public.created_at IS 'The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.';
+
+-- Drop last_cleanup_scan_at column
+ALTER TABLE lsif_data_docs_search_current_public DROP COLUMN last_cleanup_scan_at;
 
 -- Create new index
 CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_public_lookup
@@ -23,11 +27,15 @@ ALTER TABLE lsif_data_docs_search_current_public ADD COLUMN IF NOT EXISTS id SER
 --
 -- Private
 
+-- Change comment
+COMMENT ON COLUMN lsif_data_docs_search_current_private.dump_id IS 'The associated dump identifier.';
+
 -- Create new created_at column to decide a leader
 ALTER TABLE lsif_data_docs_search_current_private ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
-COMMENT ON COLUMN lsif_data_docs_search_current_private.dump_id IS 'The associated dump identifier.';
-COMMENT ON COLUMN lsif_data_docs_search_current_private.last_cleanup_scan_at IS 'The last time associated records in the lsif_data_docs_search_public table have been cleaned.';
 COMMENT ON COLUMN lsif_data_docs_search_current_private.created_at IS 'The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.';
+
+-- Drop last_cleanup_scan_at column
+ALTER TABLE lsif_data_docs_search_current_private DROP COLUMN last_cleanup_scan_at;
 
 -- Create new index
 CREATE INDEX IF NOT EXISTS lsif_data_docs_search_current_private_lookup
