@@ -124,6 +124,10 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 			Title:       seriesSet[0].Title,
 			Description: seriesSet[0].Description,
 			Series:      seriesSet,
+			Filters: types.InsightViewFilters{
+				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
+				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
+			},
 		})
 	}
 
@@ -289,7 +293,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.Title,
 			&temp.Description,
 			&temp.Label,
-			&temp.Stroke,
+			&temp.LineColor,
 			&temp.SeriesID,
 			&temp.Query,
 			&temp.CreatedAt,
@@ -302,6 +306,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			pq.Array(&temp.Repositories),
 			&temp.SampleIntervalUnit,
 			&temp.SampleIntervalValue,
+			&temp.DefaultFilterIncludeRepoRegex,
+			&temp.DefaultFilterExcludeRepoRegex,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -541,7 +547,8 @@ const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories, i.sample_interval_unit, i.sample_interval_value
+i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
+i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id

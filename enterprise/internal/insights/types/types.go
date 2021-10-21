@@ -6,23 +6,25 @@ import (
 
 // InsightViewSeries is an abstraction of a complete Code Insight. This type materializes a view with any associated series.
 type InsightViewSeries struct {
-	UniqueID            string
-	SeriesID            string
-	Title               string
-	Description         string
-	Query               string
-	CreatedAt           time.Time
-	OldestHistoricalAt  time.Time
-	LastRecordedAt      time.Time
-	NextRecordingAfter  time.Time
-	LastSnapshotAt      time.Time
-	NextSnapshotAfter   time.Time
-	BackfillQueuedAt    *time.Time
-	Label               string
-	Stroke              string
-	Repositories        []string
-	SampleIntervalUnit  *string
-	SampleIntervalValue *int
+	UniqueID                      string
+	SeriesID                      string
+	Title                         string
+	Description                   string
+	Query                         string
+	CreatedAt                     time.Time
+	OldestHistoricalAt            time.Time
+	LastRecordedAt                time.Time
+	NextRecordingAfter            time.Time
+	LastSnapshotAt                time.Time
+	NextSnapshotAfter             time.Time
+	BackfillQueuedAt              *time.Time
+	Label                         string
+	LineColor                     string
+	Repositories                  []string
+	SampleIntervalUnit            string
+	SampleIntervalValue           int
+	DefaultFilterIncludeRepoRegex *string
+	DefaultFilterExcludeRepoRegex *string
 }
 
 type Insight struct {
@@ -30,6 +32,12 @@ type Insight struct {
 	Title       string
 	Description string
 	Series      []InsightViewSeries
+	Filters     InsightViewFilters
+}
+
+type InsightViewFilters struct {
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
 }
 
 // InsightViewSeriesMetadata contains metadata about a viewable insight series such as render properties.
