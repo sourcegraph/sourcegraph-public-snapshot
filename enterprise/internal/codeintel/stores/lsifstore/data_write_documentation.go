@@ -681,7 +681,7 @@ insert_current AS (
 	VALUES (%s, %s, %s, %s, %s)
 	ON CONFLICT DO NOTHING
 ),
-update_metadata AS (
+update_current AS (
 	UPDATE lsif_data_docs_search_current_$SUFFIX
 	SET
 		dump_id = %s,
