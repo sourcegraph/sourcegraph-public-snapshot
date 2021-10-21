@@ -44,34 +44,60 @@ func (s *Store) deleteOldSearchRecords(ctx context.Context, minimumTimeSinceLast
 const deleteOldSearchRecordsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/documentation_janitor.go:deleteOldSearchRecords
 WITH
-candidates AS (
-	SELECT repo_id, dump_root, lang_name_id, dump_id
+candidate_batch AS (
+	SELECT id, repo_id, dump_root, lang_name_id, created_at, dump_id
 	FROM lsif_data_docs_search_current_$SUFFIX
 	WHERE (%s - last_cleanup_scan_at > (%s * '1 second'::interval))
-	ORDER BY repo_id, dump_root, lang_name_id FOR UPDATE
+	ORDER BY last_cleanup_scan_at
 	LIMIT %s
 ),
-deletion_candidates AS (
-	SELECT id
-	FROM lsif_data_docs_search_$SUFFIX s
-	JOIN candidates c
-	ON
-		c.repo_id = s.repo_id AND
-		c.dump_root = s.dump_root AND
-		c.lang_name_id = s.lang_name_id
-	WHERE
-		s.dump_id != c.dump_id
+locked_candidate_batch AS (
+	SELECT id FROM candidate_batch
+	-- TODO - document
 	ORDER BY id FOR UPDATE
 ),
-deleted AS (
-	DELETE FROM lsif_data_docs_search_$SUFFIX
-	WHERE id IN (SELECT id FRom deletion_candidates)
+candidates AS (
+	SELECT id, repo_id, dump_root, lang_name_id, dump_id
+	FROM candidate_batch cb
+	WHERE created_at != (
+		SELECT MAX(created_at)
+		FROM lsif_data_docs_search_current_$SUFFIX cp
+		WHERE
+			cp.repo_id = cb.repo_id AND
+			cp.dump_root = cb.dump_root AND
+			cp.lang_name_id = cb.lang_name_id
+	)
+	ORDER BY id
+),
+locked_search_records AS (
+	SELECT id
+	FROM lsif_data_docs_search_$SUFFIX
+	WHERE
+		(repo_id, dump_root, lang_name_Id, dump_id) IN (
+			SELECT repo_id, dump_root, lang_name_Id, dump_id
+			FROM candidates
+		)
+	-- TODO - document
+	ORDER BY id FOR UPDATE
+),
+delete_current_markers AS (
+	-- TODO - document
+	DELETE FROM lsif_data_docs_search_current_$SUFFIX
+	WHERE id IN (SELECT id FROM locked_candidate_batch)
 	RETURNING 1
 ),
-update AS (
+delete_search_records AS (
+	-- TODO - document
+	DELETE FROM lsif_data_docs_search_$SUFFIX
+	WHERE id IN (SELECT id FROM locked_search_records)
+	RETURNING 1
+),
+update_timestamp AS (
+	-- TODO - document
 	UPDATE lsif_data_docs_search_current_$SUFFIX
 	SET last_cleanup_scan_at = %s
-	WHERE (repo_id, dump_root, lang_name_id) IN (SELECT repo_id, dump_root, lang_name_id FROM candidates)
+	-- TODO - document
+	WHERE id IN (SELECT id FROM locked_candidate_batch EXCEPT SELECT id FROM candidates)
 )
-SELECT COUNT(*) FROM deleted
+SELECT COUNT(*) FROM delete_search_records
 `
