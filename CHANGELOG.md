@@ -27,7 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- All version contexts functionality (deprecated in 3.33) is now removed. [#26267](https://github.com/sourcegraph/sourcegraph/issues/26267)
 
 ## 3.33.0
 
