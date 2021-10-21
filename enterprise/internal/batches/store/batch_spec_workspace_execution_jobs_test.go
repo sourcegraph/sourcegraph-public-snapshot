@@ -17,7 +17,7 @@ import (
 )
 
 func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 2)
+	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 3)
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
 			BatchSpecWorkspaceID: int64(i + 456),
@@ -161,6 +161,83 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
 				}
 			}
+		})
+
+		t.Run("WithFailureMessage", func(t *testing.T) {
+			message1 := "failure message 1"
+			message2 := "failure message 2"
+			message3 := "failure message 3"
+
+			jobs[0].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+			jobs[0].FailureMessage = &message1
+			ct.UpdateJobState(t, ctx, s, jobs[0])
+
+			// has a failure message, but it's outdated, because job is processing
+			jobs[1].State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+			jobs[1].FailureMessage = &message2
+			ct.UpdateJobState(t, ctx, s, jobs[1])
+
+			jobs[2].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+			jobs[2].FailureMessage = &message3
+			ct.UpdateJobState(t, ctx, s, jobs[2])
+
+			wantIDs := []int64{jobs[0].ID, jobs[2].ID}
+
+			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				WithFailureMessage: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(have) != 2 {
+				t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 2, len(have))
+			}
+			haveIDs := []int64{have[0].ID, have[1].ID}
+
+			if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("BatchSpecID", func(t *testing.T) {
+			workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
+			jobByBatchSpecID := map[int64]*btypes.BatchSpecWorkspaceExecutionJob{}
+			for i := 0; i < cap(workspaces); i++ {
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: int64(300 + i),
+				}
+
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+				workspaces = append(workspaces, ws)
+
+				job := &btypes.BatchSpecWorkspaceExecutionJob{
+					BatchSpecWorkspaceID: ws.ID,
+				}
+
+				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+					t.Fatal(err)
+				}
+				jobByBatchSpecID[ws.BatchSpecID] = job
+			}
+
+			for batchSpecID, wantJob := range jobByBatchSpecID {
+				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+					BatchSpecID: batchSpecID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(have) != 1 {
+					t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 1, len(have))
+				}
+
+				if have[0].ID != wantJob.ID {
+					t.Fatalf("wrong job returned. want=%d, have=%d", wantJob.ID, have[0].ID)
+				}
+			}
+
 		})
 	})
 
