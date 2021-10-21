@@ -237,17 +237,7 @@ exports[`UserNavItem simple 1`] = `
                         href="/users/alice/settings/repositories"
                         onClick={[Function]}
                       >
-                        Your Repositories 
-                        <Badge
-                          className="ml-1"
-                          status="beta"
-                        >
-                          <span
-                            className="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                          >
-                            beta
-                          </span>
-                        </Badge>
+                        Your repositories
                       </a>
                     </LinkAnchor>
                   </Link>
