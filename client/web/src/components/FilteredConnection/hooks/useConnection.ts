@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef } from 'react'
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 import { useSearchParameters } from '@sourcegraph/wildcard'
-import { usePoll } from '@sourcegraph/wildcard/src/hooks/usePoll'
+import { useInterval } from '@sourcegraph/wildcard/src/hooks/useInterval'
 
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 
@@ -168,7 +168,7 @@ export const useConnection = <TResult, TVariables, TData>({
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
     // would only poll for the first page of results.
-    const { startPolling, stopPolling } = usePoll(refetchAll, options?.pollInterval || -1)
+    const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
 
     return {
         connection,
@@ -177,7 +177,7 @@ export const useConnection = <TResult, TVariables, TData>({
         fetchMore: fetchMoreData,
         refetchAll,
         hasNextPage: connection ? hasNextPage(connection) : false,
-        startPolling,
-        stopPolling,
+        startPolling: startExecution,
+        stopPolling: stopExecution,
     }
 }
