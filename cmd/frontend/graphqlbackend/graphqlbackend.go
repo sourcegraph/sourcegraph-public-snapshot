@@ -54,7 +54,7 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
-		ctx, finish = t.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+		ctx, finish = t.OpenTracingTracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
