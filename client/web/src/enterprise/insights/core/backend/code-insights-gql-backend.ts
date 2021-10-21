@@ -1,5 +1,7 @@
-import { throwError } from 'rxjs'
+import { Observable, throwError, of } from 'rxjs'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
+
+import { SupportedInsightSubject } from '../types/subjects'
 
 import { CodeInsightsBackend } from './code-insights-backend'
 import { RepositorySuggestionData } from './code-insights-backend-types'
@@ -14,7 +16,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getReachableInsights = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
-    public getInsightSubjects = errorMockMethod('getInsightSubjects')
+    public getInsightSubjects = (): Observable<SupportedInsightSubject[]> => {
+        console.warn('TODO: Get insight subjects')
+        return of([])
+    }
     public getSubjectSettingsById = errorMockMethod('getSubjectSettingsById')
     public createInsight = errorMockMethod('createInsight')
     public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
