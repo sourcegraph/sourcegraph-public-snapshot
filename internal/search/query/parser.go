@@ -432,7 +432,7 @@ func ScanPredicate(field string, buf []byte) (string, int, bool) {
 }
 
 // ScanPredicateName scans for a well-known predicate name for he given field
-func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (string, int, bool) {
+func ScanPredicateName(lookup PredicateTable, buf []byte) (string, int, bool) {
 	var predicateName string
 	var advance int
 	for {
@@ -448,7 +448,7 @@ func ScanPredicateName(fieldRegistry map[string]func() Predicate, buf []byte) (s
 		advance += i
 	}
 
-	if _, ok := fieldRegistry[predicateName]; !ok {
+	if _, ok := lookup[predicateName]; !ok {
 		// The string is not a predicate
 		return "", 0, false
 	}

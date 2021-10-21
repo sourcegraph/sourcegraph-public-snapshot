@@ -38,7 +38,11 @@ var DefaultPredicateRegistry = predicateRegistry{
 	},
 }
 
-type predicateRegistry map[string]map[string]func() Predicate
+// PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
+type PredicateTable map[string]func() Predicate
+
+// predicateRegistry is a lookup map of predicate tables associated with all fields.
+type predicateRegistry map[string]PredicateTable
 
 // Get returns a predicate for the given field with the given name. It assumes
 // it exists, and panics otherwise.
