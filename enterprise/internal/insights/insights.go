@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
 // IsEnabled tells if code insights are enabled or not.
@@ -37,7 +36,7 @@ func IsEnabled() bool {
 }
 
 // Init initializes the given enterpriseServices to include the required resolvers for insights.
-func Init(ctx context.Context, postgres dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, postgres dbutil.DB, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if !IsEnabled() {
 		if conf.IsDeployTypeSingleDockerContainer(conf.DeployType()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("backend-run code insights are not available on single-container deployments")

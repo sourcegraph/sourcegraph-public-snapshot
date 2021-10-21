@@ -43,7 +43,7 @@ func init() {
 	oobmigration.ReturnEnterpriseMigrations = true
 }
 
-type EnterpriseInitializer = func(context.Context, dbutil.DB, *oobmigration.Runner, *enterprise.Services, *observation.Context) error
+type EnterpriseInitializer = func(context.Context, dbutil.DB, *enterprise.Services, *observation.Context) error
 
 var initFunctions = map[string]EnterpriseInitializer{
 	"authz":          authz.Init,
@@ -57,7 +57,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"searchcontexts": searchcontexts.Init,
 }
 
-func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
+func enterpriseSetupHook(db dbutil.DB) enterprise.Services {
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")
@@ -75,7 +75,7 @@ func enterpriseSetupHook(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Ru
 	}
 
 	for name, fn := range initFunctions {
-		if err := fn(ctx, db, outOfBandMigrationRunner, &enterpriseServices, observationContext); err != nil {
+		if err := fn(ctx, db, &enterpriseServices, observationContext); err != nil {
 			log.Fatal(fmt.Sprintf("failed to initialize %s: %s", name, err))
 		}
 	}

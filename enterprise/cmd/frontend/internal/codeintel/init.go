@@ -13,10 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db dbutil.DB, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if err := initServices(ctx, db); err != nil {
 		return err
 	}
