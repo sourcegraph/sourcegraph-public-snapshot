@@ -91,7 +91,6 @@ func TestResolverTo(t *testing.T) {
 		&languageSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{db: db},
-		&versionContextResolver{},
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)

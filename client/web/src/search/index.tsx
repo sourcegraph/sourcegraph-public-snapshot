@@ -8,18 +8,14 @@ import { discreteValueAliases, escapeSpaces, FilterType } from '@sourcegraph/sha
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
 import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { memoizeObservable } from '@sourcegraph/shared/src/util/memoizeObservable'
 import { replaceRange } from '@sourcegraph/shared/src/util/strings'
-
-import { VersionContext } from '../schema/site.schema'
 
 import {
     EventLogResult,
     isSearchContextAvailable,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
-    convertVersionContextToSearchContext,
     fetchSearchContext,
     fetchSearchContextBySpec,
     createSearchContext,
@@ -58,16 +54,6 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     return patternType
 }
 
-/**
- * Parses the version context out of the URL search params (the 'c' parameter). If the version context
- * is not present, return undefined.
- */
-function parseSearchURLVersionContext(query: string): string | undefined {
-    const searchParameters = new URLSearchParams(query)
-    const context = searchParameters.get('c')
-    return context ?? undefined
-}
-
 function searchURLIsCaseSensitive(query: string): boolean {
     const globalCase = findFilter(parseSearchURLQuery(query) || '', 'case', FilterKind.Global)
     if (globalCase?.value && globalCase.value.type === 'literal') {
@@ -83,7 +69,6 @@ export interface ParsedSearchURL {
     query: string | undefined
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
-    versionContext: string | undefined
 }
 
 /**
@@ -131,7 +116,6 @@ export function parseSearchURL(
         query: finalQuery,
         patternType,
         caseSensitive,
-        versionContext: parseSearchURLVersionContext(urlSearchQuery),
     }
 }
 
@@ -175,12 +159,6 @@ export interface CaseSensitivityProps {
     setCaseSensitivity: (caseSensitive: boolean) => void
 }
 
-export interface MutableVersionContextProps extends VersionContextProps {
-    setVersionContext: (versionContext: string | undefined) => Promise<void>
-    availableVersionContexts: VersionContext[] | undefined
-    previousVersionContext: string | null
-}
-
 export interface OnboardingTourProps {
     showOnboardingTour: boolean
 }
@@ -197,7 +175,6 @@ export interface SearchContextProps {
     getUserSearchContextNamespaces: typeof getUserSearchContextNamespaces
     fetchAutoDefinedSearchContexts: typeof fetchAutoDefinedSearchContexts
     fetchSearchContexts: typeof fetchSearchContexts
-    convertVersionContextToSearchContext: typeof convertVersionContextToSearchContext
     isSearchContextSpecAvailable: typeof isSearchContextSpecAvailable
     fetchSearchContext: typeof fetchSearchContext
     fetchSearchContextBySpec: typeof fetchSearchContextBySpec
@@ -236,34 +213,6 @@ export interface SearchStreamingProps {
         queryObservable: Observable<string>,
         options: StreamSearchOptions
     ) => Observable<AggregateStreamingSearchResults>
-}
-
-/**
- * Verifies whether a version context exists on an instance.
- *
- * For URLs that have a `c=$X` parameter, we must check that
- * the version $X actually exists before trying to search with it.
- *
- * If the version context doesn't exist or there are no available version contexts, return undefined to
- * use the default context.
- *
- * @param versionContext The version context to verify.
- * @param availableVersionContexts A list of all version contexts defined in site configuration.
- */
-export function resolveVersionContext(
-    versionContext: string | undefined,
-    availableVersionContexts: VersionContext[] | undefined
-): string | undefined {
-    if (
-        !versionContext ||
-        !availableVersionContexts ||
-        !availableVersionContexts.map(versionContext => versionContext.name).includes(versionContext) ||
-        versionContext === 'default'
-    ) {
-        return undefined
-    }
-
-    return versionContext
 }
 
 export function getGlobalSearchContextFilter(query: string): { filter: Filter; spec: string } | null {

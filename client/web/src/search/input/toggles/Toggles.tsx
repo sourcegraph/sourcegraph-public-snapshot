@@ -7,7 +7,6 @@ import React, { useCallback } from 'react'
 
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { findFilter, FilterKind } from '@sourcegraph/shared/src/search/query/validate'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
@@ -24,7 +23,6 @@ export interface TogglesProps
     extends PatternTypeProps,
         CaseSensitivityProps,
         SettingsCascadeProps,
-        VersionContextProps,
         Pick<SearchContextProps, 'showSearchContext' | 'selectedSearchContextSpec'> {
     navbarSearchQuery: string
     history: H.History
@@ -36,14 +34,13 @@ export interface TogglesProps
 export const getFullQuery = (
     query: string,
     searchContextSpec: string,
-    versionContext: string | undefined,
     caseSensitive: boolean,
     patternType: SearchPatternType
 ): string => {
     const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
         .filter(queryPart => !!queryPart)
         .join(' ')
-    return appendContextFilter(finalQuery, searchContextSpec, versionContext)
+    return appendContextFilter(finalQuery, searchContextSpec)
 }
 
 /**
@@ -53,7 +50,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     const {
         history,
         navbarSearchQuery,
-        versionContext,
         hasGlobalQueryBehavior,
         patternType,
         setPatternType,
@@ -84,21 +80,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     source,
                     patternType: newPatternType,
                     caseSensitive: newCaseSensitive,
-                    versionContext,
                     activation,
                     selectedSearchContextSpec,
                 })
             }
         },
-        [
-            caseSensitive,
-            hasGlobalQueryBehavior,
-            history,
-            navbarSearchQuery,
-            patternType,
-            versionContext,
-            selectedSearchContextSpec,
-        ]
+        [caseSensitive, hasGlobalQueryBehavior, history, navbarSearchQuery, patternType, selectedSearchContextSpec]
     )
 
     const toggleCaseSensitivity = useCallback((): void => {
@@ -130,13 +117,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         submitOnToggle({ newPatternType })
     }, [patternType, setPatternType, settingsCascade.final, submitOnToggle])
 
-    const fullQuery = getFullQuery(
-        navbarSearchQuery,
-        selectedSearchContextSpec || '',
-        versionContext,
-        caseSensitive,
-        patternType
-    )
+    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
         <div className={classNames('toggle-container', className)}>

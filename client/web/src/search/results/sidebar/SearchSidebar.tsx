@@ -137,7 +137,6 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         onNavbarQueryChange: setQueryState,
                         patternType: props.patternType,
                         query,
-                        versionContext: props.versionContext,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                     })}
                 </SearchSidebarSection>

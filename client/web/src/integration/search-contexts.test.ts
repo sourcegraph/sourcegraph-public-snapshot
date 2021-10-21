@@ -13,13 +13,10 @@ import { WebGraphQlOperations } from '../graphql-operations'
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createRepositoryRedirectResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { createJsContext, siteGQLID, siteID } from './jscontext'
+import { siteGQLID, siteID } from './jscontext'
 
 const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
     ...commonWebGraphQlResults,
-    ConvertVersionContextToSearchContext: ({ name }) => ({
-        convertVersionContextToSearchContext: { id: `id${name}`, spec: name },
-    }),
 }
 
 describe('Search contexts', () => {
@@ -37,13 +34,6 @@ describe('Search contexts', () => {
         })
         testContext.overrideGraphQL(testContextForSearchContexts)
         testContext.overrideSearchStreamEvents([{ type: 'done', data: {} }])
-        const context = createJsContext({ sourcegraphBaseUrl: driver.sourcegraphBaseUrl })
-        testContext.overrideJsContext({
-            ...context,
-            experimentalFeatures: {
-                versionContexts,
-            },
-        })
     })
     afterEachSaveScreenshotIfFailed(() => driver.page)
     afterEach(() => testContext?.dispose())
@@ -118,18 +108,6 @@ describe('Search contexts', () => {
             },
         }),
     }
-    const versionContexts = [
-        {
-            name: 'version-context-1',
-            description: 'v1',
-            revisions: [],
-        },
-        {
-            name: 'version-context-2',
-            description: 'v2',
-            revisions: [],
-        },
-    ]
 
     const getSelectedSearchContextSpec = () =>
         driver.page.evaluate(() => document.querySelector('.test-selected-search-context-spec')?.textContent)
@@ -187,78 +165,6 @@ describe('Search contexts', () => {
         await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
         expect(await getSelectedSearchContextSpec()).toStrictEqual('context:global')
         await clearLocalStorage()
-    })
-
-    test('Disable dropdown if version context is active', async () => {
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp&c=version-context-1')
-        await driver.page.waitForSelector('.test-selected-search-context-spec', { visible: true })
-        expect(await isSearchContextDropdownDisabled()).toBeTruthy()
-    })
-
-    test('Convert version context', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            IsSearchContextAvailable: () => ({
-                isSearchContextAvailable: false,
-            }),
-        })
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/convert-version-contexts')
-
-        await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
-        await driver.page.click('.test-convert-version-context-btn')
-
-        await driver.page.waitForSelector('[data-testid="convert-version-context-node"] .text-success')
-
-        const successText = await driver.page.evaluate(
-            () => document.querySelector('[data-testid="convert-version-context-node"] .text-success')?.textContent
-        )
-        expect(successText).toBe('Version context successfully converted.')
-    })
-
-    test('Convert all version contexts', async () => {
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            IsSearchContextAvailable: () => ({
-                isSearchContextAvailable: false,
-            }),
-        })
-
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/contexts/convert-version-contexts')
-
-        // Wait for individual nodes to load
-        await driver.page.waitForSelector('.test-convert-version-context-btn', { visible: true })
-        await driver.page.waitForSelector('.test-convert-all-search-contexts-btn')
-        await driver.page.click('.test-convert-all-search-contexts-btn')
-
-        testContext.overrideGraphQL({
-            ...testContextForSearchContexts,
-            IsSearchContextAvailable: () => ({
-                isSearchContextAvailable: true,
-            }),
-        })
-
-        // Check that a success message appears with the correct number of converted contexts
-        await driver.page.waitForSelector('.test-convert-all-search-contexts-success')
-        const successText = await driver.page.evaluate(
-            () => document.querySelector('.test-convert-all-search-contexts-success')?.textContent
-        )
-        expect(successText).toBe(
-            `Sucessfully converted ${versionContexts.length} version contexts into search contexts.`
-        )
-
-        await driver.page.waitForFunction(
-            versionContextsCount =>
-                document.querySelectorAll('.test-converted-context').length === versionContextsCount,
-            undefined,
-            versionContexts.length
-        )
-
-        // Check that individual context nodes have 'Converted' text
-        const convertedContexts = await driver.page.evaluate(
-            () => document.querySelectorAll('.test-converted-context').length
-        )
-        expect(convertedContexts).toBe(versionContexts.length)
     })
 
     test('Create search context', async () => {

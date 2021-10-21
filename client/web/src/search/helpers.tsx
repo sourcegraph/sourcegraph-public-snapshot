@@ -5,7 +5,6 @@ import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { CharacterRange } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
@@ -18,7 +17,6 @@ export interface SubmitSearchParameters
     extends Partial<Pick<ActivationProps, 'activation'>>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        VersionContextProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     history: H.History
     query: string
@@ -50,7 +48,6 @@ export function submitSearch({
     query,
     patternType,
     caseSensitive,
-    versionContext,
     selectedSearchContextSpec,
     activation,
     source,
@@ -60,7 +57,6 @@ export function submitSearch({
         query,
         patternType,
         caseSensitive,
-        versionContext,
         selectedSearchContextSpec,
         searchParameters
     )
@@ -79,7 +75,7 @@ export function submitSearch({
     eventLogger.log(
         'SearchSubmitted',
         {
-            query: appendContextFilter(query, selectedSearchContextSpec, versionContext),
+            query: appendContextFilter(query, selectedSearchContextSpec),
             source,
         },
         { source }

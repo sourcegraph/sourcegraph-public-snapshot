@@ -129,7 +129,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             setPatternType,
             caseSensitive,
             setCaseSensitivity,
-            versionContext,
             globbing,
             ...context
         }: RepoRevisionContainerContext &
@@ -186,7 +185,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 setPatternType,
                 caseSensitive,
                 setCaseSensitivity,
-                versionContext,
                 globbing,
             }
 
@@ -267,7 +265,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
             useBreadcrumb,
             setBreadcrumb,
             settingsCascade,
-            versionContext,
             repo,
             history,
             location,
@@ -291,7 +288,6 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     useBreadcrumb={useBreadcrumb}
                     setBreadcrumb={setBreadcrumb}
                     settingsCascade={settingsCascade}
-                    versionContext={versionContext}
                     repo={repo}
                     history={history}
                     location={location}

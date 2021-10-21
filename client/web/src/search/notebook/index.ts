@@ -117,7 +117,6 @@ export class Notebook {
                             version: LATEST_VERSION,
                             patternType: SearchPatternType.literal,
                             caseSensitive: false,
-                            versionContext: undefined,
                             trace: undefined,
                         }
                     ).pipe(startWith(emptyAggregateResults)),

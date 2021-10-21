@@ -57,9 +57,7 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
-import { VersionContext } from './schema/site.schema'
 import {
-    resolveVersionContext,
     parseSearchURL,
     getAvailableSearchContextSpecOrDefault,
     isSearchContextSpecAvailable,
@@ -71,7 +69,6 @@ import {
     fetchRecentFileViews,
     fetchAutoDefinedSearchContexts,
     fetchSearchContexts,
-    convertVersionContextToSearchContext,
     fetchSearchContext,
     createSearchContext,
     updateSearchContext,
@@ -150,7 +147,7 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     /**
      * The current parsed search query, with all UI-configurable parameters
-     * (eg. pattern type, case sensitivity, version context) removed
+     * (eg. pattern type, case sensitivity) removed
      */
     parsedSearchQuery: string
 
@@ -163,21 +160,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
      * Whether the current search is case sensitive.
      */
     searchCaseSensitivity: boolean
-
-    /*
-     * The version context the instance is in. If undefined, it means no version context is selected.
-     */
-    versionContext?: string
-
-    /**
-     * Available version contexts defined in the site configuration.
-     */
-    availableVersionContexts?: VersionContext[]
-
-    /**
-     * The previously used version context, as specified in localStorage.
-     */
-    previousVersionContext: string | null
 
     showOnboardingTour: boolean
 
@@ -230,7 +212,6 @@ const notificationClassNames = {
     [NotificationType.Error]: 'alert alert-danger',
 }
 
-const LAST_VERSION_CONTEXT_KEY = 'sg-last-version-context'
 const LAST_SEARCH_CONTEXT_KEY = 'sg-last-search-context'
 
 setLinkComponent(RouterLinkOrAnchor)
@@ -274,13 +255,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         // This will be updated with the default in settings when the web app mounts.
         const urlPatternType = parsedSearchURL.patternType || SearchPatternType.literal
         const urlCase = parsedSearchURL.caseSensitive
-        const availableVersionContexts = window.context.experimentalFeatures.versionContexts
-        const previousVersionContext = localStorage.getItem(LAST_VERSION_CONTEXT_KEY)
-        const resolvedVersionContext = availableVersionContexts
-            ? resolveVersionContext(parsedSearchURL.versionContext || undefined, availableVersionContexts) ||
-              resolveVersionContext(previousVersionContext || undefined, availableVersionContexts) ||
-              undefined
-            : undefined
 
         this.state = {
             settingsCascade: EMPTY_SETTINGS_CASCADE,
@@ -288,9 +262,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             parsedSearchQuery: parsedSearchURL.query || '',
             searchPatternType: urlPatternType,
             searchCaseSensitivity: urlCase,
-            versionContext: resolvedVersionContext,
-            availableVersionContexts,
-            previousVersionContext,
             showOnboardingTour: false,
             showSearchContext: false,
             showSearchContextManagement: false,
@@ -421,11 +392,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
             this.setSelectedSearchContextSpec(lastSelectedSearchContextSpec)
         }
 
-        // Send initial versionContext to extensions
-        this.setVersionContext(this.state.versionContext).catch(error => {
-            console.error('Error sending initial version context to extensions', error)
-        })
-
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
             console.error('Error sending search context to extensions', error)
         })
@@ -498,10 +464,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     setPatternType={this.setPatternType}
                                                     caseSensitive={this.state.searchCaseSensitivity}
                                                     setCaseSensitivity={this.setCaseSensitivity}
-                                                    versionContext={this.state.versionContext}
-                                                    setVersionContext={this.setVersionContext}
-                                                    availableVersionContexts={this.state.availableVersionContexts}
-                                                    previousVersionContext={this.state.previousVersionContext}
                                                     // Extensions
                                                     platformContext={this.platformContext}
                                                     extensionsController={this.extensionsController}
@@ -525,9 +487,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                     createSearchContext={createSearchContext}
                                                     updateSearchContext={updateSearchContext}
                                                     deleteSearchContext={deleteSearchContext}
-                                                    convertVersionContextToSearchContext={
-                                                        convertVersionContextToSearchContext
-                                                    }
                                                     isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                                                     defaultSearchContextSpec={this.state.defaultSearchContextSpec}
                                                     showEnterpriseHomePanels={this.state.showEnterpriseHomePanels}
@@ -580,23 +539,6 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         this.setState({
             searchCaseSensitivity: caseSensitive,
         })
-    }
-
-    private setVersionContext = async (versionContext: string | undefined): Promise<void> => {
-        const resolvedVersionContext = resolveVersionContext(versionContext, this.state.availableVersionContexts)
-        if (!resolvedVersionContext) {
-            localStorage.removeItem(LAST_VERSION_CONTEXT_KEY)
-            this.setState({ versionContext: undefined, previousVersionContext: null })
-        } else {
-            localStorage.setItem(LAST_VERSION_CONTEXT_KEY, resolvedVersionContext)
-            this.setState({ versionContext: resolvedVersionContext, previousVersionContext: resolvedVersionContext })
-        }
-
-        const extensionHostAPI = await this.extensionsController.extHostAPI
-        // Note: `setVersionContext` is now asynchronous since the version context
-        // is sent directly to extensions in the worker thread. This means that when the Promise
-        // is in a fulfilled state, we know that extensions have received the latest version context
-        await extensionHostAPI.setVersionContext(resolvedVersionContext)
     }
 
     private onUserExternalServicesOrRepositoriesUpdate = (

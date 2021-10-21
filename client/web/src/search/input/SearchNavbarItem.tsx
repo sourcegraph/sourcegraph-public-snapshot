@@ -4,7 +4,6 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,7 +18,6 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
-import { VersionContext } from '../../schema/site.schema'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
 import { submitSearch } from '../helpers'
 import { useNavbarQueryState } from '../navbarSearchQueryState'
@@ -33,7 +31,6 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
-        VersionContextProps,
         OnboardingTourProps,
         TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -43,8 +40,6 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    setVersionContext: (versionContext: string | undefined) => Promise<void>
-    availableVersionContexts: VersionContext[] | undefined
 }
 
 /**

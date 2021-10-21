@@ -9,7 +9,6 @@ import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { VersionContext } from '../../schema/site.schema'
 import { SearchContextProps } from '../../search'
 
 import { SearchContextsListTab } from './SearchContextsListTab'
@@ -23,7 +22,6 @@ export interface SearchContextsListPageProps
     history: H.History
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    availableVersionContexts: VersionContext[] | undefined
 }
 
 type SelectedTab = 'list'
@@ -112,13 +110,6 @@ export const SearchContextsListPage: React.FunctionComponent<SearchContextsListP
                                 </span>
                             </a>
                         </div>
-                        {props.authenticatedUser?.siteAdmin && (
-                            <div className="nav-item d-flex align-items-center ml-auto">
-                                <Link className="nav-link" to="/contexts/convert-version-contexts">
-                                    Convert version contexts
-                                </Link>
-                            </div>
-                        )}
                     </div>
                 </div>
                 {selectedTab === 'list' && <SearchContextsListTab {...props} />}

@@ -67,7 +67,6 @@ export const panelProps = {
     repoName: 'git://github.com/foo/bar',
     fetchHighlightedFileLineRanges: () => of([]),
     isLightTheme: true,
-    versionContext: undefined,
     platformContext: {} as any,
     settingsCascade: { subjects: null, final: null },
     telemetryService: NOOP_TELEMETRY_SERVICE,

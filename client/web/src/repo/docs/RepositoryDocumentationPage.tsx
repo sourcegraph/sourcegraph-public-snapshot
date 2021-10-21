@@ -12,7 +12,6 @@ import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoFileLink'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError, ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { RevisionSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -50,8 +49,7 @@ interface Props
         Partial<RevisionSpec>,
         ResolvedRevisionSpec,
         BreadcrumbSetters,
-        SettingsCascadeProps,
-        VersionContextProps {
+        SettingsCascadeProps {
     repo: RepositoryFields
     history: H.History
     location: H.Location
