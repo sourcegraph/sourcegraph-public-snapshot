@@ -670,7 +670,7 @@ insert_data AS (
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
 ),
-insert_metadata AS (
+insert_current AS (
 	INSERT INTO lsif_data_docs_search_current_$SUFFIX (
 		repo_id,
 		dump_root,
