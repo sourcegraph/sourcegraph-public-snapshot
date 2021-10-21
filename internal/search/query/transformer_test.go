@@ -40,13 +40,15 @@ func toJSON(node Node) interface{} {
 		}
 	case Parameter:
 		return struct {
-			Field   string `json:"field"`
-			Value   string `json:"value"`
-			Negated bool   `json:"negated"`
+			Field   string   `json:"field"`
+			Value   string   `json:"value"`
+			Negated bool     `json:"negated"`
+			Labels  []string `json:"labels"`
 		}{
 			Field:   n.Field,
 			Value:   n.Value,
 			Negated: n.Negated,
+			Labels:  n.Annotation.Labels.String(),
 		}
 	case Pattern:
 		return struct {
@@ -83,17 +85,17 @@ func TestSubstituteAliases(t *testing.T) {
 
 	autogold.Want(
 		"basic substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false},{"field":"repogroup","value":"repogroup","negated":false},{"field":"file","value":"file","negated":false}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"field":"repogroup","value":"repogroup","negated":false,"labels":["IsAlias"]},{"field":"file","value":"file","negated":false,"labels":["IsAlias"]}]}]`).
 		Equal(t, test("r:repo g:repogroup f:file", SearchTypeRegex))
 
 	autogold.Want(
 		"special case for content substitution",
-		`[{"and":[{"field":"repo","value":"repo","negated":false},{"value":"^a-regexp:tbf$","negated":false,"labels":["Regexp"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^a-regexp:tbf$","negated":false,"labels":["IsAlias","Regexp"]}]}]`).
 		Equal(t, test("r:repo content:^a-regexp:tbf$", SearchTypeRegex))
 
 	autogold.Want(
 		"substitution honors literal search pattern",
-		`[{"and":[{"field":"repo","value":"repo","negated":false},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["Literal"]}]}]`).
+		`[{"and":[{"field":"repo","value":"repo","negated":false,"labels":["IsAlias"]},{"value":"^not-actually-a-regexp:tbf$","negated":false,"labels":["IsAlias","Literal"]}]}]`).
 		Equal(t, test("r:repo content:^not-actually-a-regexp:tbf$", SearchTypeLiteral))
 }
 
