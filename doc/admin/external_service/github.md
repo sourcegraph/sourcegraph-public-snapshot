@@ -34,19 +34,23 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
-No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
+No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
 | Feature                                               | Required token scopes                                                                              |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [Sync private repositories](#github)                  | `read:repo`                                                                                        |
-| [Sync repository permissions][permissions]            | `write:repo`                                                                                       |
-| [Repository permissions caching][permissions-caching] | `write:org`                                                                                        |
+| [Sync private repositories](#github)                  | `repo`                                                                                             |
+| [Sync repository permissions][permissions]            | `repo` and write access to relevant repositories                                                   |
+| [Repository permissions caching][permissions-caching] | `write:org` and write access to relevant organizations                                             |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, and `read:discussion` ([learn more][batch-changes-interactions]) |
 
 [permissions]: ../repo/permissions.md#github
 [permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching
 [batch-changes]: ../../batch_changes/index.md
 [batch-changes-interactions]: ../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes
+
+<span class="virtual-br"></span>
+
+> NOTE: To leverage additional token scopes, the account attached to the token must actually have access to the prerequisite resources. For example, you cannot grant `repo` access to a repository that the token's account itself does not have write access for.
 
 ## GitHub.com rate limits
 
