@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"strconv"
 	"sync"
@@ -13,10 +14,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
@@ -308,4 +312,111 @@ func (r *batchChangeResolver) BatchSpecs(
 	}
 
 	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
+}
+
+func (r *batchChangeResolver) HasExternalServicesWithoutWebhooks(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: We can access this without a site admin check because we
+	// don't return the actual external service; we're only interested in
+	// whether there is webhook configuration or not, and there's no way to leak
+	// anything past that below.
+	services, _, err := r.store.ListExternalServices(ctx, store.ListExternalServicesOpts{
+		BatchChangeID: r.batchChange.ID,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, es := range services {
+		cfg, err := es.Configuration()
+		if err != nil {
+			return false, err
+		}
+
+		if hasWebhooks, err := webhooks.ConfigurationHasWebhooks(cfg); err != nil {
+			return false, err
+		} else if hasWebhooks {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (r *batchChangeResolver) ExternalServices(
+	ctx context.Context,
+	args *graphqlbackend.ListExternalServicesArgs,
+) (graphqlbackend.ExternalServiceConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can access external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	return &externalServiceConnectionResolver{
+		store:         r.store,
+		batchChangeID: r.batchChange.ID,
+		args:          args,
+	}, nil
+}
+
+type externalServiceConnectionResolver struct {
+	store         *store.Store
+	batchChangeID int64
+	args          *graphqlbackend.ListExternalServicesArgs
+
+	once                     sync.Once
+	externalServiceResolvers []*graphqlbackend.ExternalServiceResolver
+	next                     int64
+	err                      error
+}
+
+var _ graphqlbackend.ExternalServiceConnectionResolver = &externalServiceConnectionResolver{}
+
+func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*graphqlbackend.ExternalServiceResolver, int64, error) {
+	r.once.Do(func() {
+		var cursor int64
+		if r.args.After != nil {
+			cursor, r.err = strconv.ParseInt(*r.args.After, 10, 64)
+			if r.err != nil {
+				return
+			}
+		}
+
+		var externalServices []*types.ExternalService
+		externalServices, r.next, r.err = r.store.ListExternalServices(ctx, store.ListExternalServicesOpts{
+			BatchChangeID: r.batchChangeID,
+			Cursor:        cursor,
+			LimitOpts:     store.LimitOpts{Limit: int(r.args.First)},
+		})
+		if r.err != nil {
+			return
+		}
+
+		r.externalServiceResolvers = make([]*graphqlbackend.ExternalServiceResolver, len(externalServices))
+		for i, es := range externalServices {
+			r.externalServiceResolvers[i] = graphqlbackend.NewExternalServiceResolver(r.store.DB(), es)
+		}
+	})
+	return r.externalServiceResolvers, r.next, r.err
+}
+
+func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.ExternalServiceResolver, error) {
+	externalServiceResolvers, _, err := r.compute(ctx)
+	return externalServiceResolvers, err
+}
+
+func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	count, err := r.store.CountExternalServices(ctx, r.batchChangeID)
+	return int32(count), err
+}
+
+func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if next == 0 {
+		return graphqlutil.HasNextPage(false), nil
+	}
+	return graphqlutil.NextPageCursor(fmt.Sprint(next)), nil
 }

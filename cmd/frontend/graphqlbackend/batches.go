@@ -547,6 +547,11 @@ type ListBatchSpecArgs struct {
 	After *string
 }
 
+type ListExternalServicesArgs struct {
+	First int32
+	After *string
+}
+
 type ListWorkspacesArgs struct {
 	First   int32
 	After   *string
@@ -590,6 +595,8 @@ type BatchChangeResolver interface {
 	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
 	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 	BatchSpecs(ctx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+	HasExternalServicesWithoutWebhooks(ctx context.Context) (bool, error)
+	ExternalServices(ctx context.Context, args *ListExternalServicesArgs) (ExternalServiceConnectionResolver, error)
 }
 
 type BatchChangesConnectionResolver interface {

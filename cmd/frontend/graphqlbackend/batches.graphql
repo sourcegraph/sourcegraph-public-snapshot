@@ -2314,6 +2314,19 @@ type BatchChange implements Node {
         """
         after: String
     ): BatchSpecConnection!
+
+    hasExternalServicesWithoutWebhooks: Boolean!
+
+    externalServices(
+        """
+        Returns the first n entries from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): ExternalServiceConnection!
 }
 
 """

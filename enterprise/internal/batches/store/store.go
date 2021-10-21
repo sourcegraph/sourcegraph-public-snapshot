@@ -165,6 +165,8 @@ type operations struct {
 	getBatchChangeDiffStat *observation.Operation
 	getRepoDiffStat        *observation.Operation
 	listBatchChanges       *observation.Operation
+	listExternalServices   *observation.Operation
+	countExternalServices  *observation.Operation
 
 	createBatchSpecExecution *observation.Operation
 	getBatchSpecExecution    *observation.Operation
@@ -286,6 +288,8 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchChange:      op("DeleteBatchChange"),
 			countBatchChanges:      op("CountBatchChanges"),
 			listBatchChanges:       op("ListBatchChanges"),
+			listExternalServices:   op("ListExternalServices"),
+			countExternalServices:  op("CountExternalServices"),
 			getBatchChange:         op("GetBatchChange"),
 			getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
 			getRepoDiffStat:        op("GetRepoDiffStat"),
