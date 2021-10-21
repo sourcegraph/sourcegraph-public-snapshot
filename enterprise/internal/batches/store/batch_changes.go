@@ -592,7 +592,7 @@ func (s *Store) listExternalServices(ctx context.Context, opts *ListExternalServ
 
 	// Let's go get some external service IDs.
 	ids := make([]int64, 0, opts.DBLimit())
-	if err := s.query(ctx, q, func(sc scanner) error {
+	if err := s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var id int64
 		if err := sc.Scan(&id); err != nil {
 			return err
