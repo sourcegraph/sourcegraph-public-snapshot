@@ -8,7 +8,7 @@ import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 import { CHANGESETS, queryExternalChangesetWithFileDiffs } from '../backend'
 
 import { BatchChangeChangesets } from './BatchChangeChangesets'
@@ -54,7 +54,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 }
 
 add('List of changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
                 <BatchChangeChangesets
@@ -68,11 +68,11 @@ add('List of changesets', () => (
                 />
             </MockedTestProvider>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('List of expanded changesets', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <MockedTestProvider link={mocks}>
                 <BatchChangeChangesets
@@ -87,5 +87,5 @@ add('List of expanded changesets', () => (
                 />
             </MockedTestProvider>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

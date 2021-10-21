@@ -598,12 +598,19 @@ func (s *Store) replaceSearchRecords(
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
 
-		// For current marker update
+		// For current marker insert
 		upload.RepositoryID, // repo_id
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
 		now,                 // last_cleanup_scan_at
+
+		// For current marker update
+		upload.ID,           // dump_id
+		now,                 // last_cleanup_scan_at
+		upload.RepositoryID, // repo_id
+		upload.Root,         // dump_root
+		languageNameID,      // lang_name_id
 	)); err != nil {
 		return errors.Wrap(err, "committing staged search records")
 	}
@@ -629,7 +636,7 @@ CREATE TEMPORARY TABLE t_lsif_data_docs_search_$SUFFIX (
 const insertSearchRecordsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
 WITH
-ins AS (
+insert_data AS (
 	INSERT INTO lsif_data_docs_search_$SUFFIX (
 		repo_id,
 		dump_id,
@@ -662,17 +669,29 @@ ins AS (
 		source.label_tsv,
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
+),
+insert_current AS (
+	INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+		repo_id,
+		dump_root,
+		lang_name_id,
+		dump_id,
+		last_cleanup_scan_at
+	)
+	VALUES (%s, %s, %s, %s, %s)
+	ON CONFLICT DO NOTHING
+),
+update_current AS (
+	UPDATE lsif_data_docs_search_current_$SUFFIX
+	SET
+		dump_id = %s,
+		last_cleanup_scan_at = %s
+	WHERE
+		repo_id = %s AND
+		dump_root = %s AND
+		lang_name_id = %s
 )
-INSERT INTO lsif_data_docs_search_current_$SUFFIX (
-	repo_id,
-	dump_root,
-	lang_name_id,
-	dump_id,
-	last_cleanup_scan_at
-)
-VALUES (%s, %s, %s, %s, %s)
-ON CONFLICT (repo_id, dump_root, lang_name_id)
-DO UPDATE SET dump_id = EXCLUDED.dump_id
+SELECT 1
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {

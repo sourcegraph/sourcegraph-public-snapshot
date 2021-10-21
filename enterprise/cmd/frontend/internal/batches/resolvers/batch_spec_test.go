@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
 	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
@@ -261,6 +262,9 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	ctx := context.Background()
 	db := dbtest.NewDB(t, "")
 
+	now := timeutil.Now().Truncate(time.Second)
+	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
+
 	admin := ct.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 
@@ -352,7 +356,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
 	for _, ws := range workspaces {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
-		if err := bstore.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 			t.Fatal(err)
 		}
 		jobs = append(jobs, job)
@@ -362,57 +366,65 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs processing
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	jobs[1].StartedAt = minAgo(99)
+	setJobProcessing(t, ctx, bstore, jobs[1])
 	want.State = "PROCESSING"
+	want.StartedAt = graphqlbackend.DateTime{Time: jobs[1].StartedAt}
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 processing
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobProcessing(t, ctx, bstore, jobs[0])
+	setJobProcessing(t, ctx, bstore, jobs[2])
 	// Expect same state
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs complete, 2/3 processing
-	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	jobs[2].FinishedAt = minAgo(30)
+	setJobCompleted(t, ctx, bstore, jobs[2])
 	// Expect same state
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 jobs complete
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateCompleted)
+	jobs[0].FinishedAt = minAgo(9)
+	jobs[1].FinishedAt = minAgo(15)
+	setJobCompleted(t, ctx, bstore, jobs[0])
+	setJobCompleted(t, ctx, bstore, jobs[1])
 	want.State = "COMPLETED"
 	want.ApplyURL = &applyUrl
+	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 	want.ApplyURL = nil
 
 	// 1/3 jobs is failed, 2/3 completed
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	setJobFailed(t, ctx, bstore, jobs[1])
 	want.State = "FAILED"
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
+	setJobProcessing(t, ctx, bstore, jobs[0])
+	setJobProcessing(t, ctx, bstore, jobs[2])
 	want.State = "PROCESSING"
+	want.FinishedAt = graphqlbackend.DateTime{}
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 jobs canceling and processing
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateProcessing)
-	setJobCancel(t, ctx, bstore, jobs[0])
-	setJobCancel(t, ctx, bstore, jobs[1])
-	setJobCancel(t, ctx, bstore, jobs[2])
+	setJobCanceling(t, ctx, bstore, jobs[0])
+	setJobCanceling(t, ctx, bstore, jobs[1])
+	setJobCanceling(t, ctx, bstore, jobs[2])
 
 	want.State = "CANCELING"
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 canceling and failed
-	setJobState(t, ctx, bstore, jobs[0], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
-	setJobState(t, ctx, bstore, jobs[1], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
-	setJobState(t, ctx, bstore, jobs[2], btypes.BatchSpecWorkspaceExecutionJobStateFailed)
+	jobs[0].FinishedAt = minAgo(9)
+	jobs[1].FinishedAt = minAgo(15)
+	jobs[2].FinishedAt = minAgo(30)
+	setJobCanceled(t, ctx, bstore, jobs[0])
+	setJobCanceled(t, ctx, bstore, jobs[1])
+	setJobCanceled(t, ctx, bstore, jobs[2])
 
 	want.State = "CANCELED"
+	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 }
 
@@ -430,15 +442,65 @@ func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schem
 	}
 }
 
-func setJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob, state btypes.BatchSpecWorkspaceExecutionJobState) {
+func setJobProcessing(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
 	t.Helper()
-
-	job.State = state
-
-	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
-	if err != nil {
-		t.Fatalf("failed to set job state: %s", err)
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+	if job.StartedAt.IsZero() {
+		job.StartedAt = time.Now().Add(-5 * time.Minute)
 	}
+	job.FinishedAt = time.Time{}
+	job.Cancel = false
+	ct.UpdateJobState(t, ctx, s, job)
+}
+
+func setJobCompleted(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateCompleted
+	if job.StartedAt.IsZero() {
+		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	}
+	if job.FinishedAt.IsZero() {
+		job.FinishedAt = time.Now()
+	}
+	job.Cancel = false
+	ct.UpdateJobState(t, ctx, s, job)
+}
+
+func setJobFailed(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+	if job.StartedAt.IsZero() {
+		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	}
+	if job.FinishedAt.IsZero() {
+		job.FinishedAt = time.Now()
+	}
+	job.Cancel = false
+	ct.UpdateJobState(t, ctx, s, job)
+}
+
+func setJobCanceling(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+	if job.StartedAt.IsZero() {
+		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	}
+	job.FinishedAt = time.Time{}
+	job.Cancel = true
+	ct.UpdateJobState(t, ctx, s, job)
+}
+
+func setJobCanceled(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+	t.Helper()
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+	if job.StartedAt.IsZero() {
+		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	}
+	if job.FinishedAt.IsZero() {
+		job.FinishedAt = time.Now()
+	}
+	job.Cancel = true
+	ct.UpdateJobState(t, ctx, s, job)
 }
 
 func setResolutionJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecResolutionJob, state btypes.BatchSpecResolutionJobState) {
@@ -449,17 +511,6 @@ func setResolutionJobState(t *testing.T, ctx context.Context, s *store.Store, jo
 	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_resolution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
 	if err != nil {
 		t.Fatalf("failed to set resolution job state: %s", err)
-	}
-}
-
-func setJobCancel(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
-	t.Helper()
-
-	job.Cancel = true
-
-	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET cancel = true WHERE id = %s", job.ID))
-	if err != nil {
-		t.Fatalf("failed to set job state: %s", err)
 	}
 }
 
@@ -546,6 +597,8 @@ query($batchSpec: ID!) {
       workspaceResolution {
         state
       }
+      startedAt
+      finishedAt
     }
   }
 }

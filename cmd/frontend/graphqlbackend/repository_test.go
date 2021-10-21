@@ -13,10 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git/gitapi"
 )
@@ -184,7 +183,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		},
 		{
 			name:           "clone in progress",
-			symbolicRefErr: &vcs.RepoNotExistError{CloneInProgress: true},
+			symbolicRefErr: &gitdomain.RepoNotExistError{CloneInProgress: true},
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,
@@ -198,7 +197,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		{
 			name:               "default branch doesn't exist",
 			symbolicRef:        "refs/heads/main",
-			resolveRevisionErr: &gitserver.RevisionNotFoundError{Repo: "repo", Spec: "refs/heads/main"},
+			resolveRevisionErr: &gitdomain.RevisionNotFoundError{Repo: "repo", Spec: "refs/heads/main"},
 			// Expect it to not fail and not return a resolver.
 			wantBranch: nil,
 			wantErr:    nil,

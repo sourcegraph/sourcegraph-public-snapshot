@@ -1997,8 +1997,6 @@ type BatchSpecWorkspace implements Node {
     """
     The rank of this execution in the queue. The value of this field is null if the
     execution has started.
-
-    TODO: Not implemented yet.
     """
     placeInQueue: Int
 }
@@ -2706,8 +2704,6 @@ type BatchSpec implements Node {
     The set of changeset specs for importing changesets, as determined from the
     raw spec.
     Null, if not created through createBatchSpecFromRaw.
-
-    TODO: Not yet implemented.
     """
     importingChangesets(first: Int = 50, after: String, search: String): ChangesetSpecConnection
 

@@ -13,6 +13,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
@@ -154,7 +155,7 @@ func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWork
 
 	q := getBatchSpecWorkspaceQuery(&opts)
 	var c btypes.BatchSpecWorkspace
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpecWorkspace(&c, sc)
 	})
 	if err != nil {
@@ -205,7 +206,7 @@ func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecW
 	q := listBatchSpecWorkspacesQuery(opts)
 
 	cs = make([]*btypes.BatchSpecWorkspace, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpecWorkspace
 		if err := scanBatchSpecWorkspace(&c, sc); err != nil {
 			return err
@@ -279,7 +280,7 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 	return s.Exec(ctx, q)
 }
 
-func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s scanner) error {
+func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
 	var steps json.RawMessage
 
 	if err := s.Scan(
@@ -324,7 +325,7 @@ func scanBatchSpecWorkspaces(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpe
 
 	var jobs []*btypes.BatchSpecWorkspace
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.BatchSpecWorkspace
 		if err = scanBatchSpecWorkspace(&j, sc); err != nil {
 			return err

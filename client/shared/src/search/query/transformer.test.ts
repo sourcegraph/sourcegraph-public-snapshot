@@ -9,29 +9,22 @@ expect.addSnapshotSerializer({
 })
 
 describe('appendContextFilter', () => {
-    const emptyVersionContext = undefined
     test('appending context to empty query', () => {
-        expect(appendContextFilter('', 'ctx', emptyVersionContext)).toMatchInlineSnapshot('context:ctx ')
+        expect(appendContextFilter('', 'ctx')).toMatchInlineSnapshot('context:ctx ')
     })
 
     test('appending context to populated query', () => {
-        expect(appendContextFilter('foo', 'ctx', emptyVersionContext)).toMatchInlineSnapshot('context:ctx foo')
+        expect(appendContextFilter('foo', 'ctx')).toMatchInlineSnapshot('context:ctx foo')
     })
 
     test('appending when query already contains a context', () => {
-        expect(appendContextFilter('context:bar foo', 'ctx', emptyVersionContext)).toMatchInlineSnapshot(
-            'context:bar foo'
-        )
+        expect(appendContextFilter('context:bar foo', 'ctx')).toMatchInlineSnapshot('context:bar foo')
     })
 
     test('appending when query already contains multiple contexts', () => {
-        expect(
-            appendContextFilter('(context:bar foo) or (context:bar1 foo1)', 'ctx', emptyVersionContext)
-        ).toMatchInlineSnapshot('(context:bar foo) or (context:bar1 foo1)')
-    })
-
-    test('appending with active version context', () => {
-        expect(appendContextFilter('foo', 'ctx', 'vc')).toMatchInlineSnapshot('foo')
+        expect(appendContextFilter('(context:bar foo) or (context:bar1 foo1)', 'ctx')).toMatchInlineSnapshot(
+            '(context:bar foo) or (context:bar1 foo1)'
+        )
     })
 })
 

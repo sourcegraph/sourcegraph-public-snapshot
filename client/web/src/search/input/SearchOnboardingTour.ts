@@ -277,13 +277,13 @@ const useTourWithSteps = ({
                 },
                 classes: 'tour-card tour-card--arrow-right-down',
                 attachTo: {
-                    element: '.search-button__btn',
+                    element: '[data-testid="search-button"]',
                     on: 'top',
                 },
                 popperOptions: {
                     modifiers: [{ name: 'offset', options: { offset: [-140, 8] } }],
                 },
-                advanceOn: { selector: '.search-button__btn', event: 'click' },
+                advanceOn: { selector: '[data-testid="search-button"]', event: 'click' },
             },
         ])
     }, [tour, setQueryState])

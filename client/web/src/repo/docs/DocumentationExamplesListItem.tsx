@@ -9,7 +9,6 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { RepoFileLink } from '@sourcegraph/shared/src/components/RepoFileLink'
 import { RepoIcon } from '@sourcegraph/shared/src/components/RepoIcon'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -20,7 +19,7 @@ import { PersonLink } from '../../person/PersonLink'
 
 import { fetchDocumentationBlame } from './graphql'
 
-interface Props extends SettingsCascadeProps, VersionContextProps {
+interface Props extends SettingsCascadeProps {
     location: H.Location
     isLightTheme: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>

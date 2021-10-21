@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { subDays } from 'date-fns'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import styles from './BatchChangeListPage.module.scss'
 import { BatchChangeNode } from './BatchChangeNode'
@@ -17,7 +17,7 @@ const { add } = storiesOf('web/batches/BatchChangeNode', module).addDecorator(st
 
 for (const key of Object.keys(nodes)) {
     add(key, () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeNode
                     {...props}
@@ -26,6 +26,6 @@ for (const key of Object.keys(nodes)) {
                     now={isChromatic() ? () => subDays(now, 5) : undefined}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ))
 }

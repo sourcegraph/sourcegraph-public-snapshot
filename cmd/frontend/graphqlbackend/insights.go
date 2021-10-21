@@ -96,6 +96,13 @@ type InsightsDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
 	Views() InsightViewConnectionResolver
+	Grants() InsightsPermissionGrantsResolver
+}
+
+type InsightsPermissionGrantsResolver interface {
+	Users() []graphql.ID
+	Organizations() []graphql.ID
+	Global() bool
 }
 
 type CreateInsightsDashboardArgs struct {

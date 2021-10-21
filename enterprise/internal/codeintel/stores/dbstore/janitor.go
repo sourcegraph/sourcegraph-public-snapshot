@@ -132,18 +132,17 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 	}})
 	defer endObservation(1, observation.Args{})
 
-	assignmentExpressions := []*sqlf.Query{
-		sqlf.Sprintf("commit_last_checked_at = %s", now),
-	}
+	uploadsAssignmentExpressions := []*sqlf.Query{sqlf.Sprintf("commit_last_checked_at = %s", now)}
+	indexesAssignmentExpressions := []*sqlf.Query{sqlf.Sprintf("commit_last_checked_at = %s", now)}
 	if delete {
-		assignmentExpressions = append(assignmentExpressions, sqlf.Sprintf("state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END"))
+		uploadsAssignmentExpressions = append(uploadsAssignmentExpressions, sqlf.Sprintf("state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END"))
+		indexesAssignmentExpressions = append(indexesAssignmentExpressions, sqlf.Sprintf("state = 'deleted'"))
 	}
-	assignmentExpression := sqlf.Join(assignmentExpressions, ", ")
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(
 		refreshCommitResolvabilityQuery,
-		repositoryID, commit, assignmentExpression,
-		repositoryID, commit, assignmentExpression,
+		repositoryID, commit, sqlf.Join(uploadsAssignmentExpressions, ", "),
+		repositoryID, commit, sqlf.Join(indexesAssignmentExpressions, ", "),
 	))
 	if err != nil {
 		return 0, 0, err

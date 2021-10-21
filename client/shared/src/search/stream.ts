@@ -398,7 +398,6 @@ export interface StreamSearchOptions {
     version: string
     patternType: SearchPatternType
     caseSensitive: boolean
-    versionContext: string | undefined
     trace: string | undefined
     sourcegraphURL?: string
     decorationKinds?: string[]
@@ -411,7 +410,6 @@ function initiateSearchStream(
         version,
         patternType,
         caseSensitive,
-        versionContext,
         trace,
         decorationKinds,
         decorationContextLines,
@@ -431,9 +429,6 @@ function initiateSearchStream(
             ['dc', (decorationContextLines || '1').toString()],
             ['display', '1500'],
         ]
-        if (versionContext) {
-            parameters.push(['vc', versionContext])
-        }
         if (trace) {
             parameters.push(['trace', trace])
         }

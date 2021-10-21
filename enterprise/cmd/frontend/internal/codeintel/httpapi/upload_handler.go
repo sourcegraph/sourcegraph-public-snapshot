@@ -20,10 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
 )
 
@@ -399,7 +398,7 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 	}
 
 	if _, err := backend.Repos.ResolveRev(ctx, repo, commit); err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			http.Error(w, fmt.Sprintf("unknown commit %q", commit), http.StatusNotFound)
 			return nil, false
 		}
@@ -407,7 +406,7 @@ func ensureRepoAndCommitExist(ctx context.Context, w http.ResponseWriter, repoNa
 		// If the repository is currently being cloned (which is most likely to happen on dotcom),
 		// then we want to continue to queue the LSIF upload record to unblock the client, then have
 		// the worker wait until the rev is resolvable before starting to process.
-		if !vcs.IsCloneInProgress(err) {
+		if !gitdomain.IsCloneInProgress(err) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return nil, false
 		}

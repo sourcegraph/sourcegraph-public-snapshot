@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -38,7 +40,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	const wantDefaultBranchRef = "refs/heads/foo"
 	git.Mocks.ExecSafe = func(params []string) (stdout, stderr []byte, exitCode int, err error) {
-		// Mock default branch lookup in (*RepsitoryResolver).DefaultBranch.
+		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
 		return []byte(wantDefaultBranchRef), nil, 0, nil
 	}
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
@@ -47,12 +49,17 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		}
 		return wantCommitID, nil
 	}
-	git.Mocks.GetObject = func(objectName string) (git.OID, git.ObjectType, error) {
-		oid := git.OID{} // empty is OK for this test
-		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
-		return oid, git.ObjectTypeTree, nil
-	}
 	defer git.ResetMocks()
+
+	gitserver.ClientMocks.GetObject = func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+		oid := gitdomain.OID{} // empty is OK for this test
+		copy(oid[:], bytes.Repeat([]byte{0xaa}, 40))
+		return &gitdomain.GitObject{
+			ID:   oid,
+			Type: gitdomain.ObjectTypeTree,
+		}, nil
+	}
+	defer gitserver.ResetClientMocks()
 
 	mkResult := func(path string, lineNumbers ...int32) *result.FileMatch {
 		rn := types.RepoName{
