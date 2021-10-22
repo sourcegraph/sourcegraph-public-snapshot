@@ -3,6 +3,7 @@ package compute
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
@@ -116,7 +117,42 @@ func toRegexpPattern(value string) (*regexp.Regexp, error) {
 	return rp, nil
 }
 
+var ComputePredicateRegistry = query.PredicateRegistry{
+	query.FieldContent: {
+		"replace": func() query.Predicate { return query.EmptyPredicate{} },
+	},
+}
+
+func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) {
+	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
+		// pattern is not set via `content:`, so it cannot be a replace command.
+		return nil, false, nil
+	}
+	value, _, ok := query.ScanPredicate("content", []byte(pattern.Value), ComputePredicateRegistry)
+	if !ok {
+		return nil, false, nil
+	}
+	_, args := query.ParseAsPredicate(value)
+	parts := strings.Split(args, "->")
+	if len(parts) != 2 {
+		return nil, false, errors.New("invalid replace statement, no left and right hand sides of `->`")
+	}
+	rp, err := regexp.Compile(parts[0])
+	if err != nil {
+		return nil, false, errors.Wrap(err, "invalid regular expression in replace command")
+	}
+	return &ReplaceInPlace{MatchPattern: &Regexp{Value: rp}, ReplacePattern: parts[1]}, true, nil
+}
+
 func toCommand(pattern *query.Pattern) (Command, error) {
+	command, ok, err := parseReplaceInPlace(pattern)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return command, nil
+	}
+
 	rp, err := toRegexpPattern(pattern.Value)
 	if err != nil {
 		return nil, err

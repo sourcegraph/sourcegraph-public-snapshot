@@ -77,6 +77,14 @@ func ParseAsPredicate(value string) (name, params string) {
 	return name, params
 }
 
+// EmptyPredicate is a noop value that satisfies the Predicate interface.
+type EmptyPredicate struct{}
+
+func (EmptyPredicate) Field() string            { return "" }
+func (EmptyPredicate) Name() string             { return "" }
+func (EmptyPredicate) ParseParams(string) error { return nil }
+func (EmptyPredicate) Plan(Basic) (Plan, error) { return nil, nil }
+
 // RepoContainsPredicate represents the `repo:contains()` predicate,
 // which filters to repos that contain either a file or content
 type RepoContainsPredicate struct {
