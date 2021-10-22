@@ -76,9 +76,11 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 }
 
 func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
-	if r.workspace.Skipped {
-		return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
-	}
+	// TODO: Do we really not want to show these? Currently it won't show steps
+	// for the ignored and unsupported repos.
+	// if r.workspace.Skipped {
+	// 	return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
+	// }
 
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
