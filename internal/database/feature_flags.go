@@ -405,7 +405,7 @@ func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID in
 	return scanFeatureFlagOverrides(rows)
 }
 
-// GetOrgOverrideForFlag returns the flag override for the given organization
+// GetOrgOverrideForFlag returns the flag override for the given organization.
 func (f *FeatureFlagStore) GetOrgOverrideForFlag(ctx context.Context, orgID int32, flagName string) (*ff.Override, error) {
 	const listOrgOverridesFmtString = `
 		SELECT
