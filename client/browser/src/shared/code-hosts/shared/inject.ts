@@ -3,12 +3,18 @@ import { filter, startWith } from 'rxjs/operators'
 
 import { isCloudSupportedCodehost, SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
 import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
+import { checkIsSourcegraph, signalBrowserExtensionInstalled } from '../sourcegraph/inject'
 
 import { determineCodeHost, CodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
 import { RepoIsBlockedForCloudError } from './errors'
 import { logger } from './util/logger'
 
 function inject(codeHost: CodeHost, assetsURL: string, sourcegraphURL: string, isExtension: boolean): Subscription {
+    const isSourcegraphServer = checkIsSourcegraph(sourcegraphURL)
+    if (isSourcegraphServer) {
+        signalBrowserExtensionInstalled()
+        return new Subscription()
+    }
     logger.info('Attaching code intelligence using', sourcegraphURL)
 
     const observeMutations: ObserveMutations = codeHost.observeMutations || defaultObserveMutations
