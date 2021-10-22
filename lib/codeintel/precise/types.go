@@ -189,10 +189,10 @@ type DocumentationMapping struct {
 // DocumentationSearchResult describes a single documentation search result, from the
 // lsif_data_docs_search_public or lsif_data_docs_search_private table.
 type DocumentationSearchResult struct {
-	ID int64
-	RepoID int32
-	DumpID int32
-	DumpRoot string
+	ID        int64
+	RepoID    int32
+	DumpID    int32
+	DumpRoot  string
 	PathID    string
 	Detail    string
 	Lang      string
