@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import * as React from 'react'
 import { merge, of, Subject, Subscription } from 'rxjs'
@@ -8,6 +9,8 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { HeroPage } from '../components/HeroPage'
 import { checkMirrorRepositoryConnection } from '../site-admin/backend'
 import { eventLogger } from '../tracking/eventLogger'
+
+import styles from './RepositoryNotFoundPage.module.scss'
 
 interface Props {
     /** The name of the repository. */
@@ -89,11 +92,11 @@ export class RepositoryNotFoundPage extends React.PureComponent<Props, State> {
                 icon={MapSearchIcon}
                 title="Repository not found"
                 subtitle={
-                    <div className="repository-not-found-page">
+                    <div className={styles.repositoryNotFoundPage}>
                         {this.state.showAdd && (
-                            <div className="repository-not-found-page__section mt-3">
-                                <div className="repository-not-found-page__section-inner">
-                                    <div className="repository-not-found-page__section-description">
+                            <div className={classNames('mt-3', styles.section)}>
+                                <div className={styles.sectionInner}>
+                                    <div className={styles.sectionDescription}>
                                         {this.state.canAddOrError === undefined && (
                                             <>Checking whether this repository can be added...</>
                                         )}
