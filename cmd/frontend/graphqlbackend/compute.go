@@ -162,6 +162,30 @@ func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContex
 	}
 }
 
+func toComputeTextResolver(fm *result.FileMatch, text, kind string, db dbutil.DB) *computeTextResolver {
+	type repoKey struct {
+		Name types.RepoName
+		Rev  string
+	}
+	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+			return existing
+		}
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver.RepoMatch.Rev = rev
+		repoResolvers[repoKey{repoName, rev}] = resolver
+		return resolver
+	}
+
+	return &computeTextResolver{
+		repository: getRepoResolver(fm.Repo, ""),
+		commit:     string(fm.CommitID),
+		path:       fm.Path,
+		t:          &compute.Text{Value: text, Kind: kind},
+	}
+}
+
 func toComputeResultResolver(r *computeMatchContextResolver) *computeResultResolver {
 	return &computeResultResolver{result: r}
 }
