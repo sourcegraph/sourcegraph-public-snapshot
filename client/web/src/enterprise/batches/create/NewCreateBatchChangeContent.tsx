@@ -59,7 +59,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [selectedNamespace, setSelectedNamespace] = useState<string>('')
     const [previewID, setPreviewID] = useState<Scalars['ID']>()
-    const [code, setCode] = useState<string>('name:')
+    const [code, setCode] = useState<string>('name: ')
 
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
         if (!previewID) {
@@ -68,7 +68,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
         setIsLoading(true)
         try {
             const execution = await executeBatchSpec(previewID)
-            history.push(`${execution.namespace.url}/batch-changes/specs/${execution.id}`)
+            history.push(`${execution.namespace.url}/batch-changes/executions/${execution.id}`)
         } catch (error) {
             setIsLoading(error)
         }
@@ -165,8 +165,13 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                             catchError(error => [asError(error)])
                         )
                     }),
-                    tap(() => {
+                    tap(preview => {
                         setPreviewStale(false)
+                        if (!isErrorLike(preview)) {
+                            setPreviewID(preview.id)
+                        } else {
+                            setPreviewID(undefined)
+                        }
                     }),
                     catchError(error => [asError(error)])
                 )

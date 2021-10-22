@@ -33,6 +33,105 @@ const batchSpecExecutionFieldsFragment = gql`
             url
             namespaceName
         }
+        workspaceResolution {
+            workspaces {
+                totalCount
+                pageInfo {
+                    endCursor
+                    hasNextPage
+                }
+                nodes {
+                    id
+                    steps {
+                        run
+                        diffStat {
+                            added
+                            changed
+                            deleted
+                        }
+                        diff {
+                            baseRepository {
+                                name
+                            }
+                        }
+                        container
+                        cachedResultFound
+                        skipped
+                        outputLines
+                        startedAt
+                        finishedAt
+                        exitCode
+                        environment {
+                            name
+                            value
+                        }
+                        outputVariables {
+                            name
+                            value
+                        }
+                    }
+                    searchResultPaths
+                    startedAt
+                    finishedAt
+                    failureMessage
+                    state
+                    changesetSpecs {
+                        id
+                        type
+                        __typename
+                        ... on VisibleChangesetSpec {
+                            description {
+                                ... on GitBranchChangesetDescription {
+                                    title
+                                }
+                                ... on ExistingChangesetReference {
+                                    externalID
+                                }
+                            }
+                        }
+                    }
+                    placeInQueue
+                    repository {
+                        name
+                        url
+                    }
+                    branch {
+                        name
+                    }
+                    path
+                    onlyFetchWorkspace
+                    ignored
+                    unsupported
+                    cachedResultFound
+                    stages {
+                        setup {
+                            key
+                            command
+                            startTime
+                            exitCode
+                            out
+                            durationMilliseconds
+                        }
+                        srcExec {
+                            key
+                            command
+                            startTime
+                            exitCode
+                            out
+                            durationMilliseconds
+                        }
+                        teardown {
+                            key
+                            command
+                            startTime
+                            exitCode
+                            out
+                            durationMilliseconds
+                        }
+                    }
+                }
+            }
+        }
     }
 `
 

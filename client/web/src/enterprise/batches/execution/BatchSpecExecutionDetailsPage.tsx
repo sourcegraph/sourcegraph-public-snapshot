@@ -1,12 +1,20 @@
+import { parseISO } from 'date-fns/esm'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import React, { useCallback, useEffect, useState } from 'react'
+import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import ErrorIcon from 'mdi-react/ErrorIcon'
+import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
+import TimerSandIcon from 'mdi-react/TimerSandIcon'
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useHistory } from 'react-router'
 import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
+import { BatchSpecState, BatchSpecWorkspaceState } from '@sourcegraph/shared/src/graphql-operations'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
+import { DiffStat } from '@sourcegraph/web/src/components/diff/DiffStat'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -50,6 +58,13 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
         return () => subscription.unsubscribe()
     }, [fetchBatchSpecExecution, executionID])
 
+    const history = useHistory()
+
+    const selectedNamespace = useMemo(() => {
+        const query = new URLSearchParams(history.location.search)
+        return query.get('workspace')
+    }, [history.location.search])
+
     const [isCanceling, setIsCanceling] = useState<boolean | Error>(false)
     const cancelExecution = useCallback(async () => {
         try {
@@ -68,6 +83,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             </div>
         )
     }
+
     // Is not found.
     if (batchSpecExecution === null) {
         return <HeroPage icon={AlertCircleIcon} title="Execution not found" />
@@ -119,8 +135,40 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             <Container className="mb-3">
                 <BatchSpec originalInput={batchSpecExecution.originalInput} />
             </Container>
-
-            <h2>Timeline</h2>
+            <div>
+                {batchSpecExecution.startedAt && (
+                    <Duration start={batchSpecExecution.startedAt} end={batchSpecExecution.finishedAt ?? undefined} />
+                )}
+            </div>
+            <div className="row mb-3">
+                <div className="col-4">
+                    <h2>Workspaces</h2>
+                    <Container>
+                        <ul className="list-group">
+                            {batchSpecExecution.workspaceResolution!.workspaces.nodes.map(workspaceNode => (
+                                <li className="list-group-item" key={workspaceNode.id}>
+                                    <WorkspaceStateIcon node={workspaceNode} />{' '}
+                                    <Link to={`?workspace=${workspaceNode.id}`}>{workspaceNode.repository.name}</Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </Container>
+                </div>
+                <div className="col-8">
+                    <Container>
+                        {selectedNamespace === null && <h3 className="text-center">Select workspace to get started</h3>}
+                        {selectedNamespace !== null && (
+                            <WorkspaceNode
+                                node={
+                                    batchSpecExecution.workspaceResolution!.workspaces.nodes.find(
+                                        node => node.id === selectedNamespace
+                                    )!
+                                }
+                            />
+                        )}
+                    </Container>
+                </div>
+            </div>
             {/* <ExecutionTimeline execution={batchSpecExecution} now={now} expandStage={expandStage} className="mb-3" /> */}
 
             {batchSpecExecution.applyURL && (
@@ -136,6 +184,96 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             )}
         </>
     )
+}
+
+type Workspace = NonNullable<BatchSpecExecutionFields['workspaceResolution']>['workspaces']['nodes'][0]
+type Step = Workspace['steps'][0]
+
+const WorkspaceNode: React.FunctionComponent<{
+    node: Workspace
+}> = ({ node }) => {
+    const a = ''
+    return (
+        <>
+            <h4>{node.repository.name}</h4>
+            <p>Started at: {node.startedAt ?? 'not yet'}</p>
+            <p>Finished at: {node.finishedAt ?? 'not yet'}</p>
+            {node.failureMessage && <ErrorAlert error={node.failureMessage} />}
+            <p>
+                <b>Steps</b>
+            </p>
+            {node.steps.map((step, index) => (
+                <Collapsible
+                    key={index}
+                    className="card"
+                    titleClassName="w-100"
+                    title={
+                        <div className="card-body">
+                            <div className="d-flex justify-content-between">
+                                <div>
+                                    <StepStateIcon step={step} />
+                                    <strong>Step {index + 1}</strong>{' '}
+                                    <span className="text-monospace">{step.run.slice(0, 25)}...</span>
+                                    <StepTimer step={step} />
+                                </div>
+                                <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
+                            </div>
+                        </div>
+                    }
+                >
+                    {step.container}
+                    {step.outputLines && <div className="card">{step.outputLines.join('\n')}</div>}
+                    <p>
+                        <strong>Output variables:</strong>
+                        <br />
+                        {JSON.stringify(step.outputVariables)}
+                    </p>
+                </Collapsible>
+            ))}
+        </>
+    )
+}
+
+const WorkspaceStateIcon: React.FunctionComponent<{ node: Workspace }> = ({ node }) => {
+    switch (node.state) {
+        case BatchSpecWorkspaceState.PENDING:
+            return null
+        case BatchSpecWorkspaceState.QUEUED:
+            return <TimerSandIcon className="icon-inline text-muted" />
+        case BatchSpecWorkspaceState.PROCESSING:
+            return <LoadingSpinner className="icon-inline text-muted" />
+        case BatchSpecWorkspaceState.SKIPPED:
+            return <LinkVariantRemoveIcon className="icon-inline text-muted" />
+        case BatchSpecWorkspaceState.CANCELED:
+        case BatchSpecWorkspaceState.CANCELING:
+        case BatchSpecWorkspaceState.FAILED:
+            return <ErrorIcon className="icon-inline text-danger" />
+        case BatchSpecWorkspaceState.COMPLETED:
+            return <CheckCircleIcon className="icon-inline text-success" />
+    }
+}
+
+const StepStateIcon: React.FunctionComponent<{ step: Step }> = ({ step }) => {
+    if (step.skipped) {
+        return <LinkVariantRemoveIcon className="icon-inline text-muted" />
+    }
+    if (!step.startedAt) {
+        return <TimerSandIcon className="icon-inline text-muted" />
+    }
+    if (!step.finishedAt) {
+        return <LoadingSpinner className="icon-inline text-muted" />
+    }
+    if (step.exitCode === 0) {
+        return <CheckCircleIcon className="icon-inline text-success" />
+    }
+    return <ErrorIcon className="icon-inline text-danger" />
+}
+
+const StepTimer: React.FunctionComponent<{ step: Step }> = ({ step }) => {
+    if (!step.startedAt) {
+        return null
+    }
+    return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
 }
 
 // interface ExecutionTimelineProps {
@@ -239,3 +377,41 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 //         expanded: expand || !(success || !finished),
 //     }
 // }
+
+const Duration: React.FunctionComponent<{ start: Date | string; end?: Date | string }> = ({ start, end }) => {
+    const startDate = typeof start === 'string' ? parseISO(start) : start
+    const endDate = typeof end === 'string' ? parseISO(end) : end || new Date()
+    let duration = endDate.getTime() / 1000 - startDate.getTime() / 1000
+    const hours = Math.floor(duration / (60 * 60))
+    duration -= hours * 60 * 60
+    const minutes = Math.floor(duration / 60)
+    duration -= minutes * 60
+    const seconds = Math.floor(duration)
+
+    const [, forceUpdate] = useReducer((any: number) => any + 1, 0)
+
+    useEffect(() => {
+        if (end === undefined) {
+            const timer = setInterval(() => {
+                forceUpdate()
+            }, 1000)
+            return () => {
+                clearInterval(timer)
+            }
+        }
+        return undefined
+    }, [end])
+
+    return (
+        <>
+            {leading0(hours)}:{leading0(minutes)}:{leading0(seconds)}
+        </>
+    )
+}
+
+function leading0(index: number): string {
+    if (index < 10) {
+        return '0' + String(index)
+    }
+    return String(index)
+}
