@@ -335,7 +335,7 @@ func executeSingleStep(
 
 	writerCtx, writerCancel := context.WithCancel(ctx)
 	defer writerCancel()
-	outputWriter := opts.ui.StepOutputWriter(writerCtx, opts.task, i)
+	outputWriter := opts.ui.StepOutputWriter(writerCtx, opts.task, i+1)
 	defer func() {
 		outputWriter.Close()
 	}()
