@@ -1,5 +1,5 @@
 import { ParentSize } from '@visx/responsive'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -51,8 +51,8 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                 </p>
             </div>
 
-            <div className={classnames(styles.createIntroPageInsights, 'pb-5')}>
-                <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+            <div className={classNames(styles.createIntroPageInsights, 'pb-5')}>
+                <section className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                     <h3>Based on your search query</h3>
 
                     <p>
@@ -63,7 +63,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     <LinkWithQuery
                         to="/insights/create/search"
                         onClick={logCreateSearchBasedInsightClick}
-                        className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
+                        className={classNames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                     >
                         Create search insight
                     </LinkWithQuery>
@@ -78,7 +78,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </div>
                 </section>
 
-                <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                <section className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                     <h3>Language usage</h3>
 
                     <p>Shows language usage in your repository by lines of code.</p>
@@ -86,7 +86,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     <LinkWithQuery
                         to="/insights/create/lang-stats"
                         onClick={logCreateCodeStatsInsightClick}
-                        className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
+                        className={classNames(styles.createIntroPageInsightButton, 'btn', 'btn-primary')}
                     >
                         Create language usage insight
                     </LinkWithQuery>
@@ -101,7 +101,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     </div>
                 </section>
 
-                <section className={classnames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
+                <section className={classNames(styles.createIntroPageInsightCard, 'card card-body p-3')}>
                     <h3>Based on Sourcegraph extensions</h3>
 
                     <p>
@@ -112,7 +112,7 @@ export const IntroCreationPage: React.FunctionComponent<IntroCreationPageProps> 
                     <Link
                         to="/extensions?query=category:Insights&experimental=true"
                         onClick={logExploreExtensionsClick}
-                        className={classnames(styles.createIntroPageInsightButton, 'btn', 'btn-secondary')}
+                        className={classNames(styles.createIntroPageInsightButton, 'btn', 'btn-secondary')}
                     >
                         Explore the extensions
                     </Link>

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { MdiReactIconComponentType } from 'mdi-react'
 import React from 'react'
 
@@ -23,7 +23,7 @@ export const ViewCardDescription: React.FunctionComponent<ViewCardDescriptionPro
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <small
             title={title}
-            className={classnames(styles.viewDescription, 'text-muted', className)}
+            className={classNames(styles.viewDescription, 'text-muted', className)}
             onMouseDown={stopPropagation}
         >
             <Icon className="icon-inline" /> {title}

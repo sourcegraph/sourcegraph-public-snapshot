@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { camelCase } from 'lodash'
 import DatabaseIcon from 'mdi-react/DatabaseIcon'
 import React, { useCallback, useContext, useRef, useState } from 'react'
@@ -157,7 +157,7 @@ export const BackendInsight: React.FunctionComponent<BackendInsightProps> = prop
                 />
             }
             innerRef={insightCardReference}
-            className={classnames('be-insight-card', otherProps.className, {
+            className={classNames('be-insight-card', otherProps.className, {
                 [styles.cardWithFilters]: isFiltersOpen,
             })}
         >
