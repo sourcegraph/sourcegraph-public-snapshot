@@ -418,6 +418,7 @@ func serverQA(candidateTag string) operations.Operation {
 
 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
 
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
