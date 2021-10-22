@@ -29,6 +29,7 @@ var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 var _ graphqlbackend.CreateInsightResultResolver = &createInsightResultResolver{}
 var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
 var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
+var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -80,10 +81,10 @@ func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.
 	return &insightPresentationUnionResolver{resolver: lineChartPresentation}, nil
 }
 
-func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.SearchInsightDataSeriesDefinitionResolver, error) {
-	var resolvers []graphqlbackend.SearchInsightDataSeriesDefinitionResolver
+func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.InsightDataSeriesDefinition, error) {
+	var resolvers []graphqlbackend.InsightDataSeriesDefinition
 	for j := range i.view.Series {
-		resolvers = append(resolvers, &searchInsightDataSeriesDefinitionResolver{series: &i.view.Series[j]})
+		resolvers = append(resolvers, &insightDataSeriesDefinitionUnionResolver{resolver: &searchInsightDataSeriesDefinitionResolver{series: &i.view.Series[j]}})
 	}
 	return resolvers, nil
 }
@@ -251,5 +252,16 @@ type insightPresentationUnionResolver struct {
 // ToLineChartInsightViewPresentation is used by the GraphQL library to resolver type fragments for unions
 func (r *insightPresentationUnionResolver) ToLineChartInsightViewPresentation() (graphqlbackend.LineChartInsightViewPresentation, bool) {
 	res, ok := r.resolver.(*lineChartInsightViewPresentation)
+	return res, ok
+}
+
+// A dummy type to represent the GraphQL union InsightDataSeriesDefinition
+type insightDataSeriesDefinitionUnionResolver struct {
+	resolver interface{}
+}
+
+// ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolver type fragments for unions
+func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefinition() (graphqlbackend.SearchInsightDataSeriesDefinitionResolver, bool) {
+	res, ok := r.resolver.(*searchInsightDataSeriesDefinitionResolver)
 	return res, ok
 }

@@ -145,7 +145,11 @@ type InsightViewResolver interface {
 	AppliedFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
 	Presentation(ctx context.Context) (InsightPresentation, error)
-	DataSeriesDefinitions(ctx context.Context) ([]SearchInsightDataSeriesDefinitionResolver, error)
+	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
+}
+
+type InsightDataSeriesDefinition interface {
+	ToSearchInsightDataSeriesDefinition() (SearchInsightDataSeriesDefinitionResolver, bool)
 }
 
 type LineChartInsightViewPresentation interface {
