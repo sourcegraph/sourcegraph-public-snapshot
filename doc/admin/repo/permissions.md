@@ -273,7 +273,7 @@ Sourcegraph's [background permissions syncing](#background-permissions-syncing) 
 
 A **complete sync** means a user has completed user-centric permissions sync (or a repository has completed a repository-centric sync), which indicates the most accurate permissions from the code host has been presisted to Sourcegraph.
 
-An **incremental sync** indicates that a user has *not* yet completed user-centric permissions sync (or a repository has *not* yet completed a repository-centric sync), but has been granted some permissions from other sources. For example, if a user has *not* had a user-centric permissions sync, but has been granted permissions from one or more repository-centric syncs, the user will have only completed an incremental sync.
+An **incremental sync** indicates that a user has *not* yet completed user-centric permissions sync (or a repository has *not* yet completed a repository-centric sync), but has been granted some permissions from other sources. For example, if a user has *not* had a user-centric permissions sync, but has been granted permissions from one or more repository-centric syncs, the user will have only completed an incremental sync. In this state, a user might not have access to all repositories they should have access to.
 
 ### Permissions sync scheduling
 
