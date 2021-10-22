@@ -39,6 +39,10 @@ export function useUpdateDashboardCallback(props: useUpdateDashboardProps): Dash
         }
 
         try {
+            if (!previousDashboard.owner || !previousDashboard.settingsKey) {
+                throw new Error('TODO: implement for GraphQl API')
+            }
+
             if (previousDashboard.owner.id !== dashboardValues.visibility) {
                 const settings = await getSubjectSettings(previousDashboard.owner.id).toPromise()
                 const editedSettings = removeDashboardFromSettings(settings.contents, previousDashboard.settingsKey)

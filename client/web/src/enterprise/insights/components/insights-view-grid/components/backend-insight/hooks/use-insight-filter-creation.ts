@@ -29,8 +29,13 @@ export function useInsightFilterCreation(props: UseInsightFilterCreationProps): 
 
     const createInsightWithFilters = async (inputs: CreateInsightInputs): Promise<void> => {
         const { dashboard, insightName, originalInsight, filters } = inputs
+
+        if (!isVirtualDashboard(dashboard) && !dashboard.owner) {
+            throw new Error('TODO: support GraphQL API')
+        }
+
         // Get id of insight setting subject (owner of it insight)
-        const subjectId = isVirtualDashboard(dashboard) ? originalInsight.visibility : dashboard.owner.id
+        const subjectId = isVirtualDashboard(dashboard) ? originalInsight.visibility : dashboard.owner!.id || ''
 
         // Create new insight by name and last valid filters value
         const newInsight: SearchBackendBasedInsight = {
@@ -47,8 +52,13 @@ export function useInsightFilterCreation(props: UseInsightFilterCreationProps): 
             (settings: string) => {
                 // Virtual and built-in dashboards calculate their insight dynamically in runtime
                 // no need to store insight list for them explicitly
+
                 if (isVirtualDashboard(dashboard) || !isSettingsBasedInsightsDashboard(dashboard)) {
                     return settings
+                }
+
+                if (!dashboard.settingsKey) {
+                    throw new Error('TODO: add support for GraphQl API')
                 }
 
                 return addInsightToDashboard(settings, dashboard.settingsKey, newInsight.id)
