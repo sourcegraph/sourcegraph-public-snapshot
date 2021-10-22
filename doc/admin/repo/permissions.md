@@ -268,8 +268,8 @@ However, this means that it [can take a long time for a full sync to complete](#
 
 Sourcegraph's [background permissions syncing](#background-permissions-syncing) is a 2-way sync that populates the database tables Sourcegraph uses as its source-of-truth for what repositories a user has access to, and vice versa:
 
-- a *user-centric* permissions sync that pulls all repositories a user has access to
-- a *repository-centric* permissions sync that pulls all users that have access to a repository
+- A *user-centric* permissions sync that pulls all repositories a user has access to.
+- A *repository-centric* permissions sync that pulls all users that have access to a repository.
 
 A **complete sync** means a user has completed user-centric permissions sync (or a repository has completed a repository-centric sync), which indicates the most accurate permissions from the code host has been presisted to Sourcegraph.
 
