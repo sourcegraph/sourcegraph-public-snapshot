@@ -61,7 +61,7 @@ function passThroughToServer(): React.ReactNode {
     return null
 }
 
-export enum PageRoutes {
+export enum PAGE_ROUTES {
     INDEX = '/',
     SEARCH = '/search',
     SEARCH_CONSOLE = '/search/console',
@@ -92,38 +92,38 @@ export enum PageRoutes {
  */
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
-        path: PageRoutes.INDEX,
+        path: PAGE_ROUTES.INDEX,
         render: () => <Redirect to="/search" />,
         exact: true,
     },
     {
-        path: PageRoutes.SEARCH,
+        path: PAGE_ROUTES.SEARCH,
         render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
-        path: PageRoutes.SEARCH_CONSOLE,
+        path: PAGE_ROUTES.SEARCH_CONSOLE,
         render: props =>
             props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
         exact: true,
     },
     {
-        path: PageRoutes.SEARCH_NOTEBOOK,
+        path: PAGE_ROUTES.SEARCH_NOTEBOOK,
         render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
         exact: true,
     },
     {
-        path: PageRoutes.SIGN_IN,
+        path: PAGE_ROUTES.SIGN_IN,
         render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: PageRoutes.SIGN_UP,
+        path: PAGE_ROUTES.SIGN_UP,
         render: props => <SignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: PageRoutes.WELCOME,
+        path: PAGE_ROUTES.WELCOME,
         render: props =>
             /**
              * Welcome flow is allowed when:
@@ -153,24 +153,24 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: PageRoutes.SETTINGS,
+        path: PAGE_ROUTES.SETTINGS,
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
     {
-        path: PageRoutes.USER,
+        path: PAGE_ROUTES.USER,
         render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
     },
     {
-        path: PageRoutes.ORGANIZATIONS,
+        path: PAGE_ROUTES.ORGANIZATIONS,
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
-        path: PageRoutes.SITE_ADMIN_INIT,
+        path: PAGE_ROUTES.SITE_ADMIN_INIT,
         exact: true,
         render: props => <SiteInitPage {...props} context={window.context} />,
     },
     {
-        path: PageRoutes.SITE_ADMIN,
+        path: PAGE_ROUTES.SITE_ADMIN,
         render: props => (
             <SiteAdminArea
                 {...props}
@@ -181,38 +181,38 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         ),
     },
     {
-        path: PageRoutes.PASSWORD_RESET,
+        path: PAGE_ROUTES.PASSWORD_RESET,
         render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
     },
     {
-        path: PageRoutes.API_CONSOLE,
+        path: PAGE_ROUTES.API_CONSOLE,
         render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
         exact: true,
     },
     {
-        path: PageRoutes.USER_AREA,
+        path: PAGE_ROUTES.USER_AREA,
         render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
     },
     {
-        path: PageRoutes.SURVEY,
+        path: PAGE_ROUTES.SURVEY,
         render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
-        path: PageRoutes.EXTENSIONS,
+        path: PAGE_ROUTES.EXTENSIONS,
         render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
     },
     {
-        path: PageRoutes.HELP,
+        path: PAGE_ROUTES.HELP,
         render: passThroughToServer,
     },
     {
-        path: PageRoutes.DEBUG,
+        path: PAGE_ROUTES.DEBUG,
         render: passThroughToServer,
     },
     ...communitySearchContextsRoutes,
     {
-        path: PageRoutes.REPO_CONTAINER,
+        path: PAGE_ROUTES.REPO_CONTAINER,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
 ]
