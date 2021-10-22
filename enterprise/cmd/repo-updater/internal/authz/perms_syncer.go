@@ -220,7 +220,7 @@ func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs
 // connections) to list all accessible private repositories on code hosts for
 // the given user.
 //
-// It returns a list of internal database repository IDs and a noop when
+// It returns a list of internal database repository IDs and is a noop when
 // `envvar.SourcegraphDotComMode()` is true.
 func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
