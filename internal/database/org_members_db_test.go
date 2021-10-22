@@ -177,7 +177,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 		t.Run(test.name, func(*testing.T) {
 			got, err := OrgMembers(db).MemberCount(ctx, test.orgID)
 			if err != nil {
-				t.Fatalf("Error when calling IsOnlyMember: %v", err)
+				t.Fatal(err)
 			}
 			if test.want != got {
 				t.Errorf("%s: want %v, got %v", test.name, test.want, got)
