@@ -111,7 +111,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 	}
 }
 
-func TestOrgMembers_IsOnlyMember(t *testing.T) {
+func TestOrgMembers_MemberCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -167,15 +167,15 @@ func TestOrgMembers_IsOnlyMember(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, test := range []struct {
-		name          string
-		orgID, userID int32
-		want          bool
+		name  string
+		orgID int32
+		want  int
 	}{
-		{"org with single member", org1.ID, user1.ID, true},
-		{"org with two members", org2.ID, user1.ID, false},
-		{"org with one other deleted member", org3.ID, user1.ID, true}} {
+		{"org with single member", org1.ID, 1},
+		{"org with two members", org2.ID, 2},
+		{"org with one  deleted member", org3.ID, 1}} {
 		t.Run(test.name, func(*testing.T) {
-			got, err := OrgMembers(db).IsOnlyMember(ctx, test.orgID, test.userID)
+			got, err := OrgMembers(db).MemberCount(ctx, test.orgID)
 			if err != nil {
 				t.Fatalf("Error when calling IsOnlyMember: %v", err)
 			}

@@ -67,18 +67,16 @@ func (m *OrgMemberStore) GetByOrgIDAndUserID(ctx context.Context, orgID, userID 
 	return m.getOneBySQL(ctx, "INNER JOIN users ON org_members.user_id=users.id WHERE org_id=$1 AND user_id=$2 AND users.deleted_at IS NULL LIMIT 1", orgID, userID)
 }
 
-func (m *OrgMemberStore) IsOnlyMember(ctx context.Context, orgID, userID int32) (bool, error) {
-	var isMember int
-	var otherMembersCount int
-	err := m.Handle().DB().QueryRowContext(ctx, `SELECT
-		count(*) FILTER (WHERE user_id = $2) AS is_member,
-		count(*) FILTER (WHERE user_id != $2) AS other_count
+func (m *OrgMemberStore) MemberCount(ctx context.Context, orgID int32) (int, error) {
+	var memberCount int
+	err := m.Handle().DB().QueryRowContext(ctx, `
+		SELECT COUNT(*)
 		FROM org_members INNER JOIN users ON org_members.user_id = users.id
-		WHERE org_id = $1 AND users.deleted_at IS NULL;`, orgID, userID).Scan(&isMember, &otherMembersCount)
+		WHERE org_id=$1 AND users.deleted_at IS NULL`, orgID).Scan(&memberCount)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
-	return isMember == 1 && otherMembersCount == 0, nil
+	return memberCount, nil
 }
 
 func (m *OrgMemberStore) Remove(ctx context.Context, orgID, userID int32) error {
