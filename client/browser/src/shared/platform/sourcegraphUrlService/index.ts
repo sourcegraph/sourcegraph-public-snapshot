@@ -55,9 +55,8 @@ export const createSourcegraphUrlService = ({
             // eslint-disable-next-line rxjs/no-ignored-subscription
             .subscribe(selfHostedURL)
 
-        observeStorageKey(STORAGE_AREA, 'blocklist')
-            // eslint-disable-next-line rxjs/no-ignored-subscription
-            .subscribe(blocklist)
+        // eslint-disable-next-line rxjs/no-ignored-subscription
+        observeStorageKey(STORAGE_AREA, 'blocklist').subscribe(blocklist)
     }
 
     /**

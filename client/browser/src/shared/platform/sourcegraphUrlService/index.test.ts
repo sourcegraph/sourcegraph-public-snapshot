@@ -132,6 +132,14 @@ describe('SourcegraphUrlService', () => {
                 })
             })
         })
+
+        describe('.observeSelfHostedURL', () => {
+            it('returns self-hosted URL', () => {
+                scheduler().run(({ expectObservable }) => {
+                    expectObservable(SourcegraphUrlService.observeSelfHostedURL()).toBe('0', [SELF_HOSTED_URL])
+                })
+            })
+        })
     })
 
     describe('self-hosted URL DOES NOT exists', () => {
@@ -172,29 +180,12 @@ describe('SourcegraphUrlService', () => {
                 })
             })
         })
-    })
 
-    describe.skip('.observeSelfHostedURL', () => {
-        let SourcegraphUrlService: typeof OriginalSourcegraphUrlService
-        it('returns self-hosted URL', () => {
-            const mockIsInBlocklist = sinon.spy(() => false)
-            const mockObserveStorageKey = sinon.spy()
-
-            SourcegraphUrlService = createSourcegraphUrlService({
-                isInBlocklist: mockIsInBlocklist,
-                observeStorageKey: mockObserveStorageKey,
-            })
-
-            scheduler().run(({ expectObservable }) => {
-                expectObservable(SourcegraphUrlService.observeSelfHostedURL()).toBe('0', [CLOUD_SOURCEGRAPH_URL])
-            })
-        })
-
-        it('returns cloud URL if self-hosted is empty', async () => {
-            await SourcegraphUrlService.setSelfHostedURL(SELF_HOSTED_URL)
-
-            scheduler().run(({ expectObservable }) => {
-                expectObservable(SourcegraphUrlService.observeSelfHostedURL()).toBe('0', [CLOUD_SOURCEGRAPH_URL])
+        describe('.observeSelfHostedURL', () => {
+            it('returns empty self-hosted URL', () => {
+                scheduler().run(({ expectObservable }) => {
+                    expectObservable(SourcegraphUrlService.observeSelfHostedURL()).toBe('0', [undefined])
+                })
             })
         })
     })
