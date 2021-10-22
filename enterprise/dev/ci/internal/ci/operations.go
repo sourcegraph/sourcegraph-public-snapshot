@@ -398,6 +398,8 @@ func serverE2E(candidateTag string) operations.Operation {
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
 
+			// TODO need doc
+			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
@@ -420,6 +422,8 @@ func serverQA(candidateTag string) operations.Operation {
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
 			bk.Env("DISPLAY", ":99"),
 
+			// TODO need doc
+			bk.Env("JEST_CIRCUS", "0"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -443,6 +447,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 
 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
 			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
 
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
 			bk.Env("NO_CLEANUP", "false"),
