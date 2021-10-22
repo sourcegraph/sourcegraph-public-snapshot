@@ -140,6 +140,22 @@ func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagRes
 	return res
 }
 
+func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args *struct {
+	OrgID    graphql.ID
+	FlagName string
+}) (bool, error) {
+	org, err := UnmarshalOrgID(args.OrgID)
+	if err != nil {
+		return false, err
+	}
+
+	result, err := database.FeatureFlags(r.db).GetOrgFeatureFlag(ctx, org, args.FlagName)
+	if err != nil {
+		return false, err
+	}
+	return result, nil
+}
+
 func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

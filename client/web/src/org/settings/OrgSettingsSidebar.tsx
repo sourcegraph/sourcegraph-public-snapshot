@@ -11,18 +11,24 @@ import { showOrganizationsCode } from './utils'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
+    showOrgCode: boolean
 }
 
 /**
  * Sidebar for org settings pages.
  */
-export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({ org, authenticatedUser, className, match }) => {
+export const OrgSettingsSidebar: React.FunctionComponent<Props> = ({
+    org,
+    authenticatedUser,
+    className,
+    match,
+    showOrgCode,
+}) => {
     if (!org) {
         return null
     }
 
     const siteAdminViewingOtherOrg = authenticatedUser && org.viewerCanAdminister && !org.viewerIsMember
-    const showOrgCode = showOrganizationsCode(authenticatedUser)
 
     return (
         <div className={classNames(styles.orgSettingsSidebar, className)}>
