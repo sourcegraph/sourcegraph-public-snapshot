@@ -36,7 +36,6 @@ func installExec(ctx context.Context, args []string) error {
 	}
 
 	var location string
-
 	switch runtime.GOOS {
 	case "linux":
 		location = filepath.Join(homeDir, ".local", "bin", "sg")
@@ -75,8 +74,15 @@ func installExec(ctx context.Context, args []string) error {
 	}
 	defer original.Close()
 
+	// Make sure directory for new file exists
+	sgDir := filepath.Dir(location)
+	if err := os.MkdirAll(sgDir, os.ModePerm); err != nil {
+		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
+		return err
+	}
+
 	// Create new file
-	newFile, err := os.Create(location)
+	newFile, err := os.OpenFile(location, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
 	if err != nil {
 		pending.Complete(output.Linef(output.EmojiFailure, output.StyleWarning, "Failed: %s", err))
 		return err
@@ -90,7 +96,6 @@ func installExec(ctx context.Context, args []string) error {
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 
-	sgDir := filepath.Dir(location)
 	paths := []struct {
 		path              string
 		createIfNotExists bool
@@ -122,9 +127,11 @@ func installExec(ctx context.Context, args []string) error {
 
 	addToShellOkay := getBool()
 	if !addToShellOkay {
-		stdout.Out.Write("Done")
+		stdout.Out.Writef("Alright! Make sure to add %s to your $PATH, restart your shell and run 'sg logo'. See you!", sgDir)
 		return nil
 	}
+
+	pending = stdout.Out.Pending(output.Linef("", output.StylePending, "Writing to files..."))
 
 	exportLine := fmt.Sprintf("\nexport PATH=%s:$PATH\n", sgDir)
 	lineWrittenTo := []string{}
@@ -146,7 +153,8 @@ func installExec(ctx context.Context, args []string) error {
 		lineWrittenTo = append(lineWrittenTo, p.path)
 	}
 
-	stdout.Out.Write("")
+	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Done!"))
+
 	stdout.Out.Writef("Modified the following files:")
 	stdout.Out.Write("")
 	for _, p := range lineWrittenTo {
@@ -158,6 +166,7 @@ func installExec(ctx context.Context, args []string) error {
 
 	return nil
 }
+
 func getBool() bool {
 	var s string
 
