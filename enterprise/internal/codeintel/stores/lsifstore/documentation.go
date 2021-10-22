@@ -391,8 +391,8 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 		apidocs.TextSearchRank("result.label_tsv", q.MainTerms, q.SubStringMatches),                               // label_rank
 		apidocs.TextSearchRank("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches),      // label_reverse_rank
 
-		sqlf.Join(primaryClauses, " OR "), // primary WHERE clause
-		q.Limit,                           // result limit
+		sqlf.Join(primaryClauses, ") OR ("), // primary WHERE clause
+		q.Limit,                             // result limit
 	)))
 }
 
@@ -449,7 +449,7 @@ WITH final_results AS (
 		JOIN lsif_data_docs_search_repo_names_$SUFFIX reponames ON reponames.id = result.repo_name_id
 		JOIN lsif_data_docs_search_tags_$SUFFIX tags ON tags.id = result.tags_id
 		WHERE
-			(%s)
+			((%s))
 
 			-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
 			-- have results from multiple uploads (the table is cleaned up asynchronously in the
