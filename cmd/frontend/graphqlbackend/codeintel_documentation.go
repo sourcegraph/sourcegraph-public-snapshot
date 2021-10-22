@@ -13,3 +13,22 @@ type LSIFDocumentationPathInfoArgs struct {
 	MaxDepth    *int32
 	IgnoreIndex *bool
 }
+
+type DocumentationSearchArgs struct {
+	Query string
+	Repos *[]string
+}
+
+type DocumentationSearchResultsResolver interface {
+	Results() []DocumentationSearchResultResolver
+}
+
+type DocumentationSearchResultResolver interface {
+	Lang() string
+	RepoName() string
+	SearchKey() string
+	PathID() string
+	Label() string
+	Detail() string
+	Tags() []string
+}
