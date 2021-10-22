@@ -148,6 +148,10 @@ func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args 
 	if err != nil {
 		return false, err
 	}
+	// same behavior as if the flag does not exist
+	if err := backend.CheckOrgAccess(ctx, r.db, org); err != nil {
+		return false, nil
+	}
 
 	result, err := database.FeatureFlags(r.db).GetOrgFeatureFlag(ctx, org, args.FlagName)
 	if err != nil {
