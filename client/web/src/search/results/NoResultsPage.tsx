@@ -16,6 +16,7 @@ import searchBoxStyle from '../input/SearchBox.module.scss'
 import { Toggles } from '../input/toggles/Toggles'
 
 import styles from './NoResultsPage.module.scss'
+import { AnnotatedSearchInput } from './AnnoatedSearchExample'
 
 export enum SectionID {
     SEARCH_BAR = 'search-bar',
@@ -181,6 +182,13 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
             <h2>Sourcegraph basics</h2>
             <div className={styles.root}>
                 <div className={classNames(styles.mainPanels, 'flex-shrink-past-contents')}>
+                    {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
+                        <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
+                            <div style={{ display: 'flex', overflowX: 'auto' }}>
+                                <AnnotatedSearchInput />
+                            </div>
+                        </Container>
+                    )}
                     {!hiddenSectionIDs?.includes(SectionID.LITERAL_SEARCH) && (
                         <Container
                             sectionID={SectionID.LITERAL_SEARCH}
