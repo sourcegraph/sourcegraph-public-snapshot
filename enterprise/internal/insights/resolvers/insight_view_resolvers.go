@@ -238,7 +238,7 @@ type insightTimeScopeUnionResolver struct {
 	resolver interface{}
 }
 
-// ToInsightIntervalTimeScope is used by the GraphQL library to resolver type fragments for unions
+// ToInsightIntervalTimeScope is used by the GraphQL library to resolve type fragments for unions
 func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbackend.InsightIntervalTimeScope, bool) {
 	res, ok := r.resolver.(*insightIntervalTimeScopeResolver)
 	return res, ok
@@ -249,7 +249,7 @@ type insightPresentationUnionResolver struct {
 	resolver interface{}
 }
 
-// ToLineChartInsightViewPresentation is used by the GraphQL library to resolver type fragments for unions
+// ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
 func (r *insightPresentationUnionResolver) ToLineChartInsightViewPresentation() (graphqlbackend.LineChartInsightViewPresentation, bool) {
 	res, ok := r.resolver.(*lineChartInsightViewPresentation)
 	return res, ok
@@ -260,7 +260,7 @@ type insightDataSeriesDefinitionUnionResolver struct {
 	resolver interface{}
 }
 
-// ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolver type fragments for unions
+// ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolve type fragments for unions
 func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefinition() (graphqlbackend.SearchInsightDataSeriesDefinitionResolver, bool) {
 	res, ok := r.resolver.(*searchInsightDataSeriesDefinitionResolver)
 	return res, ok
