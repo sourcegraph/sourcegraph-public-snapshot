@@ -109,12 +109,12 @@ func extractPattern(basic query.Basic) (*query.Pattern, error) {
 	return pattern, nil
 }
 
-func toRegexpPattern(value string) (*regexp.Regexp, error) {
+func toRegexpPattern(value string) (*Regexp, error) {
 	rp, err := regexp.Compile(value)
 	if err != nil {
-		return nil, errors.Wrap(err, "regular expression is not valid for compute endpoint")
+		return nil, errors.Wrap(err, "compute endpoint")
 	}
-	return rp, nil
+	return &Regexp{Value: rp}, nil
 }
 
 var ComputePredicateRegistry = query.PredicateRegistry{
@@ -137,11 +137,11 @@ func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) 
 	if len(parts) != 2 {
 		return nil, false, errors.New("invalid replace statement, no left and right hand sides of `->`")
 	}
-	rp, err := regexp.Compile(parts[0])
+	rp, err := toRegexpPattern(parts[0])
 	if err != nil {
-		return nil, false, errors.Wrap(err, "invalid regular expression in replace command")
+		return nil, false, errors.Wrap(err, "replace command")
 	}
-	return &ReplaceInPlace{MatchPattern: &Regexp{Value: rp}, ReplacePattern: parts[1]}, true, nil
+	return &ReplaceInPlace{MatchPattern: rp, ReplacePattern: parts[1]}, true, nil
 }
 
 func toCommand(pattern *query.Pattern) (Command, error) {
@@ -157,7 +157,7 @@ func toCommand(pattern *query.Pattern) (Command, error) {
 	if err != nil {
 		return nil, err
 	}
-	return MatchOnly{MatchPattern: &Regexp{Value: rp}}, nil
+	return MatchOnly{MatchPattern: rp}, nil
 }
 
 func toComputeQuery(plan query.Plan) (*Query, error) {
