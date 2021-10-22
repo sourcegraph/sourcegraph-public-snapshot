@@ -5,6 +5,7 @@ import React, { useCallback } from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -41,14 +42,16 @@ interface SearchInputExampleProps {
     showSearchContext: boolean
     query: string
     patternType?: SearchPatternType
+    onRun: () => void
 }
 
 const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     showSearchContext,
     query,
     patternType = SearchPatternType.literal,
+    onRun,
 }) => {
-    const builtURLQuery = buildSearchURLQuery(query, patternType, false, undefined, 'global')
+    const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
     return (
         <div className={styles.searchInputExample}>
             <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchBox)}>
@@ -85,12 +88,11 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                             setCaseSensitivity={noop}
                             setPatternType={noop}
                             settingsCascade={{ subjects: null, final: {} }}
-                            versionContext={undefined}
                         />
                     </div>
                 </div>
             </div>
-            <Link className="ml-1" to={{ pathname: '/search', search: builtURLQuery }}>
+            <Link onClick={onRun} className="ml-1" to={{ pathname: '/search', search: builtURLQuery }}>
                 Run&nbsp;Search
             </Link>
         </div>
@@ -130,10 +132,6 @@ const Container: React.FunctionComponent<ContainerProps> = ({
     </div>
 )
 
-interface NoResultsPageProps extends ThemeProps {
-    showSearchContext: boolean
-}
-
 const videos = [
     {
         title: 'Three ways to search',
@@ -157,23 +155,32 @@ const videos = [
     },
 ]
 
-export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ showSearchContext, isLightTheme }) => {
+interface NoResultsPageProps extends ThemeProps, TelemetryProps {
+    showSearchContext: boolean
+}
+
+export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
+    showSearchContext,
+    isLightTheme,
+    telemetryService,
+}) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
     const onClose = useCallback(
         sectionID => {
+            telemetryService.log('NoResultsPanel', { panelID: sectionID, action: 'closed' })
             setHiddenSectionIds((hiddenSectionIDs = []) =>
                 !hiddenSectionIDs.includes(sectionID) ? [...hiddenSectionIDs, sectionID] : hiddenSectionIDs
             )
         },
-        [setHiddenSectionIds]
+        [setHiddenSectionIds, telemetryService]
     )
 
     return (
         <>
             <h2>Sourcegraph basics</h2>
             <div className={styles.root}>
-                <div className={styles.mainPanels}>
+                <div className={classNames(styles.mainPanels, 'flex-shrink-past-contents')}>
                     {!hiddenSectionIDs?.includes(SectionID.LITERAL_SEARCH) && (
                         <Container
                             sectionID={SectionID.LITERAL_SEARCH}
@@ -198,6 +205,9 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                                 showSearchContext={showSearchContext}
                                 query="repo:sourcegraph const Authentication"
                                 patternType={SearchPatternType.regexp}
+                                onRun={() =>
+                                    telemetryService.log('NoResultsSearchLiteral', { search: 'regexp search' })
+                                }
                             />
                         </Container>
                     )}
@@ -208,6 +218,9 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                             <SearchInputExample
                                 showSearchContext={showSearchContext}
                                 query="repo:sourcegraph/about lang:go publish"
+                                onRun={() =>
+                                    telemetryService.log('NoResultsCommonProblems', { search: 'zfind specific repo' })
+                                }
                             />
                             <p>
                                 To search within all of an org’s repositories, specify only the org name and a trailing
@@ -216,6 +229,9 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                             <SearchInputExample
                                 showSearchContext={showSearchContext}
                                 query="repo:sourcegraph/ lang:go publish"
+                                onRun={() =>
+                                    telemetryService.log('NoResultsCommonProblems', { search: 'find specific repo' })
+                                }
                             />
                             <p>
                                 <small>
@@ -233,6 +249,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                             <SearchInputExample
                                 showSearchContext={showSearchContext}
                                 query="repo:sourcegraph/ (lang:typescript OR lang:go) auth"
+                                onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
                             />
 
                             <h4>Escaping</h4>
@@ -243,6 +260,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                             <SearchInputExample
                                 showSearchContext={showSearchContext}
                                 query={'content:"class Vector"'}
+                                onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'escaping' })}
                             />
                         </Container>
                     )}
@@ -253,11 +271,16 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                             Sourcegraph.
                         </p>
                         <p>
-                            <Link target="blank" to="https://learn.sourcegraph.com/">
+                            <Link
+                                onClick={() => telemetryService.log('NoResultsMore', { link: 'Learn site' })}
+                                target="blank"
+                                to="https://learn.sourcegraph.com/"
+                            >
                                 Sourcegraph Learn <ExternalLinkIcon className="icon-inline" />
                             </Link>
                             <br />
                             <Link
+                                onClick={() => telemetryService.log('NoResultsMore', { link: 'Cheat sheet' })}
                                 target="blank"
                                 to="https://learn.sourcegraph.com/how-to-search-code-with-sourcegraph-a-cheat-sheet"
                             >
@@ -268,8 +291,15 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
 
                     {hiddenSectionIDs && hiddenSectionIDs.length > 0 && (
                         <p>
-                            Some help panels are hidden.
-                            <button type="button" className="btn btn-link" onClick={() => setHiddenSectionIds([])}>
+                            Some help panels are hidden.{' '}
+                            <button
+                                type="button"
+                                className="btn btn-link p-0 border-0 align-baseline"
+                                onClick={() => {
+                                    telemetryService.log('NoResultsPanel', { action: 'showAll' })
+                                    setHiddenSectionIds([])
+                                }}
+                            >
                                 Turn all panels on.
                             </button>
                         </p>
@@ -294,6 +324,11 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({ sho
                                         alt: `${video.title} video thumbnail`,
                                     }}
                                     showCaption={true}
+                                    onToggle={isOpen => {
+                                        if (isOpen) {
+                                            telemetryService.log('NoResultsVideoPlayed', { video: video.title })
+                                        }
+                                    }}
                                 />
                             ))}
                         </Container>

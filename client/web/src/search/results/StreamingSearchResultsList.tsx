@@ -121,7 +121,11 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
 
             {itemsToShow >= (results?.results.length || 0) && <StreamingSearchResultFooter results={results} />}
             {results?.state === 'complete' && results?.results.length === 0 && (
-                <NoResultsPage isLightTheme={isLightTheme} showSearchContext={true} />
+                <NoResultsPage
+                    isLightTheme={isLightTheme}
+                    showSearchContext={true}
+                    telemetryService={telemetryService}
+                />
             )}
         </>
     )
