@@ -28,7 +28,14 @@ type BuildOptions struct {
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {
 	type buildOptions BuildOptions
 	boCopy := buildOptions(bo)
-	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `\$`)
+	// Buildkite pipeline upload command will interpolate if it sees a $var
+	// which can cause the pipeline generation to fail because that
+	// variable do not exists.
+	// By replacing $ into $$ in the commit messages we can prevent those
+	// failures to happen.
+	//
+	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
+	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
 	return json.Marshal(boCopy)
 }
 
