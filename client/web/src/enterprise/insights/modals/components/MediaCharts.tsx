@@ -71,7 +71,7 @@ export const FourLineChart: React.FunctionComponent<React.SVGProps<SVGSVGElement
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         {...props}
-        className={classname(styles.chart, props.className)}
+        className={classNames(styles.chart, props.className)}
     >
         <rect x="16" y="45" width="137" height="1" />
         <rect x="16" y="22" width="137" height="1" />
