@@ -43,7 +43,7 @@ func installExec(ctx context.Context, args []string) error {
 	case "darwin":
 		location = "/usr/local/bin/sg"
 	default:
-		err = fmt.Errorf("unsupported platform: %s", runtime.GOOS)
+		return fmt.Errorf("unsupported platform: %s", runtime.GOOS)
 	}
 
 	var logoOut bytes.Buffer
