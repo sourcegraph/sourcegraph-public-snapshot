@@ -6,6 +6,27 @@ import (
 	"github.com/hexops/autogold"
 )
 
+func TestTruncate(t *testing.T) {
+	testCases := []struct {
+		input      string
+		limitBytes int
+		want       autogold.Value
+	}{
+		{"", 5, autogold.Want("empty string", "")},
+		{"1", 5, autogold.Want("tiny string not limited", "1")},
+		{"1", 1, autogold.Want("tiny string limited", "1")},
+		{"123456789", 5, autogold.Want("basic", "12345…")},
+		{"👪👪", 5, autogold.Want("two four byte family characters, do not break them", "👪…")},
+		{"1234👪👪56789", 5, autogold.Want("do not break unicode runes, exclude if they exceed byte limit", "1234…")},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			got := Truncate(tc.input, tc.limitBytes)
+			tc.want.Equal(t, got)
+		})
+	}
+}
+
 func TestReverse(t *testing.T) {
 	testCases := []struct {
 		input string
@@ -23,5 +44,3 @@ func TestReverse(t *testing.T) {
 		})
 	}
 }
-
-// TODO(apidocs): tests: Truncate

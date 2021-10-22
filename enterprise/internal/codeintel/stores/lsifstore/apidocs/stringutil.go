@@ -11,8 +11,8 @@ func Truncate(s string, limitBytes int) string {
 	runes := []rune(s)
 	bytes := 0
 	for i, r := range runes {
-		if bytes+len(string(r)) >= limitBytes {
-			return string(runes[:i-1]) + "…"
+		if bytes+len([]byte(string(r))) > limitBytes {
+			return string(runes[:i]) + "…"
 		}
 		bytes += len(string(r))
 	}
