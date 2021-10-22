@@ -115,11 +115,6 @@ const config = {
           name: 'react',
           chunks: 'all',
         },
-        monaco: {
-          test: /[/\\]node_modules[/\\](monaco-editor)[/\\]/,
-          name: 'monaco',
-          chunks: 'all',
-        },
       },
     },
     ...(isDevelopment && {
