@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
@@ -100,7 +100,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     value={currentDashboard?.id}
                     dashboards={dashboards}
                     onSelect={handleDashboardSelect}
-                    className={classnames(styles.dashboardSelect, 'mr-2')}
+                    className={classNames(styles.dashboardSelect, 'mr-2')}
                 />
 
                 <DashboardMenu

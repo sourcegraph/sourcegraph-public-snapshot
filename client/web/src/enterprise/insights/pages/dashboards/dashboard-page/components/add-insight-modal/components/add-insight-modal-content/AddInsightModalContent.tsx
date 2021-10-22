@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { escapeRegExp } from 'lodash'
 import React from 'react'
 import { Link } from 'react-router-dom'
@@ -65,7 +65,7 @@ export const AddInsightModalContent: React.FunctionComponent<AddInsightModalCont
                 {...searchInput.input}
             />
 
-            <fieldset className={classnames('mt-2', styles.insightsContainer)}>
+            <fieldset className={classNames('mt-2', styles.insightsContainer)}>
                 {filteredInsights.map(insight => (
                     <label key={insight.id} className={styles.insightItem}>
                         <input

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
@@ -112,7 +112,7 @@ export const LangStatsInsightCreationContent: React.FunctionComponent<LangStatsI
     const hasFilledValue = values.repository !== '' || values.title !== ''
 
     return (
-        <div data-testid="code-stats-insight-creation-page-content" className={classnames(styles.content, className)}>
+        <div data-testid="code-stats-insight-creation-page-content" className={classNames(styles.content, className)}>
             <LangStatsInsightCreationForm
                 mode={mode}
                 innerRef={ref}

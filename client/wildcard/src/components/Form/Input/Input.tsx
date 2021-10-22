@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { forwardRef, InputHTMLAttributes, ReactNode } from 'react'
 
 import { LoaderInput } from '@sourcegraph/branded/src/components/LoaderInput'
@@ -44,14 +44,14 @@ export const Input = forwardRef((props, reference) => {
     } = props
 
     return (
-        <label className={classnames('w-100', className)}>
+        <label className={classNames('w-100', className)}>
             {label && <div className="mb-2">{variant === 'regular' ? label : <small>{label}</small>}</div>}
 
             <LoaderInput className="d-flex" loading={status === 'loading'}>
                 <Component
                     disabled={disabled}
                     type={type}
-                    className={classnames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
+                    className={classNames(styles.input, inputClassName, 'form-control', 'with-invalid-icon', {
                         'is-valid': status === 'valid',
                         'is-invalid': status === 'error',
                         'form-control-sm': variant === 'small',
@@ -65,7 +65,7 @@ export const Input = forwardRef((props, reference) => {
 
             {message && (
                 <small
-                    className={classnames(
+                    className={classNames(
                         status === 'error' ? 'text-danger' : 'text-muted',
                         'form-text font-weight-normal mt-2'
                     )}

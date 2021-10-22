@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { PropsWithChildren, ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
 
@@ -62,7 +62,7 @@ export const ViewCard: React.FunctionComponent<PropsWithChildren<ViewCardProps>>
             /* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */
             tabIndex={0}
             ref={innerRef}
-            className={classnames('card', otherProps.className, styles.viewCard)}
+            className={classNames('card', otherProps.className, styles.viewCard)}
         >
             <ErrorBoundary
                 className="pt-0"

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -108,7 +108,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<LangStatsInsi
     }
 
     return (
-        <Page className={classnames(styles.creationPage, 'col-10')}>
+        <Page className={classNames(styles.creationPage, 'col-10')}>
             <PageTitle title="Create new code insight" />
 
             <div className="mb-5">
