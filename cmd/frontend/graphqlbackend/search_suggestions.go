@@ -222,7 +222,7 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 	var effectiveRepoFieldValues []string
 	if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && hasSingleContextField)) {
 		effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
-	} else if len(r.Query.Values(query.FieldRepo)) > 0 {
+	} else if len(r.Query.Values(query.FieldRepo)) > 0 && hasSingleField {
 		effectiveRepoFieldValues, _ = r.Query.Repositories()
 	}
 
