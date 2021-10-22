@@ -6,6 +6,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -30,4 +31,17 @@ func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUser
 	}
 
 	return ErrNoAccessExternalService
+}
+
+// CheckOrgExternalServices checks if the feature organization can own external services
+// is allowed or not
+func CheckOrgExternalServices(ctx context.Context, db dbutil.DB, orgID int32) error {
+	enabled, err := database.FeatureFlags(db).GetOrgFeatureFlag(ctx, orgID, "org-code")
+	if err != nil {
+		return err
+	} else if enabled {
+		return nil
+	}
+
+	return errors.New("organization code host connections are not enabled")
 }

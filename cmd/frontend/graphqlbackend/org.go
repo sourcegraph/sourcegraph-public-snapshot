@@ -291,10 +291,13 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
+	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
+		return nil, err
+	}
 	// 🚨 SECURITY: Only org members can list the org repositories.
 	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view members")
+			return nil, errors.New("must be a member of this organization to view its repositories")
 		}
 		return nil, err
 	}

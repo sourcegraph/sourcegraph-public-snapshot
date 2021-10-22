@@ -57,6 +57,9 @@ func TestOrganizationRepositories(t *testing.T) {
 			UserID: 1,
 		}, nil
 	}
+	database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+		return true, nil
+	}
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
