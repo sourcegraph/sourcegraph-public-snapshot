@@ -6,16 +6,16 @@ import { Redirect } from 'react-router-dom'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors';
+import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../components/HeroPage'
-import { Settings } from '../../schema/settings.schema';
+import { Settings } from '../../schema/settings.schema'
 import { lazyComponent } from '../../util/lazyComponent'
 
 import { CodeInsightsBackendContext } from './core/backend/code-insights-backend-context'
-import { CodeInsightsGqlBackend } from './core/backend/code-insights-gql-backend';
+import { CodeInsightsGqlBackend } from './core/backend/code-insights-gql-backend'
 import { CodeInsightsSettingsCascadeBackend } from './core/backend/code-insights-setting-cascade-backend'
 import { BetaConfirmationModal } from './modals/BetaConfirmationModal'
 import { DashboardsRoutes } from './pages/dashboards/DasbhoardsRoutes'
@@ -51,16 +51,13 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
 
     const api = useMemo(() => {
         // Disabled by default condition
-        const isNewGqlApiEnabled= !isErrorLike(settingsCascade.final)
-            && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
+        const isNewGqlApiEnabled =
+            !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
 
         return isNewGqlApiEnabled
             ? new CodeInsightsGqlBackend()
             : new CodeInsightsSettingsCascadeBackend(settingsCascade, platformContext)
-    }, [
-        platformContext,
-        settingsCascade,
-    ])
+    }, [platformContext, settingsCascade])
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
