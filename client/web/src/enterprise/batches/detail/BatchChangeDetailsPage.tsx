@@ -8,6 +8,7 @@ import { useQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { ErrorMessage } from '@sourcegraph/web/src/components/alerts'
 import { PageHeader } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
 import { HeroPage } from '../../../components/HeroPage'
 import { PageTitle } from '../../../components/PageTitle'
@@ -35,12 +36,15 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     /** The namespace ID. */
     namespaceID: Scalars['ID']
     /** The batch change name. */
     batchChangeName: BatchChangeFields['name']
+    /** The current user, if any. */
+    authenticatedUser: AuthenticatedUser
     /** For testing only. */
     deleteBatchChange?: typeof _deleteBatchChange
 }
@@ -49,7 +53,15 @@ export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
  * The area for a single batch change.
  */
 export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsPageProps> = props => {
-    const { namespaceID, batchChangeName, history, location, telemetryService, deleteBatchChange } = props
+    const {
+        namespaceID,
+        batchChangeName,
+        history,
+        location,
+        telemetryService,
+        deleteBatchChange,
+        authenticatedUser,
+    } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeDetailsPage')
@@ -61,7 +73,12 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
     const { data, error, loading, refetch } = useQuery<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
         BATCH_CHANGE_BY_NAMESPACE,
         {
-            variables: { namespaceID, batchChange: batchChangeName, createdAfter },
+            variables: {
+                namespaceID,
+                batchChange: batchChangeName,
+                createdAfter,
+                siteAdmin: authenticatedUser?.siteAdmin,
+            },
             // Cache this data but always re-request it in the background when we revisit
             // this page to pick up newer changes.
             fetchPolicy: 'cache-and-network',
@@ -145,6 +162,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <ChangesetsArchivedNotice history={history} location={location} />
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

@@ -145,6 +145,18 @@ const batchChangeFragment = gql`
                 applyURL
             }
         }
+
+        hasExternalServicesWithoutWebhooks
+        externalServicesWithoutWebhooks(first: 5) @include(if: $siteAdmin) {
+            nodes {
+                id
+                kind
+                displayName
+            }
+            pageInfo {
+                hasNextPage
+            }
+        }
     }
 
     fragment ActiveBulkOperationsConnectionFields on BulkOperationConnection {
@@ -177,18 +189,24 @@ const changesetLabelFragment = gql`
 export const fetchBatchChangeByNamespace = (
     namespaceID: Scalars['ID'],
     batchChange: BatchChangeFields['name'],
-    createdAfter: BatchChangeByNamespaceVariables['createdAfter']
+    createdAfter: BatchChangeByNamespaceVariables['createdAfter'],
+    siteAdmin: boolean = false
 ): Observable<BatchChangeFields | null> =>
     requestGraphQL<BatchChangeByNamespaceResult, BatchChangeByNamespaceVariables>(
         gql`
-            query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!, $createdAfter: DateTime!) {
+            query BatchChangeByNamespace(
+                $namespaceID: ID!
+                $batchChange: String!
+                $createdAfter: DateTime!
+                $siteAdmin: Boolean!
+            ) {
                 batchChange(namespace: $namespaceID, name: $batchChange) {
                     ...BatchChangeFields
                 }
             }
             ${batchChangeFragment}
         `,
-        { namespaceID, batchChange, createdAfter }
+        { namespaceID, batchChange, createdAfter, siteAdmin }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ batchChange }) => {
@@ -200,7 +218,12 @@ export const fetchBatchChangeByNamespace = (
     )
 
 export const BATCH_CHANGE_BY_NAMESPACE = gql`
-    query BatchChangeByNamespace($namespaceID: ID!, $batchChange: String!, $createdAfter: DateTime!) {
+    query BatchChangeByNamespace(
+        $namespaceID: ID!
+        $batchChange: String!
+        $createdAfter: DateTime!
+        $siteAdmin: Boolean!
+    ) {
         batchChange(namespace: $namespaceID, name: $batchChange) {
             ...BatchChangeFields
         }
