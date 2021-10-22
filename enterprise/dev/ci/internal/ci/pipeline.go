@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
@@ -39,6 +40,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=8192",
+
+		// Bundlesize configuration: https://github.com/siddharthkp/bundlesize2#build-status-and-checks-for-github
+		"CI_REPO_OWNER": "sourcegraph",
+		"CI_REPO_NAME":  "sourcegraph",
+		"CI_COMMIT_SHA": os.Getenv("BUILDKITE_COMMIT"),
+		// $ in commit messages must be escaped to not attempt interpolation which will fail.
+		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.

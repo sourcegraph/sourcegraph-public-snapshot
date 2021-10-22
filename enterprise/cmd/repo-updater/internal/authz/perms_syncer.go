@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
@@ -215,27 +216,23 @@ func (s *PermsSyncer) listPrivateRepoNamesByExact(ctx context.Context, repoSpecs
 	return repoNames, nil
 }
 
-// syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
-// the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (err error) {
-	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
-	defer save(requestTypeUser, userID, &err)
-
-	user, err := database.UsersWith(s.reposStore).GetByID(ctx, userID)
-	if err != nil {
-		return errors.Wrap(err, "get user")
-	}
-
-	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
-	//  table, the user has proven that they have read access to the repository.
-	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, userID)
-	if err != nil {
-		return errors.Wrap(err, "list external service repo IDs by user ID")
+// fetchUserPermsViaExternalAccounts uses external accounts (aka. login
+// connections) to list all accessible private repositories on code hosts for
+// the given user.
+//
+// It returns a list of internal database repository IDs and is a noop when
+// `envvar.SourcegraphDotComMode()` is true.
+func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
+	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
+	//  repositories, therefore it is no point wasting effort and code host API rate
+	//  limit quota on trying.
+	if envvar.SourcegraphDotComMode() {
+		return []uint32{}, nil
 	}
 
 	accts, err := s.permsStore.ListExternalAccounts(ctx, user.ID)
 	if err != nil {
-		return errors.Wrap(err, "list external accounts")
+		return nil, errors.Wrap(err, "list external accounts")
 	}
 
 	serviceToAccounts := make(map[string]*extsvc.Account)
@@ -250,7 +247,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		},
 	)
 	if err != nil {
-		return errors.Wrap(err, "list user verified emails")
+		return nil, errors.Wrap(err, "list user verified emails")
 	}
 
 	emails := make([]string, len(userEmails))
@@ -306,7 +303,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 
 		if err := s.waitForRateLimit(ctx, provider.ServiceID(), 1); err != nil {
-			return errors.Wrap(err, "wait for rate limiter")
+			return nil, errors.Wrap(err, "wait for rate limiter")
 		}
 
 		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
@@ -322,7 +319,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			if unauthorized || accountSuspended || forbidden {
 				err = accounts.TouchExpired(ctx, acct.ID)
 				if err != nil {
-					return errors.Wrapf(err, "set expired for external account %d", acct.ID)
+					return nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
 				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
 					"userID", user.ID,
@@ -338,13 +335,13 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 
 			// Process partial results if this is an initial fetch.
 			if !noPerms {
-				return errors.Wrap(err, "fetch user permissions")
+				return nil, errors.Wrap(err, "fetch user permissions")
 			}
 			log15.Warn("PermsSyncer.syncUserPerms.proceedWithPartialResults", "userID", user.ID, "error", err)
 		} else {
 			err = accounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
-				return errors.Wrapf(err, "set last valid for external account %d", acct.ID)
+				return nil, errors.Wrapf(err, "set last valid for external account %d", acct.ID)
 			}
 		}
 
@@ -384,7 +381,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	// Get corresponding internal database IDs
 	repoNames, err := s.listPrivateRepoNamesByExact(ctx, repoSpecs)
 	if err != nil {
-		return errors.Wrap(err, "list external repositories by exact matching")
+		return nil, errors.Wrap(err, "list external repositories by exact matching")
 	}
 
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
@@ -398,9 +395,39 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "list external repositories by contains matching")
+			return nil, errors.Wrap(err, "list external repositories by contains matching")
 		}
 		repoNames = append(repoNames, rs...)
+	}
+
+	repoIDs = make([]uint32, 0, len(repoNames))
+	for _, r := range repoNames {
+		repoIDs = append(repoIDs, uint32(r.ID))
+	}
+	return repoIDs, nil
+}
+
+// syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
+// the method will use partial results to update permissions tables even when error occurs.
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (err error) {
+	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
+	defer save(requestTypeUser, userID, &err)
+
+	user, err := database.UsersWith(s.reposStore).GetByID(ctx, userID)
+	if err != nil {
+		return errors.Wrap(err, "get user")
+	}
+
+	// NOTE: If a <repo_id, user_id> pair is present in the external_service_repos
+	//  table, the user has proven that they have read access to the repository.
+	repoIDs, err := s.reposStore.ListExternalServicePrivateRepoIDsByUserID(ctx, user.ID)
+	if err != nil {
+		return errors.Wrap(err, "list external service repo IDs by user ID")
+	}
+
+	fetchedRepoIDs, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
+	if err != nil {
+		return errors.Wrap(err, "fetch user permissions via external accounts")
 	}
 
 	// Save permissions to database
@@ -413,9 +440,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	for i := range repoIDs {
 		p.IDs.Add(uint32(repoIDs[i]))
 	}
-	for i := range repoNames {
-		p.IDs.Add(uint32(repoNames[i].ID))
-	}
+	p.IDs.AddMany(fetchedRepoIDs)
 
 	err = s.permsStore.SetUserPermissions(ctx, p)
 	if err != nil {
