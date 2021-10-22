@@ -1,5 +1,5 @@
 import { last } from 'lodash'
-import { Observable, of, BehaviorSubject } from 'rxjs'
+import { Observable, of, BehaviorSubject, combineLatest } from 'rxjs'
 import { distinctUntilChanged, filter, map } from 'rxjs/operators'
 
 import {
@@ -61,15 +61,16 @@ export const createSourcegraphUrlService = ({
     }
 
     /**
-     * Observe sourcegraphURL
+     * Observe current Sourcegraph URL
      */
     const observe = (isExtension: boolean = true): Observable<string> => {
         if (!isExtension) {
             return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || CLOUD_SOURCEGRAPH_URL)
         }
 
-        return currentSourcegraphURL.asObservable().pipe(
-            map(currentUrl => currentUrl || selfHostedURL.value || CLOUD_SOURCEGRAPH_URL),
+        // TODO: clarify regarding private repository mapping to cloud if there is not self-hosted url
+        return combineLatest([currentSourcegraphURL.asObservable(), observeSelfHostedURL()]).pipe(
+            map(([current, selfHosted]) => current || selfHosted || CLOUD_SOURCEGRAPH_URL),
             distinctUntilChanged()
         )
     }
@@ -94,7 +95,7 @@ export const createSourcegraphUrlService = ({
 
         detectedURL ??= last(instanceURLs)
         if (!detectedURL) {
-            throw new RepoIsBlockedForCloudError('Repository is in blocklist.')
+            throw new RepoIsBlockedForCloudError('Repository is in blocklist for cloud and no self-hosted URL exists.')
         }
         currentSourcegraphURL.next(detectedURL)
     }

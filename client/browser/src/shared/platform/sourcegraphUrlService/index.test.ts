@@ -101,6 +101,13 @@ describe('SourcegraphUrlService', () => {
                     expectObservable(SourcegraphUrlService.observe()).toBe('0', [SELF_HOSTED_URL])
                 })
             })
+
+            it('returns cloud URL when self-hosted is removed', async () => {
+                await SourcegraphUrlService.setSelfHostedURL(undefined)
+                scheduler().run(({ expectObservable }) => {
+                    expectObservable(SourcegraphUrlService.observe()).toBe('0', [CLOUD_SOURCEGRAPH_URL])
+                })
+            })
         })
 
         describe('.use + observe(true)', () => {

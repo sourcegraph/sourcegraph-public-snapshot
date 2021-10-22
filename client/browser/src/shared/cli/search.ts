@@ -55,7 +55,7 @@ export class SearchCommand {
         query: string,
         disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab'
     ): Promise<void> => {
-        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
+        const sourcegraphURL = await SourcegraphUrlService.observe().pipe(take(1)).toPromise()
 
         const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
 
