@@ -68,19 +68,17 @@ func (m *OrgMemberStore) GetByOrgIDAndUserID(ctx context.Context, orgID, userID 
 }
 
 func (m *OrgMemberStore) IsOnlyMember(ctx context.Context, orgID, userID int32) (bool, error) {
-	rows, err := m.Handle().DB().QueryContext(ctx, `SELECT CASE WHEN count(*) FILTER (WHERE user_id = $2) > 0 THEN true ELSE false END AS is_member, count(*) FILTER (WHERE user_id != $2) AS other_count FROM org_members INNER JOIN users ON org_members.user_id = users.id WHERE org_id = $1 AND users.deleted_at IS NULL;`, orgID, userID)
+	var isMember int
+	var otherMembersCount int
+	err := m.Handle().DB().QueryRowContext(ctx, `SELECT
+		count(*) FILTER (WHERE user_id = $2) AS is_member,
+		count(*) FILTER (WHERE user_id != $2) AS other_count
+		FROM org_members INNER JOIN users ON org_members.user_id = users.id
+		WHERE org_id = $1 AND users.deleted_at IS NULL;`, orgID, userID).Scan(&isMember, &otherMembersCount)
 	if err != nil {
 		return false, err
 	}
-	defer rows.Close()
-	rows.Next()
-	var isMember bool
-	var otherMembersCount int
-	rows.Scan(&isMember, &otherMembersCount)
-	if rows.Err() != nil {
-		return false, err
-	}
-	return isMember && otherMembersCount == 0, nil
+	return isMember == 1 && otherMembersCount == 0, nil
 }
 
 func (m *OrgMemberStore) Remove(ctx context.Context, orgID, userID int32) error {
