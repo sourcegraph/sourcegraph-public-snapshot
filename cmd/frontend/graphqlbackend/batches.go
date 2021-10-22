@@ -596,7 +596,7 @@ type BatchChangeResolver interface {
 	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
 	BatchSpecs(ctx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 	HasExternalServicesWithoutWebhooks(ctx context.Context) (bool, error)
-	ExternalServices(ctx context.Context, args *ListExternalServicesArgs) (ExternalServiceConnectionResolver, error)
+	ExternalServicesWithoutWebhooks(ctx context.Context, args *ListExternalServicesArgs) (ExternalServiceConnectionResolver, error)
 }
 
 type BatchChangesConnectionResolver interface {

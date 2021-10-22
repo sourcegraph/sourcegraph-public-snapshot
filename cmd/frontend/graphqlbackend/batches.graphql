@@ -2315,9 +2315,19 @@ type BatchChange implements Node {
         after: String
     ): BatchSpecConnection!
 
+    """
+    True if one or more changesets are on an external service that doesn't have
+    webhooks configured.
+    """
     hasExternalServicesWithoutWebhooks: Boolean!
 
-    externalServices(
+    """
+    Returns the external services that have one or more changesets in this
+    batch change and do not have webhooks configured.
+
+    Site-admin only.
+    """
+    externalServicesWithoutWebhooks(
         """
         Returns the first n entries from the list.
         """

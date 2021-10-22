@@ -342,7 +342,7 @@ func (r *batchChangeResolver) HasExternalServicesWithoutWebhooks(ctx context.Con
 	return false, nil
 }
 
-func (r *batchChangeResolver) ExternalServices(
+func (r *batchChangeResolver) ExternalServicesWithoutWebhooks(
 	ctx context.Context,
 	args *graphqlbackend.ListExternalServicesArgs,
 ) (graphqlbackend.ExternalServiceConnectionResolver, error) {
@@ -351,14 +351,14 @@ func (r *batchChangeResolver) ExternalServices(
 		return nil, err
 	}
 
-	return &externalServiceConnectionResolver{
+	return &externalServicesWithoutWebhooksResolver{
 		store:         r.store,
 		batchChangeID: r.batchChange.ID,
 		args:          args,
 	}, nil
 }
 
-type externalServiceConnectionResolver struct {
+type externalServicesWithoutWebhooksResolver struct {
 	store         *store.Store
 	batchChangeID int64
 	args          *graphqlbackend.ListExternalServicesArgs
@@ -369,11 +369,16 @@ type externalServiceConnectionResolver struct {
 	err                      error
 }
 
-var _ graphqlbackend.ExternalServiceConnectionResolver = &externalServiceConnectionResolver{}
+var _ graphqlbackend.ExternalServiceConnectionResolver = &externalServicesWithoutWebhooksResolver{}
 
-func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*graphqlbackend.ExternalServiceResolver, int64, error) {
+func (r *externalServicesWithoutWebhooksResolver) compute(ctx context.Context) ([]*graphqlbackend.ExternalServiceResolver, int64, error) {
 	r.once.Do(func() {
-		var cursor int64
+		// We have to do our own pagination here, as the underlying paged query
+		// doesn't know how to filter by webhook status.
+		var (
+			cursor int64 = 0
+			first  int   = int(r.args.First) + 1
+		)
 		if r.args.After != nil {
 			cursor, r.err = strconv.ParseInt(*r.args.After, 10, 64)
 			if r.err != nil {
@@ -381,14 +386,45 @@ func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*gra
 			}
 		}
 
-		var externalServices []*types.ExternalService
-		externalServices, r.next, r.err = r.store.ListExternalServices(ctx, store.ListExternalServicesOpts{
-			BatchChangeID: r.batchChangeID,
-			Cursor:        cursor,
-			LimitOpts:     store.LimitOpts{Limit: int(r.args.First)},
-		})
-		if r.err != nil {
-			return
+		externalServices := []*types.ExternalService{}
+		for {
+			page, next, err := r.store.ListExternalServices(ctx, store.ListExternalServicesOpts{
+				BatchChangeID: r.batchChangeID,
+				Cursor:        cursor,
+				LimitOpts:     store.LimitOpts{Limit: first},
+			})
+			if err != nil {
+				r.err = errors.Wrap(err, "listing external services")
+				return
+			}
+
+			for _, es := range page {
+				cfg, err := es.Configuration()
+				if err != nil {
+					r.err = errors.Wrapf(err, "retrieving configuration for external service %d", es.ID)
+					return
+				}
+
+				if hasWebhooks, err := webhooks.ConfigurationHasWebhooks(cfg); err != nil {
+					r.err = errors.Wrapf(err, "checking webhook configuration for external service %d", es.ID)
+				} else if !hasWebhooks {
+					externalServices = append(externalServices, es)
+				}
+			}
+
+			if len(page) == 0 || next == 0 {
+				break
+			}
+			cursor = next
+		}
+
+		if len(externalServices) > int(r.args.First) {
+			// The cursor is the ID of the first excess external service
+			// resolver.
+			r.next = externalServices[int(r.args.First)].ID
+			externalServices = externalServices[0:int(r.args.First)]
+		} else {
+			r.next = 0
 		}
 
 		r.externalServiceResolvers = make([]*graphqlbackend.ExternalServiceResolver, len(externalServices))
@@ -399,17 +435,17 @@ func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*gra
 	return r.externalServiceResolvers, r.next, r.err
 }
 
-func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.ExternalServiceResolver, error) {
+func (r *externalServicesWithoutWebhooksResolver) Nodes(ctx context.Context) ([]*graphqlbackend.ExternalServiceResolver, error) {
 	externalServiceResolvers, _, err := r.compute(ctx)
 	return externalServiceResolvers, err
 }
 
-func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *externalServicesWithoutWebhooksResolver) TotalCount(ctx context.Context) (int32, error) {
 	count, err := r.store.CountExternalServices(ctx, r.batchChangeID)
 	return int32(count), err
 }
 
-func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *externalServicesWithoutWebhooksResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
