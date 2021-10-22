@@ -193,7 +193,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
-	pattern := query.(*compute.MatchOnly).MatchPattern.(*compute.Regexp).Value
+	pattern := query.Command.(*compute.MatchOnly).MatchPattern.(*compute.Regexp).Value
 	return toResultResolverList(pattern, results.Matches, db), nil
 }
 

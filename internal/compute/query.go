@@ -9,43 +9,51 @@ import (
 	"github.com/cockroachdb/errors"
 )
 
-type Query interface {
-	String() string
-	node()
+type Query struct {
+	Command    Command
+	Parameters []query.Parameter
 }
 
-func (MatchOnly) node()            {}
-func (ReplaceInPlace) node()       {}
-func (ReplaceWithSeparator) node() {}
+func (q Query) String() string {
+	return fmt.Sprintf("Command: `%s`, Parameters: `%s`",
+		q.Command.String(),
+		query.Q(query.ToNodes(q.Parameters)).String())
+}
+
+type Command interface {
+	command()
+	String() string
+}
+
+func (MatchOnly) command()            {}
+func (ReplaceInPlace) command()       {}
+func (ReplaceWithSeparator) command() {}
 
 type MatchOnly struct {
 	MatchPattern MatchPattern
-	Parameters   []query.Parameter
 }
 
 type ReplaceInPlace struct {
 	MatchPattern   MatchPattern
 	ReplacePattern string
-	Parameters     []query.Parameter
 }
 
 type ReplaceWithSeparator struct {
 	MatchPattern   MatchPattern
 	ReplacePattern string
 	Separator      string
-	Parameters     []query.Parameter
 }
 
-func (n MatchOnly) String() string {
-	return fmt.Sprintf("Match only: %s", n.MatchPattern.String())
+func (c MatchOnly) String() string {
+	return fmt.Sprintf("Match only: %s", c.MatchPattern.String())
 }
 
-func (n ReplaceInPlace) String() string {
-	return fmt.Sprintf("Replace in place: %s -> %s", n.MatchPattern.String(), n.ReplacePattern)
+func (c ReplaceInPlace) String() string {
+	return fmt.Sprintf("Replace in place: %s -> %s", c.MatchPattern.String(), c.ReplacePattern)
 }
 
-func (n ReplaceWithSeparator) String() string {
-	return fmt.Sprintf("Replace with separator: %s -> %s separator: %s", n.MatchPattern.String(), n.ReplacePattern, n.Separator)
+func (c ReplaceWithSeparator) String() string {
+	return fmt.Sprintf("Replace with separator: %s -> %s separator: %s", c.MatchPattern.String(), c.ReplacePattern, c.Separator)
 }
 
 type MatchPattern interface {
@@ -108,7 +116,7 @@ func toRegexpPattern(value string) (*regexp.Regexp, error) {
 	return rp, nil
 }
 
-func toComputeQuery(plan query.Plan) (Query, error) {
+func toComputeQuery(plan query.Plan) (*Query, error) {
 	if len(plan) != 1 {
 		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
 	}
@@ -120,10 +128,13 @@ func toComputeQuery(plan query.Plan) (Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &MatchOnly{MatchPattern: &Regexp{Value: rp}, Parameters: plan[0].Parameters}, nil
+	return &Query{
+		Parameters: plan[0].Parameters,
+		Command:    MatchOnly{MatchPattern: &Regexp{Value: rp}},
+	}, nil
 }
 
-func Parse(q string) (Query, error) {
+func Parse(q string) (*Query, error) {
 	plan, err := query.Pipeline(query.Init(q, query.SearchTypeRegex))
 	if err != nil {
 		return nil, err
