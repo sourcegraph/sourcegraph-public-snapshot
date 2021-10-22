@@ -54,7 +54,7 @@ export const OrgSettingsArea: React.FunctionComponent<Props> = props => {
         return null
     }
 
-    const showOrgCode = data?.organizationFeatureFlagValue
+    const showOrgCode = data?.organizationFeatureFlagValue || false
 
     return (
         <div className="d-flex">

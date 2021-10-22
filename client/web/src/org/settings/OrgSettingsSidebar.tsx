@@ -7,7 +7,6 @@ import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 import { OrgAreaPageProps } from '../area/OrgArea'
 
 import styles from './OrgSettingsSidebar.module.scss'
-import { showOrganizationsCode } from './utils'
 
 interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     className?: string
