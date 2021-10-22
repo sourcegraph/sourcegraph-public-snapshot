@@ -356,7 +356,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
 	for _, ws := range workspaces {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
-		if err := bstore.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 			t.Fatal(err)
 		}
 		jobs = append(jobs, job)

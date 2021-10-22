@@ -11,6 +11,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -33,7 +34,7 @@ func (s *Store) GetChangesetEvent(ctx context.Context, opts GetChangesetEventOpt
 	q := getChangesetEventQuery(&opts)
 
 	var c btypes.ChangesetEvent
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanChangesetEvent(&c, sc)
 	})
 	if err != nil {
@@ -100,7 +101,7 @@ func (s *Store) ListChangesetEvents(ctx context.Context, opts ListChangesetEvent
 	q := listChangesetEventsQuery(&opts)
 
 	cs = make([]*btypes.ChangesetEvent, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var c btypes.ChangesetEvent
 		if err = scanChangesetEvent(&c, sc); err != nil {
 			return err
@@ -201,7 +202,7 @@ func (s *Store) UpsertChangesetEvents(ctx context.Context, cs ...*btypes.Changes
 	}
 
 	i := -1
-	return s.query(ctx, q, func(sc scanner) (err error) {
+	return s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		i++
 		return scanChangesetEvent(cs[i], sc)
 	})
@@ -323,7 +324,7 @@ func batchChangesetEventsQuery(fmtstr string, es []*btypes.ChangesetEvent) (*sql
 	return sqlf.Sprintf(fmtstr, string(batch)), nil
 }
 
-func scanChangesetEvent(e *btypes.ChangesetEvent, s scanner) error {
+func scanChangesetEvent(e *btypes.ChangesetEvent, s dbutil.Scanner) error {
 	var metadata json.RawMessage
 
 	err := s.Scan(

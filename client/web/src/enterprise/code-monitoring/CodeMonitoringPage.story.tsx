@@ -6,9 +6,9 @@ import sinon from 'sinon'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 
 import { AuthenticatedUser } from '../../auth'
+import { WebStory } from '../../components/WebStory'
 import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
 import { ListUserCodeMonitorsVariables } from '../../graphql-operations'
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
 
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
@@ -39,9 +39,9 @@ const additionalProps = {
 add(
     'Code monitoring list page',
     () => (
-        <EnterpriseWebStory initialEntries={['/code-monitoring']}>
+        <WebStory initialEntries={['/code-monitoring']}>
             {props => <CodeMonitoringPage {...props} {...additionalProps} />}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {
@@ -53,17 +53,17 @@ add(
 )
 
 add('Code monitoring list page - unauthenticated', () => (
-    <EnterpriseWebStory initialEntries={['/code-monitoring']}>
+    <WebStory initialEntries={['/code-monitoring']}>
         {props => <CodeMonitoringPage {...props} {...additionalProps} authenticatedUser={null} />}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add(
     'Code monitoring getting started page',
     () => (
-        <EnterpriseWebStory initialEntries={['/code-monitoring/getting-started']}>
+        <WebStory initialEntries={['/code-monitoring/getting-started']}>
             {props => <CodeMonitoringPage {...props} {...additionalProps} showGettingStarted={true} />}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {
@@ -77,7 +77,7 @@ add(
 add(
     'Code monitoring getting started page - unauthenticated',
     () => (
-        <EnterpriseWebStory initialEntries={['/code-monitoring/getting-started']}>
+        <WebStory initialEntries={['/code-monitoring/getting-started']}>
             {props => (
                 <CodeMonitoringPage
                     {...props}
@@ -86,7 +86,7 @@ add(
                     authenticatedUser={null}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {
         design: {

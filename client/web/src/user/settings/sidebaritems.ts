@@ -45,7 +45,6 @@ export const userSettingsSideBarItems: UserSettingsSidebarItems = [
         label: 'Your repositories',
         to: '/repositories',
         condition: userExternalServicesEnabled,
-        status: 'beta',
     },
     {
         label: 'Product research',

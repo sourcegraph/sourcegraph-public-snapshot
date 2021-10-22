@@ -90,8 +90,7 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
       <div
         className="mb-4"
       >
-        Or,
-         
+        Or, 
         <a
           href="/?showEmail=true"
           onClick={[Function]}

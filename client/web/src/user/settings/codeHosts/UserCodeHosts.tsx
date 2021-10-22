@@ -6,7 +6,7 @@ import { Container } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../../auth'
 import { codeHostExternalServices } from '../../../components/externalServices/externalServices'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { SourcegraphContext } from '../../../jscontext'
+import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
@@ -23,7 +23,6 @@ export interface UserCodeHosts {
 }
 
 type ServicesByKind = Partial<Record<ExternalServiceKind, ListExternalServiceFields>>
-type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 const cloudSupportedServices = {

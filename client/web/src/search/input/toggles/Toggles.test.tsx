@@ -1,5 +1,4 @@
 import { mount } from 'enzyme'
-import * as H from 'history'
 import React from 'react'
 
 import { SearchPatternType } from '../../../graphql-operations'
@@ -39,15 +38,12 @@ describe('Toggles', () => {
                 mount(
                     <Toggles
                         navbarSearchQuery="(case:yes foo) or (case:no bar)"
-                        history={H.createBrowserHistory()}
-                        location={H.createBrowserHistory().location}
                         patternType={SearchPatternType.literal}
                         setPatternType={() => undefined}
                         caseSensitive={false}
                         setCaseSensitivity={() => undefined}
                         settingsCascade={{ subjects: null, final: {} }}
                         selectedSearchContextSpec="global"
-                        showSearchContext={false}
                     />
                 ).find('.test-case-sensitivity-toggle')
             ).toMatchSnapshot()
@@ -58,15 +54,12 @@ describe('Toggles', () => {
                 mount(
                     <Toggles
                         navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                        history={H.createBrowserHistory()}
-                        location={H.createBrowserHistory().location}
                         patternType={SearchPatternType.literal}
                         setPatternType={() => undefined}
                         caseSensitive={false}
                         setCaseSensitivity={() => undefined}
                         settingsCascade={{ subjects: null, final: {} }}
                         selectedSearchContextSpec="global"
-                        showSearchContext={false}
                     />
                 ).find('.test-case-sensitivity-toggle')
             ).toMatchSnapshot()
@@ -77,15 +70,12 @@ describe('Toggles', () => {
                 mount(
                     <Toggles
                         navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
-                        history={H.createBrowserHistory()}
-                        location={H.createBrowserHistory().location}
                         patternType={SearchPatternType.literal}
                         setPatternType={() => undefined}
                         caseSensitive={false}
                         setCaseSensitivity={() => undefined}
                         settingsCascade={{ subjects: null, final: {} }}
                         selectedSearchContextSpec="global"
-                        showSearchContext={false}
                     />
                 ).find('.test-regexp-toggle')
             ).toMatchSnapshot()

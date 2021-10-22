@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Dropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -7,25 +6,21 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CaseSensitivityProps, PatternTypeProps, SearchContextInputProps } from '..'
+import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
-import { SubmitSearchParameters } from '../helpers'
+import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
 import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
     extends Omit<SearchContextInputProps, 'showSearchContext'>,
-        Pick<PatternTypeProps, 'patternType'>,
-        Pick<CaseSensitivityProps, 'caseSensitive'>,
-        TelemetryProps {
+        TelemetryProps,
+        Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    submitSearch: (args: SubmitSearchParameters) => void
-    submitSearchOnSearchContextChange?: boolean
     query: string
-    history: H.History
     className?: string
 }
 
@@ -35,16 +30,12 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         authenticatedUser,
         hasUserAddedRepositories,
         hasUserAddedExternalServices,
-        history,
-        patternType,
-        caseSensitive,
         query,
         selectedSearchContextSpec,
         setSelectedSearchContextSpec,
         submitSearch,
         fetchAutoDefinedSearchContexts,
         fetchSearchContexts,
-        submitSearchOnSearchContextChange = true,
         className,
         telemetryService,
     } = props
@@ -61,29 +52,18 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
 
     const disabledTooltipText = isContextFilterInQuery ? 'Overridden by query' : ''
 
-    const submitOnToggle = useCallback(
-        (selectedSearchContextSpec: string): void => {
-            submitSearch({
-                history,
-                query,
-                source: 'filter',
-                patternType,
-                caseSensitive,
-                selectedSearchContextSpec,
-            })
-        },
-        [submitSearch, caseSensitive, history, query, patternType]
-    )
-
     const selectSearchContextSpec = useCallback(
         (spec: string): void => {
-            if (submitSearchOnSearchContextChange) {
-                submitOnToggle(spec)
+            if (submitSearch) {
+                submitSearch({
+                    source: 'filter',
+                    selectedSearchContextSpec: spec,
+                })
             } else {
                 setSelectedSearchContextSpec(spec)
             }
         },
-        [submitSearchOnSearchContextChange, submitOnToggle, setSelectedSearchContextSpec]
+        [submitSearch, setSelectedSearchContextSpec]
     )
 
     useEffect(() => {

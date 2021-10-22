@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { queryAllChangesetIDs as _queryAllChangesetIDs } from '../backend'
 
@@ -31,7 +31,7 @@ add('all states', () => {
     const initialVisible = CHANGESET_IDS.slice(0, visibleChangesets)
 
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <>
                     <h3>Configurable</h3>
@@ -251,6 +251,6 @@ add('all states', () => {
                     <hr />
                 </>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
