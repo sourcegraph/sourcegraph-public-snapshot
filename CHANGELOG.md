@@ -17,6 +17,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
+- Fixes a nil-panic that could be caused when `src batch [preview|apply]` would encounter a repository that was currently being cloned or is empty.
+
 ### Removed
 
 ## 3.33.0

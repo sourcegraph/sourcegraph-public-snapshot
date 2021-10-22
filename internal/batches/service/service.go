@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -431,19 +432,23 @@ func (svc *Service) ResolveRepositories(ctx context.Context, spec *batcheslib.Ba
 			return nil, errors.Wrapf(err, "resolving %q", on.String())
 		}
 
+		reposWithBranch := make([]*graphql.Repository, 0, len(repos))
+		for _, repo := range repos {
+			if !repo.HasBranch() {
+				continue
+			}
+			reposWithBranch = append(reposWithBranch, repo)
+		}
+
 		var repoBatchIgnores map[*graphql.Repository][]string
 		if !svc.allowIgnored {
-			repoBatchIgnores, err = svc.FindDirectoriesInRepos(ctx, ".batchignore", repos...)
+			repoBatchIgnores, err = svc.FindDirectoriesInRepos(ctx, ".batchignore", reposWithBranch...)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		for _, repo := range repos {
-			if !repo.HasBranch() {
-				continue
-			}
-
+		for _, repo := range reposWithBranch {
 			if other, ok := seen[repo.ID]; !ok {
 				seen[repo.ID] = repo
 

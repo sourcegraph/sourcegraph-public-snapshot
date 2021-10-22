@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -318,6 +319,70 @@ const testBatchIgnoreInRepos = `{
         },
         "repo_1": { "results": { "results": [] } },
         "repo_2": { "results": { "results": [] } }
+    }
+}
+`
+
+func TestResolveRepositories_RepoWithoutBranch(t *testing.T) {
+	spec := &batcheslib.BatchSpec{
+		On: []batcheslib.OnQueryOrRepository{
+			{RepositoriesMatchingQuery: "testquery"},
+		},
+	}
+
+	client, done := mockGraphQLClient(testResolveRepositoriesNoBranch, testBatchIgnoreInReposNoBranch)
+	defer done()
+
+	svc := &Service{client: client, allowIgnored: false}
+
+	repos, err := svc.ResolveRepositories(context.Background(), spec)
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	if len(repos) != 1 {
+		t.Fatalf("wrong number of repos. want=%d, have=%d", 2, len(repos))
+	}
+}
+
+const testResolveRepositoriesNoBranch = `{
+  "data": {
+    "search": {
+      "results": {
+        "results": [
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeToxMw==",
+            "name": "bitbucket.sgdev.org/SOUR/automation-testing",
+            "url": "/bitbucket.sgdev.org/SOUR/automation-testing",
+            "externalRepository": { "serviceType": "bitbucketserver" },
+            "defaultBranch": null
+          },
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeTo0",
+            "name": "github.com/sourcegraph/automation-testing",
+            "url": "/github.com/sourcegraph/automation-testing",
+            "externalRepository": { "serviceType": "github" },
+            "defaultBranch": null
+          },
+          {
+            "__typename": "Repository",
+            "id": "UmVwb3NpdG9yeTo2MQ==",
+            "name": "gitlab.sgdev.org/sourcegraph/automation-testing",
+            "url": "/gitlab.sgdev.org/sourcegraph/automation-testing",
+            "externalRepository": { "serviceType": "gitlab" },
+            "defaultBranch": { "name": "refs/heads/master", "target": { "oid": "3b79a5d479d2af9cfe91e0aad4e9dddca7278150" } }
+          }
+        ]
+      }
+    }
+  }
+}
+`
+
+const testBatchIgnoreInReposNoBranch = `{
+    "data": {
+        "repo_0": { "results": { "results": [] } }
     }
 }
 `
