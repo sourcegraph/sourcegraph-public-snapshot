@@ -245,6 +245,7 @@ func TestCreateSeries(t *testing.T) {
 			LastSnapshotAt:     now,
 			NextSnapshotAfter:  now,
 			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
 		}
 
 		got, err := store.CreateSeries(ctx, series)
@@ -263,6 +264,7 @@ func TestCreateSeries(t *testing.T) {
 			NextSnapshotAfter:  now,
 			CreatedAt:          now,
 			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
 		}
 
 		log15.Info("values", "want", want, "got", got)
@@ -340,6 +342,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		LastSnapshotAt:     now,
 		NextSnapshotAfter:  now,
 		BackfillQueuedAt:   now,
+		SampleIntervalUnit: string(types.Month),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -412,6 +415,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 			LastSnapshotAt:     now,
 			NextSnapshotAfter:  now,
 			BackfillQueuedAt:   now,
+			SampleIntervalUnit: string(types.Month),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -465,6 +469,7 @@ func TestDeleteView(t *testing.T) {
 		LastSnapshotAt:     now,
 		NextSnapshotAfter:  now,
 		BackfillQueuedAt:   now,
+		SampleIntervalUnit: string(types.Month),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -512,13 +517,15 @@ func TestAttachSeriesView(t *testing.T) {
 
 	t.Run("test attach and fetch", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID:           "unique-1",
-			Query:              "query-1",
-			OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-			LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
-			NextRecordingAfter: now,
-			LastSnapshotAt:     now,
-			NextSnapshotAfter:  now,
+			SeriesID:            "unique-1",
+			Query:               "query-1",
+			OldestHistoricalAt:  now.Add(-time.Hour * 24 * 365),
+			LastRecordedAt:      now.Add(-time.Hour * 24 * 365),
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			SampleIntervalUnit:  string(types.Month),
+			SampleIntervalValue: 1,
 		}
 		series, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -602,6 +609,7 @@ func TestInsightStore_GetDataSeries(t *testing.T) {
 			LastSnapshotAt:     now,
 			NextSnapshotAfter:  now,
 			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -641,6 +649,7 @@ func TestInsightStore_StampRecording(t *testing.T) {
 			LastSnapshotAt:     now,
 			NextSnapshotAfter:  now,
 			Enabled:            true,
+			SampleIntervalUnit: string(types.Month),
 		}
 		created, err := store.CreateSeries(ctx, series)
 		if err != nil {
@@ -682,6 +691,7 @@ func TestInsightStore_StampBackfill(t *testing.T) {
 		LastSnapshotAt:     now,
 		NextSnapshotAfter:  now,
 		Enabled:            true,
+		SampleIntervalUnit: string(types.Month),
 	}
 	created, err := store.CreateSeries(ctx, series)
 	if err != nil {
@@ -746,8 +756,9 @@ func TestDirtyQueries(t *testing.T) {
 
 	t.Run("write and read back", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID: "asdf",
-			Query:    "qwerwre",
+			SeriesID:           "asdf",
+			Query:              "qwerwre",
+			SampleIntervalUnit: string(types.Month),
 		}
 
 		created, err := store.CreateSeries(ctx, series)
@@ -814,8 +825,9 @@ func TestDirtyQueriesAggregated(t *testing.T) {
 
 	t.Run("write and read back", func(t *testing.T) {
 		series := types.InsightSeries{
-			SeriesID: "asdf",
-			Query:    "qwerwre",
+			SeriesID:           "asdf",
+			Query:              "qwerwre",
+			SampleIntervalUnit: string(types.Month),
 		}
 
 		created, err := store.CreateSeries(ctx, series)
@@ -881,6 +893,7 @@ func TestSetSeriesEnabled(t *testing.T) {
 			LastSnapshotAt:     now,
 			NextSnapshotAfter:  now,
 			BackfillQueuedAt:   now,
+			SampleIntervalUnit: string(types.Month),
 		})
 		if err != nil {
 			t.Fatal(err)

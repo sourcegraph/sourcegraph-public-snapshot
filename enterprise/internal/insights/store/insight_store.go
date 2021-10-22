@@ -275,6 +275,8 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
 			&temp.Enabled,
+			&temp.SampleIntervalUnit,
+			&temp.SampleIntervalValue,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -569,6 +571,8 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
+last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
+sample_interval_unit, sample_interval_value from insight_series
 WHERE %s
 `

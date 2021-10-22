@@ -74,6 +74,16 @@ type InsightSeries struct {
 	SampleIntervalValue int
 }
 
+type IntervalUnit string
+
+const (
+	Month IntervalUnit = "MONTH"
+	Day   IntervalUnit = "DAY"
+	Week  IntervalUnit = "WEEK"
+	Year  IntervalUnit = "YEAR"
+	Hour  IntervalUnit = "HOUR"
+)
+
 type DirtyQuery struct {
 	ID      int
 	Query   string
