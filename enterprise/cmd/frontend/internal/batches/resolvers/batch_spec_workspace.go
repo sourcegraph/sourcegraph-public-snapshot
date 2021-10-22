@@ -109,6 +109,39 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 	return resolvers, nil
 }
 
+func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	// TODO: Do we really not want to show these? Currently it won't show steps
+	// for the ignored and unsupported repos.
+	// if r.workspace.Skipped {
+	// 	return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
+	// }
+
+	var stepInfo = make(map[int]*btypes.StepInfo)
+	if r.execution != nil {
+		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
+		if ok {
+			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
+			stepInfo = btypes.ParseLogLines(logLines)
+		}
+	}
+
+	repo, err := r.computeRepo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(r.workspace.Steps) < int(args.Index) {
+		return nil, nil
+	}
+
+	si, ok := stepInfo[int(args.Index)]
+	if !ok {
+		// Step hasn't run yet.
+		si = &btypes.StepInfo{}
+	}
+	return &batchSpecWorkspaceStepResolver{index: int(args.Index), step: r.workspace.Steps[args.Index-1], stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit}, nil
+}
+
 func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
 	if r.workspace.BatchSpecID == 0 {
 		return nil, nil
@@ -151,6 +184,19 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.execution.StartedAt}
+}
+
+func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
+	if r.workspace.Skipped {
+		return nil
+	}
+	if r.execution == nil {
+		return nil
+	}
+	if r.execution.CreatedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.execution.CreatedAt}
 }
 
 func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {

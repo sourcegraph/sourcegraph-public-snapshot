@@ -1963,10 +1963,20 @@ type BatchSpecWorkspace implements Node {
     steps: [BatchSpecWorkspaceStep!]!
 
     """
+    Get a specific step by it's index. Index is 1-based.
+    """
+    step(index: Int!): BatchSpecWorkspaceStep
+
+    """
     If this workspace was resolved based on a search, this is the list of paths
     to files that have been included in the search results.
     """
     searchResultPaths: [String!]!
+
+    """
+    The time when the workspace was enqueued for processing. Null, if not yet enqueued.
+    """
+    queuedAt: DateTime
 
     """
     The time when the workspace started processing. Null, if not yet started.

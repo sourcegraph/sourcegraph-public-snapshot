@@ -1,9 +1,11 @@
 import { parseISO } from 'date-fns/esm'
-import { isEqual } from 'lodash'
+import { isArray, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import CheckIcon from 'mdi-react/CheckIcon'
 import ErrorIcon from 'mdi-react/ErrorIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
+import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useHistory } from 'react-router'
@@ -12,10 +14,17 @@ import { delay, distinctUntilChanged, repeatWhen } from 'rxjs/operators'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { BatchSpecState, BatchSpecWorkspaceState } from '@sourcegraph/shared/src/graphql-operations'
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { Collapsible } from '@sourcegraph/web/src/components/Collapsible'
 import { DiffStat } from '@sourcegraph/web/src/components/diff/DiffStat'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { FileDiffConnection } from '@sourcegraph/web/src/components/diff/FileDiffConnection'
+import { FileDiffNode } from '@sourcegraph/web/src/components/diff/FileDiffNode'
+import { ExecutionLogEntry } from '@sourcegraph/web/src/components/ExecutionLogEntry'
+import { FilteredConnectionQueryArguments } from '@sourcegraph/web/src/components/FilteredConnection'
+import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
+import { Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { ErrorAlert } from '../../../components/alerts'
@@ -24,9 +33,13 @@ import { PageTitle } from '../../../components/PageTitle'
 import { BatchSpecExecutionFields, Scalars } from '../../../graphql-operations'
 import { BatchSpec } from '../BatchSpec'
 
-import { cancelBatchSpecExecution, fetchBatchSpecExecution as _fetchBatchSpecExecution } from './backend'
+import {
+    cancelBatchSpecExecution,
+    fetchBatchSpecExecution as _fetchBatchSpecExecution,
+    queryBatchSpecWorkspaceStepFileDiffs,
+} from './backend'
 
-export interface BatchSpecExecutionDetailsPageProps {
+export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     executionID: Scalars['ID']
 
     /** For testing only. */
@@ -39,6 +52,7 @@ export interface BatchSpecExecutionDetailsPageProps {
 
 export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
     executionID,
+    isLightTheme,
     // now = () => new Date(),
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
     // expandStage,
@@ -164,12 +178,12 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                         node => node.id === selectedNamespace
                                     )!
                                 }
+                                isLightTheme={isLightTheme}
                             />
                         )}
                     </Container>
                 </div>
             </div>
-            {/* <ExecutionTimeline execution={batchSpecExecution} now={now} expandStage={expandStage} className="mb-3" /> */}
 
             {batchSpecExecution.applyURL && (
                 <>
@@ -189,15 +203,20 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 type Workspace = NonNullable<BatchSpecExecutionFields['workspaceResolution']>['workspaces']['nodes'][0]
 type Step = Workspace['steps'][0]
 
-const WorkspaceNode: React.FunctionComponent<{
-    node: Workspace
-}> = ({ node }) => {
+const WorkspaceNode: React.FunctionComponent<
+    {
+        node: Workspace
+    } & ThemeProps
+> = ({ node, isLightTheme }) => {
     const a = ''
     return (
         <>
-            <h4>{node.repository.name}</h4>
-            <p>Started at: {node.startedAt ?? 'not yet'}</p>
-            <p>Finished at: {node.finishedAt ?? 'not yet'}</p>
+            <div className="d-flex justify-content-between">
+                <h4>
+                    <WorkspaceStateIcon node={node} /> {node.repository.name}
+                </h4>
+                {node.startedAt && <Duration start={node.startedAt} end={node.finishedAt ?? undefined} />}
+            </div>
             {node.failureMessage && <ErrorAlert error={node.failureMessage} />}
             <p>
                 <b>Steps</b>
@@ -221,13 +240,53 @@ const WorkspaceNode: React.FunctionComponent<{
                         </div>
                     }
                 >
-                    {step.container}
-                    {step.outputLines && <div className="card">{step.outputLines.join('\n')}</div>}
-                    <p>
-                        <strong>Output variables:</strong>
-                        <br />
-                        {JSON.stringify(step.outputVariables)}
-                    </p>
+                    <Tabs size="medium">
+                        <TabList>
+                            <Tab key="logs">Logs</Tab>
+                            <Tab key="output-variables">Output variables</Tab>
+                            <Tab key="diff">Diff</Tab>
+                            <Tab key="files-env">Files / Env</Tab>
+                            <Tab key="command-container">Commands / container</Tab>
+                            <Tab key="timeline">Timeline</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel key="logs">
+                                <pre className="card p-2">{step.outputLines?.join('\n')}</pre>
+                            </TabPanel>
+                            <TabPanel key="output-variables">
+                                <ul>
+                                    {step.outputVariables?.map(variable => (
+                                        <li key={variable.name}>
+                                            {variable.name}: {variable.value}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </TabPanel>
+                            <TabPanel key="diff">
+                                <WorkspaceStepFileDiffConnection
+                                    isLightTheme={isLightTheme}
+                                    step={index + 1}
+                                    workspace={node}
+                                />
+                            </TabPanel>
+                            <TabPanel key="files-env">
+                                <ul>
+                                    {step.environment.map(variable => (
+                                        <li key={variable.name}>
+                                            {variable.name}: {variable.value}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </TabPanel>
+                            <TabPanel key="command-container">
+                                <p className="text-monospace">{step.run}</p>
+                                <p className="text-monospace mb-0">{step.container}</p>
+                            </TabPanel>
+                            <TabPanel key="timeline">
+                                <ExecutionTimeline node={node} />
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
                 </Collapsible>
             ))}
         </>
@@ -276,107 +335,100 @@ const StepTimer: React.FunctionComponent<{ step: Step }> = ({ step }) => {
     return <Duration start={step.startedAt} end={step.finishedAt ?? undefined} />
 }
 
-// interface ExecutionTimelineProps {
-//     execution: BatchSpecExecutionFields
-//     className?: string
+interface ExecutionTimelineProps {
+    node: Workspace
+    className?: string
 
-//     /** For testing only. */
-//     now?: () => Date
-//     expandStage?: string
-// }
+    /** For testing only. */
+    now?: () => Date
+    expandStage?: string
+}
 
-// const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({
-//     execution,
-//     className,
-//     now,
-//     expandStage,
-// }) => {
-//     const stages = useMemo(
-//         () => [
-//             { icon: <TimerSandIcon />, text: 'Queued', date: execution.createdAt, className: 'bg-success' },
-//             {
-//                 icon: <CheckIcon />,
-//                 text: 'Began processing',
-//                 date: execution.startedAt,
-//                 className: 'bg-success',
-//             },
+const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ node, className, now, expandStage }) => {
+    const stages = useMemo(
+        () => [
+            { icon: <TimerSandIcon />, text: 'Queued', date: node.queuedAt, className: 'bg-success' },
+            {
+                icon: <CheckIcon />,
+                text: 'Began processing',
+                date: node.startedAt,
+                className: 'bg-success',
+            },
 
-//             setupStage(execution, expandStage === 'setup', now),
-//             batchPreviewStage(execution, expandStage === 'srcPreview', now),
-//             teardownStage(execution, expandStage === 'teardown', now),
+            setupStage(node, expandStage === 'setup', now),
+            batchPreviewStage(node, expandStage === 'srcPreview', now),
+            teardownStage(node, expandStage === 'teardown', now),
 
-//             execution.state === BatchSpecState.COMPLETED
-//                 ? { icon: <CheckIcon />, text: 'Finished', date: execution.finishedAt, className: 'bg-success' }
-//                 : execution.state === BatchSpecState.CANCELED
-//                 ? { icon: <ErrorIcon />, text: 'Canceled', date: execution.finishedAt, className: 'bg-secondary' }
-//                 : { icon: <ErrorIcon />, text: 'Failed', date: execution.finishedAt, className: 'bg-danger' },
-//         ],
-//         [execution, now, expandStage]
-//     )
-//     return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
-// }
+            node.state === BatchSpecWorkspaceState.COMPLETED
+                ? { icon: <CheckIcon />, text: 'Finished', date: node.finishedAt, className: 'bg-success' }
+                : node.state === BatchSpecWorkspaceState.CANCELED
+                ? { icon: <ErrorIcon />, text: 'Canceled', date: node.finishedAt, className: 'bg-secondary' }
+                : { icon: <ErrorIcon />, text: 'Failed', date: node.finishedAt, className: 'bg-danger' },
+        ],
+        [expandStage, node, now]
+    )
+    return <Timeline stages={stages.filter(isDefined)} now={now} className={className} />
+}
 
-// const setupStage = (
-//     execution: BatchSpecExecutionFields,
-//     expand: boolean,
-//     now?: () => Date
-// ): TimelineStage | undefined =>
-//     execution.steps.setup.length === 0
-//         ? undefined
-//         : {
-//               text: 'Setup',
-//               details: execution.steps.setup.map(logEntry => (
-//                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
-//               )),
-//               ...genericStage(execution.steps.setup, expand),
-//           }
+const setupStage = (execution: Workspace, expand: boolean, now?: () => Date): TimelineStage | undefined => {
+    if (execution.stages === null) {
+        return undefined
+    }
+    return execution.stages.setup.length === 0
+        ? undefined
+        : {
+              text: 'Setup',
+              details: execution.stages.setup.map(logEntry => (
+                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
+              )),
+              ...genericStage(execution.stages.setup, expand),
+          }
+}
 
-// const batchPreviewStage = (
-//     execution: BatchSpecExecutionFields,
-//     expand: boolean,
-//     now?: () => Date
-// ): TimelineStage | undefined =>
-//     !execution.steps.srcPreview
-//         ? undefined
-//         : {
-//               text: 'Create batch spec preview',
-//               details: (
-//                   <ExecutionLogEntry logEntry={execution.steps.srcPreview} now={now}>
-//                       {execution.steps.srcPreview.out && <ParsedJsonOutput out={execution.steps.srcPreview.out} />}
-//                   </ExecutionLogEntry>
-//               ),
-//               ...genericStage(execution.steps.srcPreview, expand),
-//           }
+const batchPreviewStage = (execution: Workspace, expand: boolean, now?: () => Date): TimelineStage | undefined => {
+    if (execution.stages === null) {
+        return undefined
+    }
+    return !execution.stages.srcExec
+        ? undefined
+        : {
+              text: 'Create batch spec preview',
+              details: (
+                  <ExecutionLogEntry key={execution.stages.srcExec.key} logEntry={execution.stages.srcExec} now={now} />
+              ),
+              ...genericStage(execution.stages.srcExec, expand),
+          }
+}
 
-// const teardownStage = (
-//     execution: BatchSpecExecutionFields,
-//     expand: boolean,
-//     now?: () => Date
-// ): TimelineStage | undefined =>
-//     execution.steps.teardown.length === 0
-//         ? undefined
-//         : {
-//               text: 'Teardown',
-//               details: execution.steps.teardown.map(logEntry => (
-//                   <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
-//               )),
-//               ...genericStage(execution.steps.teardown, expand),
-//           }
+const teardownStage = (execution: Workspace, expand: boolean, now?: () => Date): TimelineStage | undefined => {
+    if (execution.stages === null) {
+        return undefined
+    }
+    return execution.stages.teardown.length === 0
+        ? undefined
+        : {
+              text: 'Teardown',
+              details: execution.stages.teardown.map(logEntry => (
+                  <ExecutionLogEntry key={logEntry.key} logEntry={logEntry} now={now} />
+              )),
+              ...genericStage(execution.stages.teardown, expand),
+          }
+}
 
-// const genericStage = <E extends { startTime: string; exitCode: number | null }>(
-//     value: E | E[],
-//     expand: boolean
-// ): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
-//     const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
-//     const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
+const genericStage = <E extends { startTime: string; exitCode: number | null }>(
+    value: E | E[],
+    expand: boolean
+): Pick<TimelineStage, 'icon' | 'date' | 'className' | 'expanded'> => {
+    const finished = isArray(value) ? value.every(logEntry => logEntry.exitCode !== null) : value.exitCode !== null
+    const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
-//     return {
-//         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
-//         date: isArray(value) ? value[0].startTime : value.startTime,
-//         className: success || !finished ? 'bg-success' : 'bg-danger',
-//         expanded: expand || !(success || !finished),
-//     }
-// }
+    return {
+        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
+        date: isArray(value) ? value[0].startTime : value.startTime,
+        className: success || !finished ? 'bg-success' : 'bg-danger',
+        expanded: expand || !(success || !finished),
+    }
+}
 
 const Duration: React.FunctionComponent<{ start: Date | string; end?: Date | string }> = ({ start, end }) => {
     const startDate = typeof start === 'string' ? parseISO(start) : start
@@ -414,4 +466,46 @@ function leading0(index: number): string {
         return '0' + String(index)
     }
     return String(index)
+}
+
+const WorkspaceStepFileDiffConnection: React.FunctionComponent<
+    {
+        workspace: Workspace
+        step: number
+    } & ThemeProps
+> = ({ workspace, step, isLightTheme }) => {
+    const queryFileDiffs = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryBatchSpecWorkspaceStepFileDiffs({
+                after: args.after ?? null,
+                first: args.first ?? null,
+                node: workspace.id,
+                step,
+            }),
+        [workspace.id, step]
+    )
+    const history = useHistory()
+    return (
+        <FileDiffConnection
+            listClassName="list-group list-group-flush"
+            noun="changed file"
+            pluralNoun="changed files"
+            queryConnection={queryFileDiffs}
+            nodeComponent={FileDiffNode}
+            nodeComponentProps={{
+                history,
+                location: history.location,
+                isLightTheme,
+                persistLines: true,
+                lineNumbers: true,
+            }}
+            defaultFirst={15}
+            hideSearch={true}
+            noSummaryIfAllNodesVisible={true}
+            history={history}
+            location={history.location}
+            useURLQuery={false}
+            cursorPaging={true}
+        />
+    )
 }

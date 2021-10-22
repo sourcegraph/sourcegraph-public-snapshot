@@ -3,14 +3,18 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
+import { fileDiffFields } from '../../../backend/diff'
 import { requestGraphQL } from '../../../backend/graphql'
 import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
+    BatchSpecWorkspaceStepFileDiffsResult,
+    BatchSpecWorkspaceStepFileDiffsVariables,
     CancelBatchSpecExecutionResult,
     CancelBatchSpecExecutionVariables,
     Scalars,
+    WorkspaceStepFileDiffConnectionFields,
 } from '../../../graphql-operations'
 
 const batchSpecExecutionFieldsFragment = gql`
@@ -71,6 +75,7 @@ const batchSpecExecutionFieldsFragment = gql`
                         }
                     }
                     searchResultPaths
+                    queuedAt
                     startedAt
                     finishedAt
                     failureMessage
@@ -175,3 +180,65 @@ export async function cancelBatchSpecExecution(id: Scalars['ID']): Promise<Batch
     ).toPromise()
     return dataOrThrowErrors(result).cancelBatchSpecExecution
 }
+
+const batchSpecWorkspaceStepFileDiffsFields = gql`
+    fragment BatchSpecWorkspaceStepFileDiffsFields on BatchSpecWorkspace {
+        step(index: $step) {
+            diff {
+                fileDiffs(first: $first, after: $after) {
+                    ...WorkspaceStepFileDiffConnectionFields
+                }
+            }
+        }
+    }
+
+    fragment WorkspaceStepFileDiffConnectionFields on FileDiffConnection {
+        nodes {
+            ...FileDiffFields
+        }
+        totalCount
+        pageInfo {
+            hasNextPage
+            endCursor
+        }
+    }
+
+    ${fileDiffFields}
+`
+
+export const queryBatchSpecWorkspaceStepFileDiffs = ({
+    node,
+    step,
+    first,
+    after,
+}: BatchSpecWorkspaceStepFileDiffsVariables): Observable<WorkspaceStepFileDiffConnectionFields> =>
+    requestGraphQL<BatchSpecWorkspaceStepFileDiffsResult, BatchSpecWorkspaceStepFileDiffsVariables>(
+        gql`
+            query BatchSpecWorkspaceStepFileDiffs($node: ID!, $step: Int!, $first: Int, $after: String) {
+                node(id: $node) {
+                    __typename
+                    ...BatchSpecWorkspaceStepFileDiffsFields
+                }
+            }
+
+            ${batchSpecWorkspaceStepFileDiffsFields}
+        `,
+        { node, step, first, after }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`BatchSpecWorkspace with ID ${node} does not exist`)
+            }
+            if (node.__typename !== 'BatchSpecWorkspace') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchSpecWorkspace`)
+            }
+            if (!node.step) {
+                throw new Error('The given Step is not available')
+            }
+            if (!node.step.diff) {
+                throw new Error('The diff is not available')
+            }
+            return node.step.diff.fileDiffs
+        })
+    )
