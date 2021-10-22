@@ -3185,6 +3185,31 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## repo-updater: perms_syncer_outdated_perms
+
+<p class="subtitle">number of entities with outdated permissions</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with outdated permissions for 5m0s
+
+**Possible solutions**
+
+- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
+- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-outdated-perms).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_repo-updater_perms_syncer_outdated_perms"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Core application team](https://about.sourcegraph.com/handbook/engineering/core-application).*</sub>
+
+<br />
+
 ## repo-updater: perms_syncer_sync_duration
 
 <p class="subtitle">95th permissions sync duration</p>

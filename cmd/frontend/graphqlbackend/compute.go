@@ -4,11 +4,9 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -167,35 +165,6 @@ func toComputeResultResolver(r *computeMatchContextResolver) *computeResultResol
 	return &computeResultResolver{result: r}
 }
 
-func regexpFromQuery(q string) (*regexp.Regexp, error) {
-	plan, err := query.Pipeline(query.Init(q, query.SearchTypeRegex))
-	if err != nil {
-		return nil, err
-	}
-	if len(plan) != 1 {
-		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
-	}
-	switch node := plan[0].Pattern.(type) {
-	case query.Operator:
-		if len(node.Operands) == 1 {
-			if pattern, ok := node.Operands[0].(query.Pattern); ok && !pattern.Negated {
-				rp, err := regexp.Compile(pattern.Value)
-				if err != nil {
-					return nil, errors.Wrap(err, "regular expression is not valid for compute endpoint")
-				}
-				return rp, nil
-			}
-		}
-		return nil, errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
-	case query.Pattern:
-		if !node.Negated {
-			return regexp.Compile(node.Value)
-		}
-	}
-	// unreachable
-	return nil, nil
-}
-
 func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbutil.DB) []*computeResultResolver {
 	var computeResult []*computeResultResolver
 	for _, m := range matches {
@@ -210,7 +179,7 @@ func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbu
 // NewComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
 func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs) ([]*computeResultResolver, error) {
-	pattern, err := regexpFromQuery(args.Query)
+	query, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
 	}
@@ -224,6 +193,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
+	pattern := query.(*compute.MatchOnly).MatchPattern.(*compute.Regexp).Value
 	return toResultResolverList(pattern, results.Matches, db), nil
 }
 

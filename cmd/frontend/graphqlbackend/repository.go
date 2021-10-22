@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -173,7 +174,7 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 
 	commitID, err := backend.Repos.ResolveRev(ctx, repo, args.Rev)
 	if err != nil {
-		if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil
 		}
 		return nil, err
@@ -424,7 +425,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	}
 
 	// If we already created the commit
-	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitserver.RevisionNotFoundError{})) {
+	if commit, err := getCommit(); commit != nil || (err != nil && !errors.HasType(err, &gitdomain.RevisionNotFoundError{})) {
 		return commit, err
 	}
 

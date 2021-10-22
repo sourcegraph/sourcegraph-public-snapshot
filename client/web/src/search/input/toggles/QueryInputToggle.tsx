@@ -1,5 +1,4 @@
 import classNames from 'classnames'
-import * as H from 'history'
 import React, { useCallback, useEffect, useRef, useMemo } from 'react'
 import { fromEvent } from 'rxjs'
 import { filter } from 'rxjs/operators'
@@ -8,9 +7,6 @@ import { Key } from 'ts-key-enum'
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 
 export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
-    history: H.History
-    /** Search query in the main query input. */
-    navbarSearchQuery: string
     /** Title of the toggle.  */
     title: string
     /** Icon to display.  */
@@ -24,7 +20,6 @@ export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
      * For multiple true conditions, use the first rule that evalutes to true.
      */
     disableOn?: { condition: boolean; reason: string }[]
-    hasGlobalQueryBehavior?: boolean
     className?: string
     activeClassName?: string
 }

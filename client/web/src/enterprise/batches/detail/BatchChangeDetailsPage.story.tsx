@@ -9,6 +9,7 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     BatchChangeByNamespaceResult,
     BatchChangeFields,
@@ -17,7 +18,6 @@ import {
     ChangesetSpecType,
     ChangesetState,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import {
     queryChangesets as _queryChangesets,
@@ -302,7 +302,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
         ])
 
         return (
-            <EnterpriseWebStory initialEntries={[url]}>
+            <WebStory initialEntries={[url]}>
                 {props => (
                     <MockedTestProvider link={mocks}>
                         <BatchChangeDetailsPage
@@ -319,7 +319,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                         />
                     </MockedTestProvider>
                 )}
-            </EnterpriseWebStory>
+            </WebStory>
         )
     })
 }
@@ -349,7 +349,7 @@ add('Empty changesets', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <MockedTestProvider link={mocks}>
                     <BatchChangeDetailsPage
@@ -365,6 +365,6 @@ add('Empty changesets', () => {
                     />
                 </MockedTestProvider>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

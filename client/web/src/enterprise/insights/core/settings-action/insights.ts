@@ -3,7 +3,18 @@ import { get } from 'lodash'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { modify, parseJSONCOrError } from '@sourcegraph/shared/src/util/jsonc'
 
-import { Insight, INSIGHTS_ALL_REPOS_SETTINGS_KEY, InsightType, InsightTypePrefix, isLangStatsInsight } from '../types'
+import {
+    Insight,
+    InsightDashboard,
+    INSIGHTS_ALL_REPOS_SETTINGS_KEY,
+    InsightType,
+    InsightTypePrefix,
+    isLangStatsInsight,
+    isVirtualDashboard,
+} from '../types'
+import { isSettingsBasedInsightsDashboard } from '../types/dashboard/real-dashboard'
+
+import { addInsightToDashboard } from './dashboards'
 
 /**
  * Returns insight settings key. Since different types of insight live in different
@@ -27,6 +38,21 @@ const getInsightSettingKey = (insight: Insight): string[] => {
             return [INSIGHTS_ALL_REPOS_SETTINGS_KEY, insight.id]
         }
     }
+}
+
+export const addInsight = (settings: string, insight: Insight, dashboard: InsightDashboard | null): string => {
+    const dashboardSettingKey =
+        !isVirtualDashboard(dashboard) && isSettingsBasedInsightsDashboard(dashboard)
+            ? dashboard.settingsKey
+            : undefined
+
+    const transforms = [
+        (settings: string) => addInsightToSettings(settings, insight),
+        (settings: string) =>
+            dashboardSettingKey ? addInsightToDashboard(settings, dashboardSettingKey, insight.id) : settings,
+    ]
+
+    return transforms.reduce((settings, transformer) => transformer(settings), settings)
 }
 
 /**

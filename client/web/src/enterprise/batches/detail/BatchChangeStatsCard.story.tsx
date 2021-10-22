@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeStatsCard } from './BatchChangeStatsCard'
 
@@ -10,7 +10,7 @@ const { add } = storiesOf('web/batches/BatchChangeStatsCard', module).addDecorat
 ))
 
 add('All states', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeStatsCard
                 {...props}
@@ -29,10 +29,10 @@ add('All states', () => (
                 closedAt={null}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 add('Batch change closed', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeStatsCard
                 {...props}
@@ -51,10 +51,10 @@ add('Batch change closed', () => (
                 closedAt={new Date().toISOString()}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 add('Batch change done', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeStatsCard
                 {...props}
@@ -73,5 +73,5 @@ add('Batch change done', () => (
                 closedAt={null}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

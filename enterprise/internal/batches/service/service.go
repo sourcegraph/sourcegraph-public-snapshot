@@ -1117,19 +1117,27 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 		len(es), strings.Join(points, "\n"))
 }
 
-func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
-	return computeBatchSpecState(ctx, s.store, batchSpec)
+func (s *Service) LoadBatchSpecStats(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecStats, error) {
+	return loadBatchSpecStats(ctx, s.store, batchSpec)
 }
 
-func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
-	statsMap, err := s.GetBatchSpecStats(ctx, []int64{spec.ID})
+func loadBatchSpecStats(ctx context.Context, bstore *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecStats, error) {
+	statsMap, err := bstore.GetBatchSpecStats(ctx, []int64{spec.ID})
 	if err != nil {
-		return "", err
+		return btypes.BatchSpecStats{}, err
 	}
 
 	stats, ok := statsMap[spec.ID]
 	if !ok {
-		return "", store.ErrNoResults
+		return btypes.BatchSpecStats{}, store.ErrNoResults
+	}
+	return stats, nil
+}
+
+func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	stats, err := loadBatchSpecStats(ctx, s, spec)
+	if err != nil {
+		return "", err
 	}
 
 	return btypes.ComputeBatchSpecState(spec, stats), nil

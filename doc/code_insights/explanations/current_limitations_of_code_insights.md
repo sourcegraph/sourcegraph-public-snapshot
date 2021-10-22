@@ -36,7 +36,6 @@ Because these insights need to run dramatically fewer queries than insights over
 
 * **Dynamic x-axis ranges**: set a custom amount of historical data you care about
 * **Editing data series queries after creation**: for insights over all repositories, you must make a new insight if you wish to run a different query
-* **Up-to-the-minute recent datapoint**: insights over all repositories currently only show the last day of the prior month as their most recent datapoint 
 * **Live previews**: showing the preview of your insight in real time
 * **"Diff click"**: click a datapoint on your insight and be taken to a diff search showing any changes contributing to the difference between a datapoint and the prior one
 

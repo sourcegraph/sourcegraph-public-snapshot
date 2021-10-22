@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangesChangelogAlert } from './BatchChangesChangelogAlert'
 
@@ -9,4 +9,4 @@ const { add } = storiesOf('web/batches/BatchChangesChangelogAlert', module).addD
     <div className="p-3 container web-content">{story()}</div>
 ))
 
-add('Changelog', () => <EnterpriseWebStory>{() => <BatchChangesChangelogAlert />}</EnterpriseWebStory>)
+add('Changelog', () => <WebStory>{() => <BatchChangesChangelogAlert />}</WebStory>)

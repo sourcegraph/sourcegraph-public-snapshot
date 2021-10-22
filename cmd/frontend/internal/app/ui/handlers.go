@@ -33,11 +33,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
@@ -159,7 +159,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 		// Common repo pages (blob, tree, etc).
 		var err error
 		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitserver.RevisionNotFoundError{}) // should reply with HTTP 200
+		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
 			var urlMovedError *handlerutil.URLMovedError
 			if errors.As(err, &urlMovedError) {
@@ -183,7 +183,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 				http.Redirect(w, r, u.String(), http.StatusSeeOther)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				// Revision does not exist.
 				serveError(w, r, err, http.StatusNotFound)
 				return nil, nil
@@ -199,8 +199,8 @@ func newCommon(w http.ResponseWriter, r *http.Request, title string, indexed boo
 				dangerouslyServeError(w, r, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
-			if vcs.IsRepoNotExist(err) {
-				if vcs.IsCloneInProgress(err) {
+			if gitdomain.IsRepoNotExist(err) {
+				if gitdomain.IsCloneInProgress(err) {
 					// Repo is cloning.
 					return common, nil
 				}

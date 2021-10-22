@@ -84,18 +84,16 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 
 	dataSeriesStore.GetDataSeriesFunc.SetDefaultReturn([]types.InsightSeries{
 		{
-			ID:                    1,
-			SeriesID:              "series1",
-			Query:                 "query1",
-			NextRecordingAfter:    now.Add(-1 * time.Hour),
-			RecordingIntervalDays: 1,
+			ID:                 1,
+			SeriesID:           "series1",
+			Query:              "query1",
+			NextRecordingAfter: now.Add(-1 * time.Hour),
 		},
 		{
-			ID:                    2,
-			SeriesID:              "series2",
-			Query:                 "query2",
-			NextRecordingAfter:    now.Add(1 * time.Hour),
-			RecordingIntervalDays: 1,
+			ID:                 2,
+			SeriesID:           "series2",
+			Query:              "query2",
+			NextRecordingAfter: now.Add(1 * time.Hour),
 		},
 	}, nil)
 

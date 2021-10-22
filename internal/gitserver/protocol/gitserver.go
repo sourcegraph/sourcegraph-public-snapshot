@@ -7,8 +7,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type SearchRequest struct {
@@ -42,7 +42,7 @@ type SearchEventDone struct {
 
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
-		var e vcs.RepoNotExistError
+		var e gitdomain.RepoNotExistError
 		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
 			return &e
 		}
@@ -55,7 +55,7 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	event := SearchEventDone{
 		LimitHit: limitHit,
 	}
-	var notExistError *vcs.RepoNotExistError
+	var notExistError *gitdomain.RepoNotExistError
 	if errors.As(err, &notExistError) {
 		b, _ := json.Marshal(notExistError)
 		event.Error = string(b)
@@ -131,6 +131,15 @@ type HTTPSConfig struct {
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
+
+	// MigrateFrom is the name of the gitserver instance that is the current owner of the
+	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from the
+	// current gitserver instance to the new home of the repo based on the rendezvous hashing
+	// scheme.
+	//
+	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
+	// and it should be removed.
+	MigrateFrom string `json:"migrateFrom"`
 }
 
 // RepoUpdateResponse returns meta information of the repo enqueued for
@@ -331,4 +340,13 @@ type CreateCommitFromPatchError struct {
 // Error returns a detailed error conforming to the error interface
 func (e *CreateCommitFromPatchError) Error() string {
 	return e.InternalError
+}
+
+type GetObjectRequest struct {
+	Repo       api.RepoName
+	ObjectName string
+}
+
+type GetObjectResponse struct {
+	Object gitdomain.GitObject
 }

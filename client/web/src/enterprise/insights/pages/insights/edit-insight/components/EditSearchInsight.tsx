@@ -1,7 +1,5 @@
 import React, { useMemo } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
 import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
 import { InsightType, SearchBasedInsight } from '../../../../core/types'
 import { isSearchBackendBasedInsight } from '../../../../core/types/insight/search-insight'
@@ -13,14 +11,13 @@ import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/i
 
 interface EditSearchBasedInsightProps {
     insight: SearchBasedInsight
-    finalSettings: Settings
     subjects: SupportedInsightSubject[]
     onSubmit: (insight: SearchBasedInsight) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
 export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsightProps> = props => {
-    const { insight, finalSettings = {}, subjects, onSubmit, onCancel } = props
+    const { insight, subjects, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(() => {
         if (insight.type === InsightType.Backend) {
@@ -67,7 +64,6 @@ export const EditSearchBasedInsight: React.FunctionComponent<EditSearchBasedInsi
             mode="edit"
             className="pb-5"
             initialValue={insightFormValues}
-            settings={finalSettings}
             subjects={subjects}
             dataTestId="search-insight-edit-page-content"
             onSubmit={handleSubmit}

@@ -5,13 +5,15 @@ import {
     useLazyQuery as useApolloLazyQuery,
     DocumentNode,
     OperationVariables,
-    QueryHookOptions,
+    QueryHookOptions as ApolloQueryHookOptions,
     QueryResult,
-    MutationHookOptions,
+    MutationHookOptions as ApolloMutationHookOptions,
     MutationTuple,
     QueryTuple,
 } from '@apollo/client'
 import { useMemo } from 'react'
+
+import { ApolloContext } from '../types'
 
 type RequestDocument = string | DocumentNode
 
@@ -31,6 +33,16 @@ export const getDocumentNode = (document: RequestDocument): DocumentNode => {
 const useDocumentNode = (document: RequestDocument): DocumentNode =>
     useMemo(() => getDocumentNode(document), [document])
 
+export interface QueryHookOptions<TData = any, TVariables = OperationVariables>
+    extends Omit<ApolloQueryHookOptions<TData, TVariables>, 'context'> {
+    /**
+     * Shared context information for apollo client. Since internal apollo
+     * types have context as Record<string, any> we have to set this type
+     * directly.
+     */
+    context?: ApolloContext
+}
+
 /**
  * Send a query to GraphQL and respond to updates.
  * Wrapper around Apollo `useQuery` that supports `DocumentNode` and `string` types.
@@ -46,21 +58,22 @@ export function useQuery<TData = any, TVariables = OperationVariables>(
     const documentNode = useDocumentNode(query)
     return useApolloQuery(documentNode, options)
 }
-
-/**
- * Unlike with `useQuery`, when you call `useLazyQuery`, it does not immediately execute its associated query.
- * Wrapper around Apollo `useLazyQuery` that supports `DocumentNode` and `string` types.
- *
- * @param query GraphQL operation payload.
- * @param options Operation variables and request configuration.
- * @returns returns a query function in its result tuple that you call whenever you're ready to execute the query.
- */
 export function useLazyQuery<TData = any, TVariables = OperationVariables>(
     query: RequestDocument,
     options: QueryHookOptions<TData, TVariables>
 ): QueryTuple<TData, TVariables> {
     const documentNode = useDocumentNode(query)
     return useApolloLazyQuery(documentNode, options)
+}
+
+interface MutationHookOptions<TData = any, TVariables = OperationVariables>
+    extends Omit<ApolloMutationHookOptions<TData, TVariables>, 'context'> {
+    /**
+     * Shared context information for apollo client. Since internal apollo
+     * types have context as Record<string, any> we have to set this type
+     * directly.
+     */
+    context?: ApolloContext
 }
 
 /**

@@ -11,7 +11,7 @@ To connect GitHub to Sourcegraph:
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
-**NOTE** That adding code hosts as a user is currently in private beta.
+> NOTE: Adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -38,8 +38,8 @@ No token scopes are required if you only want to sync public repositories and do
 
 | Feature                                               | Required token scopes                                                                              |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Sync private repositories                             | `repo`                                                                                             |
-| [Sync repository permissions][permissions]            | `write:repo` or `write:org`                                                                        |
+| [Sync private repositories](#github)                  | `read:repo`                                                                                        |
+| [Sync repository permissions][permissions]            | `write:repo`                                                                                       |
 | [Repository permissions caching][permissions-caching] | `write:org`                                                                                        |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, and `read:discussion` ([learn more][batch-changes-interactions]) |
 

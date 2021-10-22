@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestConfigDefaults(t *testing.T) {
@@ -106,7 +107,7 @@ func TestS3ClientOptions(t *testing.T) {
 		options := &s3.Options{}
 		s3ClientOptions("s3", config.S3)(options)
 
-		if diff := cmp.Diff(&s3.Options{}, options); diff != "" {
+		if diff := cmp.Diff(&s3.Options{}, options, cmpopts.IgnoreUnexported(s3.Options{})); diff != "" {
 			t.Fatalf("invalid s3 options returned for S3: %s", diff)
 		}
 	}

@@ -131,9 +131,9 @@ func (i DashboardGrant) toQuery(dashboardID int) (*sqlf.Query, error) {
 	if !i.IsValid() {
 		return nil, errors.New("invalid dashboard grant, no principal assigned")
 	}
-	// dashboard_id, org_id, user_id, global
+	// dashboard_id, user_id, org_id, global
 	valuesFmt := "(%s, %s, %s, %s)"
-	return sqlf.Sprintf(valuesFmt, dashboardID, i.OrgID, i.UserID, i.Global), nil
+	return sqlf.Sprintf(valuesFmt, dashboardID, i.UserID, i.OrgID, i.Global), nil
 }
 
 func UserDashboardGrant(userID int) DashboardGrant {

@@ -107,34 +107,15 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 	return errors.Wrap(err, "symbol search failed")
 }
 
-func (a *Aggregator) DoFilePathSearch(ctx context.Context, args *search.TextParameters) (err error) {
+func (a *Aggregator) DoFilePathSearch(ctx context.Context, zoektArgs zoektutil.IndexedSearchRequest, searcherArgs *search.SearcherParameters, notSearcherOnly bool, stream streaming.Sender) (err error) {
 	tr, ctx := trace.New(ctx, "doFilePathSearch", "")
 	defer func() {
 		a.Error(err)
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()
-	tr.LogFields(
-		trace.Stringer("query", args.Query),
-		trace.Stringer("info", args.PatternInfo),
-		trace.Stringer("global_search_mode", args.Mode),
-	)
 
-	ctx, stream, cleanup := streaming.WithLimit(ctx, a, int(args.PatternInfo.FileMatchLimit))
-	defer cleanup()
-
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoektutil.MissingRepoRevStatus(stream))
-	if err != nil {
-		return err
-	}
-
-	searcherArgs := &search.SearcherParameters{
-		SearcherURLs:    args.SearcherURLs,
-		PatternInfo:     args.PatternInfo,
-		UseFullDeadline: args.UseFullDeadline,
-	}
-
-	return unindexed.SearchFilesInRepos(ctx, zoektArgs, searcherArgs, args.Mode != search.SearcherOnly, stream)
+	return unindexed.SearchFilesInRepos(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
 }
 
 func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters) (err error) {

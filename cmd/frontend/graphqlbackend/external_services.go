@@ -11,7 +11,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -52,15 +51,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 
 	if args.Input.Namespace != nil {
 		var err error
-		switch relay.UnmarshalKind(*args.Input.Namespace) {
-		case "User":
-			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceUserID)
-		case "Org":
-			err = relay.UnmarshalSpec(*args.Input.Namespace, &namespaceOrgID)
-		default:
-			err = errors.Errorf("invalid namespace %q", *args.Input.Namespace)
-		}
 
+		err = UnmarshalNamespaceID(*args.Input.Namespace, &namespaceUserID, &namespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -77,8 +69,13 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 				return nil, errors.New("the namespace is not the same as the authenticated user")
 			}
 		}
-		if namespaceOrgID > 0 && backend.CheckOrgAccess(ctx, r.db, namespaceOrgID) != nil {
-			return nil, errors.New("the authenticated user does not belong to the organization requested")
+		if namespaceOrgID > 0 {
+			if err = backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
+				return nil, err
+			}
+			if backend.CheckOrgAccess(ctx, r.db, namespaceOrgID) != nil {
+				return nil, errors.New("the authenticated user does not belong to the organization requested")
+			}
 		}
 
 	} else if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
@@ -259,16 +256,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	var namespaceUserID int32
 	var namespaceOrgID int32
 	if args.Namespace != nil {
-		var err error
-		switch relay.UnmarshalKind(*args.Namespace) {
-		case "User":
-			err = relay.UnmarshalSpec(*args.Namespace, &namespaceUserID)
-		case "Org":
-			err = relay.UnmarshalSpec(*args.Namespace, &namespaceOrgID)
-		default:
-			err = errors.Errorf("invalid namespace %q", *args.Namespace)
-		}
-
+		err := UnmarshalNamespaceID(*args.Namespace, &namespaceUserID, &namespaceOrgID)
 		if err != nil {
 			return nil, err
 		}
@@ -276,6 +264,12 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 
 	if err := backend.CheckExternalServiceAccess(ctx, r.db, namespaceUserID, namespaceOrgID); err != nil {
 		return nil, err
+	}
+
+	if namespaceOrgID > 0 {
+		if err := backend.CheckOrgExternalServices(ctx, r.db, namespaceOrgID); err != nil {
+			return nil, err
+		}
 	}
 
 	var afterID int64

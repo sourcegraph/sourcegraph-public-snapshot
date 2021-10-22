@@ -72,6 +72,9 @@ type BatchSpecStats struct {
 	Canceling  int
 	Canceled   int
 	Failed     int
+
+	StartedAt  time.Time
+	FinishedAt time.Time
 }
 
 // BatchSpecState defines the possible states of a BatchSpec that was created
@@ -99,6 +102,19 @@ func (s BatchSpecState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 // canceled.
 func (s BatchSpecState) Cancelable() bool {
 	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
+}
+
+// Started returns whether the execution of the BatchSpec has started.
+func (s BatchSpecState) Started() bool {
+	return s != BatchSpecStateQueued && s != BatchSpecStatePending
+}
+
+// Finished returns whether the execution of the BatchSpec has finished.
+func (s BatchSpecState) Finished() bool {
+	return s == BatchSpecStateCompleted ||
+		s == BatchSpecStateFailed ||
+		s == BatchSpecStateErrored ||
+		s == BatchSpecStateCanceled
 }
 
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.

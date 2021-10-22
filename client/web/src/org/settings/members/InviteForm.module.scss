@@ -1,0 +1,24 @@
+.invited-notification {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.message {
+    flex: 1;
+}
+
+.container {
+    margin-bottom: 1rem;
+    width: fit-content;
+}
+
+.status {
+    padding-top: 0.5rem;
+    overflow: hidden;
+}
+
+.alert {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}

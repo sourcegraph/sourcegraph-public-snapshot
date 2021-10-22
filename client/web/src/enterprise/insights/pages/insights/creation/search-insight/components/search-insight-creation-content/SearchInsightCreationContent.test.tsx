@@ -6,8 +6,10 @@ import sinon from 'sinon'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
 import { FORM_ERROR } from '../../../../../../components/form/hooks/useForm'
-import { InsightsApiContext } from '../../../../../../core/backend/api-provider'
-import { createMockInsightAPI } from '../../../../../../core/backend/create-insights-api'
+import {
+    CodeInsightsBackendContext,
+    FakeDefaultCodeInsightsBackend,
+} from '../../../../../../core/backend/code-insights-backend-context'
 import { SupportedInsightSubject } from '../../../../../../core/types/subjects'
 
 import { SearchInsightCreationContent, SearchInsightCreationContentProps } from './SearchInsightCreationContent'
@@ -28,16 +30,18 @@ const SITE_TEST_SUBJECT: SupportedInsightSubject = {
 }
 
 describe('CreateInsightContent', () => {
-    const mockAPI = createMockInsightAPI({
-        getRepositorySuggestions: () => Promise.resolve([]),
-    })
+    class CodeInsightsTestBackend extends FakeDefaultCodeInsightsBackend {
+        public getRepositorySuggestions = () => Promise.resolve([])
+    }
+
+    const codeInsightsBackend = new CodeInsightsTestBackend()
 
     const renderWithProps = (props: SearchInsightCreationContentProps): RenderResult =>
         render(
             <MemoryRouter>
-                <InsightsApiContext.Provider value={mockAPI}>
+                <CodeInsightsBackendContext.Provider value={codeInsightsBackend}>
                     <SearchInsightCreationContent {...props} subjects={[USER_TEST_SUBJECT, SITE_TEST_SUBJECT]} />
-                </InsightsApiContext.Provider>
+                </CodeInsightsBackendContext.Provider>
             </MemoryRouter>
         )
     const onSubmitMock = sinon.spy()
