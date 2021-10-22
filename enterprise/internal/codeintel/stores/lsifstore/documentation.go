@@ -363,7 +363,7 @@ func (s *Store) documentationDefinitions(
 // slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
 // 10,000 is an arbitrary choice based on current Sourcegraph.com corpus size and performance, it'll
 // be tuned as we scale to more repos if perf gets worse or we find we need better relevance.
-var debugAPIDocsSearchCandidates, _ = strconv.ParseInt(env.Get("DEBUG_API_DOCS_SEARCH_CANDIDATES", "10000", "maximum candidates for consideration in API docs search"))
+var debugAPIDocsSearchCandidates, _ = strconv.ParseInt(env.Get("DEBUG_API_DOCS_SEARCH_CANDIDATES", "10000", "maximum candidates for consideration in API docs search"), 10, 64)
 
 // DocumentationSearch searches API documentation in either the "public" or "private" table.
 //
@@ -378,6 +378,7 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 	defer endObservation(1, observation.Args{})
 
 	q := apidocs.ParseQuery(query)
+	resultLimit := 50
 
 	langRepoTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
 
@@ -400,7 +401,7 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 
 		sqlf.Join(primaryClauses, ") OR ("), // primary WHERE clause
 		debugAPIDocsSearchCandidates,        // maximum candidates for consideration.
-		q.Limit,                             // result limit
+		resultLimit,                         // result limit
 	)))
 }
 
