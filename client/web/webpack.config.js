@@ -139,8 +139,11 @@ const config = {
   output: {
     path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-    filename: mode === 'production' ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
-    chunkFilename: mode === 'production' ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
+    // Note: [name] will vary depending on the Webpack chunk`. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
+    filename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
+    chunkFilename:
+      mode === 'production' && !useNamedChunks ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
