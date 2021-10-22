@@ -52,23 +52,37 @@ type InsightView struct {
 	Title       string
 	Description string
 	UniqueID    string
+	Filters     InsightViewFilters
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
 // as its unique series ID.
 type InsightSeries struct {
-	ID                 int
-	SeriesID           string
-	Query              string
-	CreatedAt          time.Time
-	OldestHistoricalAt time.Time
-	LastRecordedAt     time.Time
-	NextRecordingAfter time.Time
-	LastSnapshotAt     time.Time
-	NextSnapshotAfter  time.Time
-	BackfillQueuedAt   time.Time
-	Enabled            bool
+	ID                  int
+	SeriesID            string
+	Query               string
+	CreatedAt           time.Time
+	OldestHistoricalAt  time.Time
+	LastRecordedAt      time.Time
+	NextRecordingAfter  time.Time
+	LastSnapshotAt      time.Time
+	NextSnapshotAfter   time.Time
+	BackfillQueuedAt    time.Time
+	Enabled             bool
+	Repositories        []string
+	SampleIntervalUnit  string
+	SampleIntervalValue int
 }
+
+type IntervalUnit string
+
+const (
+	Month IntervalUnit = "MONTH"
+	Day   IntervalUnit = "DAY"
+	Week  IntervalUnit = "WEEK"
+	Year  IntervalUnit = "YEAR"
+	Hour  IntervalUnit = "HOUR"
+)
 
 type DirtyQuery struct {
 	ID      int

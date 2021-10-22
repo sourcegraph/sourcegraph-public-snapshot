@@ -114,6 +114,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.1.1
 	github.com/schollz/progressbar/v3 v3.8.3
 	github.com/segmentio/fasthash v1.0.3
+	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.2.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20210228213109-c3a9aa474629
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0

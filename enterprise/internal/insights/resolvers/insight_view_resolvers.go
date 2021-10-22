@@ -2,6 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"time"
+
+	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	"github.com/segmentio/ksuid"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -18,6 +26,7 @@ var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightD
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
+var _ graphqlbackend.CreateInsightResultResolver = &createInsightResultResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -153,6 +162,66 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 	return l.series.LineColor, nil
 }
 
-func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (graphqlbackend.CreateInsightResultResolver, error) {
-	panic("implement me")
+func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.CreateInsightResultResolver, err error) {
+	uid := actor.FromContext(ctx).UID
+
+	tx, err := r.insightStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	view, err := tx.CreateView(ctx, types.InsightView{
+		Title:    emptyIfNil(args.Input.Options.Title),
+		UniqueID: ksuid.New().String(),
+		Filters:  types.InsightViewFilters{},
+	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
+	if err != nil {
+		return nil, errors.Wrap(err, "CreateView")
+	}
+
+	for _, series := range args.Input.DataSeries {
+		created, err := tx.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:            ksuid.New().String(), // ignoring sharing data series for now, we will just always generate unique series
+			Query:               series.Query,
+			CreatedAt:           time.Now(),
+			Repositories:        series.RepositoryScope.Repositories,
+			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
+			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "CreateSeries")
+		}
+		err = tx.AttachSeriesToView(ctx, created, view, types.InsightViewSeriesMetadata{
+			Label:  emptyIfNil(series.Options.Label),
+			Stroke: emptyIfNil(series.Options.LineColor),
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "AttachSeriesToView")
+		}
+	}
+	return &createInsightResultResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+}
+
+type createInsightResultResolver struct {
+	viewId string
+	baseInsightResolver
+}
+
+func (c *createInsightResultResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
+	mapped, err := c.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: []int{int(actor.FromContext(ctx).UID)}})
+	if err != nil {
+		return nil, err
+	}
+	if len(mapped) < 1 {
+		return nil, err
+	}
+	return &insightViewResolver{view: &mapped[0], baseInsightResolver: c.baseInsightResolver}, nil
+}
+
+func emptyIfNil(in *string) string {
+	if in == nil {
+		return ""
+	}
+	return *in
 }
