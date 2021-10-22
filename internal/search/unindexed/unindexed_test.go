@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -63,9 +62,9 @@ func TestSearchFilesInRepos(t *testing.T) {
 		case "foo/empty":
 			return false, nil
 		case "foo/cloning":
-			return false, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: true}
+			return false, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: true}
 		case "foo/missing":
-			return false, &vcs.RepoNotExistError{Repo: repoName}
+			return false, &gitdomain.RepoNotExistError{Repo: repoName}
 		case "foo/missing-database":
 			return false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
 		case "foo/timedout":
@@ -74,7 +73,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 			// TODO we do not specify a rev when searching "foo/no-rev", so it
 			// is treated as an empty repository. We need to test the fatal
 			// case of trying to search a revision which doesn't exist.
-			return false, &gitserver.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
+			return false, &gitdomain.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
 		default:
 			return false, errors.New("Unexpected repo")
 		}
@@ -149,7 +148,7 @@ func TestSearchFilesInRepos(t *testing.T) {
 		UseFullDeadline: args.UseFullDeadline,
 	}
 	_, _, err = SearchFilesInReposBatch(context.Background(), zoektArgs, searcherArgs, args.Mode != search.SearcherOnly)
-	if !errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
 	}
 }

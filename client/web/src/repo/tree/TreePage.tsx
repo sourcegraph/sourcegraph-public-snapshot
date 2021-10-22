@@ -26,7 +26,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -115,7 +114,6 @@ interface Props
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,

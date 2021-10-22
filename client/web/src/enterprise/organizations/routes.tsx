@@ -1,5 +1,4 @@
 import React from 'react'
-import { Redirect } from 'react-router'
 
 import { OrgAreaRoute } from '../../org/area/OrgArea'
 import { orgAreaRoutes } from '../../org/area/routes'
@@ -15,10 +14,6 @@ const NamespaceBatchChangesArea = lazyComponent<NamespaceBatchChangesAreaProps, 
 export const enterpriseOrganizationAreaRoutes: readonly OrgAreaRoute[] = [
     ...orgAreaRoutes,
     ...enterpriseNamespaceAreaRoutes,
-    {
-        path: '/campaigns',
-        render: ({ location }) => <Redirect to={location.pathname.replace('/campaigns', '/batch-changes')} />,
-    },
     {
         path: '/batch-changes',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.org.id} />,

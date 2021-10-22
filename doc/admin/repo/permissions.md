@@ -18,15 +18,16 @@ Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to
 
 ## GitHub
 
-Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
+Prerequisite: [Add GitHub as an authentication provider](../auth/index.md#github).
 
 Then, [add or edit a GitHub connection](../external_service/github.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
-   "url": "https://github.com",
-   "token": "$PERSONAL_ACCESS_TOKEN",
-   "authorization": {}
+  // The GitHub URL used to set up the GitHub authentication provider must match this URL.
+  "url": "https://github.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  "authorization": {}
 }
 ```
 

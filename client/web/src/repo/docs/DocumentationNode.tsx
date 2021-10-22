@@ -10,7 +10,6 @@ import { Observable } from 'rxjs'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { AnchorLink } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
@@ -25,12 +24,7 @@ import { DocumentationIcons } from './DocumentationIcons'
 import { GQLDocumentationNode, Tag, isExcluded } from './graphql'
 import { hasDescendent } from './RepositoryDocumentationSidebar'
 
-interface Props
-    extends Partial<RevisionSpec>,
-        ResolvedRevisionSpec,
-        BreadcrumbSetters,
-        SettingsCascadeProps,
-        VersionContextProps {
+interface Props extends Partial<RevisionSpec>, ResolvedRevisionSpec, BreadcrumbSetters, SettingsCascadeProps {
     repo: RepositoryFields
 
     history: H.History

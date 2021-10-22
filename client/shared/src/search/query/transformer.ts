@@ -5,12 +5,8 @@ import { scanSearchQuery } from './scanner'
 import { Filter, Token } from './token'
 import { filterExists, findFilters } from './validate'
 
-export function appendContextFilter(
-    query: string,
-    searchContextSpec: string | undefined,
-    versionContext: string | undefined
-): string {
-    return !filterExists(query, FilterType.context) && searchContextSpec && !versionContext
+export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
+    return !filterExists(query, FilterType.context) && searchContextSpec
         ? `context:${searchContextSpec} ${query}`
         : query
 }

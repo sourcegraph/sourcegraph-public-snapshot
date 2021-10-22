@@ -1,7 +1,6 @@
-//go:build ignore
-// +build ignore
-
 package main
+
+//go:generate go run ./doc.go
 
 import (
 	"io/fs"

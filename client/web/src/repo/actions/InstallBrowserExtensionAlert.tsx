@@ -45,9 +45,12 @@ export const InstallBrowserExtensionAlert: React.FunctionComponent<Props> = ({
     }
 
     return (
-        <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert">
+        <div
+            className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+            data-testid="install-browser-extension-alert"
+        >
             <div className="d-flex align-items-center">
-                <p className="install-browser-extension-alert__text my-0 mr-3">
+                <p className="my-0 mr-3">
                     {codeHostIntegrationMessaging === 'native-integration' ? (
                         <>
                             Sourcegraph's code intelligence will follow you to your code host. Your site admin set up
@@ -139,7 +142,7 @@ export function isFirefoxCampaignActive(currentMs: number): boolean {
 }
 
 export const FirefoxAddonAlert: React.FunctionComponent<FirefoxAlertProps> = ({ onAlertDismissed, displayName }) => (
-    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert percy-hide">
+    <div className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 percy-hide">
         <div>
             <p className="font-weight-medium my-0 mr-3">
                 Sourcegraph is back at{' '}

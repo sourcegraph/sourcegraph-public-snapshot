@@ -54,7 +54,6 @@ import {
     HomePanelsProps,
     SearchStreamingProps,
     ParsedSearchQueryProps,
-    MutableVersionContextProps,
     parseSearchURL,
     SearchContextProps,
     getGlobalSearchContextFilter,
@@ -81,7 +80,6 @@ export interface LayoutProps
         ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        MutableVersionContextProps,
         OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
@@ -141,25 +139,21 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
+    // Update parsedSearchQuery, patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
     const {
         history,
         parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
         caseSensitive: currentCaseSensitive,
-        versionContext: currentVersionContext,
         selectedSearchContextSpec,
         location,
         setParsedSearchQuery,
         setPatternType,
         setCaseSensitivity,
-        setVersionContext,
         setSelectedSearchContextSpec,
     } = props
 
-    const { query = '', patternType, caseSensitive, versionContext } = useMemo(() => parseSearchURL(location.search), [
-        location.search,
-    ])
+    const { query = '', patternType, caseSensitive } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
@@ -178,12 +172,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 setCaseSensitivity(caseSensitive)
             }
 
-            if (versionContext !== currentVersionContext) {
-                setVersionContext(versionContext).catch(error => {
-                    console.error('Error sending version context to extensions', error)
-                })
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
@@ -194,15 +182,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         currentCaseSensitive,
         currentPatternType,
         currentQuery,
-        currentVersionContext,
         selectedSearchContextSpec,
         patternType,
         query,
         setCaseSensitivity,
         setParsedSearchQuery,
         setPatternType,
-        setVersionContext,
-        versionContext,
         setSelectedSearchContextSpec,
         searchContextSpec,
     ])

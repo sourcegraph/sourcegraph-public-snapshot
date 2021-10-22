@@ -147,9 +147,9 @@ describe('parseRepoURI', () => {
 })
 
 describe('encodeURIPathComponent', () => {
-    it('encodes all special characters except slashes and the plus sign', () => {
-        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
-            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
+    it('encodes all special characters except "/+[]" signs', () => {
+        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@/[...slug].js')).toBe(
+            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40/[...slug].js'
         )
     })
 })
@@ -419,10 +419,6 @@ describe('buildSearchURLQuery', () => {
     it('removes the case parameter case:no exists in the query and caseSensitive is true', () =>
         expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, undefined)).toBe(
             'q=foo+&patternType=literal'
-        ))
-    it('builds url query with a version context', () =>
-        expect(buildSearchURLQuery('foo case:no', SearchPatternType.literal, true, '3.15')).toBe(
-            'q=foo+&patternType=literal&c=3.15'
         ))
 })
 

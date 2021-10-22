@@ -3,20 +3,23 @@
 exports[`SearchContextMenu should filter list by spec when searching 1`] = `
 Array [
   <DropdownItem
-    className="search-context-menu__item"
+    className="item"
+    data-testid="search-context-menu-item"
     onClick={[Function]}
     tag="button"
     toggle={true}
   >
     <button
-      className="search-context-menu__item dropdown-item"
+      className="item dropdown-item"
+      data-testid="search-context-menu-item"
       onClick={[Function]}
       role="menuitem"
       tabIndex="0"
       type="button"
     >
       <small
-        className="search-context-menu__item-name font-weight-medium"
+        className="font-weight-medium itemName"
+        data-testid="search-context-menu-item-name"
         title="@username"
       >
         <HighlightedSearchContextSpec
@@ -29,7 +32,7 @@ Array [
       </small>
        
       <small
-        className="search-context-menu__item-description"
+        className="itemDescription"
         title="Your repositories on Sourcegraph"
       >
         Your repositories on Sourcegraph
@@ -37,20 +40,23 @@ Array [
     </button>
   </DropdownItem>,
   <DropdownItem
-    className="search-context-menu__item"
+    className="item"
+    data-testid="search-context-menu-item"
     onClick={[Function]}
     tag="button"
     toggle={true}
   >
     <button
-      className="search-context-menu__item dropdown-item"
+      className="item dropdown-item"
+      data-testid="search-context-menu-item"
       onClick={[Function]}
       role="menuitem"
       tabIndex="0"
       type="button"
     >
       <small
-        className="search-context-menu__item-name font-weight-medium"
+        className="font-weight-medium itemName"
+        data-testid="search-context-menu-item-name"
         title="@username/test-version-1.5"
       >
         <HighlightedSearchContextSpec
@@ -65,7 +71,7 @@ Array [
       </small>
        
       <small
-        className="search-context-menu__item-description"
+        className="itemDescription"
         title="Only code in version 1.5"
       >
         Only code in version 1.5

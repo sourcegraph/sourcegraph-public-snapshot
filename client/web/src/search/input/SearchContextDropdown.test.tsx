@@ -1,5 +1,4 @@
 import { mount } from 'enzyme'
-import * as H from 'history'
 import React from 'react'
 import { act } from 'react-dom/test-utils'
 import { Dropdown, DropdownItem, DropdownToggle } from 'reactstrap'
@@ -12,8 +11,6 @@ import {
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/util/MockIntersectionObserver'
-
-import { SearchPatternType } from '../../graphql-operations'
 
 import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
 
@@ -28,11 +25,6 @@ describe('SearchContextDropdown', () => {
         defaultSearchContextSpec: '',
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
-        history: H.createMemoryHistory(),
-        caseSensitive: true,
-        patternType: SearchPatternType.literal,
-        versionContext: undefined,
-        submitSearch: () => {},
         hasUserAddedRepositories: false,
         hasUserAddedExternalServices: false,
         isSourcegraphDotCom: false,
@@ -116,27 +108,5 @@ describe('SearchContextDropdown', () => {
         item.simulate('click')
 
         sinon.assert.calledOnce(submitSearch)
-    })
-
-    it('should not submit search if submitSearchOnSearchContextChange is false', () => {
-        const submitSearch = sinon.spy()
-        const element = mount(
-            <SearchContextDropdown
-                {...defaultProps}
-                submitSearch={submitSearch}
-                submitSearchOnSearchContextChange={false}
-            />
-        )
-
-        act(() => {
-            // Wait for debounce
-            clock.tick(50)
-        })
-        element.update()
-
-        const item = element.find(DropdownItem).at(0)
-        item.simulate('click')
-
-        sinon.assert.notCalled(submitSearch)
     })
 })

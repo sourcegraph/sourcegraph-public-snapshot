@@ -13,7 +13,7 @@ import { queryExternalServices } from '../../../components/externalServices/back
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { SourcegraphContext } from '../../../jscontext'
+import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -21,7 +21,6 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud
 
 import { CodeHostItem } from './CodeHostItem'
 
-type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps
@@ -239,9 +238,23 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
     const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
-        <div className="alert alert-danger my-3" key={service.id}>
-            <h4 className="align-middle mb-1">Could not connect with {service.displayName}</h4>
-            <p className="align-middle mb-0">{service.problem}. Try connecting again.</p>
+        <div className="alert alert-warning my-3" key={service.id}>
+            <h4 className="align-middle mb-1">Can't connect with {service.displayName}</h4>
+            <p className="align-middle mb-0">
+                <span className="align-middle">Please try</span>{' '}
+                {owner.type === 'org' ? (
+                    <button
+                        type="button"
+                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                        onClick={toggleUpdateModal}
+                    >
+                        updating the code host connection
+                    </button>
+                ) : (
+                    <span className="align-middle">reconnecting the code host connection</span>
+                )}{' '}
+                <span className="align-middle">with {service.displayName} to restore access.</span>
+            </p>
         </div>
     )
 

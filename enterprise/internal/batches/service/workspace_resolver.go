@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -283,7 +283,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 	commit, err := git.ResolveRevision(ctx, repo.Name, branch, git.ResolveRevisionOptions{
 		NoEnsureRevision: true,
 	})
-	if err != nil && errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+	if err != nil && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 		return nil, fmt.Errorf("no branch matching %q found for repository %s", branch, name)
 	}
 

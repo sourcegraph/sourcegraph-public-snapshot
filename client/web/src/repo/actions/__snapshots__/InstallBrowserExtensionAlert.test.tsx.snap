@@ -15,13 +15,14 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -73,13 +74,14 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (native integration) 1`] =
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         Bitbucket Server
@@ -135,13 +137,14 @@ exports[`InstallBrowserExtensionAlert BITBUCKETSERVER (non-Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Get code intelligence
          
@@ -192,13 +195,14 @@ exports[`InstallBrowserExtensionAlert GITHUB (Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -250,13 +254,14 @@ exports[`InstallBrowserExtensionAlert GITHUB (native integration) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         GitHub
@@ -312,13 +317,14 @@ exports[`InstallBrowserExtensionAlert GITHUB (non-Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Get code intelligence
          
@@ -369,13 +375,14 @@ exports[`InstallBrowserExtensionAlert GITLAB (Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -427,13 +434,14 @@ exports[`InstallBrowserExtensionAlert GITLAB (native integration) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         GitLab
@@ -489,13 +497,14 @@ exports[`InstallBrowserExtensionAlert GITLAB (non-Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Get code intelligence
          
@@ -546,13 +555,14 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         <a
           className="alert-link"
@@ -601,13 +611,14 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (native integration) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Sourcegraph's code intelligence will follow you to your code host. Your site admin set up the Sourcegraph native integration for 
         Phabricator
@@ -663,13 +674,14 @@ exports[`InstallBrowserExtensionAlert PHABRICATOR (non-Chrome) 1`] = `
   onAlertDismissed={[Function]}
 >
   <div
-    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0 install-browser-extension-alert"
+    className="alert alert-info m-2 d-flex justify-content-between flex-shrink-0"
+    data-testid="install-browser-extension-alert"
   >
     <div
       className="d-flex align-items-center"
     >
       <p
-        className="install-browser-extension-alert__text my-0 mr-3"
+        className="my-0 mr-3"
       >
         Get code intelligence
          

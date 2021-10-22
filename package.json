@@ -223,7 +223,8 @@
     "babel-loader": "^8.2.2",
     "babel-plugin-lodash": "^3.3.4",
     "babel-preset-react-app": "^10.0.0",
-    "browserslist": "^4.12.0",
+    "browserslist": "^4.17.4",
+    "bundlesize2": "^0.0.30",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chalk": "^4.1.0",
@@ -324,7 +325,7 @@
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
-    "@apollo/client": "^3.3.20",
+    "@apollo/client": "3.4.7",
     "@reach/accordion": "^0.10.2",
     "@reach/combobox": "^0.15.2",
     "@reach/dialog": "^0.11.2",

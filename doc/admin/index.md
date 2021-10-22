@@ -1,10 +1,10 @@
 # Administration
 
 <p class="lead">
-Adminstration guides and documentation for <a href="install">self-hosted Sourcegraph instances</a>.
+Administration guides and documentation for <a href="install">self-hosted Sourcegraph instances</a>.
 </p>
 
-Adminstration is usually handled by site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on a Sourcegraph instance.
+Administration is usually handled by site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on a Sourcegraph instance.
 
 ## [Install Sourcegraph](install/index.md)
 

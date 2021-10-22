@@ -2,7 +2,6 @@ import classnames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 
@@ -10,7 +9,7 @@ import { Page } from '../../../../../../components/Page'
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
 import { SearchBasedInsight } from '../../../../core/types'
-import { useInsightSubjects } from '../../../../hooks/use-insight-subjects/use-insight-subjects'
+import { SupportedInsightSubject } from '../../../../core/types/subjects'
 
 import {
     SearchInsightCreationContent,
@@ -22,15 +21,20 @@ import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'
 
 export interface InsightCreateEvent {
-    subjectId: string
     insight: SearchBasedInsight
 }
 
-export interface SearchInsightCreationPageProps extends SettingsCascadeProps, TelemetryProps {
+export interface SearchInsightCreationPageProps extends TelemetryProps {
     /**
      * Set initial value for insight visibility setting.
      */
     visibility: string
+
+    /**
+     * List of all supported by code insights subjects that can store insight entities
+     * it's used for visibility setting section.
+     */
+    subjects: SupportedInsightSubject[]
 
     /**
      * Whenever the user submit form and clicks on save/submit button
@@ -53,16 +57,8 @@ export interface SearchInsightCreationPageProps extends SettingsCascadeProps, Te
 
 /** Displays create insight page with creation form. */
 export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCreationPageProps> = props => {
-    const {
-        visibility,
-        settingsCascade,
-        telemetryService,
-        onInsightCreateRequest,
-        onCancel,
-        onSuccessfulCreation,
-    } = props
+    const { visibility, subjects, telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
-    const subjects = useInsightSubjects({ settingsCascade })
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
 
     // Set top-level scope value as initial value for the insight visibility
@@ -74,12 +70,10 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
 
     const handleSubmit = useCallback<SearchInsightCreationContentProps['onSubmit']>(
         async values => {
-            const subjectID = values.visibility
-
             try {
                 const insight = getSanitizedSearchInsight(values)
 
-                await onInsightCreateRequest({ subjectId: subjectID, insight })
+                await onInsightCreateRequest({ insight })
 
                 telemetryService.log('CodeInsightsSearchBasedCreationPageSubmitClick')
                 telemetryService.log(
@@ -142,7 +136,6 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
                         <SearchInsightCreationContent
                             className="pb-5"
                             dataTestId="search-insight-create-page-content"
-                            settings={settingsCascade.final}
                             initialValue={mergedInitialValues}
                             subjects={subjects}
                             onSubmit={handleSubmit}

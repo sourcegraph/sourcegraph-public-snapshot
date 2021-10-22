@@ -15,14 +15,6 @@ import (
 )
 
 func TestGetIndexOptions(t *testing.T) {
-	vc := parseVersionContext
-	vcConf := func(contexts ...*schema.VersionContext) schema.SiteConfiguration {
-		return schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				VersionContexts: contexts,
-			},
-		}
-	}
 	withBranches := func(c schema.SiteConfiguration, b map[string][]string) schema.SiteConfiguration {
 		if c.ExperimentalFeatures == nil {
 			c.ExperimentalFeatures = &schema.ExperimentalFeatures{}
@@ -112,57 +104,6 @@ func TestGetIndexOptions(t *testing.T) {
 			},
 		},
 	}, {
-		name: "implicit HEAD",
-		conf: vcConf(vc("foo", "repo@b", "repo@a"), vc("bar", "repo@c", "repo@a", "other@d")),
-		repo: "repo",
-		want: zoektIndexOptions{
-			RepoID:  1,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-				{Name: "b", Version: "!b"},
-				{Name: "c", Version: "!c"},
-			},
-		},
-	}, {
-		name: "implicit HEAD not in vc",
-		conf: vcConf(vc("foo", "repo@a")),
-		repo: "not_in_version_context",
-		want: zoektIndexOptions{
-			RepoID:  3,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{{
-				Name:    "HEAD",
-				Version: "!HEAD",
-			}},
-		},
-	}, {
-		name: "explicit HEAD",
-		conf: vcConf(vc("foo", "repo@HEAD", "repo@a")),
-		repo: "repo",
-		want: zoektIndexOptions{
-			RepoID:  1,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-			},
-		},
-	}, {
-		// a revision can be the empty string, treat as HEAD
-		name: "explicit HEAD empty",
-		conf: vcConf(vc("foo", "repo", "repo@a")),
-		repo: "repo",
-		want: zoektIndexOptions{
-			RepoID:  1,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-			},
-		},
-	}, {
 		name: "conf index branches",
 		conf: withBranches(schema.SiteConfiguration{}, map[string][]string{"repo": {"a"}}),
 		repo: "repo",
@@ -172,22 +113,6 @@ func TestGetIndexOptions(t *testing.T) {
 			Branches: []zoekt.RepositoryBranch{
 				{Name: "HEAD", Version: "!HEAD"},
 				{Name: "a", Version: "!a"},
-			},
-		},
-	}, {
-		name: "conf index branches and vc",
-		conf: withBranches(
-			vcConf(vc("foo", "repo", "repo@a", "repo@b")),
-			map[string][]string{"repo": {"b", "c"}}),
-		repo: "repo",
-		want: zoektIndexOptions{
-			RepoID:  1,
-			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-				{Name: "b", Version: "!b"},
-				{Name: "c", Version: "!c"},
 			},
 		},
 	}, {
@@ -286,13 +211,8 @@ func TestGetIndexOptions(t *testing.T) {
 }
 
 func TestGetIndexOptions_getVersion(t *testing.T) {
-	conf := schema.SiteConfiguration{
-		ExperimentalFeatures: &schema.ExperimentalFeatures{
-			VersionContexts: []*schema.VersionContext{
-				parseVersionContext("foo", "repo@b1", "repo@b2"),
-			},
-		},
-	}
+	conf := schema.SiteConfiguration{}
+	getSearchContextRevs := func(int32) ([]string, error) { return []string{"b1", "b2"}, nil }
 
 	boom := errors.New("boom")
 	cases := []struct {
@@ -347,8 +267,6 @@ func TestGetIndexOptions_getVersion(t *testing.T) {
 					GetVersion: tc.f,
 				}, nil
 			}
-
-			getSearchContextRevs := func(int32) ([]string, error) { return nil, nil }
 
 			b := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, "repo")
 
@@ -414,25 +332,6 @@ func TestGetIndexOptions_batch(t *testing.T) {
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatal("mismatch (-want, +got):\n", diff)
-	}
-}
-
-func parseVersionContext(name string, repoRevStrs ...string) *schema.VersionContext {
-	var repoRevs []*schema.VersionContextRevision
-	for _, repo := range repoRevStrs {
-		rev := ""
-		if idx := strings.LastIndex(repo, "@"); idx > 0 {
-			rev = repo[idx+1:]
-			repo = repo[:idx]
-		}
-		repoRevs = append(repoRevs, &schema.VersionContextRevision{
-			Repo: repo,
-			Rev:  rev,
-		})
-	}
-	return &schema.VersionContext{
-		Name:      name,
-		Revisions: repoRevs,
 	}
 }
 
