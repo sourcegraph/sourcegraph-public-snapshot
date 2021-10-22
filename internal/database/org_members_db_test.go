@@ -180,7 +180,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 				t.Fatal(err)
 			}
 			if test.want != got {
-				t.Errorf("%s: want %v, got %v", test.name, test.want, got)
+				t.Errorf("want %v, got %v", test.want, got)
 			}
 		})
 
