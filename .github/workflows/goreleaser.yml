@@ -28,7 +28,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
-          version: latest
+          version: v0.182.1
           args: release --rm-dist
         env:
           # Use separate access token, because we need a scope:repo token to publish the brew formula.
