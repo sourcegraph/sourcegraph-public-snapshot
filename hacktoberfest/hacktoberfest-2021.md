@@ -22,9 +22,11 @@ Once you've chosen an issue, **comment on it to announce that you will be workin
 
 All open issues are not yet solved. If the task is interesting to you, take it and feel free to do it. There is no need to ask for permission or get in line. Even if someone else can do the task faster than you, don't stop - your solution may be better. It is the beauty of Open Source!
 
-## Step 2 - Clone the Sourcegraph repository
+## Step 2 - Fork the Sourcegraph repository
 
-Clone the repo: `git clone https://github.com/sourcegraph/sourcegraph/`.
+Fork the Sourcegraph repository: `gh repo fork https://github.com/sourcegraph/sourcegraph/ --clone=true`.
+
+For more information about forking a repository, please read the [GitHub docs](https://docs.github.com/en/get-started/quickstart/fork-a-repo#cloning-your-forked-repository).
 
 ## Step 3 - Set up your local development environment
 
