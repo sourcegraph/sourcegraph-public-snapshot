@@ -3,6 +3,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -73,7 +74,7 @@ func TestExtractCloneURL(t *testing.T) {
 			}
 
 			for idx := range tc.configs {
-				repo.Sources[fmt.Sprintf("%d", idx)] = &types.SourceInfo{
+				repo.Sources[strconv.Itoa(idx)] = &types.SourceInfo{
 					ID: fmt.Sprintf("::%d", idx), // see SourceInfo.ExternalServiceID
 				}
 			}

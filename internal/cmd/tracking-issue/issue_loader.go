@@ -207,7 +207,7 @@ func (l *IssueLoader) performRequest(ctx context.Context, cli *graphql.Client, r
 // This is used to later construct a GraphQL request with a subset of these queries.
 func makeFragmentArgs(n int) (fragments []string, args [][]string) {
 	for i := 0; i < n; i++ {
-		fragments = append(fragments, makeSearchQuery(fmt.Sprintf("%d", i)))
+		fragments = append(fragments, makeSearchQuery(strconv.Itoa(i)))
 
 		args = append(args, []string{
 			fmt.Sprintf("$query%d: String!", i),

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -1232,7 +1233,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					},
 				}
 				for i := 1; i <= countToExceedParameterLimit; i++ {
-					u.accounts.AccountIDs[i-1] = fmt.Sprintf("%d", i)
+					u.accounts.AccountIDs[i-1] = strconv.Itoa(i)
 				}
 				return []update{u}
 			}(),
@@ -1242,7 +1243,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 					perms[extsvc.AccountSpec{
 						ServiceType: authz.SourcegraphServiceType,
 						ServiceID:   authz.SourcegraphServiceID,
-						AccountID:   fmt.Sprintf("%d", i),
+						AccountID:   strconv.Itoa(i),
 					}] = []uint32{1}
 				}
 				return perms
@@ -1254,7 +1255,7 @@ func testPermsStore_SetRepoPendingPermissions(db *sql.DB) func(*testing.T) {
 						accounts[i-1] = extsvc.AccountSpec{
 							ServiceType: authz.SourcegraphServiceType,
 							ServiceID:   authz.SourcegraphServiceID,
-							AccountID:   fmt.Sprintf("%d", i),
+							AccountID:   strconv.Itoa(i),
 						}
 					}
 					return accounts

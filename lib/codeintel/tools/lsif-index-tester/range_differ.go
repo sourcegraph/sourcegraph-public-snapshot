@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -65,7 +66,7 @@ func DrawLocations(contents string, expected, actual Location, context int) (str
 
 		text := header(expected) + "\n"
 
-		prefixWidth := len(fmt.Sprintf("%d", line+1+context))
+		prefixWidth := len(strconv.Itoa(line + 1 + context))
 
 		for offset := context; offset > 0; offset-- {
 			newLine := line - offset
