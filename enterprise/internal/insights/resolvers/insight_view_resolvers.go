@@ -27,6 +27,8 @@ var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeRes
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 var _ graphqlbackend.CreateInsightResultResolver = &createInsightResultResolver{}
+var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
+var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -72,8 +74,10 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.LineChartInsightViewPresentation, error) {
-	return &lineChartInsightViewPresentation{view: i.view}, nil
+func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
+	lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
+
+	return &insightPresentationUnionResolver{resolver: lineChartPresentation}, nil
 }
 
 func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.SearchInsightDataSeriesDefinitionResolver, error) {
@@ -236,5 +240,16 @@ type insightTimeScopeUnionResolver struct {
 // ToInsightIntervalTimeScope is used by the GraphQL library to resolver type fragments for unions
 func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbackend.InsightIntervalTimeScope, bool) {
 	res, ok := r.resolver.(*insightIntervalTimeScopeResolver)
+	return res, ok
+}
+
+// A dummy type to represent the GraphQL union InsightPresentation
+type insightPresentationUnionResolver struct {
+	resolver interface{}
+}
+
+// ToLineChartInsightViewPresentation is used by the GraphQL library to resolver type fragments for unions
+func (r *insightPresentationUnionResolver) ToLineChartInsightViewPresentation() (graphqlbackend.LineChartInsightViewPresentation, bool) {
+	res, ok := r.resolver.(*lineChartInsightViewPresentation)
 	return res, ok
 }
