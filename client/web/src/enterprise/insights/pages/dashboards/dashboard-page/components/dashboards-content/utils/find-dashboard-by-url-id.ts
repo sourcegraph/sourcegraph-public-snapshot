@@ -18,15 +18,11 @@ export function findDashboardByUrlId(
             )
         }
 
-        if (!dashboard.settingsKey) {
-            throw new Error('TODO: support GraphQL API')
-        }
-
         return (
             dashboard.id === dashboardID ||
             dashboard.title.toLowerCase() === dashboardID?.toLowerCase() ||
             (isSettingsBasedInsightsDashboard(dashboard) &&
-                dashboard.settingsKey.toLowerCase() === dashboardID?.toLowerCase())
+                dashboard.settingsKey?.toLowerCase() === dashboardID?.toLowerCase())
         )
     })
 }
