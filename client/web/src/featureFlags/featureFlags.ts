@@ -8,7 +8,7 @@ import { FetchFeatureFlagsResult } from '../graphql-operations'
 
 // A union of all feature flags we currently have.
 // If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName = 'search-notebook-onboarding' | 'test-flag'
+export type FeatureFlagName = 'search-notebook-onboarding' | 'test-flag' | 'signup-optimization'
 
 export type FlagSet = Map<FeatureFlagName, boolean>
 

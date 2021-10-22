@@ -2,6 +2,8 @@ import React from 'react'
 import { MemoryRouter, Redirect } from 'react-router'
 import renderer from 'react-test-renderer'
 
+import { EMPTY_FEATURE_FLAGS } from '../../featureFlags/featureFlags'
+
 import { SiteInitPage } from './SiteInitPage'
 
 describe('SiteInitPage', () => {
@@ -23,6 +25,7 @@ describe('SiteInitPage', () => {
                     needsSiteInit={false}
                     authenticatedUser={null}
                     context={{ authProviders: [], sourcegraphDotComMode: false }}
+                    featureFlags={EMPTY_FEATURE_FLAGS}
                 />
             </MemoryRouter>
         )
@@ -40,6 +43,7 @@ describe('SiteInitPage', () => {
                         needsSiteInit={true}
                         authenticatedUser={{ username: 'alice' }}
                         context={{ authProviders: [], sourcegraphDotComMode: false }}
+                        featureFlags={EMPTY_FEATURE_FLAGS}
                     />
                 )
                 .toJSON()
@@ -54,6 +58,7 @@ describe('SiteInitPage', () => {
                         needsSiteInit={true}
                         authenticatedUser={null}
                         context={{ authProviders: [], sourcegraphDotComMode: false }}
+                        featureFlags={EMPTY_FEATURE_FLAGS}
                     />
                 )
                 .toJSON()
