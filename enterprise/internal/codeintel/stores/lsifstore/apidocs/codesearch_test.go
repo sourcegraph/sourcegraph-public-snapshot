@@ -1,4 +1,4 @@
-package lsifstore
+package apidocs
 
 import (
 	"testing"
@@ -6,7 +6,7 @@ import (
 	"github.com/hexops/autogold"
 )
 
-func Test_lexemes(t *testing.T) {
+func TestLexemes(t *testing.T) {
 	testCases := []struct {
 		input string
 		want  autogold.Value
@@ -28,31 +28,13 @@ func Test_lexemes(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := lexemes(tc.input)
+			got := Lexemes(tc.input)
 			tc.want.Equal(t, got)
 		})
 	}
 }
 
-func Test_reverse(t *testing.T) {
-	testCases := []struct {
-		input string
-		want  autogold.Value
-	}{
-		{"", autogold.Want("empty string", "")},
-		{"h", autogold.Want("one character", "h")},
-		{"asdf", autogold.Want("ascii", "fdsa")},
-		{"as⃝df̅", autogold.Want("unicode with combining characters", "f̅ds⃝a")},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := reverse(tc.input)
-			tc.want.Equal(t, got)
-		})
-	}
-}
-
-func Test_textSearchVector(t *testing.T) {
+func TestTextSearchVector(t *testing.T) {
 	testCases := []struct {
 		input string
 		want  autogold.Value
@@ -64,7 +46,7 @@ func Test_textSearchVector(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
-			got := textSearchVector(tc.input)
+			got := TextSearchVector(tc.input)
 			tc.want.Equal(t, got)
 		})
 	}
