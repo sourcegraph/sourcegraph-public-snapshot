@@ -15,12 +15,20 @@ import {
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
     CreateInsightResult,
+    GetInsightResult,
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     TimeIntervalStepUnit,
 } from '@sourcegraph/web/src/graphql-operations'
 
-import { InsightDashboard, InsightType, isSearchBasedInsight, SearchBasedInsight } from '../types'
+import {
+    InsightDashboard,
+    Insight,
+    InsightType,
+    InsightTypePrefix,
+    isSearchBasedInsight,
+    SearchBasedInsight,
+} from '../types'
 import { isSearchBackendBasedInsight } from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
 
@@ -77,7 +85,53 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // Insights
     public getInsights = errorMockMethod('getInsights')
-    public getInsightById = errorMockMethod('getInsightById')
+
+    public getInsightById = (id: string): Observable<Insight | null> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<GetInsightResult>({
+                query: gql`
+                    query GetInsight($ids: [ID!]) {
+                        insights(ids: $ids) {
+                            nodes {
+                                id
+                                title
+                                series {
+                                    label
+                                }
+                            }
+                        }
+                    }
+                `,
+                variables: { ids: [id] },
+            })
+        ).pipe(
+            map(result => {
+                const { data } = result
+                const insightData = data.insights?.nodes[0]
+
+                if (!insightData) {
+                    return null
+                }
+
+                // TODO [VK] Support lang stats insight
+                // TODO [VK] Support different type of insight backend based and FE insight
+                return {
+                    type: InsightType.Backend,
+                    // This is our convenstion around insight id, by this id prefix
+                    // we make a difference between search and lang stats insight
+                    id: `${InsightTypePrefix.search}.${insightData.id}`,
+                    visibility: '',
+                    title: insightData.title,
+                    series: insightData.series.map(series => ({
+                        name: series.label,
+                        // TODO [VK] we don't have series query and color in gql API but we should add this
+                        query: '',
+                        stroke: '',
+                    })),
+                }
+            })
+        )
+
     public findInsightByName = errorMockMethod('findInsightByName')
     public getReachableInsights = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')

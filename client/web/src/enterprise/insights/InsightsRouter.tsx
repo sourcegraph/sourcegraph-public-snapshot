@@ -54,8 +54,7 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const api = useMemo(() => {
         // Disabled by default condition
         const isNewGqlApiEnabled =
-            !isErrorLike(settingsCascade.final) &&
-            settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
+            !isErrorLike(settingsCascade.final) && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
 
         return isNewGqlApiEnabled
             ? new CodeInsightsGqlBackend(apolloClient)
