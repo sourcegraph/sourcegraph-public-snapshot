@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/cockroachdb/errors"
@@ -12,8 +14,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
-
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 
@@ -25,12 +25,13 @@ var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionR
 var _ graphqlbackend.InsightsDashboardResolver = &insightsDashboardResolver{}
 var _ graphqlbackend.InsightViewConnectionResolver = &DashboardInsightViewConnectionResolver{}
 var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
+var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	dashboardStore store.DashboardStore
-	insightStore   *store.InsightStore
-	orgStore       *database.OrgStore
-	args           *graphqlbackend.InsightsDashboardsArgs
+	orgStore *database.OrgStore
+	args     *graphqlbackend.InsightsDashboardsArgs
+
+	baseInsightResolver
 
 	// Cache results because they are used by multiple fields
 	once       sync.Once
@@ -83,7 +84,7 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
 	for _, dashboard := range dashboards {
 		id := newRealDashboardID(int64(dashboard.ID))
-		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id, insightStore: d.insightStore})
+		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id, baseInsightResolver: d.baseInsightResolver})
 	}
 	return resolvers, nil
 }
@@ -103,7 +104,7 @@ type insightsDashboardResolver struct {
 	dashboard *types.Dashboard
 	id        *dashboardID
 
-	insightStore *store.InsightStore
+	baseInsightResolver
 }
 
 func (i *insightsDashboardResolver) Title() string {
@@ -115,13 +116,48 @@ func (i *insightsDashboardResolver) ID() graphql.ID {
 }
 
 func (i *insightsDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
-	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, insightStore: i.insightStore, dashboard: i.dashboard}
+	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, dashboard: i.dashboard, baseInsightResolver: i.baseInsightResolver}
+}
+
+func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
+	return &insightsPermissionGrantsResolver{
+		UserIdGrants: i.dashboard.UserIdGrants,
+		OrgIdGrants:  i.dashboard.OrgIdGrants,
+		GlobalGrant:  i.dashboard.GlobalGrant,
+	}
+}
+
+type insightsPermissionGrantsResolver struct {
+	UserIdGrants []int64
+	OrgIdGrants  []int64
+	GlobalGrant  bool
+}
+
+func (i *insightsPermissionGrantsResolver) Users() []graphql.ID {
+	var marshalledUserIds []graphql.ID
+	for _, userIdGrant := range i.UserIdGrants {
+		marshalledUserIds = append(marshalledUserIds, graphqlbackend.MarshalUserID(int32(userIdGrant)))
+	}
+	return marshalledUserIds
+}
+
+func (i *insightsPermissionGrantsResolver) Organizations() []graphql.ID {
+	var marshalledOrgIds []graphql.ID
+	for _, orgIdGrant := range i.OrgIdGrants {
+		marshalledOrgIds = append(marshalledOrgIds, graphqlbackend.MarshalOrgID(int32(orgIdGrant)))
+	}
+	return marshalledOrgIds
+}
+
+func (i *insightsPermissionGrantsResolver) Global() bool {
+	return i.GlobalGrant
 }
 
 type DashboardInsightViewConnectionResolver struct {
-	insightStore *store.InsightStore
-	ids          []string
-	dashboard    *types.Dashboard
+	baseInsightResolver
+
+	ids       []string
+	dashboard *types.Dashboard
 }
 
 func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
@@ -131,7 +167,7 @@ func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]g
 		return nil, err
 	}
 	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i]})
+		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
 	}
 	return resolvers, nil
 }
@@ -146,11 +182,23 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 		return nil, errors.Wrap(err, "unable to parse dashboard grants")
 	}
 
-	dashboard, err := r.dashboardStore.CreateDashboard(ctx, types.Dashboard{Title: args.Input.Title, Save: true}, dashboardGrants)
+	userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		return nil, errors.Wrap(err, "getUserPermissions")
+	}
+
+	dashboard, err := r.dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: args.Input.Title, Save: true},
+		Grants:    dashboardGrants,
+		UserID:    userIds,
+		OrgID:     orgIds})
 	if err != nil {
 		return nil, err
 	}
-	return &insightsDashboardPayloadResolver{&dashboard}, nil
+	if dashboard == nil {
+		return nil, nil
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
@@ -169,11 +217,23 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	if dashboardID.isVirtualized() {
 		return nil, errors.New("unable to update a virtualized dashboard")
 	}
-	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{ID: int(dashboardID.Arg), Title: args.Input.Title, Grants: dashboardGrants})
+	userIds, orgIds, err := r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
 	if err != nil {
 		return nil, err
 	}
-	return &insightsDashboardPayloadResolver{&dashboard}, nil
+	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{
+		ID:     int(dashboardID.Arg),
+		Title:  args.Input.Title,
+		Grants: dashboardGrants,
+		UserID: userIds,
+		OrgID:  orgIds})
+	if err != nil {
+		return nil, err
+	}
+	if dashboard == nil {
+		return nil, nil
+	}
+	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {
@@ -202,6 +262,24 @@ func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) (
 	return dashboardGrants, nil
 }
 
+func (r *Resolver) ensureDashboardPermission(ctx context.Context, dashboardId int) (userIds []int, orgIds []int, err error) {
+	userIds, orgIds, err = getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+	if err != nil {
+		errors.Wrap(err, "getUserPermissions")
+		return
+	}
+	hasPermissionToUpdate, err := r.dashboardStore.HasDashboardPermission(ctx, dashboardId, userIds, orgIds)
+	if err != nil {
+		errors.Wrap(err, "HasDashboardPermission")
+		return
+	}
+	if !hasPermissionToUpdate {
+		err = errors.New("this user does not have permission to modify this dashboard")
+		return
+	}
+	return
+}
+
 func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
 	emptyResponse := &graphqlbackend.EmptyResponse{}
 
@@ -211,6 +289,10 @@ func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbac
 	}
 	if dashboardID.isVirtualized() {
 		return emptyResponse, nil
+	}
+	_, _, err = r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return emptyResponse, err
 	}
 
 	err = r.dashboardStore.DeleteDashboard(ctx, dashboardID.Arg)
@@ -230,7 +312,10 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
-
+	userIds, orgIds, err := r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
 	exists, err := r.dashboardStore.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsViewOnDashboard")
@@ -243,11 +328,11 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 	if err != nil {
 		return nil, errors.Wrap(err, "AddInsightViewToDashboard")
 	}
-	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg), UserID: userIds, OrgID: orgIds})
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
@@ -260,20 +345,26 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
 	}
+	userIds, orgIds, err := r.ensureDashboardPermission(ctx, int(dashboardID.Arg))
+	if err != nil {
+		return nil, err
+	}
 
 	err = r.dashboardStore.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
 	if err != nil {
 		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
 	}
-	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg)})
+	dashboards, err := r.dashboardStore.GetDashboards(ctx, store.DashboardQueryArgs{ID: int(dashboardID.Arg), UserID: userIds, OrgID: orgIds})
 	if err != nil || len(dashboards) < 1 {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboards[0]}, nil
+	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
 }
 
 type insightsDashboardPayloadResolver struct {
 	dashboard *types.Dashboard
+
+	baseInsightResolver
 }
 
 func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {

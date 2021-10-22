@@ -59,6 +59,8 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	TableName:         "batch_spec_workspace_execution_jobs",
 	ColumnExpressions: store.BatchSpecWorkspaceExecutionJobColums.ToSqlf(),
 	Scan:              scanFirstBatchSpecWorkspaceExecutionJobRecord,
+	// This needs to be kept in sync with the placeInQueue fragment in the batch
+	// spec execution jobs store.
 	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.created_at, batch_spec_workspace_execution_jobs.id"),
 	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
 	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,

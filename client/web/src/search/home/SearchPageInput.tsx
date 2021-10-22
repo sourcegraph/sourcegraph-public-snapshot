@@ -82,18 +82,43 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
         setQueryState: setUserQueryState,
         stepsContainer: tourContainer.current ?? undefined,
     })
-    const onSubmit = useCallback(
-        (event?: React.FormEvent<HTMLFormElement>): void => {
-            event?.preventDefault()
-            submitSearch({
-                ...props,
-                query: props.hiddenQueryPrefix
-                    ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
-                    : userQueryState.query,
-                source: 'home',
-            })
+
+    const submitSearchOnChange = useCallback(
+        (parameters: Partial<SubmitSearchParameters> = {}) => {
+            const query = props.hiddenQueryPrefix
+                ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
+                : userQueryState.query
+
+            if (query !== '') {
+                submitSearch({
+                    source: 'home',
+                    query,
+                    history: props.history,
+                    patternType: props.patternType,
+                    caseSensitive: props.caseSensitive,
+                    activation: props.activation,
+                    selectedSearchContextSpec: props.selectedSearchContextSpec,
+                    ...parameters,
+                })
+            }
         },
-        [props, userQueryState.query]
+        [
+            props.history,
+            props.patternType,
+            props.caseSensitive,
+            props.activation,
+            props.selectedSearchContextSpec,
+            props.hiddenQueryPrefix,
+            userQueryState.query,
+        ]
+    )
+
+    const onSubmit = useCallback(
+        (event?: React.FormEvent): void => {
+            event?.preventDefault()
+            submitSearchOnChange()
+        },
+        [submitSearchOnChange]
     )
 
     return (
@@ -106,8 +131,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                     <SearchBox
                         {...props}
                         {...onboardingTourQueryInputProps}
-                        submitSearchOnSearchContextChange={false}
-                        hasGlobalQueryBehavior={true}
+                        submitSearchOnToggle={submitSearchOnChange}
                         queryState={userQueryState}
                         onChange={setUserQueryState}
                         onSubmit={onSubmit}

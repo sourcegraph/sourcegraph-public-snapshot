@@ -8,7 +8,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { SearchContextInputProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { QueryState, submitSearch } from '../helpers'
+import { QueryState, SubmitSearchProps } from '../helpers'
 
 import { LazyMonacoQueryInput } from './LazyMonacoQueryInput'
 import styles from './SearchBox.module.scss'
@@ -17,7 +17,7 @@ import { SearchContextDropdown } from './SearchContextDropdown'
 import { Toggles, TogglesProps } from './toggles/Toggles'
 
 export interface SearchBoxProps
-    extends Omit<TogglesProps, 'navbarSearchQuery'>,
+    extends Omit<TogglesProps, 'navbarSearchQuery' | 'submitSearch'>,
         ThemeProps,
         SearchContextInputProps,
         TelemetryProps,
@@ -27,12 +27,13 @@ export interface SearchBoxProps
     queryState: QueryState
     onChange: (newState: QueryState) => void
     onSubmit: () => void
+    submitSearchOnSearchContextChange?: SubmitSearchProps['submitSearch']
+    submitSearchOnToggle?: SubmitSearchProps['submitSearch']
     onFocus?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
-    submitSearchOnSearchContextChange?: boolean
 
     /** Whether globbing is enabled for filters. */
     globbing: boolean
@@ -57,7 +58,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         <SearchContextDropdown
                             {...props}
                             query={queryState.query}
-                            submitSearch={submitSearch}
+                            submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
                         />
                         <div className={styles.searchBoxSeparator} />
@@ -69,7 +70,12 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
                     />
-                    <Toggles {...props} navbarSearchQuery={queryState.query} className={styles.searchBoxToggles} />
+                    <Toggles
+                        {...props}
+                        submitSearch={props.submitSearchOnToggle}
+                        navbarSearchQuery={queryState.query}
+                        className={styles.searchBoxToggles}
+                    />
                 </div>
             </div>
             <SearchButton hideHelpButton={props.hideHelpButton} className={styles.searchBoxButton} />

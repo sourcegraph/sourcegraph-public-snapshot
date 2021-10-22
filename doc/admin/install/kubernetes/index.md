@@ -103,7 +103,7 @@ Kubernetes is a portable, extensible, open-source platform for managing containe
 Our Kubernetes support has the following requirements:
 
 - [Sourcegraph Enterprise license](configure.md#add-license-key). _You can run through these instructions without one, but you must obtain a license for instances of more than 10 users._
-- Minimum Kubernetes version: [v1.15](https://kubernetes.io/blog/2019/06/19/kubernetes-1-15-release-announcement/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.15 or later.
+- Minimum Kubernetes version: [v1.18](https://kubernetes.io/blog/2020/03/25/kubernetes-1-18-release-announcement/) and [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) v1.18 or later (check kubectl docs for backward and forward compatibility with Kubernetes versions).
 - Support for Persistent Volumes. 
 
 We also recommend familiarizing yourself with the following before proceeding with the install steps:

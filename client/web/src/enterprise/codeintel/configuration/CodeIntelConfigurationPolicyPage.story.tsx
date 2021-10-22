@@ -5,8 +5,8 @@ import React from 'react'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
+import { WebStory } from '../../../components/WebStory'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import {
     CodeIntelConfigurationPolicyPage,
@@ -110,11 +110,11 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelConfigurationPolicyPageProps> = args => (
-    <EnterpriseWebStory mocks={[policyRequest, branchRequest, branchRequest, tagRequest, tagRequest, commitRequest]}>
+    <WebStory mocks={[policyRequest, branchRequest, branchRequest, tagRequest, tagRequest, commitRequest]}>
         {props => (
             <CodeIntelConfigurationPolicyPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 )
 
 const defaults: Partial<CodeIntelConfigurationPolicyPageProps> = {}

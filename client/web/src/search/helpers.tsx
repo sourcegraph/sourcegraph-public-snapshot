@@ -33,6 +33,10 @@ export interface SubmitSearchParameters
     searchParameters?: { key: string; value: string }[]
 }
 
+export interface SubmitSearchProps {
+    submitSearch: (parameters: Partial<Omit<SubmitSearchParameters, 'query'>>) => void
+}
+
 const SUBMITTED_SEARCHES_COUNT_KEY = 'submitted-searches-count'
 
 export function getSubmittedSearchesCount(): number {

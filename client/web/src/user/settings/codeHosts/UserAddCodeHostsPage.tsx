@@ -13,7 +13,7 @@ import { queryExternalServices } from '../../../components/externalServices/back
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
 import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { SourcegraphContext } from '../../../jscontext'
+import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
@@ -21,7 +21,6 @@ import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud
 
 import { CodeHostItem } from './CodeHostItem'
 
-type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps
