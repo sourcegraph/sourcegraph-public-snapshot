@@ -688,10 +688,10 @@ type InsightView implements Node {
 #"""
 #union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
 
-#"""
-#Defines a scope of time for which the insight data is generated.
-#"""
-#union InsightTimeScope = InsightIntervalTimeScope
+"""
+Defines a scope of time for which the insight data is generated.
+"""
+union InsightTimeScope = InsightIntervalTimeScope
 
 """
 A custom repository scope for an insight. A scope with all empty fields implies a global scope.
@@ -737,7 +737,7 @@ type SearchInsightDataSeriesDefinition {
     """
     The scope of time for which the insight data is generated.
     """
-    timeScope: InsightIntervalTimeScope!
+    timeScope: InsightTimeScope!
 }
 
 """

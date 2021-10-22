@@ -163,7 +163,11 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
-	TimeScope(ctx context.Context) (InsightIntervalTimeScope, error)
+	TimeScope(ctx context.Context) (InsightTimeScope, error)
+}
+
+type InsightTimeScope interface {
+	ToInsightIntervalTimeScope() (InsightIntervalTimeScope, bool)
 }
 
 type InsightIntervalTimeScope interface {

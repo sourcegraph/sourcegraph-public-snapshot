@@ -100,11 +100,13 @@ func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.
 	return &insightRepositoryScopeResolver{repositories: s.series.Repositories}, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightIntervalTimeScope, error) {
-	return &insightIntervalTimeScopeResolver{
+func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
+	intervalResolver := &insightIntervalTimeScopeResolver{
 		unit:  s.series.SampleIntervalUnit,
 		value: int32(s.series.SampleIntervalValue),
-	}, nil
+	}
+
+	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
@@ -224,4 +226,15 @@ func emptyIfNil(in *string) string {
 		return ""
 	}
 	return *in
+}
+
+// A dummy type to represent the GraphQL union InsightTimeScope
+type insightTimeScopeUnionResolver struct {
+	resolver interface{}
+}
+
+// ToInsightIntervalTimeScope is used by the GraphQL library to resolver type fragments for unions
+func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbackend.InsightIntervalTimeScope, bool) {
+	res, ok := r.resolver.(*insightIntervalTimeScopeResolver)
+	return res, ok
 }
