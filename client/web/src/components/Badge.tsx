@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import styles from './Badge.module.scss'
@@ -25,7 +25,7 @@ export const Badge: React.FunctionComponent<BadgeProps> = props => {
     return (
         <span
             data-tooltip={tooltip}
-            className={classnames(
+            className={classNames(
                 'badge',
                 styles.badgeCapitalized,
                 'd-inline-flex',

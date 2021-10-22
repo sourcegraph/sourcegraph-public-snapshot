@@ -1,6 +1,6 @@
 import Dialog from '@reach/dialog'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
 
@@ -67,7 +67,7 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
 
     return (
         <Dialog className={styles.modal} onDismiss={onClose} aria-label="Add insights to dashboard modal">
-            <button type="button" className={classnames('btn btn-icon', styles.closeButton)} onClick={onClose}>
+            <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
             </button>

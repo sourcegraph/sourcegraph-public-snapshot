@@ -46,9 +46,7 @@ Below are instructions to install these dependencies:
 
 4. Choose to run Postgres and Redis manually (Option a.) or via Docker (Option b.)
 
-    a. (without docker) Install PostgreSQL and Redis
-
-    a. **Without Docker**
+    a. **Install PostgreSQL and Redis Without Docker**
 
       1. Install PostgreSQL and Redis with the following commands:
 

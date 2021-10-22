@@ -28,6 +28,14 @@
 `sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 Learn more about the tool's overall vision in [`sg` Vision](./vision.md).
 
+## QUICKEST Quickstart
+
+Copy & paste & run:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf 'https://raw.githubusercontent.com/sourcegraph/sourcegraph/sg/install-binary-script/dev/sg/bootstrap.sh' | sh
+```
+
 ## Quickstart
 
 1. Install the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies).

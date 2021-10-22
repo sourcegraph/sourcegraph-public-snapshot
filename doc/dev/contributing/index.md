@@ -7,3 +7,7 @@
 
 - For [frontend issues](frontend_contribution.md).
 - For [backend issues](../getting-started/index.md).
+
+## For Sourcegraph team
+
+- Accepting an external contribution [guide](./accepting_contribution.md).

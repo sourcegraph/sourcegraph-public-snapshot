@@ -1142,7 +1142,7 @@ describe('Blob viewer', () => {
 
                 // Alert should not be visible before the user reaches the hover threshold
                 assert(
-                    !(await driver.page.$('.install-browser-extension-alert')),
+                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
                     'Expected "Install browser extension" alert to not be displayed before user reaches hover threshold'
                 )
 
@@ -1155,7 +1155,7 @@ describe('Blob viewer', () => {
                 await driver.page.reload()
 
                 // Alert should be visible now that the user has seen $HOVER_THRESHOLD hovers
-                await driver.page.waitForSelector('.install-browser-extension-alert', { timeout: 5000 })
+                await driver.page.waitForSelector('[data-testid="install-browser-extension-alert"]', { timeout: 5000 })
 
                 // Dismiss alert
                 await driver.page.click('.test-close-alert')

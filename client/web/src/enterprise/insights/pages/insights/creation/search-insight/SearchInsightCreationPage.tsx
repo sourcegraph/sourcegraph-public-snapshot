@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useCallback, useEffect } from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -106,7 +106,7 @@ export const SearchInsightCreationPage: React.FunctionComponent<SearchInsightCre
     }, [telemetryService, setLocalStorageFormValues, onCancel])
 
     return (
-        <Page className={classnames('col-10', styles.creationPage)}>
+        <Page className={classNames('col-10', styles.creationPage)}>
             <PageTitle title="Create new code insight" />
 
             {loading && (

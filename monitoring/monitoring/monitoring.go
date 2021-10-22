@@ -543,8 +543,8 @@ func (o Observable) validate() error {
 	if len(o.Description) == 0 {
 		return errors.New("Description must be set")
 	}
-	if v := string([]rune(o.Description)[0]); v != strings.ToLower(v) {
-		return errors.Errorf("Description must be lowercase; found \"%s\"", o.Description)
+	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
+		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
 	}
 	if o.Owner == "" && !o.NoAlert {
 		return errors.New("Owner must be defined for observables with alerts")

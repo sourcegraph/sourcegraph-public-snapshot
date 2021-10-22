@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useRef } from 'react'
 
@@ -43,7 +43,7 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
             <button
                 ref={targetButtonReference}
                 type="button"
-                className={classnames('btn btn-icon p-1', styles.filterButton, {
+                className={classNames('btn btn-icon p-1', styles.filterButton, {
                     [styles.filterButtonWithOpenPanel]: isOpen,
                     [styles.filterButtonActive]: isFiltered,
                 })}
