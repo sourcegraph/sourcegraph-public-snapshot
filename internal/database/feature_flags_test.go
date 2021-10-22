@@ -617,9 +617,10 @@ func testOrgFeatureFlag(t *testing.T) {
 		mkFFBool("f1", true)
 		mkFFBool("f2", false)
 
-		got1, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
-		got2, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f2")
-		require.NoError(t, err)
+		got1, err1 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
+		got2, err2 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f2")
+		require.NoError(t, err1)
+		require.NoError(t, err2)
 		expected1 := true
 		expected2 := false
 		require.Equal(t, expected1, got1)
