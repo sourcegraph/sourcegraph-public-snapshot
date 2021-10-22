@@ -144,8 +144,12 @@ type InsightViewResolver interface {
 	DefaultFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	AppliedFilters(ctx context.Context) (InsightViewFiltersResolver, error)
 	DataSeries(ctx context.Context) ([]InsightSeriesResolver, error)
-	Presentation(ctx context.Context) (LineChartInsightViewPresentation, error)
-	DataSeriesDefinitions(ctx context.Context) ([]SearchInsightDataSeriesDefinitionResolver, error)
+	Presentation(ctx context.Context) (InsightPresentation, error)
+	DataSeriesDefinitions(ctx context.Context) ([]InsightDataSeriesDefinition, error)
+}
+
+type InsightDataSeriesDefinition interface {
+	ToSearchInsightDataSeriesDefinition() (SearchInsightDataSeriesDefinitionResolver, bool)
 }
 
 type LineChartInsightViewPresentation interface {
@@ -163,7 +167,15 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	SeriesId(ctx context.Context) (string, error)
 	Query(ctx context.Context) (string, error)
 	RepositoryScope(ctx context.Context) (InsightRepositoryScopeResolver, error)
-	TimeScope(ctx context.Context) (InsightIntervalTimeScope, error)
+	TimeScope(ctx context.Context) (InsightTimeScope, error)
+}
+
+type InsightPresentation interface {
+	ToLineChartInsightViewPresentation() (LineChartInsightViewPresentation, bool)
+}
+
+type InsightTimeScope interface {
+	ToInsightIntervalTimeScope() (InsightIntervalTimeScope, bool)
 }
 
 type InsightIntervalTimeScope interface {

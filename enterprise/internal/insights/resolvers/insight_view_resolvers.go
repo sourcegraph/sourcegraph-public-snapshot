@@ -27,6 +27,9 @@ var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeRes
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
 var _ graphqlbackend.CreateInsightResultResolver = &createInsightResultResolver{}
+var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
+var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
+var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -72,14 +75,16 @@ func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.LineChartInsightViewPresentation, error) {
-	return &lineChartInsightViewPresentation{view: i.view}, nil
+func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
+	lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
+
+	return &insightPresentationUnionResolver{resolver: lineChartPresentation}, nil
 }
 
-func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.SearchInsightDataSeriesDefinitionResolver, error) {
-	var resolvers []graphqlbackend.SearchInsightDataSeriesDefinitionResolver
+func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.InsightDataSeriesDefinition, error) {
+	var resolvers []graphqlbackend.InsightDataSeriesDefinition
 	for j := range i.view.Series {
-		resolvers = append(resolvers, &searchInsightDataSeriesDefinitionResolver{series: &i.view.Series[j]})
+		resolvers = append(resolvers, &insightDataSeriesDefinitionUnionResolver{resolver: &searchInsightDataSeriesDefinitionResolver{series: &i.view.Series[j]}})
 	}
 	return resolvers, nil
 }
@@ -100,11 +105,13 @@ func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.
 	return &insightRepositoryScopeResolver{repositories: s.series.Repositories}, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightIntervalTimeScope, error) {
-	return &insightIntervalTimeScopeResolver{
+func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
+	intervalResolver := &insightIntervalTimeScopeResolver{
 		unit:  s.series.SampleIntervalUnit,
 		value: int32(s.series.SampleIntervalValue),
-	}, nil
+	}
+
+	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
@@ -224,4 +231,37 @@ func emptyIfNil(in *string) string {
 		return ""
 	}
 	return *in
+}
+
+// A dummy type to represent the GraphQL union InsightTimeScope
+type insightTimeScopeUnionResolver struct {
+	resolver interface{}
+}
+
+// ToInsightIntervalTimeScope is used by the GraphQL library to resolve type fragments for unions
+func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbackend.InsightIntervalTimeScope, bool) {
+	res, ok := r.resolver.(*insightIntervalTimeScopeResolver)
+	return res, ok
+}
+
+// A dummy type to represent the GraphQL union InsightPresentation
+type insightPresentationUnionResolver struct {
+	resolver interface{}
+}
+
+// ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
+func (r *insightPresentationUnionResolver) ToLineChartInsightViewPresentation() (graphqlbackend.LineChartInsightViewPresentation, bool) {
+	res, ok := r.resolver.(*lineChartInsightViewPresentation)
+	return res, ok
+}
+
+// A dummy type to represent the GraphQL union InsightDataSeriesDefinition
+type insightDataSeriesDefinitionUnionResolver struct {
+	resolver interface{}
+}
+
+// ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolve type fragments for unions
+func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefinition() (graphqlbackend.SearchInsightDataSeriesDefinitionResolver, bool) {
+	res, ok := r.resolver.(*searchInsightDataSeriesDefinitionResolver)
+	return res, ok
 }
