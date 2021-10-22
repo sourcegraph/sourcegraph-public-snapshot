@@ -10,3 +10,6 @@
 ## Buildkite
 
 To request a Buildkite build for a pull request from a fork, check out the branch and use `sg ci build` after reviewing the code.
+
+It is possible to check out the branch without having to re-clone the forked repo by running `git fetch git@github.com:theirusername/sourcegraph theirbranch:theirbranch`
+Make sure that the created branch name exactly matches their branch name, otherwise Buildkite will not match the created build to their branch.
