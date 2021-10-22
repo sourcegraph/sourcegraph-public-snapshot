@@ -13,7 +13,10 @@ const statusStyleMapping: Record<BadgeStatus, string> = {
     new: 'badge-info',
 }
 
-const statusLinkMapping: Partial<Record<BadgeStatus, string>> = {
+type Extends<T, U extends T> = U
+type BadgeStatusLinked = Extends<BadgeStatus, 'beta' | 'experimental'>
+
+const statusLinkMapping: Record<BadgeStatusLinked, string> = {
     experimental: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#experimental-features',
     beta: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#beta-features',
 }
@@ -40,9 +43,9 @@ export const Badge: React.FunctionComponent<BadgeProps> = props => {
         ),
     }
 
-    if (useLink && statusLinkMapping[status]) {
+    if (useLink && statusLinkMapping[status as BadgeStatusLinked]) {
         return (
-            <a href={statusLinkMapping[status]} rel="noopener" target="_blank" {...commonProps}>
+            <a href={statusLinkMapping[status as BadgeStatusLinked]} rel="noopener" target="_blank" {...commonProps}>
                 {status}
             </a>
         )
