@@ -94,6 +94,8 @@ func (e failedRun) Error() string {
 type installErr struct {
 	cmdName string
 	output  string
+
+	originalErr error
 }
 
 func (e installErr) Error() string {
@@ -130,6 +132,9 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	switch e := errors.Cause(err).(type) {
 	case installErr:
 		message = "Failed to build " + cmdName
+		if e.originalErr != nil {
+			message += ": " + e.originalErr.Error()
+		}
 		cmdOut = e.output
 	case reinstallErr:
 		message = "Failed to rebuild " + cmdName
@@ -205,7 +210,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			cmdOut, err := BashInRoot(ctx, cmd.Install, makeEnv(globalEnv, cmd.Env))
 			if err != nil {
 				if !startedOnce {
-					return installErr{cmdName: cmd.Name, output: cmdOut}
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				} else {
 					printCmdError(stdout.Out, cmd.Name, reinstallErr{cmdName: cmd.Name, output: cmdOut})
 					// Now we wait for a reload signal before we start to build it again
@@ -225,7 +230,7 @@ func runWatch(ctx context.Context, cmd Command, root string, globalEnv map[strin
 			if cmd.CheckBinary != "" {
 				newHash, err := md5HashFile(filepath.Join(root, cmd.CheckBinary))
 				if err != nil {
-					return installErr{cmdName: cmd.Name, output: cmdOut}
+					return installErr{cmdName: cmd.Name, output: cmdOut, originalErr: err}
 				}
 
 				md5changed = md5hash != newHash
