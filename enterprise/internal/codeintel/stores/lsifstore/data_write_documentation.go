@@ -603,14 +603,6 @@ func (s *Store) replaceSearchRecords(
 		upload.Root,         // dump_root
 		languageNameID,      // lang_name_id
 		upload.ID,           // dump_id
-		now,                 // last_cleanup_scan_at
-
-		// For current marker update
-		upload.ID,           // dump_id
-		now,                 // last_cleanup_scan_at
-		upload.RepositoryID, // repo_id
-		upload.Root,         // dump_root
-		languageNameID,      // lang_name_id
 	)); err != nil {
 		return errors.Wrap(err, "committing staged search records")
 	}
@@ -669,29 +661,14 @@ insert_data AS (
 		source.label_tsv,
 		source.label_reverse_tsv
 	FROM t_lsif_data_docs_search_$SUFFIX source
-),
-insert_current AS (
-	INSERT INTO lsif_data_docs_search_current_$SUFFIX (
-		repo_id,
-		dump_root,
-		lang_name_id,
-		dump_id,
-		last_cleanup_scan_at
-	)
-	VALUES (%s, %s, %s, %s, %s)
-	ON CONFLICT DO NOTHING
-),
-update_current AS (
-	UPDATE lsif_data_docs_search_current_$SUFFIX
-	SET
-		dump_id = %s,
-		last_cleanup_scan_at = %s
-	WHERE
-		repo_id = %s AND
-		dump_root = %s AND
-		lang_name_id = %s
 )
-SELECT 1
+INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+	repo_id,
+	dump_root,
+	lang_name_id,
+	dump_id
+)
+VALUES (%s, %s, %s, %s)
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
