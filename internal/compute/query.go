@@ -157,7 +157,7 @@ func toCommand(pattern *query.Pattern) (Command, error) {
 	if err != nil {
 		return nil, err
 	}
-	return MatchOnly{MatchPattern: rp}, nil
+	return &MatchOnly{MatchPattern: rp}, nil
 }
 
 func toComputeQuery(plan query.Plan) (*Query, error) {
