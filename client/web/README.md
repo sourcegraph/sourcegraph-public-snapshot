@@ -27,6 +27,20 @@ For open-source version:
 sg start oss-web-standalone
 ```
 
+#### Public API
+
+To use a public API that doesn't require authentication for most of the functionality:
+
+```sh
+SOURCEGRAPH_API_URL=https://sourcegraph.com sg start web-standalone
+```
+
+For open-source version:
+
+```sh
+SOURCEGRAPH_API_URL=https://sourcegraph.com sg start oss-web-standalone
+```
+
 ### Production server
 
 ```sh
