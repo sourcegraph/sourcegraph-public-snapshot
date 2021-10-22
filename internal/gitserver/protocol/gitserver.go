@@ -7,8 +7,8 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 type SearchRequest struct {
@@ -42,7 +42,7 @@ type SearchEventDone struct {
 
 func (s SearchEventDone) Err() error {
 	if s.Error != "" {
-		var e vcs.RepoNotExistError
+		var e gitdomain.RepoNotExistError
 		if err := json.Unmarshal([]byte(s.Error), &e); err != nil {
 			return &e
 		}
@@ -55,7 +55,7 @@ func NewSearchEventDone(limitHit bool, err error) SearchEventDone {
 	event := SearchEventDone{
 		LimitHit: limitHit,
 	}
-	var notExistError *vcs.RepoNotExistError
+	var notExistError *gitdomain.RepoNotExistError
 	if errors.As(err, &notExistError) {
 		b, _ := json.Marshal(notExistError)
 		event.Error = string(b)
@@ -331,4 +331,13 @@ type CreateCommitFromPatchError struct {
 // Error returns a detailed error conforming to the error interface
 func (e *CreateCommitFromPatchError) Error() string {
 	return e.InternalError
+}
+
+type GetObjectRequest struct {
+	Repo       api.RepoName
+	ObjectName string
+}
+
+type GetObjectResponse struct {
+	Object gitdomain.GitObject
 }

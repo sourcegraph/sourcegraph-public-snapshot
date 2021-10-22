@@ -59,7 +59,7 @@ func (s *Store) CreateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 	if err != nil {
 		return err
 	}
-	return s.query(ctx, q, func(sc scanner) error { return scanBatchSpec(c, sc) })
+	return s.query(ctx, q, func(sc dbutil.Scanner) error { return scanBatchSpec(c, sc) })
 }
 
 var createBatchSpecQueryFmtstr = `
@@ -118,7 +118,7 @@ func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err e
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) error {
+	return s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanBatchSpec(c, sc)
 	})
 }
@@ -240,7 +240,7 @@ func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *
 	q := getBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
@@ -301,7 +301,7 @@ func (s *Store) GetNewestBatchSpec(ctx context.Context, opts GetNewestBatchSpecO
 	q := getNewestBatchSpecQuery(&opts)
 
 	var c btypes.BatchSpec
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpec(&c, sc)
 	})
 	if err != nil {
@@ -366,7 +366,7 @@ func (s *Store) ListBatchSpecs(ctx context.Context, opts ListBatchSpecsOpts) (cs
 	q := listBatchSpecsQuery(&opts)
 
 	cs = make([]*btypes.BatchSpec, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpec
 		if err := scanBatchSpec(&c, sc); err != nil {
 			return err
@@ -432,7 +432,7 @@ func (s *Store) DeleteExpiredBatchSpecs(ctx context.Context) (err error) {
 func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[int64]btypes.BatchSpecStats, err error) {
 	stats = make(map[int64]btypes.BatchSpecStats)
 	q := getBatchSpecStatsQuery(ids)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var (
 			s  btypes.BatchSpecStats
 			id int64
@@ -440,6 +440,8 @@ func (s *Store) GetBatchSpecStats(ctx context.Context, ids []int64) (stats map[i
 		if err := sc.Scan(
 			&id,
 			&s.Workspaces,
+			&dbutil.NullTime{Time: &s.StartedAt},
+			&dbutil.NullTime{Time: &s.FinishedAt},
 			&s.Executions,
 			&s.Completed,
 			&s.Processing,
@@ -472,6 +474,8 @@ const getBatchSpecStatsFmtstr = `
 SELECT
 	batch_specs.id AS batch_spec_id,
 	COUNT(ws.id) AS workspaces,
+	MIN(jobs.started_at) AS started_at,
+	MAX(jobs.finished_at) AS finished_at,
 	COUNT(jobs.id) AS executions,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
@@ -501,7 +505,7 @@ AND NOT EXISTS (
 )
 `
 
-func scanBatchSpec(c *btypes.BatchSpec, s scanner) error {
+func scanBatchSpec(c *btypes.BatchSpec, s dbutil.Scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(

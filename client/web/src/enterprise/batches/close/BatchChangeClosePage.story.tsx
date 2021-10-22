@@ -5,6 +5,7 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -12,7 +13,6 @@ import {
     ChangesetState,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -224,7 +224,7 @@ add('Overview', () => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -237,7 +237,7 @@ add('Overview', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
@@ -257,7 +257,7 @@ add('No open changesets', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -270,6 +270,6 @@ add('No open changesets', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

@@ -40,6 +40,11 @@ const (
 
 func computeRunType(tag, branch string) RunType {
 	switch {
+	case branch == "bext/release":
+		return BextReleaseBranch
+	case os.Getenv("BEXT_NIGHTLY") == "true":
+		return BextNightly
+
 	case branch == "main":
 		return MainBranch
 	case strings.HasPrefix(branch, "main-dry-run/"):
@@ -49,11 +54,6 @@ func computeRunType(tag, branch string) RunType {
 		return TaggedRelease
 	case lazyregexp.New(`^[0-9]+\.[0-9]+$`).MatchString(branch):
 		return ReleaseBranch
-
-	case branch == "bext/release":
-		return BextReleaseBranch
-	case os.Getenv("BEXT_NIGHTLY") == "true":
-		return BextNightly
 
 	case strings.HasPrefix(branch, "docker-images-patch/"):
 		return ImagePatch

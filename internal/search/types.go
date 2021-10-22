@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
@@ -289,22 +290,21 @@ func (p *TextPatternInfo) String() string {
 }
 
 type RepoOptions struct {
-	RepoFilters        []string
-	MinusRepoFilters   []string
-	RepoGroupFilters   []string
-	SearchContextSpec  string
-	VersionContextName string
-	UserSettings       *schema.Settings
-	NoForks            bool
-	OnlyForks          bool
-	NoArchived         bool
-	OnlyArchived       bool
-	CommitAfter        string
-	Visibility         query.RepoVisibility
-	Ranked             bool // Return results ordered by rank
-	Limit              int
-	CacheLookup        bool
-	Query              query.Q
+	RepoFilters       []string
+	MinusRepoFilters  []string
+	RepoGroupFilters  []string
+	SearchContextSpec string
+	UserSettings      *schema.Settings
+	NoForks           bool
+	OnlyForks         bool
+	NoArchived        bool
+	OnlyArchived      bool
+	CommitAfter       string
+	Visibility        query.RepoVisibility
+	Ranked            bool // Return results ordered by rank
+	Limit             int
+	CacheLookup       bool
+	Query             query.Q
 }
 
 func (op *RepoOptions) String() string {
@@ -324,9 +324,6 @@ func (op *RepoOptions) String() string {
 	}
 	if len(op.RepoGroupFilters) > 0 {
 		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
-	}
-	if op.VersionContextName != "" {
-		_, _ = fmt.Fprintf(&b, " versionContext=%q", op.VersionContextName)
 	}
 	if op.CommitAfter != "" {
 		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)

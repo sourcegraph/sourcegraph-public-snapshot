@@ -221,7 +221,7 @@ func migrateDashboard(ctx context.Context, dashboardStore *store.DBDashboardStor
 	} else {
 		grants = []store.DashboardGrant{store.GlobalDashboardGrant()}
 	}
-	_, err = dashboardStore.CreateDashboard(ctx, dashboard, grants)
+	_, err = dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{Dashboard: dashboard, Grants: grants})
 	if err != nil {
 		return err
 	}

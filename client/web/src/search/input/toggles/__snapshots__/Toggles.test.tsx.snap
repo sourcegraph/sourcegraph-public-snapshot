@@ -22,7 +22,6 @@ Array [
         },
       ]
     }
-    history="[History]"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -31,7 +30,6 @@ Array [
       }
     }
     isActive={false}
-    location="[Location path=/]"
     navbarSearchQuery="(case:yes foo) or (case:no bar)"
     onToggle={[Function]}
     patternType="literal"
@@ -44,7 +42,6 @@ Array [
         "subjects": null,
       }
     }
-    showSearchContext={false}
     title="Case sensitivity"
   >
     <div
@@ -101,7 +98,6 @@ Array [
         },
       ]
     }
-    history="[History]"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -110,7 +106,6 @@ Array [
       }
     }
     isActive={false}
-    location="[Location path=/]"
     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
     onToggle={[Function]}
     patternType="literal"
@@ -123,7 +118,6 @@ Array [
         "subjects": null,
       }
     }
-    showSearchContext={false}
     title="Case sensitivity"
   >
     <div
@@ -172,7 +166,6 @@ Array [
         },
       ]
     }
-    history="[History]"
     icon={
       Object {
         "$$typeof": Symbol(react.memo),
@@ -181,7 +174,6 @@ Array [
       }
     }
     isActive={false}
-    location="[Location path=/]"
     navbarSearchQuery="(foo patterntype:literal) or (bar patterntype:structural)"
     onToggle={[Function]}
     patternType="literal"
@@ -194,7 +186,6 @@ Array [
         "subjects": null,
       }
     }
-    showSearchContext={false}
     title="Regular expression"
   >
     <div

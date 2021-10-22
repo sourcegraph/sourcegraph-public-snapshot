@@ -1,5 +1,4 @@
 import { storiesOf } from '@storybook/react'
-import { createMemoryHistory } from 'history'
 import React from 'react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -18,11 +17,8 @@ const { add } = storiesOf('web/search/input/SearchBox', module)
     .addParameters({ chromatic: { viewports: [575, 700] } })
     .addDecorator(story => <div className="w-100 d-flex">{story()}</div>)
 
-const history = createMemoryHistory()
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    location: history.location,
-    history,
     settingsCascade: {
         final: null,
         subjects: null,

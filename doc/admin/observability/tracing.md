@@ -83,3 +83,9 @@ alternative when Jaeger is not available or as a supplement to Jaeger.
 
 Site admins can access `net/trace` information at https://sourcegraph.example.com/-/debug/. From
 there, click **Requests** to view the traces for that service.
+
+## Use an external Jaeger instance
+See the following docs on how to connect Sourcegraph to an external Jaeger instance:
+  1. [For Kubernetes Deployments](../install/kubernetes/configure.md)
+  2. For Docker-Compose Deployments - Currently not available
+  

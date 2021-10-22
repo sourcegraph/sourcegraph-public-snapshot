@@ -6,13 +6,13 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
-import { useLocalStorage } from '@sourcegraph/shared/src/util/useLocalStorage'
 import { BrandLogo } from '@sourcegraph/web/src/components/branding/BrandLogo'
 import { HeroPage } from '@sourcegraph/web/src/components/HeroPage'
 
 import { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { useTemporarySetting } from '../settings/temporary/useTemporarySetting'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
@@ -51,8 +51,6 @@ export type FinishWelcomeFlow = (event: React.MouseEvent<HTMLElement>, payload: 
 
 export const getPostSignUpEvent = (action?: string): string => `PostSignUp${action ? '_' + action : ''}`
 
-const USER_FINISHED_WELCOME_FLOW = 'finished-welcome-flow'
-
 export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     authenticatedUser: user,
     context,
@@ -60,7 +58,11 @@ export const PostSignUpPage: FunctionComponent<PostSignUpPage> = ({
     onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
-    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useLocalStorage(USER_FINISHED_WELCOME_FLOW, false)
+    const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
+        'signup.finishedWelcomeFlow',
+        false
+    )
+
     const isOAuthCall = useRef(false)
     const location = useLocation()
     const history = useHistory()

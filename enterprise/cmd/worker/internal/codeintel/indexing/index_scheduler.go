@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -140,7 +140,7 @@ func (s *IndexScheduler) handleRepository(
 
 		// Attempt to queue an index if one does not exist for each of the matching commits
 		if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
-			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 				continue
 			}
 

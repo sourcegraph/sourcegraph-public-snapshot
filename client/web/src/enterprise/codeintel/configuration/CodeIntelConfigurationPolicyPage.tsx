@@ -74,6 +74,10 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )
     }, [policy, repo, savePolicyConfiguration, history])
 
+    if (loadingPolicyConfig) {
+        return <LoadingSpinner className="icon-inline" />
+    }
+
     if (policyConfigError || policy === undefined) {
         return <ErrorAlert prefix="Error fetching configuration policy" error={policyConfigError} />
     }
@@ -93,57 +97,52 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 }.`}
                 className="mb-3"
             />
-            {loadingPolicyConfig ? (
-                <LoadingSpinner className="icon-inline" />
-            ) : (
-                <>
-                    {policy.protected && (
-                        <div className="alert alert-info">
-                            This configuration policy is protected. Protected configuration policies may not be deleted
-                            and only the retention duration and indexing options are editable.
-                        </div>
-                    )}
 
-                    <Container className="container form">
-                        {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
-                        <BranchTargetSettings
-                            repoId={repo?.id}
-                            policy={policy}
-                            setPolicy={setPolicy}
-                            disabled={policy.protected}
-                        />
-
-                        <RetentionSettings policy={policy} setPolicy={setPolicy} />
-
-                        {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
-
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            onClick={savePolicyConfig}
-                            disabled={isSaving || !validatePolicy(policy) || comparePolicies(policy, saved)}
-                        >
-                            {policy.id === '' ? 'Create' : 'Update'} policy
-                        </Button>
-
-                        <Button
-                            type="button"
-                            className="ml-3"
-                            variant="secondary"
-                            onClick={() => history.push('./')}
-                            disabled={isSaving}
-                        >
-                            Cancel
-                        </Button>
-
-                        {isSaving && (
-                            <span className="ml-2">
-                                <LoadingSpinner className="icon-inline" /> Saving...
-                            </span>
-                        )}
-                    </Container>
-                </>
+            {policy.protected && (
+                <div className="alert alert-info">
+                    This configuration policy is protected. Protected configuration policies may not be deleted and only
+                    the retention duration and indexing options are editable.
+                </div>
             )}
+
+            <Container className="container form mb-3">
+                {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
+                <BranchTargetSettings
+                    repoId={repo?.id}
+                    policy={policy}
+                    setPolicy={setPolicy}
+                    disabled={policy.protected}
+                />
+
+                <RetentionSettings policy={policy} setPolicy={setPolicy} />
+
+                {indexingEnabled && <IndexingSettings policy={policy} setPolicy={setPolicy} />}
+            </Container>
+            <div className="mb-3">
+                <Button
+                    type="submit"
+                    variant="primary"
+                    onClick={savePolicyConfig}
+                    disabled={isSaving || !validatePolicy(policy) || comparePolicies(policy, saved)}
+                >
+                    {!isSaving && <>{policy.id === '' ? 'Create' : 'Update'} policy</>}
+                    {isSaving && (
+                        <>
+                            <LoadingSpinner className="icon-inline" /> Saving...
+                        </>
+                    )}
+                </Button>
+
+                <Button
+                    type="button"
+                    className="ml-2"
+                    variant="secondary"
+                    onClick={() => history.push('./')}
+                    disabled={isSaving}
+                >
+                    Cancel
+                </Button>
+            </div>
         </>
     )
 }

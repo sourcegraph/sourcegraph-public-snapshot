@@ -19,7 +19,7 @@ import {
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
-import { submitSearch } from '../helpers'
+import { SubmitSearchParameters } from '../helpers'
 import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 import { SearchBox } from './SearchBox'
@@ -51,14 +51,36 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
-    const { queryState, setQueryState } = useNavbarQueryState()
+    const { queryState, setQueryState, submitSearch } = useNavbarQueryState()
+
+    const submitSearchOnChange = useCallback(
+        (parameters: Partial<SubmitSearchParameters> = {}) => {
+            submitSearch({
+                history: props.history,
+                patternType: props.patternType,
+                caseSensitive: props.caseSensitive,
+                source: 'nav',
+                activation: props.activation,
+                selectedSearchContextSpec: props.selectedSearchContextSpec,
+                ...parameters,
+            })
+        },
+        [
+            submitSearch,
+            props.history,
+            props.patternType,
+            props.caseSensitive,
+            props.activation,
+            props.selectedSearchContextSpec,
+        ]
+    )
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            submitSearch({ ...props, query: queryState.query, source: 'nav' })
+            submitSearchOnChange()
         },
-        [props, queryState]
+        [submitSearchOnChange]
     )
 
     useEffect(() => {
@@ -78,10 +100,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
-                hasGlobalQueryBehavior={true}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
+                submitSearchOnToggle={submitSearchOnChange}
+                submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}

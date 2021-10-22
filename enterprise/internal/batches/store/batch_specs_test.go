@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -376,6 +375,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 func TestStoreGetBatchSpecStats(t *testing.T) {
 	ctx := context.Background()
 	c := &ct.TestClock{Time: timeutil.Now()}
+	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
 	db := dbtest.NewDB(t, "")
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
@@ -386,32 +386,42 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 	var specIDs []int64
 	for _, setup := range []struct {
-		jobs                []string
+		jobs                []*btypes.BatchSpecWorkspaceExecutionJob
 		additionalWorkspace int
 	}{
 		{
-			jobs: []string{
-				"processing",
-				"completed",
-				"canceled",
-				"canceling",
-				"queued",
-				"failed",
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(99)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
 			additionalWorkspace: 1,
 		},
 		{
-			jobs: []string{
-				"processing",
-				"processing",
-				"completed",
-				"canceled",
-				"canceling",
-				"canceling",
-				"queued",
-				"failed",
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(55)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
 			},
 			additionalWorkspace: 3,
+		},
+		{
+			jobs:                []*btypes.BatchSpecWorkspaceExecutionJob{},
+			additionalWorkspace: 0,
+		},
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+			},
+			additionalWorkspace: 0,
 		},
 	} {
 		spec := &btypes.BatchSpec{
@@ -438,45 +448,22 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 		}
 
 		// Workspaces with execution jobs
-		for _, jobState := range setup.jobs {
+		for _, job := range setup.jobs {
 			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 				t.Fatal(err)
 			}
 
-			job := &btypes.BatchSpecWorkspaceExecutionJob{
-				BatchSpecWorkspaceID: ws.ID,
-			}
-			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+			// We use a clone so that CreateBatchSpecWorkspaceExecutionJob doesn't overwrite the fields we set
+
+			clone := *job
+			clone.BatchSpecWorkspaceID = ws.ID
+			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
 				t.Fatal(err)
 			}
 
-			switch jobState {
-			case "processing":
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
-			case "completed":
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
-			case "queued":
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued' WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
-			case "failed":
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'failed', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
-			case "canceled":
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'failed', started_at = now(), finished_at = NULL, cancel = TRUE WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
-			case "canceling":
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL, cancel = TRUE WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
-			}
+			job.ID = clone.ID
+			ct.UpdateJobState(t, ctx, s, job)
 		}
 
 	}
@@ -487,6 +474,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 
 	want := map[int64]btypes.BatchSpecStats{
 		specIDs[0]: {
+			StartedAt:  minAgo(99),
+			FinishedAt: minAgo(1),
 			Workspaces: 7,
 			Executions: 6,
 			Queued:     1,
@@ -497,6 +486,8 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			Failed:     1,
 		},
 		specIDs[1]: {
+			StartedAt:  minAgo(55),
+			FinishedAt: minAgo(1),
 			Workspaces: 11,
 			Executions: 8,
 			Queued:     1,
@@ -505,6 +496,17 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			Canceling:  2,
 			Canceled:   1,
 			Failed:     1,
+		},
+		specIDs[2]: {
+			StartedAt:  time.Time{},
+			FinishedAt: time.Time{},
+		},
+		specIDs[3]: {
+			StartedAt:  minAgo(5),
+			FinishedAt: time.Time{},
+			Workspaces: 1,
+			Executions: 1,
+			Processing: 1,
 		},
 	}
 	if diff := cmp.Diff(have, want); diff != "" {

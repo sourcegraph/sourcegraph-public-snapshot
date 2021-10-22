@@ -30,6 +30,11 @@ const migrations: Migration[] = [
         temporarySettingsKey: 'npsSurvey.hasPermanentlyDismissed',
         type: 'boolean',
     },
+    {
+        localStorageKey: 'finished-welcome-flow',
+        temporarySettingsKey: 'signup.finishedWelcomeFlow',
+        type: 'boolean',
+    },
 ]
 
 export async function migrateLocalStorageToTemporarySettings(storage: TemporarySettingsStorage): Promise<void> {
