@@ -135,14 +135,6 @@ func getIndexOptions(
 
 	// Add all branches that are referenced by version contexts
 	if c.ExperimentalFeatures != nil {
-		for _, vc := range c.ExperimentalFeatures.VersionContexts {
-			for _, rev := range vc.Revisions {
-				if rev.Repo == repoName && rev.Rev != "" {
-					branches[rev.Rev] = struct{}{}
-				}
-			}
-		}
-
 		for _, rev := range c.ExperimentalFeatures.SearchIndexBranches[repoName] {
 			branches[rev] = struct{}{}
 		}

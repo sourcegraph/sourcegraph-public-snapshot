@@ -248,6 +248,11 @@ type InsightsDashboard implements Node {
     The list of associated insights to the dashboard.
     """
     views: InsightViewConnection
+
+    """
+    The permission grants assossiated with the dashboard.
+    """
+    grants: InsightsPermissionGrants!
 }
 
 """
@@ -261,7 +266,7 @@ input CreateInsightsDashboardInput {
     """
     Permissions to grant to the dashboard.
     """
-    grants: InsightsPermissionGrants!
+    grants: InsightsPermissionGrantsInput!
 }
 
 """
@@ -275,13 +280,31 @@ input UpdateInsightsDashboardInput {
     """
     Permissions to grant to the dashboard.
     """
-    grants: InsightsPermissionGrants
+    grants: InsightsPermissionGrantsInput
+}
+
+"""
+Permissions object. Note: only organizations the user has access to will be included.
+"""
+type InsightsPermissionGrants {
+    """
+    Specific users that have permission.
+    """
+    users: [ID!]!
+    """
+    Organizations that have permission.
+    """
+    organizations: [ID!]!
+    """
+    True if the permission is set to global.
+    """
+    global: Boolean!
 }
 
 """
 Input object for permissions to grant.
 """
-input InsightsPermissionGrants {
+input InsightsPermissionGrantsInput {
     """
     Specific users to grant permissions to.
     """
@@ -309,16 +332,6 @@ type InsightViewConnection {
     Pagination information.
     """
     pageInfo: PageInfo!
-}
-
-"""
-Stub for insight view
-"""
-type InsightView implements Node {
-    """
-    The View ID.
-    """
-    id: ID!
 }
 
 """
@@ -469,4 +482,323 @@ type InsightSeriesQueryStatus {
     This count only represents the queries that have yet to be pruned by the background maintenance workers.
     """
     queued: Int!
+}
+
+"""
+A custom time scope for an insight data series.
+"""
+input TimeScopeInput {
+    """
+    Sets a time scope using a step interval (intervals of time).
+    """
+    stepInterval: TimeIntervalStepInput
+}
+
+"""
+A time scope defined using a time interval (ex. 5 days)
+"""
+input TimeIntervalStepInput {
+    """
+    The time unit for the interval.
+    """
+    unit: TimeIntervalStepUnit!
+
+    """
+    The value for the interval.
+    """
+    value: Int!
+}
+
+"""
+Time interval units.
+"""
+enum TimeIntervalStepUnit {
+    HOUR
+    DAY
+    WEEK
+    MONTH
+    YEAR
+}
+
+"""
+A custom repository scope for an insight data series.
+"""
+input RepositoryScopeInput {
+    """
+    The list of repositories included in this scope.
+    """
+    repositories: [String!]!
+}
+
+"""
+Options for a line chart
+"""
+input LineChartOptionsInput {
+    """
+    The chart title.
+    """
+    title: String
+}
+
+"""
+Input for a line chart search insight.
+"""
+input LineChartSearchInsightInput {
+    """
+    The list of data series to create (or add) to this insight.
+    """
+    dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+}
+
+"""
+Input for a line chart search insight data series.
+"""
+input LineChartSearchInsightDataSeriesInput {
+    """
+    The query string.
+    """
+    query: String!
+    """
+    Options for this line chart data series.
+    """
+    options: LineChartDataSeriesOptionsInput!
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+    """
+    The scope of time.
+    """
+    timeScope: TimeScopeInput!
+}
+
+"""
+Options for a line chart data series
+"""
+input LineChartDataSeriesOptionsInput {
+    """
+    The label for the data series.
+    """
+    label: String
+    """
+    The line color for the data series.
+    """
+    lineColor: String
+}
+
+"""
+Input for a pie chart search insight
+"""
+input PieChartSearchInsightInput {
+    """
+    The query string.
+    """
+    query: String!
+    """
+    The scope of repositories.
+    """
+    repositoryScope: RepositoryScopeInput!
+
+    """
+    Options for this pie chart.
+    """
+    options: PieChartOptionsInput!
+}
+
+"""
+Options for a pie chart
+"""
+input PieChartOptionsInput {
+    """
+    The title for the pie chart.
+    """
+    title: String
+    """
+    The threshold for which groups fall into the "other category". Only categories with a percentage greater than
+    this value will be separately rendered.
+    """
+    otherThreshold: Float!
+}
+
+"""
+Payload for an insight view after creation.
+"""
+type CreateInsightResult {
+    """
+    The resulting view.
+    """
+    view: InsightView!
+}
+
+extend type Mutation {
+    """
+    Create a line chart backed by search insights.
+    """
+    createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
+    #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+}
+
+"""
+An Insight View is a lens to view insight data series. In most cases this corresponds to a visualization of an insight, containing multiple series.
+"""
+type InsightView implements Node {
+    """
+    The View ID.
+    """
+    id: ID!
+
+    """
+    The default filters saved on the insight. This will differ from the applied filters if they are overwritten but not saved.
+    """
+    defaultFilters: InsightViewFilters!
+
+    """
+    The filters currently applied to the insight and the data.
+    """
+    appliedFilters: InsightViewFilters!
+
+    """
+    The time series data for this insight.
+    """
+    dataSeries: [InsightsSeries!]!
+
+    """
+    Presentation options for the insight.
+    """
+    presentation: LineChartInsightViewPresentation!
+
+    """
+    Information on how each data series was generated
+    """
+    dataSeriesDefinitions: [SearchInsightDataSeriesDefinition!]!
+}
+
+#"""
+#Defines how the data series is generated.
+#"""
+#union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
+
+#"""
+#Defines presentation options for the insight.
+#"""
+#union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
+
+#"""
+#Defines a scope of time for which the insight data is generated.
+#"""
+#union InsightTimeScope = InsightIntervalTimeScope
+
+"""
+A custom repository scope for an insight. A scope with all empty fields implies a global scope.
+"""
+type InsightRepositoryScope {
+    """
+    The list of repositories in the scope.
+    """
+    repositories: [String!]!
+}
+"""
+Defines a time scope using an interval of time
+"""
+type InsightIntervalTimeScope {
+    """
+    The unit of time.
+    """
+    unit: TimeIntervalStepUnit!
+    """
+    The value of time.
+    """
+    value: Int!
+}
+
+"""
+Defines an insight data series that is constructed from a Sourcegraph search query.
+"""
+type SearchInsightDataSeriesDefinition {
+    """
+    The unique ID for the series.
+    """
+    seriesId: String!
+    """
+    The query string.
+    """
+    query: String!
+
+    """
+    A scope of repositories defined for this insight.
+    """
+    repositoryScope: InsightRepositoryScope!
+
+    """
+    The scope of time for which the insight data is generated.
+    """
+    timeScope: InsightIntervalTimeScope!
+}
+
+"""
+View presentation for a line chart insight
+"""
+type LineChartInsightViewPresentation {
+    """
+    The title for the line chart.
+    """
+    title: String!
+
+    """
+    The presentation options for the line chart.
+    """
+    seriesPresentation: [LineChartDataSeriesPresentation!]!
+}
+
+"""
+View presentation for a single insight line chart data series
+"""
+type LineChartDataSeriesPresentation {
+    """
+    Unique ID for the series.
+    """
+    seriesId: String!
+    """
+    The label for the series.
+    """
+    label: String!
+    """
+    The color for the series.
+    """
+    color: String!
+}
+
+"""
+View presentation for an insight pie chart.
+"""
+type PieChartInsightViewPresentation {
+    """
+    The title for the pie chart.
+    """
+    title: String!
+    """
+    The threshold for which groups fall into the "other category". Only categories with a percentage greater than
+    this value will be separately rendered.
+    """
+    otherThreshold: Float!
+}
+
+"""
+The fields and values for which the insight is filtered.
+"""
+type InsightViewFilters {
+    """
+    A regex string for which to include repositories in a filter.
+    """
+    includeRepoRegex: String
+
+    """
+    A regex string for which to exclude repositories from a filter.
+    """
+    excludeRepoRegex: String
 }

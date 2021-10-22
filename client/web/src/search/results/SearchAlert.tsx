@@ -12,7 +12,6 @@ interface SearchAlertProps {
     alert: Required<AggregateStreamingSearchResults>['alert']
     patternType: SearchPatternType | undefined
     caseSensitive: boolean
-    versionContext?: string
     searchContextSpec?: string
     children?: ReactNode[]
 }
@@ -21,7 +20,6 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
     alert,
     patternType,
     caseSensitive,
-    versionContext,
     searchContextSpec,
     children,
 }) => (
@@ -49,7 +47,6 @@ export const SearchAlert: React.FunctionComponent<SearchAlertProps> = ({
                                         proposedQuery.query,
                                         patternType || SearchPatternType.literal,
                                         caseSensitive,
-                                        versionContext,
                                         searchContextSpec
                                     )
                                 }

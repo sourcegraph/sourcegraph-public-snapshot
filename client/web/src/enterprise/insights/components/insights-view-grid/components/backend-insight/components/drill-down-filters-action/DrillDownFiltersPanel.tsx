@@ -2,8 +2,6 @@ import classnames from 'classnames'
 import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import React, { useRef } from 'react'
 
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-
 import { SearchBasedBackendFilters } from '../../../../../../core/types/insight/search-insight'
 import { flipRightPosition } from '../../../../../context-menu/utils'
 import { SubmissionResult } from '../../../../../form/hooks/useForm'
@@ -16,7 +14,6 @@ import styles from './DrillDownFiltersPanel.module.scss'
 
 interface DrillDownFiltersProps {
     isOpen: boolean
-    settings: Settings
     initialFiltersValue: SearchBasedBackendFilters
     originalFiltersValue: SearchBasedBackendFilters
     popoverTargetRef: React.RefObject<HTMLElement>
@@ -29,7 +26,6 @@ interface DrillDownFiltersProps {
 export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersProps> = props => {
     const {
         isOpen,
-        settings,
         popoverTargetRef,
         initialFiltersValue,
         originalFiltersValue,
@@ -71,7 +67,6 @@ export const DrillDownFiltersAction: React.FunctionComponent<DrillDownFiltersPro
                 onMouseDown={event => event.stopPropagation()}
             >
                 <DrillDownFiltersPanel
-                    settings={settings}
                     initialFiltersValue={initialFiltersValue}
                     originalFiltersValue={originalFiltersValue}
                     onFiltersChange={onFilterChange}

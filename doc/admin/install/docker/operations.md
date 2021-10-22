@@ -62,7 +62,7 @@ For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/git
 Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ```dockerfile
-FROM sourcegraph/server:3.32.0
+FROM sourcegraph/server:3.33.0
 
 COPY gitconfig /etc/gitconfig
 COPY ssh /root/.ssh
@@ -103,7 +103,7 @@ This is required to [collect debug data](../../pprof.md).
 The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
 
 ```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.32.0
+docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:3.33.0
 ```
 
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
@@ -121,5 +121,5 @@ Add the following to your docker run command:
 ```
 docker run [...]
 -e (YOUR CODE)
-sourcegraph/server:3.32.0
+sourcegraph/server:3.33.0
 ```

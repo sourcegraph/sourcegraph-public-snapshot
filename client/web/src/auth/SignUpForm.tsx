@@ -18,14 +18,15 @@ import {
 
 import { ErrorAlert } from '../components/alerts'
 import { LoaderButton } from '../components/LoaderButton'
-import { SourcegraphContext } from '../jscontext'
+import { FeatureFlagProps } from '../featureFlags/featureFlags'
+import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial, signupTerms } from '../util/features'
 
 import { OrDivider } from './OrDivider'
-import { EmailInput, maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
+import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-
+import { SignupEmailField } from './SignupEmailField'
 export interface SignUpArguments {
     email: string
     username: string
@@ -35,7 +36,7 @@ export interface SignUpArguments {
     firstSourceUrl?: string
 }
 
-interface SignUpFormProps {
+interface SignUpFormProps extends FeatureFlagProps {
     className?: string
 
     /** Called to perform the signup on the server. */
@@ -54,6 +55,7 @@ const preventDefault = (event: React.FormEvent): void => event.preventDefault()
  * The form for creating an account
  */
 export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
+    featureFlags,
     onSignUp,
     buttonLabel,
     className,
@@ -63,6 +65,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const [loading, setLoading] = useState(false)
     const [requestedTrial, setRequestedTrial] = useState(false)
     const [error, setError] = useState<Error | null>(null)
+    const isSignupOptimised = featureFlags.get('signup-optimization')
 
     const signUpFieldValidators: Record<'email' | 'username' | 'password', ValidationOptions> = useMemo(
         () => ({
@@ -126,10 +129,10 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (serviceType: string): React.MouseEventHandler<HTMLAnchorElement> => () => {
+        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLAnchorElement> => () => {
             // TODO: Log events with keepalive=true to ensure they always outlive the webpage
             // https://github.com/sourcegraph/sourcegraph/issues/19174
-            eventLogger.log('ExternalAuthSignupClicked', { type: serviceType }, { type: serviceType })
+            eventLogger.log('SignupInitiated', { type }, { type })
         },
         []
     )
@@ -150,32 +153,15 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                 onSubmit={handleSubmit}
                 noValidate={true}
             >
-                <div className="form-group d-flex flex-column align-content-start">
-                    <label
-                        htmlFor="email"
-                        className={classNames('align-self-start', {
-                            'text-danger font-weight-bold': emailState.kind === 'INVALID',
-                        })}
-                    >
-                        Email
-                    </label>
-                    <LoaderInput
-                        className={classNames(deriveInputClassName(emailState))}
-                        loading={emailState.kind === 'LOADING'}
-                    >
-                        <EmailInput
-                            className={deriveInputClassName(emailState)}
-                            onChange={nextEmailFieldChange}
-                            required={true}
-                            value={emailState.value}
-                            disabled={loading}
-                            autoFocus={true}
-                            placeholder=" "
-                            inputRef={emailInputReference}
-                        />
-                    </LoaderInput>
-                    {emailState.kind === 'INVALID' && <small className="invalid-feedback">{emailState.reason}</small>}
-                </div>
+                {!isSignupOptimised && (
+                    <SignupEmailField
+                        label="Email"
+                        loading={loading}
+                        nextEmailFieldChange={nextEmailFieldChange}
+                        emailState={emailState}
+                        emailInputReference={emailInputReference}
+                    />
+                )}
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="username"
@@ -205,6 +191,15 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         </small>
                     )}
                 </div>
+                {isSignupOptimised && (
+                    <SignupEmailField
+                        label="Email address"
+                        loading={loading}
+                        nextEmailFieldChange={nextEmailFieldChange}
+                        emailState={emailState}
+                        emailInputReference={emailInputReference}
+                    />
+                )}
                 <div className="form-group d-flex flex-column align-content-start">
                     <label
                         htmlFor="password"
@@ -264,7 +259,7 @@ export const SignUpForm: React.FunctionComponent<SignUpFormProps> = ({
                         label={buttonLabel || 'Register'}
                         type="submit"
                         disabled={disabled}
-                        className="btn btn-primary btn-block"
+                        className={classNames('btn btn-primary btn-block', isSignupOptimised && 'mt-4')}
                     />
                 </div>
                 {context.sourcegraphDotComMode && (

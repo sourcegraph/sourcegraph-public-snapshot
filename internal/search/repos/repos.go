@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -28,9 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Resolved struct {
@@ -102,22 +100,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	// If a version context is specified, gather the list of repository names
-	// to limit the results to these repositories.
-	var versionContextRepositories []string
-	var versionContext *schema.VersionContext
-	// If a ref is specified we skip using version contexts.
-	if len(includePatternRevs) == 0 && op.VersionContextName != "" {
-		versionContext, err = resolveVersionContext(op.VersionContextName)
-		if err != nil {
-			return Resolved{}, err
-		}
-
-		for _, revision := range versionContext.Revisions {
-			versionContextRepositories = append(versionContextRepositories, revision.Repo)
-		}
-	}
-
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
@@ -151,7 +133,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 		options := database.ReposListOptions{
 			IncludePatterns: includePatterns,
-			Names:           versionContextRepositories,
 			ExcludePattern:  UnionRegExps(excludePatterns),
 			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
 			LimitOffset:  &database.LimitOffset{Limit: limit + 1},
@@ -215,15 +196,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
 		var revs []search.RevisionSpecifier
-		// versionContext will be nil if the Query contains revision specifiers
-		if versionContext != nil {
-			for _, vcRepoRev := range versionContext.Revisions {
-				if vcRepoRev.Repo == string(repo.Name) {
-					repoRev.Repo = repo
-					revs = append(revs, search.RevisionSpecifier{RevSpec: vcRepoRev.Rev})
-				}
-			}
-		} else if len(searchContextRepositoryRevisions) > 0 {
+		if len(searchContextRepositoryRevisions) > 0 {
 			for _, repositoryRevisions := range searchContextRepositoryRevisions {
 				if repo.ID == repositoryRevisions.Repo.ID {
 					repoRev.Repo = repo
@@ -278,10 +251,10 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				if errors.Is(err, context.DeadlineExceeded) {
 					return Resolved{}, context.DeadlineExceeded
 				}
-				if errors.HasType(err, git.BadCommitError{}) {
+				if errors.HasType(err, gitdomain.BadCommitError{}) {
 					return Resolved{}, err
 				}
-				if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
+				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					// The revspec does not exist, so don't include it, and report that it's missing.
 					if rev.RevSpec == "" {
 						// Report as HEAD not "" (empty string) to avoid user confusion.
@@ -357,17 +330,6 @@ func UnionRegExps(patterns []string) string {
 		patterns2[i] = p
 	}
 	return strings.Join(patterns2, "|")
-}
-
-// NOTE: This function is not called if the version context is not used
-func resolveVersionContext(versionContext string) (*schema.VersionContext, error) {
-	for _, vc := range conf.Get().ExperimentalFeatures.VersionContexts {
-		if vc.Name == versionContext {
-			return vc, nil
-		}
-	}
-
-	return nil, errors.New("version context not found")
 }
 
 // Cf. golang/go/src/regexp/syntax/parse.go.
@@ -583,7 +545,7 @@ func filterRepoHasCommitAfter(ctx context.Context, revisions []*search.Repositor
 			for _, rev := range revs.Revs {
 				ok, err := git.HasCommitAfter(ctx, revs.GitserverRepo(), after, rev.RevSpec)
 				if err != nil {
-					if errors.HasType(err, &gitserver.RevisionNotFoundError{}) || vcs.IsRepoNotExist(err) {
+					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) || gitdomain.IsRepoNotExist(err) {
 						continue
 					}
 
@@ -640,13 +602,13 @@ func HandleRepoSearchResult(repoRev *search.RepositoryRevisions, limitHit, timed
 		status |= search.RepoStatusLimitHit
 	}
 
-	if vcs.IsRepoNotExist(searchErr) {
-		if vcs.IsCloneInProgress(searchErr) {
+	if gitdomain.IsRepoNotExist(searchErr) {
+		if gitdomain.IsCloneInProgress(searchErr) {
 			status |= search.RepoStatusCloning
 		} else {
 			status |= search.RepoStatusMissing
 		}
-	} else if errors.HasType(searchErr, &gitserver.RevisionNotFoundError{}) {
+	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
 		if len(repoRev.Revs) == 0 || len(repoRev.Revs) == 1 && repoRev.Revs[0].RevSpec == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {

@@ -8,4 +8,6 @@
   - [Reading materials](frontend-learning-materials.md)
 - Backend
   - [Backend developer docs](backend.md)
+- Pings
+  - [Code Insights Pings](code_insights_pings.md)
 

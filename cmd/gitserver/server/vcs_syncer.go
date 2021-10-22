@@ -124,6 +124,24 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.UR
 	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
+// FusionConfig allows configuration of the p4-fusion client
+type FusionConfig struct {
+	// Enabled: Enable the p4-fusion client for cloning and fetching repos
+	Enabled bool
+	// Client: The client spec tht should be used
+	Client string
+	// LookAhead: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
+	LookAhead int
+	// NetworkThreads: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
+	NetworkThreads int
+	// PrintBatch:  The p4 print batch size
+	PrintBatch int
+	// Refresh: How many times a connection should be reused before it is refreshed
+	Refresh int
+	// Retries: How many times a command should be retried before the process exits in a failure
+	Retries int
+}
+
 // PerforceDepotSyncer is a syncer for Perforce depots.
 type PerforceDepotSyncer struct {
 	// MaxChanges indicates to only import at most n changes when possible.
@@ -133,8 +151,8 @@ type PerforceDepotSyncer struct {
 	// find the list of interesting files in p4.
 	Client string
 
-	// UseFusionClient, if true, will use the p4-fusion cliet for faster cloning.
-	UseFusionClient bool
+	// FusionConfig contains information about the experimental p4-fusion client
+	FusionConfig FusionConfig
 }
 
 func (s *PerforceDepotSyncer) Type() string {
@@ -266,19 +284,19 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 	}
 
 	var cmd *exec.Cmd
-	if s.UseFusionClient {
+	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		cmd = exec.CommandContext(ctx, "p4-fusion",
 			"--path", depot+"...",
+			"--client", s.FusionConfig.Client,
 			"--user", username,
 			"--src", tmpPath,
-			"--networkThreads", "64",
-			"--printBatch", "10",
+			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
+			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
 			"--port", host,
-			"--lookAhead", "2000",
-			"--retries", "10",
-			"--refresh", "100",
-			"--bare", "true")
+			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
+			"--retries", strconv.Itoa(s.FusionConfig.Retries),
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -306,23 +324,21 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	args := append([]string{"p4", "sync"}, s.p4CommandOptions()...)
 
 	var cmd *exec.Cmd
-	if s.UseFusionClient {
-		// Fetching is done by adding the extra "autoResume param"
-		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100 --autoresume true
+	if s.FusionConfig.Enabled {
+		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
 		log15.Info("Fetching", "root", root)
 		cmd = exec.CommandContext(ctx, "p4-fusion",
 			"--path", depot+"...",
+			"--client", s.FusionConfig.Client,
 			"--user", username,
 			"--src", root+".git",
-			"--networkThreads", "64",
-			"--printBatch", "10",
+			"--networkThreads", strconv.Itoa(s.FusionConfig.NetworkThreads),
+			"--printBatch", strconv.Itoa(s.FusionConfig.PrintBatch),
 			"--port", host,
-			"--lookAhead", "2000",
-			"--retries", "10",
-			"--refresh", "100",
-			"--autoResume", "true",
-			"--bare", "true")
+			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
+			"--retries", strconv.Itoa(s.FusionConfig.Retries),
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
@@ -333,7 +349,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 		return errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
 
-	if !s.UseFusionClient {
+	if !s.FusionConfig.Enabled {
 		// Force update "master" to "refs/remotes/p4/master" where changes are synced into
 		cmd = exec.CommandContext(ctx, "git", "branch", "-f", "master", "refs/remotes/p4/master")
 		cmd.Env = append(os.Environ(),

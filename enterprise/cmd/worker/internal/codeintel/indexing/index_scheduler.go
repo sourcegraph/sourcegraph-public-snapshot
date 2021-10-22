@@ -2,29 +2,27 @@ package indexing
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 type IndexScheduler struct {
-	dbStore       DBStore
-	settingStore  IndexingSettingStore
-	repoStore     IndexingRepoStore
-	indexEnqueuer IndexEnqueuer
-	operations    *schedulerOperations
+	dbStore                DBStore
+	policyMatcher          PolicyMatcher
+	indexEnqueuer          IndexEnqueuer
+	repositoryProcessDelay time.Duration
+	repositoryBatchSize    int
+	operations             *schedulerOperations
 }
 
 var (
@@ -34,18 +32,20 @@ var (
 
 func NewIndexScheduler(
 	dbStore DBStore,
-	settingStore IndexingSettingStore,
-	repoStore IndexingRepoStore,
+	policyMatcher PolicyMatcher,
 	indexEnqueuer IndexEnqueuer,
+	repositoryProcessDelay time.Duration,
+	repositoryBatchSize int,
 	interval time.Duration,
 	observationContext *observation.Context,
 ) goroutine.BackgroundRoutine {
 	scheduler := &IndexScheduler{
-		dbStore:       dbStore,
-		settingStore:  settingStore,
-		repoStore:     repoStore,
-		indexEnqueuer: indexEnqueuer,
-		operations:    newOperations(observationContext),
+		dbStore:                dbStore,
+		policyMatcher:          policyMatcher,
+		indexEnqueuer:          indexEnqueuer,
+		repositoryProcessDelay: repositoryProcessDelay,
+		repositoryBatchSize:    repositoryBatchSize,
+		operations:             newOperations(observationContext),
 	}
 
 	return goroutine.NewPeriodicGoroutineWithMetrics(
@@ -59,144 +59,94 @@ func NewIndexScheduler(
 // For mocking in tests
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
-func (s *IndexScheduler) Handle(ctx context.Context) error {
+func (s *IndexScheduler) Handle(ctx context.Context) (err error) {
 	if !autoIndexingEnabled() {
 		return nil
 	}
 
-	disabledRepoGroups, err := s.getDisabledRepositoryIDMap(ctx)
+	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
+	// set should contain repositories that have yet to be updated, or that have been updated least recently.
+	// This allows us to update every repository reliably, even if it takes a long time to process through
+	// the backlog.
+	repositories, err := s.dbStore.SelectRepositoriesForIndexScan(ctx, s.repositoryProcessDelay, s.repositoryBatchSize)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "dbstore.SelectRepositoriesForIndexScan")
+	}
+	if len(repositories) == 0 {
+		// All repositories updated recently enough
+		return nil
 	}
 
-	repositoryIDSourcers := []func(ctx context.Context) ([]int, error){
-		s.getRepositoryIDsWithIndexConfiguration,
-		s.getRepositoryIDsFromRepositoryGroups,
-		s.getRepositoryIDsByPopularity,
+	// Retrieve the set of global configuration policies that affect indexing. These policies are applied
+	// to all repositories.
+	globalPolicies, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+		ForIndexing: true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
 	}
 
-	repositoryIDMap := map[int]struct{}{}
-	for _, repositoryIDSourcer := range repositoryIDSourcers {
-		repositoryIDs, err := repositoryIDSourcer(ctx)
-		if err != nil {
-			return err
-		}
+	now := timeutil.Now()
 
-		for _, repositoryID := range repositoryIDs {
-			if _, ok := disabledRepoGroups[repositoryID]; !ok {
-				repositoryIDMap[repositoryID] = struct{}{}
-			}
-		}
-	}
-
-	repositoryIDs := make([]int, 0, len(repositoryIDMap))
-	for repositoryID := range repositoryIDMap {
-		repositoryIDs = append(repositoryIDs, repositoryID)
-	}
-	sort.Ints(repositoryIDs)
-
-	var queueErr error
-	for _, repositoryID := range repositoryIDs {
-		if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, "HEAD", "", false); err != nil {
-			if errors.HasType(err, &gitserver.RevisionNotFoundError{}) {
-				continue
-			}
-
-			if queueErr == nil {
-				queueErr = err
+	for _, repositoryID := range repositories {
+		if repositoryErr := s.handleRepository(ctx, repositoryID, globalPolicies, now); repositoryErr != nil {
+			if err == nil {
+				err = repositoryErr
 			} else {
-				queueErr = multierror.Append(queueErr, err)
+				err = multierror.Append(err, repositoryErr)
 			}
 		}
 	}
-	if queueErr != nil {
-		return queueErr
-	}
 
-	return nil
+	return err
 }
 
 func (s *IndexScheduler) HandleError(err error) {
-	log15.Error("Failed to update indexable repositories", "err", err)
+	log15.Error("Failed to schedule index jobs", "err", err)
 }
 
-func (s *IndexScheduler) getDisabledRepositoryIDMap(ctx context.Context) (map[int]struct{}, error) {
-	disabledRepoGroupsList, err := s.dbStore.GetAutoindexDisabledRepositories(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "DBStore.GetAutoindexDisabledRepositories")
-	}
-
-	disabledRepoGroups := make(map[int]struct{}, len(disabledRepoGroupsList))
-	for _, v := range disabledRepoGroupsList {
-		disabledRepoGroups[v] = struct{}{}
-	}
-
-	return disabledRepoGroups, nil
-}
-
-func (s *IndexScheduler) getRepositoryIDsWithIndexConfiguration(ctx context.Context) ([]int, error) {
-	configuredRepositoryIDs, err := s.dbStore.GetRepositoriesWithIndexConfiguration(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "DBStore.GetRepositoriesWithIndexConfiguration")
-	}
-
-	return configuredRepositoryIDs, nil
-}
-
-func (s *IndexScheduler) getRepositoryIDsFromRepositoryGroups(ctx context.Context) ([]int, error) {
-	// TODO(autoindex): We should create a way to gather _all_ repogroups (including all user repogroups)
-	//    https://github.com/sourcegraph/sourcegraph/issues/22130
-	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
-	if err != nil {
-		return nil, errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
-	}
-
-	// TODO(autoindex): Later we can remove using cncf explicitly and do all of them
-	//    https://github.com/sourcegraph/sourcegraph/issues/22130
-	groupsByName := searchrepos.ResolveRepoGroupsFromSettings(settings)
-	includePatterns, _ := searchrepos.RepoGroupsToIncludePatterns(settings.CodeIntelligenceAutoIndexRepositoryGroups, groupsByName)
-
-	options := database.ReposListOptions{
-		IncludePatterns: []string{includePatterns},
-		OnlyCloned:      true,
-		NoForks:         true,
-		NoArchived:      true,
-		NoPrivate:       true,
-	}
-
-	repositories, err := s.repoStore.ListRepoNames(ctx, options)
-	if err != nil {
-		return nil, errors.Wrap(err, "IndexingRepoStore.ListRepoNames")
-	}
-
-	return extractIDs(repositories), nil
-}
-
-func (s *IndexScheduler) getRepositoryIDsByPopularity(ctx context.Context) ([]int, error) {
-	settings, err := s.settingStore.GetLastestSchemaSettings(ctx, api.SettingsSubject{})
-	if err != nil {
-		return nil, errors.Wrap(err, "IndexingSettingStore.GetLastestSchemaSettings")
-	}
-
-	if settings.CodeIntelligenceAutoIndexPopularRepoLimit == 0 {
-		return nil, nil
-	}
-
-	repositories, err := s.repoStore.ListIndexableRepos(ctx, database.ListIndexableReposOptions{
-		LimitOffset: &database.LimitOffset{Limit: settings.CodeIntelligenceAutoIndexPopularRepoLimit},
+func (s *IndexScheduler) handleRepository(
+	ctx context.Context,
+	repositoryID int,
+	globalPolicies []dbstore.ConfigurationPolicy,
+	now time.Time,
+) error {
+	// Retrieve the set of configuration policies that affect indexing. These policies are applied
+	// only to this repository.
+	repositoryPolicies, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+		RepositoryID: repositoryID,
+		ForIndexing:  true,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "IndexingRepoStore.ListIndexableRepos")
+		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")
 	}
 
-	return extractIDs(repositories), nil
-}
+	// Combine global and repository-specific policies. The resulting slice may be empty, but that
+	// condition is short-circuited in the call to CommitsDescribedByPolicy below.
+	combinedPolicies := make([]dbstore.ConfigurationPolicy, 0, len(globalPolicies)+len(repositoryPolicies))
+	combinedPolicies = append(combinedPolicies, globalPolicies...)
+	combinedPolicies = append(combinedPolicies, repositoryPolicies...)
 
-func extractIDs(repositories []types.RepoName) []int {
-	repositoryIDs := make([]int, 0, len(repositories))
-	for _, repoGroupRepository := range repositories {
-		repositoryIDs = append(repositoryIDs, int(repoGroupRepository.ID))
+	// Get the set of commits within this repository that match an indexing policy
+	commitMap, err := s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, combinedPolicies, now)
+	if err != nil {
+		return errors.Wrap(err, "policies.CommitsDescribedByPolicy")
 	}
 
-	return repositoryIDs
+	for commit, policyMatches := range commitMap {
+		if len(policyMatches) == 0 {
+			continue
+		}
+
+		// Attempt to queue an index if one does not exist for each of the matching commits
+		if _, err := s.indexEnqueuer.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				continue
+			}
+
+			return errors.Wrap(err, "indexEnqueuer.QueueIndexes")
+		}
+	}
+
+	return nil
 }

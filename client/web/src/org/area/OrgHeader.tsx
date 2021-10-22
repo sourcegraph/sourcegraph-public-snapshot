@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React from 'react'
 import { Link, NavLink, RouteComponentProps } from 'react-router-dom'
 
@@ -34,7 +33,7 @@ export const OrgHeader: React.FunctionComponent<Props> = ({
     className = '',
     isSourcegraphDotCom,
 }) => (
-    <div className={classNames('org-header', className)}>
+    <div className={className}>
         <div className="container">
             {org && (
                 <>

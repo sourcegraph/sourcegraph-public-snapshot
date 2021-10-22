@@ -139,7 +139,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 	expectedIndexStates := map[int]string{
 		1: "completed",
 		2: "completed",
-		3: "deleting",
+		3: "deleted",
 		4: "completed",
 		5: "completed",
 	}

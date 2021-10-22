@@ -1396,11 +1396,16 @@ func (s *PermsStore) UserIDsWithNoPerms(ctx context.Context) ([]int32, error) {
 
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithNoPerms
-SELECT users.id, NULL FROM users
-WHERE users.deleted_at IS NULL
+SELECT users.id, NULL
+FROM users
+WHERE
+	users.deleted_at IS NULL
 AND %s
-AND users.id NOT IN
-	(SELECT perms.user_id FROM user_permissions AS perms)
+AND NOT EXISTS (
+		SELECT
+		FROM user_permissions
+		WHERE user_id = users.id
+	)
 `, filterSiteAdmins)
 	results, err := s.loadIDsWithTime(ctx, q)
 	if err != nil {
@@ -1414,8 +1419,28 @@ AND users.id NOT IN
 	return ids, nil
 }
 
-// RepoIDsWithNoPerms returns a list of private repository IDs with no permissions
-// found in the database.
+// UserIDsWithOutdatedPerms returns a list of user IDs who have newer code host
+// connection sync after last permissions sync.
+func (s *PermsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error) {
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOutdatedPerms
+SELECT
+	DISTINCT(external_services.namespace_user_id),
+	user_permissions.synced_at
+FROM external_services
+JOIN user_permissions ON user_permissions.user_id = external_services.namespace_user_id
+WHERE
+	external_services.deleted_at IS NULL
+AND (
+		user_permissions.synced_at IS NULL
+	OR  external_services.last_sync_at >= user_permissions.synced_at
+)
+`)
+	return s.loadIDsWithTime(ctx, q)
+}
+
+// RepoIDsWithNoPerms returns a list of private repository IDs with no
+// permissions found in the database.
 func (s *PermsStore) RepoIDsWithNoPerms(ctx context.Context) ([]api.RepoID, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.RepoIDsWithNoPerms

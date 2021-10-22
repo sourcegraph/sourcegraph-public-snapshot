@@ -191,7 +191,7 @@
           ]
         },
         "versionContexts": {
-          "description": "JSON array of version context configuration",
+          "description": "DEPRECATED: Use search contexts instead.\n\nJSON array of version context configuration",
           "type": "array",
           "items": {
             "title": "VersionContext",
@@ -304,14 +304,14 @@
       "group": "Experimental"
     },
     "campaigns.enabled": {
-      "description": "DEPRECATED: Use batchChanges.enabled instead. Enables/disables the campaigns feature.",
+      "description": "DEPRECATED: Use batchChanges.enabled instead. This setting is non-functional.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",
       "default": true
     },
     "campaigns.restrictToAdmins": {
-      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. When enabled, only site admins can create and apply campaigns.",
+      "description": "DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Campaigns",

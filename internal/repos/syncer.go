@@ -476,17 +476,25 @@ func (s *Syncer) SyncExternalService(
 	// token manually rather than deleting the repos automatically.
 	deleted := 0
 	if err = errs.ErrorOrNil(); err == nil || (svc.NamespaceUserID != 0 && fatal(err)) {
-		s.log().Warn("syncer: deleting not seen repos",
-			"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", err)
-
-		// Remove associations and any repos that are no longer associated with any external service.
+		// Remove associations and any repos that are no longer associated with any
+		// external service.
 		//
-		// We don't want to delete all repos that weren't seen if we had a lot of spurious errors since that could
-		// cause lots of repos to be deleted, only to be added the next sync. We delete only if we had no errors or we
-		// had one of the fatal errors.
-		deleted, err = s.delete(ctx, svc, seen)
-		if err != nil {
-			multierror.Append(errs, errors.Wrap(err, "some repos couldn't be deleted"))
+		// We don't want to delete all repos that weren't seen if we had a lot of
+		// spurious errors since that could cause lots of repos to be deleted, only to be
+		// added the next sync. We delete only if we had no errors or we had one of the
+		// fatal errors.
+		var deletedErr error
+		deleted, deletedErr = s.delete(ctx, svc, seen)
+		if deletedErr != nil {
+			s.log().Warn("syncer: failed to delete some repos",
+				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "error", deletedErr, "deleted", deleted)
+
+			multierror.Append(errs, errors.Wrap(deletedErr, "some repos couldn't be deleted"))
+		}
+
+		if deleted > 0 {
+			s.log().Warn("syncer: deleted not seen repos",
+				"svc", svc.DisplayName, "id", svc.ID, "seen", len(seen), "deleted", deleted, "error", err)
 		}
 	}
 

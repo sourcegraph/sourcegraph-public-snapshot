@@ -50,7 +50,6 @@ const defaultProps = {
     fetchHighlightedFileLineRanges: HIGHLIGHTED_FILE_LINES_SIMPLE_REQUEST,
     onSelect,
     settingsCascade: NOOP_SETTINGS_CASCADE,
-    versionContext: undefined,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 

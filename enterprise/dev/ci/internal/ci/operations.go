@@ -135,7 +135,10 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"))
+		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CHECK_BUNDLESIZE", "1"),
+		// To ensure the Bundlesize output can be diffed to the baseline on main
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
@@ -263,6 +266,8 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":go: Test",
+		// Temporary fix until we fix the code-intel flake
+		bk.AutomaticRetry(3),
 		bk.Cmd("./dev/ci/go-test.sh"),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
 }

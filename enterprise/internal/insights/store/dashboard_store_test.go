@@ -113,7 +113,7 @@ func TestCreateDashboard(t *testing.T) {
 		global := true
 		orgId := 1
 		grants := []DashboardGrant{{nil, nil, &global}, {nil, &orgId, nil}}
-		_, err = store.CreateDashboard(ctx, types.Dashboard{ID: 1, Title: "test dashboard 1"}, grants)
+		_, err = store.CreateDashboard(ctx, CreateDashboardArgs{Dashboard: types.Dashboard{ID: 1, Title: "test dashboard 1"}, Grants: grants, UserID: []int{1}, OrgID: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,8 +122,11 @@ func TestCreateDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterCreateDashboard", []*types.Dashboard{{
-			ID:    1,
-			Title: "test dashboard 1",
+			ID:           1,
+			Title:        "test dashboard 1",
+			UserIdGrants: []int64{},
+			OrgIdGrants:  []int64{},
+			GlobalGrant:  true,
 		}}).Equal(t, got)
 
 		gotGrants, err := store.GetDashboardGrants(ctx, 1)
@@ -165,46 +168,49 @@ func TestUpdateDashboard(t *testing.T) {
 		}
 		autogold.Want("BeforeUpdate", []*types.Dashboard{
 			{
-				ID:    1,
-				Title: "test dashboard 1",
+				ID:           1,
+				Title:        "test dashboard 1",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 			{
-				ID:    2,
-				Title: "test dashboard 2",
-			}}).Equal(t, got)
+				ID:           2,
+				Title:        "test dashboard 2",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+		}).Equal(t, got)
 
 		newTitle := "new title!"
 		global := true
 		userId := 1
 		grants := []DashboardGrant{{nil, nil, &global}, {&userId, nil, nil}}
-		_, err = store.UpdateDashboard(ctx, UpdateDashboardArgs{1, &newTitle, grants})
+		_, err = store.UpdateDashboard(ctx, UpdateDashboardArgs{1, &newTitle, grants, []int{1}, []int{}})
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err = store.GetDashboards(ctx, DashboardQueryArgs{})
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterUpdate", []*types.Dashboard{
 			{
-				ID:    1,
-				Title: "new title!",
+				ID:           1,
+				Title:        "new title!",
+				UserIdGrants: []int64{1},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 			{
-				ID:    2,
-				Title: "test dashboard 2",
-			}}).Equal(t, got)
-
-		gotGrants, err := store.GetDashboardGrants(ctx, 1)
-		if err != nil {
-			t.Fatal(err)
-		}
-		autogold.Want("AfterUpdateGrant", []*DashboardGrant{
-			{
-				Global: valast.Addr(true).(*bool),
+				ID:           2,
+				Title:        "test dashboard 2",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
-			{UserID: valast.Addr(1).(*int)},
-		}).Equal(t, gotGrants)
+		}).Equal(t, got)
 	})
 }
 
@@ -235,13 +241,20 @@ func TestDeleteDashboard(t *testing.T) {
 		}
 		autogold.Want("BeforeDelete", []*types.Dashboard{
 			{
-				ID:    1,
-				Title: "test dashboard 1",
+				ID:           1,
+				Title:        "test dashboard 1",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 			{
-				ID:    2,
-				Title: "test dashboard 2",
-			}}).Equal(t, got)
+				ID:           2,
+				Title:        "test dashboard 2",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
+			},
+		}).Equal(t, got)
 
 		err = store.DeleteDashboard(ctx, 1)
 		if err != nil {
@@ -252,8 +265,11 @@ func TestDeleteDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 		autogold.Want("AfterDelete", []*types.Dashboard{{
-			ID:    2,
-			Title: "test dashboard 2",
+			ID:           2,
+			Title:        "test dashboard 2",
+			UserIdGrants: []int64{},
+			OrgIdGrants:  []int64{},
+			GlobalGrant:  true,
 		}}).Equal(t, got)
 	})
 }
@@ -307,9 +323,14 @@ func TestAssociateViewsById(t *testing.T) {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
 		got := dashboards[0]
-		autogold.Want("check views are added to dashboard", &types.Dashboard{ID: 1, Title: "test dashboard 1", InsightIDs: []string{
-			"view1234567",
-		}}).Equal(t, got)
+		autogold.Want("check views are added to dashboard", &types.Dashboard{
+			ID: 1, Title: "test dashboard 1", InsightIDs: []string{
+				"view1234567",
+			},
+			UserIdGrants: []int64{},
+			OrgIdGrants:  []int64{},
+			GlobalGrant:  true,
+		}).Equal(t, got)
 	})
 }
 
@@ -335,11 +356,19 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = store.CreateDashboard(ctx, types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}}, []DashboardGrant{GlobalDashboardGrant()})
+	_, err = store.CreateDashboard(ctx, CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}},
+		Grants:    []DashboardGrant{GlobalDashboardGrant()},
+		UserID:    []int{1},
+		OrgID:     []int{1}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	second, err := store.CreateDashboard(ctx, types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}}, []DashboardGrant{GlobalDashboardGrant()})
+	second, err := store.CreateDashboard(ctx, CreateDashboardArgs{
+		Dashboard: types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}},
+		Grants:    []DashboardGrant{GlobalDashboardGrant()},
+		UserID:    []int{1},
+		OrgID:     []int{1}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -351,14 +380,20 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		}
 		autogold.Want("dashboards before removing a view", []*types.Dashboard{
 			{
-				ID:         1,
-				Title:      "first",
-				InsightIDs: []string{"view1"},
+				ID:           1,
+				Title:        "first",
+				InsightIDs:   []string{"view1"},
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 			{
-				ID:         2,
-				Title:      "second",
-				InsightIDs: []string{"view1"},
+				ID:           2,
+				Title:        "second",
+				InsightIDs:   []string{"view1"},
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 		}).Equal(t, dashboards)
 
@@ -372,13 +407,19 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 		}
 		autogold.Want("dashboards after removing a view", []*types.Dashboard{
 			{
-				ID:         1,
-				Title:      "first",
-				InsightIDs: []string{"view1"},
+				ID:           1,
+				Title:        "first",
+				InsightIDs:   []string{"view1"},
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 			{
-				ID:    2,
-				Title: "second",
+				ID:           2,
+				Title:        "second",
+				UserIdGrants: []int64{},
+				OrgIdGrants:  []int64{},
+				GlobalGrant:  true,
 			},
 		}).Equal(t, dashboards)
 	})

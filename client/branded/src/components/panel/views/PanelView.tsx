@@ -5,7 +5,6 @@ import { Observable } from 'rxjs'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
@@ -16,7 +15,7 @@ import { EmptyPanelView } from './EmptyPanelView'
 import { HierarchicalLocationsView } from './HierarchicalLocationsView'
 import styles from './PanelView.module.scss'
 
-interface Props extends ExtensionsControllerProps, SettingsCascadeProps, VersionContextProps, TelemetryProps {
+interface Props extends ExtensionsControllerProps, SettingsCascadeProps, TelemetryProps {
     panelView: PanelViewWithComponent
     repoName?: string
     location: H.Location
@@ -44,7 +43,6 @@ export const PanelView = React.memo<Props>(props => (
                 fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                 extensionsController={props.extensionsController}
                 settingsCascade={props.settingsCascade}
-                versionContext={props.versionContext}
                 telemetryService={props.telemetryService}
             />
         )}

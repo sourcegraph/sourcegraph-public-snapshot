@@ -11,9 +11,9 @@ import { FormInput } from '../../../../../../../components/form/form-input/FormI
 import { useCheckboxes } from '../../../../../../../components/form/hooks/useCheckboxes'
 import { useField } from '../../../../../../../components/form/hooks/useField'
 import { SubmissionErrors, useForm, FORM_ERROR } from '../../../../../../../components/form/hooks/useForm'
+import { ReachableInsight } from '../../../../../../../core/backend/code-insights-backend-types'
 import { Badge } from '../../../dashboard-select/components/badge/Badge'
 import { TruncatedText } from '../../../dashboard-select/components/trancated-text/TrancatedText'
-import { ReachableInsight } from '../../hooks/use-reachable-insights'
 
 import styles from './AddInsightModalContent.module.scss'
 

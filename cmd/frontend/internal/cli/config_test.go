@@ -46,24 +46,64 @@ func TestReadSiteConfigFile(t *testing.T) {
 `, `{"second": "file"}`},
 		Want: `// merged SITE_CONFIG_FILE
 {
-
-// BEGIN $tmp/0.json
+  // BEGIN $tmp/0.json
   "first": "file",
-// END $tmp/0.json
-
-// BEGIN $tmp/1.json
+  // END $tmp/0.json
+  // BEGIN $tmp/1.json
   "second": "file",
-// END $tmp/1.json
-}
-`,
-	}, {
-		Name: "parse-error",
-		Files: []string{
-			"{}",
-			"{",
+  // END $tmp/1.json
+}`,
+	},
+		{
+			Name: "three",
+			Files: []string{
+				`{
+    "search.index.branches": {
+      "github.com/sourcegraph/sourcegraph": ["3.17", "v3.0.0"],
+      "github.com/kubernetes/kubernetes": ["release-1.17"],
+      "github.com/go-yaml/yaml": ["v2", "v3"]
+    }
+}`,
+				`{
+  "observability.alerts": [ {"level":"warning"}, { "level": "critical"} ]
+}`},
+			Want: `// merged SITE_CONFIG_FILE
+{
+  // BEGIN $tmp/0.json
+  "search.index.branches": {
+    "github.com/go-yaml/yaml": [
+      "v2",
+      "v3"
+    ],
+    "github.com/kubernetes/kubernetes": [
+      "release-1.17"
+    ],
+    "github.com/sourcegraph/sourcegraph": [
+      "3.17",
+      "v3.0.0"
+    ]
+  },
+  // END $tmp/0.json
+  // BEGIN $tmp/1.json
+  "observability.alerts": [
+    {
+      "level": "warning"
+    },
+    {
+      "level": "critical"
+    }
+  ],
+  // END $tmp/1.json
+}`,
 		},
-		Err: "CloseBraceExpected",
-	}}
+		{
+			Name: "parse-error",
+			Files: []string{
+				"{}",
+				"{",
+			},
+			Err: "CloseBraceExpected",
+		}}
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {

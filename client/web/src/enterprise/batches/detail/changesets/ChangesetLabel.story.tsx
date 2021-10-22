@@ -1,7 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
+import { WebStory } from '../../../../components/WebStory'
 
 import { ChangesetLabel } from './ChangesetLabel'
 
@@ -10,7 +10,7 @@ const { add } = storiesOf('web/batches/ChangesetLabel', module).addDecorator(sto
 ))
 
 add('Various labels', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {() => (
             <>
                 <ChangesetLabel
@@ -43,5 +43,5 @@ add('Various labels', () => (
                 />
             </>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

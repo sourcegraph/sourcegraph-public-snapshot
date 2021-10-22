@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -52,6 +53,10 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
+	// internal actor on the context.
+	ctx := actor.WithInternalActor(r.Context())
+
 	// Parse the event proper.
 	if r.Body == nil {
 		respond(w, http.StatusBadRequest, "missing request body")
@@ -83,7 +88,7 @@ func (h *GitLabWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Route the request based on the event type.
-	if err := h.handleEvent(r.Context(), extSvc, event); err != nil {
+	if err := h.handleEvent(ctx, extSvc, event); err != nil {
 		respond(w, err.code, err)
 	} else {
 		respond(w, http.StatusNoContent, nil)

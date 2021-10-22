@@ -23,7 +23,8 @@ export class SearchCommand {
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
     public getSuggestions = async (query: string): Promise<browser.omnibox.SuggestResult[]> => {
-        const sourcegraphURL = await SourcegraphUrlService.observe(IS_EXTENSION).pipe(take(1)).toPromise()
+        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
+
         return new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)
@@ -54,7 +55,7 @@ export class SearchCommand {
         query: string,
         disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab'
     ): Promise<void> => {
-        const sourcegraphURL = await SourcegraphUrlService.observe(IS_EXTENSION).pipe(take(1)).toPromise()
+        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
 
         const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
 

@@ -2003,6 +2003,20 @@ type MockLSIFStore struct {
 	// ClearFunc is an instance of a mock function object controlling the
 	// behavior of the method Clear.
 	ClearFunc *LSIFStoreClearFunc
+	// DeleteOldPrivateSearchRecordsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteOldPrivateSearchRecords.
+	DeleteOldPrivateSearchRecordsFunc *LSIFStoreDeleteOldPrivateSearchRecordsFunc
+	// DeleteOldPublicSearchRecordsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteOldPublicSearchRecords.
+	DeleteOldPublicSearchRecordsFunc *LSIFStoreDeleteOldPublicSearchRecordsFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *LSIFStoreDoneFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *LSIFStoreTransactFunc
 }
 
 // NewMockLSIFStore creates a new mock of the LSIFStore interface. All
@@ -2014,6 +2028,26 @@ func NewMockLSIFStore() *MockLSIFStore {
 				return nil
 			},
 		},
+		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
+			defaultHook: func(context.Context, time.Duration, int) (int, error) {
+				return 0, nil
+			},
+		},
+		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
+			defaultHook: func(context.Context, time.Duration, int) (int, error) {
+				return 0, nil
+			},
+		},
+		DoneFunc: &LSIFStoreDoneFunc{
+			defaultHook: func(error) error {
+				return nil
+			},
+		},
+		TransactFunc: &LSIFStoreTransactFunc{
+			defaultHook: func(context.Context) (LSIFStore, error) {
+				return nil, nil
+			},
+		},
 	}
 }
 
@@ -2023,6 +2057,18 @@ func NewMockLSIFStoreFrom(i LSIFStore) *MockLSIFStore {
 	return &MockLSIFStore{
 		ClearFunc: &LSIFStoreClearFunc{
 			defaultHook: i.Clear,
+		},
+		DeleteOldPrivateSearchRecordsFunc: &LSIFStoreDeleteOldPrivateSearchRecordsFunc{
+			defaultHook: i.DeleteOldPrivateSearchRecords,
+		},
+		DeleteOldPublicSearchRecordsFunc: &LSIFStoreDeleteOldPublicSearchRecordsFunc{
+			defaultHook: i.DeleteOldPublicSearchRecords,
+		},
+		DoneFunc: &LSIFStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		TransactFunc: &LSIFStoreTransactFunc{
+			defaultHook: i.Transact,
 		},
 	}
 }
@@ -2137,6 +2183,445 @@ func (c LSIFStoreClearFuncCall) Args() []interface{} {
 // invocation.
 func (c LSIFStoreClearFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// LSIFStoreDeleteOldPrivateSearchRecordsFunc describes the behavior when
+// the DeleteOldPrivateSearchRecords method of the parent MockLSIFStore
+// instance is invoked.
+type LSIFStoreDeleteOldPrivateSearchRecordsFunc struct {
+	defaultHook func(context.Context, time.Duration, int) (int, error)
+	hooks       []func(context.Context, time.Duration, int) (int, error)
+	history     []LSIFStoreDeleteOldPrivateSearchRecordsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOldPrivateSearchRecords delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) DeleteOldPrivateSearchRecords(v0 context.Context, v1 time.Duration, v2 int) (int, error) {
+	r0, r1 := m.DeleteOldPrivateSearchRecordsFunc.nextHook()(v0, v1, v2)
+	m.DeleteOldPrivateSearchRecordsFunc.appendCall(LSIFStoreDeleteOldPrivateSearchRecordsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteOldPrivateSearchRecords method of the parent MockLSIFStore instance
+// is invoked and the hook queue is empty.
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOldPrivateSearchRecords method of the parent MockLSIFStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) PushHook(hook func(context.Context, time.Duration, int) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, int) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) nextHook() func(context.Context, time.Duration, int) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) appendCall(r0 LSIFStoreDeleteOldPrivateSearchRecordsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LSIFStoreDeleteOldPrivateSearchRecordsFuncCall objects describing the
+// invocations of this function.
+func (f *LSIFStoreDeleteOldPrivateSearchRecordsFunc) History() []LSIFStoreDeleteOldPrivateSearchRecordsFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDeleteOldPrivateSearchRecordsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDeleteOldPrivateSearchRecordsFuncCall is an object that
+// describes an invocation of method DeleteOldPrivateSearchRecords on an
+// instance of MockLSIFStore.
+type LSIFStoreDeleteOldPrivateSearchRecordsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDeleteOldPrivateSearchRecordsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDeleteOldPrivateSearchRecordsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LSIFStoreDeleteOldPublicSearchRecordsFunc describes the behavior when the
+// DeleteOldPublicSearchRecords method of the parent MockLSIFStore instance
+// is invoked.
+type LSIFStoreDeleteOldPublicSearchRecordsFunc struct {
+	defaultHook func(context.Context, time.Duration, int) (int, error)
+	hooks       []func(context.Context, time.Duration, int) (int, error)
+	history     []LSIFStoreDeleteOldPublicSearchRecordsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOldPublicSearchRecords delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockLSIFStore) DeleteOldPublicSearchRecords(v0 context.Context, v1 time.Duration, v2 int) (int, error) {
+	r0, r1 := m.DeleteOldPublicSearchRecordsFunc.nextHook()(v0, v1, v2)
+	m.DeleteOldPublicSearchRecordsFunc.appendCall(LSIFStoreDeleteOldPublicSearchRecordsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteOldPublicSearchRecords method of the parent MockLSIFStore instance
+// is invoked and the hook queue is empty.
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) SetDefaultHook(hook func(context.Context, time.Duration, int) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOldPublicSearchRecords method of the parent MockLSIFStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) PushHook(hook func(context.Context, time.Duration, int) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration, int) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration, int) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) nextHook() func(context.Context, time.Duration, int) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) appendCall(r0 LSIFStoreDeleteOldPublicSearchRecordsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// LSIFStoreDeleteOldPublicSearchRecordsFuncCall objects describing the
+// invocations of this function.
+func (f *LSIFStoreDeleteOldPublicSearchRecordsFunc) History() []LSIFStoreDeleteOldPublicSearchRecordsFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDeleteOldPublicSearchRecordsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDeleteOldPublicSearchRecordsFuncCall is an object that describes
+// an invocation of method DeleteOldPublicSearchRecords on an instance of
+// MockLSIFStore.
+type LSIFStoreDeleteOldPublicSearchRecordsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDeleteOldPublicSearchRecordsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDeleteOldPublicSearchRecordsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// LSIFStoreDoneFunc describes the behavior when the Done method of the
+// parent MockLSIFStore instance is invoked.
+type LSIFStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []LSIFStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLSIFStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(LSIFStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockLSIFStore instance is invoked and the hook queue is empty.
+func (f *LSIFStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockLSIFStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *LSIFStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *LSIFStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreDoneFunc) appendCall(r0 LSIFStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreDoneFuncCall objects describing
+// the invocations of this function.
+func (f *LSIFStoreDoneFunc) History() []LSIFStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreDoneFuncCall is an object that describes an invocation of method
+// Done on an instance of MockLSIFStore.
+type LSIFStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// LSIFStoreTransactFunc describes the behavior when the Transact method of
+// the parent MockLSIFStore instance is invoked.
+type LSIFStoreTransactFunc struct {
+	defaultHook func(context.Context) (LSIFStore, error)
+	hooks       []func(context.Context) (LSIFStore, error)
+	history     []LSIFStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockLSIFStore) Transact(v0 context.Context) (LSIFStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(LSIFStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockLSIFStore instance is invoked and the hook queue is empty.
+func (f *LSIFStoreTransactFunc) SetDefaultHook(hook func(context.Context) (LSIFStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockLSIFStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *LSIFStoreTransactFunc) PushHook(hook func(context.Context) (LSIFStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *LSIFStoreTransactFunc) SetDefaultReturn(r0 LSIFStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (LSIFStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *LSIFStoreTransactFunc) PushReturn(r0 LSIFStore, r1 error) {
+	f.PushHook(func(context.Context) (LSIFStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *LSIFStoreTransactFunc) nextHook() func(context.Context) (LSIFStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *LSIFStoreTransactFunc) appendCall(r0 LSIFStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of LSIFStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *LSIFStoreTransactFunc) History() []LSIFStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]LSIFStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// LSIFStoreTransactFuncCall is an object that describes an invocation of
+// method Transact on an instance of MockLSIFStore.
+type LSIFStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 LSIFStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c LSIFStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c LSIFStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // MockPolicyMatcher is a mock implementation of the PolicyMatcher interface

@@ -48,7 +48,6 @@ export function fetchStreamSuggestions(query: string, sourcegraphURL?: string): 
         version: SearchVersion.V2,
         patternType: SearchPatternType.literal,
         caseSensitive: false,
-        versionContext: undefined,
         trace: undefined,
         sourcegraphURL,
     }).pipe(map(suggestions => suggestions.results))

@@ -54,13 +54,17 @@ function updateQuery(query: string, updates: QueryUpdate[]): string {
 }
 
 export interface NavbarQueryState {
+    /**
+     * The current search query (usually visible in the main search input).
+     */
     queryState: QueryState
     setQueryState: (queryState: QueryStateUpdate) => void
     /**
      * submitSearch makes it possible to submit a new search query by updating
-     * the current query via the callback.
+     * the current query via update directives. It won't submit the query if it
+     * is empty.
      */
-    submitSearch: (updates: QueryUpdate[], parameters: Omit<SubmitSearchParameters, 'query'>) => void
+    submitSearch: (parameters: Omit<SubmitSearchParameters, 'query'>, updates?: QueryUpdate[]) => void
 }
 export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     queryState: { query: '' },
@@ -71,7 +75,10 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
             set({ queryState: queryStateUpdate })
         }
     },
-    submitSearch: (updates, parameters) => {
-        submitSearch({ ...parameters, query: updateQuery(get().queryState.query, updates) })
+    submitSearch: (parameters, updates = []) => {
+        const query = updateQuery(get().queryState.query, updates)
+        if (query !== '') {
+            submitSearch({ ...parameters, query })
+        }
     },
 }))
