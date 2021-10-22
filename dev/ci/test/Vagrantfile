@@ -120,6 +120,7 @@ export VAGRANT_SERVICE_ACCOUNT=#{ENV['VAGRANT_SERVICE_ACCOUNT']}
 export MINIMUM_UPGRADEABLE_VERSION=#{ENV['MINIMUM_UPGRADEABLE_VERSION']}
 
 EOF
+gcloud auth configure-docker --quiet
       SHELL
 
         server['shell_commands'].each do |sh|
