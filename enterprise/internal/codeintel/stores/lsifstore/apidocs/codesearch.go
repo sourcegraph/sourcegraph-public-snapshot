@@ -210,8 +210,8 @@ type Query struct {
 /// syntax.
 func ParseQuery(query string) Query {
 	q := Query{
-		MetaTerms: query,
-		MainTerms: query,
+		MetaTerms:        query,
+		MainTerms:        query,
 		SubStringMatches: true,
 	}
 	if i := strings.Index(query, ":"); i != -1 {
