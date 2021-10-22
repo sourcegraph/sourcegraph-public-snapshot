@@ -135,7 +135,6 @@ func transformRecord(ctx context.Context, s batchesStore, job *btypes.BatchSpecW
 					"batch",
 					"exec",
 					"-f", "input.json",
-					"-skip-errors",
 					"-clear-cache",
 				},
 				Dir: ".",
