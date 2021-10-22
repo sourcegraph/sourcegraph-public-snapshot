@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/apidocs"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -358,6 +359,12 @@ func (s *Store) documentationDefinitions(
 	return locations, totalCount, nil
 }
 
+// maximum candidates we'll consider: the more candidates we have the better ranking we get, but the
+// slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
+// 10,000 is an arbitrary choice based on current Sourcegraph.com corpus size and performance, it'll
+// be tuned as we scale to more repos if perf gets worse or we find we need better relevance.
+var debugAPIDocsSearchCandidates, _ = strconv.ParseInt(env.Get("DEBUG_API_DOCS_SEARCH_CANDIDATES", "10000", "maximum candidates for consideration in API docs search"))
+
 // DocumentationSearch searches API documentation in either the "public" or "private" table.
 //
 // 🚨 SECURITY: If the input tableSuffix is "private", then it is the callers responsibility to
@@ -392,6 +399,7 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 		apidocs.TextSearchRank("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches),      // label_reverse_rank
 
 		sqlf.Join(primaryClauses, ") OR ("), // primary WHERE clause
+		debugAPIDocsSearchCandidates,        // maximum candidates for consideration.
 		q.Limit,                             // result limit
 	)))
 }
@@ -476,10 +484,7 @@ WITH final_results AS (
 
 		-- maximum candidates we'll consider: the more candidates we have the better ranking we get,
 		-- but the slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
-		-- 10,000 is an arbitrary choice based on current Sourcegraph.com corpus size and performance,
-		-- it'll be tuned as we scale to more repos if perf gets worse or we find we need better
-		-- relevance.
-		LIMIT 10000
+		LIMIT %s
 	) sub
 	ORDER BY
 		-- Rank results from repos that match query terms higher.
