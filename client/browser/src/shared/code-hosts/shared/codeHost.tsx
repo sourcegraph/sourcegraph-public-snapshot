@@ -88,10 +88,9 @@ import { toTextDocumentPositionParameters } from '../../backend/extension-api-co
 import { CodeViewToolbar, CodeViewToolbarClassProps } from '../../components/CodeViewToolbar'
 import { isExtension, isInPage } from '../../context'
 import { SourcegraphIntegrationURLs, BrowserPlatformContext } from '../../platform/context'
-import { SourcegraphUrlService } from '../../platform/sourcegraphUrlService'
 import { resolveRevision, retryWhenCloneInProgressError } from '../../repo/backend'
 import { EventLogger, ConditionalTelemetryService } from '../../tracking/eventLogger'
-import { CLOUD_SOURCEGRAPH_URL, getPlatformName } from '../../util/context'
+import { DEFAULT_SOURCEGRAPH_URL, getPlatformName, observeSourcegraphURL } from '../../util/context'
 import { MutationRecordLike, querySelectorOrSelf } from '../../util/dom'
 import { featureFlags } from '../../util/featureFlags'
 import { shouldOverrideSendTelemetry, observeOptionFlag } from '../../util/optionFlags'
@@ -114,7 +113,6 @@ import {
     registerNativeTooltipContributions,
 } from './nativeTooltips'
 import { resolveRepoNamesForDiffOrFileInfo, defaultRevisionToCommitID } from './util/fileInfo'
-import { logger } from './util/logger'
 import { ViewOnSourcegraphButtonClassProps, ViewOnSourcegraphButton } from './ViewOnSourcegraphButton'
 import { delayUntilIntersecting, trackViews, ViewResolver } from './views'
 
@@ -685,7 +683,7 @@ export function handleCodeHost({
     const checkPrivateCloudError = (error: any): boolean =>
         !!(
             isRepoNotFoundErrorLike(error) &&
-            sourcegraphURL === CLOUD_SOURCEGRAPH_URL &&
+            sourcegraphURL === DEFAULT_SOURCEGRAPH_URL &&
             codeHost.getContext?.().privateRepository
         )
 
@@ -1294,7 +1292,33 @@ const CODE_HOSTS: CodeHost[] = [
     gerritCodeHost,
 ]
 
-export const determineCodeHost = (): CodeHost | undefined => CODE_HOSTS.find(codeHost => codeHost.check())
+const CLOUD_CODE_HOST_HOSTS = ['github.com', 'gitlab.com']
+
+export const determineCodeHost = (sourcegraphURL?: string): CodeHost | undefined => {
+    const codeHost = CODE_HOSTS.find(codeHost => codeHost.check())
+
+    if (!codeHost) {
+        return undefined
+    }
+
+    // Prevent repo lookups for code hosts that we know cannot have repositories
+    // cloned on sourcegraph.com. Repo lookups trigger cloning, which will
+    // inevitably fail in this case.
+    if (sourcegraphURL === DEFAULT_SOURCEGRAPH_URL) {
+        const { hostname } = new URL(location.href)
+        const validCodeHost = CLOUD_CODE_HOST_HOSTS.some(cloudHost => cloudHost === hostname)
+        if (!validCodeHost) {
+            console.log(
+                `Sourcegraph code host integration: stopped initialization since ${hostname} is not a supported code host when Sourcegraph URL is ${DEFAULT_SOURCEGRAPH_URL}.\n List of supported code hosts on ${DEFAULT_SOURCEGRAPH_URL}: ${CLOUD_CODE_HOST_HOSTS.join(
+                    ', '
+                )}`
+            )
+            return undefined
+        }
+    }
+
+    return codeHost
+}
 
 export function injectCodeIntelligenceToCodeHost(
     mutations: Observable<MutationRecordLike[]>,
@@ -1312,7 +1336,7 @@ export function injectCodeIntelligenceToCodeHost(
     const { requestGraphQL } = platformContext
     subscriptions.add(extensionsController)
 
-    const overrideSendTelemetry = SourcegraphUrlService.observe(isExtension).pipe(
+    const overrideSendTelemetry = observeSourcegraphURL(isExtension).pipe(
         map(sourcegraphUrl => shouldOverrideSendTelemetry(isFirefox(), isExtension, sourcegraphUrl))
     )
 
@@ -1348,7 +1372,7 @@ export function injectCodeIntelligenceToCodeHost(
                 if (codeHostSubscription) {
                     codeHostSubscription.unsubscribe()
                 }
-                logger.info('Browser extension is disabled')
+                console.log('Browser extension is disabled')
             } else {
                 codeHostSubscription = handleCodeHost({
                     mutations,
@@ -1363,7 +1387,7 @@ export function injectCodeIntelligenceToCodeHost(
                     background,
                 })
                 subscriptions.add(codeHostSubscription)
-                logger.info(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
+                console.log(`${isExtension ? 'Browser extension' : 'Native integration'} is enabled`)
             }
         })
     )
