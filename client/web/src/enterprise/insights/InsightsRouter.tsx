@@ -50,9 +50,9 @@ export const InsightsRouter = withAuthenticatedUser<InsightsRouterProps>(props =
     const match = useRouteMatch()
 
     const api = useMemo(() => {
-        // Enabled by default condition
+        // Disabled by default condition
         const isNewGqlApiEnabled= !isErrorLike(settingsCascade.final)
-            && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi !== false
+            && settingsCascade.final?.experimentalFeatures?.codeInsightsGqlApi
 
         return isNewGqlApiEnabled
             ? new CodeInsightsGqlBackend()
