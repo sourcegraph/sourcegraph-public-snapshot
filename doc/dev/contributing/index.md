@@ -10,4 +10,4 @@
 
 ## For Sourcegraph team
 
-1. Accepting an external contribution [guide](./accepting_contribution.md).
+- Accepting an external contribution [guide](./accepting_contribution.md).
