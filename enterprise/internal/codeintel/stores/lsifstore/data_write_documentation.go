@@ -11,8 +11,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -20,6 +18,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore/apidocs"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -356,8 +355,8 @@ func (s *Store) upsertRepositoryName(ctx context.Context, name, tableSuffix stri
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(upsertRepositoryNameQuery, "$SUFFIX", tableSuffix),
 		name,
-		textSearchVector(name),
-		textSearchVector(reverse(name)),
+		apidocs.TextSearchVector(name),
+		apidocs.TextSearchVector(apidocs.Reverse(name)),
 		name,
 	)))
 
@@ -388,7 +387,7 @@ func (s *Store) upsertLanguageName(ctx context.Context, indexerName, tableSuffix
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(upsertLanguageNameQuery, "$SUFFIX", tableSuffix),
 		languageName,
-		textSearchVector(languageName),
+		apidocs.TextSearchVector(languageName),
 		languageName,
 	)))
 
@@ -425,7 +424,7 @@ func (s *Store) upsertTags(ctx context.Context, tags []string, tableSuffix strin
 
 	inserter := func(inserter *batch.Inserter) error {
 		for _, tags := range tags {
-			if err := inserter.Insert(ctx, tags, textSearchVector(tags)); err != nil {
+			if err := inserter.Insert(ctx, tags, apidocs.TextSearchVector(tags)); err != nil {
 				return err
 			}
 		}
@@ -532,8 +531,8 @@ func (s *Store) replaceSearchRecords(
 				return nil
 			}
 
-			detail := truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
-			label := truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
+			detail := apidocs.Truncate(node.Detail.String(), 5*1024) // 5 KiB - just for sanity
+			label := apidocs.Truncate(node.Label.String(), 256)      // 256 bytes, enough for ~100 characters in all languages
 			tagsID := tagIDs[normalizeTags(node.Documentation.Tags)]
 
 			if err := inserter.Insert(
@@ -542,13 +541,13 @@ func (s *Store) replaceSearchRecords(
 				detail,      // detail
 				tagsID,      // tags_id
 
-				node.Documentation.SearchKey,                            // search_key
-				textSearchVector(node.Documentation.SearchKey),          // search_key_tsv
-				textSearchVector(reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
+				node.Documentation.SearchKey,                                            // search_key
+				apidocs.TextSearchVector(node.Documentation.SearchKey),                  // search_key_tsv
+				apidocs.TextSearchVector(apidocs.Reverse(node.Documentation.SearchKey)), // search_key_reverse_tsv
 
-				label,                            // label
-				textSearchVector(label),          // label_tsv
-				textSearchVector(reverse(label)), // label_reverse_tsv
+				label,                           // label
+				apidocs.TextSearchVector(label), // label_tsv
+				apidocs.TextSearchVector(apidocs.Reverse(label)), // label_reverse_tsv
 			); err != nil {
 				return err
 			}
@@ -787,141 +786,3 @@ DELETE FROM lsif_data_docs_search_$SUFFIX
 WHERE id IN (SELECT id FROM candidates)
 RETURNING id
 `
-
-// truncate truncates a string to limitBytes, taking into account multi-byte runes. If the string
-// is truncated, an ellipsis "…" is added to the end.
-func truncate(s string, limitBytes int) string {
-	runes := []rune(s)
-	bytes := 0
-	for i, r := range runes {
-		if bytes+len(string(r)) >= limitBytes {
-			return string(runes[:i-1]) + "…"
-		}
-		bytes += len(string(r))
-	}
-	return s
-}
-
-// textSearchVector constructs an ordered tsvector from the given string.
-//
-// Postgres' built in to_tsvector configurations (`simple`, `english`, etc.) work well for human
-// language search but for multiple reasons produces tsvectors that are not appropriate for our
-// use case of code search.
-//
-// By default, tsvectors perform word deduplication and normalization of words (Rat -> rat for
-// example.) They also get sorted alphabetically:
-//
-// ```
-// SELECT 'a fat cat sat on a mat and ate a fat rat'::tsvector;
-//                       tsvector
-// ----------------------------------------------------
-//  'a' 'and' 'ate' 'cat' 'fat' 'mat' 'on' 'rat' 'sat'
-// ```
-//
-// In the context of general document search, this doesn't matter. But in our context of API docs
-// search, the order in which words (in the general computing sense) appear matters. For example,
-// when searching `mux.router` it's important we match (package mux, symbol router) and not
-// (package router, symbol mux).
-//
-// Another critical reason to_tsvector's configurations are not suitable for codes search is that
-// they explicitly drop most punctuation (excluding periods) and don't split words between periods:
-//
-// ```
-// select to_tsvector('foo::bar mux.Router const Foo* = Bar<T<X>>');
-//                  to_tsvector
-// ----------------------------------------------
-//  'bar':2,6 'const':4 'foo':1,5 'mux.router':3
-// ```
-//
-// Luckily, Postgres allows one to construct tsvectors manually by providing a sorted list of lexemes
-// with optional integer _positions_ and weights, or:
-//
-// ```
-// SELECT $$'foo':1 '::':2 'bar':3 'mux':4 'Router':5 'const':6 'Foo':7 '*':8 '=':9 'Bar':10 '<':11 'T':12 '<':13 'X':14 '>':15 '>':16$$::tsvector;
-//                                                       tsvector
-// --------------------------------------------------------------------------------------------------------------------
-//  '*':8 '::':2 '<':11,13 '=':9 '>':15,16 'Bar':10 'Foo':7 'Router':5 'T':12 'X':14 'bar':3 'const':6 'foo':1 'mux':4
-// ```
-//
-// Ordered, case-sensitive, punctuation-inclusive tsquery matches against the tsvector are then possible.
-//
-// For example, a query for `bufio.` would then match a tsvector ("bufio", ".", "Reader", ".", "writeBuf"):
-//
-// ```
-// SELECT $$'bufio':1 '.':2 'Reader':3 '.':4 'writeBuf':5$$::tsvector @@ tsquery_phrase($$'bufio'$$::tsquery, $$'.'$$::tsquery) AS matches;
-//  matches
-// ---------
-//  t
-// ```
-//
-func textSearchVector(s string) string {
-	// We need to emit a string in the Postgres tsvector format, roughly:
-	//
-	//     lexeme1:1 lexeme2:2 lexeme3:3
-	//
-	lexemes := lexemes(s)
-	pairs := make([]string, 0, len(lexemes))
-	for i, lexeme := range lexemes {
-		pairs = append(pairs, fmt.Sprintf("%s:%v", lexeme, i+1))
-	}
-	return strings.Join(pairs, " ")
-}
-
-// lexemes splits the string into lexemes, each will be any contiguous section of Unicode digits,
-// numbers, and letters. All other unicode runes, such as punctuation, are considered their own
-// individual lexemes - and spaces are removed and considered boundaries.
-func lexemes(s string) []string {
-	var (
-		lexemes       []string
-		currentLexeme []rune
-	)
-	for _, r := range s {
-		if unicode.IsDigit(r) || unicode.IsNumber(r) || unicode.IsLetter(r) {
-			currentLexeme = append(currentLexeme, r)
-			continue
-		}
-		if len(currentLexeme) > 0 {
-			lexemes = append(lexemes, string(currentLexeme))
-			currentLexeme = currentLexeme[:0]
-		}
-		if !unicode.IsSpace(r) {
-			lexemes = append(lexemes, string(r))
-		}
-	}
-	if len(currentLexeme) > 0 {
-		lexemes = append(lexemes, string(currentLexeme))
-	}
-	return lexemes
-}
-
-// reverses a UTF-8 string accounting for Unicode and combining characters. This is not a part of
-// the Go standard library or any of the golang.org/x packages. Note that reversing a slice of
-// runes is not enough (would not handle combining characters.)
-//
-// See http://rosettacode.org/wiki/Reverse_a_string#Go
-func reverse(s string) string {
-	if s == "" {
-		return ""
-	}
-	p := []rune(s)
-	r := make([]rune, len(p))
-	start := len(r)
-	for i := 0; i < len(p); {
-		// quietly skip invalid UTF-8
-		if p[i] == utf8.RuneError {
-			i++
-			continue
-		}
-		j := i + 1
-		for j < len(p) && (unicode.Is(unicode.Mn, p[j]) ||
-			unicode.Is(unicode.Me, p[j]) || unicode.Is(unicode.Mc, p[j])) {
-			j++
-		}
-		for k := j - 1; k >= i; k-- {
-			start--
-			r[start] = p[k]
-		}
-		i = j
-	}
-	return (string(r[start:]))
-}
