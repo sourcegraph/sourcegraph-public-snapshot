@@ -173,7 +173,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	}{
 		{"org with single member", org1.ID, 1},
 		{"org with two members", org2.ID, 2},
-		{"org with one  deleted member", org3.ID, 1}} {
+		{"org with one deleted member", org3.ID, 1}} {
 		t.Run(test.name, func(*testing.T) {
 			got, err := OrgMembers(db).MemberCount(ctx, test.orgID)
 			if err != nil {
