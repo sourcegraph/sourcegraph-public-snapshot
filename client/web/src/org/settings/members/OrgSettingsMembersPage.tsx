@@ -167,7 +167,7 @@ interface State extends HasOneMember {
 /**
  * The organizations members page
  */
-export class OrgSettingsMembersPage extends React.PureComponent<Props, State & HasOneMember> {
+export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
     private componentUpdates = new Subject<Props>()
     private userUpdates = new Subject<void>()
     private subscriptions = new Subscription()
