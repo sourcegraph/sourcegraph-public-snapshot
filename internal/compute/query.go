@@ -57,33 +57,6 @@ func (MatchOnly) command() {}
 func (Replace) command()   {}
 func (Output) command()    {}
 
-type MatchOnly struct {
-	MatchPattern MatchPattern
-}
-
-type Replace struct {
-	MatchPattern   MatchPattern
-	ReplacePattern string
-}
-
-type Output struct {
-	MatchPattern  MatchPattern
-	OutputPattern string
-	Separator     string
-}
-
-func (c *MatchOnly) String() string {
-	return fmt.Sprintf("Match only: %s", c.MatchPattern.String())
-}
-
-func (c *Replace) String() string {
-	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
-}
-
-func (c *Output) String() string {
-	return fmt.Sprintf("Output with separator: (%s) -> (%s) separator: %s", c.MatchPattern.String(), c.OutputPattern, c.Separator)
-}
-
 type MatchPattern interface {
 	pattern()
 	String() string
