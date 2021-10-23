@@ -108,9 +108,9 @@ func toLspRange(r compute.Range) lsp.Range {
 // ComputeText GQL result resolver definitions.
 
 type computeTextResolver struct {
-	repository *RepositoryResolver //nolint
-	commit     string              //nolint
-	path       string              //nolint
+	repository *RepositoryResolver
+	commit     string
+	path       string
 	t          *compute.Text
 }
 
@@ -159,6 +159,32 @@ func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContex
 		commit:     string(fm.CommitID),
 		path:       fm.Path,
 		matches:    computeMatches,
+	}
+}
+
+var _ = toComputeTextResolver
+
+func toComputeTextResolver(fm *result.FileMatch, text, kind string, db dbutil.DB) *computeTextResolver {
+	type repoKey struct {
+		Name types.RepoName
+		Rev  string
+	}
+	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+			return existing
+		}
+		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver.RepoMatch.Rev = rev
+		repoResolvers[repoKey{repoName, rev}] = resolver
+		return resolver
+	}
+
+	return &computeTextResolver{
+		repository: getRepoResolver(fm.Repo, ""),
+		commit:     string(fm.CommitID),
+		path:       fm.Path,
+		t:          &compute.Text{Value: text, Kind: kind},
 	}
 }
 
