@@ -58,6 +58,39 @@ func TestClient_ListCloned(t *testing.T) {
 	}
 }
 
+func TestClient_RequestRepoMigrate(t *testing.T) {
+	repo := api.RepoName("github.com/souregraph/sourcegraph")
+	addrs := []string{"http://172.16.8.1:8080", "http://172.16.8.2:800"}
+
+	expected := gitserver.RendezvousAddrForRepo(repo, addrs)
+
+	cli := &gitserver.Client{
+		Addrs: func() []string {
+			return addrs
+		},
+
+		HTTPClient: httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+			switch r.URL.String() {
+			// Ensure that the request was received by the "expected" gitserver instance - where
+			// expected is the gitserver instance according to the Rendezvous hashing scheme.
+			// For anything else apart from this we return an error.
+			case expected + "/repo-update":
+				return &http.Response{
+					StatusCode: 200,
+					Body:       io.NopCloser(bytes.NewBufferString("{}")),
+				}, nil
+			default:
+				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+			}
+		}),
+	}
+
+	_, err := cli.RequestRepoMigrate(context.Background(), repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestClient_Archive(t *testing.T) {
 	root, err := os.MkdirTemp("", t.Name())
 	if err != nil {
