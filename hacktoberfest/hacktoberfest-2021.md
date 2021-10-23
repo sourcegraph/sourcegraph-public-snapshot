@@ -24,7 +24,11 @@ All open issues are not yet solved. If the task is interesting to you, take it a
 
 ## Step 2 - Fork the Sourcegraph repository
 
-Fork the Sourcegraph repository: `gh repo fork https://github.com/sourcegraph/sourcegraph/ --clone=true`.
+If you have the GitHub command line tool:
+
+`gh repo fork https://github.com/sourcegraph/sourcegraph/ --clone=true`
+
+Otherwise, [fork sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph/fork) then `git clone git@github.com:<your-username>/sourcegraph.git`.
 
 For more information about forking a repository, please read the [GitHub docs](https://docs.github.com/en/get-started/quickstart/fork-a-repo#cloning-your-forked-repository).
 
