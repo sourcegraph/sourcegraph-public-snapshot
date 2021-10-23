@@ -55,9 +55,7 @@
             }
 
             &:focus,
-            &.focus,
-            &:active,
-            &.active {
+            &.focus {
                 color: $text-color;
                 background-color: $base-color;
                 border-color: var(--body-bg);
@@ -120,9 +118,7 @@
             }
 
             &:focus,
-            &.focus,
-            &:active,
-            &.active {
+            &.focus {
                 color: var(--body-color);
                 border-color: var(--body-bg);
                 background-color: var(--body-bg);
@@ -253,9 +249,7 @@
             }
 
             &:focus,
-            &.focus,
-            &:active,
-            &.active {
+            &.focus {
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
 
