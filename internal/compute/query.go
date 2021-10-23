@@ -3,11 +3,10 @@ package compute
 import (
 	"fmt"
 	"regexp"
-	"strings"
-
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 
 	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
 type Query struct {
@@ -75,11 +74,11 @@ func (c *MatchOnly) String() string {
 }
 
 func (c *ReplaceInPlace) String() string {
-	return fmt.Sprintf("Replace in place: %s -> %s", c.MatchPattern.String(), c.ReplacePattern)
+	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
 }
 
 func (c *ReplaceWithSeparator) String() string {
-	return fmt.Sprintf("Replace with separator: %s -> %s separator: %s", c.MatchPattern.String(), c.ReplacePattern, c.Separator)
+	return fmt.Sprintf("Replace with separator: (%s) -> (%s) separator: %s", c.MatchPattern.String(), c.ReplacePattern, c.Separator)
 }
 
 type MatchPattern interface {
@@ -148,6 +147,8 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 	},
 }
 
+var arrowSyntax = lazyregexp.New(`\s*->\s*`)
+
 func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) {
 	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
 		// pattern is not set via `content:`, so it cannot be a replace command.
@@ -158,7 +159,7 @@ func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) 
 		return nil, false, nil
 	}
 	_, args := query.ParseAsPredicate(value)
-	parts := strings.Split(args, "->")
+	parts := arrowSyntax.Split(args, 2)
 	if len(parts) != 2 {
 		return nil, false, errors.New("invalid replace statement, no left and right hand sides of `->`")
 	}
