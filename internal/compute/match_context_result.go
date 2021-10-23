@@ -45,6 +45,8 @@ type MatchContext struct {
 	Path    string  `json:"path"`
 }
 
+func (*MatchContext) result() {}
+
 func newLocation(line, column, offset int) Location {
 	return Location{
 		Offset: offset,
