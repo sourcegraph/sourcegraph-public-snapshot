@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
-func doReplaceInPlace(content []byte, command *ReplaceInPlace) (*Text, error) {
+func doReplaceInPlace(content []byte, command *Replace) (*Text, error) {
 	var newContent []byte
 	switch p := command.MatchPattern.(type) {
 	case *Regexp:
@@ -19,7 +19,7 @@ func doReplaceInPlace(content []byte, command *ReplaceInPlace) (*Text, error) {
 	return &Text{Value: string(newContent), Kind: "replace-in-place"}, nil
 }
 
-func ReplaceInPlaceFromFileMatch(ctx context.Context, fm *result.FileMatch, command *ReplaceInPlace) (*Text, error) {
+func ReplaceInPlaceFromFileMatch(ctx context.Context, fm *result.FileMatch, command *Replace) (*Text, error) {
 	content, err := git.ReadFile(ctx, fm.Repo.Name, fm.CommitID, fm.Path, 0)
 	if err != nil {
 		return nil, err

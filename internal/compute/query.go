@@ -28,7 +28,7 @@ func (q Query) ToSearchQuery() (string, error) {
 	switch c := q.Command.(type) {
 	case *MatchOnly:
 		searchPattern = c.MatchPattern.String()
-	case *ReplaceInPlace:
+	case *Replace:
 		searchPattern = c.MatchPattern.String()
 	case *ReplaceWithSeparator:
 		searchPattern = c.MatchPattern.String()
@@ -49,19 +49,19 @@ type Command interface {
 
 var (
 	_ Command = (*MatchOnly)(nil)
-	_ Command = (*ReplaceInPlace)(nil)
+	_ Command = (*Replace)(nil)
 	_ Command = (*ReplaceWithSeparator)(nil)
 )
 
 func (MatchOnly) command()            {}
-func (ReplaceInPlace) command()       {}
+func (Replace) command()              {}
 func (ReplaceWithSeparator) command() {}
 
 type MatchOnly struct {
 	MatchPattern MatchPattern
 }
 
-type ReplaceInPlace struct {
+type Replace struct {
 	MatchPattern   MatchPattern
 	ReplacePattern string
 }
@@ -76,7 +76,7 @@ func (c *MatchOnly) String() string {
 	return fmt.Sprintf("Match only: %s", c.MatchPattern.String())
 }
 
-func (c *ReplaceInPlace) String() string {
+func (c *Replace) String() string {
 	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
 }
 
@@ -152,7 +152,7 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 
 var arrowSyntax = lazyregexp.New(`\s*->\s*`)
 
-func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) {
+func parseReplace(pattern *query.Pattern) (*Replace, bool, error) {
 	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
 		// pattern is not set via `content:`, so it cannot be a replace command.
 		return nil, false, nil
@@ -170,11 +170,11 @@ func parseReplaceInPlace(pattern *query.Pattern) (*ReplaceInPlace, bool, error) 
 	if err != nil {
 		return nil, false, errors.Wrap(err, "replace command")
 	}
-	return &ReplaceInPlace{MatchPattern: rp, ReplacePattern: parts[1]}, true, nil
+	return &Replace{MatchPattern: rp, ReplacePattern: parts[1]}, true, nil
 }
 
 func toCommand(pattern *query.Pattern) (Command, error) {
-	command, ok, err := parseReplaceInPlace(pattern)
+	command, ok, err := parseReplace(pattern)
 	if err != nil {
 		return nil, err
 	}
