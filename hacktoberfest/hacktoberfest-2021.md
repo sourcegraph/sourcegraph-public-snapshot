@@ -52,7 +52,7 @@ Before creating a Pull Request ensure that [recommended checks](https://docs.sou
 
 When you are satisfied, open your pull request referencing the issue that you are resolving. **Use the word `hacktoberfest` in your pull request description** to increase its discoverability.
 
-**IMPORTANT:** Once you have a pull request ready to review, the `verification/cla-signed` check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@natectang`. After that, your pull request will be ready for review.
+**IMPORTANT:** Once you have a pull request ready to review, the `verification/cla-signed` check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@sourcegraph/hacktoberfest-reviewers`. After that, your pull request will be ready for review.
 
 ## Further Info
 
