@@ -279,14 +279,32 @@ An **incremental sync** indicates that a user has *not* yet completed user-centr
 
 ### Permissions sync scheduling
 
-A variety of heuristics are used to determine when a user or a repository should be scheduled for a permissions sync (either [user-centric or repo-centric](#complete-sync-vs-incremental-sync) respectively) to ensure the relevancy of the permissions data Sourcegraph has. For examples, permissions syncs may be scheduled:
+A variety of heuristics are used to determine when a user or a repository should be scheduled for a permissions sync (either [user-centric or repo-centric](#complete-sync-vs-incremental-sync) respectively) to ensure the relevancy of the permissions data Sourcegraph has. For example, permissions syncs may be scheduled:
 
 - When a user or repository is created
 - When a user's or repository's permissions are deemed stale (i.e. some amount of time has passed since the last sync)
-- When a manual sync is scheduled by a site admin
 - When a relevant [webhook is configured and received](#triggering-syncs-with-webhooks)
+- When a [manual sync is scheduled](#manually-scheduling-a-sync)
 
 When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration).
+
+#### Manually scheduling a sync
+
+Permissions syncs are [typically scheduled automatically](#manually-scheduling-a-sync).
+However, a sync can be manually scheduled through the UI in one of two ways by site admins:
+
+- For users: navigating to `/users/$USER/settings/permissions` and clicking "Schedule now"
+- For repositories: navigating to `/$CODEHOST/$REPO/-/settings/permissions` and clicking "Schedule now"
+
+The GraphQL API can also be used to schedule a sync:
+
+```gql
+mutation {
+  scheduleUserPermissionsSync(user: "userid") {
+    alwaysNil
+  }
+}
+```
 
 ### Permissions sync duration
 
