@@ -1,8 +1,8 @@
-# Bkstats 
+# Bkstats
 
 A crude script to compute statistics from our Buildkite pipelines.
 
-## Usage 
+## Usage
 
 ```
 $ go run main.go -token BUILKITE_API_TOKEN -date 2021-10-22 -pipeline sourcegraph
