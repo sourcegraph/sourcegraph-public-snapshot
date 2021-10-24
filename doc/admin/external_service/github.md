@@ -39,8 +39,8 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 | Feature                                               | Required token scopes                                                                              |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | [Sync private repositories](#github)                  | `repo`                                                                                             |
-| [Sync repository permissions][permissions]            | `repo` and write access to relevant repositories                                                   |
-| [Repository permissions caching][permissions-caching] | `write:org` and write access to relevant organizations                                             |
+| [Sync repository permissions][permissions]            | `repo`                                                                                             |
+| [Repository permissions caching][permissions-caching] | `write:org`                                                                                        |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, and `read:discussion` ([learn more][batch-changes-interactions]) |
 
 [permissions]: ../repo/permissions.md#github
@@ -50,7 +50,9 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 <span class="virtual-br"></span>
 
-> NOTE: To leverage additional token scopes, the account attached to the token must actually have access to the prerequisite resources. For example, you cannot grant `repo` access to a repository that the token's account itself does not have write access for.
+> WARNING: In addition to the prerequisite token scopes, the account attached to the token must actually have access to the relevant resources for [complete permissions sync](./../repo/permissions.md#complete-sync-vs-incremental-sync) (i.e. you cannot grant `repo` access to a repository that the token's account itself does not have write access for).
+>
+> For example, to sync repository permissions, the token's account must have write access to all repositories that need permissions enforced in order to list each repository's collaborators for repo-centric sync
 
 ## GitHub.com rate limits
 
