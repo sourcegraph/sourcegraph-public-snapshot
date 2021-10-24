@@ -22,10 +22,10 @@ type ListExternalServicesForBatchChangeOpts struct {
 // ListExternalServicesForBatchChange lists the external services that the given
 // batch change has changesets published on.
 //
-// 🚨 SECURITY: Although this is filtered using authz, only site admins should
-// have access to the configuratin within external services. The raw results of
-// this method MUST NOT be used unless a site admin check has already occurred
-// before invoking this method.
+// 🚨 SECURITY: Although this is filtered using authz, only site admins are
+// permitted access to the configuration within external services, since it may
+// include secrets. The raw results of this method MUST NOT be used unless a
+// site admin check has already occurred before invoking this method.
 func (s *Store) ListExternalServicesForBatchChange(ctx context.Context, opts ListExternalServicesForBatchChangeOpts) (es []*types.ExternalService, next int64, err error) {
 	ctx, endObservation := s.operations.listExternalServicesForBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
@@ -131,6 +131,8 @@ func listExternalServicesForBatchChangeQuery(opts *ListExternalServicesForBatchC
 	)
 }
 
+// CountExternalServicesForBatchChange returns the number of external services
+// that the given batch change has changesets on.
 func (s *Store) CountExternalServicesForBatchChange(ctx context.Context, batchChangeID int64) (count int64, err error) {
 	ctx, endObservation := s.operations.countExternalServicesForBatchChange.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})

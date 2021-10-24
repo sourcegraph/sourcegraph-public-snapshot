@@ -36,7 +36,7 @@ func testExternalServices(t *testing.T, ctx context.Context, store *Store, clock
 	ghRepos, ghExtSvc := bt.CreateGitHubSSHTestRepos(t, ctx, store.DB(), 2)
 	glRepos, glExtSvc := bt.CreateGitlabTestRepos(t, ctx, store.DB(), 1)
 	bbsRepos, bbsExtSvc := bt.CreateBbsSSHTestRepos(t, ctx, store.DB(), 1)
-	unusedRepos, unusedExtSvc := bt.CreateGitHubSSHTestRepos(t, ctx, store.DB(), 1)
+	otherRepos, otherExtSvc := bt.CreateGitHubSSHTestRepos(t, ctx, store.DB(), 1)
 
 	user := bt.CreateTestUser(t, store.DB(), false)
 	admin := bt.CreateTestUser(t, store.DB(), true)
@@ -66,13 +66,13 @@ func testExternalServices(t *testing.T, ctx context.Context, store *Store, clock
 	otherBatchChange := bt.CreateBatchChange(t, ctx, store, "other", user.ID, otherBatchSpec.ID)
 	otherChangesetSpec := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
 		User:      user.ID,
-		Repo:      unusedRepos[0].ID,
+		Repo:      otherRepos[0].ID,
 		BatchSpec: otherBatchSpec.ID,
 		HeadRef:   "main",
 		Published: true,
 	})
 	bt.CreateChangeset(t, ctx, store, bt.TestChangesetOpts{
-		Repo:             unusedRepos[0].ID,
+		Repo:             otherRepos[0].ID,
 		BatchChange:      otherBatchChange.ID,
 		CurrentSpec:      otherChangesetSpec.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
@@ -167,7 +167,7 @@ func testExternalServices(t *testing.T, ctx context.Context, store *Store, clock
 			"other": {
 				batchChangeID: otherBatchChange.ID,
 				user:          admin,
-				want:          []*types.ExternalService{unusedExtSvc},
+				want:          []*types.ExternalService{otherExtSvc},
 			},
 			"primary as admin": {
 				batchChangeID: batchChange.ID,
