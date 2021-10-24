@@ -59,7 +59,7 @@ main() {
   fi
 
   printf '%s\n' 'running sg install' 1>&2
-  exec "$_file" install
+  "$_file" install </dev/tty
 }
 
 get_architecture() {

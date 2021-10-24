@@ -22,9 +22,15 @@ Once you've chosen an issue, **comment on it to announce that you will be workin
 
 All open issues are not yet solved. If the task is interesting to you, take it and feel free to do it. There is no need to ask for permission or get in line. Even if someone else can do the task faster than you, don't stop - your solution may be better. It is the beauty of Open Source!
 
-## Step 2 - Clone the Sourcegraph repository
+## Step 2 - Fork the Sourcegraph repository
 
-Clone the repo: `git clone https://github.com/sourcegraph/sourcegraph/`.
+If you have the GitHub command line tool:
+
+`gh repo fork https://github.com/sourcegraph/sourcegraph/ --clone=true`
+
+Otherwise, [fork sourcegraph/sourcegraph](https://github.com/sourcegraph/sourcegraph/fork) then `git clone git@github.com:<your-username>/sourcegraph.git`.
+
+For more information about forking a repository, please read the [GitHub docs](https://docs.github.com/en/get-started/quickstart/fork-a-repo#cloning-your-forked-repository).
 
 ## Step 3 - Set up your local development environment
 
@@ -46,7 +52,7 @@ Before creating a Pull Request ensure that [recommended checks](https://docs.sou
 
 When you are satisfied, open your pull request referencing the issue that you are resolving. **Use the word `hacktoberfest` in your pull request description** to increase its discoverability.
 
-**IMPORTANT:** Once you have a pull request ready to review, the `verification/cla-signed` check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@natectang`. After that, your pull request will be ready for review.
+**IMPORTANT:** Once you have a pull request ready to review, the `verification/cla-signed` check will be flagged, and you will be prompted to sign the CLA with a link provided by our bot. Once you sign, add a comment tagging `@sourcegraph/hacktoberfest-reviewers`. After that, your pull request will be ready for review.
 
 ## Further Info
 
