@@ -43,8 +43,10 @@ func main() {
 	nextPage := 0
 	for {
 		bs, resp, err := client.Builds.ListByPipeline("sourcegraph", pipeline, &buildkite.BuildsListOptions{
-			Branch:      "main",
-			CreatedFrom: BoD(t).Add(-1 * 24 * time.Hour), // day before
+			Branch: "main",
+			// Select all builds that finished on or after the beginning of the day ...
+			FinishedFrom: BoD(t),
+			// To those who were created before or on the end of the day.
 			CreatedTo:   EoD(t),
 			ListOptions: buildkite.ListOptions{Page: nextPage},
 		})
@@ -66,6 +68,11 @@ func main() {
 	ends := []*event{}
 	for _, b := range builds {
 		if b.FinishedAt != nil {
+			if b.FinishedAt.Time.Day() != t.Day() {
+				// Because we select builds that can be created on a given day but may not have finished yet
+				// we need to discard those.
+				continue
+			}
 			ends = append(ends, &event{
 				at:       b.FinishedAt.Time,
 				state:    *b.State,
