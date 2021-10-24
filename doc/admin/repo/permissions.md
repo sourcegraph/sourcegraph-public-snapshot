@@ -40,7 +40,7 @@ Then, [add or edit a GitHub connection](../external_service/github.md) with a [t
 
 <span class="badge badge-note">Sourcegraph 3.22+</span>
 
-Sourcegraph can improve the relevancy of synchronized permissions by initiating syncs when receiving webhooks from GitHub for events related to user and repo permissions - [learn more about webhooks and permissions sync](#triggering-syncs-with-webhooks).
+Sourcegraph can improve how up to date synchronized permissions stay by initiating syncs when receiving webhooks from GitHub for events related to user and repo permissions - [learn more about webhooks and permissions sync](#triggering-syncs-with-webhooks).
 
 To set up webhooks, follow the guide in the [GitHub Code Host Docs](../external_service/github.md#webhooks). These events will enqueue permissions syncs for the repositories or users mentioned, meaning things like publicising / privatising repos, or adding collaborators will be reflected in your Sourcegraph searches more quickly. For this to work the user must have logged in via the [GitHub OAuth provider](../auth.md#github).
 
