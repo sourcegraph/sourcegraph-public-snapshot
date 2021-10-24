@@ -280,6 +280,34 @@ The two types of sync means that each user or repository can be in one of two st
 - A **complete sync** means a user has completed user-centric permissions sync (or a repository has completed a repository-centric sync), which indicates the most accurate permissions from the code host has been presisted to Sourcegraph.
 - An **incremental sync** indicates that a user has *not* yet completed user-centric permissions sync (or a repository has *not* yet completed a repository-centric sync), but has been granted some permissions from other sources. For example, if a user has *not* had a user-centric permissions sync, but has been granted permissions from one or more repository-centric syncs, the user will have only completed an incremental sync. In this state, a user might not have access to all repositories they should have access to, but will incrementally receive more access as repository-centric syncs complete.
 
+#### Checking on permissions sync state
+
+The state of an user or repository's permissions can be checked in the UI by:
+
+- For users: navigating to `/users/$USER/settings/permissions`
+- For repositories: navigating to `/$CODEHOST/$REPO/-/settings/permissions`
+
+The GraphQL API can also be used:
+
+```gql
+query {
+  user(username: "user") {
+    permissionsInfo {
+      syncedAt
+      updatedAt
+    }
+  }
+  repository(name: "repository") {
+    permissionsInfo {
+      syncedAt
+      updatedAt
+    }
+  }
+}
+```
+
+In the GraphQL API, `syncedAt` indicates the last complete sync and `updatedAt` indicates the last incremental sync - [learn more](#complete-sync-vs-incremental-sync).
+
 ### Permissions sync scheduling
 
 A variety of heuristics are used to determine when a user or a repository should be scheduled for a permissions sync (either [user-centric or repo-centric](#complete-sync-vs-incremental-sync) respectively) to ensure the relevancy of the permissions data Sourcegraph has. For example, permissions syncs may be scheduled:
@@ -294,7 +322,7 @@ When a sync is scheduled, it is added to a queue that is steadily processed to a
 #### Manually scheduling a sync
 
 Permissions syncs are [typically scheduled automatically](#manually-scheduling-a-sync).
-However, a sync can be manually scheduled through the UI in one of two ways by site admins:
+However, a sync can be manually scheduled through the UI in by site admins:
 
 - For users: navigating to `/users/$USER/settings/permissions` and clicking "Schedule now"
 - For repositories: navigating to `/$CODEHOST/$REPO/-/settings/permissions` and clicking "Schedule now"
