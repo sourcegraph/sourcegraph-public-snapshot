@@ -41,6 +41,10 @@ var (
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
+
+	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
+	ciBuildBranchFlag = ciBuildFlagSet.String("branch", "", "Branch name to build (defaults to current branch)")
+	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit to build (defaults to current commit)")
 )
 
 // get branch from flag or git
@@ -179,6 +183,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 			},
 		}, {
 			Name:      "build",
+			FlagSet:   ciBuildFlagSet,
 			ShortHelp: "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks)",
 			LongHelp:  "Manually request a Buildkite build for the currently checked out commit and branch. This is most useful when triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)",
 			Exec: func(ctx context.Context, args []string) error {
@@ -187,14 +192,31 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					return err
 				}
 
-				branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+				branch := *ciBuildBranchFlag
+				if branch == "" {
+					branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
+					if err != nil {
+						return err
+					}
+				}
+
+				commit := *ciBuildCommitFlag
+				if commit == "" {
+					commit, err = run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
+					if err != nil {
+						return err
+					}
+				}
+
+				_, err = run.GitCmd("merge-base", "--is-ancestor", commit, branch)
 				if err != nil {
+					var exitErr *exec.ExitError
+					if errors.As(err, &exitErr) {
+						return fmt.Errorf("commit %s does not belong to the branch %s: %w", commit, branch, exitErr)
+					}
 					return err
 				}
-				commit, err := run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
-				if err != nil {
-					return err
-				}
+
 				out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
 
 				// simple check to see if commit is in origin, this is non blocking but
@@ -308,7 +330,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 func allLinesPrefixed(lines []string, match string) bool {
 	for _, l := range lines {
-		if !strings.HasPrefix(l, match) {
+		if !strings.HasPrefix(strings.TrimSpace(l), match) {
 			return false
 		}
 	}
