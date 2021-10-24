@@ -303,6 +303,9 @@ mutation {
   scheduleUserPermissionsSync(user: "userid") {
     alwaysNil
   }
+  scheduleRepositoryPermissionsSync(repository: "repositoryid") {
+    alwaysNil
+  }
 }
 ```
 
