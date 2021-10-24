@@ -399,7 +399,7 @@ query {
 
 ## Permissions for multiple code hosts
 
-If the Sourcegraph instance is configured to sync repositories from multiple code hosts (regardless of whether they are the same code host, e.g. `GitHub + GitHub` or `GitHub + GitLab`), setting up permissions for each code host will make repository permissions apply holistically on Sourcegraph, so long as users log in from each code host *and* users have the same primary email across all code hosts.
+If the Sourcegraph instance is configured to sync repositories from multiple code hosts (regardless of whether they are the same code host, e.g. `GitHub + GitHub` or `GitHub + GitLab`), Sourcegraph will enforce access to repositories from each code host with authorization enabled, so long as users log in from each code host *and* users have the same primary email across all code hosts.
 
 To attach a user's Sourcegraph account to all relevant code host accounts, a specific sign-in flow needs to be utilized when users are creating an account and signing into Sourcegraph for the first time.
 
