@@ -284,7 +284,7 @@ A variety of heuristics are used to determine when a user or a repository should
 - When a manual sync is scheduled by a site admin
 - When a relevant [webhook is configured and received](#triggering-syncs-with-webhooks)
 
-When a sync is scheduled, it is added to a queue that is steadily processed based to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration).
+When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration).
 
 ### Permissions sync duration
 
