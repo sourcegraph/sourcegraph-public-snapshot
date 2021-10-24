@@ -264,7 +264,9 @@ This enables:
 1. Permissions are quickly synced for new repositories added to the Sourcegraph instance.
 1. Users who sign up on the Sourcegraph instance can immediately get search results from some repositories they have access to on the code host as we begin to [incrementally sync](#complete-sync-vs-incremental-sync) their permissions.
 
-However, this means that it [can take a long time for a full sync to complete](#permissions-sync-duration).
+However, it [can still take a long time for a full sync to complete](#permissions-sync-duration).
+
+> NOTE: Background permissions sync does not apply to the [explicit permissions API](#explicit-permissions-api).
 
 ### Complete sync vs incremental sync
 
@@ -273,7 +275,7 @@ Sourcegraph's [background permissions syncing](#background-permissions-syncing) 
 - A *user-centric* permissions sync that pulls all repositories a user has access to.
 - A *repository-centric* permissions sync that pulls all users that have access to a repository.
 
-> NOTE: Failure cases for each type of sync is generally gracefully handled - unless the code host returns a non-error response, the result is not used to update permissions. The result is generally that permissions may become outdated, but will not be deleted, if syncs fail.
+> NOTE: Failure cases for each type of sync is generally gracefully handled - unless the code host returns a non-error response, the result is not used to update permissions. This means that permissions may become outdated, but will usually not be deleted, if syncs fail.
 
 The two types of sync means that each user or repository can be in one of two states:
 
