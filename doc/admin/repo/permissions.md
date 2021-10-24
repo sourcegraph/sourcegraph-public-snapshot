@@ -310,7 +310,7 @@ In the GraphQL API, `syncedAt` indicates the last complete sync and `updatedAt` 
 
 ### Permissions sync scheduling
 
-A variety of heuristics are used to determine when a user or a repository should be scheduled for a permissions sync (either [user-centric or repo-centric](#complete-sync-vs-incremental-sync) respectively) to ensure the relevancy of the permissions data Sourcegraph has. For example, permissions syncs may be scheduled:
+A variety of heuristics are used to determine when a user or a repository should be scheduled for a permissions sync (either [user-centric or repo-centric](#complete-sync-vs-incremental-sync) respectively) to ensure the permissions data Sourcegraph has is up to date. For example, permissions syncs may be scheduled:
 
 - When a user or repository is created
 - When a user's or repository's permissions are deemed stale (i.e. some amount of time has passed since the last sync)
@@ -350,7 +350,7 @@ To further mitigate long sync times and API request load, Sourcegraph can also l
 
 ### Provider-specific optimizations
 
-Each provider can implement optimizations to improve [sync performance](#permissions-sync-duration) and [relevancy](#triggering-syncs-with-webhooks) - please refer to the relevant provider documentation on this page for more details.
+Each provider can implement optimizations to improve [sync performance](#permissions-sync-duration) and [up-to-dateness of permissions](#triggering-syncs-with-webhooks) - please refer to the relevant provider documentation on this page for more details.
 
 #### Triggering syncs with webhooks
 
