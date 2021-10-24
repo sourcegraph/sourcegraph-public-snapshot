@@ -23,7 +23,7 @@ If the Sourcegraph instance is configured to sync repositories from multiple cod
 
 Prerequisite: [Add GitHub as an authentication provider](../auth/index.md#github).
 
-Then, [add or edit a GitHub connection](../external_service/github.md) with a [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access), and include the `authorization` field:
+Then, [add or edit a GitHub connection](../external_service/github.md) and include the `authorization` field:
 
 ```json
 {
@@ -33,6 +33,8 @@ Then, [add or edit a GitHub connection](../external_service/github.md) with a [t
   "authorization": {}
 }
 ```
+
+A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) is required in order to list collaborators for each repository to perform a [complete sync](#complete-sync-vs-incremental-sync).
 
 > WARNING: It can take some time to complete [backgroung mirroring of repository permissions](#background-permissions-syncing) from a code host. [Learn more](#permissions-sync-duration).
 
@@ -89,12 +91,12 @@ In the corresponding [authorization provider](../auth/index.md#github) in [site 
 }
 ```
 
-When enabling this feature, we currently recommend a default of `72` (hours, or 3 days) for `groupsCacheTTL`. A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
+A [token that has the prerequisite scopes](../external_service/github.md#github-api-token-and-access) read repository, organization, and team permissions and memberships in order to cache them across syncs.
+
+When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
 Cache invaldiation happens automatically on certain [webhook events](#trigger-permissions-sync-from-github-webhooks), so it is recommended that to configure webhook support when using cached permissions sync.
 Caches can also be [manually invalidated](#permissions-caching) if necessary.
-
-> NOTE: The token associated with the external service must have `repo` and `write:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
 
 <br />
 

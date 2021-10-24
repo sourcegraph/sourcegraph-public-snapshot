@@ -52,7 +52,12 @@ No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps
 
 > WARNING: In addition to the prerequisite token scopes, the account attached to the token must actually have access to the relevant resources for [complete permissions sync](./../repo/permissions.md#complete-sync-vs-incremental-sync) (i.e. you cannot grant `repo` access to a repository that the token's account itself does not have write access for).
 >
-> For example, to sync repository permissions, the token's account must have write access to all repositories that need permissions enforced in order to list each repository's collaborators for repo-centric sync
+> For example:
+>
+> - If the `repo` scope is needed, the token's account must have write access to all repositories as well. This can happen by being added as a direct contributor, being on a team with write access to the repository, being an admin for the repository's organization, and so on.
+> - If the `write:org` scope is needed, the token's account must have write access for all organizations as well. This can happen by being an admin in the organization.
+>
+> Learn more about how the GitHub API is used in the corresponding feature documentation.
 
 ## GitHub.com rate limits
 
