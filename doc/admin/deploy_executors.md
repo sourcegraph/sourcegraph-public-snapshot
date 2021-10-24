@@ -59,15 +59,18 @@ The Prometheus configuration must add the following scraping job that uses [GCE 
 
 ```yaml
 - job_name: 'sourcegraph-executors'
-  gce_sd_configs:
+  metrics_path: /proxy
+  params:
+    module: [executor]
+  gce_sd_configs: &executor_gce_config
     - project: {GCP_PROJECT}
-      port: 6060
+      port: 9999
       zone: {GCP_ZONE}
       filter: '(labels.executor_tag = {INSTANCE_TAG})'
-  relabel_configs:
+  relabel_configs: &executor_relabel_config
     - source_labels: [__meta_gce_public_ip]
       target_label: __address__
-      replacement: "${1}${2}:6060"
+      replacement: "${1}${2}:9999"
       separator: ''
     - source_labels: [__meta_gce_zone]
       regex: ".+/([^/]+)"
@@ -80,6 +83,12 @@ The Prometheus configuration must add the following scraping job that uses [GCE 
       separator: ''
     - regex: "__meta_gce_metadata_(image_.+)"
       action: labelmap
+- job_name: 'sourcegraph-executor-nodes'
+  metrics_path: /proxy
+  params:
+    module: [node]
+  gce_sd_configs: *executor_gce_config
+  relabel_configs: *executor_relabel_config
 ```
 
 The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22instance_tag%22&patternType=literal).
@@ -90,16 +99,19 @@ The Prometheus configuration must add the following scraping job that uses [EC2 
 
 ```yaml
 - job_name: 'sourcegraph-executors'
-  ec2_sd_configs:
+  metrics_path: /proxy
+  params: 
+    module: [executor]
+  ec2_sd_configs: &executor_ec2_config
     - region: {AWS_REGION}
-      port: 6060
+      port: 9999
       filters:
         - name: tag:executor_tag
           values: [{INSTANCE_TAG}]
-  relabel_configs:
+  relabel_configs: &executor_relabel_config
     - source_labels: [__meta_ec2_public_ip]
       target_label: __address__
-      replacement: "${1}${2}:6060"
+      replacement: "${1}${2}:9999"
       separator: ''
     - source_labels: [__meta_ec2_availability_zone]
       regex: ".+/([^/]+)"
@@ -110,6 +122,12 @@ The Prometheus configuration must add the following scraping job that uses [EC2 
       separator: ''
     - source_labels: [__meta_ec2_ami]
       target_label: version
+- job_name: 'sourcegraph-executor-nodes'
+  metrics_path: /proxy
+  params:
+    module: [node]
+  ec2_sd_configs: *executor_ec2_config
+  relabel_configs: *executor_relabel_config
 ```
 
 The `{INSTANCE_TAG}` value above must be the same as [`instance_tag`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22instance_tag%22&patternType=literal).

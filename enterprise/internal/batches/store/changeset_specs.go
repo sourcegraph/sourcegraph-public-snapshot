@@ -67,7 +67,7 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) error { return scanChangesetSpec(c, sc) })
+	return s.query(ctx, q, func(sc dbutil.Scanner) error { return scanChangesetSpec(c, sc) })
 }
 
 var createChangesetSpecQueryFmtstr = `
@@ -141,7 +141,7 @@ func (s *Store) UpdateChangesetSpec(ctx context.Context, c *btypes.ChangesetSpec
 		return err
 	}
 
-	return s.query(ctx, q, func(sc scanner) error {
+	return s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanChangesetSpec(c, sc)
 	})
 }
@@ -248,10 +248,10 @@ func countChangesetSpecsQuery(opts *CountChangesetSpecsOpts) *sqlf.Query {
 	if opts.Type != "" {
 		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
 			// Check that externalID is not empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL"))
 		} else {
 			// Check that externalID is empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL"))
 		}
 	}
 
@@ -279,7 +279,7 @@ func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts)
 	q := getChangesetSpecQuery(&opts)
 
 	var c btypes.ChangesetSpec
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		return scanChangesetSpec(&c, sc)
 	})
 	if err != nil {
@@ -350,7 +350,7 @@ func (s *Store) ListChangesetSpecs(ctx context.Context, opts ListChangesetSpecsO
 	q := listChangesetSpecsQuery(&opts)
 
 	cs = make(btypes.ChangesetSpecs, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.ChangesetSpec
 		if err := scanChangesetSpec(&c, sc); err != nil {
 			return err
@@ -396,10 +396,10 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 	if opts.Type != "" {
 		if opts.Type == batcheslib.ChangesetSpecDescriptionTypeExisting {
 			// Check that externalID is not empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NOT NULL"))
 		} else {
 			// Check that externalID is empty.
-			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL", opts.BatchSpecID))
+			preds = append(preds, sqlf.Sprintf("COALESCE(changeset_specs.spec->>'externalID', NULL) IS NULL"))
 		}
 	}
 
@@ -437,7 +437,7 @@ func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, ba
 
 	q := sqlf.Sprintf(listChangesetSpecsWithConflictingHeadQueryFmtstr, batchSpecID)
 
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c ChangesetSpecHeadRefConflict
 		if err := sc.Scan(&c.RepoID, &c.HeadRef, &c.Count); err != nil {
 			return errors.Wrap(err, "scanning head ref conflict")
@@ -523,7 +523,7 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 	return sqlf.Sprintf(deleteChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))
 }
 
-func scanChangesetSpec(c *btypes.ChangesetSpec, s scanner) error {
+func scanChangesetSpec(c *btypes.ChangesetSpec, s dbutil.Scanner) error {
 	var spec json.RawMessage
 
 	err := s.Scan(
@@ -623,7 +623,7 @@ func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsO
 		return nil, err
 	}
 
-	if err = s.query(ctx, q, func(sc scanner) error {
+	if err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.RewirerMapping
 		if err := sc.Scan(&c.ChangesetSpecID, &c.ChangesetID, &c.RepoID); err != nil {
 			return err

@@ -13,7 +13,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
 import { AuthenticatedUser } from '../auth'
-import { Badge } from '../components/Badge'
 import { SearchContextProps } from '../search'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
@@ -160,12 +159,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                         className="dropdown-item"
                     >
-                        Repositories <Badge className="ml-1" status="beta" />
-                    </Link>
-                )}
-                {props.showSearchContext && props.showSearchContextManagement && (
-                    <Link to="/contexts" className="dropdown-item">
-                        Search contexts <Badge className="ml-1" status="new" />
+                        Your repositories
                     </Link>
                 )}
                 <Link to={`/users/${props.authenticatedUser.username}/searches`} className="dropdown-item">
@@ -206,7 +200,7 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 {props.authenticatedUser.organizations.nodes.length > 0 && (
                     <>
                         <DropdownItem divider={true} />
-                        <DropdownItem header={true}>Organizations</DropdownItem>
+                        <DropdownItem header={true}>Your organizations</DropdownItem>
                         {props.authenticatedUser.organizations.nodes.map(org => (
                             <Link key={org.id} to={org.settingsURL || org.url} className="dropdown-item">
                                 {org.displayName || org.name}

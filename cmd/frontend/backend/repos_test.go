@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -137,8 +138,8 @@ func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
 
 type gitObjectInfo string
 
-func (oid gitObjectInfo) OID() git.OID {
-	var v git.OID
+func (oid gitObjectInfo) OID() gitdomain.OID {
+	var v gitdomain.OID
 	copy(v[:], []byte(oid))
 	return v
 }

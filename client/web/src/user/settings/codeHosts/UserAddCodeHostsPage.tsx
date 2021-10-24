@@ -12,22 +12,21 @@ import { ErrorAlert } from '../../../components/alerts'
 import { queryExternalServices } from '../../../components/externalServices/backend'
 import { AddExternalServiceOptions } from '../../../components/externalServices/externalServices'
 import { PageTitle } from '../../../components/PageTitle'
-import { Scalars, ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
-import { SourcegraphContext } from '../../../jscontext'
+import { ExternalServiceKind, ListExternalServiceFields } from '../../../graphql-operations'
+import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { useCodeHostScopeContext } from '../../../site/CodeHostScopeAlerts/CodeHostScopeProvider'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
-import { githubRepoScopeRequired, gitlabAPIScopeRequired } from '../cloud-ga'
+import { githubRepoScopeRequired, gitlabAPIScopeRequired, Owner } from '../cloud-ga'
 
 import { CodeHostItem } from './CodeHostItem'
 
-type AuthProvider = SourcegraphContext['authProviders'][0]
 type AuthProvidersByKind = Partial<Record<ExternalServiceKind, AuthProvider>>
 
 export interface UserAddCodeHostsPageProps
     extends Pick<UserExternalServicesOrRepositoriesUpdateProps, 'onUserExternalServicesOrRepositoriesUpdate'>,
         TelemetryProps {
-    user: { id: Scalars['ID']; tags: string[] }
+    owner: Owner
     codeHostExternalServices: Record<string, AddExternalServiceOptions>
     routingPrefix: string
     context: Pick<SourcegraphContext, 'authProviders'>
@@ -62,7 +61,7 @@ export const ifNotNavigated = (callback: () => void, waitMS: number = 2000): voi
 }
 
 export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageProps> = ({
-    user,
+    owner,
     codeHostExternalServices,
     routingPrefix,
     context,
@@ -71,15 +70,19 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 }) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
     const { scopes, setScope } = useCodeHostScopeContext()
+    const [isUpdateModalOpen, setIssUpdateModalOpen] = useState(false)
+    const toggleUpdateModal = useCallback(() => {
+        setIssUpdateModalOpen(!isUpdateModalOpen)
+    }, [isUpdateModalOpen])
 
     // If we have a GitHub or GitLab services, check whether we need to prompt the user to
     // update their scope
-    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(user.tags, scopes.github) : false
-    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(user.tags, scopes.gitlab) : false
+    const isGitHubTokenUpdateRequired = scopes.github ? githubRepoScopeRequired(owner.tags, scopes.github) : false
+    const isGitLabTokenUpdateRequired = scopes.gitlab ? gitlabAPIScopeRequired(owner.tags, scopes.gitlab) : false
 
     const isTokenUpdateRequired: Partial<Record<ExternalServiceKind, boolean | undefined>> = {
-        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(user.tags, scopes.github),
-        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(user.tags, scopes.gitlab),
+        [ExternalServiceKind.GITHUB]: githubRepoScopeRequired(owner.tags, scopes.github),
+        [ExternalServiceKind.GITLAB]: gitlabAPIScopeRequired(owner.tags, scopes.gitlab),
     }
 
     useEffect(() => {
@@ -90,7 +93,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
         setStatusOrError('loading')
 
         const { nodes: fetchedServices } = await queryExternalServices({
-            namespace: user.id,
+            namespace: owner.id,
             first: null,
             after: null,
         }).toPromise()
@@ -105,7 +108,16 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
         const repoCount = fetchedServices.reduce((sum, codeHost) => sum + codeHost.repoCount, 0)
         onUserExternalServicesOrRepositoriesUpdate(fetchedServices.length, repoCount)
-    }, [user.id, onUserExternalServicesOrRepositoriesUpdate])
+    }, [owner.id, onUserExternalServicesOrRepositoriesUpdate])
+
+    const handleServiceUpsert = useCallback(
+        (service: ListExternalServiceFields): void => {
+            if (isServicesByKind(statusOrError)) {
+                setStatusOrError({ ...statusOrError, [service.kind]: service })
+            }
+        },
+        [statusOrError]
+    )
 
     const removeService = (kind: ExternalServiceKind) => (): void => {
         if (
@@ -149,20 +161,30 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const getAddReposBanner = (services: string[]): JSX.Element | null =>
         services.length > 0 ? (
-            <div className="alert alert-success mb-4" role="alert" key="add-repos">
-                Connected with {services.join(', ')}. Next,{' '}
-                <Link
-                    className="alert-link"
-                    to={`${routingPrefix}/repositories/manage`}
-                    onClick={logAddRepositoriesClicked('banner')}
-                >
-                    add your repositories →
-                </Link>
+            <div className="alert alert-success my-3" role="alert" key="add-repos">
+                <h4 className="align-middle mb-1">Connected with {services.join(', ')}</h4>
+                <p className="align-middle mb-0">
+                    Next,{' '}
+                    <Link
+                        className="font-weight-normal"
+                        to={`${routingPrefix}/repositories/manage`}
+                        onClick={logAddRepositoriesClicked('banner')}
+                    >
+                        add repositories
+                    </Link>{' '}
+                    to search with Sourcegraph.
+                </p>
             </div>
         ) : null
 
+    interface serviceProblem {
+        id: string
+        displayName: string
+        problem: string
+    }
+
     const getErrorAndSuccessBanners = (status: Status): (JSX.Element | null)[] => {
-        const servicesWithProblems = []
+        const servicesWithProblems: serviceProblem[] = []
         const notYetSyncedServiceNames = []
 
         // check if services are fetched
@@ -170,9 +192,10 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
             const services = Object.values(status).filter(isDefined)
 
             for (const service of services) {
+                const problem = service.warning || service.lastSyncError
                 // if service has warnings or errors
-                if (service.warning || service.lastSyncError) {
-                    servicesWithProblems.push(service)
+                if (problem) {
+                    servicesWithProblems.push({ id: service.id, displayName: service.displayName, problem })
                     continue
                 }
 
@@ -214,13 +237,24 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
 
     const handleError = useCallback((error: ErrorLike): void => setStatusOrError(error), [])
 
-    const getServiceWarningFragment = ({ id, displayName }: ListExternalServiceFields): JSX.Element => (
-        <div className="alert alert-danger my-4" key={id}>
-            <strong className="align-middle">Could not connect to {displayName}.</strong>
-            <span className="align-middle">
-                {' '}
-                Please remove {displayName} code host connection and try again to restore the connection.
-            </span>
+    const getServiceWarningFragment = (service: serviceProblem): JSX.Element => (
+        <div className="alert alert-warning my-3" key={service.id}>
+            <h4 className="align-middle mb-1">Can't connect with {service.displayName}</h4>
+            <p className="align-middle mb-0">
+                <span className="align-middle">Please try</span>{' '}
+                {owner.type === 'org' ? (
+                    <button
+                        type="button"
+                        className="btn btn-link font-weight-normal shadow-none p-0 border-0"
+                        onClick={toggleUpdateModal}
+                    >
+                        updating the code host connection
+                    </button>
+                ) : (
+                    <span className="align-middle">reconnecting the code host connection</span>
+                )}{' '}
+                <span className="align-middle">with {service.displayName} to restore access.</span>
+            </p>
         </div>
     )
 
@@ -255,8 +289,8 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                 headingElement="h2"
                 path={[{ text: 'Code host connections' }]}
                 description={
-                    <>
-                        Connect with your code hosts. Then,{' '}
+                    <span className="text-muted">
+                        Connect with {owner.name ? owner.name + "'s" : 'your'} code hosts. Then,{' '}
                         <Link
                             to={`${routingPrefix}/repositories/manage`}
                             onClick={logAddRepositoriesClicked('description')}
@@ -264,7 +298,7 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             add repositories
                         </Link>{' '}
                         to search with Sourcegraph.
-                    </>
+                    </span>
                 }
                 className="mb-3"
             />
@@ -281,12 +315,16 @@ export const UserAddCodeHostsPage: React.FunctionComponent<UserAddCodeHostsPageP
                             authProvidersByKind[kind] ? (
                                 <li key={id} className="list-group-item user-code-hosts-page__code-host-item">
                                     <CodeHostItem
+                                        owner={owner}
                                         service={isServicesByKind(statusOrError) ? statusOrError[kind] : undefined}
                                         kind={kind}
                                         name={defaultDisplayName}
                                         isTokenUpdateRequired={isTokenUpdateRequired[kind]}
                                         navigateToAuthProvider={navigateToAuthProvider}
                                         icon={icon}
+                                        isUpdateModalOpen={isUpdateModalOpen}
+                                        toggleUpdateModal={toggleUpdateModal}
+                                        onDidUpsert={handleServiceUpsert}
                                         onDidAdd={addNewService}
                                         onDidRemove={removeService(kind)}
                                         onDidError={handleError}

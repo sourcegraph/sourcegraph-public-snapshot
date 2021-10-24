@@ -3,7 +3,7 @@ import classNames from 'classnames'
 import { addDays } from 'date-fns'
 import React from 'react'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchSpecNode } from './BatchSpecNode'
 import styles from './BatchSpecsPage.module.scss'
@@ -16,7 +16,7 @@ const { add } = storiesOf('web/batches/settings/specs', module).addDecorator(sto
 const NOW = () => addDays(new Date(), 1)
 
 add('BatchSpecNode', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <>
                 {NODES.map(node => (
@@ -24,5 +24,5 @@ add('BatchSpecNode', () => (
                 ))}
             </>
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

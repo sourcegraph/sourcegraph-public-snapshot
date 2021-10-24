@@ -47,14 +47,14 @@ var (
 )
 
 type prometheusTracer struct {
-	trace.OpenTracingTracer
+	tracer trace.OpenTracingTracer
 }
 
 func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, operationName string, variables map[string]interface{}, varTypes map[string]*introspection.Type) (context.Context, trace.TraceQueryFinishFunc) {
 	start := time.Now()
 	var finish trace.TraceQueryFinishFunc
 	if ot.ShouldTrace(ctx) {
-		ctx, finish = trace.OpenTracingTracer{}.TraceQuery(ctx, queryString, operationName, variables, varTypes)
+		ctx, finish = t.tracer.TraceQuery(ctx, queryString, operationName, variables, varTypes)
 	}
 
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
@@ -122,6 +122,7 @@ VARIABLES
 }
 
 func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldName string, trivial bool, args map[string]interface{}) (context.Context, trace.TraceFieldFinishFunc) {
+	// We don't call into t.OpenTracingTracer.TraceField since it generates too many spans which is really hard to read.
 	start := time.Now()
 	return ctx, func(err *gqlerrors.QueryError) {
 		isErrStr := strconv.FormatBool(err != nil)
@@ -137,6 +138,18 @@ func (prometheusTracer) TraceField(ctx context.Context, label, typeName, fieldNa
 		if origin != "unknown" && (fieldName == "search" || fieldName == "lsif") {
 			isExact := strconv.FormatBool(fieldName == "lsif")
 			codeIntelSearchHistogram.WithLabelValues(isExact, isErrStr).Observe(time.Since(start).Seconds())
+		}
+	}
+}
+
+func (t prometheusTracer) TraceValidation(ctx context.Context) trace.TraceValidationFinishFunc {
+	var finish trace.TraceValidationFinishFunc
+	if ot.ShouldTrace(ctx) {
+		finish = t.tracer.TraceValidation(ctx)
+	}
+	return func(queryErrors []*gqlerrors.QueryError) {
+		if finish != nil {
+			finish(queryErrors)
 		}
 	}
 }
@@ -617,17 +630,26 @@ func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error)
 }
 
 func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struct {
-	User     graphql.ID
-	CodeHost *graphql.ID
-	Query    *string
+	Namespace graphql.ID
+	CodeHost  *graphql.ID
+	Query     *string
 }) (*affiliatedRepositoriesConnection, error) {
-	userID, err := UnmarshalUserID(args.User)
+	var userID, orgID int32
+	err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Make sure the user is the same user being requested
-	if err := backend.CheckSameUser(ctx, userID); err != nil {
-		return nil, err
+	if userID > 0 {
+		// 🚨 SECURITY: Make sure the user is the same user being requested
+		if err := backend.CheckSameUser(ctx, userID); err != nil {
+			return nil, err
+		}
+	}
+	if orgID > 0 {
+		// 🚨 SECURITY: Make sure the user can access the organization
+		if err := backend.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+			return nil, err
+		}
 	}
 	var codeHost int64
 	if args.CodeHost != nil {
@@ -644,6 +666,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	return &affiliatedRepositoriesConnection{
 		db:       r.db,
 		userID:   userID,
+		orgID:    orgID,
 		codeHost: codeHost,
 		query:    query,
 	}, nil

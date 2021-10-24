@@ -57,9 +57,10 @@ type LSIFStore interface {
 	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) error
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
-	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData) error
+	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData, repositoryNameID int, languageNameID int) error
 	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) error
 	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) error
+	WriteDocumentationSearchPrework(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool) (int, int, error)
 }
 
 type LSIFStoreShim struct {
@@ -77,7 +78,7 @@ func (s *LSIFStoreShim) Transact(ctx context.Context) (LSIFStore, error) {
 
 type GitserverClient interface {
 	DirectoryChildren(ctx context.Context, repositoryID int, commit string, dirnames []string) (map[string][]string, error)
-	CommitDate(ctx context.Context, repositoryID int, commit string) (time.Time, bool, error)
+	CommitDate(ctx context.Context, repositoryID int, commit string) (string, time.Time, bool, error)
 	ResolveRevision(ctx context.Context, repositoryID int, versionString string) (api.CommitID, error)
 	DefaultBranchContains(ctx context.Context, repositoryID int, commit string) (bool, error)
 }

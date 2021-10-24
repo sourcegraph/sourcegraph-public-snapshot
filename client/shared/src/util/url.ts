@@ -576,7 +576,13 @@ const positionString = (position: Position): string =>
  * `%`-encoding for URLs.
  */
 export const encodeURIPathComponent = (component: string): string =>
-    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
+    component
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/')
+        .replace(/%2B/g, '+')
+        .replace(/%5B/g, '[')
+        .replace(/%5D/g, ']')
 
 /**
  * The inverse of parseRepoURI, this generates a string from parsed values.
@@ -626,8 +632,6 @@ export function withWorkspaceRootInputRevision(
  *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
- * @param versionContext (optional): the version context to search in. If undefined, we interpret
- * it as the instance not having version contexts, and won't append the `c` query param.
  * Having a `patternType:` filter in the query overrides this argument.
  *
  */
@@ -635,7 +639,6 @@ export function buildSearchURLQuery(
     query: string,
     patternType: SearchPatternType,
     caseSensitive: boolean,
-    versionContext?: string,
     searchContextSpec?: string,
     searchParametersList?: { key: string; value: string }[]
 ): string {
@@ -660,7 +663,7 @@ export function buildSearchURLQuery(
     }
 
     if (searchContextSpec) {
-        queryParameter = appendContextFilter(queryParameter, searchContextSpec, versionContext)
+        queryParameter = appendContextFilter(queryParameter, searchContextSpec)
     }
 
     searchParameters.set('q', queryParameter)
@@ -668,10 +671,6 @@ export function buildSearchURLQuery(
 
     if (caseParameter === 'yes') {
         searchParameters.set('case', caseParameter)
-    }
-
-    if (versionContext) {
-        searchParameters.set('c', versionContext)
     }
 
     if (searchParametersList) {

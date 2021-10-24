@@ -32,6 +32,8 @@ type CommitSearch struct {
 func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, repoRev := range j.Repos {
+		repoRev := repoRev // we close over repoRev in onMatches
+
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			continue

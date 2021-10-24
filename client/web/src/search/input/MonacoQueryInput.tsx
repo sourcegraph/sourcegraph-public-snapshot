@@ -7,7 +7,6 @@ import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -20,13 +19,14 @@ import { observeResize } from '../../util/dom'
 import { QueryChangeSource, QueryState } from '../helpers'
 import { useQueryIntelligence, useQueryDiagnostics } from '../useQueryIntelligence'
 
+import styles from './MonacoQueryInput.module.scss'
+
 export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        SettingsCascadeProps,
-        VersionContextProps {
+        SettingsCascadeProps {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -108,7 +108,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     onCompletionItemSelected,
     autoFocus,
     selectedSearchContextSpec,
-    versionContext,
     patternType,
     globbing,
     interpretComments,
@@ -138,9 +137,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     }, [editor, container])
 
     const fetchSuggestionsWithContext = useCallback(
-        (query: string) =>
-            fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec, versionContext)),
-        [selectedSearchContextSpec, versionContext]
+        (query: string) => fetchStreamSuggestions(appendContextFilter(query, selectedSearchContextSpec)),
+        [selectedSearchContextSpec]
     )
 
     const sourcegraphSearchLanguageId = useQueryIntelligence(fetchSuggestionsWithContext, {
@@ -388,7 +386,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 options={options}
                 border={false}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
-                className="test-query-input monaco-query-input"
+                className={classNames('test-query-input', styles.monacoQueryInput)}
             />
         </div>
     )

@@ -1,6 +1,10 @@
 package shared
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import (
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+)
 
 // CodeIntelligence exports available shared observable and group constructors related to
 // the code intelligence team. Some of these panels are useful from multiple container
@@ -683,7 +687,7 @@ func (codeIntelligence) NewAutoIndexEnqueuerGroup(containerName string) monitori
 // src_codeintel_background_errors_total
 func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "[codeintel] Janitor stats",
+		Title:  fmt.Sprintf("%s: %s", titlecase("codeintel"), "Janitor stats"),
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
@@ -736,6 +740,15 @@ func (codeIntelligence) NewJanitorGroup(containerName string) monitoring.Group {
 				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
 					Number of LSIF upload data bundles purged from the codeintel-db database every 5m
 				`).Observable(),
+
+				Standard.Count("records deleted")(ObservableConstructorOptions{
+					MetricNameRoot:        "codeintel_background_documentation_search_records_removed",
+					MetricDescriptionRoot: "documentation search record",
+				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
+					Number of documentation search records removed from the codeintel-db database every 5m
+				`).Observable(),
+			},
+			{
 
 				Observation.Errors(ObservableConstructorOptions{
 					MetricNameRoot:        "codeintel_background",

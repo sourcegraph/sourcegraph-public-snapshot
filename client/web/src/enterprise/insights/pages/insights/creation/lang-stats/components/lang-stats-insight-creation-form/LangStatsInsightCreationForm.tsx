@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
 
 import { Button } from '@sourcegraph/wildcard/src'
@@ -59,7 +59,7 @@ export const LangStatsInsightCreationForm: React.FunctionComponent<LangStatsInsi
         <form
             ref={innerRef}
             noValidate={true}
-            className={classnames(className, 'd-flex flex-column')}
+            className={classNames(className, 'd-flex flex-column')}
             onSubmit={handleSubmit}
             onReset={onFormReset}
         >

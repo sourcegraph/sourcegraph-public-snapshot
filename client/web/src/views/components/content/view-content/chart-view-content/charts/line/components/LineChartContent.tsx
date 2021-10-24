@@ -6,7 +6,7 @@ import { RenderTooltipParams } from '@visx/xychart/lib/components/Tooltip'
 import { XYCHART_EVENT_SOURCE } from '@visx/xychart/lib/constants'
 import isValidNumber from '@visx/xychart/lib/typeguards/isValidNumber'
 import { EventHandlerParams } from '@visx/xychart/lib/types'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { ReactElement, useCallback, useMemo, useState, MouseEvent, useRef } from 'react'
 import { noop } from 'rxjs'
 import { LineChartContent as LineChartContentType } from 'sourcegraph'
@@ -212,10 +212,10 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     }
 
     const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
-    const rootClasses = classnames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
+    const rootClasses = classNames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
 
     return (
-        <div className={classnames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">
+        <div className={classNames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">
             {/*
                 Because XYChart wraps itself with context providers in case if consumer didn't add them
                 But this recursive wrapping leads to problem with event emitter context - double subscription all event

@@ -105,7 +105,7 @@ func TestAddExternalService(t *testing.T) {
 				},
 			})
 
-			want := "the namespace is not same as the authenticated user"
+			want := "the namespace is not the same as the authenticated user"
 			got := fmt.Sprintf("%v", err)
 			if got != want {
 				t.Errorf("err: want %q but got %q", want, got)
@@ -214,6 +214,109 @@ func TestAddExternalService(t *testing.T) {
 				t.Fatalf("NamespaceUserID: want %d but got %d", userID, result.externalService.NamespaceUserID)
 			}
 		})
+
+		t.Run("org namespace requested, but feature is not allowed", func(t *testing.T) {
+			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+				return false, nil
+			}
+			defer func() {
+				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
+			}()
+
+			ctx := context.Background()
+			orgID := MarshalOrgID(1)
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &orgID,
+				},
+			})
+
+			want := "organization code host connections are not enabled"
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("org namespace requested, but user does not belong to the org", func(t *testing.T) {
+			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+				return &types.User{ID: 1, SiteAdmin: true}, nil
+			}
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return nil, nil
+			}
+			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+				return true, nil
+			}
+
+			defer func() {
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
+				database.Mocks.Users = database.MockUsers{}
+				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			orgID := MarshalOrgID(1)
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &orgID,
+				},
+			})
+
+			want := "the authenticated user does not belong to the organization requested"
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("org namespace requested, and user belongs to the same org", func(t *testing.T) {
+			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+				return &types.User{ID: 10, SiteAdmin: true}, nil
+			}
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return &types.OrgMembership{
+					ID:     1,
+					OrgID:  42,
+					UserID: 10,
+				}, nil
+			}
+			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
+				return nil
+			}
+			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+				return true, nil
+			}
+			defer func() {
+				database.Mocks.Users = database.MockUsers{}
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
+				database.Mocks.ExternalServices = database.MockExternalServices{}
+				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 10})
+			orgID := MarshalOrgID(42)
+
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &orgID,
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// We want to check the namespace field is populated
+			if result.externalService.NamespaceOrgID != 42 {
+				t.Fatal("NamespaceOrgID: want 42 but got #{result.externalService.NamespaceOrgID}")
+			}
+		})
 	})
 
 	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -286,7 +389,7 @@ func TestUpdateExternalService(t *testing.T) {
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
 			})
-			if want := backend.ErrMustBeSiteAdmin; err != want {
+			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -294,7 +397,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}
 		})
 
-		t.Run("has mismatched namespace", func(t *testing.T) {
+		t.Run("has mismatched user namespace", func(t *testing.T) {
 			userID := int32(2)
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
@@ -313,7 +416,7 @@ func TestUpdateExternalService(t *testing.T) {
 				},
 			})
 
-			want := errNoAccessExternalService.Error()
+			want := backend.ErrNoAccessExternalService.Error()
 			got := fmt.Sprintf("%v", err)
 			if got != want {
 				t.Errorf("err: want %q but got %q", want, got)
@@ -323,7 +426,40 @@ func TestUpdateExternalService(t *testing.T) {
 			}
 		})
 
-		t.Run("has matching namespace", func(t *testing.T) {
+		t.Run("has mismatched org namespace", func(t *testing.T) {
+			orgID := int32(42)
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return nil, nil
+			}
+			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID:             id,
+					NamespaceOrgID: orgID,
+				}, nil
+			}
+			defer func() {
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
+				database.Mocks.ExternalServices = database.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+				Input: updateExternalServiceInput{
+					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+				},
+			})
+
+			want := backend.ErrNoAccessExternalService.Error()
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("has matching user namespace", func(t *testing.T) {
 			userID := int32(1)
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
@@ -337,6 +473,44 @@ func TestUpdateExternalService(t *testing.T) {
 				return nil
 			}
 			defer func() {
+				database.Mocks.ExternalServices = database.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			_, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+				Input: updateExternalServiceInput{
+					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+				},
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !calledUpdate {
+				t.Fatal("!calledUpdate")
+			}
+		})
+
+		t.Run("has matching org namespace", func(t *testing.T) {
+			orgID := int32(1)
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return &types.OrgMembership{
+					OrgID:  orgID,
+					UserID: 1,
+				}, nil
+			}
+			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID:             id,
+					NamespaceOrgID: orgID,
+				}, nil
+			}
+			calledUpdate := false
+			database.Mocks.ExternalServices.Update = func(ctx context.Context, ps []schema.AuthProviders, id int64, update *database.ExternalServiceUpdate) error {
+				calledUpdate = true
+				return nil
+			}
+			defer func() {
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
 				database.Mocks.ExternalServices = database.MockExternalServices{}
 			}()
 
@@ -440,6 +614,7 @@ func TestUpdateExternalService(t *testing.T) {
 				}
 			}
 		`,
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 		},
 	})
 }
@@ -469,7 +644,7 @@ func TestDeleteExternalService(t *testing.T) {
 			result, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
-			if want := backend.ErrMustBeSiteAdmin; err != want {
+			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -477,7 +652,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}
 		})
 
-		t.Run("has mismatched namespace", func(t *testing.T) {
+		t.Run("has mismatched user namespace", func(t *testing.T) {
 			userID := int32(2)
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
@@ -494,7 +669,7 @@ func TestDeleteExternalService(t *testing.T) {
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 
-			want := errNoAccessExternalService.Error()
+			want := backend.ErrNoAccessExternalService.Error()
 			got := fmt.Sprintf("%v", err)
 			if got != want {
 				t.Errorf("err: want %q but got %q", want, got)
@@ -504,12 +679,78 @@ func TestDeleteExternalService(t *testing.T) {
 			}
 		})
 
-		t.Run("has matching namespace", func(t *testing.T) {
+		t.Run("has matching user namespace", func(t *testing.T) {
 			userID := int32(1)
 			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
 				return &types.ExternalService{
 					ID:              id,
 					NamespaceUserID: userID,
+				}, nil
+			}
+			calledDelete := false
+			database.Mocks.ExternalServices.Delete = func(ctx context.Context, id int64) error {
+				calledDelete = true
+				return nil
+			}
+			defer func() {
+				database.Mocks.ExternalServices = database.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			_, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !calledDelete {
+				t.Fatal("!calledDelete")
+			}
+		})
+
+		t.Run("has mismatched org namespace", func(t *testing.T) {
+			orgID := int32(2)
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return nil, nil
+			}
+			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID:             id,
+					NamespaceOrgID: orgID,
+				}, nil
+			}
+			defer func() {
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
+				database.Mocks.ExternalServices = database.MockExternalServices{}
+			}()
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			result, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
+			})
+
+			want := backend.ErrNoAccessExternalService.Error()
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("has matching org namespace", func(t *testing.T) {
+			orgID := int32(1)
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return &types.OrgMembership{
+					OrgID:  orgID,
+					UserID: 1,
+				}, nil
+			}
+			database.Mocks.ExternalServices.GetByID = func(id int64) (*types.ExternalService, error) {
+				return &types.ExternalService{
+					ID:             id,
+					NamespaceOrgID: orgID,
 				}, nil
 			}
 			calledDelete := false
@@ -569,6 +810,7 @@ func TestDeleteExternalService(t *testing.T) {
 				}
 			}
 		`,
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 		},
 	})
 }
@@ -577,7 +819,7 @@ func TestExternalServices(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		t.Run("read someone else's external services", func(t *testing.T) {
+		t.Run("read users external services", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 				return &types.User{ID: 1}, nil
 			}
@@ -592,7 +834,51 @@ func TestExternalServices(t *testing.T) {
 			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
-			if want := errNoAccessExternalService; err != want {
+			if want := backend.ErrNoAccessExternalService; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("read orgs external services", func(t *testing.T) {
+			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+				return &types.User{ID: 1}, nil
+			}
+			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+				return nil, nil
+			}
+			t.Cleanup(func() {
+				database.Mocks.OrgMembers = database.MockOrgMembers{}
+				database.Mocks.Users = database.MockUsers{}
+			})
+
+			id := MarshalOrgID(2)
+			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
+				Namespace: &id,
+			})
+			if want := backend.ErrNoAccessExternalService; err != want {
+				t.Errorf("err: want %q but got %v", want, err)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
+		t.Run("read site-level external services", func(t *testing.T) {
+			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
+				return &types.User{ID: 1}, nil
+			}
+			database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+				return &types.User{ID: id}, nil
+			}
+			t.Cleanup(func() {
+				database.Mocks.Users = database.MockUsers{}
+			})
+
+			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -602,7 +888,7 @@ func TestExternalServices(t *testing.T) {
 	})
 
 	t.Run("authenticated as admin", func(t *testing.T) {
-		t.Run("read someone else's external services", func(t *testing.T) {
+		t.Run("read other users external services", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 				return &types.User{ID: 1, SiteAdmin: true}, nil
 			}
@@ -617,7 +903,7 @@ func TestExternalServices(t *testing.T) {
 			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
-			if want := errNoAccessExternalService; err != want {
+			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
 			if result != nil {
@@ -625,7 +911,7 @@ func TestExternalServices(t *testing.T) {
 			}
 		})
 
-		t.Run("can read unowned external service", func(t *testing.T) {
+		t.Run("can read site-level external service", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 				return &types.User{ID: 1, SiteAdmin: true}, nil
 			}
@@ -723,8 +1009,8 @@ func TestExternalServices(t *testing.T) {
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
 					Path:          []interface{}{"externalServices"},
-					Message:       errNoAccessExternalService.Error(),
-					ResolverError: errNoAccessExternalService,
+					Message:       backend.ErrNoAccessExternalService.Error(),
+					ResolverError: backend.ErrNoAccessExternalService,
 				},
 			},
 			ExpectedResult: `null`,

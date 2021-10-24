@@ -20,8 +20,6 @@ import (
 // modified in CreateBatchSpecResolutionJob.
 var batchSpecResolutionJobInsertColumns = SQLColumns{
 	"batch_spec_id",
-	"allow_unsupported",
-	"allow_ignored",
 
 	"state",
 
@@ -29,7 +27,7 @@ var batchSpecResolutionJobInsertColumns = SQLColumns{
 	"updated_at",
 }
 
-const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s, %s, %s)`
+const batchSpecResolutionJobInsertColsFmt = `(%s, %s, %s, %s)`
 
 // ChangesetJobColumns are used by the changeset job related Store methods to query
 // and create changeset jobs.
@@ -37,8 +35,6 @@ var BatchSpecResolutionJobColums = SQLColumns{
 	"batch_spec_resolution_jobs.id",
 
 	"batch_spec_resolution_jobs.batch_spec_id",
-	"batch_spec_resolution_jobs.allow_unsupported",
-	"batch_spec_resolution_jobs.allow_ignored",
 
 	"batch_spec_resolution_jobs.state",
 	"batch_spec_resolution_jobs.failure_message",
@@ -72,7 +68,7 @@ func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.Bat
 
 	q := s.createBatchSpecResolutionJobQuery(wj)
 
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpecResolutionJob(wj, sc)
 	})
 	if err != nil && isUniqueConstraintViolation(err, "batch_spec_resolution_jobs_batch_spec_id_unique") {
@@ -106,8 +102,6 @@ func (s *Store) createBatchSpecResolutionJobQuery(wj *btypes.BatchSpecResolution
 		createBatchSpecResolutionJobQueryFmtstr,
 		sqlf.Join(batchSpecResolutionJobInsertColumns.ToSqlf(), ", "),
 		wj.BatchSpecID,
-		wj.AllowUnsupported,
-		wj.AllowIgnored,
 		state,
 		wj.CreatedAt,
 		wj.UpdatedAt,
@@ -131,7 +125,7 @@ func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpec
 
 	q := getBatchSpecResolutionJobQuery(&opts)
 	var c btypes.BatchSpecResolutionJob
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		return scanBatchSpecResolutionJob(&c, sc)
 	})
 	if err != nil {
@@ -185,7 +179,7 @@ func (s *Store) ListBatchSpecResolutionJobs(ctx context.Context, opts ListBatchS
 	q := listBatchSpecResolutionJobsQuery(opts)
 
 	cs = make([]*btypes.BatchSpecResolutionJob, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpecResolutionJob
 		if err := scanBatchSpecResolutionJob(&c, sc); err != nil {
 			return err
@@ -226,15 +220,13 @@ func listBatchSpecResolutionJobsQuery(opts ListBatchSpecResolutionJobsOpts) *sql
 	)
 }
 
-func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s scanner) error {
+func scanBatchSpecResolutionJob(rj *btypes.BatchSpecResolutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
 
 	if err := s.Scan(
 		&rj.ID,
 		&rj.BatchSpecID,
-		&rj.AllowUnsupported,
-		&rj.AllowIgnored,
 		&rj.State,
 		&dbutil.NullString{S: &failureMessage},
 		&dbutil.NullTime{Time: &rj.StartedAt},
@@ -276,7 +268,7 @@ func scanBatchSpecResolutionJobs(rows *sql.Rows, queryErr error) ([]*btypes.Batc
 
 	var jobs []*btypes.BatchSpecResolutionJob
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.BatchSpecResolutionJob
 		if err = scanBatchSpecResolutionJob(&j, sc); err != nil {
 			return err

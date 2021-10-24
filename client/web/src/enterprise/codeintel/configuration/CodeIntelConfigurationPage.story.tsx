@@ -6,12 +6,12 @@ import React from 'react'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/graphql'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     CodeIntelligenceConfigurationPoliciesResult,
     IndexConfigurationResult,
     InferredIndexConfigurationResult,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelConfigurationPage, CodeIntelConfigurationPageProps } from './CodeIntelConfigurationPage'
 import { POLICIES_CONFIGURATION, REPOSITORY_CONFIGURATION, INFERRED_CONFIGURATION } from './usePoliciesConfigurations'
@@ -223,7 +223,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelConfigurationPageProps> = args => (
-    <EnterpriseWebStory
+    <WebStory
         mocks={[
             localMockRequest,
             globalMockRequest,
@@ -235,7 +235,7 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
         {props => (
             <CodeIntelConfigurationPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 )
 
 export const EmptyGlobalPage = Template.bind({})

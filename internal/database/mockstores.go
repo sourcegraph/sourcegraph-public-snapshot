@@ -31,4 +31,6 @@ type MockStores struct {
 	EventLogs MockEventLogs
 
 	TemporarySettings MockTemporarySettings
+
+	FeatureFlags MockFeatureFlags
 }

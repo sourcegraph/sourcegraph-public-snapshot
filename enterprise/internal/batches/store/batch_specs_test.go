@@ -7,6 +7,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -35,8 +38,10 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 						Published: &falsy,
 					},
 				},
-				CreatedFromRaw: true,
-				UserID:         int32(i + 1234),
+				CreatedFromRaw:   true,
+				AllowUnsupported: true,
+				AllowIgnored:     true,
+				UserID:           int32(i + 1234),
 			}
 
 			if i%2 == 0 {
@@ -168,6 +173,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 		for _, c := range batchSpecs {
 			c.UserID += 1234
 			c.CreatedFromRaw = false
+			c.AllowUnsupported = false
+			c.AllowIgnored = false
 
 			clock.Add(1 * time.Second)
 
@@ -363,4 +370,146 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			}
 		}
 	})
+}
+
+func TestStoreGetBatchSpecStats(t *testing.T) {
+	ctx := context.Background()
+	c := &ct.TestClock{Time: timeutil.Now()}
+	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
+
+	db := dbtest.NewDB(t, "")
+	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
+
+	repo, _ := ct.CreateTestRepo(t, ctx, db)
+
+	admin := ct.CreateTestUser(t, db, true)
+
+	var specIDs []int64
+	for _, setup := range []struct {
+		jobs                []*btypes.BatchSpecWorkspaceExecutionJob
+		additionalWorkspace int
+	}{
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(99)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
+			},
+			additionalWorkspace: 1,
+		},
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(55)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
+			},
+			additionalWorkspace: 3,
+		},
+		{
+			jobs:                []*btypes.BatchSpecWorkspaceExecutionJob{},
+			additionalWorkspace: 0,
+		},
+		{
+			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
+			},
+			additionalWorkspace: 0,
+		},
+	} {
+		spec := &btypes.BatchSpec{
+			Spec:            &batcheslib.BatchSpec{},
+			UserID:          admin.ID,
+			NamespaceUserID: admin.ID,
+		}
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+		specIDs = append(specIDs, spec.ID)
+
+		job := &btypes.BatchSpecResolutionJob{BatchSpecID: spec.ID}
+		if err := s.CreateBatchSpecResolutionJob(ctx, job); err != nil {
+			t.Fatal(err)
+		}
+
+		// Workspaces without execution job
+		for i := 0; i < setup.additionalWorkspace; i++ {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+		}
+
+		// Workspaces with execution jobs
+		for _, job := range setup.jobs {
+			ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			// We use a clone so that CreateBatchSpecWorkspaceExecutionJob doesn't overwrite the fields we set
+
+			clone := *job
+			clone.BatchSpecWorkspaceID = ws.ID
+			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, &clone); err != nil {
+				t.Fatal(err)
+			}
+
+			job.ID = clone.ID
+			ct.UpdateJobState(t, ctx, s, job)
+		}
+
+	}
+	have, err := s.GetBatchSpecStats(ctx, specIDs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[int64]btypes.BatchSpecStats{
+		specIDs[0]: {
+			StartedAt:  minAgo(99),
+			FinishedAt: minAgo(1),
+			Workspaces: 7,
+			Executions: 6,
+			Queued:     1,
+			Processing: 1,
+			Completed:  1,
+			Canceling:  1,
+			Canceled:   1,
+			Failed:     1,
+		},
+		specIDs[1]: {
+			StartedAt:  minAgo(55),
+			FinishedAt: minAgo(1),
+			Workspaces: 11,
+			Executions: 8,
+			Queued:     1,
+			Processing: 2,
+			Completed:  1,
+			Canceling:  2,
+			Canceled:   1,
+			Failed:     1,
+		},
+		specIDs[2]: {
+			StartedAt:  time.Time{},
+			FinishedAt: time.Time{},
+		},
+		specIDs[3]: {
+			StartedAt:  minAgo(5),
+			FinishedAt: time.Time{},
+			Workspaces: 1,
+			Executions: 1,
+			Processing: 1,
+		},
+	}
+	if diff := cmp.Diff(have, want); diff != "" {
+		t.Errorf("unexpected batch spec stats:\n%s", diff)
+	}
 }

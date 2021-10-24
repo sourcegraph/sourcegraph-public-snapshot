@@ -76,6 +76,10 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 }
 
 func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	if r.workspace.Skipped {
+		return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
+	}
+
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
@@ -115,8 +119,11 @@ func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlback
 }
 
 func (r *batchSpecWorkspaceResolver) Ignored() bool {
-	// TODO(ssbc): not implemented
-	return false
+	return r.workspace.Ignored
+}
+
+func (r *batchSpecWorkspaceResolver) Unsupported() bool {
+	return r.workspace.Unsupported
 }
 
 func (r *batchSpecWorkspaceResolver) CachedResultFound() bool {
@@ -132,6 +139,9 @@ func (r *batchSpecWorkspaceResolver) Stages() graphqlbackend.BatchSpecWorkspaceS
 }
 
 func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
+	if r.workspace.Skipped {
+		return nil
+	}
 	if r.execution == nil {
 		return nil
 	}
@@ -142,6 +152,9 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
+	if r.workspace.Skipped {
+		return nil
+	}
 	if r.execution == nil {
 		return nil
 	}
@@ -152,6 +165,9 @@ func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
 }
 
 func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
+	if r.workspace.Skipped {
+		return nil
+	}
 	if r.execution == nil {
 		return nil
 	}
@@ -159,13 +175,20 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 }
 
 func (r *batchSpecWorkspaceResolver) State() string {
+	if r.workspace.Skipped {
+		return "SKIPPED"
+	}
 	if r.execution == nil {
-		return "QUEUED"
+		return "PENDING"
 	}
 	return r.execution.State.ToGraphQL()
 }
 
 func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]graphqlbackend.ChangesetSpecResolver, error) {
+	if r.workspace.Skipped {
+		return nil, nil
+	}
+
 	if len(r.workspace.ChangesetSpecIDs) == 0 {
 		none := []graphqlbackend.ChangesetSpecResolver{}
 		return &none, nil
@@ -186,8 +209,15 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 }
 
 func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
-	// TODO(ssbc): not implemented
-	return nil
+	if r.execution == nil {
+		return nil
+	}
+	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateQueued {
+		return nil
+	}
+
+	i32 := int32(r.execution.PlaceInQueue)
+	return &i32
 }
 
 type batchSpecWorkspaceStagesResolver struct {

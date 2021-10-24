@@ -19,7 +19,7 @@
     "storybook": "STORIES_GLOB=client/web/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
     "serve:dev": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/development.server.ts",
     "serve:prod": "ts-node-transpile-only --project ./dev/tsconfig.json ./dev/server/production.server.ts",
-    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=4096\" gulp",
+    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "dev": "yarn task:gulp dev",
     "unsafeDev": "yarn task:gulp unsafeDev",
     "build": "yarn task:gulp build",
@@ -30,9 +30,17 @@
     "eslint": "eslint --cache '**/*.[tj]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
     "browserslist": "browserslist",
-    "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build"
+    "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build",
+    "bundlesize": "bundlesize"
   },
   "jest": {
     "testURL": "http://localhost:3080"
-  }
+  },
+  "bundlesize": [
+    {
+      "path": "../../ui/assets/scripts/*.js",
+      "maxSize": "600kb",
+      "compression": "brotli"
+    }
+  ]
 }

@@ -1,12 +1,11 @@
 import Dialog from '@reach/dialog'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { useHistory } from 'react-router-dom'
 
 import { isErrorLike } from '@sourcegraph/codeintellify/lib/errors'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Button } from '@sourcegraph/wildcard'
 
 import { ErrorAlert } from '../../../../../../../components/alerts'
@@ -16,13 +15,13 @@ import { SettingsBasedInsightDashboard } from '../../../../../core/types'
 import styles from './DeleteDashobardModal.module.scss'
 import { useDeleteDashboardHandler } from './hooks/use-delete-dashboard-handler'
 
-export interface DeleteDashboardModalProps extends PlatformContextProps<'updateSettings'> {
+export interface DeleteDashboardModalProps {
     dashboard: SettingsBasedInsightDashboard
     onClose: () => void
 }
 
 export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalProps> = props => {
-    const { dashboard, platformContext, onClose } = props
+    const { dashboard, onClose } = props
     const history = useHistory()
 
     const handleDeleteSuccess = (): void => {
@@ -31,7 +30,6 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
     }
 
     const { loadingOrError, handler } = useDeleteDashboardHandler({
-        platformContext,
         dashboard,
         onSuccess: handleDeleteSuccess,
     })
@@ -40,7 +38,7 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
 
     return (
         <Dialog className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
-            <button type="button" className={classnames('btn btn-icon', styles.closeButton)} onClick={onClose}>
+            <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
             </button>

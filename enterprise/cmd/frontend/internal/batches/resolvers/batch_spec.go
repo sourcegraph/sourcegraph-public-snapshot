@@ -53,23 +53,16 @@ type batchSpecResolver struct {
 	workspaces     []*btypes.BatchSpecWorkspace
 	workspacesErr  error
 
-	executionJobsOnce sync.Once
-	executionJobs     []*btypes.BatchSpecWorkspaceExecutionJob
-	executionJobsErr  error
-
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
+	statsOnce sync.Once
+	stats     btypes.BatchSpecStats
+	statsErr  error
+
 	stateOnce sync.Once
-	state     string
+	state     btypes.BatchSpecState
 	stateErr  error
-
-	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-	shouldActAsCampaignSpec bool
-}
-
-func (r *batchSpecResolver) ActAsCampaignSpec() bool {
-	return r.shouldActAsCampaignSpec
 }
 
 func (r *batchSpecResolver) ID() graphql.ID {
@@ -181,7 +174,7 @@ func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
 		return nil, err
 	}
 
-	if r.batchSpec.CreatedFromRaw && state != "COMPLETED" {
+	if r.batchSpec.CreatedFromRaw && state != btypes.BatchSpecStateCompleted {
 		return nil, nil
 	}
 
@@ -249,11 +242,6 @@ func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return totalStat, nil
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
-	return r.AppliesToBatchChange(ctx)
-}
-
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
 	batchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, r.batchSpec)
@@ -268,11 +256,6 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 		store:       r.store,
 		batchChange: batchChange,
 	}, nil
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *batchSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	return r.SupersedingBatchSpec(ctx)
 }
 
 func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
@@ -346,6 +329,20 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 	}, nil
 }
 
+func (r *batchSpecResolver) AllowUnsupported() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.AllowUnsupported
+	}
+	return nil
+}
+
+func (r *batchSpecResolver) AllowIgnored() *bool {
+	if r.batchSpec.CreatedFromRaw {
+		return &r.batchSpec.AllowIgnored
+	}
+	return nil
+}
+
 func (r *batchSpecResolver) AutoApplyEnabled() bool {
 	// TODO(ssbc): not implemented
 	return false
@@ -356,45 +353,57 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return state, nil
+	return state.ToGraphQL(), nil
 }
 
 func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	resolution, err := r.computeResolutionJob(ctx)
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution == nil {
+
+	if !state.Started() {
 		return nil, nil
 	}
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+
+	stats, err := r.computeStats(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspaces) == 0 {
+	if stats.StartedAt.IsZero() {
 		return nil, nil
 	}
-	// TODO: Look at earliest started_at time among all workspaces.
-	return nil, nil
+
+	return graphqlbackend.DateTimeOrNil(&stats.StartedAt), nil
 }
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	resolution, err := r.computeResolutionJob(ctx)
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution == nil {
+
+	if !state.Finished() {
 		return nil, nil
 	}
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+
+	stats, err := r.computeStats(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspaces) == 0 {
+	if stats.FinishedAt.IsZero() {
 		return nil, nil
 	}
-	// TODO: Look at latest finished_at time among all workspaces, and ensure all are in a final state.
-	return nil, nil
+
+	return graphqlbackend.DateTimeOrNil(&stats.FinishedAt), nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
@@ -528,93 +537,34 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 	return r.workspaces, r.workspacesErr
 }
 
-func (r *batchSpecResolver) computeExecutionJobs(ctx context.Context, workspaceIDs []int64) ([]*btypes.BatchSpecWorkspaceExecutionJob, error) {
-	r.executionJobsOnce.Do(func() {
-		opts := store.ListBatchSpecWorkspaceExecutionJobsOpts{BatchSpecWorkspaceIDs: workspaceIDs}
-
-		r.executionJobs, r.executionJobsErr = r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, opts)
+func (r *batchSpecResolver) computeStats(ctx context.Context) (btypes.BatchSpecStats, error) {
+	r.statsOnce.Do(func() {
+		svc := service.New(r.store)
+		r.stats, r.statsErr = svc.LoadBatchSpecStats(ctx, r.batchSpec)
 	})
-	return r.executionJobs, r.workspacesErr
+	return r.stats, r.statsErr
 }
 
-func (r *batchSpecResolver) computeState(ctx context.Context) (string, error) {
+func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
 	r.stateOnce.Do(func() {
-		r.state, r.stateErr = func() (string, error) {
-			if !r.batchSpec.CreatedFromRaw {
-				return "COMPLETED", nil
-			}
-
-			validationErr := r.validateChangesetSpecs(ctx)
-			if validationErr != nil {
-				return "FAILED", nil
-			}
-
-			workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
+			stats, err := r.computeStats(ctx)
 			if err != nil {
 				return "", err
 			}
-			if len(workspaces) == 0 {
-				return "PENDING", nil
-			}
 
-			var ids []int64
-			for _, ws := range workspaces {
-				ids = append(ids, ws.ID)
-			}
+			state := btypes.ComputeBatchSpecState(r.batchSpec, stats)
 
-			jobs, err := r.computeExecutionJobs(ctx, ids)
-			if err != nil {
-				return "", err
-			}
-			if len(jobs) == 0 {
-				return "PENDING", nil
-			}
-
-			var (
-				processing bool
-				failed     bool
-				canceled   bool
-
-				canceling   bool
-				allFinished bool
-			)
-
-			for _, j := range jobs {
-				switch j.State {
-				case btypes.BatchSpecWorkspaceExecutionJobStateProcessing:
-					if j.Cancel {
-						canceling = true
-					} else {
-						processing = true
-					}
-
-					allFinished = false
-				case btypes.BatchSpecWorkspaceExecutionJobStateCompleted:
-					allFinished = true
-				case btypes.BatchSpecWorkspaceExecutionJobStateFailed:
-					if j.Cancel {
-						canceled = true
-					} else {
-						failed = true
-					}
-					allFinished = true
+			// If the BatchSpec finished execution successfully, we validate
+			// the changeset specs.
+			if state == btypes.BatchSpecStateCompleted {
+				validationErr := r.validateChangesetSpecs(ctx)
+				if validationErr != nil {
+					return btypes.BatchSpecStateFailed, nil
 				}
 			}
 
-			switch {
-			case canceling:
-				return "CANCELING", nil
-			case canceled && allFinished:
-				return "CANCELED", nil
-			case processing:
-				return "PROCESSING", nil
-			case allFinished && !failed:
-				return "COMPLETED", nil
-			case allFinished && failed:
-				return "FAILED", nil
-			default:
-				return "QUEUED", nil
-			}
+			return state, nil
 		}()
 	})
 	return r.state, r.stateErr

@@ -12,7 +12,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/gorilla/schema"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // HTTP returns the most appropriate HTTP status code that describes
@@ -30,9 +30,9 @@ func HTTP(err error) int {
 		return http.StatusRequestTimeout
 	}
 
-	if vcs.IsCloneInProgress(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{CloneInProgress: true}).Error()) {
+	if gitdomain.IsCloneInProgress(err) || strings.Contains(err.Error(), (&gitdomain.RepoNotExistError{CloneInProgress: true}).Error()) {
 		return http.StatusAccepted
-	} else if vcs.IsRepoNotExist(err) || strings.Contains(err.Error(), (&vcs.RepoNotExistError{}).Error()) {
+	} else if gitdomain.IsRepoNotExist(err) || strings.Contains(err.Error(), (&gitdomain.RepoNotExistError{}).Error()) {
 		return http.StatusNotFound
 	}
 

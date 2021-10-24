@@ -11,7 +11,6 @@ import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -27,7 +26,6 @@ const MAXIMUM_LOCATION_RESULTS = 500
 
 export interface HierarchicalLocationsViewProps
     extends SettingsCascadeProps,
-        VersionContextProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI'> {
     location: H.Location
@@ -289,7 +287,6 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                         icon={FileDocumentIcon}
                         fetchHighlightedFileLineRanges={this.props.fetchHighlightedFileLineRanges}
                         settingsCascade={this.props.settingsCascade}
-                        versionContext={this.props.versionContext}
                         parentContainerIsEmpty={this.state.locationsOrError.result.locations.length === 0}
                     />
                 </div>

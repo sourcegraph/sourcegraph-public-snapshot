@@ -5,7 +5,7 @@ import { Group } from '@visx/group'
 import { scaleBand, scaleLinear } from '@visx/scale'
 import { Bar } from '@visx/shape'
 import { useTooltip, TooltipWithBounds } from '@visx/tooltip'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { range } from 'lodash'
 import React, { ReactElement, useCallback, useMemo } from 'react'
 import { BarChartContent } from 'sourcegraph'
@@ -138,7 +138,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                         {data.map((datum, index) => {
                             const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
                             const link = linkURLs?.[index]
-                            const classes = classnames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
+                            const classes = classNames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
                             const yValue = yAccessor(datum)
                             const xValue = formatXLabel(index)
                             const ariaLabel = `Bar ${index + 1} of ${

@@ -11,7 +11,7 @@ To connect GitHub to Sourcegraph:
 1. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
 
-**NOTE** That adding code hosts as a user is currently in private beta.
+> NOTE: Adding code hosts as a user is currently in private beta.
 
 ## Supported versions
 
@@ -34,15 +34,19 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
-No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required:
+No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
-- `repo` to sync private repositories from GitHub to Sourcegraph.
-- `read:org` to use:
-  - the `"allowOrgs"` setting [with a GitHub authentication provider](../auth/index.md#github)
-  - GitHub external service [`"authorization.groupsCacheTTL"` (which also requires `"allowGroupsPermissionsSync"`) for permissions caching](../repo/permissions.md#teams-and-organizations-permissions-caching).
-- `repo`, `read:org`, `user:email`, and `read:discussion` to use [batch changes](../../batch_changes/index.md) with GitHub repositories. See "[Code host interactions in batch changes](../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes)" for details.
+| Feature                                               | Required token scopes                                                                              |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [Sync private repositories](#github)                  | `read:repo`                                                                                        |
+| [Sync repository permissions][permissions]            | `write:repo`                                                                                       |
+| [Repository permissions caching][permissions-caching] | `write:org`                                                                                        |
+| [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, and `read:discussion` ([learn more][batch-changes-interactions]) |
 
-> NOTE: If you plan to use repository permissions with [background permissions syncing](../repo/permissions.md#background-permissions-syncing), an access token that has admin access to all private repositories is required. It is because only admin can list all collaborators of a repository.
+[permissions]: ../repo/permissions.md#github
+[permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching
+[batch-changes]: ../../batch_changes/index.md
+[batch-changes-interactions]: ../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes
 
 ## GitHub.com rate limits
 

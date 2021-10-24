@@ -11,23 +11,21 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 )
 
 var preview bool
+var wantYaml bool
 
 func init() {
 	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
+	flag.BoolVar(&wantYaml, "yaml", false, "Use YAML instead of JSON")
 }
 
 func main() {
 	flag.Parse()
 
-	config, err := ci.NewConfig(time.Now())
-	if err != nil {
-		panic(err)
-	}
+	config := ci.NewConfig(time.Now())
 
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
@@ -39,7 +37,11 @@ func main() {
 		return
 	}
 
-	_, err = pipeline.WriteTo(os.Stdout)
+	if wantYaml {
+		_, err = pipeline.WriteYAMLTo(os.Stdout)
+	} else {
+		_, err = pipeline.WriteJSONTo(os.Stdout)
+	}
 	if err != nil {
 		panic(err)
 	}

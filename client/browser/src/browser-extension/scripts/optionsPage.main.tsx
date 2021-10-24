@@ -81,7 +81,7 @@ const fetchCurrentTabStatus = async (): Promise<TabStatus> => {
 function requestGraphQL<T, V = object>(options: {
     request: string
     variables: V
-    sourcegraphURL?: string
+    sourcegraphURL: string
 }): Observable<GraphQLResult<T>> {
     return from(background.requestGraphQL<T, V>(options))
 }
@@ -89,8 +89,8 @@ function requestGraphQL<T, V = object>(options: {
 const version = getExtensionVersion()
 const isFullPage = !new URLSearchParams(window.location.search).get('popup')
 
-const validateSourcegraphUrl = (url: string): Observable<string | undefined> =>
-    fetchSite(options => requestGraphQL({ ...options, sourcegraphURL: url })).pipe(
+const validateSourcegraphUrl = (sourcegraphURL: string): Observable<string | undefined> =>
+    fetchSite(options => requestGraphQL({ ...options, sourcegraphURL })).pipe(
         mapTo(undefined),
         catchError(error => {
             const { message } = asError(error)

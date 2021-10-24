@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestAndOrQuery_Validation(t *testing.T) {
+func TestValidation(t *testing.T) {
 	cases := []struct {
 		input      string
 		searchType SearchType // nil value is regexp
@@ -125,7 +125,7 @@ func TestAndOrQuery_Validation(t *testing.T) {
 	}
 }
 
-func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
+func TestIsCaseSensitive(t *testing.T) {
 	cases := []struct {
 		name  string
 		input string
@@ -161,7 +161,7 @@ func TestAndOrQuery_IsCaseSensitive(t *testing.T) {
 	}
 }
 
-func TestAndOrQuery_RegexpPatterns(t *testing.T) {
+func TestRegexpPatterns(t *testing.T) {
 	type want struct {
 		values        []string
 		negatedValues []string

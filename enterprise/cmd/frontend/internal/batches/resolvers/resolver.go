@@ -106,14 +106,8 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
-		"Campaign": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.campaignByID(ctx, id)
-		},
 		batchChangeIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangeByID(ctx, id)
-		},
-		"CampaignSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.campaignSpecByID(ctx, id)
 		},
 		batchSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchSpecByID(ctx, id)
@@ -123,9 +117,6 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		},
 		changesetIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.changesetByID(ctx, id)
-		},
-		"CampaignsCredential": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.campaignsCredentialByID(ctx, id)
 		},
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangesCredentialByID(ctx, id)
@@ -879,7 +870,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		// changesets, since that would leak information.
 		safe = false
 	}
-	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
+	if args.OnlyPublishedByThisBatchChange != nil {
 		published := btypes.ChangesetPublicationStatePublished
 
 		opts.OwnedByBatchChangeID = batchChangeID
@@ -1514,8 +1505,25 @@ func (r *Resolver) CancelBatchSpecExecution(ctx context.Context, args *graphqlba
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	batchSpecRandID, err := unmarshalBatchSpecID(args.BatchSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	if batchSpecRandID == "" {
+		return nil, ErrIDIsZero{}
+	}
+
+	svc := service.New(r.store)
+	batchSpec, err := svc.CancelBatchSpec(ctx, service.CancelBatchSpecOpts{
+		BatchSpecRandID: batchSpecRandID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &batchSpecResolver{store: r.store, batchSpec: batchSpec}, nil
 }
 
 func (r *Resolver) CancelBatchSpecWorkspaceExecution(ctx context.Context, args *graphqlbackend.CancelBatchSpecWorkspaceExecutionArgs) (*graphqlbackend.EmptyResponse, error) {

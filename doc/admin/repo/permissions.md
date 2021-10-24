@@ -18,15 +18,16 @@ Setting up a unified SSO for code hosts and Sourcegraph is also possible: how to
 
 ## GitHub
 
-Prerequisite: [Add GitHub as an authentication provider.](../auth/index.md#github)
+Prerequisite: [Add GitHub as an authentication provider](../auth/index.md#github).
 
 Then, [add or edit a GitHub connection](../external_service/github.md#repository-syncing) and include the `authorization` field:
 
 ```json
 {
-   "url": "https://github.com",
-   "token": "$PERSONAL_ACCESS_TOKEN",
-   "authorization": {}
+  // The GitHub URL used to set up the GitHub authentication provider must match this URL.
+  "url": "https://github.com",
+  "token": "$PERSONAL_ACCESS_TOKEN",
+  "authorization": {}
 }
 ```
 
@@ -88,7 +89,7 @@ When enabling this feature, we currently recommend a default of `72` (hours, or 
 Caches can also be [manually invalidated](#permissions-caching) if necessary.
 Cache invaldiation also happens automatically on certain [webhook events](#faster-permissions-syncing-via-github-webhooks).
 
-> NOTE: The token associated with the external service must have `repo` and `read:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
+> NOTE: The token associated with the external service must have `repo` and `write:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
 
 <br />
 

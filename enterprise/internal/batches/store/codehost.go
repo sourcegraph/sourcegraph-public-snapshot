@@ -8,6 +8,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -22,7 +23,7 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs [
 	q := listCodeHostsQuery(opts)
 
 	cs = make([]*btypes.CodeHost, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.CodeHost
 		if err := scanCodeHost(&c, sc); err != nil {
 			return err
@@ -73,7 +74,7 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Sprintf("%s", "ssh://%"), sqlf.Join(preds, "AND"))
 }
 
-func scanCodeHost(c *btypes.CodeHost, sc scanner) error {
+func scanCodeHost(c *btypes.CodeHost, sc dbutil.Scanner) error {
 	return sc.Scan(
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,
@@ -92,7 +93,7 @@ func (s *Store) GetExternalServiceIDs(ctx context.Context, opts GetExternalServi
 
 	q := getExternalServiceIDsQuery(opts)
 
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var id int64
 		sc.Scan(&id)
 		if err := sc.Scan(&id); err != nil {

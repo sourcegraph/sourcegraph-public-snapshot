@@ -143,3 +143,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
 - [Adding or changing Buildkite secrets](how-to/adding_buildkite_secrets.md)
 
+## [Contributing](./contributing/index.md)
+
+- [Project setup and CI checks for frontend issues](./contributing/frontend_contribution.md).
+- [Accepting an external contribution guide](./contributing/accepting_contribution.md).

@@ -9,6 +9,46 @@ Indexes:
 
 ```
 
+# Table "public.lsif_data_apidocs_num_dumps"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_dumps_indexed"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_pages"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_search_results_private"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
+# Table "public.lsif_data_apidocs_num_search_results_public"
+```
+ Column |  Type  | Collation | Nullable | Default 
+--------+--------+-----------+----------+---------
+ count  | bigint |           |          | 
+
+```
+
 # Table "public.lsif_data_definitions"
 ```
      Column     |  Type   | Collation | Nullable | Default 
@@ -61,6 +101,70 @@ Tracks the range of schema_versions for each upload in the lsif_data_definitions
 **max_schema_version**: An upper-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
 
 **min_schema_version**: A lower-bound on the `lsif_data_definitions.schema_version` where `lsif_data_definitions.dump_id = dump_id`.
+
+# Table "public.lsif_data_docs_search_current_private"
+```
+        Column        |           Type           | Collation | Nullable |                              Default                              
+----------------------+--------------------------+-----------+----------+-------------------------------------------------------------------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+ id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_private_id_seq'::regclass)
+Indexes:
+    "lsif_data_docs_search_current_private_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_current_private_last_cleanup_scan_at" btree (last_cleanup_scan_at)
+    "lsif_data_docs_search_current_private_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
+
+```
+
+A table indicating the most current search index for a unique repository, root, and language.
+
+**created_at**: The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.
+
+**dump_id**: The associated dump identifier.
+
+**dump_root**: The root of the associated dump.
+
+**lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
+
+**repo_id**: The repository identifier of the associated dump.
+
+# Table "public.lsif_data_docs_search_current_public"
+```
+        Column        |           Type           | Collation | Nullable |                             Default                              
+----------------------+--------------------------+-----------+----------+------------------------------------------------------------------
+ repo_id              | integer                  |           | not null | 
+ dump_root            | text                     |           | not null | 
+ lang_name_id         | integer                  |           | not null | 
+ dump_id              | integer                  |           | not null | 
+ last_cleanup_scan_at | timestamp with time zone |           | not null | now()
+ created_at           | timestamp with time zone |           | not null | now()
+ id                   | integer                  |           | not null | nextval('lsif_data_docs_search_current_public_id_seq'::regclass)
+Indexes:
+    "lsif_data_docs_search_current_public_pkey" PRIMARY KEY, btree (id)
+    "lsif_data_docs_search_current_public_last_cleanup_scan_at" btree (last_cleanup_scan_at)
+    "lsif_data_docs_search_current_public_lookup" btree (repo_id, dump_root, lang_name_id, created_at) INCLUDE (dump_id)
+
+```
+
+A table indicating the most current search index for a unique repository, root, and language.
+
+**created_at**: The time this record was inserted. The records with the latest created_at value for the same repository, root, and language is the only visible one and others will be deleted asynchronously.
+
+**dump_id**: The associated dump identifier.
+
+**dump_root**: The root of the associated dump.
+
+**lang_name_id**: The interned index name of the associated dump.
+
+**last_cleanup_scan_at**: The last time this record was checked as part of a data retention scan.
+
+**repo_id**: The repository identifier of the associated dump.
 
 # Table "public.lsif_data_docs_search_lang_names_private"
 ```
@@ -142,6 +246,9 @@ Foreign-key constraints:
     "lsif_data_docs_search_private_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id)
     "lsif_data_docs_search_private_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id)
     "lsif_data_docs_search_private_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id)
+Triggers:
+    lsif_data_docs_search_private_delete AFTER DELETE ON lsif_data_docs_search_private REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_delete()
+    lsif_data_docs_search_private_insert AFTER INSERT ON lsif_data_docs_search_private REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_private_insert()
 
 ```
 
@@ -209,6 +316,9 @@ Foreign-key constraints:
     "lsif_data_docs_search_public_lang_name_id_fk" FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id)
     "lsif_data_docs_search_public_repo_name_id_fk" FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id)
     "lsif_data_docs_search_public_tags_id_fk" FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id)
+Triggers:
+    lsif_data_docs_search_public_delete AFTER DELETE ON lsif_data_docs_search_public REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_delete()
+    lsif_data_docs_search_public_insert AFTER INSERT ON lsif_data_docs_search_public REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_docs_search_public_insert()
 
 ```
 
@@ -382,6 +492,11 @@ Maps documentation path IDs to their corresponding integral documentationResult 
  search_indexed | boolean |           |          | false
 Indexes:
     "lsif_data_documentation_pages_pkey" PRIMARY KEY, btree (dump_id, path_id)
+    "lsif_data_documentation_pages_dump_id_unindexed" btree (dump_id) WHERE NOT search_indexed
+Triggers:
+    lsif_data_documentation_pages_delete AFTER DELETE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_delete()
+    lsif_data_documentation_pages_insert AFTER INSERT ON lsif_data_documentation_pages REFERENCING NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_insert()
+    lsif_data_documentation_pages_update AFTER UPDATE ON lsif_data_documentation_pages REFERENCING OLD TABLE AS oldtbl NEW TABLE AS newtbl FOR EACH STATEMENT EXECUTE FUNCTION lsif_data_documentation_pages_update()
 
 ```
 

@@ -217,9 +217,9 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
         <>
             <h3>Preview workspaces ({preview.workspaceResolution?.workspaces.nodes.length})</h3>
             <p className="text-monospace">
-                allowUnsupported: {JSON.stringify(preview.workspaceResolution?.allowUnsupported)}
+                allowUnsupported: {JSON.stringify(preview.allowUnsupported)}
                 <br />
-                allowIgnored: {JSON.stringify(preview.workspaceResolution?.allowIgnored)}
+                allowIgnored: {JSON.stringify(preview.allowIgnored)}
             </p>
             <ul className="list-group p-1 mb-0">
                 {preview.workspaceResolution?.workspaces.nodes.map(item => (

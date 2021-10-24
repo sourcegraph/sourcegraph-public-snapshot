@@ -91,7 +91,6 @@ func TestResolverTo(t *testing.T) {
 		&languageSuggestionResolver{},
 		&settingsSubject{},
 		&statusMessageResolver{db: db},
-		&versionContextResolver{},
 	}
 	for _, r := range resolvers {
 		typ := reflect.TypeOf(r)
@@ -237,7 +236,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -286,7 +285,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -339,7 +338,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,
@@ -395,7 +394,7 @@ func TestAffiliatedRepositories(t *testing.T) {
 			Query: `
 			{
 				affiliatedRepositories(
-					user: "VXNlcjox"
+					namespace: "VXNlcjox"
 				) {
 					nodes {
 						name,

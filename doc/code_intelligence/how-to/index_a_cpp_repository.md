@@ -64,7 +64,7 @@ with `gcc` or `g++`.)
   * `$IMAGE_ID`: the ID of the Docker image you just built
 
 If successful, you should see the upload visible in [the repository settings page like
-this](https://sourcegraph.com/github.com/tesseract-ocr/tesseract/-/settings/code-intelligence/uploads).
+this](https://sourcegraph.com/github.com/tesseract-ocr/tesseract/-/code-intelligence/uploads).
 
 For reference, some examples of Dockerized C++ LSIF generation are:
 

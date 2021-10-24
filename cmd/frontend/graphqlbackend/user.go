@@ -354,13 +354,6 @@ func (r *UserResolver) ViewerCanChangeUsername(ctx context.Context) bool {
 	return viewerCanChangeUsername(ctx, r.db, r.user.ID)
 }
 
-// TODO(campaigns-deprecation):
-func (r *UserResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	id := r.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
-}
-
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
@@ -431,11 +424,6 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		indexed:    args.Indexed,
 		notIndexed: args.NotIndexed,
 	}, nil
-}
-
-func (r *UserResolver) CampaignsCodeHosts(ctx context.Context, args *ListCampaignsCodeHostsArgs) (CampaignsCodeHostConnectionResolver, error) {
-	args.UserID = r.user.ID
-	return EnterpriseResolvers.batchChangesResolver.CampaignsCodeHosts(ctx, args)
 }
 
 func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {

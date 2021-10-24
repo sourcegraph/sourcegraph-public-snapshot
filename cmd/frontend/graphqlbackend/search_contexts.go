@@ -23,7 +23,6 @@ type SearchContextsResolver interface {
 
 	SearchContextByID(ctx context.Context, id graphql.ID) (SearchContextResolver, error)
 	SearchContextBySpec(ctx context.Context, args SearchContextBySpecArgs) (SearchContextResolver, error)
-	ConvertVersionContextToSearchContext(ctx context.Context, args ConvertVersionContextToSearchContextArgs) (SearchContextResolver, error)
 	IsSearchContextAvailable(ctx context.Context, args IsSearchContextAvailableArgs) (bool, error)
 	CreateSearchContext(ctx context.Context, args CreateSearchContextArgs) (SearchContextResolver, error)
 	UpdateSearchContext(ctx context.Context, args UpdateSearchContextArgs) (SearchContextResolver, error)
@@ -92,10 +91,6 @@ type DeleteSearchContextArgs struct {
 
 type SearchContextBySpecArgs struct {
 	Spec string
-}
-
-type ConvertVersionContextToSearchContextArgs struct {
-	Name string
 }
 
 type IsSearchContextAvailableArgs struct {

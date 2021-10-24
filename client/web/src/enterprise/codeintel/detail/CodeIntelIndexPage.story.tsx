@@ -4,8 +4,8 @@ import { of } from 'rxjs'
 
 import { LSIFUploadState } from '@sourcegraph/shared/src/graphql/schema'
 
+import { WebStory } from '../../../components/WebStory'
 import { LsifIndexFields, LSIFIndexState, LsifIndexStepsFields } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelIndexPage, CodeIntelIndexPageProps } from './CodeIntelIndexPage'
 
@@ -310,7 +310,7 @@ const completedSteps: LsifIndexStepsFields = {
             stdout:    \\u001b[?25h\\u001b[?25lfile: dump.lsif
             stdout:    \\u001b[?25h\\u001b[?25lindexer: lsif-go
             stdout:    \\u001b[?25h
-            stdout: \\u001b[?25h\\u001b[?25l💡 View processing status at https://sourcegraph.com/github.com/kubernetes/kubernetes/-/settings/code-intelligence/lsif-uploads/TFNJRlVwbG9hZDoiNTUyNzg3Ig==
+            stdout: \\u001b[?25h\\u001b[?25l💡 View processing status at https://sourcegraph.com/github.com/kubernetes/kubernetes/-/code-intelligence/uploads/TFNJRlVwbG9hZDoiNTUyNzg3Ig==
             stdout: \\u001b[?25h
         `),
         durationMilliseconds: 1265,
@@ -403,7 +403,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelIndexPageProps> = args => (
-    <EnterpriseWebStory>{props => <CodeIntelIndexPage {...props} {...args} />}</EnterpriseWebStory>
+    <WebStory>{props => <CodeIntelIndexPage {...props} {...args} />}</WebStory>
 )
 
 const defaults: Partial<CodeIntelIndexPageProps> = {

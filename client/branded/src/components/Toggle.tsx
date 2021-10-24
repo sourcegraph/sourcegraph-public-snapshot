@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import * as React from 'react'
 
 import styles from './Toggle.module.scss'
@@ -60,7 +60,7 @@ export const Toggle: React.FunctionComponent<Props> = ({
     return (
         <button
             type="button"
-            className={classnames(styles.toggle, className)}
+            className={classNames(styles.toggle, className)}
             id={id}
             title={title}
             value={value ? 1 : 0}
@@ -75,12 +75,12 @@ export const Toggle: React.FunctionComponent<Props> = ({
             data-test={dataTest}
         >
             <span
-                className={classnames(styles.bar, {
+                className={classNames(styles.bar, {
                     [styles.barOn]: value,
                 })}
             />
             <span
-                className={classnames(styles.knob, {
+                className={classNames(styles.knob, {
                     [styles.knobOn]: value,
                 })}
             />

@@ -232,15 +232,15 @@ type operations struct {
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
 
-	createBatchSpecWorkspace *observation.Operation
-	getBatchSpecWorkspace    *observation.Operation
-	listBatchSpecWorkspaces  *observation.Operation
+	createBatchSpecWorkspace       *observation.Operation
+	getBatchSpecWorkspace          *observation.Operation
+	listBatchSpecWorkspaces        *observation.Operation
+	markSkippedBatchSpecWorkspaces *observation.Operation
 
-	createBatchSpecWorkspaceExecutionJob  *observation.Operation
 	createBatchSpecWorkspaceExecutionJobs *observation.Operation
 	getBatchSpecWorkspaceExecutionJob     *observation.Operation
 	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJob  *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJobs *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -356,15 +356,15 @@ func newOperations(observationContext *observation.Context) *operations {
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
 
-			createBatchSpecWorkspace: op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:    op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:  op("ListBatchSpecWorkspaces"),
+			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
-			createBatchSpecWorkspaceExecutionJob:  op("CreateBatchSpecWorkspaceExecutionJob"),
 			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
 			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
 			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJob:  op("CancelBatchSpecWorkspaceExecutionJob"),
+			cancelBatchSpecWorkspaceExecutionJobs: op("CancelBatchSpecWorkspaceExecutionJobs"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
@@ -378,14 +378,9 @@ func newOperations(observationContext *observation.Context) *operations {
 	return singletonOperations
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...interface{}) error
-}
-
-// a scanFunc scans one or more rows from a scanner, returning
+// a scanFunc scans one or more rows from a dbutil.Scanner, returning
 // the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+type scanFunc func(dbutil.Scanner) (err error)
 
 func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
 	defer func() { err = basestore.CloseRows(rows, err) }()

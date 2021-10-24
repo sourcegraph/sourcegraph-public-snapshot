@@ -174,13 +174,6 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
-// TODO(campaigns-deprecation):
-func (o *OrgResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	id := o.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
-}
-
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := o.ID()
 	args.Namespace = &id
@@ -282,4 +275,84 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
+}
+
+type ListOrgRepositoriesArgs struct {
+	First              *int32
+	Query              *string
+	After              *string
+	Cloned             bool
+	NotCloned          bool
+	Indexed            bool
+	NotIndexed         bool
+	ExternalServiceIDs *[]*graphql.ID
+	OrderBy            *string
+	Descending         bool
+}
+
+func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
+	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
+		return nil, err
+	}
+	// 🚨 SECURITY: Only org members can list the org repositories.
+	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
+		if err == backend.ErrNotAnOrgMember {
+			return nil, errors.New("must be a member of this organization to view its repositories")
+		}
+		return nil, err
+	}
+
+	opt := database.ReposListOptions{}
+	if args.Query != nil {
+		opt.Query = *args.Query
+	}
+	if args.First != nil {
+		opt.LimitOffset = &database.LimitOffset{Limit: int(*args.First)}
+	}
+	if args.After != nil {
+		cursor, err := unmarshalRepositoryCursor(args.After)
+		if err != nil {
+			return nil, err
+		}
+		opt.CursorColumn = cursor.Column
+		opt.CursorValue = cursor.Value
+		opt.CursorDirection = cursor.Direction
+	} else {
+		opt.CursorValue = ""
+		opt.CursorDirection = "next"
+	}
+	if args.OrderBy == nil {
+		opt.OrderBy = database.RepoListOrderBy{{
+			Field:      "name",
+			Descending: false,
+		}}
+	} else {
+		opt.OrderBy = database.RepoListOrderBy{{
+			Field:      toDBRepoListColumn(*args.OrderBy),
+			Descending: args.Descending,
+		}}
+	}
+
+	if args.ExternalServiceIDs == nil || len(*args.ExternalServiceIDs) == 0 {
+		opt.OrgID = o.org.ID
+	} else {
+		var idArray []int64
+		for i, externalServiceID := range *args.ExternalServiceIDs {
+			id, err := unmarshalExternalServiceID(*externalServiceID)
+			if err != nil {
+				return nil, err
+			}
+			idArray[i] = id
+		}
+		opt.ExternalServiceIDs = idArray
+	}
+
+	return &repositoryConnectionResolver{
+		db:         o.db,
+		opt:        opt,
+		cloned:     args.Cloned,
+		notCloned:  args.NotCloned,
+		indexed:    args.Indexed,
+		notIndexed: args.NotIndexed,
+	}, nil
 }

@@ -126,6 +126,9 @@ export const OptionsPage: React.FC<OptionsPageProps> = ({
 
     const selfHostedSourcegraphUrlValidate = useCallback(
         (url: string) => {
+            if (!url) {
+                return of(undefined)
+            }
             if (isCloudSourcegraphUrl(url)) {
                 return of('Sourcegraph cloud is supported by default')
             }

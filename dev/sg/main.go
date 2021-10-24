@@ -59,6 +59,7 @@ var (
 			funkyLogoCommand,
 			teammateCommand,
 			ciCommand,
+			installCommand,
 		},
 	}
 )

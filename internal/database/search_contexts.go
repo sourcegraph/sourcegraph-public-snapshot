@@ -545,13 +545,13 @@ ORDER BY
 
 // GetAllRevisionsForRepos returns the list of revisions that are used in search
 // contexts for each given repo ID.
-func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []int32) (map[int32][]string, error) {
+func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 	if a := actor.FromContext(ctx); !a.IsInternal() {
 		return nil, errors.New("GetAllRevisionsForRepos can only be accessed by an internal actor")
 	}
 
 	if len(repoIDs) == 0 {
-		return map[int32][]string{}, nil
+		return map[api.RepoID][]string{}, nil
 	}
 
 	q := sqlf.Sprintf(
@@ -565,10 +565,10 @@ func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoI
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	revs := make(map[int32][]string, len(repoIDs))
+	revs := make(map[api.RepoID][]string, len(repoIDs))
 	for rows.Next() {
 		var (
-			repoID int32
+			repoID api.RepoID
 			rev    string
 		)
 		if err = rows.Scan(&repoID, &rev); err != nil {
