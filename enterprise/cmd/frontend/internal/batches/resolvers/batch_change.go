@@ -319,7 +319,7 @@ func (r *batchChangeResolver) HasExternalServicesWithoutWebhooks(ctx context.Con
 	// don't return the actual external service; we're only interested in
 	// whether there is webhook configuration or not, and there's no way to leak
 	// anything past that below.
-	services, _, err := r.store.ListExternalServices(ctx, store.ListExternalServicesOpts{
+	services, _, err := r.store.ListExternalServicesForBatchChange(ctx, store.ListExternalServicesForBatchChangeOpts{
 		BatchChangeID: r.batchChange.ID,
 	})
 	if err != nil {
@@ -388,7 +388,7 @@ func (r *externalServicesWithoutWebhooksResolver) compute(ctx context.Context) (
 
 		externalServices := []*types.ExternalService{}
 		for {
-			page, next, err := r.store.ListExternalServices(ctx, store.ListExternalServicesOpts{
+			page, next, err := r.store.ListExternalServicesForBatchChange(ctx, store.ListExternalServicesForBatchChangeOpts{
 				BatchChangeID: r.batchChangeID,
 				Cursor:        cursor,
 				LimitOpts:     store.LimitOpts{Limit: first},
@@ -441,7 +441,7 @@ func (r *externalServicesWithoutWebhooksResolver) Nodes(ctx context.Context) ([]
 }
 
 func (r *externalServicesWithoutWebhooksResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountExternalServices(ctx, r.batchChangeID)
+	count, err := r.store.CountExternalServicesForBatchChange(ctx, r.batchChangeID)
 	return int32(count), err
 }
 
