@@ -91,8 +91,8 @@ In the corresponding [authorization provider](../auth/index.md#github) in [site 
 
 When enabling this feature, we currently recommend a default of `72` (hours, or 3 days) for `groupsCacheTTL`. A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
+Cache invaldiation happens automatically on certain [webhook events](#trigger-permissions-sync-from-github-webhooks), so it is recommended that to configure webhook support when using cached permissions sync.
 Caches can also be [manually invalidated](#permissions-caching) if necessary.
-Cache invaldiation also happens automatically on certain [webhook events](#trigger-permissions-sync-from-github-webhooks).
 
 > NOTE: The token associated with the external service must have `repo` and `write:org` scope in order to read the repo, orgs, and teams permissions and cache them - [learn more](../external_service/github.md#github-api-token-and-access).
 
