@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -59,7 +59,6 @@ func TestRepository_Commit(t *testing.T) {
 }
 
 func TestRepositoryHydration(t *testing.T) {
-	db := new(dbtesting.MockDB)
 	makeRepos := func() (*types.Repo, *types.Repo) {
 		const id = 42
 		name := fmt.Sprintf("repo-%d", id)
@@ -86,10 +85,11 @@ func TestRepositoryHydration(t *testing.T) {
 
 	t.Run("hydrated without errors", func(t *testing.T) {
 		minimalRepo, hydratedRepo := makeRepos()
-		database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-			return hydratedRepo, nil
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
+
+		rs := dbmock.NewMockRepoStore()
+		rs.GetFunc.SetDefaultReturn(hydratedRepo, nil)
+		db := dbmock.NewMockDB()
+		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
@@ -100,10 +100,10 @@ func TestRepositoryHydration(t *testing.T) {
 
 		dbErr := errors.New("cannot load repo")
 
-		database.Mocks.Repos.Get = func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-			return nil, dbErr
-		}
-		defer func() { database.Mocks = database.MockStores{} }()
+		rs := dbmock.NewMockRepoStore()
+		rs.GetFunc.SetDefaultReturn(nil, dbErr)
+		db := dbmock.NewMockDB()
+		db.ReposFunc.SetDefaultReturn(rs)
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
 		_, err := repoResolver.Description(ctx)

@@ -60,7 +60,7 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Stats.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
@@ -76,7 +76,7 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	var resolvers []*RepositoryResolver
 	c.Stats.Status.Filter(mask, func(id api.RepoID) {
 		if r, ok := c.Stats.Repos[id]; ok {
-			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
+			resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -144,7 +144,7 @@ func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver := NewRepositoryResolver(database.NewDB(db), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
