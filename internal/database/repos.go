@@ -62,23 +62,23 @@ func (e *RepoNotFoundErr) NotFound() bool {
 }
 
 type RepoStore interface {
-	With(basestore.ShareableStore) RepoStore
-	Transact(context.Context) (RepoStore, error)
-	Get(context.Context, api.RepoID) (*types.Repo, error)
-	GetByName(context.Context, api.RepoName) (*types.Repo, error)
-	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
-	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	Count(context.Context, ReposListOptions) (int, error)
-	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
-	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
-	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.RepoName, error)
 	Create(context.Context, ...*types.Repo) error
 	Delete(context.Context, ...api.RepoID) error
-	ListEnabledNames(context.Context) ([]string, error)
 	ExternalServices(context.Context, api.RepoID) ([]*types.ExternalService, error)
+	Get(context.Context, api.RepoID) (*types.Repo, error)
+	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
+	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
+	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+	List(context.Context, ReposListOptions) ([]*types.Repo, error)
+	ListEnabledNames(context.Context) ([]string, error)
+	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.RepoName, error)
+	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
+	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
+	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
+	Transact(context.Context) (RepoStore, error)
+	With(basestore.ShareableStore) RepoStore
 }
 
 var _ RepoStore = (*repoStore)(nil)
