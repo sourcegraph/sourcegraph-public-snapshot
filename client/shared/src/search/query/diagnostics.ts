@@ -168,6 +168,13 @@ const rules: PatternOf<Token[], PatternData>[] = [
             ),
         })
     ),
+
+    each({
+        field: { value: oneOf('g', 'repogroup') },
+        $data: addFilterDiagnostic(
+            'Error: repogroup filter is not available. Repository groups have been removed in favor of search contexts.'
+        ),
+    }),
 ]
 
 /**
