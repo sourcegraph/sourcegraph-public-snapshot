@@ -15,7 +15,7 @@ import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import { Toggles } from '../input/toggles/Toggles'
 
-import { AnnotatedSearchInput } from './AnnoatedSearchExample'
+import { AnnotatedSearchInput } from './AnnotatedSearchExample'
 import styles from './NoResultsPage.module.scss'
 
 export enum SectionID {
@@ -54,11 +54,11 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
     return (
         <div className={styles.searchInputExample}>
-            <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchBox)}>
+            <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchbox)}>
                 <div
                     className={classNames(
                         searchBoxStyle.searchBoxBackgroundContainer,
-                        styles.fakeSearchBoxBackgroundContainer,
+                        styles.fakeSearchboxBackgroundContainer,
                         'flex-shrink-past-contents'
                     )}
                 >
@@ -66,14 +66,14 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                         <>
                             <SearchContext />
                             <div
-                                className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchBoxSeparator)}
+                                className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)}
                             />
                         </>
                     )}
                     <div
                         className={classNames(
                             searchBoxStyle.searchBoxFocusContainer,
-                            styles.fakeSearchBoxFocusContainer,
+                            styles.fakeSearchboxFocusContainer,
                             'flex-shrink-past-contents'
                         )}
                     >
@@ -87,7 +87,7 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                             <SyntaxHighlightedSearchQuery query={query} />
                         </div>
                     </div>
-                    <div className={styles.fakeSearchBoxToggles}>
+                    <div className={styles.fakeSearchboxToggles}>
                         <Toggles
                             navbarSearchQuery={query}
                             caseSensitive={false}
@@ -123,7 +123,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
     className = '',
 }) => (
     <div className={classNames(styles.container, className)}>
-        <h3 className={styles.containerTitle}>
+        <h3 className={styles.title}>
             <span className="flex-1">{title}</span>
             {sectionID && (
                 <button
@@ -136,7 +136,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
                 </button>
             )}
         </h3>
-        <div className={styles.containerContent}>{children}</div>
+        <div className={styles.content}>{children}</div>
     </div>
 )
 

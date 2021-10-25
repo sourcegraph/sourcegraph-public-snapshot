@@ -9,38 +9,57 @@
     }
 }
 
-.mainPanels,
-.videoPanel {
+.main-panels,
+.video-panel {
     margin-right: 1rem;
 }
 
-.videoContainer figcaption {
-    text-align: center;
-}
+.container {
+    &:last-of-type {
+        margin-bottom: 1rem;
+    }
 
-.containerContent {
-    background-color: var(--color-bg-1);
-    border: 1px solid var(--border-color);
-    padding: 1.5rem;
-    border-radius: 3px;
-}
-
-.videoContainer .containerContent {
-    padding: 0;
-    background-color: transparent;
-    border: 0;
-
-    @media (--lg-breakpoint-down) {
+    .title {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
         display: flex;
-        flex-wrap: wrap;
+        align-items: center;
+    }
 
-        > .video {
-            padding: 0 1rem;
+    .content {
+        background-color: var(--color-bg-1);
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        border-radius: 3px;
+
+        > :last-child {
+            margin-bottom: 0;
         }
     }
 }
 
-.annotatedSearchInput {
+.video-container {
+    figcaption {
+        text-align: center;
+    }
+
+    .container-content {
+        padding: 0;
+        background-color: transparent;
+        border: 0;
+
+        @media (--lg-breakpoint-down) {
+            display: flex;
+            flex-wrap: wrap;
+
+            > .video {
+                padding: 0 1rem;
+            }
+        }
+    }
+}
+
+.annotated-search-input {
     flex: 1;
     overflow-x: auto;
     display: flex;
@@ -52,22 +71,7 @@
     }
 }
 
-.container:last-of-type {
-    margin-bottom: 1rem;
-}
-
-.containerContent > :last-child {
-    margin-bottom: 0;
-}
-
-.containerTitle {
-    margin-top: 1.25rem;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-}
-
-.searchInputExample {
+.search-input-example {
     display: flex;
     margin-bottom: 1rem;
     align-items: center;
@@ -78,16 +82,22 @@
     }
 }
 
-.fakeSearchBox {
+.fake-searchbox {
     @media (--xs-breakpoint-down) {
         background-color: var(--body-bg);
         margin-bottom: 0.25rem;
     }
 }
 
-.searchContext {
+.search-context {
     @media (--xs-breakpoint-down) {
         margin-bottom: 0.5rem;
+    }
+
+    > :global(.btn) {
+        @media (--xs-breakpoint-down) {
+            background-color: var(--color-bg-1);
+        }
     }
 }
 
@@ -95,19 +105,13 @@
  * space, so the box can be multiple lines heigh. This changes the input to
  * cover the whole height.
  */
-.fakeSearchBoxSeparator {
+.fake-searchbox-separator {
     align-self: stretch;
     height: auto;
     margin: 0.125rem 0;
 }
 
-.searchContext > :global(.btn) {
-    @media (--xs-breakpoint-down) {
-        background-color: var(--color-bg-1);
-    }
-}
-
-.fakeSearchBoxBackgroundContainer {
+.fake-searchbox-background-container {
     background-color: var(--body-bg);
     border-right-color: var(--input-border-color);
     border-radius: 3px;
@@ -118,13 +122,13 @@
     }
 }
 
-.fakeSearchBoxFocusContainer {
+.fake-searchbox-focus-container {
     @media (--xs-breakpoint-down) {
         display: block;
     }
 }
 
-.fakeSearchInput {
+.fake-search-input {
     margin-right: 1rem;
 
     @media (--xs-breakpoint-down) {
@@ -132,7 +136,7 @@
     }
 }
 
-.fakeSearchBoxToggles {
+.fake-Searchbox-toggles {
     @media (--xs-breakpoint-down) {
         margin-top: 0.75rem;
     }

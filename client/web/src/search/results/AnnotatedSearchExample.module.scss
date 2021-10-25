@@ -1,9 +1,8 @@
-.annotatedSearchInput {
+.annotated-search-input {
     text {
         font-family: var(--base-font-family);
         fill: var(--body-color);
         font-size: 0.75rem;
-        letter-spacing: 0px;
     }
 
     text.code {
@@ -20,21 +19,21 @@
         fill: var(--search-filter-keyword-color);
     }
 
-    tspan.metaRegexpCharacterSet {
+    tspan.meta-regexp-character-set {
         /* from client/web/src/components/MonacoEditor.tsx */
         fill: #a112ff;
     }
 
-    tspan.metaRegexpRangeQuantifier {
+    tspan.meta-regexp-range-quantifier {
         /* from client/web/src/components/MonacoEditor.tsx */
         fill: #1098ad;
     }
 
-    .searchIcon {
+    .search-icon {
         color: var(--light-text);
     }
 
-    .searchBox {
+    .search-box {
         fill: var(--body-bg);
         stroke: var(--input-border-color);
     }

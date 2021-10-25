@@ -24,8 +24,8 @@ const belowArrowY = 150
  * the input (above/below) as argument and computes the position and dimensions
  * the the four <line>s that make up this "arrow".
  */
+// eslint-disable-next-line id-length
 function arrow(x: number, width: number, position: 'above' | 'below'): React.ReactElement {
-    // eslint-disable-line id-length
     const pointerLine = <line x1={width / 2} x2={width / 2} y1="0" y2={arrowHeight} />
     const centerLine = <line x1="0" x2={width} y1={arrowHeight} y2={arrowHeight} />
     const leftEdge = <line x1="0" x2="0" y1={arrowHeight} y2={arrowHeight + edgesHeight} />
@@ -77,7 +77,7 @@ export const AnnotatedSearchInput: React.FunctionComponent<{ className?: string 
             </text>
             <line className={styles.separator} x1="178" y1="118" x2="178" y2="137" />
             <text className={styles.code} x="171.852" y="130.836">
-                <tspan className={styles.filter}> repo:</tspan>
+                <tspan className={styles.filter}>{'  '}repo:</tspan>
                 <tspan>sourcegraph/sourcegraph</tspan>
                 <tspan className={styles.metaRegexpCharacterSet}>.</tspan>
                 <tspan className={styles.metaRegexpRangeQuantifier}>*</tspan>
