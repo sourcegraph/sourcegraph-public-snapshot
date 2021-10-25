@@ -178,6 +178,28 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
 
+// RepoSearchQuery returns an SQL expression of e.g. the form:
+//
+// 	(column_name @@ ... OR column_name @@ ... OR column_name @@ ...)
+//
+// Which can be used in a WHERE clause to match any of the given query repositories against the
+// provided tsvector column name.
+//
+// Repo search queries in practice have much stricter matching than TextSearchQuery, because the
+// risks of matching a repository (and filtering results to just that repo, or few repos) are in
+// practice worse. With text search queries, you want them to be a bit fuzzy. With repo search
+// queries, you really only want to match repos if you're pretty sure that's what the user meant.
+func RepoSearchQuery(columnName string, possibleRepoNames []string) *sqlf.Query {
+	if len(possibleRepoNames) == 0 {
+		return sqlf.Sprintf("false") // match no repo names
+	}
+	expressions := make([]*sqlf.Query, 0, len(possibleRepoNames))
+	for _, repoName := range possibleRepoNames {
+		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", lexemeSequence(repoName, false)))
+	}
+	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
+}
+
 // Query describes an API docs search query.
 type Query struct {
 	// MetaTerms are the terms that should be matched against tags, repo names, and language name
