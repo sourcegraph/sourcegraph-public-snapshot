@@ -102,7 +102,7 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 			ID:           "searchInsights.insight.global.simple",
 			Title:        "my insight",
 			Repositories: []string{"github.com/sourcegraph/sourcegraph"},
-			Series: []TimeSeries{TimeSeries{
+			Series: []TimeSeries{{
 				Name:   "Redis",
 				Stroke: "var(--oc-red-7)",
 				Query:  "redis",
@@ -113,7 +113,7 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 			ID:           "searchInsights.insight.numbertwo",
 			Title:        "numbertwo title",
 			Repositories: []string{"github.com/sourcegraph/numbertwo"},
-			Series: []TimeSeries{TimeSeries{
+			Series: []TimeSeries{{
 				Name:   "numbertwo series name",
 				Stroke: "numbertwo var(--oc-red-7)",
 				Query:  "numbertwo query",
@@ -124,7 +124,7 @@ func TestGetSearchInsightsMulti(t *testing.T) {
 			ID:           "searchInsights.insight.three",
 			Title:        "three title",
 			Repositories: []string{"github.com/sourcegraph/three"},
-			Series: []TimeSeries{TimeSeries{
+			Series: []TimeSeries{{
 				Name:   "three series name",
 				Stroke: "three var(--oc-red-7)",
 				Query:  "three query",
