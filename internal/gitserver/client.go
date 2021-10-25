@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -28,6 +29,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/go-rendezvous"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -97,6 +99,17 @@ func (c *Client) AddrForRepo(repo api.RepoName) string {
 	return AddrForRepo(repo, addrs)
 }
 
+// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
+// Rendezvous hashing scheme.
+func (c *Client) RendezvousAddrForRepo(repo api.RepoName) string {
+	addrs := c.Addrs()
+	if len(addrs) == 0 {
+		panic("unexpected state: no gitserver addresses")
+	}
+
+	return RendezvousAddrForRepo(repo, addrs)
+}
+
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *Client) addrForKey(key string) string {
@@ -119,6 +132,15 @@ func AddrForRepo(repo api.RepoName, addrs []string) string {
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return addrForKey(string(repo), addrs)
+}
+
+// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
+// Rendezvous hashing scheme.
+//
+// It should never be called with an empty slice.
+func RendezvousAddrForRepo(repo api.RepoName, addrs []string) string {
+	r := rendezvous.New(addrs, xxhash.Sum64String)
+	return r.Lookup(string(protocol.NormalizeRepo(repo)))
 }
 
 // addrForKey returns the gitserver address to use for the given string key,

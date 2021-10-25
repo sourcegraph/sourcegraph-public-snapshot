@@ -287,6 +287,46 @@ func TestAddrForRepo(t *testing.T) {
 	}
 }
 
+func TestRendezvousAddrForRepo(t *testing.T) {
+	addrs := []string{"gitserver-1", "gitserver-2", "gitserver-3"}
+
+	testCases := []struct {
+		name string
+		repo api.RepoName
+		want string
+	}{
+		{
+			name: "repo1",
+			repo: api.RepoName("repo1"),
+			want: "gitserver-1",
+		},
+		{
+			name: "check we normalise",
+			repo: api.RepoName("repo1.git"),
+			want: "gitserver-1",
+		},
+		{
+			name: "another repo",
+			repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
+			want: "gitserver-3",
+		},
+		{
+			name: "yet another repo",
+			repo: api.RepoName("gitlab.com/foo/bar"),
+			want: "gitserver-2",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := gitserver.RendezvousAddrForRepo(tc.repo, addrs)
+			if got != tc.want {
+				t.Fatalf("Want %q, got %q", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestClient_P4Exec(t *testing.T) {
 	root, err := os.MkdirTemp("", t.Name())
 	if err != nil {
