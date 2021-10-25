@@ -87,7 +87,7 @@ func (r *workHandler) Handle(ctx context.Context, record workerutil.Record) (err
 
 	log15.Info("dequeue_job", "job", *job)
 
-	series, err := r.getSeries(ctx, job.SeriesID) // somehow this is returning a null series, causing a panic in DeleteSnapshots. Related to the new series ID maybe??
+	series, err := r.getSeries(ctx, job.SeriesID)
 	if err != nil {
 		return err
 	}
