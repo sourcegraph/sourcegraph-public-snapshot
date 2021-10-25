@@ -61,27 +61,27 @@ function passThroughToServer(): React.ReactNode {
     return null
 }
 
-export enum PAGE_ROUTES {
-    INDEX = '/',
-    SEARCH = '/search',
-    SEARCH_CONSOLE = '/search/console',
-    SEARCH_NOTEBOOK = '/search/notebook',
-    SIGN_IN = '/sign-in',
-    SIGN_UP = '/sign-up',
-    WELCOME = '/welcome',
-    SETTINGS = '/settings',
-    USER = '/user',
-    ORGANIZATIONS = '/organizations',
-    SITE_ADMIN = '/site-admin',
-    SITE_ADMIN_INIT = '/site-admin/init',
-    PASSWORD_RESET = '/password-reset',
-    API_CONSOLE = '/api/console',
-    USER_AREA = '/users/:username',
-    SURVEY = '/survey/:score?',
-    EXTENSIONS = '/extensions',
-    HELP = '/help',
-    DEBUG = '/-/debug/*',
-    REPO_CONTAINER = '/:repoRevAndRest+',
+export enum PageRoutes {
+    Index = '/',
+    Search = '/search',
+    SearchConsole = '/search/console',
+    SearchNotebook = '/search/notebook',
+    SignIn = '/sign-in',
+    SignUp = '/sign-up',
+    Welcome = '/welcome',
+    Settings = '/settings',
+    User = '/user',
+    Organizations = '/organizations',
+    SiteAdmin = '/site-admin',
+    SiteAdminInit = '/site-admin/init',
+    PasswordReset = '/password-reset',
+    ApiConsole = '/api/console',
+    UserArea = '/users/:username',
+    Survey = '/survey/:score?',
+    Extensions = '/extensions',
+    Help = '/help',
+    Debug = '/-/debug/*',
+    RepoContainer = '/:repoRevAndRest+',
 }
 
 /**
@@ -92,38 +92,38 @@ export enum PAGE_ROUTES {
  */
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
-        path: PAGE_ROUTES.INDEX,
+        path: PageRoutes.Index,
         render: () => <Redirect to="/search" />,
         exact: true,
     },
     {
-        path: PAGE_ROUTES.SEARCH,
+        path: PageRoutes.Search,
         render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
-        path: PAGE_ROUTES.SEARCH_CONSOLE,
+        path: PageRoutes.SearchConsole,
         render: props =>
             props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
         exact: true,
     },
     {
-        path: PAGE_ROUTES.SEARCH_NOTEBOOK,
+        path: PageRoutes.SearchNotebook,
         render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
         exact: true,
     },
     {
-        path: PAGE_ROUTES.SIGN_IN,
+        path: PageRoutes.SignIn,
         render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: PAGE_ROUTES.SIGN_UP,
+        path: PageRoutes.SignUp,
         render: props => <SignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: PAGE_ROUTES.WELCOME,
+        path: PageRoutes.Welcome,
         render: props =>
             /**
              * Welcome flow is allowed when:
@@ -153,24 +153,24 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: PAGE_ROUTES.SETTINGS,
+        path: PageRoutes.Settings,
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
     {
-        path: PAGE_ROUTES.USER,
+        path: PageRoutes.User,
         render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
     },
     {
-        path: PAGE_ROUTES.ORGANIZATIONS,
+        path: PageRoutes.Organizations,
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
-        path: PAGE_ROUTES.SITE_ADMIN_INIT,
+        path: PageRoutes.SiteAdminInit,
         exact: true,
         render: props => <SiteInitPage {...props} context={window.context} />,
     },
     {
-        path: PAGE_ROUTES.SITE_ADMIN,
+        path: PageRoutes.SiteAdmin,
         render: props => (
             <SiteAdminArea
                 {...props}
@@ -181,38 +181,38 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         ),
     },
     {
-        path: PAGE_ROUTES.PASSWORD_RESET,
+        path: PageRoutes.PasswordReset,
         render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
     },
     {
-        path: PAGE_ROUTES.API_CONSOLE,
+        path: PageRoutes.ApiConsole,
         render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
         exact: true,
     },
     {
-        path: PAGE_ROUTES.USER_AREA,
+        path: PageRoutes.UserArea,
         render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
     },
     {
-        path: PAGE_ROUTES.SURVEY,
+        path: PageRoutes.Survey,
         render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
-        path: PAGE_ROUTES.EXTENSIONS,
+        path: PageRoutes.EXTENSIONS,
         render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
     },
     {
-        path: PAGE_ROUTES.HELP,
+        path: PageRoutes.Help,
         render: passThroughToServer,
     },
     {
-        path: PAGE_ROUTES.DEBUG,
+        path: PageRoutes.Debug,
         render: passThroughToServer,
     },
     ...communitySearchContextsRoutes,
     {
-        path: PAGE_ROUTES.REPO_CONTAINER,
+        path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
 ]

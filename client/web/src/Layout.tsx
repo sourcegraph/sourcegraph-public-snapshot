@@ -44,7 +44,7 @@ import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { LayoutRouteProps, LayoutRouteComponentProps, PAGE_ROUTES } from './routes'
+import { LayoutRouteProps, LayoutRouteComponentProps, PageRoutes } from './routes'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
@@ -205,17 +205,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
-    const isSiteInit = props.location.pathname === PAGE_ROUTES.SITE_ADMIN_INIT
+    const isSiteInit = props.location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        props.location.pathname === PAGE_ROUTES.SIGN_IN ||
-        props.location.pathname === PAGE_ROUTES.SIGN_UP ||
-        props.location.pathname === PAGE_ROUTES.PASSWORD_RESET ||
-        props.location.pathname === PAGE_ROUTES.WELCOME
+        props.location.pathname === PageRoutes.SignIn ||
+        props.location.pathname === PageRoutes.SignUp ||
+        props.location.pathname === PageRoutes.PasswordReset ||
+        props.location.pathname === PageRoutes.Welcome
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
     // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === PAGE_ROUTES.SURVEY || routeMatch === '/insights'
+    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === '/insights'
 
     const authRequired = useObservable(authRequiredObservable)
 
@@ -307,7 +307,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 </Suspense>
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== PAGE_ROUTES.SIGN_IN && (
+                props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}
                         {...themeProps}

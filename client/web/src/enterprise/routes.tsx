@@ -8,17 +8,17 @@ import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enable
 import { LayoutRouteProps, routes } from '../routes'
 import { lazyComponent } from '../util/lazyComponent'
 
-export enum ENTERPRISE_PAGE_ROUTES {
-    SUBSCRIPTIONS_NEW = '/subscriptions/new',
-    OLD_SUBSCRIPTIONS_NEW = '/user/subscriptions/new',
-    BATCH_CHANGES = '/batch-changes',
-    STATS = '/stats',
-    CODE_MONITORING = '/code-monitoring',
-    INSIGHTS = '/insights',
-    CONTEXTS = '/contexts',
-    CREATE_CONTEXT = '/contexts/new',
-    EDIT_CONTEXT = '/contexts/:spec+/edit',
-    CONTEXT = '/contexts/:spec+',
+export enum EnterprisePageRoutes {
+    SubscriptionsNew = '/subscriptions/new',
+    OldSubscriptionsNew = '/user/subscriptions/new',
+    BatchChanges = '/batch-changes',
+    Stats = '/stats',
+    CodeMonitoring = '/code-monitoring',
+    Insights = '/insights',
+    Contexts = '/contexts',
+    CreateContext = '/contexts/new',
+    EditContext = '/contexts/:spec+/edit',
+    Context = '/contexts/:spec+',
 }
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
@@ -30,7 +30,7 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     {
         // Allow unauthenticated viewers to view the "new subscription" page to price out a subscription (instead
         // of just dumping them on a sign-in page).
-        path: ENTERPRISE_PAGE_ROUTES.SUBSCRIPTIONS_NEW,
+        path: EnterprisePageRoutes.SubscriptionsNew,
         exact: true,
         render: lazyComponent(
             () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
@@ -39,12 +39,12 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
     },
     {
         // Redirect from old /user/subscriptions/new -> /subscriptions/new.
-        path: ENTERPRISE_PAGE_ROUTES.OLD_SUBSCRIPTIONS_NEW,
+        path: EnterprisePageRoutes.OldSubscriptionsNew,
         exact: true,
         render: () => <Redirect to="/subscriptions/new" />,
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.BATCH_CHANGES,
+        path: EnterprisePageRoutes.BatchChanges,
         render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
         // We also render this route on sourcegraph.com as a precaution in case anyone
         // follows an in-app link to /batch-changes from sourcegraph.com; the component
@@ -52,40 +52,40 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         condition: ({ batchChangesEnabled, isSourcegraphDotCom }) => batchChangesEnabled || isSourcegraphDotCom,
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.STATS,
+        path: EnterprisePageRoutes.Stats,
         render: lazyComponent(() => import('./search/stats/SearchStatsPage'), 'SearchStatsPage'),
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.CODE_MONITORING,
+        path: EnterprisePageRoutes.CodeMonitoring,
         render: lazyComponent(
             () => import('./code-monitoring/global/GlobalCodeMonitoringArea'),
             'GlobalCodeMonitoringArea'
         ),
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.INSIGHTS,
+        path: EnterprisePageRoutes.Insights,
         render: lazyComponent(() => import('./insights/InsightsRouter'), 'InsightsRouter'),
         condition: props => isCodeInsightsEnabled(props.settingsCascade),
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.CONTEXTS,
+        path: EnterprisePageRoutes.Contexts,
         render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.CREATE_CONTEXT,
+        path: EnterprisePageRoutes.CreateContext,
         render: lazyComponent(() => import('./searchContexts/CreateSearchContextPage'), 'CreateSearchContextPage'),
         exact: true,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.EDIT_CONTEXT,
+        path: EnterprisePageRoutes.EditContext,
         render: lazyComponent(() => import('./searchContexts/EditSearchContextPage'), 'EditSearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
     {
-        path: ENTERPRISE_PAGE_ROUTES.CONTEXT,
+        path: EnterprisePageRoutes.Context,
         render: lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage'),
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
     },
