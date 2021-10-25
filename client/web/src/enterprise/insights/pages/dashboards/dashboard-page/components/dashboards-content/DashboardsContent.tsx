@@ -53,7 +53,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (!isVirtualDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)) {
+                if (
+                    !isVirtualDashboard(currentDashboard) &&
+                    isSettingsBasedInsightsDashboard(currentDashboard) &&
+                    currentDashboard.settingsKey
+                ) {
                     history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
                 }
                 return

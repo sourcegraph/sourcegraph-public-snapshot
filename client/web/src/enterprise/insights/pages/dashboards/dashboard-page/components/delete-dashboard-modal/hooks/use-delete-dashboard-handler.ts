@@ -28,6 +28,10 @@ export function useDeleteDashboardHandler(props: UseDeleteDashboardHandlerProps)
         setLoadingOrError(true)
 
         try {
+            if (!dashboard.settingsKey || !dashboard.owner) {
+                throw new Error('TODO: implement deleteDashboard for GraphQl API')
+            }
+
             await deleteDashboard({
                 dashboardSettingKey: dashboard.settingsKey,
                 dashboardOwnerId: dashboard.owner.id,
