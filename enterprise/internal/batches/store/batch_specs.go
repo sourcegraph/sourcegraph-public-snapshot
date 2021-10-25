@@ -474,7 +474,7 @@ const getBatchSpecStatsFmtstr = `
 -- source: enterprise/internal/batches/store/batch_specs.go:GetBatchSpecStats
 SELECT
 	batch_specs.id AS batch_spec_id,
-	res_job.state IN ('completed', 'failed') AS resolution_done,
+	COALESCE(res_job.state IN ('completed', 'failed'), FALSE) AS resolution_done,
 	COUNT(ws.id) AS workspaces,
 	MIN(jobs.started_at) AS started_at,
 	MAX(jobs.finished_at) AS finished_at,
@@ -486,7 +486,7 @@ SELECT
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = TRUE) AS canceled,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
 FROM batch_specs
-JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id
+LEFT JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id
 LEFT JOIN batch_spec_workspaces ws ON ws.batch_spec_id = batch_specs.id
 LEFT JOIN batch_spec_workspace_execution_jobs jobs ON jobs.batch_spec_workspace_id = ws.id
 WHERE
