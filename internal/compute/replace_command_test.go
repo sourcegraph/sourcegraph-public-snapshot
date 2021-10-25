@@ -7,9 +7,9 @@ import (
 	"github.com/hexops/autogold"
 )
 
-func Test_doReplaceInPlace(t *testing.T) {
-	test := func(input string, op *Replace) string {
-		result, err := doReplaceInPlace([]byte(input), op)
+func Test_replace(t *testing.T) {
+	test := func(input string, cmd *Replace) string {
+		result, err := replace([]byte(input), cmd.MatchPattern, cmd.ReplacePattern)
 		if err != nil {
 			return err.Error()
 		}
