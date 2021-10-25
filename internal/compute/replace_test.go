@@ -8,7 +8,7 @@ import (
 )
 
 func Test_doReplaceInPlace(t *testing.T) {
-	test := func(input string, op *ReplaceInPlace) string {
+	test := func(input string, op *Replace) string {
 		result, err := doReplaceInPlace([]byte(input), op)
 		if err != nil {
 			return err.Error()
@@ -19,7 +19,7 @@ func Test_doReplaceInPlace(t *testing.T) {
 	autogold.Want(
 		"regexp search replace",
 		"needs a bit more queryrunner").
-		Equal(t, test("needs more queryrunner", &ReplaceInPlace{
+		Equal(t, test("needs more queryrunner", &Replace{
 			MatchPattern:   &Regexp{Value: regexp.MustCompile(`more (\w+)`)},
 			ReplacePattern: "a bit more $1",
 		}))
