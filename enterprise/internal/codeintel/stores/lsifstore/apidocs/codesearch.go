@@ -173,9 +173,16 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	expressions := make([]*sqlf.Query, 0, len(distances)*len(terms))
 	for _, term := range terms {
 		lexemes := Lexemes(term)
-		for _, distance := range distances {
-			tsquery := lexemeSequence(lexemes, subStringMatches, distance)
+		if len(lexemes) == 1 {
+			// This term will not have any distance operators emitted, as it is only one lexeme. So
+			// we do not need to emit multiple distance operators.
+			tsquery := lexemeSequence(lexemes, subStringMatches, " <-> ")
 			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
+		} else {
+			for _, distance := range distances {
+				tsquery := lexemeSequence(lexemes, subStringMatches, distance)
+				expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
+			}
 		}
  	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
