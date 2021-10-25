@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -125,5 +127,28 @@ func TestNode_Org(t *testing.T) {
 				}
 			`,
 		},
+	})
+}
+
+func TestUnmarshalOrgID(t *testing.T) {
+	t.Run("Valid org ID is parsed correctly", func(t *testing.T) {
+		const id = 1
+		namespaceOrgID := relay.MarshalID("Org", id)
+		org, err := UnmarshalOrgID(namespaceOrgID)
+		if err != nil {
+			t.Fatal("Error when unmarshalling valid org id: #{err}")
+		}
+		if id != org {
+			t.Fatal("ID mismatch: want #{id} but got #{org}")
+		}
+	})
+
+	t.Run("Returns error for invalid org ID", func(t *testing.T) {
+		const id = 1
+		namespaceOrgID := relay.MarshalID("User", id)
+		_, err := UnmarshalOrgID(namespaceOrgID)
+		if err == nil {
+			t.Fatal("Expecting error, got: #{org}, #{err}")
+		}
 	})
 }
