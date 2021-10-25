@@ -1808,7 +1808,7 @@ func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader
 
 		lock.SetStatus(redactedProgress)
 		if logFile != nil {
-			// Failing to write here is non-fatal and we don't want to spam out logs if there
+			// Failing to write here is non-fatal and we don't want to spam our logs if there
 			// are issues
 			_, _ = fmt.Fprintln(logFile, progress)
 		}
