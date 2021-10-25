@@ -207,91 +207,88 @@ const WorkspaceNode: React.FunctionComponent<
     {
         node: Workspace
     } & ThemeProps
-> = ({ node, isLightTheme }) => {
-    const a = ''
-    return (
-        <>
-            <div className="d-flex justify-content-between">
-                <h4>
-                    <WorkspaceStateIcon node={node} /> {node.repository.name}
-                </h4>
-                {node.startedAt && <Duration start={node.startedAt} end={node.finishedAt ?? undefined} />}
-            </div>
-            {node.failureMessage && <ErrorAlert error={node.failureMessage} />}
-            <p>
-                <b>Steps</b>
-            </p>
-            {node.steps.map((step, index) => (
-                <Collapsible
-                    key={index}
-                    className="card"
-                    titleClassName="w-100"
-                    title={
-                        <div className="card-body">
-                            <div className="d-flex justify-content-between">
-                                <div>
-                                    <StepStateIcon step={step} />
-                                    <strong>Step {index + 1}</strong>{' '}
-                                    <span className="text-monospace">{step.run.slice(0, 25)}...</span>
-                                    <StepTimer step={step} />
-                                </div>
-                                <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
+> = ({ node, isLightTheme }) => (
+    <>
+        <div className="d-flex justify-content-between">
+            <h4>
+                <WorkspaceStateIcon node={node} /> {node.repository.name}
+            </h4>
+            {node.startedAt && <Duration start={node.startedAt} end={node.finishedAt ?? undefined} />}
+        </div>
+        {node.failureMessage && <ErrorAlert error={node.failureMessage} />}
+        <p>
+            <b>Steps</b>
+        </p>
+        {node.steps.map((step, index) => (
+            <Collapsible
+                key={index}
+                className="card"
+                titleClassName="w-100"
+                title={
+                    <div className="card-body">
+                        <div className="d-flex justify-content-between">
+                            <div>
+                                <StepStateIcon step={step} />
+                                <strong>Step {index + 1}</strong>{' '}
+                                <span className="text-monospace">{step.run.slice(0, 25)}...</span>
+                                <StepTimer step={step} />
                             </div>
+                            <div>{step.diffStat && <DiffStat {...step.diffStat} expandedCounts={true} />}</div>
                         </div>
-                    }
-                >
-                    <Tabs size="medium">
-                        <TabList>
-                            <Tab key="logs">Logs</Tab>
-                            <Tab key="output-variables">Output variables</Tab>
-                            <Tab key="diff">Diff</Tab>
-                            <Tab key="files-env">Files / Env</Tab>
-                            <Tab key="command-container">Commands / container</Tab>
-                            <Tab key="timeline">Timeline</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel key="logs">
-                                <pre className="card p-2">{step.outputLines?.join('\n')}</pre>
-                            </TabPanel>
-                            <TabPanel key="output-variables">
-                                <ul>
-                                    {step.outputVariables?.map(variable => (
-                                        <li key={variable.name}>
-                                            {variable.name}: {variable.value}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </TabPanel>
-                            <TabPanel key="diff">
-                                <WorkspaceStepFileDiffConnection
-                                    isLightTheme={isLightTheme}
-                                    step={index + 1}
-                                    workspace={node}
-                                />
-                            </TabPanel>
-                            <TabPanel key="files-env">
-                                <ul>
-                                    {step.environment.map(variable => (
-                                        <li key={variable.name}>
-                                            {variable.name}: {variable.value}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </TabPanel>
-                            <TabPanel key="command-container">
-                                <p className="text-monospace">{step.run}</p>
-                                <p className="text-monospace mb-0">{step.container}</p>
-                            </TabPanel>
-                            <TabPanel key="timeline">
-                                <ExecutionTimeline node={node} />
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                </Collapsible>
-            ))}
-        </>
-    )
-}
+                    </div>
+                }
+            >
+                <Tabs size="medium">
+                    <TabList>
+                        <Tab key="logs">Logs</Tab>
+                        <Tab key="output-variables">Output variables</Tab>
+                        <Tab key="diff">Diff</Tab>
+                        <Tab key="files-env">Files / Env</Tab>
+                        <Tab key="command-container">Commands / container</Tab>
+                        <Tab key="timeline">Timeline</Tab>
+                    </TabList>
+                    <TabPanels>
+                        <TabPanel key="logs">
+                            <pre className="card p-2">{step.outputLines?.join('\n')}</pre>
+                        </TabPanel>
+                        <TabPanel key="output-variables">
+                            <ul>
+                                {step.outputVariables?.map(variable => (
+                                    <li key={variable.name}>
+                                        {variable.name}: {variable.value}
+                                    </li>
+                                ))}
+                            </ul>
+                        </TabPanel>
+                        <TabPanel key="diff">
+                            <WorkspaceStepFileDiffConnection
+                                isLightTheme={isLightTheme}
+                                step={index + 1}
+                                workspace={node}
+                            />
+                        </TabPanel>
+                        <TabPanel key="files-env">
+                            <ul>
+                                {step.environment.map(variable => (
+                                    <li key={variable.name}>
+                                        {variable.name}: {variable.value}
+                                    </li>
+                                ))}
+                            </ul>
+                        </TabPanel>
+                        <TabPanel key="command-container">
+                            <p className="text-monospace">{step.run}</p>
+                            <p className="text-monospace mb-0">{step.container}</p>
+                        </TabPanel>
+                        <TabPanel key="timeline">
+                            <ExecutionTimeline node={node} />
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            </Collapsible>
+        ))}
+    </>
+)
 
 const WorkspaceStateIcon: React.FunctionComponent<{ node: Workspace }> = ({ node }) => {
     switch (node.state) {

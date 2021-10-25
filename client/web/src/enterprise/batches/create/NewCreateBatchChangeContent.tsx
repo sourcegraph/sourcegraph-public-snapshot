@@ -22,7 +22,7 @@ import {
     tap,
 } from 'rxjs/operators'
 
-import { Link } from '@sourcegraph/shared/src/components/Link'
+import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { BatchSpecWorkspaceResolutionState, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import {
     SettingsCascadeOrError,
@@ -113,9 +113,8 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
 
     const preview = useObservable(
         useMemo(
-            () => {
-                let initialFetchCompleted = false
-                return codeUpdates.pipe(
+            () =>
+                codeUpdates.pipe(
                     startWith(code),
                     distinctUntilChanged(),
                     tap(() => {
@@ -137,11 +136,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         if (preview !== undefined && !isErrorLike(preview)) {
                             specCreator = replaceBatchSpecInput(preview.id, code)
                         } else {
-                            specCreator = createBatchSpecFromRaw(code, selectedNamespace).pipe(
-                                tap(() => {
-                                    initialFetchCompleted = true
-                                })
-                            )
+                            specCreator = createBatchSpecFromRaw(code, selectedNamespace)
                         }
                         return specCreator.pipe(
                             switchMap(spec =>
@@ -152,10 +147,11 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                                         repeatWhen(completed => completed.pipe(delay(500))),
                                         takeWhile(
                                             response =>
-                                                [
-                                                    BatchSpecWorkspaceResolutionState.PROCESSING,
-                                                    BatchSpecWorkspaceResolutionState.QUEUED,
-                                                ].includes(response.workspaceResolution?.state),
+                                                !!response.workspaceResolution &&
+                                                (response.workspaceResolution.state ===
+                                                    BatchSpecWorkspaceResolutionState.QUEUED ||
+                                                    response.workspaceResolution.state ===
+                                                        BatchSpecWorkspaceResolutionState.PROCESSING),
                                             true
                                         )
                                     )
@@ -173,8 +169,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         }
                     }),
                     catchError(error => [asError(error)])
-                )
-            },
+                ),
             // Don't want to trigger on changes to code, it's just the initial value.
             // eslint-disable-next-line react-hooks/exhaustive-deps
             [codeUpdates]
@@ -400,23 +395,24 @@ const PreviewWorkspaces: React.FunctionComponent<PreviewWorkspacesProps> = ({ ex
             {preview.workspaceResolution.workspaces.nodes.length === 0 && (
                 <span className="text-muted">No workspaces found</span>
             )}
-            {preview.importingChangesets?.totalCount > 0 && (
+            {preview.importingChangesets && preview.importingChangesets.totalCount > 0 && (
                 <>
                     <h3>Importing changesets</h3>
                     <ul>
                         {preview.importingChangesets?.nodes.map(node => (
                             <li key={node.id}>
-                                <Link
+                                <LinkOrSpan
                                     to={
                                         node.__typename === 'VisibleChangesetSpec' &&
-                                        node.description.__typename === 'ExistingChangesetReference' &&
-                                        node.description.baseRepository.url
+                                        node.description.__typename === 'ExistingChangesetReference'
+                                            ? node.description.baseRepository.url
+                                            : undefined
                                     }
                                 >
                                     {node.__typename === 'VisibleChangesetSpec' &&
                                         node.description.__typename === 'ExistingChangesetReference' &&
                                         node.description.baseRepository.name}
-                                </Link>{' '}
+                                </LinkOrSpan>{' '}
                                 #
                                 {node.__typename === 'VisibleChangesetSpec' &&
                                     node.description.__typename === 'ExistingChangesetReference' &&

@@ -8,8 +8,8 @@ import {
     ExecuteBatchSpecFields,
     ExecuteBatchSpecResult,
     ExecuteBatchSpecVariables,
-    BatchSpecByID2Result,
-    BatchSpecByID2Variables,
+    BatchSpecWorkspacesByIDResult,
+    BatchSpecWorkspacesByIDVariables,
     BatchSpecWorkspacesFields,
     CreateBatchSpecFromRawResult,
     CreateBatchSpecFromRawVariables,
@@ -141,9 +141,9 @@ export function replaceBatchSpecInput(
 }
 
 export function fetchBatchSpec(id: Scalars['ID']): Observable<BatchSpecWorkspacesFields> {
-    return requestGraphQL<BatchSpecByID2Result, BatchSpecByID2Variables>(
+    return requestGraphQL<BatchSpecWorkspacesByIDResult, BatchSpecWorkspacesByIDVariables>(
         gql`
-            query BatchSpecByID2($id: ID!) {
+            query BatchSpecWorkspacesByID($id: ID!) {
                 node(id: $id) {
                     __typename
                     ...BatchSpecWorkspacesFields
