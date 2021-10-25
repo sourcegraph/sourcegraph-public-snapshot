@@ -45,7 +45,7 @@ export function MultiCombobox<T>(props: ComboboxProps<T>): ReactElement {
     }
 
     return (
-        <div className={classnames(styles.multicomboboxContainer)}>
+        <div className={styles.multicomboboxContainer}>
             <div className={styles.badges}>
                 {values.map(token => (
                     <span key={getTokenKey(token)} className={classnames('badge badge-secondary', styles.badge)}>
