@@ -186,19 +186,23 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
     public updateDashboard = (input: DashboardUpdateInput): Observable<void> => {
         const { previousDashboard, nextDashboardInput } = input
 
+        if (!previousDashboard.owner || !previousDashboard.settingsKey) {
+            throw new Error('TODO: Implement updateDashboard for GraphQL API')
+        }
+
         return of(null).pipe(
             switchMap(() => {
-                if (previousDashboard.owner.id !== nextDashboardInput.visibility) {
-                    return getSubjectSettings(previousDashboard.owner.id).pipe(
+                if (previousDashboard.owner!.id !== nextDashboardInput.visibility) {
+                    return getSubjectSettings(previousDashboard.owner!.id).pipe(
                         switchMap(settings => {
                             const editedSettings = removeDashboardFromSettings(
                                 settings.contents,
-                                previousDashboard.settingsKey
+                                previousDashboard.settingsKey!
                             )
 
                             return updateSubjectSettings(
                                 this.platformContext,
-                                previousDashboard.owner.id,
+                                previousDashboard.owner!.id,
                                 editedSettings
                             )
                         })
@@ -215,7 +219,7 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
                 // if title was changed we need remove old dashboard object from the settings
                 // by dashboard's old id
                 if (previousDashboard.title !== nextDashboardInput.name) {
-                    settingsContent = removeDashboardFromSettings(settingsContent, previousDashboard.settingsKey)
+                    settingsContent = removeDashboardFromSettings(settingsContent, previousDashboard.settingsKey!)
                 }
 
                 const updatedDashboard: InsightDashboardConfiguration = {

@@ -36,12 +36,12 @@ The GitHub service requires a `token` in order to access their API. There are tw
 
 No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
-| Feature                                               | Required token scopes                                                                              |
-| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| [Sync private repositories](#github)                  | `repo`                                                                                             |
-| [Sync repository permissions][permissions]            | `repo`                                                                                             |
-| [Repository permissions caching][permissions-caching] | `write:org`                                                                                        |
-| [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, and `read:discussion` ([learn more][batch-changes-interactions]) |
+| Feature                                               | Required token scopes                                                                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [Sync private repositories](#github)                  | `repo`                                                                                                         |
+| [Sync repository permissions][permissions]            | `repo`                                                                                                         |
+| [Repository permissions caching][permissions-caching] | `write:org`                                                                                                    |
+| [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
 [permissions]: ../repo/permissions.md#github
 [permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching

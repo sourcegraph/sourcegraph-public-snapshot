@@ -124,6 +124,10 @@ const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): Dashbo
     const groupsDictionary = dashboards
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
+            if (!dashboard.owner) {
+                throw new Error('TODO: support GraphQL API')
+            }
+
             if (!store[dashboard.owner.id]) {
                 store[dashboard.owner.id] = {
                     id: dashboard.owner.id,

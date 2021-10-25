@@ -23,6 +23,10 @@ const getVisibilityFromDashboard = (dashboard: InsightDashboard | null): string 
         return undefined
     }
 
+    if (!dashboard.owner) {
+        throw new Error('TODO: support GraphQL API')
+    }
+
     return dashboard.owner.id
 }
 
@@ -62,6 +66,10 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
             history.push(`/insights/dashboards/${insight.visibility}`)
 
             return
+        }
+
+        if (!dashboard.owner) {
+            throw new Error('TODO: support GraphQL API')
         }
 
         if (dashboard.owner.id === insight.visibility) {
