@@ -61,7 +61,7 @@ func main() {
 		}
 	}
 
-	if len(builds) <= 0 {
+	if len(builds) == 0 {
 		panic("no builds")
 	}
 
