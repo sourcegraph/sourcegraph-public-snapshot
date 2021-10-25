@@ -15,8 +15,8 @@ import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
 import { Toggles } from '../input/toggles/Toggles'
 
-import styles from './NoResultsPage.module.scss'
 import { AnnotatedSearchInput } from './AnnoatedSearchExample'
+import styles from './NoResultsPage.module.scss'
 
 export enum SectionID {
     SEARCH_BAR = 'search-bar',
@@ -221,7 +221,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                 <div className={classNames(styles.mainPanels, 'flex-shrink-past-contents')}>
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
                         <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
-                            <div style={{ display: 'flex', overflowX: 'auto' }}>
+                            <div className={styles.annotatedSearchInput}>
                                 <AnnotatedSearchInput />
                             </div>
                         </Container>

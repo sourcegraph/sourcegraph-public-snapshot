@@ -40,6 +40,18 @@
     }
 }
 
+.annotatedSearchInput {
+    flex: 1;
+    overflow-x: auto;
+    display: flex;
+
+    > svg {
+        /* SVG seems pretty readably up to this size */
+        min-width: 618px;
+        margin: auto;
+    }
+}
+
 .container:last-of-type {
     margin-bottom: 1rem;
 }

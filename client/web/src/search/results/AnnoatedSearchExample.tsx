@@ -1,17 +1,31 @@
 import classNames from 'classnames'
-import React from 'react'
-import styles from './AnnotatedSearchExample.module.scss'
 import CodeBracketsIcon from 'mdi-react/CodeBracketsIcon'
 import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
-import SearchIcon from 'mdi-react/SearchIcon'
 import RegexIcon from 'mdi-react/RegexIcon'
+import SearchIcon from 'mdi-react/SearchIcon'
+import React from 'react'
+
+import styles from './AnnotatedSearchExample.module.scss'
 
 const arrowHeight = 27
 const edgesHeight = 8
-const topArrowY = 70
-const bottomArrowY = 150
+const aboveArrowY = 70
+const belowArrowY = 150
 
-function arrow(x: number, width: number, position: 'top' | 'bottom'): React.ReactElement {
+/* eslint-disable jsdoc/check-indentation */
+/**
+ * Helper function to create "arrows" of the form
+ *
+ *         |                     |__________/
+ *   ______|______                    |
+ *  |            |                    |
+ *
+ * The function takes the X coordinate, the width and the position relative to
+ * the input (above/below) as argument and computes the position and dimensions
+ * the the four <line>s that make up this "arrow".
+ */
+function arrow(x: number, width: number, position: 'above' | 'below'): React.ReactElement {
+    // eslint-disable-line id-length
     const pointerLine = <line x1={width / 2} x2={width / 2} y1="0" y2={arrowHeight} />
     const centerLine = <line x1="0" x2={width} y1={arrowHeight} y2={arrowHeight} />
     const leftEdge = <line x1="0" x2="0" y1={arrowHeight} y2={arrowHeight + edgesHeight} />
@@ -25,23 +39,30 @@ function arrow(x: number, width: number, position: 'top' | 'bottom'): React.Reac
             {rightEdge}
         </>
     )
-    if (position === 'bottom') {
+
+    // To keep things simple we use the same composition of lines of above and
+    // below arrows and simple rotate the arrows below the search input by 180
+    // degrees.
+    if (position === 'below') {
         group = <g transform={`rotate(180, ${width / 2}, ${(arrowHeight + edgesHeight) / 2})`}>{group}</g>
     }
     return (
-        <g transform={`translate(${x}, ${position === 'top' ? topArrowY : bottomArrowY})`} className={styles.arrow}>
+        <g transform={`translate(${x}, ${position === 'above' ? aboveArrowY : belowArrowY})`} className={styles.arrow}>
             {' '}
             {group}
         </g>
     )
 }
 
-export const AnnotatedSearchInput: React.FunctionComponent = React.memo(() => (
+export const AnnotatedSearchInput: React.FunctionComponent<{ className?: string }> = React.memo(({ className }) => (
+    // the viewBox is adjusted to "crop" the image to its content
+    // Original widht and height of the image was 800x270
     <svg
-        className={styles.annotatedSearchInput}
-        width="800"
-        height="270"
-        viewBox="0 0 800 270"
+        className={classNames(styles.annotatedSearchInput, className)}
+        width="681"
+        height="222"
+        viewBox="55 35 681 222"
+        preserveAspectRatio="xMidYMid meet"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
     >
@@ -71,7 +92,7 @@ export const AnnotatedSearchInput: React.FunctionComponent = React.memo(() => (
             />
             <SearchIcon className={classNames(styles.searchIcon, 'icon-inline')} x="698" y="115" />
 
-            {arrow(418, 120, 'top')}
+            {arrow(410, 120, 'above')}
             <text transform="translate(395, 44)">
                 <tspan x="0" y="0">
                     By default, search terms are{' '}
@@ -81,7 +102,7 @@ export const AnnotatedSearchInput: React.FunctionComponent = React.memo(() => (
                 </tspan>
             </text>
 
-            {arrow(188, 30, 'top')}
+            {arrow(188, 30, 'above')}
             <text transform="translate(116, 44)">
                 <tspan x="0" y="0">
                     Filters scope your search to repos,{' '}
@@ -91,7 +112,7 @@ export const AnnotatedSearchInput: React.FunctionComponent = React.memo(() => (
                 </tspan>
             </text>
 
-            {arrow(68, 108, 'bottom')}
+            {arrow(68, 108, 'below')}
             <text transform="translate(56, 200)">
                 <tspan x="0" y="0">
                     By default, Sourcegraph searches the{' '}
@@ -108,7 +129,7 @@ export const AnnotatedSearchInput: React.FunctionComponent = React.memo(() => (
                 </tspan>
             </text>
 
-            {arrow(390, 16, 'bottom')}
+            {arrow(387, 16, 'below')}
             <text transform="translate(340, 200)">
                 <tspan x="0" y="0">
                     You can use regexp inside{' '}
@@ -121,7 +142,7 @@ export const AnnotatedSearchInput: React.FunctionComponent = React.memo(() => (
                 </tspan>
             </text>
 
-            {arrow(590, 82, 'bottom')}
+            {arrow(590, 82, 'below')}
             <text transform="translate(538, 200)">
                 <tspan x="0" y="0">
                     Search can be case-sensitive{' '}
