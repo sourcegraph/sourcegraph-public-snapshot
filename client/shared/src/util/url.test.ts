@@ -147,9 +147,9 @@ describe('parseRepoURI', () => {
 })
 
 describe('encodeURIPathComponent', () => {
-    it('encodes all special characters except "/+[]" signs', () => {
-        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@/[...slug].js')).toBe(
-            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40/[...slug].js'
+    it('encodes all special characters except slashes and the plus sign', () => {
+        expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
+            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
         )
     })
 })
