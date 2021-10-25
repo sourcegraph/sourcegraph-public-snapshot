@@ -7,6 +7,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hexops/autogold"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -107,23 +108,11 @@ func TestRepositoryHydration(t *testing.T) {
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
 		_, err := repoResolver.Description(ctx)
-		if err == nil {
-			t.Fatal("err is unexpected nil")
-		}
-
-		if err != dbErr {
-			t.Fatalf("wrong err. want=%q, have=%q", dbErr, err)
-		}
+		require.ErrorIs(t, err, dbErr)
 
 		// Another call to make sure err does not disappear
 		_, err = repoResolver.URI(ctx)
-		if err == nil {
-			t.Fatal("err is unexpected nil")
-		}
-
-		if err != dbErr {
-			t.Fatalf("wrong err. want=%q, have=%q", dbErr, err)
-		}
+		require.ErrorIs(t, err, dbErr)
 	})
 }
 
