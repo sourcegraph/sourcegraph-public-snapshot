@@ -758,6 +758,7 @@ If you want to specify a custom Redis server, you'll need specify the correspond
 
 - `sourcegraph-frontend`
 - `repo-updater`
+- `worker`
 
 ## Connect to an external Jaeger instance
 
