@@ -394,120 +394,51 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 		langRepoTagsClause, // matching_repo_names CTE WHERE conditions
 		langRepoTagsClause, // matching_tags CTE WHERE conditions
 
-		apidocs.TextSearchRank("result.search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
-		apidocs.TextSearchRank("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches), // search_key_reverse_rank
-		apidocs.TextSearchRank("result.label_tsv", q.MainTerms, q.SubStringMatches),                               // label_rank
-		apidocs.TextSearchRank("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches),      // label_reverse_rank
-
 		sqlf.Join(primaryClauses, ") OR ("), // primary WHERE clause
 		debugAPIDocsSearchCandidates,        // maximum candidates for consideration.
-		resultLimit,                         // result limit
+
+		apidocs.TextSearchRank("search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
+		apidocs.TextSearchRank("search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches), // search_key_reverse_rank
+		apidocs.TextSearchRank("label_tsv", q.MainTerms, q.SubStringMatches),                               // label_rank
+		apidocs.TextSearchRank("label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches),      // label_reverse_rank
+
+		resultLimit, // result limit
 	)))
 }
 
 const documentationSearchQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/documentation.go:DocumentationSearch
-WITH final_results AS (
-	SELECT * FROM (
-		WITH
-			-- Can we find a matching language name? If so, that could limit our search space greatly.
-			matching_lang_names AS (
-				SELECT id, lang_name
-				FROM lsif_data_docs_search_lang_names_$SUFFIX
-				WHERE %s LIMIT 1
-			),
+WITH
+	-- Can we find a matching language name? If so, that could limit our search space greatly.
+	matching_lang_names AS (
+		SELECT id, lang_name
+		FROM lsif_data_docs_search_lang_names_$SUFFIX
+		WHERE %s LIMIT 1
+	),
 
-			-- Can we find matching repository names? If so, we'll rank results from those higher.
-			--
-			-- We don't filter on repos currently because any term matching a repo name, e.g. "go",
-			-- could accidentally restrict the search to very few repos.
-			--
-			-- TODO(apidocs): search: future: add something that "picks out" likely repo names from
-			-- the query terms and actually filter on those.
-			matching_repo_names AS (
-				SELECT id, repo_name
-				FROM lsif_data_docs_search_repo_names_$SUFFIX
-				WHERE %s LIMIT 100
-			),
+	-- Can we find matching repository names? If so, we'll rank results from those higher.
+	--
+	-- We don't filter on repos currently because any term matching a repo name, e.g. "go",
+	-- could accidentally restrict the search to very few repos.
+	--
+	-- TODO(apidocs): search: future: add something that "picks out" likely repo names from
+	-- the query terms and actually filter on those.
+	matching_repo_names AS (
+		SELECT id, repo_name
+		FROM lsif_data_docs_search_repo_names_$SUFFIX
+		WHERE %s LIMIT 100
+	),
 
-			-- Can we find a matching sequence of documentation/symbol tags? e.g. "private variable".
-			-- If so, then we pick the top 10 and search only documentation nodes that have that same
-			-- sequence of tags.
-			matching_tags AS (
-				SELECT id, tags
-				FROM lsif_data_docs_search_tags_$SUFFIX
-				WHERE %s LIMIT 10
-			)
-		SELECT
-			result.id::bigint,
-			repo_id,
-			repo_id = ANY(SELECT id FROM matching_repo_names) AS from_matching_repo,
-			path_id,
-			detail,
-			search_key,
-			label,
-			lang_name AS lang_name,
-			repo_name AS repo_name,
-			tags AS tags,
-			%s AS search_key_rank,
-			%s AS search_key_reverse_rank,
-			%s AS label_rank,
-			%s AS label_reverse_rank
-		FROM lsif_data_docs_search_$SUFFIX result
-		JOIN lsif_data_docs_search_lang_names_$SUFFIX langnames ON langnames.id = result.lang_name_id
-		JOIN lsif_data_docs_search_repo_names_$SUFFIX reponames ON reponames.id = result.repo_name_id
-		JOIN lsif_data_docs_search_tags_$SUFFIX tags ON tags.id = result.tags_id
-		WHERE
-			((%s))
-
-			-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
-			-- have results from multiple uploads (the table is cleaned up asynchronously in the
-			-- background to avoid lock contention at insert time.)
-			AND result.dump_id = (
-				SELECT dump_id FROM lsif_data_docs_search_current_public current
-				WHERE
-					current.dump_id = result.dump_id
-					AND current.dump_root = result.dump_root
-					AND lang_name_id = result.lang_name_id
-				ORDER BY current.created_at DESC, id
-				LIMIT 1
-			)
-
-			-- If we found matching lang names, filter to just those.
-			AND (CASE WHEN (SELECT COUNT(*) FROM matching_lang_names) > 0 THEN
-				result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
-			ELSE result.lang_name_id IS NOT NULL END)
-
-			-- If we found matching tags, filter to just those.
-			AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
-				result.tags_id = ANY(array(SELECT id FROM matching_tags))
-			ELSE result.tags_id IS NOT NULL END)
-
-		-- maximum candidates we'll consider: the more candidates we have the better ranking we get,
-		-- but the slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
-		LIMIT %s
-	) sub
-	ORDER BY
-		-- Rank results from repos that match query terms higher.
-		CASE WHEN from_matching_repo THEN 1 ELSE 0 END,
-
-		-- First rank by search keys, as those are ideally super specific if you write the correct
-		-- format.
-		GREATEST(search_key_rank, search_key_reverse_rank) DESC,
-
-		-- Secondarily rank by label, e.g. function signature. These contain less specific info and
-		-- due to e.g. containing arguments a function takes, have higher chance of collision with the
-		-- desired symbol result, producing a bad match.
-		GREATEST(label_rank, label_reverse_rank) DESC,
-
-		-- If all else failed, sort by something reasonable and deterministic.
-		repo_name DESC,
-		tags DESC,
-		id DESC
-	LIMIT %s -- Maximum results we'll actually return.
-)
+	-- Can we find a matching sequence of documentation/symbol tags? e.g. "private variable".
+	-- If so, then we pick the top 10 and search only documentation nodes that have that same
+	-- sequence of tags.
+	matching_tags AS (
+		SELECT id, tags
+		FROM lsif_data_docs_search_tags_$SUFFIX
+		WHERE %s LIMIT 10
+	)
 SELECT
-	id,
+	result_id,
 	repo_id,
 	path_id,
 	detail,
@@ -516,7 +447,64 @@ SELECT
 	lang_name,
 	repo_name,
 	tags
-FROM final_results
+FROM (
+	SELECT result.id::bigint AS result_id, *
+	FROM lsif_data_docs_search_$SUFFIX result
+	JOIN lsif_data_docs_search_lang_names_$SUFFIX langnames ON langnames.id = result.lang_name_id
+	JOIN lsif_data_docs_search_repo_names_$SUFFIX reponames ON reponames.id = result.repo_name_id
+	JOIN lsif_data_docs_search_tags_$SUFFIX tags ON tags.id = result.tags_id
+	WHERE
+		((%s))
+
+		-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
+		-- have results from multiple uploads (the table is cleaned up asynchronously in the
+		-- background to avoid lock contention at insert time.)
+		AND result.dump_id = (
+			SELECT dump_id FROM lsif_data_docs_search_current_public current
+			WHERE
+				current.dump_id = result.dump_id
+				AND current.dump_root = result.dump_root
+				AND lang_name_id = result.lang_name_id
+			ORDER BY current.created_at DESC, id
+			LIMIT 1
+		)
+
+		-- If we found matching lang names, filter to just those.
+		AND (CASE WHEN (SELECT COUNT(*) FROM matching_lang_names) > 0 THEN
+			result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
+		ELSE result.lang_name_id IS NOT NULL END)
+
+		-- If we found matching tags, filter to just those.
+		AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
+			result.tags_id = ANY(array(SELECT id FROM matching_tags))
+		ELSE result.tags_id IS NOT NULL END)
+
+	-- maximum candidates we'll consider: the more candidates we have the better ranking we get,
+	-- but the slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
+	LIMIT %s
+) sub
+ORDER BY
+	-- Rank results from repos that match query terms higher.
+	CASE WHEN repo_id = ANY(SELECT id FROM matching_repo_names) THEN 1 ELSE 0 END,
+
+	-- First rank by search keys, as those are ideally super specific if you write the correct
+	-- format.
+	--
+	-- (search_key_rank, search_key_reverse_rank)
+	GREATEST(%s, %s) DESC,
+
+	-- Secondarily rank by label, e.g. function signature. These contain less specific info and
+	-- due to e.g. containing arguments a function takes, have higher chance of collision with the
+	-- desired symbol result, producing a bad match.
+	--
+	-- (label_rank, label_reverse_rank)
+	GREATEST(%s, %s) DESC,
+
+	-- If all else failed, sort by something reasonable and deterministic.
+	repo_name DESC,
+	tags DESC,
+	result_id DESC
+LIMIT %s -- Maximum results we'll actually return.
 `
 
 // scanDocumentationSearchResults reads the documentation search results rows. If no rows matched, (nil, nil) is returned.
