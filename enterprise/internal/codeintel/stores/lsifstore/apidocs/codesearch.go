@@ -150,19 +150,20 @@ func lexemeSequence(s string, subStringMatches bool, distance string) string {
 // match "http". This applies only at a lexeme level. The value should match the value provided to
 // TextSearchQuery when composing the tsquery for ranking to match properly.
 func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Query {
-	// For every term in the query string, produce the lexeme sequence that would match it. e.g.
-	// "gorilla/mux Router" -> [`gorilla:* <-> /:* <-> mux:*`, `Router:*`]
 	terms := strings.Fields(query)
-	termLexemeSequences := make([]string, 0, len(terms))
-	for _, term := range terms {
-		termLexemeSequences = append(termLexemeSequences, lexemeSequence(term, subStringMatches, " <-> "))
-	}
+	distances := []string{" <-> ", " <2> ", " <4> ", " <5> "}
 
-	// Build expressions that would match all the query terms in sequence, with some distance of
-	// lexemes between them. Note that the tsquery `foo <-> bar` matches foo _exactly_ followed by
-	// bar, and `foo <1> bar` matches _exactly_ foo followed by one lexeme and then bar. There is
-	// no way in Postgres today to specify a range of lexemes between, or a wildcard (unknown number
-	// of lexemes between). https://stackoverflow.com/a/59146601
+	// For query terms ["golang/go", "http.StatusNotFound"] we will build expressions that would
+	// match each query term in sequence with logical OR expressions to join the terms:
+	//
+	// 	$$golang <-> / <-> go$$::tsquery OR $$http <-> . <-> StatusNotFound$$::tsquery
+	//
+	// For every lexeme distance operator we want (<->, <2>, <4>, etc.) we will emit the same
+	// expression above, but with `<->` replaced with the relevant distance operator.
+	//
+	// Note that the tsquery `foo <-> bar` matches foo _exactly_ followed by bar, and `foo <1> bar`
+	// matches _exactly_ foo followed by one lexeme and then bar. There is no way in Postgres today
+	// to specify a range of lexemes between, or a wildcard (unknown number of lexemes between). https://stackoverflow.com/a/59146601
 	//
 	// "<->" (no distance) enables exact search terms like "http.StatusNotFound" to match lexemes ['http', '.', 'StatusNotFound']
 	// "<2>" enables search terms like "http StatusNotFound" (missing period) to match lexemes ['http', '.', 'StatusNotFound']
@@ -170,12 +171,17 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	// "<5>" enables search terms like "Player Run" (missing "::") to match lexemes ['Player', ':', ':', 'Run]
 	//
 	// Note that more distance != better, the greater the distance the worse relevance of results.
-	distances := []string{" <-> ", " <2> ", " <4> ", " <5> "}
-	expressions := make([]*sqlf.Query, 0, len(distances))
+	expr := make([]*sqlf.Query, 0, len(distances))
 	for _, distance := range distances {
-		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", strings.Join(termLexemeSequences, distance)))
+		// For every space-separated term in the query string, i.e. ["golang/go", "http.StatusNotFound"]
+		exprForDistance := make([]*sqlf.Query, 0, len(terms))
+		for _, term := range terms {
+			tsquery := lexemeSequence(term, subStringMatches, distance)
+			exprForDistance = append(exprForDistance, sqlf.Sprintf(columnName+" @@ %s", tsquery))
+		}
+		expr = append(expr, sqlf.Sprintf("(%s)", sqlf.Join(exprForDistance, "OR")))
 	}
-	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
+	return sqlf.Sprintf("(%s)", sqlf.Join(expr, "OR"))
 }
 
 // RepoSearchQuery returns an SQL expression of e.g. the form:
