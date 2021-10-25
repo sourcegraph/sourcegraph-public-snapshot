@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/hexops/autogold"
 	"github.com/stretchr/testify/require"
 
@@ -94,6 +95,7 @@ func TestRepositoryHydration(t *testing.T) {
 
 		repoResolver := NewRepositoryResolver(db, minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
+		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
 
 	t.Run("hydration results in errors", func(t *testing.T) {
@@ -113,6 +115,8 @@ func TestRepositoryHydration(t *testing.T) {
 		// Another call to make sure err does not disappear
 		_, err = repoResolver.URI(ctx)
 		require.ErrorIs(t, err, dbErr)
+
+		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
 }
 
