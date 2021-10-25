@@ -221,7 +221,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	var insightViewId string
 	err = relay.UnmarshalSpec(args.Id, &insightViewId)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling  the insight view id")
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
 	}
 
 	// TODO: Check permissions #25971
