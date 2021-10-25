@@ -27,7 +27,7 @@ var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightD
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
-var _ graphqlbackend.InsightViewPayloadResolver = &createInsightResultResolver{}
+var _ graphqlbackend.InsightViewPayloadResolver = &insightPayloadResolver{}
 var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
 var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
 var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
@@ -208,7 +208,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			return nil, errors.Wrap(err, "AttachSeriesToView")
 		}
 	}
-	return &createInsightResultResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
 }
 
 func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
@@ -239,15 +239,15 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	// TODO: Update data series here #25979
 
-	return &createInsightResultResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
 }
 
-type createInsightResultResolver struct {
+type insightPayloadResolver struct {
 	viewId string
 	baseInsightResolver
 }
 
-func (c *createInsightResultResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
+func (c *insightPayloadResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
 	mapped, err := c.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: []int{int(actor.FromContext(ctx).UID)}})
 	if err != nil {
 		return nil, err
