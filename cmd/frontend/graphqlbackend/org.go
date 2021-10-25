@@ -63,7 +63,7 @@ func MarshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
 
 func UnmarshalOrgID(id graphql.ID) (orgID int32, err error) {
 	if kind := relay.UnmarshalKind(id); kind != "Org" {
-		return 0, errors.Newf("invalid org id of kind `%s`", kind)
+		return 0, errors.Newf("invalid org id of kind %q", kind)
 	}
 	err = relay.UnmarshalSpec(id, &orgID)
 	return
