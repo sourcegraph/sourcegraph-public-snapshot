@@ -72,24 +72,26 @@ type UserOrg struct {
 }
 
 type BatchChange struct {
-	ID                      string
-	Name                    string
-	Description             string
-	SpecCreator             *User
-	InitialApplier          *User
-	LastApplier             *User
-	LastAppliedAt           string
-	ViewerCanAdminister     bool
-	Namespace               UserOrg
-	CreatedAt               string
-	UpdatedAt               string
-	ClosedAt                string
-	URL                     string
-	ChangesetsStats         ChangesetsStats
-	Changesets              ChangesetConnection
-	ChangesetCountsOverTime []ChangesetCounts
-	DiffStat                DiffStat
-	BulkOperations          BulkOperationConnection
+	ID                                 string
+	Name                               string
+	Description                        string
+	SpecCreator                        *User
+	InitialApplier                     *User
+	LastApplier                        *User
+	LastAppliedAt                      string
+	ViewerCanAdminister                bool
+	Namespace                          UserOrg
+	CreatedAt                          string
+	UpdatedAt                          string
+	ClosedAt                           string
+	URL                                string
+	ChangesetsStats                    ChangesetsStats
+	Changesets                         ChangesetConnection
+	ChangesetCountsOverTime            []ChangesetCounts
+	DiffStat                           DiffStat
+	BulkOperations                     BulkOperationConnection
+	HasExternalServicesWithoutWebhooks bool
+	ExternalServicesWithoutWebhooks    ExternalServiceConnection
 }
 
 type BatchChangeConnection struct {
@@ -414,4 +416,27 @@ type BatchSpecWorkspace struct {
 type BatchSpecWorkspaceStep struct {
 	Run       string
 	Container string
+}
+
+type ExternalServiceConnection struct {
+	Nodes      []ExternalService
+	TotalCount int
+	PageInfo   PageInfo
+}
+
+type ExternalService struct {
+	ID            string
+	Kind          string
+	DisplayName   string
+	Config        string
+	CreatedAt     graphqlbackend.DateTime
+	UpdatedAt     graphqlbackend.DateTime
+	Namespace     string
+	RepoCount     int32
+	WebhookURL    *string
+	Warning       *string
+	LastSyncError *string
+	LastSyncAt    *graphqlbackend.DateTime
+	NextSyncAt    *graphqlbackend.DateTime
+	GrantedScopes *[]string
 }
