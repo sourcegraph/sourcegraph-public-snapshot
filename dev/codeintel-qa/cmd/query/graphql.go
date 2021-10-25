@@ -35,6 +35,39 @@ func queryGraphQL(ctx context.Context, queryName, query string, variables map[st
 	return nil
 }
 
+// formatPercentiles returns a string slice describing latency histograms for each query.
+func formatPercentiles() []string {
+	names := queryNames()
+	percentiles := make([]string, 0, len(names))
+	sort.Strings(names)
+
+	for _, queryName := range names {
+		percentiles = append(percentiles, fmt.Sprintf(
+			"queryName=%s\trequests=%d\tp50=%s\tp95=%s\tp99=%s",
+			queryName,
+			len(durations[queryName]),
+			percentile(queryName, 0.50),
+			percentile(queryName, 0.95),
+			percentile(queryName, 0.99),
+		))
+	}
+
+	return percentiles
+}
+
+// queryNames returns the keys of the duration map.
+func queryNames() (names []string) {
+	m.Lock()
+	defer m.Unlock()
+
+	names = make([]string, 0, len(durations))
+	for queryName := range durations {
+		names = append(names, queryName)
+	}
+
+	return names
+}
+
 // percentile returns the pth percentile duration of the given query type.
 func percentile(queryName string, p float64) time.Duration {
 	m.Lock()
