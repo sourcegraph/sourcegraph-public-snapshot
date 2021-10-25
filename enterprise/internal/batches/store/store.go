@@ -157,14 +157,16 @@ func (s *Store) queryCount(ctx context.Context, q *sqlf.Query) (int, error) {
 }
 
 type operations struct {
-	createBatchChange      *observation.Operation
-	updateBatchChange      *observation.Operation
-	deleteBatchChange      *observation.Operation
-	countBatchChanges      *observation.Operation
-	getBatchChange         *observation.Operation
-	getBatchChangeDiffStat *observation.Operation
-	getRepoDiffStat        *observation.Operation
-	listBatchChanges       *observation.Operation
+	createBatchChange                   *observation.Operation
+	updateBatchChange                   *observation.Operation
+	deleteBatchChange                   *observation.Operation
+	countBatchChanges                   *observation.Operation
+	getBatchChange                      *observation.Operation
+	getBatchChangeDiffStat              *observation.Operation
+	getRepoDiffStat                     *observation.Operation
+	listBatchChanges                    *observation.Operation
+	listExternalServicesForBatchChange  *observation.Operation
+	countExternalServicesForBatchChange *observation.Operation
 
 	createBatchSpecExecution *observation.Operation
 	getBatchSpecExecution    *observation.Operation
@@ -281,14 +283,16 @@ func newOperations(observationContext *observation.Context) *operations {
 		}
 
 		singletonOperations = &operations{
-			createBatchChange:      op("CreateBatchChange"),
-			updateBatchChange:      op("UpdateBatchChange"),
-			deleteBatchChange:      op("DeleteBatchChange"),
-			countBatchChanges:      op("CountBatchChanges"),
-			listBatchChanges:       op("ListBatchChanges"),
-			getBatchChange:         op("GetBatchChange"),
-			getBatchChangeDiffStat: op("GetBatchChangeDiffStat"),
-			getRepoDiffStat:        op("GetRepoDiffStat"),
+			createBatchChange:                   op("CreateBatchChange"),
+			updateBatchChange:                   op("UpdateBatchChange"),
+			deleteBatchChange:                   op("DeleteBatchChange"),
+			countBatchChanges:                   op("CountBatchChanges"),
+			listBatchChanges:                    op("ListBatchChanges"),
+			listExternalServicesForBatchChange:  op("ListExternalServices"),
+			countExternalServicesForBatchChange: op("CountExternalServices"),
+			getBatchChange:                      op("GetBatchChange"),
+			getBatchChangeDiffStat:              op("GetBatchChangeDiffStat"),
+			getRepoDiffStat:                     op("GetRepoDiffStat"),
 
 			createBatchSpecExecution: op("CreateBatchSpecExecution"),
 			getBatchSpecExecution:    op("GetBatchSpecExecution"),

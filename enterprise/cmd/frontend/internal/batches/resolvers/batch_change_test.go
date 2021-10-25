@@ -36,6 +36,10 @@ func TestBatchChangeResolver(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
+	// Create a default GitHub repo, which defaults to no webhook configuration
+	// for that external service.
+	repos, extSvc := ct.CreateGitHubSSHTestRepos(t, ctx, db, 1)
+
 	batchSpec := &btypes.BatchSpec{
 		RawSpec:        ct.TestRawBatchSpec,
 		UserID:         userID,
@@ -57,6 +61,12 @@ func TestBatchChangeResolver(t *testing.T) {
 	if err := cstore.CreateBatchChange(ctx, batchChange); err != nil {
 		t.Fatal(err)
 	}
+
+	// Add a changeset that uses the repo created above.
+	ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:        repos[0].ID,
+		BatchChange: batchChange.ID,
+	})
 
 	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -80,6 +90,17 @@ func TestBatchChangeResolver(t *testing.T) {
 		UpdatedAt:      marshalDateTime(t, now),
 		// Not closed.
 		ClosedAt: "",
+		// The repo external service does not have webhooks.
+		HasExternalServicesWithoutWebhooks: true,
+		ExternalServicesWithoutWebhooks: apitest.ExternalServiceConnection{
+			Nodes: []apitest.ExternalService{
+				{DisplayName: extSvc.DisplayName},
+			},
+			PageInfo: apitest.PageInfo{
+				HasNextPage: false,
+			},
+			TotalCount: 1,
+		},
 	}
 
 	input := map[string]interface{}{"batchChange": batchChangeAPIID}
@@ -156,6 +177,16 @@ query($batchChange: ID!){
         ... on Org  { ...o }
       }
       url
+      hasExternalServicesWithoutWebhooks
+      externalServicesWithoutWebhooks {
+        nodes {
+          displayName
+        }
+        pageInfo {
+          hasNextPage
+        }
+        totalCount
+      }
     }
   }
 }
@@ -179,6 +210,16 @@ query($namespace: ID!, $name: String!){
       ... on Org  { ...o }
     }
     url
+    hasExternalServicesWithoutWebhooks
+    externalServicesWithoutWebhooks {
+      nodes {
+        displayName
+      }
+      pageInfo {
+        hasNextPage
+      }
+      totalCount
+    }
   }
 }
 `

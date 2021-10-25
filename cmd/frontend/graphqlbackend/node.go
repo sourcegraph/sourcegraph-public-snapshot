@@ -144,8 +144,8 @@ func (r *NodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	return n, ok
 }
 
-func (r *NodeResolver) ToExternalService() (*externalServiceResolver, bool) {
-	n, ok := r.Node.(*externalServiceResolver)
+func (r *NodeResolver) ToExternalService() (*ExternalServiceResolver, bool) {
+	n, ok := r.Node.(*ExternalServiceResolver)
 	return n, ok
 }
 

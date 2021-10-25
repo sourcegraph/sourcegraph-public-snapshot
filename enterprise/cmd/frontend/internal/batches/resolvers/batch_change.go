@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -308,4 +309,48 @@ func (r *batchChangeResolver) BatchSpecs(
 	}
 
 	return &batchSpecConnectionResolver{store: r.store, opts: opts}, nil
+}
+
+func (r *batchChangeResolver) HasExternalServicesWithoutWebhooks(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: We can access this without a site admin check because we
+	// don't return the actual external service; we're only interested in
+	// whether there is webhook configuration or not, and there's no way to leak
+	// anything past that below.
+	services, _, err := r.store.ListExternalServicesForBatchChange(ctx, store.ListExternalServicesForBatchChangeOpts{
+		BatchChangeID: r.batchChange.ID,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, es := range services {
+		cfg, err := es.Configuration()
+		if err != nil {
+			return false, err
+		}
+
+		if hasWebhooks, err := webhooks.ConfigurationHasWebhooks(cfg); err != nil {
+			return false, err
+		} else if !hasWebhooks {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (r *batchChangeResolver) ExternalServicesWithoutWebhooks(
+	ctx context.Context,
+	args *graphqlbackend.ListExternalServicesArgs,
+) (graphqlbackend.ExternalServiceConnectionResolver, error) {
+	// 🚨 SECURITY: Only site admins can access external services.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+		return nil, err
+	}
+
+	return &externalServicesWithoutWebhooksResolver{
+		store:         r.store,
+		batchChangeID: r.batchChange.ID,
+		args:          args,
+	}, nil
 }

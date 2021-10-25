@@ -18,6 +18,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful
@@ -181,6 +182,8 @@ func initTest(nameSuffix string) error {
 // in tests that require the database handle but never call it.
 type MockDB struct{}
 
+var _ dbutil.DB = &MockDB{}
+
 func (db *MockDB) QueryContext(ctx context.Context, q string, args ...interface{}) (*sql.Rows, error) {
 	panic("mock db methods are not supposed to be called")
 }
@@ -191,4 +194,31 @@ func (db *MockDB) ExecContext(ctx context.Context, query string, args ...interfa
 
 func (db *MockDB) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	panic("mock db methods are not supposed to be called")
+}
+
+// ErrorDB implements the dbutil.DB interface and always returns an error when a
+// query is invoked. This is intended for testing error paths in database
+// stores.
+type ErrorDB struct{ Err error }
+
+var _ dbutil.DB = &ErrorDB{}
+
+func NewErrorDB(err error) *ErrorDB {
+	if err == nil {
+		err = errors.New("error db methods always fail")
+	}
+
+	return &ErrorDB{Err: err}
+}
+
+func (db *ErrorDB) QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error) {
+	return nil, db.Err
+}
+
+func (db *ErrorDB) ExecContext(context.Context, string, ...interface{}) (sql.Result, error) {
+	return nil, db.Err
+}
+
+func (db *ErrorDB) QueryRowContext(context.Context, string, ...interface{}) *sql.Row {
+	return nil
 }

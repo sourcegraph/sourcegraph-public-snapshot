@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type externalServiceResolver struct {
+type ExternalServiceResolver struct {
 	db              dbutil.DB
 	externalService *types.ExternalService
 	warning         string
@@ -32,7 +32,7 @@ type externalServiceResolver struct {
 
 const externalServiceIDKind = "ExternalService"
 
-func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
+func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*ExternalServiceResolver, error) {
 	id, err := unmarshalExternalServiceID(gqlID)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func externalServiceByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*
 	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
-	return &externalServiceResolver{db: db, externalService: es}, nil
+	return &ExternalServiceResolver{db: db, externalService: es}, nil
 }
 
 func marshalExternalServiceID(id int64) graphql.ID {
@@ -62,19 +62,23 @@ func unmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err err
 	return
 }
 
-func (r *externalServiceResolver) ID() graphql.ID {
+func NewExternalServiceResolver(db dbutil.DB, externalService *types.ExternalService) *ExternalServiceResolver {
+	return &ExternalServiceResolver{db: db, externalService: externalService}
+}
+
+func (r *ExternalServiceResolver) ID() graphql.ID {
 	return marshalExternalServiceID(r.externalService.ID)
 }
 
-func (r *externalServiceResolver) Kind() string {
+func (r *ExternalServiceResolver) Kind() string {
 	return r.externalService.Kind
 }
 
-func (r *externalServiceResolver) DisplayName() string {
+func (r *ExternalServiceResolver) DisplayName() string {
 	return r.externalService.DisplayName
 }
 
-func (r *externalServiceResolver) Config() (JSONCString, error) {
+func (r *ExternalServiceResolver) Config() (JSONCString, error) {
 	redacted, err := r.externalService.RedactConfigSecrets()
 	if err != nil {
 		return "", err
@@ -82,15 +86,15 @@ func (r *externalServiceResolver) Config() (JSONCString, error) {
 	return JSONCString(redacted), nil
 }
 
-func (r *externalServiceResolver) CreatedAt() DateTime {
+func (r *ExternalServiceResolver) CreatedAt() DateTime {
 	return DateTime{Time: r.externalService.CreatedAt}
 }
 
-func (r *externalServiceResolver) UpdatedAt() DateTime {
+func (r *ExternalServiceResolver) UpdatedAt() DateTime {
 	return DateTime{Time: r.externalService.UpdatedAt}
 }
 
-func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+func (r *ExternalServiceResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.externalService.NamespaceUserID == 0 {
 		return nil, nil
 	}
@@ -102,7 +106,7 @@ func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceReso
 	return &NamespaceResolver{n}, nil
 }
 
-func (r *externalServiceResolver) WebhookURL() (*string, error) {
+func (r *ExternalServiceResolver) WebhookURL() (*string, error) {
 	r.webhookURLOnce.Do(func() {
 		parsed, err := extsvc.ParseConfig(r.externalService.Kind, r.externalService.Config)
 		if err != nil {
@@ -134,14 +138,14 @@ func (r *externalServiceResolver) WebhookURL() (*string, error) {
 	return &r.webhookURL, r.webhookErr
 }
 
-func (r *externalServiceResolver) Warning() *string {
+func (r *ExternalServiceResolver) Warning() *string {
 	if r.warning == "" {
 		return nil
 	}
 	return &r.warning
 }
 
-func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
+func (r *ExternalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
 	latestError, err := database.ExternalServices(r.db).GetLastSyncError(ctx, r.externalService.ID)
 	if err != nil {
 		return nil, err
@@ -152,18 +156,18 @@ func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, e
 	return &latestError, nil
 }
 
-func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
+func (r *ExternalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
 	return database.ExternalServices(r.db).RepoCount(ctx, r.externalService.ID)
 }
 
-func (r *externalServiceResolver) LastSyncAt() *DateTime {
+func (r *ExternalServiceResolver) LastSyncAt() *DateTime {
 	if r.externalService.LastSyncAt.IsZero() {
 		return nil
 	}
 	return &DateTime{Time: r.externalService.LastSyncAt}
 }
 
-func (r *externalServiceResolver) NextSyncAt() *DateTime {
+func (r *ExternalServiceResolver) NextSyncAt() *DateTime {
 	if r.externalService.NextSyncAt.IsZero() {
 		return nil
 	}
@@ -172,7 +176,7 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 
 var scopeCache = rcache.New("extsvc_token_scope")
 
-func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
+func (r *ExternalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
 	scopes, err := repos.GrantedScopes(ctx, scopeCache, r.externalService)
 	if err != nil {
 		// It's possible that we fail to fetch scope from the code host, in this case we

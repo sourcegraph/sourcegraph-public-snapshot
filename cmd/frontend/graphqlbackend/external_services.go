@@ -40,7 +40,7 @@ type addExternalServiceInput struct {
 	Namespace   *graphql.ID
 }
 
-func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
+func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*ExternalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -98,7 +98,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	res := &externalServiceResolver{db: r.db, externalService: externalService}
+	res := &ExternalServiceResolver{db: r.db, externalService: externalService}
 	if err := syncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -116,7 +116,7 @@ type updateExternalServiceInput struct {
 	Config      *string
 }
 
-func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
+func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*ExternalServiceResolver, error) {
 	if os.Getenv("EXTSVC_CONFIG_FILE") != "" && !extsvcConfigAllowEdits {
 		return nil, errors.New("updating external service not allowed when using EXTSVC_CONFIG_FILE")
 	}
@@ -155,7 +155,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	res := &externalServiceResolver{db: r.db, externalService: es}
+	res := &ExternalServiceResolver{db: r.db, externalService: es}
 	if err = syncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -252,7 +252,7 @@ type ExternalServicesArgs struct {
 	After *string
 }
 
-func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
+func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (ExternalServiceConnectionResolver, error) {
 	var namespaceUserID int32
 	var namespaceOrgID int32
 	if args.Namespace != nil {
@@ -290,6 +290,12 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
+type ExternalServiceConnectionResolver interface {
+	Nodes(ctx context.Context) ([]*ExternalServiceResolver, error)
+	TotalCount(ctx context.Context) (int32, error)
+	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
 type externalServiceConnectionResolver struct {
 	opt database.ExternalServicesListOptions
 
@@ -300,6 +306,8 @@ type externalServiceConnectionResolver struct {
 	db               dbutil.DB
 }
 
+var _ ExternalServiceConnectionResolver = &externalServiceConnectionResolver{}
+
 func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalService, error) {
 	r.once.Do(func() {
 		r.externalServices, r.err = database.ExternalServices(r.db).List(ctx, r.opt)
@@ -307,14 +315,14 @@ func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*typ
 	return r.externalServices, r.err
 }
 
-func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceResolver, error) {
+func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*ExternalServiceResolver, error) {
 	externalServices, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
+	resolvers := make([]*ExternalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &ExternalServiceResolver{db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -364,22 +372,24 @@ type computedExternalServiceConnectionResolver struct {
 	db               dbutil.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) []*externalServiceResolver {
+var _ ExternalServiceConnectionResolver = &computedExternalServiceConnectionResolver{}
+
+func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) ([]*ExternalServiceResolver, error) {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
 	}
-	resolvers := make([]*externalServiceResolver, 0, len(svcs))
+	resolvers := make([]*ExternalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
+		resolvers = append(resolvers, &ExternalServiceResolver{db: r.db, externalService: svc})
 	}
-	return resolvers
+	return resolvers, nil
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) int32 {
-	return int32(len(r.externalServices))
+func (r *computedExternalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	return int32(len(r.externalServices)), nil
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
+func (r *computedExternalServiceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First)), nil
 }
