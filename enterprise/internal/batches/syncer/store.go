@@ -18,7 +18,7 @@ type SyncStore interface {
 	UpsertChangesetEvents(ctx context.Context, cs ...*btypes.ChangesetEvent) error
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	Transact(context.Context) (*store.Store, error)
-	Repos() *database.RepoStore
+	Repos() database.RepoStore
 	ExternalServices() *database.ExternalServiceStore
 	Clock() func() time.Time
 	DB() dbutil.DB
