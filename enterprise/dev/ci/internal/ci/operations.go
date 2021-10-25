@@ -696,7 +696,7 @@ func fault() operations.Operation {
 			bk.Cmd("fail here"),
 			bk.Key("failing"),
 		}
-		pipeline.AddEnsureStep(":red_circle: failing on purpose", stepOpts...)
+		pipeline.AddStep(":red_circle: failing on purpose", stepOpts...)
 	}
 }
 
@@ -707,7 +707,7 @@ func depfault() operations.Operation {
 			bk.Cmd("ls -al"),
 			bk.DependsOn("failing"),
 		}
-		pipeline.AddEnsureStep(":question: dep on the failing step", stepOpts...)
+		pipeline.AddStep(":question: dep on the failing step", stepOpts...)
 	}
 }
 
