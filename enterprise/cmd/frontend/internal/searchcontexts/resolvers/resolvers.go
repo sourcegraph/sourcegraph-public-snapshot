@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -134,30 +135,71 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func repositoryByID(ctx context.Context, id graphql.ID, db dbutil.DB) (*graphqlbackend.RepositoryResolver, error) {
+func findRepositoryByIDOrName(repositories []*types.Repo, id *api.RepoID, name *string) (*types.Repo, error) {
+	for _, repository := range repositories {
+		if (id != nil && repository.ID == *id) || (name != nil && repository.Name == api.RepoName(*name)) {
+			return repository, nil
+		}
+	}
+
+	notFoundErrorMessage := "search context repository not found"
+	if id != nil {
+		notFoundErrorMessage = notFoundErrorMessage + ": id=" + string(*id)
+	} else if name != nil {
+		notFoundErrorMessage = notFoundErrorMessage + ": name=" + *name
+	}
+	return nil, errors.New(notFoundErrorMessage)
+}
+
+func unmarshalRepositoryIDIfExists(id *graphql.ID) (*api.RepoID, error) {
+	if id == nil {
+		return nil, nil
+	}
 	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
+	if err := relay.UnmarshalSpec(*id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := database.Repos(db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewRepositoryResolver(db, repo), nil
+	return &repoID, nil
 }
 
 func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	repositoryIDs := []api.RepoID{}
+	repositoryNames := []string{}
 	for _, repository := range args {
-		repoResolver, err := repositoryByID(ctx, repository.RepositoryID, r.db)
+		repoID, err := unmarshalRepositoryIDIfExists(repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+
+		if repoID != nil {
+			repositoryIDs = append(repositoryIDs, *repoID)
+		} else if repository.RepositoryName != nil {
+			repositoryNames = append(repositoryNames, *repository.RepositoryName)
+		} else {
+			return nil, errors.New("missing repository ID or repository name in search context repository")
+		}
+	}
+
+	// Extract all input repositories in a single query
+	repositories, err := database.Repos(r.db).List(ctx, database.ReposListOptions{IDs: repositoryIDs, Names: repositoryNames})
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	// Match input repositories to the repositories retrieved from the database
+	for _, repository := range args {
+		repoID, err := unmarshalRepositoryIDIfExists(repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+
+		repo, err := findRepositoryByIDOrName(repositories, repoID, repository.RepositoryName)
 		if err != nil {
 			return nil, err
 		}
 		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo: types.RepoName{
-				ID:   repoResolver.IDInt32(),
-				Name: repoResolver.RepoName(),
-			},
+			Repo:      types.RepoName{ID: repo.ID, Name: repo.Name},
 			Revisions: repository.Revisions,
 		})
 	}

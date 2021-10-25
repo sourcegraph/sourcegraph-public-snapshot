@@ -186,7 +186,7 @@ describe('Search contexts', () => {
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
-                        repository: { name: repository.repositoryID },
+                        repository: { name: repository.repositoryName ?? '' },
                     })),
                 },
             }),
@@ -258,7 +258,7 @@ describe('Search contexts', () => {
                     repositories: repositories.map(repository => ({
                         __typename: 'SearchContextRepositoryRevisions',
                         revisions: repository.revisions,
-                        repository: { name: repository.repositoryID },
+                        repository: { name: repository.repositoryName ?? '' },
                     })),
                 },
             }),

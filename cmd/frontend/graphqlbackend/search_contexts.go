@@ -70,8 +70,9 @@ type SearchContextEditInputArgs struct {
 }
 
 type SearchContextRepositoryRevisionsInputArgs struct {
-	RepositoryID graphql.ID
-	Revisions    []string
+	RepositoryID   *graphql.ID
+	RepositoryName *string
+	Revisions      []string
 }
 
 type CreateSearchContextArgs struct {

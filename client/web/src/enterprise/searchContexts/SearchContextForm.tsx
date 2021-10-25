@@ -10,10 +10,10 @@ import {
     SearchContextInput,
     SearchContextRepositoryRevisionsInput,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { ISearchContext, ISearchContextRepositoryRevisionsInput } from '@sourcegraph/shared/src/graphql/schema'
+import { ISearchContext } from '@sourcegraph/shared/src/graphql/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { useEventObservable } from '@sourcegraph/shared/src/util/useObservable'
 import { ALLOW_NAVIGATION, AwayPrompt } from '@sourcegraph/web/src/components/AwayPrompt'
 import { Container } from '@sourcegraph/wildcard'
@@ -159,33 +159,30 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
         )
     }, [description, name, searchContext, selectedNamespace, visibility, hasRepositoriesConfigChanged])
 
-    const parseRepositories = useCallback(
-        () =>
-            of(parseConfig(repositoriesConfig)).pipe(
-                switchMap(config => {
-                    if (config === null) {
-                        return of([
-                            new Error('Invalid configuration format. Check for inline editor warnings and errors.'),
-                        ])
-                    }
-                    return from(config).pipe(
-                        concatMap(({ repository: repoName, revisions }) =>
-                            fetchRepository({ repoName }).pipe(
-                                map(repository => ({ repositoryID: repository.id, revisions })),
-                                catchError(error => [asError(error)])
-                            )
-                        ),
-                        toArray()
-                    )
-                })
-            ),
-        [repositoriesConfig]
-    )
+    const parseRepositories = useCallback(() => {
+        const config = parseConfig(repositoriesConfig)
+        if (config === null) {
+            return new Error('Invalid configuration format. Check for inline editor warnings and errors.')
+        }
+        return config.map(({ repository: repositoryName, revisions }) => ({
+            repositoryName,
+            revisions,
+        }))
+    }, [repositoriesConfig])
 
     const validateRepositories = useCallback(
         () =>
-            parseRepositories().pipe(
-                switchMap(items => items),
+            of(parseRepositories()).pipe(
+                switchMap(repositoriesOrError => {
+                    if (isErrorLike(repositoriesOrError)) {
+                        return of(repositoriesOrError)
+                    }
+                    return from(repositoriesOrError).pipe(
+                        concatMap(({ repositoryName: repoName }) =>
+                            fetchRepository({ repoName }).pipe(catchError(error => [asError(error)]))
+                        )
+                    )
+                }),
                 filter(repoOrError => isErrorLike(repoOrError)),
                 map(repoOrError => repoOrError as Error),
                 toArray()
@@ -198,22 +195,18 @@ export const SearchContextForm: React.FunctionComponent<SearchContextFormProps> 
             (submit: Observable<React.FormEvent<HTMLFormElement>>) =>
                 submit.pipe(
                     tap(event => event.preventDefault()),
-                    switchMap(parseRepositories),
-                    switchMap(repositories => {
-                        const validationErrors = repositories.filter(repository => isErrorLike(repository)) as Error[]
-                        if (validationErrors.length > 0) {
-                            return throwError(createAggregateError(validationErrors))
+                    switchMap(() => {
+                        const repositories = parseRepositories()
+                        if (isErrorLike(repositories)) {
+                            return throwError(repositories)
                         }
-                        const validRepositories = repositories.filter(
-                            repository => !isErrorLike(repository)
-                        ) as ISearchContextRepositoryRevisionsInput[]
-                        return of(validRepositories)
+                        return of(repositories)
                     }),
-                    switchMap(repositoryRevisionsArray =>
+                    switchMap(repositories =>
                         onSubmit(
                             searchContext?.id,
                             { name, description, public: visibility === 'public', namespace: selectedNamespace.id },
-                            repositoryRevisionsArray
+                            repositories
                         ).pipe(
                             startWith(LOADING),
                             catchError(error => [asError(error)]),

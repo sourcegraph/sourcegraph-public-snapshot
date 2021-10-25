@@ -240,9 +240,13 @@ Input for a set of revisions to be searched within a repository.
 """
 input SearchContextRepositoryRevisionsInput {
     """
-    ID of the repository to be searched.
+    ID of the repository to be searched. Mutually exclusive with the repositoryName property.
     """
-    repositoryID: ID!
+    repositoryID: ID
+    """
+    Name of the repository to be searched. Mutually exclusive with the repositoryID property.
+    """
+    repositoryName: String
     """
     Revisions in the repository to be searched.
     """
