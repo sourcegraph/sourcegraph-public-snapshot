@@ -26,6 +26,12 @@ type Command interface {
 	String() string
 }
 
+var (
+	_ Command = (*MatchOnly)(nil)
+	_ Command = (*ReplaceInPlace)(nil)
+	_ Command = (*ReplaceWithSeparator)(nil)
+)
+
 func (MatchOnly) command()            {}
 func (ReplaceInPlace) command()       {}
 func (ReplaceWithSeparator) command() {}
@@ -45,15 +51,15 @@ type ReplaceWithSeparator struct {
 	Separator      string
 }
 
-func (c MatchOnly) String() string {
+func (c *MatchOnly) String() string {
 	return fmt.Sprintf("Match only: %s", c.MatchPattern.String())
 }
 
-func (c ReplaceInPlace) String() string {
+func (c *ReplaceInPlace) String() string {
 	return fmt.Sprintf("Replace in place: %s -> %s", c.MatchPattern.String(), c.ReplacePattern)
 }
 
-func (c ReplaceWithSeparator) String() string {
+func (c *ReplaceWithSeparator) String() string {
 	return fmt.Sprintf("Replace with separator: %s -> %s separator: %s", c.MatchPattern.String(), c.ReplacePattern, c.Separator)
 }
 
