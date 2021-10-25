@@ -1,6 +1,7 @@
 package compute
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -63,4 +64,8 @@ func FromFileMatch(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 		}
 	}
 	return &MatchContext{Matches: matches, Path: fm.Path}
+}
+
+func (c *MatchOnly) Run(_ context.Context, fm *result.FileMatch) (Result, error) {
+	return FromFileMatch(fm, c.MatchPattern.(*Regexp).Value), nil
 }
