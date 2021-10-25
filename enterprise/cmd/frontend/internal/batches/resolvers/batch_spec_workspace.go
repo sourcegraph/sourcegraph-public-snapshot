@@ -76,12 +76,6 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 }
 
 func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
-	// TODO: Do we really not want to show these? Currently it won't show steps
-	// for the ignored and unsupported repos.
-	// if r.workspace.Skipped {
-	// 	return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
-	// }
-
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
@@ -110,12 +104,6 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 }
 
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
-	// TODO: Do we really not want to show these? Currently it won't show steps
-	// for the ignored and unsupported repos.
-	// if r.workspace.Skipped {
-	// 	return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
-	// }
-
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
@@ -130,7 +118,8 @@ func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbacke
 		return nil, err
 	}
 
-	if len(r.workspace.Steps) < int(args.Index) {
+	// Check if step exists.
+	if len(r.workspace.Steps) <= int(args.Index) {
 		return nil, nil
 	}
 
