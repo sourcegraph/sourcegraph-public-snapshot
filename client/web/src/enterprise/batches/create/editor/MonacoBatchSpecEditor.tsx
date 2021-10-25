@@ -9,7 +9,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
-import jsonSchemaMetaSchema from '../../../../../../../schema/json-schema-draft-07.schema.json'
 
 import styles from './MonacoBatchSpecEditor.module.scss'
 
@@ -32,7 +31,7 @@ export interface Props extends ThemeProps {
 interface State {}
 
 /**
- * A JSON settings editor using the Monaco editor.
+ * Editor for Batch specs using Monaco editor.
  */
 export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public state: State = {}
@@ -154,13 +153,8 @@ function setDiagnosticsOptions(editor: typeof monaco): void {
         schemas: [
             {
                 uri: 'file:///root',
-                schema: batchSpecSchemaJSON,
+                schema: batchSpecSchemaJSON as JSONSchema,
                 fileMatch: ['*'],
-            },
-            // Include these schemas because they are referenced by other schemas.
-            {
-                uri: 'http://json-schema.org/draft-07/schema',
-                schema: jsonSchemaMetaSchema as JSONSchema,
             },
         ],
     })
