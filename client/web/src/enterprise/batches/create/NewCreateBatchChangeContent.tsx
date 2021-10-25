@@ -210,7 +210,11 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                     <Container>
                         {codeUpdateError && <ErrorAlert error={codeUpdateError} />}
                         {invalid && specValidator.errors && (
-                            <ErrorAlert error={`The entered spec is invalid ${specValidator.errors}`} />
+                            <ErrorAlert
+                                error={`The entered spec is invalid ${specValidator.errors
+                                    .map(error => error.message)
+                                    .join('\n')}`}
+                            />
                         )}
                         <PreviewWorkspaces
                             excludeRepo={excludeRepoFromSpec}
