@@ -110,3 +110,80 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestOrgMembers_MemberCount(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtest.NewDB(t, "")
+	ctx := context.Background()
+	// Create fixtures.
+	org1, err := Orgs(db).Create(ctx, "org1", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org2, err := Orgs(db).Create(ctx, "org2", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	org3, err := Orgs(db).Create(ctx, "org3", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	user1, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a1@example.com",
+		Username:              "u1",
+		Password:              "p",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	user2, err := Users(db).Create(ctx, NewUser{
+		Email:                 "a2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deletedUser, err := Users(db).Create(ctx, NewUser{
+		Email:                 "deleted@example.com",
+		Username:              "deleted",
+		Password:              "p2",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	OrgMembers(db).Create(ctx, org1.ID, user1.ID)
+	OrgMembers(db).Create(ctx, org2.ID, user1.ID)
+	OrgMembers(db).Create(ctx, org2.ID, user2.ID)
+	OrgMembers(db).Create(ctx, org3.ID, user1.ID)
+	OrgMembers(db).Create(ctx, org3.ID, deletedUser.ID)
+	err = Users(db).Delete(ctx, deletedUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name  string
+		orgID int32
+		want  int
+	}{
+		{"org with single member", org1.ID, 1},
+		{"org with two members", org2.ID, 2},
+		{"org with one deleted member", org3.ID, 1}} {
+		t.Run(test.name, func(*testing.T) {
+			got, err := OrgMembers(db).MemberCount(ctx, test.orgID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if test.want != got {
+				t.Errorf("want %v, got %v", test.want, got)
+			}
+		})
+
+	}
+
+}
