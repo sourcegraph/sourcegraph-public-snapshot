@@ -161,7 +161,6 @@ func (m *settingMigrator) migrate(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch just-in-time insights from all settings")
 	}
-	// log15.Info("FEInsights", "insights", justInTimeInsights)
 
 	log15.Info("insights migration: migrating backend insights")
 	m.migrateInsights(ctx, discovered, backend)
@@ -203,7 +202,6 @@ const (
 
 func (m *settingMigrator) migrateInsights(ctx context.Context, toMigrate []insights.SearchInsight, batch migrationBatch) {
 	insightStore := store.NewInsightStore(m.insights)
-
 	var count, skipped, errorCount int
 	for _, d := range toMigrate {
 		if d.ID == "" {
@@ -218,7 +216,6 @@ func (m *settingMigrator) migrateInsights(ctx context.Context, toMigrate []insig
 			skipped++
 			continue
 		}
-
 		err = migrateSeries(ctx, insightStore, d, batch)
 		if err != nil {
 			// we can't do anything about errors, so we will just skip it and log it
@@ -302,14 +299,16 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 	metadata := make([]types.InsightViewSeriesMetadata, len(from.Series))
 
 	for i, timeSeries := range from.Series {
-		log15.Info("for_timeseries", "unique_id", from.ID, "timeseries", timeSeries)
-
 		temp := types.InsightSeries{
 			Query: timeSeries.Query,
 		}
 
 		if batch == frontend {
 			temp.Repositories = from.Repositories
+			if temp.Repositories == nil {
+				// this shouldn't be possible, but if for some reason we get here there is a malformed schema
+				return errors.New("invalid schema for frontend insight, missing repositories")
+			}
 			interval := parseTimeInterval(from)
 			temp.SampleIntervalUnit = string(interval.unit)
 			temp.SampleIntervalValue = interval.value
@@ -327,7 +326,7 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 
 		var series types.InsightSeries
 		// first check if this data series already exists (somebody already created an insight of this query), in which case we just need to attach the view to this data series
-		existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: Encode(timeSeries)})
+		existing, err := tx.GetDataSeries(ctx, store.GetDataSeriesArgs{SeriesID: temp.SeriesID})
 		if err != nil {
 			return errors.Wrapf(err, "unable to migrate insight unique_id: %s series_id: %s", from.ID, temp.SeriesID)
 		} else if len(existing) > 0 {
