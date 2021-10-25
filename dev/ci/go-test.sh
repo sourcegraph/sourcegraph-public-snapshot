@@ -10,7 +10,7 @@ echo "--- :arrow_down: comby install"
 )
 
 
-echo "--- :database: Running CodeInsightsDB"
+echo "--- :arrow_right: Running CodeInsightsDB"
 (
   set -x
   # For code insights test
@@ -18,6 +18,10 @@ echo "--- :database: Running CodeInsightsDB"
   export CODEINSIGHTS_PGDATASOURCE=postgres://postgres:password@127.0.0.1:5435/postgres
   export DB_STARTUP_TIMEOUT=120s # codeinsights-db needs more time to start in some instances.
 )
+
+echo "--- :go: Getting richgo"
+go install github.com/kyoh86/richgo
+# asdf reshim golang
 
 # We have multiple go.mod files and go list doesn't recurse into them.
 find . -name go.mod -exec dirname '{}' \; | while read -r d; do
@@ -28,7 +32,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
   go mod download
 
   echo "--- :go: $d go test"
-  go test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race ./...
+  richgo test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race ./...
 
   popd >/dev/null
 done
