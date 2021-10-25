@@ -2,11 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -118,6 +118,8 @@ func TestExternalServicesWithoutWebhooksResolver(t *testing.T) {
 			)
 			assert.Nil(t, err)
 
+			// The cursor is the ID of the first element of the _next_ page,
+			// which is the Bitbucket Server external service.
 			wantCursor := fmt.Sprint(fixture.BitbucketServerSvc.ID)
 			assertExternalServiceConnection(
 				t, adminCtx,
