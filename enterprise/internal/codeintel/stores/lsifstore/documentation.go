@@ -394,8 +394,8 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 		langRepoTagsClause, // matching_repo_names CTE WHERE conditions
 		langRepoTagsClause, // matching_tags CTE WHERE conditions
 
-		sqlf.Join(primaryClauses, ") OR ("), // primary WHERE clause
-		debugAPIDocsSearchCandidates,        // maximum candidates for consideration.
+		sqlf.Sprintf("(%s)", sqlf.Join(primaryClauses, "OR")), // primary WHERE clause
+		debugAPIDocsSearchCandidates,                          // maximum candidates for consideration.
 
 		apidocs.TextSearchRank("search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
 		apidocs.TextSearchRank("search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches), // search_key_reverse_rank
