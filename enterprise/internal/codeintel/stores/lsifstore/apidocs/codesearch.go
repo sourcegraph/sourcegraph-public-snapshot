@@ -150,41 +150,86 @@ func lexemeSequence(lexemes []string, subStringMatches bool, distance string) st
 // TextSearchQuery when composing the tsquery for ranking to match properly.
 func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Query {
 	terms := strings.Fields(query)
-	distances := []string{" <-> ", " <2> ", " <4> ", " <5> "}
+	if len(terms) == 0 {
+		return sqlf.Sprintf("false")
+	}
+	expressions := make([]*sqlf.Query, 0, len(terms))
 
-	// For query terms ["golang/go", "http.StatusNotFound"] we will build expressions that would
-	// match each query term in sequence with logical OR expressions to join the terms:
-	//
-	// 	$$golang <-> / <-> go$$::tsquery OR $$http <-> . <-> StatusNotFound$$::tsquery
-	//
-	// For every lexeme distance operator we want (<->, <2>, <4>, etc.) we will emit the same
-	// expression above, but with `<->` replaced with the relevant distance operator.
-	//
-	// Note that the tsquery `foo <-> bar` matches foo _exactly_ followed by bar, and `foo <1> bar`
-	// matches _exactly_ foo followed by one lexeme and then bar. There is no way in Postgres today
-	// to specify a range of lexemes between, or a wildcard (unknown number of lexemes between). https://stackoverflow.com/a/59146601
-	//
-	// "<->" (no distance) enables exact search terms like "http.StatusNotFound" to match lexemes ['http', '.', 'StatusNotFound']
-	// "<2>" enables search terms like "http StatusNotFound" (missing period) to match lexemes ['http', '.', 'StatusNotFound']
-	// "<4>" enables search terms like "json Decode" (missing "Decoder") to match lexemes ['json', 'Decoder', 'Decode']
-	// "<5>" enables search terms like "Player Run" (missing "::") to match lexemes ['Player', ':', ':', 'Run]
-	//
-	// Note that more distance != better, the greater the distance the worse relevance of results.
-	expressions := make([]*sqlf.Query, 0, len(distances)*len(terms))
+	contiguousDisjointed := make([][]string, 0, len(terms)/2)
+	currentDisjointed := []string{}
 	for _, term := range terms {
 		lexemes := Lexemes(term)
-		if len(lexemes) == 1 {
-			// This term will not have any distance operators emitted, as it is only one lexeme. So
-			// we do not need to emit multiple distance operators.
-			tsquery := lexemeSequence(lexemes, subStringMatches, " <-> ")
+
+		// Firstly, for query terms like ["golang/go", "http.StatusNotFound"] we've got a pretty specific
+		// thing we're looking for. Our terms are not disjointed, they're specific. We know this because
+		// the number of lexemes in each term is >1 (["golang", "/", "go"], ["http", ".", "StatusNotFound"])
+		//
+		// In this case, we would like to emit an expression to match any of these terms' lexemes in
+		// sequence ("golang/go" with no lexemes between, "http.StatusNotFound" with no lexemes
+		// between)
+		if len(lexemes) > 1 {
+			sequence := lexemeSequence(lexemes, subStringMatches, " <-> ")
+			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", sequence))
+
+			if len(currentDisjointed) > 0 {
+				contiguousDisjointed = append(contiguousDisjointed, currentDisjointed)
+				currentDisjointed = currentDisjointed[:0]
+			}
+			continue
+		}
+
+		// Secondly, there may be query terms like ["http", "StatusNotFound"] where the user has
+		// space-separated something (e.g. "http.StatusNotFound"), perhaps with desire for a more
+		// fuzzy match. A query "json Decode" for example should match the search key "json.Decoder.Decode"
+		// ideally.
+		//
+		// Note that the tsquery `foo <-> bar` matches foo _exactly_ followed by bar, and `foo <1> bar`
+		// matches _exactly_ foo followed by one lexeme and then bar. There is no way in Postgres today
+		// to specify a range of lexemes between, or a wildcard (unknown number of lexemes between). https://stackoverflow.com/a/59146601
+		//
+		// So, to support this fuzzier interpretation we can emit multiple expressions with multiple
+		// distance operators between the lexemes.:
+		//
+		// 	json <-> Decode ("json", "Decode")
+		// 	json <2> Decode ("json", any lexeme, "Decode")
+		// 	json <4> Decode ("json", any lexeme, any lexeme, "Decode")
+		// 	json <5> Decode ("json", any lexeme, any lexeme, any lexeme, "Decode")
+		//
+		// The choice of distances is as follows:
+		//
+		// "<->" (no distance) enables exact search terms like "http.StatusNotFound" to match lexemes ['http', '.', 'StatusNotFound']
+		// "<2>" enables search terms like "http StatusNotFound" (missing period) to match lexemes ['http', '.', 'StatusNotFound']
+		// "<4>" enables search terms like "Player Run" (missing "::") to match lexemes ['Player', ':', ':', 'Run]
+		// "<5>" enables search terms like "json Decode" (missing "Decoder" and periods) to match lexemes ['json', '.', 'Decoder', '.', 'Decode']
+		//
+		// Note that more distance != better, the greater the distance the worse relevance of
+		// results.
+		//
+		// Another problem when this happens is that these query terms are _too_ simple, and often
+		// match too many records. For example the search query "http StatusNotFound" could match
+		// every Go package with "http" in the name, "Router Error" could match every "Error" type,
+		// etc. So the first thing we do is collect such disjointed simple terms, and later emit the
+		// varying-distance expressions between the contiguous sets.
+		currentDisjointed = append(currentDisjointed, lexemes...)
+	}
+	if len(currentDisjointed) > 0 {
+		contiguousDisjointed = append(contiguousDisjointed, currentDisjointed)
+		currentDisjointed = currentDisjointed[:0]
+	}
+
+	distances := []string{" <-> ", " <2> ", " <4> ", " <5> "}
+	for _, disjointedTermLexemes := range contiguousDisjointed {
+		// If only one lexeme, it won't have multiple distances.
+		if len(disjointedTermLexemes) == 1 {
+			tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, "")
 			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
 		} else {
 			for _, distance := range distances {
-				tsquery := lexemeSequence(lexemes, subStringMatches, distance)
+				tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, distance)
 				expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
 			}
 		}
- 	}
+	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
 
