@@ -63,6 +63,8 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
         ],
     },
     diffStat: { added: 1000, changed: 2000, deleted: 1000, __typename: 'DiffStat' },
+    hasExternalServicesWithoutWebhooks: false,
+    externalServicesWithoutWebhooks: null,
 }
 
 export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {

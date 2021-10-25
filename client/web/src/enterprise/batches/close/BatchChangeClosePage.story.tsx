@@ -79,6 +79,8 @@ const batchChangeDefaults: BatchChangeFields = {
         totalCount: 0,
         nodes: [],
     },
+    hasExternalServicesWithoutWebhooks: false,
+    externalServicesWithoutWebhooks: null,
 }
 
 const queryChangesets: typeof _queryChangesets = () =>
