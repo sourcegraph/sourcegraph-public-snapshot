@@ -1,16 +1,25 @@
 import { Observable, throwError, of } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { map, mapTo, mergeMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
 
 import { requestGraphQL } from '../../../../backend/graphql'
-import { InsightsDashboardsResult } from '../../../../graphql-operations'
-import { InsightDashboard } from '../types'
+import {
+    CreateInsightsDashboardInput,
+    InsightsDashboardsResult,
+    UpdateInsightsDashboardInput,
+} from '../../../../graphql-operations'
+import { InsightDashboard, InsightsDashboardType } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { CodeInsightsBackend } from './code-insights-backend'
-import { RepositorySuggestionData } from './code-insights-backend-types'
+import {
+    DashboardCreateInput,
+    DashboardDeleteInput,
+    DashboardUpdateInput,
+    RepositorySuggestionData,
+} from './code-insights-backend-types'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -68,11 +77,82 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 }))
             )
         )
-    public getDashboardById = errorMockMethod('getDashboardById')
-    public findDashboardByName = errorMockMethod('findDashboardByName')
-    public createDashboard = errorMockMethod('createDashboard')
-    public deleteDashboard = errorMockMethod('deleteDashboard')
-    public updateDashboard = errorMockMethod('updateDashboard')
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
+        this.getDashboards().pipe(mergeMap(dashboards => dashboards.filter(dashboard => dashboard.id === dashboardId)))
+
+    public findDashboardByName = (name: string): Observable<InsightDashboard | null> =>
+        this.getDashboards().pipe(
+            mergeMap(dashboards => dashboards.filter(dashboard => 'title' in dashboard && dashboard.title === name))
+        )
+
+    // TODO: Update input to use CreateInsightsDashboardInput directly
+    public createDashboard = (input: DashboardCreateInput): Observable<void> => {
+        const mappedInput: CreateInsightsDashboardInput = {
+            title: input.name,
+            grants: {
+                global: input.visibility === InsightsDashboardType.Global,
+                users: input.visibility === InsightsDashboardType.Personal ? ['TODO: Get userID'] : [],
+                organizations: input.visibility === InsightsDashboardType.Organization ? ['TODO: Get orgID'] : [],
+            },
+        }
+
+        return requestGraphQL(
+            gql`
+                mutation CreateDashboard($input: CreateInsightsDashboardInput!) {
+                    createInsightsDashboard(input: $input) {
+                        dashboard {
+                            id
+                        }
+                    }
+                }
+            `,
+            { input: mappedInput }
+        ).pipe(mapTo(undefined))
+    }
+
+    // TODO: Update input to use ID directly
+    public deleteDashboard = (input: DashboardDeleteInput): Observable<void> => {
+        const mappedInput: { id: string } = { id: input.dashboardSettingKey }
+        return requestGraphQL(
+            gql`
+                mutation DeleteDashboard($id: ID!) {
+                    deleteInsightsDashboard(id: $id) {
+                        alwaysNil
+                    }
+                }
+            `,
+            mappedInput
+        ).pipe(mapTo(undefined))
+    }
+
+    // TODO: Update input to use UpdateInsightsDashboardInput directly
+    public updateDashboard = (input: DashboardUpdateInput): Observable<void> => {
+        const mappedInput: UpdateInsightsDashboardInput = {
+            title: input.nextDashboardInput.name,
+            grants: {
+                global: input.nextDashboardInput.visibility === InsightsDashboardType.Global,
+                users:
+                    input.nextDashboardInput.visibility === InsightsDashboardType.Personal ? ['TODO: Get userID'] : [],
+                organizations:
+                    input.nextDashboardInput.visibility === InsightsDashboardType.Organization
+                        ? ['TODO: Get orgID']
+                        : [],
+            },
+        }
+
+        return requestGraphQL(
+            gql`
+                mutation UpdateDashboard($id: ID!, $input: UpdateInsightsDashboardInput!) {
+                    updateInsightsDashboard(id: $id, input: $input) {
+                        dashboard {
+                            id
+                        }
+                    }
+                }
+            `,
+            mappedInput
+        ).pipe(mapTo(undefined))
+    }
 
     // Live preview fetchers
     public getSearchInsightContent = (): Promise<LineChartContent<any, string>> =>
