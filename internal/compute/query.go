@@ -15,6 +15,9 @@ type Query struct {
 }
 
 func (q Query) String() string {
+	if len(q.Parameters) == 0 {
+		return fmt.Sprintf("Command: `%s`", q.Command.String())
+	}
 	return fmt.Sprintf("Command: `%s`, Parameters: `%s`",
 		q.Command.String(),
 		query.Q(query.ToNodes(q.Parameters)).String())
