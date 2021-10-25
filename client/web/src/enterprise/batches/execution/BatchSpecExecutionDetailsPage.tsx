@@ -53,9 +53,8 @@ export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
 export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
     executionID,
     isLightTheme,
-    // now = () => new Date(),
+    now,
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
-    // expandStage,
 }) => {
     const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields | null | undefined>()
 
@@ -149,7 +148,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             <Container className="mb-3">
                 <BatchSpec originalInput={batchSpecExecution.originalInput} />
             </Container>
-            <div>
+            <div className="text-right">
                 {batchSpecExecution.startedAt && (
                     <Duration start={batchSpecExecution.startedAt} end={batchSpecExecution.finishedAt ?? undefined} />
                 )}
