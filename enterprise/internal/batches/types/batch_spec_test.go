@@ -133,6 +133,11 @@ func TestComputeBatchSpecState(t *testing.T) {
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
+		{
+			stats: BatchSpecStats{Workspaces: 0, Executions: 0},
+			spec:  createdFromRawSpec,
+			want:  BatchSpecStateCompleted,
+		},
 	}
 
 	for idx, tt := range tests {

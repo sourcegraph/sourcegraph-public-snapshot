@@ -124,6 +124,10 @@ func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState
 		return BatchSpecStateCompleted
 	}
 
+	if stats.Workspaces == 0 {
+		return BatchSpecStateCompleted
+	}
+
 	if stats.Executions == 0 {
 		return BatchSpecStatePending
 	}
