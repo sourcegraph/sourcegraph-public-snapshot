@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -327,7 +326,6 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	if s.FusionConfig.Enabled {
 		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
-		log15.Info("Fetching", "root", root)
 		cmd = exec.CommandContext(ctx, "p4-fusion",
 			"--path", depot+"...",
 			"--client", s.FusionConfig.Client,
