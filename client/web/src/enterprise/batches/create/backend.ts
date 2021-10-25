@@ -101,18 +101,18 @@ const fragment = gql`
     }
 `
 
-export function createBatchSpecFromRaw(spec: string): Observable<BatchSpecWorkspacesFields> {
+export function createBatchSpecFromRaw(spec: string, namespace: Scalars['ID']): Observable<BatchSpecWorkspacesFields> {
     return requestGraphQL<CreateBatchSpecFromRawResult, CreateBatchSpecFromRawVariables>(
         gql`
-            mutation CreateBatchSpecFromRaw($spec: String!) {
-                createBatchSpecFromRaw(batchSpec: $spec) {
+            mutation CreateBatchSpecFromRaw($spec: String!, $namespace: ID!) {
+                createBatchSpecFromRaw(batchSpec: $spec, namespace: $namespace) {
                     ...BatchSpecWorkspacesFields
                 }
             }
 
             ${fragment}
         `,
-        { spec }
+        { spec, namespace }
     ).pipe(
         map(dataOrThrowErrors),
         map(result => result.createBatchSpecFromRaw)

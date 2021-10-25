@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-yaml'
 import * as React from 'react'
@@ -9,6 +10,8 @@ import { MonacoEditor } from '@sourcegraph/web/src/components/MonacoEditor'
 
 import batchSpecSchemaJSON from '../../../../../../../schema/batch_spec.schema.json'
 import jsonSchemaMetaSchema from '../../../../../../../schema/json-schema-draft-07.schema.json'
+
+import styles from './MonacoBatchSpecEditor.module.scss'
 
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
@@ -74,7 +77,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         return (
             <MonacoEditor
-                className={this.props.className}
+                className={classNames(styles.editor, this.props.className)}
                 language="yaml"
                 height={this.props.height || 400}
                 isLightTheme={this.props.isLightTheme}

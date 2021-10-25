@@ -114,7 +114,6 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     const preview = useObservable(
         useMemo(
             () => {
-                const initialFetchRunning = false
                 let initialFetchCompleted = false
                 return codeUpdates.pipe(
                     startWith(code),
@@ -138,7 +137,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         if (preview !== undefined && !isErrorLike(preview)) {
                             specCreator = replaceBatchSpecInput(preview.id, code)
                         } else {
-                            specCreator = createBatchSpecFromRaw(code).pipe(
+                            specCreator = createBatchSpecFromRaw(code, selectedNamespace).pipe(
                                 tap(() => {
                                     initialFetchCompleted = true
                                 })
