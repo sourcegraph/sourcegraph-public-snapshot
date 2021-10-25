@@ -126,7 +126,7 @@ This is done by selecting the relevant checkboxes when creating the token:
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/github-token.png" alt="The GitHub token creation page, with the repo scope selected">
 
-> NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing error messages at a later time.
+> NOTE: `workflow` is technically only required if your batch changes modify files in the `.github` directory of a repository, but we recommend enabling it regardless to avoid confusing errors at a later time.
 
 ### GitLab
 
