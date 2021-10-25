@@ -143,7 +143,7 @@ func TestUnmarshalOrgID(t *testing.T) {
 		}
 	})
 
-	t.Run("Returns error for Invalid org ID", func(t *testing.T) {
+	t.Run("Returns error for invalid org ID", func(t *testing.T) {
 		const id = 1
 		namespaceOrgID := relay.MarshalID("User", id)
 		_, err := UnmarshalOrgID(namespaceOrgID)
