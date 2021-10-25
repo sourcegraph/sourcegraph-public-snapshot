@@ -119,7 +119,7 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 	}
 }
 
-func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]types.RepoName, error) {
+func createRepos(ctx context.Context, repoStore database.RepoStore) ([]types.RepoName, error) {
 	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
 	if err != nil {
 		return nil, err
