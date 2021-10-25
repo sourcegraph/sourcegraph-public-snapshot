@@ -9,6 +9,7 @@ import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 import { getDocumentNode } from '@sourcegraph/shared/src/graphql/apollo'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
+import { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 import { BatchChangeByNamespaceResult, BatchChangeFields } from '../../../graphql-operations'
 
@@ -130,6 +131,14 @@ const stories: Record<string, { url: string; supersededBatchSpec?: boolean }> = 
     'Superseded batch-spec': { url: '/users/alice/batch-changes/awesome-batch-change', supersededBatchSpec: true },
 }
 
+const authenticatedUser = {
+    url: '/users/alice',
+    displayName: 'Alice',
+    username: 'alice',
+    email: 'alice@email.test',
+    siteAdmin: false,
+}
+
 for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
     add(name, () => {
         const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededBatchSpec)
@@ -196,6 +205,7 @@ for (const [name, { url, supersededBatchSpec }] of Object.entries(stories)) {
                             queryAllChangesetIDs={queryAllChangesetIDs}
                             extensionsController={{} as any}
                             platformContext={{} as any}
+                            authenticatedUser={authenticatedUser as AuthenticatedUser}
                         />
                     </MockedTestProvider>
                 )}
@@ -237,6 +247,7 @@ add('Empty changesets', () => {
                         deleteBatchChange={deleteBatchChange}
                         extensionsController={{} as any}
                         platformContext={{} as any}
+                        authenticatedUser={authenticatedUser as AuthenticatedUser}
                     />
                 </MockedTestProvider>
             )}
