@@ -538,6 +538,14 @@ input LineChartOptionsInput {
     The chart title.
     """
     title: String
+    """
+    The default filter to apply for including repositories.
+    """
+    includeRepoRegex: String
+    """
+    The default filter to apply for excluding repositories.
+    """
+    excludeRepoRegex: String
 }
 
 """
@@ -626,9 +634,9 @@ input PieChartOptionsInput {
 }
 
 """
-Payload for an insight view after creation.
+Response wrapper object for insight view mutations.
 """
-type CreateInsightResult {
+type InsightViewPayload {
     """
     The resulting view.
     """
@@ -639,8 +647,13 @@ extend type Mutation {
     """
     Create a line chart backed by search insights.
     """
-    createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
+    createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
     #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+
+    """
+    Update a line chart backed by search insights.
+    """
+    updateLineChartSearchInsight(id: ID!, input: LineChartSearchInsightInput!): InsightViewPayload!
 }
 
 """

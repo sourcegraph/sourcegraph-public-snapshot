@@ -25,7 +25,8 @@ type InsightsResolver interface {
 	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 
-	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (CreateInsightResultResolver, error)
+	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	UpdateLineChartSearchInsight(ctx context.Context, args *UpdateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
@@ -253,6 +254,16 @@ type CreateLineChartSearchInsightInput struct {
 	Options    LineChartOptionsInput
 }
 
+type UpdateLineChartSearchInsightArgs struct {
+	Id    graphql.ID
+	Input UpdateLineChartSearchInsightInput
+}
+
+type UpdateLineChartSearchInsightInput struct {
+	DataSeries []LineChartSearchInsightDataSeriesInput
+	Options    LineChartOptionsInput
+}
+
 type LineChartSearchInsightDataSeriesInput struct {
 	Query           string
 	TimeScope       TimeScopeInput
@@ -279,9 +290,11 @@ type TimeIntervalStepInput struct {
 }
 
 type LineChartOptionsInput struct {
-	Title *string
+	Title            *string
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
 }
 
-type CreateInsightResultResolver interface {
+type InsightViewPayloadResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
 }
