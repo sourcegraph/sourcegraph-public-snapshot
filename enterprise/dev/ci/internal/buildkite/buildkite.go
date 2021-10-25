@@ -7,8 +7,6 @@
 package buildkite
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"strings"
@@ -81,6 +79,13 @@ type Step struct {
 	Agents                 map[string]string      `json:"agents,omitempty"`
 }
 
+// GenerateKey will automatically generate a key based on the
+// step label, and return it.
+func (s *Step) GenerateKey() string {
+	s.Key = strings.ReplaceAll(s.Label, " ", "_")
+	return s.Key
+}
+
 type RetryOptions struct {
 	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
 	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
@@ -121,10 +126,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	}
 
 	if step.Key == "" {
-		// If no key has been assigned, generate one.
-		// TODO(JH) this is collision prone
-		hash := md5.Sum([]byte(step.Label))
-		step.Key = string(hex.EncodeToString(hash[:]))
+		step.GenerateKey()
 	}
 
 	p.Steps = append(p.Steps, step)
@@ -287,15 +289,6 @@ func Agent(key, value string) StepOpt {
 
 func (p *Pipeline) AddWait() {
 	p.Steps = append(p.Steps, "wait")
-}
-
-// AddEnsure acts like AddWait, but subsequent steps are ran even if there was
-// a failure in the earlier steps.
-func (p *Pipeline) AddEnsure() {
-	p.Steps = append(p.Steps, map[string]interface{}{
-		"wait":                nil,
-		"continue_on_failure": true,
-	})
 }
 
 func Key(key string) StepOpt {
