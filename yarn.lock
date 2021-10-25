@@ -7917,10 +7917,10 @@ buffer@^5.1.0, buffer@^5.2.1, buffer@^5.5.0, buffer@^5.7.0:
     base64-js "^1.3.1"
     ieee754 "^1.1.13"
 
-bundlesize2@^0.0.30:
-  version "0.0.30"
-  resolved "https://registry.npmjs.org/bundlesize2/-/bundlesize2-0.0.30.tgz#a90de469eaaca9840bd20562a011f258f5c97cd9"
-  integrity sha512-dVNC4zGdaRMMf+KK4Xf+wsPIuuDYrgDtZaX5gb1jX2vRCSOgrh2ka0Y3BGmcwMC0vViBg38yoap9AUXLBItZFA==
+bundlesize2@^0.0.31:
+  version "0.0.31"
+  resolved "https://registry.npmjs.org/bundlesize2/-/bundlesize2-0.0.31.tgz#cef6830dbbe5360e27fce07593ec0f4e3e5355d9"
+  integrity sha512-MdzJW/u+n+0jH0Uz78g8WENHAW7QNUdLD/c8aLuPB/aCIwt52zMJ4fc2fBU2y1K2iMwE/9+JoR8ojsAF0r0Xjw==
   dependencies:
     bytes "^3.1.0"
     chalk "^4.0.0"

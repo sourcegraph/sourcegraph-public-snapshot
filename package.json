@@ -224,7 +224,7 @@
     "babel-plugin-lodash": "^3.3.4",
     "babel-preset-react-app": "^10.0.0",
     "browserslist": "^4.17.4",
-    "bundlesize2": "^0.0.30",
+    "bundlesize2": "^0.0.31",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "chalk": "^4.1.0",
