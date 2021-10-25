@@ -2,6 +2,7 @@ package gitlab
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"reflect"
 	"testing"
@@ -88,6 +89,7 @@ func TestClient_GetProject(t *testing.T) {
 // TestClient_GetProject_nonexistent tests the behavior of GetProject when called
 // on a project that does not exist.
 func TestClient_GetProject_nonexistent(t *testing.T) {
+	fmt.Println("triggering go tests")
 	mock := mockHTTPEmptyResponse{http.StatusNotFound}
 	c := newTestClient(t)
 	c.httpClient = &mock
