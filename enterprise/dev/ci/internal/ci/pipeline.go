@@ -202,20 +202,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 		}))
 
+		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
+		const minimumUpgradeableVersion = "3.32.0"
+
 		// Various integration tests
 		ops.Append(
 			backendIntegrationTests(c.candidateImageTag()),
-			codeIntelQA(c.candidateImageTag()))
-
-		// All operations before this point are required
-		ops.Append(wait)
-
-		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-		const minimumUpgradeableVersion = "3.32.0"
-		ops.Append(
+			codeIntelQA(c.candidateImageTag()),
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+
+		// All operations before this point are required
+		ops.Append(wait)
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -229,8 +228,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
 			ops.Append(
-				// wait for all steps to pass
-				wait,
+				wait, // wait for all steps to pass
 				triggerUpdaterPipeline)
 		}
 	}
