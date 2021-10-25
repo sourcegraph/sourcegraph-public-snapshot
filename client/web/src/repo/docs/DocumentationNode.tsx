@@ -171,7 +171,7 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                             TODO(apidocs): add support for indicating time the API docs were updated
                             <span className="ml-2">Last updated 2 days ago</span>
                         */}
-                                    <Badge status="experimental" className="text-uppercase ml-2" />
+                                    <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
                                 </div>
                                 <hr />
                                 {onlyPathID && depth === 0 && (
