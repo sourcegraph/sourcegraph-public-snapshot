@@ -196,7 +196,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 			case *compute.MatchOnly:
 				matchContext := compute.FromFileMatch(fm, c.MatchPattern.(*compute.Regexp).Value)
 				computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, repoResolver)))
-			case *compute.ReplaceInPlace:
+			case *compute.Replace:
 				result, err := compute.ReplaceInPlaceFromFileMatch(ctx, fm, c)
 				if err != nil {
 					return nil, err
