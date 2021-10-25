@@ -239,6 +239,13 @@ sg teammate time thorsten ball
 sg teammate handbook asdine
 ```
 
+### `sg reset <key>...` - Remove key value pair from secrets
+
+```bash
+# Remove key "foo" from secrets
+sg reset foo
+```
+
 ## Configuration
 
 `sg` is configured through the [`sg.config.yaml` file in the root of the `sourcegraph/sourcegraph` repository](https://github.com/sourcegraph/sourcegraph/blob/main/sg.config.yaml). Take a look at that file to see which commands are run in which environment, how these commands set setup, what environment variables they use, and more.
