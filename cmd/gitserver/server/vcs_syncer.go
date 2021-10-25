@@ -129,16 +129,22 @@ type FusionConfig struct {
 	Enabled bool
 	// Client: The client spec tht should be used
 	Client string
-	// LookAhead: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
+	// LookAhead: How many CLs in the future, at most, shall we keep downloaded by
+	// the time it is to commit them
 	LookAhead int
-	// NetworkThreads: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
+	// NetworkThreads: The number of threads in the threadpool for running network
+	// calls. Defaults to the number of logical CPUs.
 	NetworkThreads int
 	// PrintBatch:  The p4 print batch size
 	PrintBatch int
 	// Refresh: How many times a connection should be reused before it is refreshed
 	Refresh int
-	// Retries: How many times a command should be retried before the process exits in a failure
+	// Retries: How many times a command should be retried before the process exits
+	// in a failure
 	Retries int
+	// MaxChanges limits how many changes to fetch during the initial clone. A
+	// default of -1 means fetch all changes
+	MaxChanges int
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
@@ -295,7 +301,9 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--port", host,
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
+			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -336,7 +344,9 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--port", host,
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
+			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
