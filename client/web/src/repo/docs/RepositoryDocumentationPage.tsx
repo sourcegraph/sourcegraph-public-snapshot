@@ -213,7 +213,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                         <h1>
                             <BookOpenVariantIcon className="icon-inline mr-1" />
                             API docs
-                            <Badge status="experimental" className="text-uppercase ml-2" />
+                            <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
                         </h1>
                         <p>API documentation generated for all your code</p>
                         <Container>
