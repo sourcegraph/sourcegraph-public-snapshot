@@ -159,7 +159,7 @@ Sample uses:
 
 ## Materialized cache
 
-For tables that get very large, it may be too expensive to calculate common aggregates over large portions of the table online. Consider the following table `conditions`, which stores data sampled every second from a number of temperature sensors over time.
+For tables that get very large, it may be too expensive to calculate common aggregates over large portions of the table online using a basic `COUNT(...)` function. Consider the following table `conditions`, which stores data sampled every second from a number of temperature sensors over time.
 
 ```sql
 CREATE TABLE conditions (
