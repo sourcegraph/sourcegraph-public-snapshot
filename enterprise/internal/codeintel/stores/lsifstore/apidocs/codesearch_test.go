@@ -167,6 +167,55 @@ func TestTextSearchQuery(t *testing.T) {
 	}
 }
 
+func TestRepoSearchQuery(t *testing.T) {
+	testCases := []struct {
+		possibleRepos []string
+		want          autogold.Value
+	}{
+		{nil, autogold.Want("empty repos list", [2]interface{}{"false", []interface{}{}})},
+		{
+			[]string{"golang/go"},
+			autogold.Want("unqualified repo, single", [2]interface{}{
+				"(column @@ $1)",
+				[]interface{}{"golang <-> / <-> go"},
+			}),
+		}, {
+			[]string{"github.com/golang/go"},
+			autogold.Want("qualified repo, single", [2]interface{}{
+				"(column @@ $1)",
+				[]interface{}{"github <-> . <-> com <-> / <-> golang <-> / <-> go"},
+			}),
+		}, {
+			[]string{"golang/go", "net/http"},
+			autogold.Want("unqualified repo and not a repo, should use OR", [2]interface{}{
+				"(column @@ $1 OR column @@ $2)",
+				[]interface{}{"golang <-> / <-> go", "net <-> / <-> http"},
+			}),
+		}, {
+			[]string{"golang/go", "sourcegraph/sourcegraph"},
+			autogold.Want("unqualified repo, multiple, should use OR", [2]interface{}{
+				"(column @@ $1 OR column @@ $2)",
+				[]interface{}{"golang <-> / <-> go", "sourcegraph <-> / <-> sourcegraph"},
+			}),
+		}, {
+			[]string{"github.com/golang/go", "sourcegraph/sourcegraph"},
+			autogold.Want("qualified and unqualified, should use OR", [2]interface{}{
+				"(column @@ $1 OR column @@ $2)", []interface{}{
+					"github <-> . <-> com <-> / <-> golang <-> / <-> go",
+					"sourcegraph <-> / <-> sourcegraph"},
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			q := RepoSearchQuery("column", tc.possibleRepos)
+			query := q.Query(sqlf.PostgresBindVar)
+			got := [2]interface{}{query, q.Args()}
+			tc.want.Equal(t, got)
+		})
+	}
+}
+
 func TestQuery(t *testing.T) {
 	testCases := []struct {
 		input string
