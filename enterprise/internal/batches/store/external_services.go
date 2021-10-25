@@ -87,7 +87,8 @@ func (s *Store) listExternalServicesForBatchChange(ctx context.Context, opts *Li
 
 	// Now we'll go retrieve the real ExternalService objects.
 	es, err := database.ExternalServicesWith(s.Store).List(ctx, database.ExternalServicesListOptions{
-		IDs: ids,
+		IDs:              ids,
+		OrderByDirection: "ASC",
 	})
 	if err != nil {
 		return nil, 0, errors.Wrap(err, "ListExternalServices querying external services")
