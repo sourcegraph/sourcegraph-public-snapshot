@@ -1784,12 +1784,17 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
 func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
-	logFile, err := os.CreateTemp("", "")
-	if err != nil {
-		log15.Warn("failed to create temporary clone log file", "error", err, "repo", repo)
-	} else {
-		log15.Info("logging clone output", "file", logFile.Name(), "repo", repo)
-		defer logFile.Close()
+	var logFile *os.File
+	var err error
+
+	if conf.Get().CloneProgressLog {
+		logFile, err = os.CreateTemp("", "")
+		if err != nil {
+			log15.Warn("failed to create temporary clone log file", "error", err, "repo", repo)
+		} else {
+			log15.Info("logging clone output", "file", logFile.Name(), "repo", repo)
+			defer logFile.Close()
+		}
 	}
 
 	scan := bufio.NewScanner(pr)
@@ -1807,6 +1812,7 @@ func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader
 		redactedProgress := redactor.redact(progress)
 
 		lock.SetStatus(redactedProgress)
+
 		if logFile != nil {
 			// Failing to write here is non-fatal and we don't want to spam our logs if there
 			// are issues
