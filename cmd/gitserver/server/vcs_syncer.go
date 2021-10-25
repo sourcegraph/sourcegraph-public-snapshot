@@ -346,7 +346,9 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--port", host,
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
-			"--refresh", strconv.Itoa(s.FusionConfig.Refresh))
+			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
+			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}
