@@ -30,7 +30,7 @@ func (q Query) ToSearchQuery() (string, error) {
 		searchPattern = c.MatchPattern.String()
 	case *Replace:
 		searchPattern = c.MatchPattern.String()
-	case *ReplaceWithSeparator:
+	case *Output:
 		searchPattern = c.MatchPattern.String()
 	default:
 		return "", errors.Errorf("unsupported query conversion for compute command %T", c)
@@ -50,12 +50,12 @@ type Command interface {
 var (
 	_ Command = (*MatchOnly)(nil)
 	_ Command = (*Replace)(nil)
-	_ Command = (*ReplaceWithSeparator)(nil)
+	_ Command = (*Output)(nil)
 )
 
-func (MatchOnly) command()            {}
-func (Replace) command()              {}
-func (ReplaceWithSeparator) command() {}
+func (MatchOnly) command() {}
+func (Replace) command()   {}
+func (Output) command()    {}
 
 type MatchOnly struct {
 	MatchPattern MatchPattern
@@ -66,10 +66,10 @@ type Replace struct {
 	ReplacePattern string
 }
 
-type ReplaceWithSeparator struct {
-	MatchPattern   MatchPattern
-	ReplacePattern string
-	Separator      string
+type Output struct {
+	MatchPattern  MatchPattern
+	OutputPattern string
+	Separator     string
 }
 
 func (c *MatchOnly) String() string {
@@ -80,8 +80,8 @@ func (c *Replace) String() string {
 	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
 }
 
-func (c *ReplaceWithSeparator) String() string {
-	return fmt.Sprintf("Replace with separator: (%s) -> (%s) separator: %s", c.MatchPattern.String(), c.ReplacePattern, c.Separator)
+func (c *Output) String() string {
+	return fmt.Sprintf("Output with separator: (%s) -> (%s) separator: %s", c.MatchPattern.String(), c.OutputPattern, c.Separator)
 }
 
 type MatchPattern interface {
