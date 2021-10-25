@@ -8,9 +8,10 @@
         flex: 1 1;
         min-width: 24rem;
         margin-right: 1.5rem;
-        .user-avatar {
-            width: 2.75rem;
-            height: 2.75rem;
+        // Added this class temporarily to use with css modules of migrated UserAvatar component, would convert this file to css module in next issues
+        &--user-avatar {
+            width: 2.75rem !important;
+            height: 2.75rem !important;
             font-size: 1.5rem;
         }
     }

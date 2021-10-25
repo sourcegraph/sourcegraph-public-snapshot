@@ -131,7 +131,7 @@ exports[`UserNavItem simple 1`] = `
                             }
                           >
                             <div
-                              className="user-avatar icon-inline avatar"
+                              className="userAvatar icon-inline avatar"
                               id="target-user-avatar"
                             >
                               ad
