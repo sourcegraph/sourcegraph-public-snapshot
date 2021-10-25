@@ -187,6 +187,15 @@ type Query struct {
 	// MainTerms are the terms that should be matched against the search key and label.
 	MainTerms string
 
+	// PossibleRepos are extracted query terms that are possibly repositories. These are any query
+	// terms separated with a slash. If metadata terms were separated, this will only contain
+	// possible repos from the metadata terms. i.e.:
+	//
+	// 	golang/go: net/http
+	//
+	// Will have PossibleRepos = ["golang/go"], not ["golang/go", "net/http"].
+	PossibleRepos []string
+
 	// Whether or not lexemes should match substrings, e.g. if "gith.com/sourcegraph/source" should
 	// be matched as "*gith*.*com*/*sourcegraph*/*source*" (* being a wildcard)
 	SubStringMatches bool
@@ -217,6 +226,13 @@ func ParseQuery(query string) Query {
 	if i := strings.Index(query, ":"); i != -1 {
 		q.MetaTerms = strings.TrimSpace(query[:i])
 		q.MainTerms = strings.TrimSpace(query[i+len(":"):])
+	}
+
+	// Identify possible repos in the query terms.
+	for _, term := range strings.Fields(q.MetaTerms) {
+		if strings.Contains(term, "/") {
+			q.PossibleRepos = append(q.PossibleRepos, term)
+		}
 	}
 	return q
 }

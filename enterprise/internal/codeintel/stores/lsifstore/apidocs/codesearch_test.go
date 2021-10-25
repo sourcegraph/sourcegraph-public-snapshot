@@ -179,6 +179,9 @@ func TestQuery(t *testing.T) {
 		})},
 		{"github.com/gorilla/mux", autogold.Want("repository name", Query{
 			MetaTerms: "github.com/gorilla/mux", MainTerms: "github.com/gorilla/mux",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 		{"github.com gorilla mux", autogold.Want("repository name as separate terms", Query{
@@ -186,18 +189,34 @@ func TestQuery(t *testing.T) {
 			SubStringMatches: true,
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", autogold.Want("complex query", Query{
-			MetaTerms:        "public struct github.com/gorilla/mux mux.Router",
-			MainTerms:        "public struct github.com/gorilla/mux mux.Router",
+			MetaTerms: "public struct github.com/gorilla/mux mux.Router",
+			MainTerms: "public struct github.com/gorilla/mux mux.Router",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 		{"public struct github.com/gorilla/mux: mux.Router", autogold.Want("metadata separated", Query{
-			MetaTerms:        "public struct github.com/gorilla/mux",
-			MainTerms:        "mux.Router",
+			MetaTerms: "public struct github.com/gorilla/mux",
+			MainTerms: "mux.Router",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
+			SubStringMatches: true,
+		})},
+		{"package gorilla/mux: net/http", autogold.Want("metadata separated, no repos on right side", Query{
+			MetaTerms: "package gorilla/mux", MainTerms: "net/http",
+			PossibleRepos: []string{
+				"gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 		{"public struct github.com/gorilla/mux: mux::Router", autogold.Want("metadata separated, colon later", Query{
-			MetaTerms:        "public struct github.com/gorilla/mux",
-			MainTerms:        "mux::Router",
+			MetaTerms: "public struct github.com/gorilla/mux",
+			MainTerms: "mux::Router",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 	}
