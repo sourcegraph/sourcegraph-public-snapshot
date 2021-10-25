@@ -103,7 +103,7 @@ func TestTextSearchQuery(t *testing.T) {
 		want             autogold.Value
 	}{
 		{"", true, autogold.Want("empty string", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"",
 				"",
@@ -112,7 +112,7 @@ func TestTextSearchQuery(t *testing.T) {
 			},
 		})},
 		{"mux Router", true, autogold.Want("basic", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"mux:* <-> Router:*",
 				"mux:* <2> Router:*",
@@ -121,7 +121,7 @@ func TestTextSearchQuery(t *testing.T) {
 			},
 		})},
 		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
 				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
@@ -130,7 +130,7 @@ func TestTextSearchQuery(t *testing.T) {
 			},
 		})},
 		{"github.com gorilla mux", true, autogold.Want("separate query terms are matched even if there is distance between using <N>", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"github:* <-> .:* <-> com:* <-> gorilla:* <-> mux:*",
 				"github:* <-> .:* <-> com:* <2> gorilla:* <2> mux:*",
@@ -139,7 +139,7 @@ func TestTextSearchQuery(t *testing.T) {
 			},
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"public:* <-> struct:* <-> github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:* <-> mux:* <-> .:* <-> Router:*",
 				"public:* <2> struct:* <2> github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:* <2> mux:* <-> .:* <-> Router:*",
@@ -148,7 +148,7 @@ func TestTextSearchQuery(t *testing.T) {
 			},
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"public <-> struct <-> github <-> . <-> com <-> / <-> gorilla <-> / <-> mux <-> mux <-> . <-> Router",
 				"public <2> struct <2> github <-> . <-> com <-> / <-> gorilla <-> / <-> mux <2> mux <-> . <-> Router",
