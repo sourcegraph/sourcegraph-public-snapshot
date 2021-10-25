@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -346,6 +347,60 @@ func TestCoordinator_Execute(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestCoordinator_Execute_ImportChangesets(t *testing.T) {
+
+	logManager := mock.LogNoOpManager{}
+	ui := newDummyTaskExecutionUI()
+	cache := newInMemoryExecutionCache()
+
+	repoName := "github.com/testing/test-repo"
+	repoID := "graphql-id:999"
+
+	repoNameResolver := func(ctx context.Context, name string) (*graphql.Repository, error) {
+		if name != repoName {
+			t.Fatalf("wrong repo name: %s", name)
+		}
+		return &graphql.Repository{ID: repoID, Name: repoName}, nil
+	}
+
+	opts := NewCoordinatorOpts{Features: featuresAllEnabled(), ResolveRepoName: repoNameResolver}
+
+	batchSpec := &batcheslib.BatchSpec{
+		Name:              "my-batch-change",
+		Description:       "the description",
+		ChangesetTemplate: testChangesetTemplate,
+		ImportChangesets: []batcheslib.ImportChangeset{
+			{Repository: repoName, ExternalIDs: []interface{}{500, 600, 700}},
+		},
+	}
+
+	t.Run("importChangesets:true", func(t *testing.T) {
+		opts.ImportChangesets = true
+		coord := Coordinator{cache: cache, exec: &dummyExecutor{}, logManager: logManager, opts: opts}
+
+		specs, _, err := coord.Execute(context.Background(), []*Task{}, batchSpec, ui)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if len(specs) != len(batchSpec.ImportChangesets[0].ExternalIDs) {
+			t.Fatalf("wrong number of imported changesets: %d", len(specs))
+		}
+	})
+
+	t.Run("importChangesets:false", func(t *testing.T) {
+		opts.ImportChangesets = false
+		coord := Coordinator{cache: cache, exec: &dummyExecutor{}, logManager: logManager, opts: opts}
+
+		specs, _, err := coord.Execute(context.Background(), []*Task{}, batchSpec, ui)
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if len(specs) != 0 {
+			t.Fatalf("wrong number of imported changesets: %d", len(specs))
+		}
+	})
 }
 
 func TestCoordinator_Execute_StepCaching(t *testing.T) {

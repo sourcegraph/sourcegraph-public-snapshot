@@ -157,6 +157,8 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 		Timeout:       opts.flags.timeout,
 		KeepLogs:      opts.flags.keepLogs,
 		TempDir:       opts.flags.tempDir,
+		// Do not import changesets in `src batch exec`
+		ImportChangesets: false,
 	})
 
 	opts.ui.CheckingCache()

@@ -15,6 +15,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 
 	"github.com/sourcegraph/src-cli/internal/api"
@@ -292,15 +293,16 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 
 	// EXECUTION OF TASKS
 	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
-		Creator:       workspaceCreator,
-		CacheDir:      opts.flags.cacheDir,
-		ClearCache:    opts.flags.clearCache,
-		SkipErrors:    opts.flags.skipErrors,
-		CleanArchives: opts.flags.cleanArchives,
-		Parallelism:   opts.flags.parallelism,
-		Timeout:       opts.flags.timeout,
-		KeepLogs:      opts.flags.keepLogs,
-		TempDir:       opts.flags.tempDir,
+		Creator:          workspaceCreator,
+		CacheDir:         opts.flags.cacheDir,
+		ClearCache:       opts.flags.clearCache,
+		SkipErrors:       opts.flags.skipErrors,
+		CleanArchives:    opts.flags.cleanArchives,
+		Parallelism:      opts.flags.parallelism,
+		Timeout:          opts.flags.timeout,
+		KeepLogs:         opts.flags.keepLogs,
+		TempDir:          opts.flags.tempDir,
+		ImportChangesets: true,
 	})
 
 	opts.ui.CheckingCache()

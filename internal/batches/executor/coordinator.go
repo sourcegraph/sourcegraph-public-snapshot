@@ -2,6 +2,7 @@ package executor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -54,6 +55,10 @@ type NewCoordinatorOpts struct {
 
 	// Used by createChangesetSpecs
 	Features batches.FeatureFlags
+
+	// When using `src batch exec` in SSBC we don't want to evaluate the
+	// `importChangesets`.
+	ImportChangesets bool
 
 	CleanArchives bool
 	Parallelism   int
@@ -246,28 +251,31 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batchesl
 	}
 
 	// Add external changeset specs.
-	for _, ic := range spec.ImportChangesets {
-		repo, err := c.opts.ResolveRepoName(ctx, ic.Repository)
-		if err != nil {
-			wrapped := errors.Wrapf(err, "resolving repository name %q", ic.Repository)
-			if c.opts.SkipErrors {
-				errs = multierror.Append(errs, wrapped)
-				continue
-			} else {
-				return nil, nil, wrapped
-			}
-		}
-
-		for _, id := range ic.ExternalIDs {
-			sid, err := batcheslib.ParseChangesetSpecExternalID(id)
+	if c.opts.ImportChangesets {
+		for _, ic := range spec.ImportChangesets {
+			fmt.Println("Horse!")
+			repo, err := c.opts.ResolveRepoName(ctx, ic.Repository)
 			if err != nil {
-				return nil, nil, err
+				wrapped := errors.Wrapf(err, "resolving repository name %q", ic.Repository)
+				if c.opts.SkipErrors {
+					errs = multierror.Append(errs, wrapped)
+					continue
+				} else {
+					return nil, nil, wrapped
+				}
 			}
 
-			specs = append(specs, &batcheslib.ChangesetSpec{
-				BaseRepository: repo.ID,
-				ExternalID:     sid,
-			})
+			for _, id := range ic.ExternalIDs {
+				sid, err := batcheslib.ParseChangesetSpecExternalID(id)
+				if err != nil {
+					return nil, nil, err
+				}
+
+				specs = append(specs, &batcheslib.ChangesetSpec{
+					BaseRepository: repo.ID,
+					ExternalID:     sid,
+				})
+			}
 		}
 	}
 
