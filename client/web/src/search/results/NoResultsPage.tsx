@@ -33,7 +33,6 @@ const SearchContext: React.FunctionComponent<{}> = () => (
                 global
             </code>
         </div>
-        <div className={searchBoxStyle.searchBoxSeparator} />
     </div>
 )
 
@@ -63,7 +62,14 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                         'flex-shrink-past-contents'
                     )}
                 >
-                    {showSearchContext && <SearchContext />}
+                    {showSearchContext && (
+                        <>
+                            <SearchContext />
+                            <div
+                                className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchBoxSeparator)}
+                            />
+                        </>
+                    )}
                     <div
                         className={classNames(
                             searchBoxStyle.searchBoxFocusContainer,

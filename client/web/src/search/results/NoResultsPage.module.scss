@@ -74,12 +74,19 @@
 }
 
 .searchContext {
-    display: flex;
-    align-items: center;
-
     @media (--xs-breakpoint-down) {
         margin-bottom: 0.5rem;
     }
+}
+
+/* Unlike the real search input, the fake search input wraps the query on white
+ * space, so the box can be multiple lines heigh. This changes the input to
+ * cover the whole height.
+ */
+.fakeSearchBoxSeparator {
+    align-self: stretch;
+    height: auto;
+    margin: 0.125rem 0;
 }
 
 .searchContext > :global(.btn) {
@@ -106,14 +113,10 @@
 }
 
 .fakeSearchInput {
-    white-space: nowrap;
-    overflow-x: auto;
     margin-right: 1rem;
 
     @media (--xs-breakpoint-down) {
         background-color: var(--input-bg);
-        white-space: inherit;
-        overflow-x: inherit;
     }
 }
 
