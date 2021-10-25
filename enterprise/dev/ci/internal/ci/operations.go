@@ -269,7 +269,7 @@ func addGoTests(pipeline *bk.Pipeline) {
 		// Temporary fix until we fix the code-intel flake
 		bk.AutomaticRetry(3),
 		bk.Cmd("./dev/ci/go-test.sh"),
-		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+		bk.Cmd("dev/ci/codecov.sh -c -K -F go"))
 }
 
 // Builds the OSS and Enterprise Go commands.
