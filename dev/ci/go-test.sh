@@ -22,8 +22,8 @@ echo "--- :arrow_right: Running CodeInsightsDB"
 echo "--- :go: Getting richgo"
 (
   set -x
-  wget https://github.com/kyoh86/richgo/releases/download/v0.3.9/richgo_0.3.9_linux_amd64.tar.gz
-  tar zxf richgo_0.3.9_linux_amd64.tar.gz
+  asdf plugin add richgo
+  asdf install richgo 0.3.9
 )
 
 # We have multiple go.mod files and go list doesn't recurse into them.
@@ -35,7 +35,7 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
   go mod download
 
   echo "--- :go: $d go test"
-  ./richgo_0.3.9_linux_amd64/richgo test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race ./...
+  richgo test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race ./...
 
   popd >/dev/null
 done
