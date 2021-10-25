@@ -60,6 +60,7 @@ var (
 			teammateCommand,
 			ciCommand,
 			installCommand,
+			versionCommand,
 		},
 	}
 )
