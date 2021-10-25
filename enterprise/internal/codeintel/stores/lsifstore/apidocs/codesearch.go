@@ -102,7 +102,7 @@ func TextSearchVector(s string) string {
 
 // TextSearchRank returns an SQL expression of the form:
 //
-// 	ts_rank_cd(...) + ts_rank_cd(...)...
+// 	(ts_rank_cd(...) + ts_rank_cd(...)...)
 //
 // Which determines the effective rank of the query string relative to the given tsvector column name.
 //
@@ -141,7 +141,7 @@ func lexemeSequence(s string, subStringMatches bool) string {
 
 // TextSearchQuery returns an SQL expression of e.g. the form:
 //
-// 	column_name @@ ... OR column_name @@ ... OR column_name @@ ...
+// 	(column_name @@ ... OR column_name @@ ... OR column_name @@ ...)
 //
 // Which can be used in a WHERE clause to match the given query string against the provided tsvector column
 // name.
@@ -175,7 +175,7 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	for _, distance := range distances {
 		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", strings.Join(termLexemeSequences, distance)))
 	}
-	return sqlf.Join(expressions, "OR")
+	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
 
 // Query describes an API docs search query.
