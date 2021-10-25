@@ -1335,6 +1335,11 @@ type Query {
     viewerFeatureFlags: [EvaluatedFeatureFlag!]!
 
     """
+    Retrieve the value of a feature flag for the organization
+    """
+    organizationFeatureFlagValue(orgID: ID!, flagName: String!): Boolean!
+
+    """
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!

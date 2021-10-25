@@ -3,7 +3,7 @@ import { addDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { queryBatchSpecs as _queryBatchSpecs } from './backend'
 import { BatchSpecsPage } from './BatchSpecsPage'
@@ -42,13 +42,9 @@ const queryNoBatchSpecs: typeof _queryBatchSpecs = () =>
     })
 
 add('List of specs', () => (
-    <EnterpriseWebStory>
-        {props => <BatchSpecsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}
-    </EnterpriseWebStory>
+    <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryBatchSpecs} now={NOW} />}</WebStory>
 ))
 
 add('No specs', () => (
-    <EnterpriseWebStory>
-        {props => <BatchSpecsPage {...props} queryBatchSpecs={queryNoBatchSpecs} now={NOW} />}
-    </EnterpriseWebStory>
+    <WebStory>{props => <BatchSpecsPage {...props} queryBatchSpecs={queryNoBatchSpecs} now={NOW} />}</WebStory>
 ))

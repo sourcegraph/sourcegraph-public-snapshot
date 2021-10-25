@@ -131,6 +131,15 @@ type HTTPSConfig struct {
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
 	Since time.Duration `json:"since"` // debounce interval for queries, used only with request-repo-update
+
+	// MigrateFrom is the name of the gitserver instance that is the current owner of the
+	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from the
+	// current gitserver instance to the new home of the repo based on the rendezvous hashing
+	// scheme.
+	//
+	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
+	// and it should be removed.
+	MigrateFrom string `json:"migrateFrom"`
 }
 
 // RepoUpdateResponse returns meta information of the repo enqueued for

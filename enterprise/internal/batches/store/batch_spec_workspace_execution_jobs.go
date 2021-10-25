@@ -10,19 +10,11 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
-
-var batchSpecWorkspaceExecutionJobInsertColumns = []string{
-	"batch_spec_workspace_id",
-
-	"created_at",
-	"updated_at",
-}
 
 var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
@@ -41,9 +33,19 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.worker_hostname",
 	"batch_spec_workspace_execution_jobs.cancel",
 
+	"exec.place_in_queue",
+
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
 }
+
+const executionPlaceInQueueFragment = `
+SELECT
+	exec.id,
+	ROW_NUMBER() OVER (ORDER BY COALESCE(exec.process_after, exec.created_at), exec.id) as place_in_queue
+FROM batch_spec_workspace_execution_jobs exec
+WHERE exec.state = 'queued'
+`
 
 const createBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:CreateBatchSpecWorkspaceExecutionJobs
@@ -60,18 +62,6 @@ AND
 	%s
 `
 
-// CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(batchSpecID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
-	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID, cond)
-	return s.Exec(ctx, q)
-}
-
 const executableWorkspaceJobsConditionFmtstr = `
 (
 	(batch_specs.allow_ignored OR NOT batch_spec_workspaces.ignored)
@@ -81,49 +71,16 @@ const executableWorkspaceJobsConditionFmtstr = `
 	jsonb_array_length(batch_spec_workspaces.steps) > 0
 )`
 
-// CreateBatchSpecWorkspaceExecutionJob creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJob(ctx context.Context, jobs ...*btypes.BatchSpecWorkspaceExecutionJob) (err error) {
-	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("count", len(jobs)),
+// CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	inserter := func(inserter *batch.Inserter) error {
-		for _, job := range jobs {
-			if job.CreatedAt.IsZero() {
-				job.CreatedAt = s.now()
-			}
-
-			if job.UpdatedAt.IsZero() {
-				job.UpdatedAt = job.CreatedAt
-			}
-
-			if err := inserter.Insert(
-				ctx,
-				job.BatchSpecWorkspaceID,
-				job.CreatedAt,
-				job.UpdatedAt,
-			); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-	i := -1
-	return batch.WithInserterWithReturn(
-		ctx,
-		s.Handle().DB(),
-		"batch_spec_workspace_execution_jobs",
-		batchSpecWorkspaceExecutionJobInsertColumns,
-		"",
-		BatchSpecWorkspaceExecutionJobColums,
-		func(rows *sql.Rows) error {
-			i++
-			return scanBatchSpecWorkspaceExecutionJob(jobs[i], rows)
-		},
-		inserter,
-	)
+	cond := sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr)
+	q := sqlf.Sprintf(createBatchSpecWorkspaceExecutionJobsQueryFmtstr, batchSpecID, cond)
+	return s.Exec(ctx, q)
 }
 
 // GetBatchSpecWorkspaceExecutionJobOpts captures the query options needed for getting a BatchSpecWorkspaceExecutionJob
@@ -141,8 +98,8 @@ func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetB
 
 	q := getBatchSpecWorkspaceExecutionJobQuery(&opts)
 	var c btypes.BatchSpecWorkspaceExecutionJob
-	err = s.query(ctx, q, func(sc scanner) (err error) {
-		return scanBatchSpecWorkspaceExecutionJob(&c, sc)
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
+		return ScanBatchSpecWorkspaceExecutionJob(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -157,17 +114,24 @@ func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetB
 
 var getBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:GetBatchSpecWorkspaceExecutionJob
-SELECT %s FROM batch_spec_workspace_execution_jobs WHERE %s LIMIT 1
+SELECT
+	%s
+FROM
+	batch_spec_workspace_execution_jobs
+LEFT JOIN (` + executionPlaceInQueueFragment + `) AS exec ON batch_spec_workspace_execution_jobs.id = exec.id
+WHERE
+	%s
+LIMIT 1
 `
 
 func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecutionJobOpts) *sqlf.Query {
 	var preds []*sqlf.Query
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %s", opts.ID))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = %s", opts.ID))
 	}
 
 	if opts.BatchSpecWorkspaceID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_id = %s", opts.BatchSpecWorkspaceID))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = %s", opts.BatchSpecWorkspaceID))
 	}
 
 	if len(preds) == 0 {
@@ -184,11 +148,13 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
 // listing batch spec workspace execution jobs.
 type ListBatchSpecWorkspaceExecutionJobsOpts struct {
-	Cancel                *bool
-	State                 btypes.BatchSpecWorkspaceExecutionJobState
-	WorkerHostname        string
-	BatchSpecWorkspaceIDs []int64
-	IDs                   []int64
+	Cancel                 *bool
+	State                  btypes.BatchSpecWorkspaceExecutionJobState
+	WorkerHostname         string
+	BatchSpecWorkspaceIDs  []int64
+	IDs                    []int64
+	OnlyWithFailureMessage bool
+	BatchSpecID            int64
 }
 
 // ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
@@ -199,9 +165,9 @@ func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts Li
 	q := listBatchSpecWorkspaceExecutionJobsQuery(opts)
 
 	cs = make([]*btypes.BatchSpecWorkspaceExecutionJob, 0)
-	err = s.query(ctx, q, func(sc scanner) error {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
 		var c btypes.BatchSpecWorkspaceExecutionJob
-		if err := scanBatchSpecWorkspaceExecutionJob(&c, sc); err != nil {
+		if err := ScanBatchSpecWorkspaceExecutionJob(&c, sc); err != nil {
 			return err
 		}
 		cs = append(cs, &c)
@@ -212,14 +178,20 @@ func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts Li
 }
 
 var listBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListBatchSpecWorkspaceExecutionJobs
-SELECT %s FROM batch_spec_workspace_execution_jobs
-WHERE %s
-ORDER BY id ASC
+SELECT
+	%s
+FROM
+	batch_spec_workspace_execution_jobs
+LEFT JOIN (` + executionPlaceInQueueFragment + `) as exec ON batch_spec_workspace_execution_jobs.id = exec.id
+%s       -- joins
+WHERE
+	%s   -- preds
+ORDER BY batch_spec_workspace_execution_jobs.id ASC
 `
 
 func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
+	var joins []*sqlf.Query
 
 	if opts.State != "" {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
@@ -241,6 +213,16 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
 
+	if opts.OnlyWithFailureMessage {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state IN ('errored', 'failed')"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.failure_message IS NOT NULL"))
+	}
+
+	if opts.BatchSpecID != 0 {
+		joins = append(joins, sqlf.Sprintf("JOIN batch_spec_workspaces ON batch_spec_workspace_execution_jobs.batch_spec_workspace_id = batch_spec_workspaces.id"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
@@ -248,6 +230,7 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 	return sqlf.Sprintf(
 		listBatchSpecWorkspaceExecutionJobsQueryFmtstr,
 		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -275,9 +258,9 @@ func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 	q := s.cancelBatchSpecWorkspaceExecutionJobQuery(opts)
 
 	jobs = make([]*btypes.BatchSpecWorkspaceExecutionJob, 0)
-	err = s.query(ctx, q, func(sc scanner) (err error) {
+	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
 		var j btypes.BatchSpecWorkspaceExecutionJob
-		if err := scanBatchSpecWorkspaceExecutionJob(&j, sc); err != nil {
+		if err := ScanBatchSpecWorkspaceExecutionJob(&j, sc); err != nil {
 			return err
 		}
 		jobs = append(jobs, &j)
@@ -305,19 +288,25 @@ WITH candidates AS (
 		batch_spec_workspace_execution_jobs.state IN (%s, %s)
 	ORDER BY id
 	FOR UPDATE
+),
+updated_candidates AS (
+	UPDATE
+		batch_spec_workspace_execution_jobs
+	SET
+		cancel = TRUE,
+		-- If the execution is still queued, we directly abort, otherwise we keep the
+		-- state, so the worker can to teardown and, at some point, mark it failed itself.
+		state = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.state ELSE %s END,
+		finished_at = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.finished_at ELSE %s END,
+		updated_at = %s
+	WHERE
+		id IN (SELECT id FROM candidates)
+	RETURNING *
 )
-UPDATE
-	batch_spec_workspace_execution_jobs
-SET
-	cancel = TRUE,
-	-- If the execution is still queued, we directly abort, otherwise we keep the
-	-- state, so the worker can to teardown and, at some point, mark it failed itself.
-	state = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.state ELSE %s END,
-	finished_at = CASE WHEN batch_spec_workspace_execution_jobs.state = %s THEN batch_spec_workspace_execution_jobs.finished_at ELSE %s END,
-	updated_at = %s
-WHERE
-	id IN (SELECT id FROM candidates)
-RETURNING %s
+SELECT
+	%s
+FROM updated_candidates batch_spec_workspace_execution_jobs
+LEFT JOIN (` + executionPlaceInQueueFragment + `) as exec ON batch_spec_workspace_execution_jobs.id = exec.id
 `
 
 func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
@@ -369,7 +358,7 @@ WHERE
 	id = %s
 `
 
-func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s scanner) error {
+func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
 
@@ -387,6 +376,7 @@ func scanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJo
 		pq.Array(&executionLogs),
 		&wj.WorkerHostname,
 		&wj.Cancel,
+		&dbutil.NullInt64{N: &wj.PlaceInQueue},
 		&wj.CreatedAt,
 		&wj.UpdatedAt,
 	); err != nil {
@@ -419,9 +409,9 @@ func scanBatchSpecWorkspaceExecutionJobs(rows *sql.Rows, queryErr error) ([]*bty
 
 	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
 
-	return jobs, scanAll(rows, func(sc scanner) (err error) {
+	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
 		var j btypes.BatchSpecWorkspaceExecutionJob
-		if err = scanBatchSpecWorkspaceExecutionJob(&j, sc); err != nil {
+		if err = ScanBatchSpecWorkspaceExecutionJob(&j, sc); err != nil {
 			return err
 		}
 		jobs = append(jobs, &j)

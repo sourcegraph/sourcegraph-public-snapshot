@@ -124,6 +124,10 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 			Title:       seriesSet[0].Title,
 			Description: seriesSet[0].Description,
 			Series:      seriesSet,
+			Filters: types.InsightViewFilters{
+				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
+				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
+			},
 		})
 	}
 
@@ -219,6 +223,7 @@ type GetDataSeriesArgs struct {
 	IncludeDeleted      bool
 	BackfillIncomplete  bool
 	SeriesID            string
+	GlobalOnly          bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -241,6 +246,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
+	}
+	if args.GlobalOnly {
+		preds = append(preds, sqlf.Sprintf("repositories is null"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -267,6 +275,8 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
 			&temp.Enabled,
+			&temp.SampleIntervalUnit,
+			&temp.SampleIntervalValue,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -289,7 +299,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.Title,
 			&temp.Description,
 			&temp.Label,
-			&temp.Stroke,
+			&temp.LineColor,
 			&temp.SeriesID,
 			&temp.Query,
 			&temp.CreatedAt,
@@ -302,6 +312,8 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			pq.Array(&temp.Repositories),
 			&temp.SampleIntervalUnit,
 			&temp.SampleIntervalValue,
+			&temp.DefaultFilterIncludeRepoRegex,
+			&temp.DefaultFilterExcludeRepoRegex,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
@@ -333,6 +345,8 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.Title,
 		view.Description,
 		view.UniqueID,
+		view.Filters.IncludeRepoRegex,
+		view.Filters.ExcludeRepoRegex,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
@@ -419,6 +433,9 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.NextRecordingAfter,
 		series.LastSnapshotAt,
 		series.NextSnapshotAfter,
+		pq.Array(series.Repositories),
+		series.SampleIntervalUnit,
+		series.SampleIntervalValue,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -526,22 +543,24 @@ VALUES (%s, %s, %s, %s);
 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
-INSERT INTO insight_view (title, description, unique_id)
-VALUES (%s, %s, %s)
+INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
+VALUES (%s, %s, %s, %s, %s)
 returning id;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
+							sample_interval_unit, sample_interval_value)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
 SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories, i.sample_interval_unit, i.sample_interval_value
+i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
+i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -552,6 +571,8 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
+last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
+sample_interval_unit, sample_interval_value from insight_series
 WHERE %s
 `

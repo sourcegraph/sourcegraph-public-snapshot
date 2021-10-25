@@ -4,6 +4,7 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -107,9 +108,9 @@ func toLspRange(r compute.Range) lsp.Range {
 // ComputeText GQL result resolver definitions.
 
 type computeTextResolver struct {
-	repository *RepositoryResolver //nolint
-	commit     string              //nolint
-	path       string              //nolint
+	repository *RepositoryResolver
+	commit     string
+	path       string
 	t          *compute.Text
 }
 
@@ -132,7 +133,36 @@ func (r *computeResultResolver) ToComputeText() (*computeTextResolver, bool) {
 	return res, ok
 }
 
-func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContext, db dbutil.DB) *computeMatchContextResolver {
+func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContext, repository *RepositoryResolver) *computeMatchContextResolver {
+	var computeMatches []*computeMatchResolver
+	for _, m := range mc.Matches {
+		mCopy := m
+		computeMatches = append(computeMatches, &computeMatchResolver{m: &mCopy})
+	}
+	return &computeMatchContextResolver{
+		repository: repository,
+		commit:     string(fm.CommitID),
+		path:       fm.Path,
+		matches:    computeMatches,
+	}
+}
+
+var _ = toComputeTextResolver
+
+func toComputeTextResolver(fm *result.FileMatch, text, kind string, repository *RepositoryResolver) *computeTextResolver {
+	return &computeTextResolver{
+		repository: repository,
+		commit:     string(fm.CommitID),
+		path:       fm.Path,
+		t:          &compute.Text{Value: text, Kind: kind},
+	}
+}
+
+func toComputeResultResolver(r *computeMatchContextResolver) *computeResultResolver {
+	return &computeResultResolver{result: r}
+}
+
+func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbutil.DB) []*computeResultResolver {
 	type repoKey struct {
 		Name types.RepoName
 		Rev  string
@@ -148,29 +178,12 @@ func toComputeMatchContextResolver(fm *result.FileMatch, mc *compute.MatchContex
 		return resolver
 	}
 
-	var computeMatches []*computeMatchResolver
-	for _, m := range mc.Matches {
-		mCopy := m
-		computeMatches = append(computeMatches, &computeMatchResolver{m: &mCopy})
-	}
-	return &computeMatchContextResolver{
-		repository: getRepoResolver(fm.Repo, ""),
-		commit:     string(fm.CommitID),
-		path:       fm.Path,
-		matches:    computeMatches,
-	}
-}
-
-func toComputeResultResolver(r *computeMatchContextResolver) *computeResultResolver {
-	return &computeResultResolver{result: r}
-}
-
-func toResultResolverList(pattern *regexp.Regexp, matches []result.Match, db dbutil.DB) []*computeResultResolver {
-	var computeResult []*computeResultResolver
+	computeResult := make([]*computeResultResolver, 0, len(matches))
 	for _, m := range matches {
 		if fm, ok := m.(*result.FileMatch); ok {
 			matchContext := compute.FromFileMatch(fm, pattern)
-			computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, db)))
+			repoResolver := getRepoResolver(fm.Repo, "")
+			computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, repoResolver)))
 		}
 	}
 	return computeResult
@@ -193,7 +206,13 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	if err != nil {
 		return nil, err
 	}
-	pattern := query.(*compute.MatchOnly).MatchPattern.(*compute.Regexp).Value
+	var pattern *regexp.Regexp
+	switch c := query.Command.(type) {
+	case *compute.MatchOnly:
+		pattern = c.MatchPattern.(*compute.Regexp).Value
+	default:
+		return nil, errors.Errorf("unsupported compute command %T", c)
+	}
 	return toResultResolverList(pattern, results.Matches, db), nil
 }
 

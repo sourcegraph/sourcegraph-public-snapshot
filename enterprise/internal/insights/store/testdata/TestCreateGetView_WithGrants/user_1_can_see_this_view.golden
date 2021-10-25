@@ -11,5 +11,6 @@
 	LastSnapshotAt:     time.Time{ext: 63713433600},
 	NextSnapshotAfter:  time.Time{ext: 63713433600},
 	Label:              "label1",
-	Stroke:             "blue",
+	LineColor:          "blue",
+	SampleIntervalUnit: "MONTH",
 }}

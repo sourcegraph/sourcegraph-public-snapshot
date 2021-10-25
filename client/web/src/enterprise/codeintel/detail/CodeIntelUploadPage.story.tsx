@@ -4,8 +4,8 @@ import { of } from 'rxjs'
 
 import { LSIFIndexState } from '@sourcegraph/shared/src/graphql/schema'
 
+import { WebStory } from '../../../components/WebStory'
 import { LsifUploadFields, LSIFUploadState } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { CodeIntelUploadPage, CodeIntelUploadPageProps } from './CodeIntelUploadPage'
 
@@ -109,7 +109,7 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelUploadPageProps> = args => (
-    <EnterpriseWebStory>{props => <CodeIntelUploadPage {...props} {...args} />}</EnterpriseWebStory>
+    <WebStory>{props => <CodeIntelUploadPage {...props} {...args} />}</WebStory>
 )
 
 const defaults: Partial<CodeIntelUploadPageProps> = {

@@ -62,6 +62,9 @@ func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 func MarshalOrgID(id int32) graphql.ID { return relay.MarshalID("Org", id) }
 
 func UnmarshalOrgID(id graphql.ID) (orgID int32, err error) {
+	if kind := relay.UnmarshalKind(id); kind != "Org" {
+		return 0, errors.Newf("invalid org id of kind %q", kind)
+	}
 	err = relay.UnmarshalSpec(id, &orgID)
 	return
 }
@@ -291,10 +294,13 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
+	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
+		return nil, err
+	}
 	// 🚨 SECURITY: Only org members can list the org repositories.
 	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view members")
+			return nil, errors.New("must be a member of this organization to view its repositories")
 		}
 		return nil, err
 	}

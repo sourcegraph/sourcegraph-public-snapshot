@@ -114,6 +114,7 @@ require (
 	github.com/russellhaering/goxmldsig v1.1.1
 	github.com/schollz/progressbar/v3 v3.8.3
 	github.com/segmentio/fasthash v1.0.3
+	github.com/segmentio/ksuid v1.0.4
 	github.com/sergi/go-diff v1.2.0
 	github.com/shurcooL/github_flavored_markdown v0.0.0-20210228213109-c3a9aa474629
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
@@ -324,7 +325,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20211018100733-604df7db4253
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20211021094329-fe32d3466c1f
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20210809100802-88b656a8713e

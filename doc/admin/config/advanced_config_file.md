@@ -1,39 +1,58 @@
-# Loading configuration via the file system (advanced)
+# Loading configuration via the file system (declarative config)
 
-Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin UI.
+Some teams require Sourcegraph configuration to be stored in version control as opposed to editing via the Site admin
+UI.
 
-As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md), [code host configuration](../external_service/index.md), and global settings.
+As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md)
+, [code host configuration](../external_service/index.md), and global settings. As of Sourcegraph v3.34+, Sourcegraph
+supports merging multiple site config files.
 
 ## Benefits
 
 1. Configuration can be checked into version control (e.g., Git).
-1. Configuration is enforced across the entire instance, and edits cannot be made via the web UI (by default).
+2. Configuration is enforced across the entire instance, and edits cannot be made via the web UI (by default).
+3. Declarative site-config
 
 ## Drawbacks
 
 Loading configuration in this manner has two significant drawbacks:
 
-1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as scratch space, though).
-1. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now be more manual for you (see below).
+1. You will no longer be able to save configuration edits through the web UI by default (you can use the web UI as
+   scratch space, though).
+2. Sourcegraph sometimes performs automatic migrations of configuration when upgrading versions. This process will now
+   be more manual for you (see below).
+3. Site-config contains **sensitive information** (see [Merging site config](#merging-site-configuration) for
+   mitigations)
 
 ## Site configuration
 
 Set `SITE_CONFIG_FILE=site.json` on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend`
+  containers
 - [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
-Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit through the in-app site configuration editor.
+Where `site.json` is a file that contains the [site configuration](site_config.md), which you would otherwise edit
+through the in-app site configuration editor.
 
-If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`.
+If you want to _allow_ edits to be made through the web UI (which will be overwritten with what is in the file on a
+subsequent restart), you may additionally set `SITE_CONFIG_ALLOW_EDITS=true`.
 
 > NOTE: If you do enable this, it is your responsibility to ensure the configuration on your instance and in the file remain in sync.
+
+### Merging site-configuration
+
+You may separate your site-config into a sensitive and non-sensitive `jsonc` / `json`. Set the env
+var `SITE_CONFIG_FILE=/etc/site.json:/other/sensitive-site-config.json`. Note the path separator of `:`
+
+This will merge both files. Sourcegraph will need access both files.
 
 ## Code host configuration
 
 Set `EXTSVC_CONFIG_FILE=extsvc.json` on:
 
-- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend` containers
+- [Docker Compose](../install/docker-compose/index.md) and [Kubernetes](../install/kubernetes/index.md): all `frontend`
+  containers
 - [Single-container](../install/docker/index.md): the `sourcegraph/server` container
 
 Where `extsvc.json` contains a JSON object that specifies _all_ of your code hosts in a single JSONC file:

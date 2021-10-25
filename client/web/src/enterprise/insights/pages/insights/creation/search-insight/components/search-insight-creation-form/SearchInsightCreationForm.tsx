@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { FormEventHandler, RefObject } from 'react'
 
 import { Button } from '@sourcegraph/wildcard'
@@ -101,7 +101,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
             ref={innerRef}
             onSubmit={handleSubmit}
             onReset={onFormReset}
-            className={classnames(className, 'd-flex flex-column')}
+            className={classNames(className, 'd-flex flex-column')}
         >
             <FormGroup
                 name="insight repositories"
@@ -206,7 +206,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<CreationSearchIn
                         {...stepValue.input}
                         valid={stepValue.meta.touched && stepValue.meta.validState === 'VALID'}
                         errorInputState={stepValue.meta.touched && stepValue.meta.validState === 'INVALID'}
-                        className={classnames(styles.creationInsightFormStepInput)}
+                        className={classNames(styles.creationInsightFormStepInput)}
                     />
 
                     <FormRadioInput

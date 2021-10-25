@@ -61,7 +61,7 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
     return (
         <div className={props.className}>
             <SidebarGroup>
-                <SidebarGroupHeader label="User account" />
+                <SidebarGroupHeader label="Account" />
                 {props.items.map(
                     ({ label, to, exact, status, condition = () => true }) =>
                         condition(context) && (
@@ -84,7 +84,8 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         </SidebarNavItem>
                     ))}
                     {!siteAdminViewingOtherUser &&
-                        (window.context.sourcegraphDotComMode ? (
+                        (window.context.sourcegraphDotComMode &&
+                        !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
                             <SidebarNavItem to={`${props.match.path}/about-organizations`}>
                                 About organizations
                             </SidebarNavItem>

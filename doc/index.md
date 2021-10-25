@@ -25,7 +25,7 @@ This website is home to Sourcegraph's feature, installation, administration, and
   <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph Cloud">
    <span>★ Sourcegraph Cloud</span>
    </br>
-   <b>Search 1 million+ open source respositories or your own repositories.</b> No installation required.
+   <b>Search 1 million+ open source repositories or your own repositories.</b> No installation required.
   </a>
 
   <a href="admin/install" class="btn btn-primary" alt="Self-host">

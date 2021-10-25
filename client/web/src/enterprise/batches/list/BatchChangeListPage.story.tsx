@@ -3,7 +3,7 @@ import { storiesOf } from '@storybook/react'
 import React from 'react'
 import { of } from 'rxjs'
 
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
+import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeListPage } from './BatchChangeListPage'
 import { nodes } from './testData'
@@ -31,7 +31,7 @@ const batchChangesNotLicensed = () => of(false)
 const batchChangesLicensed = () => of(true)
 
 add('List of batch changes', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeListPage
                 {...props}
@@ -40,11 +40,11 @@ add('List of batch changes', () => (
                 areBatchChangesLicensed={batchChangesLicensed}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Licensing not enforced', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchChangeListPage
                 {...props}
@@ -53,7 +53,7 @@ add('Licensing not enforced', () => (
                 areBatchChangesLicensed={batchChangesNotLicensed}
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('No batch changes', () => {
@@ -73,7 +73,7 @@ add('No batch changes', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeListPage
                     {...props}
@@ -82,7 +82,7 @@ add('No batch changes', () => {
                     areBatchChangesLicensed={batchChangesLicensed}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
@@ -103,7 +103,7 @@ add('All batch changes tab empty', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeListPage
                     {...props}
@@ -113,6 +113,6 @@ add('All batch changes tab empty', () => {
                     openTab="batchChanges"
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
