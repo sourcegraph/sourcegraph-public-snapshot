@@ -170,8 +170,8 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 //             execution.state === BatchSpecState.COMPLETED
 //                 ? { icon: <CheckIcon />, text: 'Finished', date: execution.finishedAt, className: 'bg-success' }
 //                 : execution.state === BatchSpecState.CANCELED
-//                 ? { icon: <ErrorIcon />, text: 'Canceled', date: execution.finishedAt, className: 'bg-secondary' }
-//                 : { icon: <ErrorIcon />, text: 'Failed', date: execution.finishedAt, className: 'bg-danger' },
+//                 ? { icon: <AlertCircleIcon />, text: 'Canceled', date: execution.finishedAt, className: 'bg-secondary' }
+//                 : { icon: <AlertCircleIcon />, text: 'Failed', date: execution.finishedAt, className: 'bg-danger' },
 //         ],
 //         [execution, now, expandStage]
 //     )
@@ -233,7 +233,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 //     const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
 //     return {
-//         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
+//         icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
 //         date: isArray(value) ? value[0].startTime : value.startTime,
 //         className: success || !finished ? 'bg-success' : 'bg-danger',
 //         expanded: expand || !(success || !finished),
@@ -367,7 +367,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 //                                     <CheckCircleIcon className="icon-inline text-success mr-1" />
 //                                 )}
 //                                 {completionStatus === JSONLogLineStatus.FAILURE && (
-//                                     <ErrorIcon className="icon-inline text-danger mr-1" />
+//                                     <AlertCircleIcon className="icon-inline text-danger mr-1" />
 //                                 )}
 //                                 {prettyOperationNames[tuple[0].operation]}
 //                             </p>
@@ -414,7 +414,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
 //             if (line.status === JSONLogLineStatus.FAILURE) {
 //                 return (
 //                     <li className="list-group-item p-2" key={key}>
-//                         <ErrorIcon className="icon-inline text-danger mr-1" />
+//                         <AlertCircleIcon className="icon-inline text-danger mr-1" />
 //                         <b>{repo}</b>: Failed :(
 //                     </li>
 //                 )

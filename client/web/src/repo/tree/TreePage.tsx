@@ -1,5 +1,6 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
+import AccountIcon from 'mdi-react/AccountIcon'
 import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
@@ -9,7 +10,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
@@ -389,7 +389,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             className="btn btn-outline-secondary"
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
                                         >
-                                            <UserIcon className="icon-inline" /> Contributors
+                                            <AccountIcon className="icon-inline" /> Contributors
                                         </Link>
                                         {codeIntelligenceEnabled && (
                                             <Link
