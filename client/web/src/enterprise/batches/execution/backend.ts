@@ -207,7 +207,7 @@ const batchSpecWorkspaceStepFileDiffsFields = gql`
 `
 
 export const queryBatchSpecWorkspaceStepFileDiffs = ({
-    node,
+    node: nodeID,
     step,
     first,
     after,
@@ -223,12 +223,12 @@ export const queryBatchSpecWorkspaceStepFileDiffs = ({
 
             ${batchSpecWorkspaceStepFileDiffsFields}
         `,
-        { node, step, first, after }
+        { node: nodeID, step, first, after }
     ).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
-                throw new Error(`BatchSpecWorkspace with ID ${node} does not exist`)
+                throw new Error(`BatchSpecWorkspace with ID ${nodeID} does not exist`)
             }
             if (node.__typename !== 'BatchSpecWorkspace') {
                 throw new Error(`The given ID is a ${node.__typename}, not a BatchSpecWorkspace`)
