@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cespare/xxhash/v2"
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
 	"github.com/inconshreveable/log15"
@@ -28,6 +29,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/go-rendezvous"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -97,6 +99,17 @@ func (c *Client) AddrForRepo(repo api.RepoName) string {
 	return AddrForRepo(repo, addrs)
 }
 
+// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
+// Rendezvous hashing scheme.
+func (c *Client) RendezvousAddrForRepo(repo api.RepoName) string {
+	addrs := c.Addrs()
+	if len(addrs) == 0 {
+		panic("unexpected state: no gitserver addresses")
+	}
+
+	return RendezvousAddrForRepo(repo, addrs)
+}
+
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *Client) addrForKey(key string) string {
@@ -119,6 +132,15 @@ func AddrForRepo(repo api.RepoName, addrs []string) string {
 
 	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
 	return addrForKey(string(repo), addrs)
+}
+
+// RendezvousAddrForRepo returns the gitserver address to use for the given repo name using the
+// Rendezvous hashing scheme.
+//
+// It should never be called with an empty slice.
+func RendezvousAddrForRepo(repo api.RepoName, addrs []string) string {
+	r := rendezvous.New(addrs, xxhash.Sum64String)
+	return r.Lookup(string(protocol.NormalizeRepo(repo)))
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -626,6 +648,44 @@ func (c *Client) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since
 
 	var info *protocol.RepoUpdateResponse
 	err = json.NewDecoder(resp.Body).Decode(&info)
+	return info, err
+}
+
+// RequestRepoMigrate is effectively RequestRepoUpdate but with some additional metadata to aid our
+// migration of gitserver repos to the rendezvous hashing scheme.
+func (c *Client) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
+	// We do not need to set a value for the attribute "Since" because the repo is not expected to
+	// be cloned at the new gitserver instance. And for not cloned repos, this attribute is already
+	// ignored.
+	req := &protocol.RepoUpdateRequest{
+		Repo:        repo,
+		MigrateFrom: c.AddrForRepo(repo),
+	}
+
+	// We set "op" to the HTTP URL of the gitserver instance that should be the new owner of this
+	// "repo" based on the rendezvous hashing scheme. This way, when the gitserver instance receives
+	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
+	// the repo from the URL set in MigrateFrom - the gitserver instance that owns this repo based
+	// on the existing hashing scheme.
+	op := c.RendezvousAddrForRepo(repo) + "/repo-update"
+	resp, err := c.httpPost(ctx, repo, op, req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+		return nil, &url.Error{
+			URL: resp.Request.URL.String(),
+			Op:  "RepoMigrate",
+			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, body),
+		}
+	}
+
+	var info *protocol.RepoUpdateResponse
+	err = json.NewDecoder(resp.Body).Decode(&info)
+
 	return info, err
 }
 

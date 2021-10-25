@@ -1,6 +1,6 @@
 import { GlyphDot as Glyph } from '@visx/glyph'
 import { EventHandlerParams, GlyphProps } from '@visx/xychart/lib/types'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { MouseEventHandler, PointerEventHandler, ReactElement } from 'react'
 import { LineChartSeries } from 'sourcegraph'
 
@@ -101,7 +101,7 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
             aria-label={ariaLabel}
         >
             <Glyph
-                className={classnames('line-chart__glyph', {
+                className={classNames('line-chart__glyph', {
                     'line-chart__glyph--active': hovered,
                 })}
                 cx={xCoordinate}

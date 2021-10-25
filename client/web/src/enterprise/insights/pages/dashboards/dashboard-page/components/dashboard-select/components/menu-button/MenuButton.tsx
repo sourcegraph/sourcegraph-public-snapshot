@@ -1,5 +1,5 @@
 import { ListboxButton } from '@reach/listbox'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 import React from 'react'
@@ -23,7 +23,7 @@ export const MenuButton: React.FunctionComponent<MenuButtonProps> = props => {
     const { dashboards, className } = props
 
     return (
-        <ListboxButton className={classnames(styles.button, className)}>
+        <ListboxButton className={classNames(styles.button, className)}>
             {({ value, isExpanded }) => {
                 const dashboard = dashboards.find(dashboard => dashboard.id === value)
 
@@ -61,7 +61,7 @@ const MenuButtonContent: React.FunctionComponent<MenuButtonContentProps> = props
         <>
             <span className={styles.text}>
                 <TruncatedText title={title}>{title}</TruncatedText>
-                {badge && <Badge value={badge} className={classnames('ml-1 mr-1', styles.badge)} />}
+                {badge && <Badge value={badge} className={classNames('ml-1 mr-1', styles.badge)} />}
             </span>
 
             <ListboxButtonIcon className={styles.expandedIcon} />

@@ -46,7 +46,7 @@ func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 			%s,
 			%s,
 			%s
-		) RETURNING 
+		) RETURNING
 			flag_name,
 			flag_type,
 			bool_value,
@@ -83,13 +83,13 @@ func (f *FeatureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 
 func (f *FeatureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
 	const updateFeatureFlagFmtStr = `
-		UPDATE feature_flags 
-		SET 
+		UPDATE feature_flags
+		SET
 			flag_type = %s,
 			bool_value = %s,
 			rollout = %s
 		WHERE flag_name = %s
-		RETURNING 
+		RETURNING
 			flag_name,
 			flag_type,
 			bool_value,
@@ -128,7 +128,7 @@ func (f *FeatureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 func (f *FeatureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) error {
 	const deleteFeatureFlagFmtStr = `
 		UPDATE feature_flags
-		SET 
+		SET
 			flag_name = flag_name || '-DELETED-' || TRUNC(random() * 1000000)::varchar(255),
 			deleted_at = now()
 		WHERE flag_name = %s;
@@ -206,7 +206,7 @@ func scanFeatureFlag(scanner rowScanner) (*ff.FeatureFlag, error) {
 
 func (f *FeatureFlagStore) GetFeatureFlag(ctx context.Context, flagName string) (*ff.FeatureFlag, error) {
 	const getFeatureFlagsQuery = `
-		SELECT 
+		SELECT
 			flag_name,
 			flag_type,
 			bool_value,
@@ -225,7 +225,7 @@ func (f *FeatureFlagStore) GetFeatureFlag(ctx context.Context, flagName string) 
 
 func (f *FeatureFlagStore) GetFeatureFlags(ctx context.Context) ([]*ff.FeatureFlag, error) {
 	const listFeatureFlagsQuery = `
-		SELECT 
+		SELECT
 			flag_name,
 			flag_type,
 			bool_value,
@@ -283,8 +283,8 @@ func (f *FeatureFlagStore) CreateOverride(ctx context.Context, override *ff.Over
 
 func (f *FeatureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *int32, flagName string) error {
 	const newFeatureFlagOverrideFmtStr = `
-		DELETE FROM feature_flag_overrides 
-		WHERE 
+		DELETE FROM feature_flag_overrides
+		WHERE
 			%s AND flag_name = %s;
 	`
 
@@ -307,7 +307,7 @@ func (f *FeatureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *in
 
 func (f *FeatureFlagStore) UpdateOverride(ctx context.Context, orgID, userID *int32, flagName string, newValue bool) (*ff.Override, error) {
 	const newFeatureFlagOverrideFmtStr = `
-		UPDATE feature_flag_overrides 
+		UPDATE feature_flag_overrides
 		SET flag_value = %s
 		WHERE %s -- namespace condition
 			AND flag_name = %s
@@ -403,6 +403,30 @@ func (f *FeatureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID in
 	defer rows.Close()
 
 	return scanFeatureFlagOverrides(rows)
+}
+
+// GetOrgOverrideForFlag returns the flag override for the given organization.
+func (f *FeatureFlagStore) GetOrgOverrideForFlag(ctx context.Context, orgID int32, flagName string) (*ff.Override, error) {
+	const listOrgOverridesFmtString = `
+		SELECT
+			namespace_org_id,
+			namespace_user_id,
+			flag_name,
+			flag_value
+		FROM feature_flag_overrides
+		WHERE namespace_org_id = %s
+			AND flag_name = %s
+			AND deleted_at IS NULL;
+	`
+	row := f.QueryRow(ctx, sqlf.Sprintf(listOrgOverridesFmtString, orgID, flagName))
+	override, err := scanFeatureFlagOverride(row)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return override, nil
 }
 
 func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.Override, error) {
@@ -506,4 +530,41 @@ func (f *FeatureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 	}
 
 	return res, nil
+}
+
+// GetOrgFeatureFlag returns the calculated flag value for the given organization, taking potential override into account
+func (f *FeatureFlagStore) GetOrgFeatureFlag(ctx context.Context, orgID int32, flagName string) (bool, error) {
+	if Mocks.FeatureFlags.GetOrgFeatureFlag != nil {
+		return Mocks.FeatureFlags.GetOrgFeatureFlag(ctx, orgID, flagName)
+	}
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	var override *ff.Override
+	var globalFlag *ff.FeatureFlag
+
+	g.Go(func() error {
+		res, err := f.GetOrgOverrideForFlag(ctx, orgID, flagName)
+		override = res
+		return err
+	})
+	g.Go(func() error {
+		res, err := f.GetFeatureFlag(ctx, flagName)
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		globalFlag = res
+		return err
+	})
+	if err := g.Wait(); err != nil {
+		return false, err
+	}
+
+	if override != nil {
+		return override.Value, nil
+	} else if globalFlag != nil {
+		return globalFlag.Bool.Value, nil
+	}
+
+	return false, nil
 }

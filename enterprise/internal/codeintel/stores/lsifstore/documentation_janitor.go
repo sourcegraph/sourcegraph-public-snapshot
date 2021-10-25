@@ -44,34 +44,77 @@ func (s *Store) deleteOldSearchRecords(ctx context.Context, minimumTimeSinceLast
 const deleteOldSearchRecordsQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/documentation_janitor.go:deleteOldSearchRecords
 WITH
-candidates AS (
-	SELECT repo_id, dump_root, lang_name_id, dump_id
+candidate_batch AS (
+	-- Select the next batch of records to process (may be all clean records). We do this by order
+	-- of last_cleanup_scan_at first, then apply the batch size limit, then lock the records in the
+	-- CTE below in a stable (non-temporal) order.
+
+	SELECT id, repo_id, dump_root, lang_name_id, created_at, dump_id
 	FROM lsif_data_docs_search_current_$SUFFIX
 	WHERE (%s - last_cleanup_scan_at > (%s * '1 second'::interval))
-	ORDER BY repo_id, dump_root, lang_name_id FOR UPDATE
+	ORDER BY last_cleanup_scan_at
 	LIMIT %s
 ),
-deletion_candidates AS (
-	SELECT id
-	FROM lsif_data_docs_search_$SUFFIX s
-	JOIN candidates c
-	ON
-		c.repo_id = s.repo_id AND
-		c.dump_root = s.dump_root AND
-		c.lang_name_id = s.lang_name_id
-	WHERE
-		s.dump_id != c.dump_id
+locked_candidate_batch AS (
+	SELECT id FROM candidate_batch
+
+	-- Lock the rows underlying the target CTE in a deterministic order so that we don't deadlock
+	-- with other processes updating the lsif_data_docs_search_current_* tables. Note that we are
+	-- the only consumer of that CTE, so it should be executed inline (and not materialized).
 	ORDER BY id FOR UPDATE
 ),
-deleted AS (
+candidates AS (
+	-- Trim down the set of candidates that are NOT the most recently created rows for the same set
+	-- of (repository identifier, dump root, language) values. This indicates the set of search items
+	-- that have since been replaced and can be removed.
+
+	SELECT id, repo_id, dump_root, lang_name_id, dump_id
+	FROM candidate_batch cb
+	WHERE created_at != (
+		SELECT MAX(created_at)
+		FROM lsif_data_docs_search_current_$SUFFIX cp
+		WHERE
+			cp.repo_id = cb.repo_id AND
+			cp.dump_root = cb.dump_root AND
+			cp.lang_name_id = cb.lang_name_id
+	)
+	ORDER BY id
+),
+locked_search_records AS (
+	SELECT id
+	FROM lsif_data_docs_search_$SUFFIX
+	WHERE (repo_id, dump_root, lang_name_Id, dump_id) IN (
+		SELECT repo_id, dump_root, lang_name_Id, dump_id
+		FROM candidates
+	)
+
+	-- Find the rows we'll be deleting from the associated search records table, lock them
+	-- in a deterministic order so that we don't deadlock with other processes updating the
+	-- lsif_data_docs_search_* tables.
+	ORDER BY id FOR UPDATE
+),
+delete_search_records AS (
+	-- Delete search records
 	DELETE FROM lsif_data_docs_search_$SUFFIX
-	WHERE id IN (SELECT id FRom deletion_candidates)
+	WHERE id IN (SELECT id FROM locked_search_records)
 	RETURNING 1
 ),
-update AS (
+delete_current_markers AS (
+	-- Delete search marker
+	DELETE FROM lsif_data_docs_search_current_$SUFFIX
+	WHERE id IN (SELECT id FROM locked_candidate_batch)
+	RETURNING 1
+),
+update_timestamp AS (
+	-- Update the last scanned values for the records in the batch
 	UPDATE lsif_data_docs_search_current_$SUFFIX
 	SET last_cleanup_scan_at = %s
-	WHERE (repo_id, dump_root, lang_name_id) IN (SELECT repo_id, dump_root, lang_name_id FROM candidates)
+
+	-- We need to exclude the set of ids we deleted in the sibling CTE delete_current_markers.
+	-- If we remove this EXCEPT clause then we just re-insert a new record with identical data
+	-- as the one we are trying to delete.
+	WHERE id IN (SELECT id FROM locked_candidate_batch EXCEPT SELECT id FROM candidates)
 )
-SELECT COUNT(*) FROM deleted
+-- Return count of search records deleted
+SELECT COUNT(*) FROM delete_search_records
 `

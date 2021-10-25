@@ -84,7 +84,8 @@ export const UserSettingsSidebar: React.FunctionComponent<UserSettingsSidebarPro
                         </SidebarNavItem>
                     ))}
                     {!siteAdminViewingOtherUser &&
-                        (window.context.sourcegraphDotComMode ? (
+                        (window.context.sourcegraphDotComMode &&
+                        !props.authenticatedUser?.tags?.includes('CreateOrg') ? (
                             <SidebarNavItem to={`${props.match.path}/about-organizations`}>
                                 About organizations
                             </SidebarNavItem>

@@ -220,19 +220,17 @@ const CloneInProgressDelay = time.Minute
 // If the repo is currently cloning, then we'll requeue the upload to be tried again later. This will not
 // increase the reset count of the record (so this doesn't count against the upload as a legitimate attempt).
 func requeueIfCloning(ctx context.Context, workerStore dbworkerstore.Store, upload store.Upload, repo *types.Repo) (requeued bool, _ error) {
-	if _, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit); err != nil {
-		if !gitdomain.IsCloneInProgress(err) {
-			return false, errors.Wrap(err, "Repos.ResolveRev")
-		}
-
-		if err := workerStore.Requeue(ctx, upload.ID, time.Now().UTC().Add(CloneInProgressDelay)); err != nil {
-			return false, errors.Wrap(err, "store.Requeue")
-		}
-
-		return true, nil
+	_, err := backend.Repos.ResolveRev(ctx, repo, upload.Commit)
+	if err == nil || !gitdomain.IsCloneInProgress(err) {
+		return false, errors.Wrap(err, "Repos.ResolveRev")
 	}
 
-	return false, nil
+	if err := workerStore.Requeue(ctx, upload.ID, time.Now().UTC().Add(CloneInProgressDelay)); err != nil {
+		return false, errors.Wrap(err, "store.Requeue")
+	}
+
+	log15.Warn("Requeued LSIF upload record (repository still cloning)", "id", upload.ID)
+	return true, nil
 }
 
 // withUploadData will invoke the given function with a reader of the upload's raw data. The

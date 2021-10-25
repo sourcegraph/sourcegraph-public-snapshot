@@ -670,28 +670,29 @@ type InsightView implements Node {
     """
     Presentation options for the insight.
     """
-    presentation: LineChartInsightViewPresentation!
+    presentation: InsightPresentation!
 
     """
     Information on how each data series was generated
     """
-    dataSeriesDefinitions: [SearchInsightDataSeriesDefinition!]!
+    dataSeriesDefinitions: [InsightDataSeriesDefinition!]!
 }
 
-#"""
-#Defines how the data series is generated.
-#"""
-#union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
+"""
+Defines how the data series is generated.
+"""
+union InsightDataSeriesDefinition = SearchInsightDataSeriesDefinition
 
-#"""
-#Defines presentation options for the insight.
-#"""
-#union InsightPresentation = LineChartInsightViewPresentation | PieChartInsightViewPresentation
+"""
+Defines presentation options for the insight.
+"""
+union InsightPresentation = LineChartInsightViewPresentation
+#    | PieChartInsightViewPresentation
 
-#"""
-#Defines a scope of time for which the insight data is generated.
-#"""
-#union InsightTimeScope = InsightIntervalTimeScope
+"""
+Defines a scope of time for which the insight data is generated.
+"""
+union InsightTimeScope = InsightIntervalTimeScope
 
 """
 A custom repository scope for an insight. A scope with all empty fields implies a global scope.
@@ -737,7 +738,7 @@ type SearchInsightDataSeriesDefinition {
     """
     The scope of time for which the insight data is generated.
     """
-    timeScope: InsightIntervalTimeScope!
+    timeScope: InsightTimeScope!
 }
 
 """

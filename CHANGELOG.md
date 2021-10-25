@@ -16,10 +16,11 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added documentation for merging site-config files. Available since 3.32 [#21220](https://github.com/sourcegraph/sourcegraph/issues/21220)
+- Added site config variable `cloneProgressLog` to optionally enable logging of clone progress to temporary files for debugging. Disabled by default. [#26568](https://github.com/sourcegraph/sourcegraph/pull/26568)
 
 ### Changed
 
--
+- Removed liveness probes from Kubernetes Prometheus deployment [#2970](https://github.com/sourcegraph/deploy-sourcegraph/pull/2970)
 
 ### Fixed
 

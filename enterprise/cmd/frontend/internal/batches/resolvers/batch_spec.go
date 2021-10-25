@@ -2,7 +2,9 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -421,8 +423,32 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 		return &message, nil
 	}
 
-	// TODO: look at execution jobs.
-	return nil, nil
+	failedJobs, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		OnlyWithFailureMessage: true,
+		BatchSpecID:            r.batchSpec.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(failedJobs) == 0 {
+		return nil, nil
+	}
+
+	var message strings.Builder
+	message.WriteString("Failures:\n\n")
+	for i, job := range failedJobs {
+		message.WriteString("* " + *job.FailureMessage + "\n")
+
+		if i == 4 {
+			break
+		}
+	}
+	if len(failedJobs) > 5 {
+		message.WriteString(fmt.Sprintf("\nand %d more", len(failedJobs)-5))
+	}
+
+	str := message.String()
+	return &str, nil
 }
 
 func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {

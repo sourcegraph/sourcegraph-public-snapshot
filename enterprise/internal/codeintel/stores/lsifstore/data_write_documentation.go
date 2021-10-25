@@ -586,32 +586,28 @@ func (s *Store) replaceSearchRecords(
 	}
 
 	// Insert the values from the temporary table into the target table. Here we insert
-	// the value that are the same for every row instead of sending them on each of the
+	// the values that are the same for every row instead of sending them on each of the
 	// batched insert calls.
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(insertSearchRecordsInsertQuery, "$SUFFIX", tableSuffix),
-		// For insertion
 		upload.RepositoryID, // repo_id
 		upload.ID,           // dump_id
 		upload.Root,         // dump_root
 		repositoryNameID,    // repo_name_id
 		languageNameID,      // lang_name_id
-
-		// For current marker insert
-		upload.RepositoryID, // repo_id
-		upload.Root,         // dump_root
-		languageNameID,      // lang_name_id
-		upload.ID,           // dump_id
-		now,                 // last_cleanup_scan_at
-
-		// For current marker update
-		upload.ID,           // dump_id
-		now,                 // last_cleanup_scan_at
-		upload.RepositoryID, // repo_id
-		upload.Root,         // dump_root
-		languageNameID,      // lang_name_id
 	)); err != nil {
 		return errors.Wrap(err, "committing staged search records")
+	}
+
+	// Insert a current marker for the recently inserted search records
+	if err := tx.Exec(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(insertSearchRecordsInsertCurrentMarkerQuery, "$SUFFIX", tableSuffix),
+		upload.RepositoryID, // repo_id
+		upload.Root,         // dump_root
+		languageNameID,      // lang_name_id
+		upload.ID,           // dump_id
+	)); err != nil {
+		return errors.Wrap(err, "inserting current marker")
 	}
 
 	return nil
@@ -634,63 +630,49 @@ CREATE TEMPORARY TABLE t_lsif_data_docs_search_$SUFFIX (
 
 const insertSearchRecordsInsertQuery = `
 -- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
-WITH
-insert_data AS (
-	INSERT INTO lsif_data_docs_search_$SUFFIX (
-		repo_id,
-		dump_id,
-		dump_root,
-		repo_name_id,
-		lang_name_id,
-		path_id,
-		detail,
-		tags_id,
-		search_key,
-		search_key_tsv,
-		search_key_reverse_tsv,
-		label,
-		label_tsv,
-		label_reverse_tsv
-	)
-	SELECT
-		%s, -- repo_id
-		%s, -- dump_id
-		%s, -- dump_root
-		%s, -- repo_name_id
-		%s, -- lang_name_id
-		source.path_id,
-		source.detail,
-		source.tags_id,
-		source.search_key,
-		source.search_key_tsv,
-		source.search_key_reverse_tsv,
-		source.label,
-		source.label_tsv,
-		source.label_reverse_tsv
-	FROM t_lsif_data_docs_search_$SUFFIX source
-),
-insert_current AS (
-	INSERT INTO lsif_data_docs_search_current_$SUFFIX (
-		repo_id,
-		dump_root,
-		lang_name_id,
-		dump_id,
-		last_cleanup_scan_at
-	)
-	VALUES (%s, %s, %s, %s, %s)
-	ON CONFLICT DO NOTHING
-),
-update_current AS (
-	UPDATE lsif_data_docs_search_current_$SUFFIX
-	SET
-		dump_id = %s,
-		last_cleanup_scan_at = %s
-	WHERE
-		repo_id = %s AND
-		dump_root = %s AND
-		lang_name_id = %s
+INSERT INTO lsif_data_docs_search_$SUFFIX (
+	repo_id,
+	dump_id,
+	dump_root,
+	repo_name_id,
+	lang_name_id,
+	path_id,
+	detail,
+	tags_id,
+	search_key,
+	search_key_tsv,
+	search_key_reverse_tsv,
+	label,
+	label_tsv,
+	label_reverse_tsv
 )
-SELECT 1
+SELECT
+	%s, -- repo_id
+	%s, -- dump_id
+	%s, -- dump_root
+	%s, -- repo_name_id
+	%s, -- lang_name_id
+	source.path_id,
+	source.detail,
+	source.tags_id,
+	source.search_key,
+	source.search_key_tsv,
+	source.search_key_reverse_tsv,
+	source.label,
+	source.label_tsv,
+	source.label_reverse_tsv
+FROM t_lsif_data_docs_search_$SUFFIX source
+`
+
+const insertSearchRecordsInsertCurrentMarkerQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/data_write_documentation.go:insertSearchRecords
+INSERT INTO lsif_data_docs_search_current_$SUFFIX (
+	repo_id,
+	dump_root,
+	lang_name_id,
+	dump_id
+)
+VALUES (%s, %s, %s, %s)
 `
 
 func walkDocumentationNode(node *precise.DocumentationNode, f func(node *precise.DocumentationNode) error) error {
