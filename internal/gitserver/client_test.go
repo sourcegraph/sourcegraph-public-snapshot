@@ -59,7 +59,7 @@ func TestClient_ListCloned(t *testing.T) {
 }
 
 func TestClient_RequestRepoMigrate(t *testing.T) {
-	repo := api.RepoName("github.com/souregraph/sourcegraph")
+	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
 	addrs := []string{"http://172.16.8.1:8080", "http://172.16.8.2:800"}
 
 	expected := gitserver.RendezvousAddrForRepo(repo, addrs)
