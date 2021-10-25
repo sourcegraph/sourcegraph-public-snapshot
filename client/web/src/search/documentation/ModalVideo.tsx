@@ -12,6 +12,7 @@ interface ModalVideoProps {
     thumbnail: { src: string; alt: string }
     onToggle?: (isOpen: boolean) => void
     showCaption?: boolean
+    className?: string
 }
 
 export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
@@ -21,6 +22,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
     thumbnail,
     onToggle,
     showCaption = false,
+    className,
 }) => {
     const assetsRoot = window.context?.assetsRoot || ''
     const [isOpen, setIsOpen] = useState(false)
@@ -58,7 +60,7 @@ export const ModalVideo: React.FunctionComponent<ModalVideoProps> = ({
 
     return (
         <>
-            <div className={styles.wrapper}>{thumbnailElement}</div>
+            <div className={classNames(styles.wrapper, className)}>{thumbnailElement}</div>
             {isOpen && (
                 <Dialog
                     className={classNames(styles.modal, 'modal-body modal-body--centered p-4 rounded border')}

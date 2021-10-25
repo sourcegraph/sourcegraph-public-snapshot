@@ -2,9 +2,10 @@
 
 .root {
     display: flex;
+    flex-direction: row-reverse;
 
     @media (--lg-breakpoint-down) {
-        flex-direction: column-reverse;
+        flex-direction: column;
     }
 }
 
@@ -33,7 +34,7 @@
         display: flex;
         flex-wrap: wrap;
 
-        > * {
+        > .video {
             padding: 0 1rem;
         }
     }

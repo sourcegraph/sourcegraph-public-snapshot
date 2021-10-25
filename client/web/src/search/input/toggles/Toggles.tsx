@@ -27,6 +27,7 @@ export interface TogglesProps
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
+    showCopyQueryButton?: boolean
 }
 
 export const getFullQuery = (
@@ -55,6 +56,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         className,
         selectedSearchContextSpec,
         submitSearch,
+        showCopyQueryButton = true,
     } = props
 
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
@@ -161,13 +163,17 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     ]}
                 />
             )}
-            <div className={styles.separator} />
-            <CopyQueryButton
-                fullQuery={fullQuery}
-                keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-                isMacPlatform={isMacPlatform}
-                className={classNames(styles.toggle, styles.copyQueryButton)}
-            />
+            {showCopyQueryButton && (
+                <>
+                    <div className={styles.separator} />
+                    <CopyQueryButton
+                        fullQuery={fullQuery}
+                        keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
+                        isMacPlatform={isMacPlatform}
+                        className={classNames(styles.toggle, styles.copyQueryButton)}
+                    />
+                </>
+            )}
         </div>
     )
 }

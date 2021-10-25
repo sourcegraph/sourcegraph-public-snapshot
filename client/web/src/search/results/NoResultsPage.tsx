@@ -89,12 +89,13 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
                             setCaseSensitivity={noop}
                             setPatternType={noop}
                             settingsCascade={{ subjects: null, final: {} }}
+                            showCopyQueryButton={false}
                         />
                     </div>
                 </div>
             </div>
-            <Link onClick={onRun} className="ml-1" to={{ pathname: '/search', search: builtURLQuery }}>
-                Run&nbsp;Search
+            <Link onClick={onRun} className="ml-1 text-nowrap" to={{ pathname: '/search', search: builtURLQuery }}>
+                Run Search
             </Link>
         </div>
     )
@@ -181,6 +182,36 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
         <>
             <h2>Sourcegraph basics</h2>
             <div className={styles.root}>
+                {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
+                    <div className={styles.videoPanel}>
+                        <Container
+                            sectionID={SectionID.VIDEOS}
+                            title="Video explanations"
+                            className={styles.videoContainer}
+                            onClose={onClose}
+                        >
+                            {videos.map(video => (
+                                <ModalVideo
+                                    key={video.title}
+                                    className={styles.video}
+                                    id={`video-${video.title.toLowerCase().replace(/[^a-z]+/, '-')}`}
+                                    title={video.title}
+                                    src={video.src}
+                                    thumbnail={{
+                                        src: `${video.thumbnailPrefix}-${isLightTheme ? 'light' : 'dark'}.png`,
+                                        alt: `${video.title} video thumbnail`,
+                                    }}
+                                    showCaption={true}
+                                    onToggle={isOpen => {
+                                        if (isOpen) {
+                                            telemetryService.log('NoResultsVideoPlayed', { video: video.title })
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </Container>
+                    </div>
+                )}
                 <div className={classNames(styles.mainPanels, 'flex-shrink-past-contents')}>
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
                         <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
@@ -313,35 +344,6 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                         </p>
                     )}
                 </div>
-                {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
-                    <div className={styles.videoPanel}>
-                        <Container
-                            sectionID={SectionID.VIDEOS}
-                            title="Video explanations"
-                            className={styles.videoContainer}
-                            onClose={onClose}
-                        >
-                            {videos.map(video => (
-                                <ModalVideo
-                                    key={video.title}
-                                    id={`video-${video.title.toLowerCase().replace(/[^a-z]+/, '-')}`}
-                                    title={video.title}
-                                    src={video.src}
-                                    thumbnail={{
-                                        src: `${video.thumbnailPrefix}-${isLightTheme ? 'light' : 'dark'}.png`,
-                                        alt: `${video.title} video thumbnail`,
-                                    }}
-                                    showCaption={true}
-                                    onToggle={isOpen => {
-                                        if (isOpen) {
-                                            telemetryService.log('NoResultsVideoPlayed', { video: video.title })
-                                        }
-                                    }}
-                                />
-                            ))}
-                        </Container>
-                    </div>
-                )}
             </div>
         </>
     )
