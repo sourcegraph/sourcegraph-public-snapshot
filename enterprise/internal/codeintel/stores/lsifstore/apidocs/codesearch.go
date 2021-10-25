@@ -112,7 +112,7 @@ func TextSearchVector(s string) string {
 func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query {
 	var rankFunctions []*sqlf.Query
 	for _, term := range strings.Fields(query) {
-		seq := lexemeSequence(term, subStringMatches, " <-> ")
+		seq := lexemeSequence(Lexemes(term), subStringMatches, " <-> ")
 		rankFunctions = append(rankFunctions, sqlf.Sprintf("ts_rank_cd("+columnName+", %s, 2)", seq))
 	}
 	return sqlf.Join(rankFunctions, "+")
@@ -126,8 +126,7 @@ func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query
 //
 // Note: This composing a tsquery _value_ and so using fmt.Sprintf instead of sqlf.Sprintf is
 // correct here.
-func lexemeSequence(s string, subStringMatches bool, distance string) string {
-	lexemes := Lexemes(s)
+func lexemeSequence(lexemes []string, subStringMatches bool, distance string) string {
 	sequence := make([]string, 0, len(lexemes))
 	for _, lexeme := range lexemes {
 		if subStringMatches {
@@ -172,10 +171,10 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	//
 	// Note that more distance != better, the greater the distance the worse relevance of results.
 	expressions := make([]*sqlf.Query, 0, len(distances)*len(terms))
-	for _, distance := range distances {
-		// For every space-separated term in the query string, i.e. ["golang/go", "http.StatusNotFound"]
-		for _, term := range terms {
-			tsquery := lexemeSequence(term, subStringMatches, distance)
+	for _, term := range terms {
+		lexemes := Lexemes(term)
+		for _, distance := range distances {
+			tsquery := lexemeSequence(lexemes, subStringMatches, distance)
 			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
 		}
  	}
@@ -199,7 +198,7 @@ func RepoSearchQuery(columnName string, possibleRepoNames []string) *sqlf.Query 
 	}
 	expressions := make([]*sqlf.Query, 0, len(possibleRepoNames))
 	for _, repoName := range possibleRepoNames {
-		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", lexemeSequence(repoName, false, " <-> ")))
+		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", lexemeSequence(Lexemes(repoName), false, " <-> ")))
 	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
