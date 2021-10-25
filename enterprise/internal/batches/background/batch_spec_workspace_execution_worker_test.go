@@ -10,7 +10,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -45,7 +44,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	}
 
 	job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: workspace.ID}
-	if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+	if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 		t.Fatal(err)
 	}
 
@@ -86,9 +85,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 		t.Helper()
 		job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
 		job.WorkerHostname = opts.WorkerHostname
-		if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s WHERE id = %s", job.WorkerHostname, job.State, job.ID)); err != nil {
-			t.Fatal(err)
-		}
+		ct.UpdateJobState(t, ctx, s, job)
 	}
 
 	attachAccessToken := func(t *testing.T) int64 {

@@ -89,7 +89,6 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                     version: LATEST_VERSION,
                     patternType: patternType ?? SearchPatternType.literal,
                     caseSensitive: false,
-                    versionContext: undefined,
                     trace: undefined,
                 }).pipe(debounceTime(500)),
             [patternType, transformedQuery, streamSearch]

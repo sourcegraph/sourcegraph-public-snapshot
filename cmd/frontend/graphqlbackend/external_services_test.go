@@ -215,6 +215,32 @@ func TestAddExternalService(t *testing.T) {
 			}
 		})
 
+		t.Run("org namespace requested, but feature is not allowed", func(t *testing.T) {
+			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+				return false, nil
+			}
+			defer func() {
+				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
+			}()
+
+			ctx := context.Background()
+			orgID := MarshalOrgID(1)
+			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{
+				Input: addExternalServiceInput{
+					Namespace: &orgID,
+				},
+			})
+
+			want := "organization code host connections are not enabled"
+			got := fmt.Sprintf("%v", err)
+			if got != want {
+				t.Errorf("err: want %q but got %q", want, got)
+			}
+			if result != nil {
+				t.Errorf("result: want nil but got %v", result)
+			}
+		})
+
 		t.Run("org namespace requested, but user does not belong to the org", func(t *testing.T) {
 			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
 				return &types.User{ID: 1, SiteAdmin: true}, nil
@@ -222,9 +248,14 @@ func TestAddExternalService(t *testing.T) {
 			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
 				return nil, nil
 			}
+			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+				return true, nil
+			}
+
 			defer func() {
 				database.Mocks.OrgMembers = database.MockOrgMembers{}
 				database.Mocks.Users = database.MockUsers{}
+				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -259,10 +290,14 @@ func TestAddExternalService(t *testing.T) {
 			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
 				return nil
 			}
+			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+				return true, nil
+			}
 			defer func() {
 				database.Mocks.Users = database.MockUsers{}
 				database.Mocks.OrgMembers = database.MockOrgMembers{}
 				database.Mocks.ExternalServices = database.MockExternalServices{}
+				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 10})

@@ -4,7 +4,6 @@ import React, { useCallback, useState, useEffect } from 'react'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -19,9 +18,8 @@ import {
 } from '..'
 import { AuthenticatedUser } from '../../auth'
 import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '../../keyboardShortcuts/keyboardShortcuts'
-import { VersionContext } from '../../schema/site.schema'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
-import { submitSearch } from '../helpers'
+import { SubmitSearchParameters } from '../helpers'
 import { useNavbarQueryState } from '../navbarSearchQueryState'
 
 import { SearchBox } from './SearchBox'
@@ -33,7 +31,6 @@ interface Props
         SettingsCascadeProps,
         ThemeProps,
         SearchContextInputProps,
-        VersionContextProps,
         OnboardingTourProps,
         TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -43,8 +40,6 @@ interface Props
     globbing: boolean
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
-    setVersionContext: (versionContext: string | undefined) => Promise<void>
-    availableVersionContexts: VersionContext[] | undefined
 }
 
 /**
@@ -56,14 +51,36 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
     // or remove the search help button
     const isSearchPage = props.location.pathname === '/search' && Boolean(parseSearchURLQuery(props.location.search))
     const [isFuzzyFinderVisible, setIsFuzzyFinderVisible] = useState(false)
-    const { queryState, setQueryState } = useNavbarQueryState()
+    const { queryState, setQueryState, submitSearch } = useNavbarQueryState()
+
+    const submitSearchOnChange = useCallback(
+        (parameters: Partial<SubmitSearchParameters> = {}) => {
+            submitSearch({
+                history: props.history,
+                patternType: props.patternType,
+                caseSensitive: props.caseSensitive,
+                source: 'nav',
+                activation: props.activation,
+                selectedSearchContextSpec: props.selectedSearchContextSpec,
+                ...parameters,
+            })
+        },
+        [
+            submitSearch,
+            props.history,
+            props.patternType,
+            props.caseSensitive,
+            props.activation,
+            props.selectedSearchContextSpec,
+        ]
+    )
 
     const onSubmit = useCallback(
         (event?: React.FormEvent): void => {
             event?.preventDefault()
-            submitSearch({ ...props, query: queryState.query, source: 'nav' })
+            submitSearchOnChange()
         },
-        [props, queryState]
+        [submitSearchOnChange]
     )
 
     useEffect(() => {
@@ -83,10 +100,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
         >
             <SearchBox
                 {...props}
-                hasGlobalQueryBehavior={true}
                 queryState={queryState}
                 onChange={setQueryState}
                 onSubmit={onSubmit}
+                submitSearchOnToggle={submitSearchOnChange}
+                submitSearchOnSearchContextChange={submitSearchOnChange}
                 autoFocus={autoFocus}
                 hideHelpButton={isSearchPage}
                 onHandleFuzzyFinder={setIsFuzzyFinderVisible}

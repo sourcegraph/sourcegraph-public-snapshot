@@ -184,7 +184,7 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 
 {{.URL}}
 `,
-	HTML: `<p>Hi {{.Username}},</p>
+	HTML: `<p>Hi <a>{{.Username}},</a></p>
 
 <p>Please verify your email address on Sourcegraph ({{.Host}}) by clicking this link:</p>
 

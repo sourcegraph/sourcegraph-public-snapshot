@@ -62,7 +62,7 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
 
     // Unlike onFilterClicked, this function will always append or update a filter
     const submitQueryWithProps = useCallback(
-        (updates: QueryUpdate[]) => submitSearch(updates, { ...props, source: 'filter', history }),
+        (updates: QueryUpdate[]) => submitSearch({ ...props, source: 'filter', history }, updates),
         [history, props, submitSearch]
     )
 
@@ -137,7 +137,6 @@ export const SearchSidebar: React.FunctionComponent<SearchSidebarProps> = props 
                         onNavbarQueryChange: setQueryState,
                         patternType: props.patternType,
                         query,
-                        versionContext: props.versionContext,
                         selectedSearchContextSpec: props.selectedSearchContextSpec,
                     })}
                 </SearchSidebarSection>

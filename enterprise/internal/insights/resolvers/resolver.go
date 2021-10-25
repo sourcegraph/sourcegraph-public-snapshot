@@ -18,15 +18,43 @@ import (
 
 var _ graphqlbackend.InsightsResolver = &Resolver{}
 
+// baseInsightResolver is a "super" resolver for all other insights resolvers. Since insights interacts with multiple
+// database and multiple Stores, this is a convenient way to propagate those stores without having to drill individual
+// references all over the place, but still allow interfaces at the individual resolver level for mocking.
+type baseInsightResolver struct {
+	insightStore    *store.InsightStore
+	timeSeriesStore *store.Store
+	dashboardStore  *store.DBDashboardStore
+	workerBaseStore *basestore.Store
+
+	// including the DB references for any one off stores that may need to be created.
+	insightsDB dbutil.DB
+	postgresDB dbutil.DB
+}
+
+func WithBase(insightsDB dbutil.DB, primaryDB dbutil.DB, clock func() time.Time) *baseInsightResolver {
+	insightStore := store.NewInsightStore(insightsDB)
+	timeSeriesStore := store.NewWithClock(insightsDB, store.NewInsightPermissionStore(primaryDB), clock)
+	dashboardStore := store.NewDashboardStore(insightsDB)
+	workerBaseStore := basestore.NewWithDB(primaryDB, sql.TxOptions{})
+
+	return &baseInsightResolver{
+		insightStore:    insightStore,
+		timeSeriesStore: timeSeriesStore,
+		dashboardStore:  dashboardStore,
+		workerBaseStore: workerBaseStore,
+		insightsDB:      insightsDB,
+		postgresDB:      primaryDB,
+	}
+}
+
 // Resolver is the GraphQL resolver of all things related to Insights.
 type Resolver struct {
 	timeSeriesStore      store.Interface
-	workerBaseStore      *basestore.Store
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
-	dashboardStore       *store.DBDashboardStore
-	insightsDatabase     dbutil.DB
-	postgresDatabase     dbutil.DB
+
+	baseInsightResolver
 }
 
 // New returns a new Resolver whose store uses the given Timescale and Postgres DBs.
@@ -37,15 +65,12 @@ func New(timescale, postgres dbutil.DB) graphqlbackend.InsightsResolver {
 // newWithClock returns a new Resolver whose store uses the given Timescale and Postgres DBs, and the given
 // clock for timestamps.
 func newWithClock(timescale, postgres dbutil.DB, clock func() time.Time) *Resolver {
-	insightStore := store.NewInsightStore(timescale)
+	base := WithBase(timescale, postgres, clock)
 	return &Resolver{
-		timeSeriesStore:      store.NewWithClock(timescale, store.NewInsightPermissionStore(postgres), clock),
-		workerBaseStore:      basestore.NewWithDB(postgres, sql.TxOptions{}),
-		insightMetadataStore: insightStore,
-		dataSeriesStore:      insightStore,
-		dashboardStore:       store.NewDashboardStore(timescale),
-		insightsDatabase:     timescale,
-		postgresDatabase:     postgres,
+		baseInsightResolver:  *base,
+		timeSeriesStore:      base.timeSeriesStore,
+		insightMetadataStore: base.insightStore,
+		dataSeriesStore:      base.insightStore,
 	}
 }
 
@@ -68,10 +93,9 @@ func (r *Resolver) Insights(ctx context.Context, args *graphqlbackend.InsightsAr
 
 func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
 	return &dashboardConnectionResolver{
-		insightsDatabase: r.insightsDatabase,
-		dashboardStore:   store.NewDashboardStore(r.insightsDatabase),
-		orgStore:         database.Orgs(r.workerBaseStore.Handle().DB()),
-		args:             args,
+		baseInsightResolver: r.baseInsightResolver,
+		orgStore:            database.Orgs(r.postgresDB),
+		args:                args,
 	}, nil
 }
 

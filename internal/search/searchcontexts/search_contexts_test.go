@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func init() {
@@ -120,34 +119,6 @@ func TestConstructingSearchContextSpecs(t *testing.T) {
 	}
 }
 
-func TestGettingSearchContextFromVersionContext(t *testing.T) {
-	tests := []struct {
-		name              string
-		versionContext    *schema.VersionContext
-		wantSearchContext *types.SearchContext
-	}{
-		{
-			name:              "simple version context",
-			versionContext:    &schema.VersionContext{Name: "vc1", Description: "vc1 description"},
-			wantSearchContext: &types.SearchContext{Name: "vc1", Description: "vc1 description", Public: true},
-		},
-		{
-			name:              "version context with spaces in name",
-			versionContext:    &schema.VersionContext{Name: "Version Context  2", Description: "Version Context 2 description"},
-			wantSearchContext: &types.SearchContext{Name: "Version_Context_2", Description: "Version Context 2 description", Public: true},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotSearchContext := getSearchContextFromVersionContext(tt.versionContext)
-			if !reflect.DeepEqual(tt.wantSearchContext, gotSearchContext) {
-				t.Fatalf("want %+v, got %+v", tt.wantSearchContext, gotSearchContext)
-			}
-		})
-	}
-}
-
 func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]types.RepoName, error) {
 	err := repoStore.Create(ctx, &types.Repo{Name: "github.com/example/a"}, &types.Repo{Name: "github.com/example/b"})
 	if err != nil {
@@ -162,62 +133,6 @@ func createRepos(ctx context.Context, repoStore *database.RepoStore) ([]types.Re
 		return nil, err
 	}
 	return []types.RepoName{{ID: repoA.ID, Name: repoA.Name}, {ID: repoB.ID, Name: repoB.Name}}, nil
-}
-
-func TestConvertingVersionContextToSearchContext(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
-	u := database.Users(db)
-
-	user, err := u.Create(internalCtx, database.NewUser{Username: "u", Password: "p"})
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
-	r := database.Repos(db)
-
-	repos, err := createRepos(ctx, r)
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	versionContext := &schema.VersionContext{
-		Name:        "vc1",
-		Description: "vc1 description",
-		Revisions: []*schema.VersionContextRevision{
-			{Repo: "github.com/example/a", Rev: "branch-1"},
-			{Repo: "github.com/example/a", Rev: "branch-3"},
-			{Repo: "github.com/example/b", Rev: "branch-2"},
-		},
-	}
-
-	wantRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
-		{Repo: repos[0], Revisions: []string{"branch-1", "branch-3"}},
-		{Repo: repos[1], Revisions: []string{"branch-2"}},
-	}
-	wantSearchContext := &types.SearchContext{ID: 1, Name: "vc1", Description: "vc1 description", Public: true}
-
-	gotSearchContext, err := ConvertVersionContextToSearchContext(ctx, db, versionContext)
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-	// Ignore UpdateAt field
-	gotSearchContext.UpdatedAt = wantSearchContext.UpdatedAt
-	if !reflect.DeepEqual(wantSearchContext, gotSearchContext) {
-		t.Fatalf("want search context %+v, got %+v", wantSearchContext, gotSearchContext)
-	}
-
-	gotRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, gotSearchContext.ID)
-	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-	if !reflect.DeepEqual(wantRepositoryRevisions, gotRepositoryRevisions) {
-		t.Fatalf("wanted %+v repository revisions, got %+v", wantRepositoryRevisions, gotRepositoryRevisions)
-	}
 }
 
 func TestResolvingSearchContextRepoNames(t *testing.T) {

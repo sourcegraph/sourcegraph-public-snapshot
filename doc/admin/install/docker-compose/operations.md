@@ -58,7 +58,7 @@ We **strongly** recommend that you create and run Sourcegraph from your own fork
 
   ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v3.32.0"
+  export SOURCEGRAPH_VERSION="v3.33.0"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
   ```
@@ -166,6 +166,12 @@ Address any merge conflicts you might have.
 > If you do this, make sure to validate your configuration is correct before proceeding.
 
 If you are upgrading a live deployment, make sure to check the [release upgrade notes](../../updates/docker_compose.md) for any additional actions you need to take **before proceeding**.
+
+Download all the latest docker images to your local docker daemon:
+
+```bash
+docker-compose pull --include-deps
+```
 Then, ensure that the current Sourcegraph instance is completely stopped:
 
 ```bash

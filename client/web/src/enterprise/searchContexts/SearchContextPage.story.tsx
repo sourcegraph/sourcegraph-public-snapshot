@@ -5,7 +5,7 @@ import { NEVER, Observable, of, throwError } from 'rxjs'
 
 import { IRepository, ISearchContext, ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
 
-import { EnterpriseWebStory } from '../components/EnterpriseWebStory'
+import { WebStory } from '../../components/WebStory'
 
 import { SearchContextPage } from './SearchContextPage'
 
@@ -68,9 +68,9 @@ const fetchAutoDefinedContext = (): Observable<ISearchContext> =>
 add(
     'public context',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPublicContext} />}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )
@@ -78,9 +78,9 @@ add(
 add(
     'autodefined context',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchAutoDefinedContext} />}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )
@@ -88,34 +88,30 @@ add(
 add(
     'private context',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={fetchPrivateContext} />}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )
 
 add(
     'loading',
-    () => (
-        <EnterpriseWebStory>
-            {webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}
-        </EnterpriseWebStory>
-    ),
+    () => <WebStory>{webProps => <SearchContextPage {...webProps} fetchSearchContextBySpec={() => NEVER} />}</WebStory>,
     {}
 )
 
 add(
     'error',
     () => (
-        <EnterpriseWebStory>
+        <WebStory>
             {webProps => (
                 <SearchContextPage
                     {...webProps}
                     fetchSearchContextBySpec={() => throwError(new Error('Failed to fetch search context'))}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     ),
     {}
 )

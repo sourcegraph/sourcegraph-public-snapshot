@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { ReactElement } from 'react'
 
 import { Button } from '@sourcegraph/wildcard/src'
@@ -42,16 +42,16 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
         <li
             data-testid="series-card"
             aria-label={`${name} data series`}
-            className={classnames(styles.card, className, 'card d-flex flex-row p-3')}
+            className={classNames(styles.card, className, 'card d-flex flex-row p-3')}
         >
             <div className={styles.cardInfo}>
-                <div className={classnames('mb-1 ', styles.cardTitle)}>
+                <div className={classNames('mb-1 ', styles.cardTitle)}>
                     {/* eslint-disable-next-line react/forbid-dom-props */}
                     <div data-testid="series-color-mark" style={{ color }} className={styles.cardColorMark} />
                     <span
                         data-testid="series-name"
                         title={name}
-                        className={classnames(styles.cardName, 'ml-1 font-weight-bold')}
+                        className={classNames(styles.cardName, 'ml-1 font-weight-bold')}
                     >
                         {name}
                     </span>

@@ -31,10 +31,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         render: () => <Redirect to="/subscriptions/new" />,
     },
     {
-        path: '/campaigns',
-        render: ({ match }) => <Redirect to={match.path.replace('/campaigns', '/batch-changes')} />,
-    },
-    {
         path: '/batch-changes',
         render: lazyComponent(() => import('./batches/global/GlobalBatchChangesArea'), 'GlobalBatchChangesArea'),
         // We also render this route on sourcegraph.com as a precaution in case anyone
@@ -63,16 +59,6 @@ export const enterpriseRoutes: readonly LayoutRouteProps<any>[] = [
         render: lazyComponent(() => import('./searchContexts/SearchContextsListPage'), 'SearchContextsListPage'),
         exact: true,
         condition: props => isSearchContextsManagementEnabled(props.settingsCascade),
-    },
-    {
-        path: '/contexts/convert-version-contexts',
-        render: lazyComponent(
-            () => import('./searchContexts/ConvertVersionContextsPage'),
-            'ConvertVersionContextsPage'
-        ),
-        exact: true,
-        condition: props =>
-            isSearchContextsManagementEnabled(props.settingsCascade) && !!props.authenticatedUser?.siteAdmin,
     },
     {
         path: '/contexts/new',

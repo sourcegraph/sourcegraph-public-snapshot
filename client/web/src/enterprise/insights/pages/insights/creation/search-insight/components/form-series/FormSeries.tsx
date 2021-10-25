@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import { Button } from '@sourcegraph/wildcard/src'
@@ -88,7 +88,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                         autofocus={series.length > 1}
                         onSubmit={seriesValues => onEditSeriesCommit(index, { ...line, ...seriesValues })}
                         onCancel={() => onEditSeriesCancel(index)}
-                        className={classnames('card card-body p-3', styles.formSeriesItem)}
+                        className={classNames('card card-body p-3', styles.formSeriesItem)}
                         onChange={(seriesValues, valid) => onLiveChange({ ...line, ...seriesValues }, valid, index)}
                         {...line}
                     />
@@ -112,7 +112,7 @@ export const FormSeries: React.FunctionComponent<FormSeriesProps> = props => {
                 disabled={isBackendInsightEdit}
                 onClick={() => onEditSeriesRequest(series.length)}
                 variant="link"
-                className={classnames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
+                className={classNames(styles.formSeriesItem, styles.formSeriesAddButton, 'p-3')}
             >
                 + Add another data series
             </Button>

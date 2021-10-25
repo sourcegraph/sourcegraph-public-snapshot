@@ -140,16 +140,16 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		}
 
 		// Build list of repo IDs to fetch revisions for.
-		repoIDs := make([]int32, len(repos))
+		repoIDs := make([]api.RepoID, len(repos))
 		for i, repo := range repos {
-			repoIDs[i] = int32(repo.ID)
+			repoIDs[i] = repo.ID
 		}
 		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
 		getSearchContextRevisions := func(repoID int32) ([]string, error) {
 			if revisionsForRepoErr != nil {
 				return nil, revisionsForRepoErr
 			}
-			return revisionsForRepo[repoID], nil
+			return revisionsForRepo[api.RepoID(repoID)], nil
 		}
 
 		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoNames...)

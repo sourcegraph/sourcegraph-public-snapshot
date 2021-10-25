@@ -92,7 +92,6 @@ const PROPS: HierarchicalLocationsViewProps = {
     defaultGroup: 'git://github.com/foo/bar',
     isLightTheme: true,
     fetchHighlightedFileLineRanges: () => of([['line1\n', 'line2\n', 'line3\n', 'line4']]),
-    versionContext: undefined,
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 

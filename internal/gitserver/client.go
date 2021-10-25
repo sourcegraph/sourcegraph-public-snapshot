@@ -32,10 +32,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
 var clientFactory = httpcli.NewInternalClientFactory("gitserver")
@@ -43,6 +43,16 @@ var defaultDoer, _ = clientFactory.Doer()
 
 // DefaultClient is the default Client. Unless overwritten it is connected to servers specified by SRC_GIT_SERVERS.
 var DefaultClient = NewClient(defaultDoer)
+
+var ClientMocks, emptyClientMocks struct {
+	GetObject func(repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
+}
+
+// ResetClientMocks clears the mock functions set on Mocks (so that subsequent
+// tests don't inadvertently use them).
+func ResetClientMocks() {
+	ClientMocks = emptyClientMocks
+}
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
@@ -141,7 +151,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
 		if strings.Contains(err.Error(), "Not a valid object") {
-			return 0, &RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
+			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
 	return n, err
@@ -215,7 +225,7 @@ func (c *Client) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOpti
 		}
 		resp.Body.Close()
 		return nil, &badRequestError{
-			error: &vcs.RepoNotExistError{
+			error: &gitdomain.RepoNotExistError{
 				Repo:            repo,
 				CloneInProgress: payload.CloneInProgress,
 				CloneProgress:   payload.CloneProgress,
@@ -273,7 +283,7 @@ func (c *Cmd) sendExec(ctx context.Context) (_ io.ReadCloser, _ http.Header, err
 			return nil, nil, err
 		}
 		resp.Body.Close()
-		return nil, nil, &vcs.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
+		return nil, nil, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: payload.CloneInProgress, CloneProgress: payload.CloneProgress}
 
 	default:
 		resp.Body.Close()
@@ -989,4 +999,36 @@ func (c *Client) CreateCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return res.Rev, res.Error
 	}
 	return res.Rev, nil
+}
+
+// GetObject fetches git object data in the supplied repo
+func (c *Client) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+	if ClientMocks.GetObject != nil {
+		return ClientMocks.GetObject(repo, objectName)
+	}
+
+	req := protocol.GetObjectRequest{
+		Repo:       repo,
+		ObjectName: objectName,
+	}
+	resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log15.Warn("reading gitserver get-object response", "err", err.Error())
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, err.Error())}
+	}
+
+	var res protocol.GetObjectResponse
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		log15.Warn("decoding gitserver get-object response", "err", err.Error())
+		return nil, &url.Error{URL: resp.Request.URL.String(), Op: "GetObject", Err: errors.Errorf("GetObject: http status %d %s", resp.StatusCode, string(data))}
+	}
+
+	return &res.Object, nil
 }

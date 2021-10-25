@@ -174,13 +174,6 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 
 func (o *OrgResolver) NamespaceName() string { return o.org.Name }
 
-// TODO(campaigns-deprecation):
-func (o *OrgResolver) Campaigns(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
-	id := o.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.Campaigns(ctx, args)
-}
-
 func (o *OrgResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := o.ID()
 	args.Namespace = &id
@@ -254,7 +247,13 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
-
+	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if memberCount == 1 {
+		return nil, errors.Errorf("you can’t remove the only member of an organization")
+	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
 	return nil, database.OrgMembers(r.db).Remove(ctx, orgID, userID)
 }
@@ -298,10 +297,13 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
+	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
+		return nil, err
+	}
 	// 🚨 SECURITY: Only org members can list the org repositories.
 	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
-			return nil, errors.New("must be a member of this organization to view members")
+			return nil, errors.New("must be a member of this organization to view its repositories")
 		}
 		return nil, err
 	}

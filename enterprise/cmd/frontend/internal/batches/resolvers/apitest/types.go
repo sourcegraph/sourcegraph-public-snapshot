@@ -219,6 +219,9 @@ type BatchSpec struct {
 
 	State               string
 	WorkspaceResolution BatchSpecWorkspaceResolution
+
+	StartedAt  graphqlbackend.DateTime
+	FinishedAt graphqlbackend.DateTime
 }
 
 type BatchSpecWorkspaceResolution struct {

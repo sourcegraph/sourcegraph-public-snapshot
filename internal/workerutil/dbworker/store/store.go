@@ -297,7 +297,7 @@ func newStore(handle *basestore.TransactableHandle, options Options, observation
 		replacements = append(replacements, fmt.Sprintf("{%s}", k), v)
 	}
 
-	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions)
+	modifiedColumnExpressionMatches := matchModifiedColumnExpressions(options.ViewName, options.ColumnExpressions, alternateColumnNames)
 
 	for i, expression := range options.ColumnExpressions {
 		for _, match := range modifiedColumnExpressionMatches[i] {
@@ -748,7 +748,7 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET {state} = CASE WHEN {num_failures} + 1 = %d THEN 'failed' ELSE 'errored' END,
+SET {state} = CASE WHEN {num_failures} + 1 >= %d THEN 'failed' ELSE 'errored' END,
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
 	{num_failures} = {num_failures} + 1
@@ -946,7 +946,7 @@ type MatchingColumnExpressions struct {
 //
 // The output slice has the same number of elements as the input column expressions
 // and the results are ordered in parallel with the given column expressions.
-func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query) [][]MatchingColumnExpressions {
+func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Query, alternateColumnNames map[string]string) [][]MatchingColumnExpressions {
 	matches := make([][]MatchingColumnExpressions, len(columnExpressions))
 	columnPrefixes := makeColumnPrefixes(viewName)
 
@@ -956,6 +956,10 @@ func matchModifiedColumnExpressions(viewName string, columnExpressions []*sqlf.Q
 		for _, columnName := range columnsUpdatedByDequeue {
 			match := false
 			exact := false
+
+			if name, ok := alternateColumnNames[columnName]; ok {
+				columnName = name
+			}
 
 			for _, columnPrefix := range columnPrefixes {
 				if regexp.MustCompile(fmt.Sprintf(`^%s%s$`, columnPrefix, columnName)).MatchString(columnExpressionText) {

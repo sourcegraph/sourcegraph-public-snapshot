@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
@@ -90,10 +91,20 @@ func (h *dependencyIndexingSchedulerHandler) Handle(ctx context.Context, record 
 			return errors.Wrap(err, "extsvcStore.List")
 		}
 
+		outdatedServices := make(map[int64]time.Duration, len(externalServices))
 		for _, externalService := range externalServices {
 			if externalService.LastSyncAt.Before(job.ExternalServiceSync) {
-				return h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff))
+				outdatedServices[externalService.ID] = job.ExternalServiceSync.Sub(externalService.LastSyncAt)
 			}
+		}
+
+		if len(outdatedServices) > 0 {
+			if err := h.workerStore.Requeue(ctx, job.ID, time.Now().Add(requeueBackoff)); err != nil {
+				return errors.Wrap(err, "store.Requeue")
+			}
+
+			log15.Warn("Requeued dependency indexing job (external services not yet updated)", "id", job.ID, "outdated_services", outdatedServices)
+			return nil
 		}
 	}
 

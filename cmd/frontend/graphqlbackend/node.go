@@ -77,36 +77,14 @@ func (r *NodeResolver) ToMonitorTriggerEvent() (MonitorTriggerEventResolver, boo
 	return n, ok
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-func (r *NodeResolver) ToCampaign() (BatchChangeResolver, bool) {
-	if n, ok := r.Node.(BatchChangeResolver); ok {
-		return n, n.ActAsCampaign()
-	}
-	return nil, false
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-func (r *NodeResolver) ToCampaignSpec() (BatchSpecResolver, bool) {
-	if n, ok := r.Node.(BatchSpecResolver); ok {
-		return n, n.ActAsCampaignSpec()
-	}
-	return nil, false
-}
-
 func (r *NodeResolver) ToBatchChange() (BatchChangeResolver, bool) {
-	if n, ok := r.Node.(BatchChangeResolver); ok {
-		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-		return n, !n.ActAsCampaign()
-	}
-	return nil, false
+	n, ok := r.Node.(BatchChangeResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToBatchSpec() (BatchSpecResolver, bool) {
-	if n, ok := r.Node.(BatchSpecResolver); ok {
-		// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-		return n, !n.ActAsCampaignSpec()
-	}
-	return nil, false
+	n, ok := r.Node.(BatchSpecResolver)
+	return n, ok
 }
 
 func (r *NodeResolver) ToExternalChangeset() (ExternalChangesetResolver, bool) {
@@ -144,12 +122,6 @@ func (r *NodeResolver) ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, b
 		return nil, ok
 	}
 	return n.ToVisibleChangesetSpec()
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-func (r *NodeResolver) ToCampaignsCredential() (CampaignsCredentialResolver, bool) {
-	n, ok := r.Node.(CampaignsCredentialResolver)
-	return n, ok
 }
 
 func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolver, bool) {

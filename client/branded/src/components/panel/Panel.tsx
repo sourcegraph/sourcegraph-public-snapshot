@@ -18,7 +18,6 @@ import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExce
 import { Resizable } from '@sourcegraph/shared/src/components/Resizable'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -38,8 +37,7 @@ interface Props
         SettingsCascadeProps,
         ActivationProps,
         TelemetryProps,
-        ThemeProps,
-        VersionContextProps {
+        ThemeProps {
     repoName?: string
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }

@@ -14,8 +14,8 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -23,10 +23,10 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
           Your recent searches will be displayed here. Here are a few searches to get you started:
         </small>
         <ul
-          className="recent-searches-panel__examples-list"
+          className="examplesList"
         >
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -40,7 +40,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -54,7 +54,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -68,7 +68,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
             </small>
           </li>
         </ul>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -78,11 +78,11 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -96,11 +96,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -115,7 +113,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -125,7 +123,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -140,7 +138,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -161,26 +159,26 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
     title="Recent searches"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      className="recent-searches-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Recent searches
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -194,11 +192,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="0"
             >
               <td>
@@ -225,7 +221,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -242,7 +238,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="1"
             >
               <td>
@@ -275,7 +271,7 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -330,8 +326,8 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -339,10 +335,10 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
           Your recent searches will be displayed here. Here are a few searches to get you started:
         </small>
         <ul
-          className="recent-searches-panel__examples-list"
+          className="examplesList"
         >
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -356,7 +352,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -370,7 +366,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -384,7 +380,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
             </small>
           </li>
         </ul>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -394,11 +390,11 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -412,11 +408,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -431,7 +425,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -441,7 +435,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -456,7 +450,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -466,7 +460,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -481,7 +475,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -491,7 +485,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -506,7 +500,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -523,26 +517,26 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
     title="Recent searches"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      className="recent-searches-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Recent searches
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -556,11 +550,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="0"
             >
               <td>
@@ -587,7 +579,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -604,7 +596,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="1"
             >
               <td>
@@ -637,7 +629,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -654,7 +646,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="2"
             >
               <td>
@@ -681,7 +673,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -698,7 +690,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="3"
             >
               <td>
@@ -731,7 +723,7 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -769,8 +761,8 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -778,10 +770,10 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
           Your recent searches will be displayed here. Here are a few searches to get you started:
         </small>
         <ul
-          className="recent-searches-panel__examples-list"
+          className="examplesList"
         >
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -795,7 +787,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -809,7 +801,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -823,7 +815,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
             </small>
           </li>
         </ul>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -833,11 +825,11 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -851,11 +843,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -870,7 +860,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -880,7 +870,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -895,7 +885,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -912,26 +902,26 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
     title="Recent searches"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      className="recent-searches-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Recent searches
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -945,11 +935,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="0"
             >
               <td>
@@ -976,7 +964,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -993,7 +981,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="1"
             >
               <td>
@@ -1026,7 +1014,7 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:39Z"
@@ -1064,8 +1052,8 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
   <PanelContainer
     className="recent-searches-panel"
     emptyContent={
-      <div
-        className="panel-container__empty-container text-muted"
+      <EmptyPanelContainer
+        className="text-muted"
       >
         <small
           className="mb-2"
@@ -1073,10 +1061,10 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
           Your recent searches will be displayed here. Here are a few searches to get you started:
         </small>
         <ul
-          className="recent-searches-panel__examples-list"
+          className="examplesList"
         >
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -1090,7 +1078,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -1104,7 +1092,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
             </small>
           </li>
           <li
-            className="recent-searches-panel__examples-list-item"
+            className="examplesListItem"
           >
             <small>
               <AnchorLink
@@ -1118,7 +1106,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
             </small>
           </li>
         </ul>
-      </div>
+      </EmptyPanelContainer>
     }
     loadingContent={
       <LoadingPanelView
@@ -1128,11 +1116,11 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
     populatedContent={
       <React.Fragment>
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -1146,11 +1134,9 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -1165,7 +1151,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -1175,7 +1161,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <td>
                 <small>
@@ -1190,7 +1176,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:30Z"
@@ -1207,26 +1193,26 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
     title="Recent searches"
   >
     <div
-      className="recent-searches-panel panel-container d-flex flex-column"
+      className="recent-searches-panel panelContainer d-flex flex-column"
     >
       <div
-        className="panel-container__header d-flex border-bottom"
+        className="d-flex border-bottom header"
       >
         <h4
-          className="panel-container__header-text"
+          className="headerText"
         >
           Recent searches
         </h4>
       </div>
       <div
-        className="panel-container__content h-100"
+        className="h-100 content"
       >
         <table
-          className="recent-searches-panel__results-table mt-2"
+          className="mt-2 resultsTable"
         >
           <thead>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
             >
               <th>
                 <small>
@@ -1240,11 +1226,9 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               </th>
             </tr>
           </thead>
-          <tbody
-            className="recent-searches-panel__results-table-body"
-          >
+          <tbody>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="0"
             >
               <td>
@@ -1271,7 +1255,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-08T17:36:52Z"
@@ -1288,7 +1272,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               </td>
             </tr>
             <tr
-              className="recent-searches-panel__results-table-row"
+              className="resultsTableRow"
               key="1"
             >
               <td>
@@ -1321,7 +1305,7 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
                 </small>
               </td>
               <td
-                className="recent-searches-panel__results-table-date-col"
+                className="resultsTableDateCol"
               >
                 <Timestamp
                   date="2020-09-04T18:44:30Z"

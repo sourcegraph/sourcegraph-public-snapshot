@@ -106,14 +106,8 @@ func logBackendEvent(ctx context.Context, db dbutil.DB, name string, args interf
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
-		"Campaign": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.campaignByID(ctx, id)
-		},
 		batchChangeIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangeByID(ctx, id)
-		},
-		"CampaignSpec": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.campaignSpecByID(ctx, id)
 		},
 		batchSpecIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchSpecByID(ctx, id)
@@ -123,9 +117,6 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 		},
 		changesetIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.changesetByID(ctx, id)
-		},
-		"CampaignsCredential": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.campaignsCredentialByID(ctx, id)
 		},
 		batchChangesCredentialIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
 			return r.batchChangesCredentialByID(ctx, id)
@@ -879,7 +870,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		// changesets, since that would leak information.
 		safe = false
 	}
-	if args.OnlyPublishedByThisCampaign != nil || args.OnlyPublishedByThisBatchChange != nil {
+	if args.OnlyPublishedByThisBatchChange != nil {
 		published := btypes.ChangesetPublicationStatePublished
 
 		opts.OwnedByBatchChangeID = batchChangeID

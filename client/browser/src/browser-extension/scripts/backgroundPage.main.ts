@@ -37,8 +37,6 @@ import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeStorageKey } from '../web-extension-api/storage'
 import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
 
-const IS_EXTENSION = true
-
 // Interval to check if the Sourcegraph URL is valid
 // This polling allows to detect if Sourcegraph instance is invalid or needs authentication.
 const INTERVAL_FOR_SOURCEGRPAH_URL_CHECK = 5 /* minutes */ * 60 * 1000
@@ -146,7 +144,7 @@ async function main(): Promise<void> {
 
         // Configure the omnibox when the sourcegraphURL changes.
         subscriptions.add(
-            SourcegraphUrlService.observe(IS_EXTENSION).subscribe(sourcegraphURL => {
+            SourcegraphUrlService.observeSelfHostedOrCloud().subscribe(sourcegraphURL => {
                 configureOmnibox(sourcegraphURL)
             })
         )
