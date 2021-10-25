@@ -24,6 +24,7 @@ echo "--- :go: Getting richgo"
   set -x
   asdf plugin add richgo || true
   asdf install richgo 0.3.9 || true
+  asdf local richgo 0.3.9 || true
 )
 
 # We have multiple go.mod files and go list doesn't recurse into them.
