@@ -64,6 +64,8 @@ func (cs *BatchSpec) ExpiresAt() time.Time {
 }
 
 type BatchSpecStats struct {
+	ResolutionDone bool
+
 	Workspaces int
 	Executions int
 
@@ -122,6 +124,10 @@ func (s BatchSpecState) Finished() bool {
 func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
 	if !spec.CreatedFromRaw {
 		return BatchSpecStateCompleted
+	}
+
+	if !stats.ResolutionDone {
+		return BatchSpecStatePending
 	}
 
 	if stats.Workspaces == 0 {

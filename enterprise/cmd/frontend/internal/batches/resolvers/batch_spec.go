@@ -387,7 +387,7 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	return graphqlbackend.DateTimeOrNil(&stats.StartedAt), nil
+	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
 }
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -412,7 +412,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	return graphqlbackend.DateTimeOrNil(&stats.FinishedAt), nil
+	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
