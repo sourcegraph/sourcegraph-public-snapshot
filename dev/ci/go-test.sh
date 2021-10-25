@@ -19,7 +19,7 @@ echo "--- :arrow_right: Running CodeInsightsDB"
   export DB_STARTUP_TIMEOUT=120s # codeinsights-db needs more time to start in some instances.
 )
 
-echo "--- :go: Getting richgo"
+echo "--- :go::arrow_down: Getting richgo"
 (
   set -x
   asdf plugin add richgo || true
@@ -32,10 +32,10 @@ find . -name go.mod -exec dirname '{}' \; | while read -r d; do
   pushd "$d" >/dev/null
 
   # Separate out time for go mod from go test
-  echo "--- :go: $d go mod download"
+  echo "--- :go::arrow_down: $d go mod download"
   go mod download
 
-  echo "--- :go: $d go test"
+  echo "--- :go::arrow_right: $d go test"
   richgo test -timeout 10m -coverprofile=coverage.txt -covermode=atomic -race ./...
 
   popd >/dev/null
