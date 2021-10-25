@@ -15,11 +15,15 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Changed
 
-- For internal use only: `src batch exec` does not evaluate `importChangesets` in batch specs anymore, since that's already done server-side.
-
 ### Fixed
 
 ### Removed
+
+## 3.33.2
+
+### Changed
+
+- For internal use only: `src batch exec` does not evaluate `importChangesets` in batch specs anymore, since that's already done server-side.
 
 ## 3.33.1
 
