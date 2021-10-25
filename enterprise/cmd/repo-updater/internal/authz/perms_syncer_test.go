@@ -133,6 +133,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}
 		return nil
 	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
+	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -217,6 +220,9 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 			return errors.Errorf("IDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
+	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
 	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
@@ -308,6 +314,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
+	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
 	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
@@ -426,6 +435,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
+	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
 	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {

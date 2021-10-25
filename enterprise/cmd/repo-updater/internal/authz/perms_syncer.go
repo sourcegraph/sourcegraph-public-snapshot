@@ -410,7 +410,18 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 // fetchUserPermsViaExternalServices uses user code connections) to list all
 // accessible private repositories on code hosts for the given user.
 func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, userID int32, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
-	// TODO: only do this when the user is a member of any organization that has added code host connection, otherwise this is pure waste.
+	has, err := s.permsStore.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
+	if err != nil {
+		return nil, errors.Wrap(err, "check user organization membership with a code host connection")
+	}
+
+	// NOTE: User-centric permissions syncing needs parity from the repo-centric
+	//  permissions syncing. Therefore, if the user is not a member of any
+	//  organization that has a code host connection connected, there is no point to
+	//  do the user-centric syncing.
+	if !has {
+		return []uint32{}, nil
+	}
 
 	svcs, err := database.ExternalServicesWith(s.reposStore).List(ctx,
 		database.ExternalServicesListOptions{
