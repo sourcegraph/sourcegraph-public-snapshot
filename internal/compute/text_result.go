@@ -4,3 +4,5 @@ type Text struct {
 	Value string `json:"value"`
 	Kind  string `json:"kind"`
 }
+
+func (*Text) result() {}
