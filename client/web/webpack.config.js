@@ -108,15 +108,6 @@ const config = {
       }),
       new CssMinimizerWebpackPlugin(),
     ],
-    splitChunks: {
-      cacheGroups: {
-        react: {
-          test: /[/\\]node_modules[/\\](react|react-dom)[/\\]/,
-          name: 'react',
-          chunks: 'all',
-        },
-      },
-    },
     ...(isDevelopment && {
       // Running multiple entries on a single page that do not share a runtime chunk from the same compilation is not supported.
       // https://github.com/webpack/webpack-dev-server/issues/2792#issuecomment-808328432
@@ -134,11 +125,10 @@ const config = {
   output: {
     path: path.join(rootPath, 'ui', 'assets'),
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
-    // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
       mode === 'production' && !useNamedChunks ? 'scripts/[name].[contenthash].bundle.js' : 'scripts/[name].bundle.js',
     chunkFilename:
-      mode === 'production' && !useNamedChunks ? 'scripts/[name]-[contenthash].chunk.js' : 'scripts/[name].chunk.js',
+      mode === 'production' && !useNamedChunks ? 'scripts/[id]-[contenthash].chunk.js' : 'scripts/[id].chunk.js',
     publicPath: '/.assets/',
     globalObject: 'self',
     pathinfo: false,
