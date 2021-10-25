@@ -28,6 +28,14 @@ const config = {
     upload: {
       target: 'temporary-public-storage',
     },
+    assert: {
+      assertions: {
+        'categories:performance': ['warn', { minScore: 0.6 }],
+        'categories:accessibility': ['warn', { minScore: 1 }],
+        'categories:best-practices': ['warn', { minScore: 1 }],
+        'categories:seo': ['warn', { minScore: 1 }],
+      },
+    },
   },
 }
 
