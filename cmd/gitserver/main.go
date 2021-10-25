@@ -257,6 +257,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 		PrintBatch:     10,
 		Refresh:        100,
 		Retries:        10,
+		MaxChanges:     -1,
 	}
 
 	if conn.FusionClient == nil {
@@ -269,6 +270,7 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	fc.PrintBatch = conn.FusionClient.PrintBatch
 	fc.Refresh = conn.FusionClient.Refresh
 	fc.Retries = conn.FusionClient.Retries
+	fc.MaxChanges = conn.FusionClient.MaxChanges
 
 	return fc
 }
