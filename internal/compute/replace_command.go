@@ -18,25 +18,21 @@ func (c *Replace) String() string {
 	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
 }
 
-func doReplaceInPlace(content []byte, command *Replace) (*Text, error) {
+func replace(content []byte, matchPattern MatchPattern, replacePattern string) (*Text, error) {
 	var newContent []byte
-	switch p := command.MatchPattern.(type) {
+	switch p := matchPattern.(type) {
 	case *Regexp:
-		newContent = p.Value.ReplaceAll(content, []byte(command.ReplacePattern))
+		newContent = p.Value.ReplaceAll(content, []byte(replacePattern))
 	default:
 		return nil, errors.Errorf("unsupported replacement operation for %T", p)
 	}
 	return &Text{Value: string(newContent), Kind: "replace-in-place"}, nil
 }
 
-func ReplaceInPlaceFromFileMatch(ctx context.Context, fm *result.FileMatch, command *Replace) (*Text, error) {
+func (c *Replace) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
 	content, err := git.ReadFile(ctx, fm.Repo.Name, fm.CommitID, fm.Path, 0)
 	if err != nil {
 		return nil, err
 	}
-	return doReplaceInPlace(content, command)
-}
-
-func (c *Replace) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
-	return ReplaceInPlaceFromFileMatch(ctx, fm, c)
+	return replace(content, c.MatchPattern, c.ReplacePattern)
 }
