@@ -714,6 +714,8 @@ func depfault() operations.Operation {
 func uploadBuildLogs() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
+			// Allow the upload to fail without failing the build.
+			bk.SoftFail(1),
 			bk.AllowDependencyFailure(),
 			bk.Cmd("./enterprise/dev/upload-build-logs.sh"),
 		}
