@@ -2,11 +2,21 @@ package compute
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
+
+type Replace struct {
+	MatchPattern   MatchPattern
+	ReplacePattern string
+}
+
+func (c *Replace) String() string {
+	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.MatchPattern.String(), c.ReplacePattern)
+}
 
 func doReplaceInPlace(content []byte, command *Replace) (*Text, error) {
 	var newContent []byte
