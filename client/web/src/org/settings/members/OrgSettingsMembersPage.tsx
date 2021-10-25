@@ -30,22 +30,15 @@ interface UserNodeProps {
     node: GQL.IUser
 
     /** The organization being displayed. */
-    org: OrgAreaOrganization
+    org: OrgAreaOrganizationFields
 
     /** The currently authenticated user. */
     authenticatedUser: AuthenticatedUser | null
 
     /** Called when the user is updated by an action in this list item. */
     onDidUpdate?: () => void
-    onRemoveOnlyMember?: () => void
     history: H.History
 }
-
-interface HasOneMember {
-    hasOneMember: boolean
-}
-
-type OrgAreaOrganization = OrgAreaOrganizationFields & HasOneMember
 
 interface UserNodeState {
     /** Undefined means in progress, null means done or not started. */
@@ -68,17 +61,11 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
         this.subscriptions.add(
             this.removes
                 .pipe(
-                    filter(() => {
-                        if (this.props.org.hasOneMember) {
-                            if (this.props.onRemoveOnlyMember) {
-                                this.props.onRemoveOnlyMember()
-                            }
-                            return false
-                        }
-                        return window.confirm(
+                    filter(() =>
+                        window.confirm(
                             this.isSelf ? 'Leave the organization?' : `Remove the user ${this.props.node.username}?`
                         )
-                    }),
+                    ),
                     switchMap(() =>
                         removeUserFromOrganization({ user: this.props.node.id, organization: this.props.org.id }).pipe(
                             catchError(error => [asError(error)]),
@@ -151,17 +138,13 @@ interface Props extends OrgAreaPageProps, RouteComponentProps<{}> {
     history: H.History
 }
 
-interface State extends HasOneMember {
+interface State {
     /**
      * Whether the viewer can administer this org. This is updated whenever a member is added or removed, so that
      * we can detect if the currently authenticated user is no longer able to administer the org (e.g., because
      * they removed themselves and they are not a site admin).
      */
     viewerCanAdminister: boolean
-    /**
-     * Whether the viewer is the only org member (and cannot delete their membership)
-     */
-    onlyMemberRemovalAttempted: boolean
 }
 
 /**
@@ -174,11 +157,7 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     constructor(props: Props) {
         super(props)
-        this.state = {
-            viewerCanAdminister: props.org.viewerCanAdminister,
-            hasOneMember: false,
-            onlyMemberRemovalAttempted: false,
-        }
+        this.state = { viewerCanAdminister: props.org.viewerCanAdminister }
     }
 
     public componentDidMount(): void {
@@ -207,15 +186,9 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const nodeProps: Omit<UserNodeProps, 'node'> = {
-            org: {
-                ...this.props.org,
-                viewerCanAdminister: this.state.viewerCanAdminister,
-                hasOneMember: this.state.hasOneMember,
-            },
+            org: { ...this.props.org, viewerCanAdminister: this.state.viewerCanAdminister },
             authenticatedUser: this.props.authenticatedUser,
             onDidUpdate: this.onDidUpdateUser,
-            onRemoveOnlyMember: () => this.setState({ onlyMemberRemovalAttempted: true }),
-
             history: this.props.history,
         }
 
@@ -224,9 +197,6 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
                 <PageTitle title={`Members - ${this.props.org.name}`} />
                 <PageHeader path={[{ text: 'Organization members' }]} headingElement="h2" className="mb-3" />
                 <Container>
-                    {this.state.onlyMemberRemovalAttempted && (
-                        <div className="alert alert-warning">You can’t remove the only member of an organization</div>
-                    )}
                     {this.state.viewerCanAdminister && (
                         <InviteForm
                             orgID={this.props.org.id}
@@ -281,19 +251,15 @@ export class OrgSettingsMembersPage extends React.PureComponent<Props, State> {
         ).pipe(
             map(({ data, errors }) => {
                 if (!data || !data.node) {
-                    this.setState({ viewerCanAdminister: false, hasOneMember: false })
+                    this.setState({ viewerCanAdminister: false })
                     throw createAggregateError(errors)
                 }
                 const org = data.node as GQL.IOrg
                 if (!org.members) {
-                    this.setState({ viewerCanAdminister: false, hasOneMember: false })
+                    this.setState({ viewerCanAdminister: false })
                     throw createAggregateError(errors)
                 }
-                this.setState({
-                    viewerCanAdminister: org.viewerCanAdminister,
-                    hasOneMember: org.members.totalCount === 1,
-                    onlyMemberRemovalAttempted: false,
-                })
+                this.setState({ viewerCanAdminister: org.viewerCanAdminister })
                 return org.members
             })
         )
