@@ -74,6 +74,10 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         )
     }
 
+    if (!dashboard.owner) {
+        throw new Error('TODO: support GraphQL API')
+    }
+
     // Convert dashboard info to initial form values
     const dashboardInitialValues = dashboard ? { name: dashboard.title, visibility: dashboard.owner.id } : undefined
 

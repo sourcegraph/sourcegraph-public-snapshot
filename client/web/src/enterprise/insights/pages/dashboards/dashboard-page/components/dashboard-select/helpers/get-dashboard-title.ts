@@ -11,7 +11,7 @@ export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
             return 'Global Insights'
         }
 
-        return `${dashboard.owner.name}'s Insights`
+        return `${dashboard.owner!.name}'s Insights`
     }
 
     return dashboard.title
@@ -29,6 +29,10 @@ export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string =
 
     if (type === InsightsDashboardType.Global) {
         return 'Global'
+    }
+
+    if (!dashboard.owner) {
+        throw new Error('TODO: support GraphQL API')
     }
 
     return dashboard.owner.name
