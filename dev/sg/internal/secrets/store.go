@@ -98,3 +98,20 @@ func (s *Store) Get(key string, target interface{}) error {
 	}
 	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
 }
+
+// Remove deletes a value from memory.
+func (s *Store) Remove(key string) error {
+	if _, exists := s.m[key]; exists {
+		delete(s.m, key)
+		return nil
+	}
+	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
+}
+
+// RemoveAndSave saves automatically after calling Remove.
+func (s *Store) RemoveAndSave(key string) error {
+	if err := s.Remove(key); err != nil {
+		return err
+	}
+	return s.SaveFile()
+}
