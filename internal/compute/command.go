@@ -1,7 +1,14 @@
 package compute
 
+import (
+	"context"
+
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
+)
+
 type Command interface {
 	command()
+	Run(context.Context, *result.FileMatch) (Result, error)
 	String() string
 }
 

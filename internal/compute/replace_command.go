@@ -36,3 +36,7 @@ func ReplaceInPlaceFromFileMatch(ctx context.Context, fm *result.FileMatch, comm
 	}
 	return doReplaceInPlace(content, command)
 }
+
+func (c *Replace) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
+	return ReplaceInPlaceFromFileMatch(ctx, fm, c)
+}
