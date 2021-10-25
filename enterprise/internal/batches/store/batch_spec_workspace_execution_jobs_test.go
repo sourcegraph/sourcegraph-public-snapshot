@@ -200,29 +200,28 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 		})
 
 		t.Run("BatchSpecID", func(t *testing.T) {
-			workspaces := make([]*btypes.BatchSpecWorkspace, 0, 3)
-			jobByBatchSpecID := map[int64]*btypes.BatchSpecWorkspaceExecutionJob{}
-			for i := 0; i < cap(workspaces); i++ {
-				ws := &btypes.BatchSpecWorkspace{
-					BatchSpecID: int64(300 + i),
+			workspaceIDByBatchSpecID := map[int64]int64{}
+			for i := 0; i < 3; i++ {
+				batchSpec := &btypes.BatchSpec{UserID: 500, NamespaceUserID: 500}
+				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+					t.Fatal(err)
 				}
 
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: batchSpec.ID,
+					Steps:       []batches.Step{{Run: "hello"}},
+				}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
 				}
-				workspaces = append(workspaces, ws)
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{
-					BatchSpecWorkspaceID: ws.ID,
-				}
-
-				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				if err := s.CreateBatchSpecWorkspaceExecutionJobs(ctx, ws.BatchSpecID); err != nil {
 					t.Fatal(err)
 				}
-				jobByBatchSpecID[ws.BatchSpecID] = job
+				workspaceIDByBatchSpecID[batchSpec.ID] = ws.ID
 			}
 
-			for batchSpecID, wantJob := range jobByBatchSpecID {
+			for batchSpecID, workspaceID := range workspaceIDByBatchSpecID {
 				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 					BatchSpecID: batchSpecID,
 				})
@@ -233,8 +232,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 1, len(have))
 				}
 
-				if have[0].ID != wantJob.ID {
-					t.Fatalf("wrong job returned. want=%d, have=%d", wantJob.ID, have[0].ID)
+				if have[0].BatchSpecWorkspaceID != workspaceID {
+					t.Fatalf("wrong job returned. want=%d, have=%d", workspaceID, have[0].BatchSpecWorkspaceID)
 				}
 			}
 
