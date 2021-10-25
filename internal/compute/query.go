@@ -21,6 +21,25 @@ func (q Query) String() string {
 		query.Q(query.ToNodes(q.Parameters)).String())
 }
 
+func (q Query) ToSearchQuery() (string, error) {
+	var searchPattern string
+	switch c := q.Command.(type) {
+	case *MatchOnly:
+		searchPattern = c.MatchPattern.String()
+	case *ReplaceInPlace:
+		searchPattern = c.MatchPattern.String()
+	case *ReplaceWithSeparator:
+		searchPattern = c.MatchPattern.String()
+	default:
+		return "", errors.Errorf("unsupported query conversion for compute command %T", c)
+	}
+	basic := query.Basic{
+		Parameters: q.Parameters,
+		Pattern:    query.Pattern{Value: searchPattern},
+	}
+	return basic.StringHuman(), nil
+}
+
 type Command interface {
 	command()
 	String() string
