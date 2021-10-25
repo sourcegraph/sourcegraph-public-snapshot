@@ -211,6 +211,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	svc := service.New(&service.Opts{
 		AllowUnsupported: opts.flags.allowUnsupported,
 		AllowIgnored:     opts.flags.allowIgnored,
+		AllowFiles:       true,
 		Client:           opts.client,
 	})
 

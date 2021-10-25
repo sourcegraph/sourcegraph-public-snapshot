@@ -85,6 +85,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 	svc := service.New(&service.Opts{
 		AllowUnsupported: opts.flags.allowUnsupported,
 		AllowIgnored:     opts.flags.allowIgnored,
+		AllowFiles:       false,
 		Client:           opts.client,
 	})
 	if err := svc.DetermineFeatureFlags(ctx); err != nil {
