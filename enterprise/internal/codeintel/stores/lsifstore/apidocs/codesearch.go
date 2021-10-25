@@ -171,17 +171,15 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	// "<5>" enables search terms like "Player Run" (missing "::") to match lexemes ['Player', ':', ':', 'Run]
 	//
 	// Note that more distance != better, the greater the distance the worse relevance of results.
-	expr := make([]*sqlf.Query, 0, len(distances))
+	expressions := make([]*sqlf.Query, 0, len(distances)*len(terms))
 	for _, distance := range distances {
 		// For every space-separated term in the query string, i.e. ["golang/go", "http.StatusNotFound"]
-		exprForDistance := make([]*sqlf.Query, 0, len(terms))
 		for _, term := range terms {
 			tsquery := lexemeSequence(term, subStringMatches, distance)
-			exprForDistance = append(exprForDistance, sqlf.Sprintf(columnName+" @@ %s", tsquery))
+			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
 		}
-		expr = append(expr, sqlf.Sprintf("(%s)", sqlf.Join(exprForDistance, "OR")))
-	}
-	return sqlf.Sprintf("(%s)", sqlf.Join(expr, "OR"))
+ 	}
+	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
 
 // RepoSearchQuery returns an SQL expression of e.g. the form:
