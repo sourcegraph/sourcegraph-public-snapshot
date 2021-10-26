@@ -1,7 +1,6 @@
 {
   "variables": {
     "name": "{{env `NAME`}}",
-    "srcCliVersion": "{{env `SRC_CLI_VERSION`}}",
     "awsAccessKey": "{{env `AWS_EXECUTOR_AMI_ACCESS_KEY`}}",
     "awsSecretKey": "{{env `AWS_EXECUTOR_AMI_SECRET_KEY`}}",
     "awsMaxAttempts": "{{env `AWS_MAX_ATTEMPTS`}}",
