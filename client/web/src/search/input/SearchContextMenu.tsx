@@ -74,7 +74,7 @@ export interface SearchContextMenuProps
         | 'hasUserAddedExternalServices'
     > {
     authenticatedUser: AuthenticatedUser | null
-    closeMenu: () => void
+    closeMenu: (isEscapeKey?: boolean) => void
     selectSearchContextSpec: (spec: string) => void
 }
 
@@ -131,7 +131,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
     const onMenuKeyDown = useCallback(
         (event: ReactKeyboardEvent<HTMLDivElement>): void => {
             if (event.key === 'Escape') {
-                closeMenu()
+                closeMenu(true)
                 event.stopPropagation()
             }
         },
@@ -263,7 +263,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             <div className={styles.title}>
                 <small>Choose search context</small>
                 <button
-                    onClick={closeMenu}
+                    onClick={() => closeMenu()}
                     type="button"
                     className={classNames('btn btn-icon', styles.titleClose)}
                     aria-label="Close"
@@ -334,7 +334,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                     <Link
                         to="/contexts"
                         className={classNames('btn btn-link btn-sm', styles.footerButton)}
-                        onClick={closeMenu}
+                        onClick={() => closeMenu()}
                     >
                         Manage contexts
                     </Link>

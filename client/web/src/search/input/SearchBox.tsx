@@ -1,5 +1,6 @@
 import classNames from 'classnames'
-import React from 'react'
+import * as Monaco from 'monaco-editor'
+import React, { useCallback, useState } from 'react'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -48,7 +49,18 @@ export interface SearchBoxProps
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
-    const { queryState } = props
+    const { queryState, setSelectedSearchContextSpec } = props
+
+    const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+    const focusEditor = useCallback(() => editor?.focus(), [editor])
+
+    const setSelectedSearchContextSpecWithEditorFocus = useCallback(
+        (spec: string) => {
+            setSelectedSearchContextSpec(spec)
+            focusEditor()
+        },
+        [setSelectedSearchContextSpec, focusEditor]
+    )
 
     return (
         <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
@@ -58,8 +70,10 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         <SearchContextDropdown
                             {...props}
                             query={queryState.query}
+                            setSelectedSearchContextSpec={setSelectedSearchContextSpecWithEditorFocus}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
+                            onEscapeMenuClose={focusEditor}
                         />
                         <div className={styles.searchBoxSeparator} />
                     </>
@@ -69,6 +83,7 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         {...props}
                         onHandleFuzzyFinder={props.onHandleFuzzyFinder}
                         className={styles.searchBoxInput}
+                        onEditorCreated={setEditor}
                     />
                     <Toggles
                         {...props}

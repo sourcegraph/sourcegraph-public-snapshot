@@ -34,6 +34,7 @@ export interface MonacoQueryInputProps
     onFocus?: () => void
     onCompletionItemSelected?: () => void
     onSuggestionsInitialized?: (actions: { trigger: () => void }) => void
+    onEditorCreated?: (editor: Monaco.editor.IStandaloneCodeEditor) => void
     autoFocus?: boolean
     keyboardShortcutForFocus?: KeyboardShortcut
     onHandleFuzzyFinder?: React.Dispatch<React.SetStateAction<boolean>>
@@ -116,11 +117,20 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     className,
     settingsCascade,
     onHandleFuzzyFinder,
+    onEditorCreated: onEditorCreatedCallback,
 }) => {
     const acceptSearchSuggestionOnEnter: boolean | undefined =
         !isErrorLike(settingsCascade.final) &&
         settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+
+    const onEditorCreated = useCallback(
+        (editor: Monaco.editor.IStandaloneCodeEditor) => {
+            setEditor(editor)
+            onEditorCreatedCallback?.(editor)
+        },
+        [setEditor, onEditorCreatedCallback]
+    )
 
     // Trigger a layout of the Monaco editor when its container gets resized.
     // The Monaco editor doesn't auto-resize with its container:
@@ -208,13 +218,6 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         }
         editor.focus()
     }, [editor, autoFocus])
-
-    // Always focus the editor on selectedSearchContextSpec change
-    useEffect(() => {
-        if (selectedSearchContextSpec) {
-            editor?.focus()
-        }
-    }, [editor, selectedSearchContextSpec])
 
     useEffect(() => {
         if (!editor) {
@@ -382,7 +385,7 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
                 height={17}
                 isLightTheme={isLightTheme}
                 editorWillMount={noop}
-                onEditorCreated={setEditor}
+                onEditorCreated={onEditorCreated}
                 options={options}
                 border={false}
                 keyboardShortcutForFocus={KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR}
