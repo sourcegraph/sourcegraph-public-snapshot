@@ -300,7 +300,7 @@ type TimeIntervalStepInput struct {
 }
 
 type LineChartOptionsInput struct {
-	Title            *string
+	Title *string
 }
 
 type InsightViewPayloadResolver interface {
