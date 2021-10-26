@@ -17,7 +17,7 @@ import (
 )
 
 func TestBatchSpecWorkspaceCreatorProcess(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	repos, _ := ct.CreateTestRepos(t, context.Background(), db, 4)
 

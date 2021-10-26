@@ -54,9 +54,15 @@ var rng = rand.New(rand.NewSource(func() int64 {
 }()))
 var rngLock sync.Mutex
 
-// NewDB returns a connection to a clean, new temporary testing database
+// NewDB uses NewFromDSN to create a testing database, using the default
+// DSN.
+func NewDB(t testing.TB) *sql.DB {
+	return NewFromDSN(t, "")
+}
+
+// NewFromDSN returns a connection to a clean, new temporary testing database
 // with the same schema as Sourcegraph's production Postgres database.
-func NewDB(t testing.TB, dsn string) *sql.DB {
+func NewFromDSN(t testing.TB, dsn string) *sql.DB {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}

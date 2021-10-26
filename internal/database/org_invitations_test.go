@@ -17,7 +17,7 @@ func TestOrgInvitations(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	sender, err := Users(db).Create(ctx, NewUser{

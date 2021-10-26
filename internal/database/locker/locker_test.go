@@ -13,7 +13,7 @@ func TestLock(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	locker := NewWithDB(db, "test")
 
 	key := rand.Int31n(1000)
@@ -55,7 +55,7 @@ func TestLockBlockingAcquire(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	locker := NewWithDB(db, "test")
 
 	key := rand.Int31n(1000)
@@ -111,7 +111,7 @@ func TestLockBadTransactionState(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	locker := NewWithDB(db, "test")
 
 	key := rand.Int31n(1000)

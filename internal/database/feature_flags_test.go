@@ -50,7 +50,7 @@ func cleanup(t *testing.T, db *sql.DB) func() {
 
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t, ""))
+	flagStore := FeatureFlags(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	cases := []struct {
@@ -106,7 +106,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t, ""))
+	flagStore := FeatureFlags(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
@@ -140,7 +140,7 @@ func testListFeatureFlags(t *testing.T) {
 
 func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
@@ -189,7 +189,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
@@ -268,7 +268,7 @@ func testListUserOverrides(t *testing.T) {
 
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	orgs := Orgs(db)
@@ -353,7 +353,7 @@ func testListOrgOverrides(t *testing.T) {
 
 func testUserFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	orgs := Orgs(db)
@@ -496,7 +496,7 @@ func testUserFlags(t *testing.T) {
 
 func testAnonymousUserFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -540,7 +540,7 @@ func testAnonymousUserFlags(t *testing.T) {
 
 func testUserlessFeatureFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -588,7 +588,7 @@ func testUserlessFeatureFlags(t *testing.T) {
 
 func testOrgFeatureFlag(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	orgs := Orgs(db)
 	ctx := actor.WithInternalActor(context.Background())
