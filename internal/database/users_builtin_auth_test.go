@@ -16,7 +16,7 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	if _, err := Users(db).Create(ctx, NewUser{
@@ -115,7 +115,7 @@ func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -141,7 +141,7 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	oldPasswordResetRateLimit := passwordResetRateLimit
@@ -181,7 +181,7 @@ func TestUsers_UpdatePassword(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	usr, err := Users(db).Create(ctx, NewUser{
@@ -229,7 +229,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// User without a password
@@ -295,7 +295,7 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{

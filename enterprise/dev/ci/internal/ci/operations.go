@@ -616,3 +616,31 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
 	}
 }
+
+// ~15m (building executor docker mirror base VM)
+func buildExecutorDockerMirror(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor-docker-mirror")),
+			bk.Env("VERSION", version),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
+
+		pipeline.AddStep(":packer: :construction: docker registry mirror image", stepOpts...)
+	}
+}
+
+func publishExecutorDockerMirror(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor-docker-mirror")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", version),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
+
+		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+	}
+}

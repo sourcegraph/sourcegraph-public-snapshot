@@ -12,7 +12,7 @@ import (
 // to the user.
 func TestAccessTokens_Create(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	subject, err := Users(db).Create(ctx, NewUser{
@@ -88,7 +88,7 @@ func TestAccessTokens_List(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	subject1, err := Users(db).Create(ctx, NewUser{
@@ -167,7 +167,7 @@ func TestAccessTokens_Lookup(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	subject, err := Users(db).Create(ctx, NewUser{
@@ -236,7 +236,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	t.Run("subject", func(t *testing.T) {

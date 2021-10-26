@@ -170,6 +170,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
     node: {
         __typename: 'BatchChange',
         changesets: {
+            __typename: 'ChangesetConnection',
             totalCount: 1,
             pageInfo: {
                 endCursor: null,
@@ -198,6 +199,7 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
                     id: 'changeset123',
                     labels: [
                         {
+                            __typename: 'ChangesetLabel',
                             color: '93ba13',
                             description: null,
                             text: 'Abc label',
@@ -530,7 +532,8 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 assert.strictEqual(
                     await driver.page.evaluate(() => window.location.href),
-                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change'
+                    // We now have 1 in the cache, so we'll have a starting number visible that gets set in the URL.
+                    testContext.driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?visible=1'
                 )
 
                 // Delete the closed batch change.

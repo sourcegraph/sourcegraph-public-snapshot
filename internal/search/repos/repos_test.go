@@ -431,7 +431,7 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 }
 
 func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
-	db := dbtest.NewDB(t, *dsn)
+	db := dbtest.NewFromDSN(t, *dsn)
 
 	const (
 		wantName   = "alice"
@@ -524,7 +524,7 @@ func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecif
 }
 
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {
-	db := dbtest.NewDB(t, *dsn)
+	db := dbtest.NewFromDSN(t, *dsn)
 	searchContext := &types.SearchContext{ID: 1, Name: "searchcontext"}
 	repoA := types.RepoName{ID: 1, Name: "example.com/a"}
 	repoB := types.RepoName{ID: 2, Name: "example.com/b"}

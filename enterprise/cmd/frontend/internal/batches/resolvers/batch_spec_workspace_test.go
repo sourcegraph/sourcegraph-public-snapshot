@@ -25,7 +25,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)

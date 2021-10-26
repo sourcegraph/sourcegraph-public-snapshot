@@ -2,19 +2,22 @@ package backend
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
-	"reflect"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -28,47 +31,36 @@ import (
 )
 
 func TestReposService_Get(t *testing.T) {
-	var s repos
-	ctx := testContext()
+	t.Parallel()
 
 	wantRepo := &types.Repo{ID: 1, Name: "github.com/u/r"}
 
-	calledGet := database.Mocks.Repos.MockGet_Return(t, wantRepo)
+	repoStore := dbmock.NewMockRepoStore()
+	repoStore.GetFunc.SetDefaultReturn(wantRepo, nil)
+	s := &repos{store: repoStore}
 
-	repo, err := s.Get(ctx, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !*calledGet {
-		t.Error("!calledGet")
-	}
-	// Should not be called because mock GitHub has same data as mock DB.
-	if !reflect.DeepEqual(repo, wantRepo) {
-		t.Errorf("got %+v, want %+v", repo, wantRepo)
-	}
+	repo, err := s.Get(context.Background(), 1)
+	require.NoError(t, err)
+	mockrequire.Called(t, repoStore.GetFunc)
+	require.Equal(t, wantRepo, repo)
 }
 
 func TestReposService_List(t *testing.T) {
-	var s repos
-	ctx := testContext()
+	t.Parallel()
 
 	wantRepos := []*types.Repo{
 		{Name: "r1"},
 		{Name: "r2"},
 	}
 
-	calledList := database.Mocks.Repos.MockList(t, "r1", "r2")
+	repoStore := dbmock.NewMockRepoStore()
+	repoStore.ListFunc.SetDefaultReturn(wantRepos, nil)
+	s := &repos{store: repoStore}
 
-	repos, err := s.List(ctx, database.ReposListOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !*calledList {
-		t.Error("!calledList")
-	}
-	if !reflect.DeepEqual(repos, wantRepos) {
-		t.Errorf("got %+v, want %+v", repos, wantRepos)
-	}
+	repos, err := s.List(context.Background(), database.ReposListOptions{})
+	require.NoError(t, err)
+	mockrequire.Called(t, repoStore.ListFunc)
+	require.Equal(t, wantRepos, repos)
 }
 
 func TestRepos_Add(t *testing.T) {

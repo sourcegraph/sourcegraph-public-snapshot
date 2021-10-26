@@ -70,11 +70,16 @@ const appendExcludeRepoToQuery = (spec: string, ast: YAMLMap, repo: string): YAM
 
     // Insert "-repo:" qualifier at the end of the query string
     // TODO: In the future this can be integrated into the batch spec under its own
-    // "excludes" keyword instead
+    // "excludes" keyword instead.
+    // If the value is quoted, we need to move the addition to the string to _within_
+    // the string value.
+    let slicePosition = queryValue.endPosition
+    if (queryValue.doubleQuoted || queryValue.singleQuoted) {
+        slicePosition--
+    }
     return {
         success: true,
-        spec:
-            spec.slice(0, queryValue.endPosition) + ` -repo:${escapeRegExp(repo)}` + spec.slice(queryValue.endPosition),
+        spec: spec.slice(0, slicePosition) + ` -repo:${escapeRegExp(repo)}` + spec.slice(slicePosition),
     }
 }
 

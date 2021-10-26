@@ -126,7 +126,7 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 }
 
 // Repos returns a database.RepoStore using the same connection as this store.
-func (s *Store) Repos() *database.RepoStore {
+func (s *Store) Repos() database.RepoStore {
 	return database.ReposWith(s)
 }
 
