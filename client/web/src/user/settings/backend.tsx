@@ -1,5 +1,5 @@
 import { EMPTY, Observable, Subject } from 'rxjs'
-import { bufferTime, catchError, map, switchMap } from 'rxjs/operators'
+import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
@@ -135,7 +135,7 @@ export const logEventsMutation = gql`
 events
     .pipe(
         bufferTime(1000),
-        switchMap(events => {
+        concatMap(events => {
             if (events.length > 0) {
                 return requestGraphQL<LogEventsResult, LogEventsVariables>(logEventsMutation, {
                     events,
