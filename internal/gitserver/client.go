@@ -338,7 +338,7 @@ func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMat
 		return false, err
 	}
 
-	uri := c.AddrForRepo(repoName) + "/search"
+	uri := "http://" + c.AddrForRepo(repoName) + "/search"
 	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
 	if err != nil {
 		return false, err
@@ -668,7 +668,7 @@ func (c *Client) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*pr
 	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
 	// the repo from the URL set in MigrateFrom - the gitserver instance that owns this repo based
 	// on the existing hashing scheme.
-	uri := c.RendezvousAddrForRepo(repo) + "/repo-update"
+	uri := "http://" + c.RendezvousAddrForRepo(repo) + "/repo-update"
 	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
 	if err != nil {
 		return nil, err
@@ -982,7 +982,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, pay
 		return nil, err
 	}
 
-	uri := c.AddrForRepo(repo) + "/" + op
+	uri := "http://" + c.AddrForRepo(repo) + "/" + op
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
@@ -990,10 +990,6 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, pay
 // use the predeterimned hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
 // instance to which the HTTP POST request is sent.
 func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
-	if _, err := url.ParseRequestURI(uri); err != nil {
-		return nil, errors.Wrap(err, "httpPostWithURI")
-	}
-
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -1007,7 +1003,7 @@ func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri str
 func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	url, err := url.ParseRequestURI(uri)
 	if err != nil {
-		return nil, errors.Wrap(err, "httpPostAbsolutePath")
+		return nil, errors.Wrap(err, "do")
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
