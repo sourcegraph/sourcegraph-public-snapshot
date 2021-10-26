@@ -1,3 +1,4 @@
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { of } from 'rxjs'
@@ -89,13 +90,17 @@ const PROPS: HierarchicalLocationsViewProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
 
-export default {
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
+)
+const config: Meta = {
     title: 'branded/HierarchicalLocationsView',
-
-    decorators: [story => <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>],
+    decorators: [decorator],
 }
 
-export const SingleRepo = () => (
+export default config
+
+export const SingleRepo: Story = () => (
     <HierarchicalLocationsView
         {...PROPS}
         locations={of({
@@ -105,17 +110,13 @@ export const SingleRepo = () => (
     />
 )
 
-SingleRepo.story = {
-    name: 'Single repo',
-}
+SingleRepo.storyName = 'Single repo'
 
-export const GroupedByRepo = () => <HierarchicalLocationsView {...PROPS} />
+export const GroupedByRepo: Story = () => <HierarchicalLocationsView {...PROPS} />
 
-GroupedByRepo.story = {
-    name: 'Grouped by repo',
-}
+GroupedByRepo.storyName = 'Grouped by repo'
 
-export const GroupedByRepoAndFile = () => (
+export const GroupedByRepoAndFile: Story = () => (
     <HierarchicalLocationsView
         {...PROPS}
         settingsCascade={{
@@ -127,6 +128,4 @@ export const GroupedByRepoAndFile = () => (
     />
 )
 
-GroupedByRepoAndFile.story = {
-    name: 'Grouped by repo and file',
-}
+GroupedByRepoAndFile.storyName = 'Grouped by repo and file'

@@ -2,10 +2,10 @@
 // documentation of all the Bootstrap classes we have available in our app, please see refer to the Bootstrap
 // documentation for that. Its primary purpose is to show what Bootstrap's componenents look like with our styling
 // customizations.
-
 import { Menu, MenuButton, MenuList, MenuLink } from '@reach/menu-button'
 import { action } from '@storybook/addon-actions'
 import { number } from '@storybook/addon-knobs'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import React, { useState } from 'react'
 import 'storybook-addon-designs'
@@ -29,13 +29,17 @@ import { preventDefault } from './utils'
 
 registerHighlightContributions()
 
-export default {
+const decorator: DecoratorFn = story => (
+    <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
+)
+const config: Meta = {
     title: 'branded/Global styles',
-
-    decorators: [story => <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>],
+    decorators: [decorator],
 }
 
-export const Text = () => (
+export default config
+
+export const Text: Story = () => (
     <>
         <h1>Typography</h1>
 
@@ -43,18 +47,16 @@ export const Text = () => (
     </>
 )
 
-Text.story = {
-    parameters: {
-        design: {
-            name: 'Figma',
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
-        },
+Text.parameters = {
+    design: {
+        name: 'Figma',
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=998%3A1515',
     },
 }
 
-export const Code = () => (
+export const Code: Story = () => (
     <>
         <h1>Code</h1>
 
@@ -121,7 +123,7 @@ export const Code = () => (
     </>
 )
 
-export const Colors = () => (
+export const Colors: Story = () => (
     <>
         <h1>Colors</h1>
 
@@ -131,18 +133,16 @@ export const Colors = () => (
     </>
 )
 
-Colors.story = {
-    parameters: {
-        design: {
-            name: 'Figma',
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
-        },
+Colors.parameters = {
+    design: {
+        name: 'Figma',
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A7608',
     },
 }
 
-export const Layout = () => (
+export const Layout: Story = () => (
     <>
         <h1>Layout</h1>
 
@@ -235,26 +235,24 @@ export const Layout = () => (
 
 export const Alerts = AlertsStory
 
-Alerts.story = {
-    parameters: {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma Light',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
-            },
-            {
-                type: 'figma',
-                name: 'Figma Dark',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
-            },
-        ],
-    },
+Alerts.parameters = {
+    design: [
+        {
+            type: 'figma',
+            name: 'Figma Light',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A196',
+        },
+        {
+            type: 'figma',
+            name: 'Figma Dark',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1563%3A525',
+        },
+    ],
 }
 
-export const Badges = () => (
+export const Badges: Story = () => (
     <>
         <h1>Badges</h1>
         <p>
@@ -373,26 +371,24 @@ export const Badges = () => (
     </>
 )
 
-Badges.story = {
-    parameters: {
-        design: [
-            {
-                type: 'figma',
-                name: 'Figma - Light',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
-            },
-            {
-                type: 'figma',
-                name: 'Figma - Dark',
-                url:
-                    'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
-            },
-        ],
-    },
+Badges.parameters = {
+    design: [
+        {
+            type: 'figma',
+            name: 'Figma - Light',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6149',
+        },
+        {
+            type: 'figma',
+            name: 'Figma - Dark',
+            url:
+                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A6448',
+        },
+    ],
 }
 
-export const ButtonGroups = () => {
+export const ButtonGroups: Story = () => {
     const [active, setActive] = useState<'Left' | 'Middle' | 'Right'>('Left')
     return (
         <>
@@ -512,20 +508,18 @@ export const ButtonGroups = () => {
     )
 }
 
-ButtonGroups.story = {
-    name: 'Button groups',
+ButtonGroups.storyName = 'Button groups'
 
-    parameters: {
-        design: {
-            type: 'figma',
-            name: 'Figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
-        },
+ButtonGroups.parameters = {
+    design: {
+        type: 'figma',
+        name: 'Figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=908%3A2514',
     },
 }
 
-export const Dropdowns = () => (
+export const Dropdowns: Story = () => (
     <>
         <h1>Dropdowns</h1>
         <p>
@@ -566,7 +560,7 @@ export const Dropdowns = () => (
     </>
 )
 
-export const InputGroups = () => (
+export const InputGroups: Story = () => (
     <>
         <h1>Input groups</h1>
 
@@ -590,11 +584,9 @@ export const InputGroups = () => (
     </>
 )
 
-InputGroups.story = {
-    name: 'Input groups',
-}
+InputGroups.storyName = 'Input groups'
 
-export const Forms = () => (
+export const Forms: Story = () => (
     <>
         <h1>Forms</h1>
         <p>
@@ -697,29 +689,25 @@ export const Forms = () => (
     </>
 )
 
-Forms.story = {
-    parameters: {
-        design: {
-            type: 'figma',
-            url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=30%3A24',
-        },
+Forms.parameters = {
+    design: {
+        type: 'figma',
+        url: 'https://www.figma.com/file/BkY8Ak997QauG0Iu2EqArv/Sourcegraph-Components?node-id=30%3A24',
     },
 }
 
 export const Cards = CardsStory
 
-Cards.story = {
-    parameters: {
-        design: {
-            name: 'Figma',
-            type: 'figma',
-            url:
-                'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
-        },
+Cards.parameters = {
+    design: {
+        name: 'Figma',
+        type: 'figma',
+        url:
+            'https://www.figma.com/file/NIsN34NH7lPu04olBzddTw/Design-Refresh-Systemization-source-of-truth?node-id=1172%3A285',
     },
 }
 
-export const ListGroups = () => (
+export const ListGroups: Story = () => (
     <>
         <h1>List groups</h1>
         <p>
@@ -777,11 +765,9 @@ export const ListGroups = () => (
     </>
 )
 
-ListGroups.story = {
-    name: 'List groups',
-}
+ListGroups.storyName = 'List groups'
 
-export const Meter = () => {
+export const Meter: Story = () => {
     const min = number('min', 0)
     const max = number('max', 1)
     const high = number('high', 0.8)

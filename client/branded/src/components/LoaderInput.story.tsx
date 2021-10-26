@@ -1,4 +1,5 @@
 import { boolean } from '@storybook/addon-knobs'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
@@ -6,19 +7,19 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { BrandedStory } from './BrandedStory'
 import { LoaderInput } from './LoaderInput'
 
-export default {
+const decorator: DecoratorFn = story => (
+    <div className="container mt-3" style={{ width: 800 }}>
+        {story()}
+    </div>
+)
+const config: Meta = {
     title: 'branded/LoaderInput',
-
-    decorators: [
-        story => (
-            <div className="container mt-3" style={{ width: 800 }}>
-                {story()}
-            </div>
-        ),
-    ],
+    decorators: [decorator],
 }
 
-export const Interactive = () => (
+export default config
+
+export const Interactive: Story = () => (
     <BrandedStory styles={webStyles}>
         {() => (
             <LoaderInput loading={boolean('loading', true)}>

@@ -1,3 +1,4 @@
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React, { useCallback } from 'react'
 
 import { BrandedStory } from '../BrandedStory'
@@ -26,13 +27,15 @@ const PinnedTooltip: React.FunctionComponent = () => {
     )
 }
 
-export default {
+const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
+const config: Meta = {
     title: 'branded/Tooltip',
-
-    decorators: [story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>],
+    decorators: [decorator],
 }
 
-export const Hover = () => (
+export default config
+
+export const Hover: Story = () => (
     <>
         <Tooltip />
         <p>
@@ -41,21 +44,17 @@ export const Hover = () => (
     </>
 )
 
-Hover.story = {
-    parameters: {
-        chromatic: {
-            disable: true,
-        },
+Hover.parameters = {
+    chromatic: {
+        disable: true,
     },
 }
 
-export const Pinned = () => <PinnedTooltip />
+export const Pinned: Story = () => <PinnedTooltip />
 
-Pinned.story = {
-    parameters: {
-        chromatic: {
-            // Chromatic pauses CSS animations by default and resets them to their initial state
-            pauseAnimationAtEnd: true,
-        },
+Pinned.parameters = {
+    chromatic: {
+        // Chromatic pauses CSS animations by default and resets them to their initial state
+        pauseAnimationAtEnd: true,
     },
 }
