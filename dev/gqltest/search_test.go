@@ -1360,7 +1360,7 @@ func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 		gqltestutil.CreateSearchContextInput{Name: scName, Description: "test description", Public: true},
 		[]gqltestutil.SearchContextRepositoryRevisionsInput{
 			{RepositoryID: &repo1.ID, Revisions: []string{"HEAD"}},
-			{RepositoryName: &repo2, Revisions: []string{"HEAD"}},
+			{RepositoryID: nil, RepositoryName: &repo2, Revisions: []string{"HEAD"}},
 		},
 	)
 	require.NoError(t, err)
