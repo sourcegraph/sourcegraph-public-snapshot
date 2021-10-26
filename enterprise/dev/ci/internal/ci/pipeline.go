@@ -174,6 +174,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			buildExecutorDockerMirror(c.Version),
+			publishExecutorDockerMirror(c.Version),
 		})
 
 	default:
@@ -194,6 +196,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch) {
 			ops.Append(buildExecutor(c.Version, skipHashCompare))
+			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+				ops.Append(buildExecutorDockerMirror(c.Version))
+			}
 		}
 
 		// Slow tests
@@ -220,6 +225,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		if c.RunType.Is(MainBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
+			ops.Append(publishExecutorDockerMirror(c.Version))
 		}
 
 		// Propagate changes elsewhere
