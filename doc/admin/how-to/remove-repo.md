@@ -24,4 +24,4 @@ This document assumes that you have:
 ## To reclon a removed repository
 
 1. Remove the repostiroy from the [exclude list](https://docs.sourcegraph.com/admin/external_service/github#exclude)
-2. The reclon process should start in the next syncing cycle
+2. The reclone process should start in the next syncing cycle
