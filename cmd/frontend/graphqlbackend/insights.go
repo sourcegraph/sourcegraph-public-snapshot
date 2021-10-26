@@ -260,8 +260,18 @@ type UpdateLineChartSearchInsightArgs struct {
 }
 
 type UpdateLineChartSearchInsightInput struct {
-	DataSeries []LineChartSearchInsightDataSeriesInput
-	Options    LineChartOptionsInput
+	DataSeries          []LineChartSearchInsightDataSeriesInput
+	PresentationOptions LineChartOptionsInput
+	ViewControls        InsightViewControlsInput
+}
+
+type InsightViewControlsInput struct {
+	RepoFilters InsightViewFiltersInput
+}
+
+type InsightViewFiltersInput struct {
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
