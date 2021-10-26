@@ -301,8 +301,6 @@ type TimeIntervalStepInput struct {
 
 type LineChartOptionsInput struct {
 	Title            *string
-	IncludeRepoRegex *string
-	ExcludeRepoRegex *string
 }
 
 type InsightViewPayloadResolver interface {
