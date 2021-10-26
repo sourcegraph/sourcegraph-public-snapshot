@@ -242,6 +242,9 @@ sg teammate handbook asdine
 ### `sg secret` - Interact with `sg` secrets
 
 ```bash
+# List all secrets stored in file
+sg secret list
+
 # Remove the secrets associated with buildkite (sg ci build)
 sg secret reset buildkite
 ```
