@@ -1522,7 +1522,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(argsIndexed.PatternInfo.FileMatchLimit))
 				defer cleanup()
 
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
+				globalSearch := argsIndexed.Mode == search.ZoektGlobalSearch
+				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, globalSearch, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
 				if err != nil {
 					agg.Error(err)
 					return
@@ -1622,7 +1623,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(args.PatternInfo.FileMatchLimit))
 				defer cleanup()
 
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
+				globalSearch := args.Mode == search.ZoektGlobalSearch
+				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, globalSearch, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
 				if err != nil {
 					agg.Error(err)
 					return
