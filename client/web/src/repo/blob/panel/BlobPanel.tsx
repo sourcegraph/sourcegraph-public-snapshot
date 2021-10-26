@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { from, Observable, ReplaySubject, Subscription } from 'rxjs'
 import { map, mapTo, switchMap, tap } from 'rxjs/operators'
 
-import { useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
+import { BuiltinPanelView, useBuiltinPanelViews } from '@sourcegraph/branded/src/components/panel/Panel'
 import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import * as clientType from '@sourcegraph/extension-api-types'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
@@ -84,7 +84,7 @@ export function useBlobPanelViews({
             priority: number,
             provideLocations: (parameters: P) => Observable<MaybeLoadingResult<clientType.Location[]>>,
             extraParameters?: Pick<P, Exclude<keyof P, keyof TextDocumentPositionParameters>>
-        ) =>
+        ): Observable<BuiltinPanelView | null> =>
             activeCodeEditorPositions.pipe(
                 map(textDocumentPositionParameters => {
                     if (!textDocumentPositionParameters) {
@@ -94,6 +94,7 @@ export function useBlobPanelViews({
                     return {
                         title,
                         content: '',
+                        selector: null,
                         priority,
 
                         // This disable directive is necessary because TypeScript is not yet smart
@@ -151,6 +152,7 @@ export function useBlobPanelViews({
                             title: 'History',
                             content: '',
                             priority: 150,
+                            selector: null,
                             locationProvider: undefined,
                             reactElement: (
                                 <RepoRevisionSidebarCommits
