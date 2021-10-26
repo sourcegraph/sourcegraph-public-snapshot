@@ -321,7 +321,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				if err != nil {
 					return nil, errors.Wrapf(err, "set expired for external account %d", acct.ID)
 				}
-				log15.Debug("PermsSyncer.syncUserPerms.setExternalAccountExpired",
+				log15.Debug("PermsSyncer.fetchUserPermsViaExternalAccounts.setExternalAccountExpired",
 					"userID", user.ID,
 					"id", acct.ID,
 					"unauthorized", unauthorized,
@@ -466,7 +466,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			accountSuspended := errcode.IsAccountSuspended(err)
 
 			if unauthorized || accountSuspended || forbidden {
-				log15.Warn("PermsSyncer.syncUserPerms.expiredExternalService",
+				log15.Warn("PermsSyncer.fetchUserPermsViaExternalServices.expiredExternalService",
 					"userID", userID,
 					"id", svc.ID,
 					"unauthorized", unauthorized,
