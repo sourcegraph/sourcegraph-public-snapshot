@@ -1963,7 +1963,7 @@ type BatchSpecWorkspace implements Node {
     steps: [BatchSpecWorkspaceStep!]!
 
     """
-    Get a specific step by it's index. Index is 1-based.
+    Get a specific step by its index. Index is 1-based.
     """
     step(index: Int!): BatchSpecWorkspaceStep
 
