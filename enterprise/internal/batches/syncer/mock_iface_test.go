@@ -105,7 +105,7 @@ func NewMockSyncStore() *MockSyncStore {
 			},
 		},
 		ReposFunc: &SyncStoreReposFunc{
-			defaultHook: func() *database.RepoStore {
+			defaultHook: func() database.RepoStore {
 				return nil
 			},
 		},
@@ -1028,15 +1028,15 @@ func (c SyncStoreListCodeHostsFuncCall) Results() []interface{} {
 // SyncStoreReposFunc describes the behavior when the Repos method of the
 // parent MockSyncStore instance is invoked.
 type SyncStoreReposFunc struct {
-	defaultHook func() *database.RepoStore
-	hooks       []func() *database.RepoStore
+	defaultHook func() database.RepoStore
+	hooks       []func() database.RepoStore
 	history     []SyncStoreReposFuncCall
 	mutex       sync.Mutex
 }
 
 // Repos delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockSyncStore) Repos() *database.RepoStore {
+func (m *MockSyncStore) Repos() database.RepoStore {
 	r0 := m.ReposFunc.nextHook()()
 	m.ReposFunc.appendCall(SyncStoreReposFuncCall{r0})
 	return r0
@@ -1044,7 +1044,7 @@ func (m *MockSyncStore) Repos() *database.RepoStore {
 
 // SetDefaultHook sets function that is called when the Repos method of the
 // parent MockSyncStore instance is invoked and the hook queue is empty.
-func (f *SyncStoreReposFunc) SetDefaultHook(hook func() *database.RepoStore) {
+func (f *SyncStoreReposFunc) SetDefaultHook(hook func() database.RepoStore) {
 	f.defaultHook = hook
 }
 
@@ -1052,7 +1052,7 @@ func (f *SyncStoreReposFunc) SetDefaultHook(hook func() *database.RepoStore) {
 // Repos method of the parent MockSyncStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *SyncStoreReposFunc) PushHook(hook func() *database.RepoStore) {
+func (f *SyncStoreReposFunc) PushHook(hook func() database.RepoStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1060,21 +1060,21 @@ func (f *SyncStoreReposFunc) PushHook(hook func() *database.RepoStore) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *SyncStoreReposFunc) SetDefaultReturn(r0 *database.RepoStore) {
-	f.SetDefaultHook(func() *database.RepoStore {
+func (f *SyncStoreReposFunc) SetDefaultReturn(r0 database.RepoStore) {
+	f.SetDefaultHook(func() database.RepoStore {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *SyncStoreReposFunc) PushReturn(r0 *database.RepoStore) {
-	f.PushHook(func() *database.RepoStore {
+func (f *SyncStoreReposFunc) PushReturn(r0 database.RepoStore) {
+	f.PushHook(func() database.RepoStore {
 		return r0
 	})
 }
 
-func (f *SyncStoreReposFunc) nextHook() func() *database.RepoStore {
+func (f *SyncStoreReposFunc) nextHook() func() database.RepoStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1109,7 +1109,7 @@ func (f *SyncStoreReposFunc) History() []SyncStoreReposFuncCall {
 type SyncStoreReposFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *database.RepoStore
+	Result0 database.RepoStore
 }
 
 // Args returns an interface slice containing the arguments of this
