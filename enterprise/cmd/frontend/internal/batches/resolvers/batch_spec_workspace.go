@@ -104,6 +104,12 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 }
 
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	// Check if step exists.
+	if len(r.workspace.Steps) <= int(args.Index) {
+		return nil, nil
+	}
+
+	// TODO: Deduplicate this logic.
 	var stepInfo = make(map[int]*btypes.StepInfo)
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
@@ -116,11 +122,6 @@ func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbacke
 	repo, err := r.computeRepo(ctx)
 	if err != nil {
 		return nil, err
-	}
-
-	// Check if step exists.
-	if len(r.workspace.Steps) <= int(args.Index) {
-		return nil, nil
 	}
 
 	si, ok := stepInfo[int(args.Index)]

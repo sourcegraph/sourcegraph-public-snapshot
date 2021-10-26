@@ -39,7 +39,7 @@ import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
 import { ErrorAlert } from '../../../components/alerts'
-import { BatchSpecWorkspacesFields } from '../../../graphql-operations'
+import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 
@@ -132,7 +132,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         return code
                     }),
                     switchMap(code => {
-                        let specCreator: Observable<BatchSpecWorkspacesFields>
+                        let specCreator: Observable<BatchSpecWithWorkspacesFields>
                         if (preview !== undefined && !isErrorLike(preview)) {
                             specCreator = replaceBatchSpecInput(preview.id, code)
                         } else {
@@ -329,7 +329,7 @@ const EditSpecSection: React.FunctionComponent<EditSpecSectionProps> = ({ isLigh
 
 interface PreviewWorkspacesProps {
     excludeRepo: (repo: string, branch: string) => void
-    preview: BatchSpecWorkspacesFields | Error | undefined
+    preview: BatchSpecWithWorkspacesFields | Error | undefined
     previewStale: boolean
 }
 
