@@ -2,7 +2,7 @@
 
 exports[`UserAvatar no avatar URL 1`] = `
 <div
-  className="user-avatar"
+  className="userAvatar"
 >
   t
 </div>
@@ -11,7 +11,7 @@ exports[`UserAvatar no avatar URL 1`] = `
 exports[`UserAvatar with avatar URL 1`] = `
 <img
   alt=""
-  className="user-avatar"
+  className="userAvatar"
   role="presentation"
   src="u"
 />

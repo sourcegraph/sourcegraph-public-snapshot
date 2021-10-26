@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -17,7 +17,7 @@ export const LoaderButton: React.FunctionComponent<Partial<Props>> = ({
 }) => (
     <button
         {...props}
-        className={classnames(props.className, 'd-flex justify-content-center align-items-center')}
+        className={classNames(props.className, 'd-flex justify-content-center align-items-center')}
         // eslint-disable-next-line react/button-has-type
         type={props.type ?? 'button'}
     >

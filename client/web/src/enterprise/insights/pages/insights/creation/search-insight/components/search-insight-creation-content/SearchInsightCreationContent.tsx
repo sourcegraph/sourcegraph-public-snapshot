@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 import { noop } from 'rxjs'
 
@@ -91,7 +91,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<SearchInsight
         values.title !== ''
 
     return (
-        <div data-testid={dataTestId} className={classnames(styles.content, className)}>
+        <div data-testid={dataTestId} className={classNames(styles.content, className)}>
             <SearchInsightCreationForm
                 mode={mode}
                 className={styles.contentForm}

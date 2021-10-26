@@ -20,3 +20,4 @@ jobs:
                   team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
                   team/delivery=@davejrt @ggilmore @dan-mckean @caugustus-sourcegraph @stephanx
                   team/security=@dan-mckean
+                  team/dev-experience=@taylorsperry @pdubroy

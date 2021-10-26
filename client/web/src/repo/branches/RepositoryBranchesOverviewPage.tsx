@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
 import { Link, RouteComponentProps } from 'react-router-dom'
@@ -18,6 +19,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { gitReferenceFragments, GitReferenceNode } from '../GitReference'
 
 import { RepositoryBranchesAreaPageProps } from './RepositoryBranchesArea'
+import styles from './RepositoryBranchesOverviewPage.module.scss'
 
 interface Data {
     defaultBranch: GQL.IGitRef | null
@@ -119,16 +121,16 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-branches-page">
+            <div>
                 <PageTitle title="Branches" />
                 {this.state.dataOrError === undefined ? (
                     <LoadingSpinner className="icon-inline mt-2" />
                 ) : isErrorLike(this.state.dataOrError) ? (
                     <ErrorAlert className="mt-2" error={this.state.dataOrError} />
                 ) : (
-                    <div className="repository-branches-page__cards">
+                    <div>
                         {this.state.dataOrError.defaultBranch && (
-                            <div className="card repository-branches-page__card">
+                            <div className={classNames('card', styles.card)}>
                                 <div className="card-header">Default branch</div>
                                 <ul className="list-group list-group-flush">
                                     <GitReferenceNode node={this.state.dataOrError.defaultBranch} />
@@ -136,7 +138,7 @@ export class RepositoryBranchesOverviewPage extends React.PureComponent<Props, S
                             </div>
                         )}
                         {this.state.dataOrError.activeBranches.length > 0 && (
-                            <div className="card repository-branches-page__card">
+                            <div className={classNames('card', styles.card)}>
                                 <div className="card-header">Active branches</div>
                                 <div className="list-group list-group-flush">
                                     {this.state.dataOrError.activeBranches.map((gitReference, index) => (

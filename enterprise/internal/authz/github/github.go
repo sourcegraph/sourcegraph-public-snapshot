@@ -188,8 +188,8 @@ func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.A
 		}
 	}
 
-	// If groups caching is disabled, we are done.
-	if p.groupsCache == nil {
+	// We're done if groups caching is disabled or no accountID is available.
+	if p.groupsCache == nil || accountID == "" {
 		return perms, nil
 	}
 
@@ -281,6 +281,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 
 	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), tok.AccessToken, opts)
+}
+
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return p.fetchUserPermsByToken(ctx, "", token, opts)
 }
 
 // FetchRepoPerms returns a list of user IDs (on code host) who have read access to

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo, useRef, useState } from 'react'
 import { useHistory } from 'react-router-dom'
@@ -53,7 +53,11 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
             case DashboardMenuAction.Configure: {
-                if (!isVirtualDashboard(currentDashboard) && isSettingsBasedInsightsDashboard(currentDashboard)) {
+                if (
+                    !isVirtualDashboard(currentDashboard) &&
+                    isSettingsBasedInsightsDashboard(currentDashboard) &&
+                    currentDashboard.settingsKey
+                ) {
                     history.push(`/insights/dashboards/${currentDashboard.settingsKey}/edit`)
                 }
                 return
@@ -100,7 +104,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     value={currentDashboard?.id}
                     dashboards={dashboards}
                     onSelect={handleDashboardSelect}
-                    className={classnames(styles.dashboardSelect, 'mr-2')}
+                    className={classNames(styles.dashboardSelect, 'mr-2')}
                 />
 
                 <DashboardMenu

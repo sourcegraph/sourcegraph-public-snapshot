@@ -317,7 +317,7 @@ export const SettingsRepositoriesPage: React.FunctionComponent<Props> = ({
                         text: (
                             <div className="d-flex">
                                 {isUserOwner ? 'Your repositories' : 'Repositories'}{' '}
-                                <Badge status="beta" className="ml-2" />
+                                <Badge status="beta" className="ml-2" useLink={true} />
                             </div>
                         ),
                     },
