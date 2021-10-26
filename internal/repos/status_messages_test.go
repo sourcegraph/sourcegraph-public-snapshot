@@ -26,7 +26,7 @@ func TestStatusMessages(t *testing.T) {
 		t.Skip()
 	}
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := NewStore(db, sql.TxOptions{})
 
 	admin, err := database.Users(db).Create(ctx, database.NewUser{

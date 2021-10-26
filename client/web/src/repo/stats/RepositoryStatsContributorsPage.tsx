@@ -24,6 +24,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { UserAvatar } from '../../user/UserAvatar'
 
 import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+import styles from './RepositoryStatsContributorsPage.module.scss'
 
 interface QuerySpec {
     revisionRange: string | null
@@ -59,13 +60,13 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
         .replace(/\s+/, ' ')
 
     return (
-        <div className="repository-contributor-node list-group-item py-2">
-            <div className="repository-contributor-node__person">
+        <div className={classNames('list-group-item py-2', styles.repositoryContributorNode)}>
+            <div className={styles.person}>
                 <UserAvatar className="icon-inline mr-2" user={node.person} />
                 <PersonLink userClassName="font-weight-bold" person={node.person} />
             </div>
-            <div className="repository-contributor-node__commits">
-                <div className="repository-contributor-node__commit">
+            <div className={styles.commits}>
+                <div className={styles.commit}>
                     {commit && (
                         <>
                             <Timestamp date={commit.author.date} />:{' '}
@@ -79,7 +80,7 @@ const RepositoryContributorNode: React.FunctionComponent<RepositoryContributorNo
                         </>
                     )}
                 </div>
-                <div className="repository-contributor-node__count">
+                <div className={styles.count}>
                     <Link
                         to={`/search?${buildSearchURLQuery(query, patternType, false)}`}
                         className="font-weight-bold"

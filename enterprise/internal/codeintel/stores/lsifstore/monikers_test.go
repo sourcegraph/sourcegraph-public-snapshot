@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -16,9 +14,7 @@ func TestDatabaseMonikersByPosition(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := populateTestStore(t)
 
 	// `func NewMetaData(id, root string, info ToolInfo) *MetaData {`
 	//       ^^^^^^^^^^^
@@ -47,9 +43,7 @@ func TestDatabaseBulkMonikerResults(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtesting.GetDB(t)
-	populateTestStore(t)
-	store := NewStore(db, &observation.TestContext)
+	store := populateTestStore(t)
 
 	edgeDefinitionLocations := []Location{
 		{DumpID: testBundleID, Path: "protocol/protocol.go", Range: newRange(410, 5, 410, 9)},

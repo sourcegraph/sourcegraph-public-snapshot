@@ -135,7 +135,7 @@ func TestServer_handleRepoLookup(t *testing.T) {
 }
 
 func TestServer_EnqueueRepoUpdate(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 
@@ -240,7 +240,7 @@ func TestServer_EnqueueRepoUpdate(t *testing.T) {
 }
 
 func TestServer_RepoLookup(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	store := repos.NewStore(db, sql.TxOptions{})
 	ctx := context.Background()
 	clock := timeutil.NewFakeClock(time.Now(), 0)

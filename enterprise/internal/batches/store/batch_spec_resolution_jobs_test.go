@@ -153,7 +153,7 @@ func TestBatchSpecResolutionJobs_BatchSpecIDUnique(t *testing.T) {
 	ctx := context.Background()
 	c := &ct.TestClock{Time: timeutil.Now()}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	user := ct.CreateTestUser(t, db, true)

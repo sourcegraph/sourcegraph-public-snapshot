@@ -98,7 +98,7 @@ func TestTransformRecord(t *testing.T) {
 				Commands: []string{
 					"batch", "exec",
 					"-f", "input.json",
-					"-skip-errors",
+					"-clear-cache",
 				},
 				Dir: ".",
 				Env: []string{

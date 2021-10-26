@@ -73,3 +73,14 @@ func (f Files) AffectsClient() bool {
 	}
 	return false
 }
+
+// AffectsExecutorDockerRegistryMirror returns whether files that affect the executor
+// docker registry mirror were changed.
+func (f Files) AffectsExecutorDockerRegistryMirror() bool {
+	for _, p := range f {
+		if strings.HasPrefix(p, "enterprise/cmd/executor/docker-mirror/") {
+			return true
+		}
+	}
+	return false
+}
