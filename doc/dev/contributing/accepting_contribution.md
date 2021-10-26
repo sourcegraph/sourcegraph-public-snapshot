@@ -22,3 +22,11 @@ To check out a pull request's code locally, use [the `gh` CLI](https://cli.githu
 ```sh
 gh pr checkout $NUMBER
 ```
+
+Alternatively, it is also possible to check out the branch without having to re-clone the forked repo by running:
+
+```sh
+git fetch git@github.com:$THEIR_USERNAME/sourcegraph $THEIR_BRANCH:$THEIR_BRANCH
+```
+
+Make sure that the created branch name exactly matches their branch name, otherwise Buildkite will not match the created build to their branch.
