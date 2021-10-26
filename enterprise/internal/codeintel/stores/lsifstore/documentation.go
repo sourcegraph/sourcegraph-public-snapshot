@@ -428,7 +428,7 @@ WITH
 	matching_lang_names AS (
 		SELECT id, lang_name
 		FROM lsif_data_docs_search_lang_names_$SUFFIX
-		WHERE %s LIMIT 1
+		WHERE %s LIMIT 1 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
 	),
 
 	-- Can we find matching repository names? If so, we'll filter to just those. This helps reduce
@@ -437,7 +437,7 @@ WITH
 	matching_repo_names AS (
 		SELECT id, repo_name
 		FROM lsif_data_docs_search_repo_names_$SUFFIX
-		WHERE %s LIMIT 100
+		WHERE %s LIMIT 100 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http''')
 	),
 
 	-- Can we find a matching sequence of documentation/symbol tags? e.g. "private variable".
@@ -446,7 +446,7 @@ WITH
 	matching_tags AS (
 		SELECT id, tags
 		FROM lsif_data_docs_search_tags_$SUFFIX
-		WHERE %s LIMIT 10
+		WHERE %s LIMIT 10 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
 	)
 SELECT
 	result_id,
@@ -469,8 +469,34 @@ FROM (
 		-- and can afford to enable the (much) more expensive substring matching which makes search
 		-- fuzzier. This is very nice, but just too expensive to use when searching over all repos.
 		CASE WHEN (SELECT COUNT(*) FROM matching_repo_names) > 0 THEN
+			-- e.g.
+			-- (
+			--   (
+			--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
+			--     OR result.search_key_tsv @@ '''Router'':*'
+			--   ) OR (
+			--     result.search_key_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
+			--     OR result.search_key_reverse_tsv @@ '''retuoR'':*'
+			--   ) OR (
+			--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
+			--     OR result.label_tsv @@ '''Router'':*'
+			--   ) OR (
+			--     result.label_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
+			--     OR result.label_reverse_tsv @@ '''retuoR'':*'
+			--   )
+			-- )
 			%s
 		ELSE
+			-- e.g.
+			-- (
+			--   (
+			--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'''
+			--     OR result.search_key_tsv @@ '''Router'''
+			--   ) OR (
+			--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'''
+			--     OR result.label_tsv @@ '''Router'''
+			--   )
+			-- )
 			%s
 		END
 
@@ -510,14 +536,16 @@ ORDER BY
 	-- First rank by search keys, as those are ideally super specific if you write the correct
 	-- format.
 	--
-	-- (search_key_rank, search_key_reverse_rank)
+	-- e.g. for 1st arg: (ts_rank_cd(search_key_tsv, '''net'' <-> ''/'' <-> ''http'':*', 2) + ts_rank_cd(search_key_tsv, '''Router'':*', 2))
+	-- e.g. for 2nd arg: (ts_rank_cd(search_key_reverse_tsv, '''retuoR'':*', 2) + ts_rank_cd(search_key_reverse_tsv, '''ptth'' <-> ''/'' <-> ''ten'':*', 2))
 	GREATEST(%s, %s) DESC,
 
 	-- Secondarily rank by label, e.g. function signature. These contain less specific info and
 	-- due to e.g. containing arguments a function takes, have higher chance of collision with the
 	-- desired symbol result, producing a bad match.
 	--
-	-- (label_rank, label_reverse_rank)
+	-- e.g. for 1st arg: (ts_rank_cd(label_tsv, '''net'' <-> ''/'' <-> ''http'':*', 2) + ts_rank_cd(label_tsv, '''Router'':*', 2))
+	-- e.g. for 2nd arg: (ts_rank_cd(label_reverse_tsv, '''retuoR'':*', 2) + ts_rank_cd(label_reverse_tsv, '''ptth'' <-> ''/'' <-> ''ten'':*', 2))
 	GREATEST(%s, %s) DESC,
 
 	-- If all else failed, sort by something reasonable and deterministic.
