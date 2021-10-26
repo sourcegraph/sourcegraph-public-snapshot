@@ -59,7 +59,7 @@ func TestTextSearchRank(t *testing.T) {
 		subStringMatches bool
 		want             autogold.Value
 	}{
-		{"", true, autogold.Want("empty string", [2]interface{}{"", []interface{}{}})},
+		{"", true, autogold.Want("empty string", [2]interface{}{"0", []interface{}{}})},
 		{"mux Router", true, autogold.Want("basic", [2]interface{}{
 			"ts_rank_cd(column, $1, 2) + ts_rank_cd(column, $2, 2)",
 			[]interface{}{
