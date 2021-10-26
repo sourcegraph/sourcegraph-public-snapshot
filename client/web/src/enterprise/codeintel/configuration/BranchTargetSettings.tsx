@@ -114,15 +114,13 @@ const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolic
                         To restrict the set of repositories to which this configuration applies,{' '}
                         <span
                             className={styles.addRepositoryPattern}
-                            onClick={() => {}}
-                            onKeyDown={() =>
+                            onClick={() =>
                                 setPolicy({
                                     ...policy,
                                     repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
                                 })
                             }
-                            role="link"
-                            tabIndex={0}
+                            aria-hidden="true"
                         >
                             add a repository pattern
                         </span>
@@ -162,15 +160,13 @@ const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolic
                         <div className="pb-2">
                             <span
                                 className={classNames(styles.addRepositoryPattern)}
-                                onClick={() => {}}
-                                onKeyDown={() =>
+                                onClick={() =>
                                     setPolicy({
                                         ...policy,
                                         repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
                                     })
                                 }
-                                role="link"
-                                tabIndex={0}
+                                aria-hidden="true"
                             >
                                 Add a repository pattern
                             </span>
