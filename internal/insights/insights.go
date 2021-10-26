@@ -95,17 +95,16 @@ func GetSearchInsights(ctx context.Context, db dbutil.DB, filter SettingFilter) 
 	var raw map[string]json.RawMessage
 	results := make([]SearchInsight, 0)
 
-	for _, setting := range settings {
-		raw, err = FilterSettingJson(setting.Contents, prefix)
+	for i := range settings {
+		raw, err = FilterSettingJson(settings[i].Contents, prefix)
 		if err != nil {
 			return []SearchInsight{}, err
 		}
 
-		var temp SearchInsight
-
-		for id, body := range raw {
+		for id := range raw {
+			var temp SearchInsight
 			temp.ID = id
-			if err := json.Unmarshal(body, &temp); err != nil {
+			if err := json.Unmarshal(raw[id], &temp); err != nil {
 				// a deprecated schema collides with this field name, so skip any deserialization errors
 				continue
 			}
@@ -126,15 +125,14 @@ func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilte
 	var raw map[string]json.RawMessage
 	results := make([]LangStatsInsight, 0)
 
-	for _, setting := range settings {
-		raw, err = FilterSettingJson(setting.Contents, prefix)
+	for i := range settings {
+		raw, err = FilterSettingJson(settings[i].Contents, prefix)
 		if err != nil {
 			return []LangStatsInsight{}, err
 		}
 
-		var temp LangStatsInsight
-
 		for id, body := range raw {
+			var temp LangStatsInsight
 			temp.ID = id
 			if err := json.Unmarshal(body, &temp); err != nil {
 				// a deprecated schema collides with this field name, so skip any deserialization errors
@@ -162,7 +160,8 @@ func GetIntegratedInsights(ctx context.Context, db dbutil.DB) ([]SearchInsight, 
 	var multi error
 
 	results := make([]SearchInsight, 0)
-	for _, setting := range settings {
+	for i := range settings {
+		setting := settings[i]
 		perms := permissionAssociations{
 			userID: setting.Subject.User,
 			orgID:  setting.Subject.Org,
