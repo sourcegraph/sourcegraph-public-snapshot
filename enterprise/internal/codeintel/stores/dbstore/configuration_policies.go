@@ -51,10 +51,12 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 		var configurationPolicy ConfigurationPolicy
 		var retentionDurationHours, indexCommitMaxAgeHours *int
 
+		var repositoryPatterns []string
+
 		if err := rows.Scan(
 			&configurationPolicy.ID,
 			&configurationPolicy.RepositoryID,
-			&configurationPolicy.RepositoryPatterns,
+			pq.Array(&repositoryPatterns),
 			&configurationPolicy.Name,
 			&configurationPolicy.Type,
 			&configurationPolicy.Pattern,
@@ -67,6 +69,10 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			&configurationPolicy.IndexIntermediateCommits,
 		); err != nil {
 			return nil, err
+		}
+
+		if len(repositoryPatterns) != 0 {
+			configurationPolicy.RepositoryPatterns = &repositoryPatterns
 		}
 
 		if retentionDurationHours != nil {

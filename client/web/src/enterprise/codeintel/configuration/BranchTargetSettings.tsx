@@ -1,6 +1,5 @@
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import PlusIcon from 'mdi-react/PlusIcon'
 import TrashIcon from 'mdi-react/TrashIcon'
 import React, { FunctionComponent, useMemo, useState } from 'react'
 
@@ -31,8 +30,6 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     const [pattern, setPattern] = useState(policy.pattern)
     const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [])
 
-    const [repositoryPatterns, setRepositoryPatterns] = useState<string[]>([])
-
     return (
         <>
             <div className="form-group">
@@ -49,89 +46,8 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                 <small className="form-text text-muted">Required.</small>
             </div>
 
-            {!repoId && (
-                <>
-                    {repositoryPatterns.length === 0 ? (
-                        <div className="mb-2">
-                            This configuration policy applies to all repositories.{' '}
-                            {!disabled && (
-                                <>
-                                    To restrict the set of repositories to which this configuration applies,{' '}
-                                    <span
-                                        className={styles.addRepositoryPattern}
-                                        onClick={() => setRepositoryPatterns(repositoryPatterns.concat(['']))}
-                                    >
-                                        add a repository pattern
-                                    </span>
-                                    .
-                                </>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="mb-2">
-                            <div className={styles.grid}>
-                                {repositoryPatterns.map((p, index) => (
-                                    <React.Fragment key={index}>
-                                        <div className={classNames(styles.name, 'form-group d-flex flex-column mb-0')}>
-                                            <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
-                                            <input
-                                                id={`repo-pattern-${index}`}
-                                                type="text"
-                                                className="form-control text-monospace"
-                                                value={repositoryPatterns[index]}
-                                                onChange={({ target }) =>
-                                                    setRepositoryPatterns(
-                                                        repositoryPatterns.map((p, j) =>
-                                                            index === j ? target.value : p
-                                                        )
-                                                    )
-                                                }
-                                                disabled={disabled}
-                                                required={true}
-                                            />
-                                        </div>
+            {!repoId && <TemporaryList policy={policy} setPolicy={setPolicy} disabled={disabled} />}
 
-                                        <span className={classNames(styles.button, 'd-none d-md-inline')}>
-                                            <Button
-                                                onClick={() =>
-                                                    setRepositoryPatterns(
-                                                        repositoryPatterns.filter((_, j) => index !== j)
-                                                    )
-                                                }
-                                                className="p-0 m-0 pt-4"
-                                                disabled={disabled}
-                                            >
-                                                <Tooltip />
-                                                <TrashIcon
-                                                    className="icon-inline text-danger"
-                                                    data-tooltip="Delete the repository pattern"
-                                                />
-                                            </Button>
-                                        </span>
-
-                                        <div className={classNames(styles.preview, 'form-group d-flex flex-column')}>
-                                            <RepositoryPreview pattern={p} />
-                                        </div>
-                                    </React.Fragment>
-                                ))}
-                            </div>
-
-                            {!disabled && (
-                                <>
-                                    <div className="pb-2">
-                                        <span
-                                            className={classNames(styles.addRepositoryPattern)}
-                                            onClick={() => setRepositoryPatterns(repositoryPatterns.concat(['']))}
-                                        >
-                                            Add a repository pattern
-                                        </span>
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    )}
-                </>
-            )}
             <div className="form-group">
                 <label htmlFor="type">Type</label>
                 <select
@@ -178,6 +94,133 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                 </div>
             )}
             {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}
+        </>
+    )
+}
+
+interface TemporaryListProps {
+    policy: CodeIntelligenceConfigurationPolicyFields
+    setPolicy: (policy: CodeIntelligenceConfigurationPolicyFields) => void
+    disabled: boolean
+}
+
+const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolicy, disabled }) => (
+    <div className="mb-2">
+        {policy.repositoryPatterns === null ? (
+            <>
+                This configuration policy applies to all repositories.{' '}
+                {!disabled && (
+                    <>
+                        To restrict the set of repositories to which this configuration applies,{' '}
+                        <span
+                            className={styles.addRepositoryPattern}
+                            onClick={() => {}}
+                            onKeyDown={() =>
+                                setPolicy({
+                                    ...policy,
+                                    repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
+                                })
+                            }
+                            role="link"
+                            tabIndex={0}
+                        >
+                            add a repository pattern
+                        </span>
+                        .
+                    </>
+                )}
+            </>
+        ) : (
+            <>
+                <div className={styles.grid}>
+                    {policy.repositoryPatterns.map((repositoryPattern, index) => (
+                        <Temporary
+                            key={index}
+                            index={index}
+                            pattern={repositoryPattern}
+                            setPattern={value =>
+                                setPolicy({
+                                    ...policy,
+                                    repositoryPatterns: (policy.repositoryPatterns || []).map((v, j) =>
+                                        index === j ? value : v
+                                    ),
+                                })
+                            }
+                            onDelete={() =>
+                                setPolicy({
+                                    ...policy,
+                                    repositoryPatterns: (policy.repositoryPatterns || []).filter((v, j) => index !== j),
+                                })
+                            }
+                            disabled={disabled}
+                        />
+                    ))}
+                </div>
+
+                {!disabled && (
+                    <>
+                        <div className="pb-2">
+                            <span
+                                className={classNames(styles.addRepositoryPattern)}
+                                onClick={() => {}}
+                                onKeyDown={() =>
+                                    setPolicy({
+                                        ...policy,
+                                        repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
+                                    })
+                                }
+                                role="link"
+                                tabIndex={0}
+                            >
+                                Add a repository pattern
+                            </span>
+                        </div>
+                    </>
+                )}
+            </>
+        )}
+    </div>
+)
+
+interface TemporaryProps {
+    index: number
+    pattern: string
+    setPattern: (value: string) => void
+    onDelete: () => void
+    disabled: boolean
+}
+
+const Temporary: FunctionComponent<TemporaryProps> = ({ index, pattern, setPattern, onDelete, disabled }) => {
+    const [previewPattern, setPreviewPattern] = useState(pattern)
+    const debouncedSetPattern = useMemo(() => debounce(value => setPreviewPattern(value), DEBOUNCED_WAIT), [])
+
+    return (
+        <>
+            <div className={classNames(styles.name, 'form-group d-flex flex-column mb-0')}>
+                <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
+                <input
+                    type="text"
+                    className="form-control text-monospace"
+                    value={pattern}
+                    onChange={({ target }) => {
+                        setPattern(target.value)
+                        debouncedSetPattern(target.value)
+                    }}
+                    disabled={disabled}
+                    required={true}
+                />
+            </div>
+
+            <span className={classNames(styles.button, 'd-none d-md-inline')}>
+                <Button onClick={() => onDelete()} className="p-0 m-0 pt-4" disabled={disabled}>
+                    <Tooltip />
+                    <TrashIcon className="icon-inline text-danger" data-tooltip="Delete the repository pattern" />
+                </Button>
+            </span>
+
+            <div className={classNames(styles.preview, 'form-group d-flex flex-column')}>
+                <RepositoryPreview pattern={previewPattern} />
+            </div>
         </>
     )
 }
