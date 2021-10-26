@@ -110,8 +110,13 @@ func TextSearchVector(s string) string {
 // match "http". This applies only at a lexeme level. The value should match the value provided to
 // TextSearchQuery when composing the tsquery for ranking to match properly.
 func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query {
+	terms := strings.Fields(query)
+	if len(terms) == 0 {
+		return sqlf.Sprintf("0") // lowest rank
+	}
+
 	var rankFunctions []*sqlf.Query
-	for _, term := range strings.Fields(query) {
+	for _, term := range terms {
 		seq := lexemeSequence(Lexemes(term), subStringMatches, true, " <-> ")
 		rankFunctions = append(rankFunctions, sqlf.Sprintf("ts_rank_cd("+columnName+", %s, 2)", seq))
 	}
