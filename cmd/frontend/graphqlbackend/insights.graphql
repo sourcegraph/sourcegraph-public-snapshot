@@ -560,7 +560,7 @@ Input for updating a line chart search insight.
 """
 input UpdateLineChartSearchInsightInput {
     """
-    The list of data series to create (or add) to this insight.
+    The complete list of data series on this line chart. Note: excluding a data series will remove it.
     """
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
 
@@ -594,7 +594,7 @@ input InsightViewFiltersInput {
     """
     includeRepoRegex: String
     """
-    A regex string for which to include repositories in a filter.
+    A regex string for which to exclude repositories in a filter.
     """
     excludeRepoRegex: String
 }
