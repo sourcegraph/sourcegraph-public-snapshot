@@ -28,7 +28,7 @@ func (s *Store) RepoIDsByGlobPattern(ctx context.Context, pattern string) (_ []i
 }
 
 const repoIDsByGlobPatternQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/repo.go:FindRepos
+-- source: enterprise/internal/codeintel/stores/dbstore/repo.go:RepoIDsByGlobPattern
 SELECT id
 FROM repo
 WHERE
