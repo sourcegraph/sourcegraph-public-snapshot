@@ -266,7 +266,7 @@ type UpdateLineChartSearchInsightInput struct {
 }
 
 type InsightViewControlsInput struct {
-	RepoFilters InsightViewFiltersInput
+	Filters InsightViewFiltersInput
 }
 
 type InsightViewFiltersInput struct {

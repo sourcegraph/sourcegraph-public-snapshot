@@ -228,10 +228,10 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	_, err = tx.UpdateView(ctx, types.InsightView{
 		UniqueID: insightViewId,
-		Title:    emptyIfNil(args.Input.Options.Title),
+		Title:    emptyIfNil(args.Input.PresentationOptions.Title),
 		Filters: types.InsightViewFilters{
-			IncludeRepoRegex: args.Input.Options.IncludeRepoRegex,
-			ExcludeRepoRegex: args.Input.Options.ExcludeRepoRegex},
+			IncludeRepoRegex: args.Input.ViewControls.Filters.IncludeRepoRegex,
+			ExcludeRepoRegex: args.Input.ViewControls.Filters.ExcludeRepoRegex},
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "UpdateView")

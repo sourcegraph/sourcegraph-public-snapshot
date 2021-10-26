@@ -550,6 +550,21 @@ input LineChartSearchInsightInput {
     dataSeries: [LineChartSearchInsightDataSeriesInput!]!
 
     """
+    The options for this line chart.
+    """
+    options: LineChartOptionsInput!
+}
+
+"""
+Input for updating a line chart search insight.
+"""
+input UpdateLineChartSearchInsightInput {
+    """
+    The list of data series to create (or add) to this insight.
+    """
+    dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
     The presentation options for this line chart.
     """
     presentationOptions: LineChartOptionsInput!
@@ -567,7 +582,7 @@ input InsightViewControlsInput {
     """
     Input for the default filters for an insight.
     """
-    filters: InsightViewFiltersInput
+    filters: InsightViewFiltersInput!
 }
 
 """
@@ -674,7 +689,7 @@ extend type Mutation {
     """
     Update a line chart backed by search insights.
     """
-    updateLineChartSearchInsight(id: ID!, input: LineChartSearchInsightInput!): InsightViewPayload!
+    updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
 }
 
 """
