@@ -304,10 +304,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", admin.Username, apiID)
 	codeHosts := apitest.BatchChangesCodeHostsConnection{
-		TotalCount: 1,
-		Nodes: []apitest.BatchChangesCodeHost{
-			{ExternalServiceKind: "GITHUB", ExternalServiceURL: "https://github.com/"},
-		},
+		TotalCount: 0,
+		Nodes:      []apitest.BatchChangesCodeHost{},
 	}
 	want := apitest.BatchSpec{
 		Typename: "BatchSpec",
