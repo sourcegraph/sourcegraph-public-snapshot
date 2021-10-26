@@ -18,7 +18,7 @@ This document will take you through how to run postgres queries in the main data
 
 1. Find the Sourcegraph-Container-ID in which your Sourcegraph instance is running using the following command: `docker ps -a`
 1. Run the following command to exec into the container: `docker exec -it Sourcegraph-Container-ID bash`
-1. Start postgres to run postgres queries: `psql -U postgres -W`
+1. Start postgres to run postgres queries: `psql -U postgres`
 1. There is no Password for the database by default, so you can just hit enter when it asks for your password
   
   
