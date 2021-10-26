@@ -3,7 +3,6 @@ import { isArray, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
@@ -302,7 +301,7 @@ const WorkspaceStateIcon: React.FunctionComponent<{ node: Workspace }> = ({ node
         case BatchSpecWorkspaceState.CANCELED:
         case BatchSpecWorkspaceState.CANCELING:
         case BatchSpecWorkspaceState.FAILED:
-            return <ErrorIcon className="icon-inline text-danger" />
+            return <AlertCircleIcon className="icon-inline text-danger" />
         case BatchSpecWorkspaceState.COMPLETED:
             return <CheckCircleIcon className="icon-inline text-success" />
     }
@@ -321,7 +320,7 @@ const StepStateIcon: React.FunctionComponent<{ step: Step }> = ({ step }) => {
     if (step.exitCode === 0) {
         return <CheckCircleIcon className="icon-inline text-success" />
     }
-    return <ErrorIcon className="icon-inline text-danger" />
+    return <AlertCircleIcon className="icon-inline text-danger" />
 }
 
 const StepTimer: React.FunctionComponent<{ step: Step }> = ({ step }) => {
@@ -358,8 +357,8 @@ const ExecutionTimeline: React.FunctionComponent<ExecutionTimelineProps> = ({ no
             node.state === BatchSpecWorkspaceState.COMPLETED
                 ? { icon: <CheckIcon />, text: 'Finished', date: node.finishedAt, className: 'bg-success' }
                 : node.state === BatchSpecWorkspaceState.CANCELED
-                ? { icon: <ErrorIcon />, text: 'Canceled', date: node.finishedAt, className: 'bg-secondary' }
-                : { icon: <ErrorIcon />, text: 'Failed', date: node.finishedAt, className: 'bg-danger' },
+                ? { icon: <AlertCircleIcon />, text: 'Canceled', date: node.finishedAt, className: 'bg-secondary' }
+                : { icon: <AlertCircleIcon />, text: 'Failed', date: node.finishedAt, className: 'bg-danger' },
         ],
         [expandStage, node, now]
     )
@@ -419,7 +418,7 @@ const genericStage = <E extends { startTime: string; exitCode: number | null }>(
     const success = isArray(value) ? value.every(logEntry => logEntry.exitCode === 0) : value.exitCode === 0
 
     return {
-        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <ErrorIcon />,
+        icon: !finished ? <ProgressClockIcon /> : success ? <CheckIcon /> : <AlertCircleIcon />,
         date: isArray(value) ? value[0].startTime : value.startTime,
         className: success || !finished ? 'bg-success' : 'bg-danger',
         expanded: expand || !(success || !finished),
