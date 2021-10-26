@@ -100,26 +100,26 @@ export const createCodeMonitor = ({
     )
 }
 
+export const ListUserCodeMonitors = gql`
+    query ListUserCodeMonitors($id: ID!, $first: Int, $after: String) {
+        node(id: $id) {
+            __typename
+            ... on User {
+                monitors(first: $first, after: $after) {
+                    ...ListCodeMonitors
+                }
+            }
+        }
+    }
+    ${ListCodeMonitorsFragment}
+`
+
 export const fetchUserCodeMonitors = ({
     id,
     first,
     after,
-}: ListUserCodeMonitorsVariables): Observable<ListCodeMonitors> => {
-    const query = gql`
-        query ListUserCodeMonitors($id: ID!, $first: Int, $after: String) {
-            node(id: $id) {
-                __typename
-                ... on User {
-                    monitors(first: $first, after: $after) {
-                        ...ListCodeMonitors
-                    }
-                }
-            }
-        }
-        ${ListCodeMonitorsFragment}
-    `
-
-    return requestGraphQL<ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables>(query, {
+}: ListUserCodeMonitorsVariables): Observable<ListCodeMonitors> =>
+    requestGraphQL<ListUserCodeMonitorsResult, ListUserCodeMonitorsVariables>(ListUserCodeMonitors, {
         id,
         first,
         after,
@@ -137,7 +137,6 @@ export const fetchUserCodeMonitors = ({
             return data.node.monitors
         })
     )
-}
 
 export const toggleCodeMonitorEnabled = (
     id: string,

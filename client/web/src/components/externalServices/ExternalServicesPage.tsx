@@ -1,34 +1,44 @@
 import * as H from 'history'
 import AddIcon from 'mdi-react/AddIcon'
-import React, { useEffect, useMemo, useCallback, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Redirect } from 'react-router'
-import { Subject } from 'rxjs'
-import { tap } from 'rxjs/operators'
 
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { isErrorLike, ErrorLike } from '@sourcegraph/shared/src/util/errors'
+import { createAggregateError } from '@sourcegraph/shared/src/util/errors'
+import { useConnection } from '@sourcegraph/web/src/components/FilteredConnection/hooks/useConnection'
+import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '@sourcegraph/web/src/components/FilteredConnection/ui'
 
 import { AuthenticatedUser } from '../../auth'
-import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
+import {
+    ListExternalServiceFields,
+    Scalars,
+    ExternalServicesResult,
+    ExternalServicesVariables,
+} from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
 
-import { queryExternalServices as _queryExternalServices } from './backend'
-import { ExternalServiceNodeProps, ExternalServiceNode } from './ExternalServiceNode'
+import { EXTERNAL_SERVICES } from './backend'
+import { ExternalServiceNode } from './ExternalServiceNode'
 
 interface Props extends ActivationProps, TelemetryProps {
     history: H.History
-    location: H.Location
     routingPrefix: string
     afterDeleteRoute: string
     userID?: Scalars['ID']
     authenticatedUser: Pick<AuthenticatedUser, 'id'>
-
-    /** For testing only. */
-    queryExternalServices?: typeof _queryExternalServices
 }
+
+const BATCH_COUNT = 20
 
 /**
  * A page displaying the external services on this site.
@@ -36,53 +46,62 @@ interface Props extends ActivationProps, TelemetryProps {
 export const ExternalServicesPage: React.FunctionComponent<Props> = ({
     afterDeleteRoute,
     history,
-    location,
     routingPrefix,
     activation,
     userID,
     telemetryService,
     authenticatedUser,
-    queryExternalServices = _queryExternalServices,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
     }, [telemetryService])
-    const updates = useMemo(() => new Subject<void>(), [])
-    const onDidUpdateExternalServices = useCallback(() => updates.next(), [updates])
 
-    const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) =>
-            queryExternalServices({
-                first: args.first ?? null,
-                after: args.after ?? null,
-                namespace: userID ?? null,
-            }).pipe(
-                tap(externalServices => {
-                    if (activation && externalServices.totalCount > 0) {
-                        activation.update({ ConnectedCodeHost: true })
-                    }
-                })
-            ),
+    const { connection, loading, error, fetchMore, hasNextPage } = useConnection<
+        ExternalServicesResult,
+        ExternalServicesVariables,
+        ListExternalServiceFields
+    >({
+        query: EXTERNAL_SERVICES,
+        variables: { first: BATCH_COUNT, after: null, namespace: userID ?? null },
+        getConnection: ({ data, errors }) => {
+            if (!data || !data.externalServices || errors) {
+                throw createAggregateError(errors)
+            }
+
+            return data.externalServices
+        },
+        options: {
+            useURL: true,
+        },
+    })
+
+    useEffect(() => {
+        if (activation && connection?.totalCount && connection.totalCount > 0) {
+            // TODO: Check
+            activation.update({ ConnectedCodeHost: true })
+        }
         // Activation changes in here, so we cannot recreate the callback on change,
         // or queryConnection will constantly change, resulting in infinite refetch loops.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [userID, queryExternalServices]
-    )
-
-    const [noExternalServices, setNoExternalServices] = useState<boolean>(false)
-    const onUpdate = useCallback<
-        (connection: ExternalServicesResult['externalServices'] | ErrorLike | undefined) => void
-    >(connection => {
-        if (connection && !isErrorLike(connection)) {
-            setNoExternalServices(connection.totalCount === 0)
-        }
     }, [])
 
     const isManagingOtherUser = !!userID && userID !== authenticatedUser.id
 
-    if (!isManagingOtherUser && noExternalServices) {
+    if (!isManagingOtherUser && connection?.totalCount === 0) {
         return <Redirect to={`${routingPrefix}/external-services/new`} />
     }
+
+    const summary = connection && (
+        <ConnectionSummary
+            connection={connection}
+            first={BATCH_COUNT}
+            noun="code host"
+            pluralNoun="code hosts"
+            hasNextPage={hasNextPage}
+            noSummaryIfAllNodesVisible={true}
+        />
+    )
+
     return (
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
@@ -98,31 +117,29 @@ export const ExternalServicesPage: React.FunctionComponent<Props> = ({
                 )}
             </div>
             <p className="mt-2">Manage code host connections to sync repositories.</p>
-            <FilteredConnection<
-                ListExternalServiceFields,
-                Omit<ExternalServiceNodeProps, 'node'>,
-                {},
-                ExternalServicesResult['externalServices']
-            >
-                className="list-group list-group-flush mt-3"
-                noun="code host"
-                pluralNoun="code hosts"
-                queryConnection={queryConnection}
-                nodeComponent={ExternalServiceNode}
-                nodeComponentProps={{
-                    onDidUpdate: onDidUpdateExternalServices,
-                    history,
-                    routingPrefix,
-                    afterDeleteRoute,
-                }}
-                hideSearch={true}
-                noSummaryIfAllNodesVisible={true}
-                cursorPaging={true}
-                updates={updates}
-                history={history}
-                location={location}
-                onUpdate={onUpdate}
-            />
+            <ConnectionContainer className="list-group list-group-flush mt-3">
+                {error && <ConnectionError errors={[error.message]} />}
+                {connection && (
+                    <ConnectionList>
+                        {connection.nodes.map(node => (
+                            <ExternalServiceNode
+                                key={node.id}
+                                node={node}
+                                history={history}
+                                routingPrefix={routingPrefix}
+                                afterDeleteRoute={afterDeleteRoute}
+                            />
+                        ))}
+                    </ConnectionList>
+                )}
+                {loading && <ConnectionLoading />}
+                {!loading && connection && (
+                    <SummaryContainer>
+                        {summary}
+                        {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                    </SummaryContainer>
+                )}
+            </ConnectionContainer>
         </div>
     )
 }
