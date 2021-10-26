@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -17,7 +17,9 @@ func populateTestStore(t testing.TB) *Store {
 		t.Fatalf("unexpected error reading testdata: %s", err)
 	}
 
-	tx, err := dbconn.Global.Begin()
+	db := dbtest.NewDB(t)
+
+	tx, err := db.Begin()
 	if err != nil {
 		t.Fatalf("unexpected error starting transaction: %s", err)
 	}
@@ -37,5 +39,5 @@ func populateTestStore(t testing.TB) *Store {
 		}
 	}
 
-	return NewStore(dbconn.Global, &observation.TestContext)
+	return NewStore(db, &observation.TestContext)
 }
