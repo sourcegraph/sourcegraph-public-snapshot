@@ -53,13 +53,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                             views {
                                 nodes {
                                     id
-                                    dataSeries {
-                                        label
-                                        points {
-                                            dateTime
-                                            value
-                                        }
-                                    }
                                 }
                             }
                         }
