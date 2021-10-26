@@ -115,3 +115,9 @@ func (s *Store) RemoveAndSave(key string) error {
 	}
 	return s.SaveFile()
 }
+
+func (s *Store) Display() {
+	for key, value := range s.m {
+		fmt.Printf("%s: %x\n", key, value)
+	}
+}
