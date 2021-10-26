@@ -33,7 +33,8 @@ export const SearchContextMenuItem: React.FunctionComponent<{
     isDefault: boolean
     selectSearchContextSpec: (spec: string) => void
     searchFilter: string
-}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter }) => {
+    onKeyDown: (key: string) => void
+}> = ({ spec, description, selected, isDefault, selectSearchContextSpec, searchFilter, onKeyDown }) => {
     const setContext = useCallback(() => {
         eventLogger.log('SearchContextSelected')
         selectSearchContextSpec(spec)
@@ -43,6 +44,9 @@ export const SearchContextMenuItem: React.FunctionComponent<{
             data-testid="search-context-menu-item"
             className={classNames(styles.item, selected && styles.itemSelected)}
             onClick={setContext}
+            role="menuitem"
+            data-search-context-spec={spec}
+            onKeyDown={event => onKeyDown(event.key)}
         >
             <small
                 data-testid="search-context-menu-item-name"
@@ -88,7 +92,8 @@ type LoadingState = 'LOADING' | 'LOADING_NEXT_PAGE' | 'DONE' | 'ERROR'
 
 const searchContextsPerPageToLoad = 15
 
-const getFirstMenuItem = (): HTMLButtonElement | null => document.querySelector(`${styles.item}:first-child`)
+const getSearchContextMenuItem = (spec: string): HTMLButtonElement | null =>
+    document.querySelector(`[data-search-context-spec="${spec}"]`)
 
 export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> = ({
     authenticatedUser,
@@ -121,31 +126,6 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         if (event.key === ' ' || event.key === 'Enter') {
             event.stopPropagation()
         }
-    }, [])
-
-    useEffect(() => {
-        focusInputElement()
-        const onInputKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'ArrowDown') {
-                getFirstMenuItem()?.focus()
-                event.stopPropagation()
-            }
-        }
-        const currentInput = inputElement.current
-        currentInput?.addEventListener('keydown', onInputKeyDown)
-        return () => currentInput?.removeEventListener('keydown', onInputKeyDown)
-    }, [])
-
-    useEffect(() => {
-        const firstMenuItem = getFirstMenuItem()
-        const onFirstMenuItemKeyDown = (event: KeyboardEvent): void => {
-            if (event.key === 'ArrowUp') {
-                focusInputElement()
-                event.stopPropagation()
-            }
-        }
-        firstMenuItem?.addEventListener('keydown', onFirstMenuItemKeyDown)
-        return () => firstMenuItem?.removeEventListener('keydown', onFirstMenuItemKeyDown)
     }, [])
 
     const onMenuKeyDown = useCallback(
@@ -264,6 +244,19 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
         return () => intersectionObserver.disconnect()
     }, [infiniteScrollTrigger, infiniteScrollList, loadNextPage])
 
+    useEffect(focusInputElement, [])
+
+    const onInputKeyDown = useCallback(
+        (event: React.KeyboardEvent) => {
+            if (filteredList.length > 0 && event.key === 'ArrowDown') {
+                getSearchContextMenuItem(filteredList[0].spec)?.focus()
+                event.stopPropagation()
+                event.preventDefault()
+            }
+        },
+        [filteredList]
+    )
+
     return (
         // eslint-disable-next-line jsx-a11y/no-static-element-interactions
         <div onKeyDown={onMenuKeyDown}>
@@ -282,6 +275,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                 <input
                     ref={inputElement}
                     onInput={onSearchFilterChanged}
+                    onKeyDown={onInputKeyDown}
                     type="search"
                     placeholder="Find..."
                     aria-label="Find a context"
@@ -291,7 +285,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
             </div>
             <div data-testid="search-context-menu-list" className={styles.list} ref={infiniteScrollList} role="menu">
                 {loadingState !== 'LOADING' &&
-                    filteredList.map(context => (
+                    filteredList.map((context, index) => (
                         <SearchContextMenuItem
                             key={context.id}
                             spec={context.spec}
@@ -300,6 +294,7 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                             selected={context.spec === selectedSearchContextSpec}
                             selectSearchContextSpec={selectSearchContextSpec}
                             searchFilter={searchFilter}
+                            onKeyDown={key => index === 0 && key === 'ArrowUp' && focusInputElement()}
                         />
                     ))}
                 {(loadingState === 'LOADING' || loadingState === 'LOADING_NEXT_PAGE') && (
@@ -321,6 +316,8 @@ export const SearchContextMenu: React.FunctionComponent<SearchContextMenuProps> 
                         <small>No contexts found</small>
                     </DropdownItem>
                 )}
+                {/* Dummy element to prevent a focus error when using the keyboard to open the dropdown */}
+                <DropdownItem className="d-none" />
                 <div ref={infiniteScrollTrigger} className={styles.infiniteScrollTrigger} />
             </div>
             <div className={styles.footer}>
