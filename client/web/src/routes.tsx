@@ -9,6 +9,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { PageRoutes } from './routes.constants'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -59,29 +60,6 @@ export interface LayoutRouteProps<Parameters_ extends { [K in keyof Parameters_]
 function passThroughToServer(): React.ReactNode {
     window.location.reload()
     return null
-}
-
-export enum PageRoutes {
-    Index = '/',
-    Search = '/search',
-    SearchConsole = '/search/console',
-    SearchNotebook = '/search/notebook',
-    SignIn = '/sign-in',
-    SignUp = '/sign-up',
-    Welcome = '/welcome',
-    Settings = '/settings',
-    User = '/user',
-    Organizations = '/organizations',
-    SiteAdmin = '/site-admin',
-    SiteAdminInit = '/site-admin/init',
-    PasswordReset = '/password-reset',
-    ApiConsole = '/api/console',
-    UserArea = '/users/:username',
-    Survey = '/survey/:score?',
-    Extensions = '/extensions',
-    Help = '/help',
-    Debug = '/-/debug/*',
-    RepoContainer = '/:repoRevAndRest+',
 }
 
 /**
@@ -199,7 +177,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
-        path: PageRoutes.EXTENSIONS,
+        path: PageRoutes.Extensions,
         render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
     },
     {

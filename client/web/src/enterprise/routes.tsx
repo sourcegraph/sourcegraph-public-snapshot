@@ -6,20 +6,8 @@ import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps, routes } from '../routes'
+import { EnterprisePageRoutes } from '../routes.constants'
 import { lazyComponent } from '../util/lazyComponent'
-
-export enum EnterprisePageRoutes {
-    SubscriptionsNew = '/subscriptions/new',
-    OldSubscriptionsNew = '/user/subscriptions/new',
-    BatchChanges = '/batch-changes',
-    Stats = '/stats',
-    CodeMonitoring = '/code-monitoring',
-    Insights = '/insights',
-    Contexts = '/contexts',
-    CreateContext = '/contexts/new',
-    EditContext = '/contexts/:spec+/edit',
-    Context = '/contexts/:spec+',
-}
 
 const isSearchContextsManagementEnabled = (settingsCascade: SettingsCascadeOrError): boolean =>
     !isErrorLike(settingsCascade.final) &&
