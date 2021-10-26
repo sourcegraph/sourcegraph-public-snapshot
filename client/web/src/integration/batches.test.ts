@@ -483,7 +483,6 @@ describe('Batches', () => {
                     ...batchChangesListResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
-                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
                 })
@@ -519,7 +518,6 @@ describe('Batches', () => {
                     ...batchChangeLicenseGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType, { closedAt: subDays(new Date(), 1).toISOString() }),
                     BatchChangeChangesets,
-                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
                     DeleteBatchChange: () => ({
@@ -570,7 +568,6 @@ describe('Batches', () => {
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
-                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     BatchSpecByID: () => ({
                         node: {
                             __typename: 'BatchSpec',
@@ -762,7 +759,6 @@ describe('Batches', () => {
                     ...commonWebGraphQlResults,
                     ...mockCommonGraphQLResponses(entityType),
                     BatchChangeChangesets,
-                    BatchChangeChangesetsOLD: BatchChangeChangesets,
                     ExternalChangesetFileDiffs,
                     CloseBatchChange: () => ({
                         closeBatchChange: {

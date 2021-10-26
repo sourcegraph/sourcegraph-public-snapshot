@@ -281,87 +281,6 @@ export const changesetFieldsFragment = gql`
     ${externalChangesetFieldsFragment}
 `
 
-// TODO: This has been superseded by CHANGESETS below, but the "Close" page still uses
-// this older `requestGraphQL` one. The variables and result types are the same, so
-// eventually this can just go away when we refactor the requests from the "Close" page.
-export const queryChangesets = ({
-    batchChange,
-    first,
-    after,
-    state,
-    reviewState,
-    checkState,
-    onlyPublishedByThisBatchChange,
-    search,
-    onlyArchived,
-}: BatchChangeChangesetsVariables): Observable<
-    (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
-> =>
-    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(
-        gql`
-            query BatchChangeChangesetsOLD(
-                $batchChange: ID!
-                $first: Int
-                $after: String
-                $state: ChangesetState
-                $reviewState: ChangesetReviewState
-                $checkState: ChangesetCheckState
-                $onlyPublishedByThisBatchChange: Boolean
-                $search: String
-                $onlyArchived: Boolean
-            ) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        changesets(
-                            first: $first
-                            after: $after
-                            state: $state
-                            reviewState: $reviewState
-                            checkState: $checkState
-                            onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
-                            search: $search
-                            onlyArchived: $onlyArchived
-                        ) {
-                            totalCount
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            nodes {
-                                ...ChangesetFields
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${changesetFieldsFragment}
-        `,
-        {
-            batchChange,
-            first,
-            after,
-            state,
-            reviewState,
-            checkState,
-            onlyPublishedByThisBatchChange,
-            search,
-            onlyArchived,
-        }
-    ).pipe(
-        map(dataOrThrowErrors),
-        map(({ node }) => {
-            if (!node) {
-                throw new Error(`Batch change with ID ${batchChange} does not exist`)
-            }
-            if (node.__typename !== 'BatchChange') {
-                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
-            }
-            return node.changesets
-        })
-    )
-
 export const CHANGESETS = gql`
     query BatchChangeChangesets(
         $batchChange: ID!
@@ -412,6 +331,45 @@ export const CHANGESETS = gql`
 
     ${externalChangesetFieldsFragment}
 `
+
+// TODO: This has been superseded by CHANGESETS below, but the "Close" page still uses
+// this older `requestGraphQL` one. The variables and result types are the same, so
+// eventually this can just go away when we refactor the requests from the "Close" page.
+export const queryChangesets = ({
+    batchChange,
+    first,
+    after,
+    state,
+    reviewState,
+    checkState,
+    onlyPublishedByThisBatchChange,
+    search,
+    onlyArchived,
+}: BatchChangeChangesetsVariables): Observable<
+    (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
+> =>
+    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(CHANGESETS, {
+        batchChange,
+        first,
+        after,
+        state,
+        reviewState,
+        checkState,
+        onlyPublishedByThisBatchChange,
+        search,
+        onlyArchived,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                throw new Error(`Batch change with ID ${batchChange} does not exist`)
+            }
+            if (node.__typename !== 'BatchChange') {
+                throw new Error(`The given ID is a ${node.__typename}, not a BatchChange`)
+            }
+            return node.changesets
+        })
+    )
 
 export async function syncChangeset(changeset: Scalars['ID']): Promise<void> {
     const result = await requestGraphQL<SyncChangesetResult, SyncChangesetVariables>(
