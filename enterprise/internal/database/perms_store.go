@@ -1531,6 +1531,32 @@ func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[in
 	return results, nil
 }
 
+// UserIsMemberOfOrgHasCodeHostConnection returns true if the user is a member
+// of any organization that has added code host connection.
+func (s *PermsStore) UserIsMemberOfOrgHasCodeHostConnection(ctx context.Context, userID int32) (has bool, err error) {
+	if Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection != nil {
+		return Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
+	}
+
+	ctx, save := s.observe(ctx, "UserIsMemberOfOrgHasCodeHostConnection", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/database/perms_store.go:PermsStore.UserIsMemberOfOrgHasCodeHostConnection
+SELECT EXISTS (
+	SELECT
+	FROM org_members
+	JOIN external_services ON external_services.namespace_org_id = org_id
+	WHERE user_id = %s
+)
+`, userID)
+	err = s.QueryRow(ctx, q).Scan(&has)
+	if err != nil {
+		return false, err
+	}
+	return has, nil
+}
+
 // PermsMetrics contains metrics values calculated by querying the database.
 type PermsMetrics struct {
 	// The number of users with stale permissions.
