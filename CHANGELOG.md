@@ -15,7 +15,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Added command `sg reset <key>...` to remove key value pairs from secrets [#26555](https://github.com/sourcegraph/sourcegraph/issues/26555)
+- Added command `sg secret reset <key>...` to remove key value pairs from secrets [#26555](https://github.com/sourcegraph/sourcegraph/issues/26555)
 - Added documentation for merging site-config files. Available since 3.32 [#21220](https://github.com/sourcegraph/sourcegraph/issues/21220)
 
 ### Changed
