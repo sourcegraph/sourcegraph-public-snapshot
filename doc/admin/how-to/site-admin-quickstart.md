@@ -24,7 +24,7 @@ For a comphrensive deployment guide for each option, check out our in-depth docu
 > **NOTE: Some features for production deployments [require a Sourcegraph license](https://about.sourcegraph.com/pricing/)**.
 
 ### Self-hosted vs. Managed instances
-Regardless of the deployment option you choose, Sourcegraph can be deployed either on-prem (whether locally or with the cloud provider of your choice) using the deployment options listed above. We also offer [managed instances](https://docs.sourcegraph.com/admin/install/managed) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
+Regardless of the deployment option you choose, Sourcegraph can be self-hosted locally or with the cloud provider of your choice. We also offer [managed instances](https://docs.sourcegraph.com/admin/install/managed) (we handle deployment, updates, and management of the instance for you). Please [contact us](https://about.sourcegraph.com/contact/sales) if you are interested in learning more about managed instances. 
 
 
 ## Updating your instance 
