@@ -12,10 +12,6 @@ import { BrandedStory } from '../../BrandedStory'
 
 import { HierarchicalLocationsView, HierarchicalLocationsViewProps } from './HierarchicalLocationsView'
 
-const { add } = storiesOf('branded/HierarchicalLocationsView', module).addDecorator(story => (
-    <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>
-))
-
 const LOCATIONS: Location[] = [
     {
         uri: 'git://github.com/foo/bar#file1.txt',
@@ -83,7 +79,6 @@ const LOCATIONS: Location[] = [
         },
     },
 ]
-
 const PROPS: HierarchicalLocationsViewProps = {
     extensionsController,
     settingsCascade: { subjects: null, final: null },
@@ -94,24 +89,27 @@ const PROPS: HierarchicalLocationsViewProps = {
     fetchHighlightedFileLineRanges: () => of([['line1\n', 'line2\n', 'line3\n', 'line4']]),
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
+storiesOf('branded/HierarchicalLocationsView', module)
+    .addDecorator(story => <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>)
 
-add('Single repo', () => (
-    <HierarchicalLocationsView
-        {...PROPS}
-        locations={of({ isLoading: false, result: LOCATIONS.filter(({ uri }) => uri.includes('github.com/foo/bar')) })}
-    />
-))
-
-add('Grouped by repo', () => <HierarchicalLocationsView {...PROPS} />)
-
-add('Grouped by repo and file', () => (
-    <HierarchicalLocationsView
-        {...PROPS}
-        settingsCascade={{
-            subjects: null,
-            final: {
-                'panel.locations.groupByFile': true,
-            },
-        }}
-    />
-))
+    .add('Single repo', () => (
+        <HierarchicalLocationsView
+            {...PROPS}
+            locations={of({
+                isLoading: false,
+                result: LOCATIONS.filter(({ uri }) => uri.includes('github.com/foo/bar')),
+            })}
+        />
+    ))
+    .add('Grouped by repo', () => <HierarchicalLocationsView {...PROPS} />)
+    .add('Grouped by repo and file', () => (
+        <HierarchicalLocationsView
+            {...PROPS}
+            settingsCascade={{
+                subjects: null,
+                final: {
+                    'panel.locations.groupByFile': true,
+                },
+            }}
+        />
+    ))

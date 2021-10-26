@@ -6,15 +6,6 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
 import { Toggle } from './Toggle'
 
-const onToggle = action('onToggle')
-
-const { add } = storiesOf('branded/Toggle', module).addDecorator(story => (
-    <>
-        <div>{story()}</div>
-        <style>{webStyles}</style>
-    </>
-))
-
 const ToggleExample: typeof Toggle = ({ value, disabled, onToggle }) => (
     <div className="d-flex align-items-baseline mb-2">
         <Toggle value={value} onToggle={onToggle} disabled={disabled} title="Hello" className="mr-2" />
@@ -26,28 +17,34 @@ const ToggleExample: typeof Toggle = ({ value, disabled, onToggle }) => (
         </div>
     </div>
 )
+const onToggle = action('onToggle')
+storiesOf('branded/Toggle', module)
+    .addDecorator(story => (
+        <>
+            <div>{story()}</div>
+            <style>{webStyles}</style>
+        </>
+    ))
+    .add(
+        'Interactive',
+        () => {
+            const [value, setValue] = useState(false)
 
-add(
-    'Interactive',
-    () => {
-        const [value, setValue] = useState(false)
+            const onToggle = (value: boolean) => setValue(value)
 
-        const onToggle = (value: boolean) => setValue(value)
-
-        return <ToggleExample value={value} onToggle={onToggle} />
-    },
-    {
-        chromatic: {
-            disable: true,
+            return <ToggleExample value={value} onToggle={onToggle} />
         },
-    }
-)
-
-add('Variants', () => (
-    <>
-        <ToggleExample value={true} onToggle={onToggle} />
-        <ToggleExample value={false} onToggle={onToggle} />
-        <ToggleExample value={true} disabled={true} onToggle={onToggle} />
-        <ToggleExample value={false} disabled={true} onToggle={onToggle} />
-    </>
-))
+        {
+            chromatic: {
+                disable: true,
+            },
+        }
+    )
+    .add('Variants', () => (
+        <>
+            <ToggleExample value={true} onToggle={onToggle} />
+            <ToggleExample value={false} onToggle={onToggle} />
+            <ToggleExample value={true} disabled={true} onToggle={onToggle} />
+            <ToggleExample value={false} disabled={true} onToggle={onToggle} />
+        </>
+    ))

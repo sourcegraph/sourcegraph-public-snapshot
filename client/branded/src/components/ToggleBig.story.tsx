@@ -7,38 +7,34 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { ToggleBig } from './ToggleBig'
 
 const onToggle = action('onToggle')
+storiesOf('branded/ToggleBig', module)
+    .addDecorator(story => (
+        <>
+            <div>{story()}</div>
+            <style>{webStyles}</style>
+        </>
+    ))
+    .add(
+        'Interactive',
+        () => {
+            const [value, setValue] = useState(false)
 
-const { add } = storiesOf('branded/ToggleBig', module).addDecorator(story => (
-    <>
-        <div>{story()}</div>
-        <style>{webStyles}</style>
-    </>
-))
+            const onToggle = (value: boolean) => setValue(value)
 
-add(
-    'Interactive',
-    () => {
-        const [value, setValue] = useState(false)
-
-        const onToggle = (value: boolean) => setValue(value)
-
-        return (
-            <div className="d-flex align-items-center">
-                <ToggleBig value={value} onToggle={onToggle} title="Hello" className="mr-2" /> Value is {String(value)}
-            </div>
-        )
-    },
-    {
-        chromatic: {
-            disable: true,
+            return (
+                <div className="d-flex align-items-center">
+                    <ToggleBig value={value} onToggle={onToggle} title="Hello" className="mr-2" /> Value is{' '}
+                    {String(value)}
+                </div>
+            )
         },
-    }
-)
-
-add('On', () => <ToggleBig value={true} onToggle={onToggle} />)
-
-add('Off', () => <ToggleBig value={false} onToggle={onToggle} />)
-
-add('Disabled & on', () => <ToggleBig value={true} disabled={true} onToggle={onToggle} />)
-
-add('Disabled & off', () => <ToggleBig value={false} disabled={true} onToggle={onToggle} />)
+        {
+            chromatic: {
+                disable: true,
+            },
+        }
+    )
+    .add('On', () => <ToggleBig value={true} onToggle={onToggle} />)
+    .add('Off', () => <ToggleBig value={false} onToggle={onToggle} />)
+    .add('Disabled & on', () => <ToggleBig value={true} disabled={true} onToggle={onToggle} />)
+    .add('Disabled & off', () => <ToggleBig value={false} disabled={true} onToggle={onToggle} />)
