@@ -469,9 +469,9 @@ FROM (
 		-- and can afford to enable the (much) more expensive substring matching which makes search
 		-- fuzzier. This is very nice, but just too expensive to use when searching over all repos.
 		CASE WHEN (SELECT COUNT(*) FROM matching_repo_names) > 0 THEN
-			(%s)
+			%s
 		ELSE
-			(%s)
+			%s
 		END
 
 		-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
