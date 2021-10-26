@@ -265,6 +265,7 @@ type SearchInsight struct {
 	Visibility   string
 	OrgID        *int32
 	UserID       *int32
+	Filters      *DefaultFilters
 }
 
 type LangStatsInsight struct {
@@ -272,6 +273,11 @@ type LangStatsInsight struct {
 	Title          string
 	Repository     string
 	OtherThreshold float32
+}
+
+type DefaultFilters struct {
+	IncludeRepoRegexp *string
+	ExcludeRepoRegexp *string
 }
 
 type SettingFilter string

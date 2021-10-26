@@ -292,6 +292,13 @@ func migrateSeries(ctx context.Context, insightStore *store.InsightStore, from i
 		UniqueID:    from.ID,
 	}
 
+	if from.Filters != nil {
+		view.Filters = types.InsightViewFilters{
+			IncludeRepoRegex: from.Filters.IncludeRepoRegexp,
+			ExcludeRepoRegex: from.Filters.ExcludeRepoRegexp,
+		}
+	}
+
 	var grants []store.InsightViewGrant
 	if from.UserID != nil {
 		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
