@@ -239,11 +239,11 @@ sg teammate time thorsten ball
 sg teammate handbook asdine
 ```
 
-### `sg secrets reset <key>...` - Remove key value pair from secrets
+### `sg secret` - Interact with `sg` secrets
 
 ```bash
-# Remove key "foo" from secrets
-sg secrets reset foo
+# Remove the secrets associated with buildkite (sg ci build)
+sg secret reset buildkite
 ```
 
 ## Configuration

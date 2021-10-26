@@ -10,22 +10,26 @@ import (
 
 var (
 	secretFlagSet = flag.NewFlagSet("sg secret", flag.ExitOnError)
-	resetFlagSet = flag.NewFlagSet("sg secret reset", flag.ExitOnError)
-	resetSubcommand = &ffcli.Command{
-		Name:       "reset",
-		ShortUsage: "sg secret reset <key>...",
-		ShortHelp:  "Remove key value pair from secrets file",
-		FlagSet:    resetFlagSet,
-		Exec:       resetSecretExec,
-	}
+	secretResetFlagSet = flag.NewFlagSet("sg secret reset", flag.ExitOnError)
 	secretCommand = &ffcli.Command{
 		Name:        "secret",
 		ShortUsage:  "sg secret <subcommand>...",
 		ShortHelp:   "Manipulate secrets stored in memory and in file",
 		FlagSet:     secretFlagSet,
-		Subcommands: []*ffcli.Command{resetSubcommand},
+		Subcommands: []*ffcli.Command{{
+			Name:       "reset",
+			ShortUsage: "sg secret reset <key>...",
+			ShortHelp:  "Remove key value pair from secrets file",
+			FlagSet:    secretResetFlagSet,
+			Exec:       resetSecretExec,
+		}},
+		Exec: secretExec,
 	}
 )
+
+func secretExec(ctx context.Context, args []string) error {
+	return flag.ErrHelp
+}
 
 func resetSecretExec(ctx context.Context, args []string) error {
 	if len(args) == 0 {
