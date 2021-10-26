@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -35,6 +36,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { RepositoryFields, Scalars } from '../../graphql-operations'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
+import styles from './RepositoryCompareArea.module.scss'
 import { RepositoryCompareHeader } from './RepositoryCompareHeader'
 import { RepositoryCompareOverviewPage } from './RepositoryCompareOverviewPage'
 
@@ -185,7 +187,10 @@ export class RepositoryCompareArea extends React.Component<RepositoryCompareArea
             platformContext: this.props.platformContext,
         }
         return (
-            <div className="repository-compare-area container" ref={this.nextRepositoryCompareAreaElement}>
+            <div
+                className={classNames('container', styles.repositoryCompareArea)}
+                ref={this.nextRepositoryCompareAreaElement}
+            >
                 <RepositoryCompareHeader className="my-3" {...commonProps} />
                 {spec === null ? (
                     <div className="alert alert-danger">Invalid comparison specifier</div>
