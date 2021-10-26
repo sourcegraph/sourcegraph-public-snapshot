@@ -49,18 +49,10 @@ export interface SearchBoxProps
 }
 
 export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
-    const { queryState, setSelectedSearchContextSpec } = props
+    const { queryState } = props
 
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
     const focusEditor = useCallback(() => editor?.focus(), [editor])
-
-    const setSelectedSearchContextSpecWithEditorFocus = useCallback(
-        (spec: string) => {
-            setSelectedSearchContextSpec(spec)
-            focusEditor()
-        },
-        [setSelectedSearchContextSpec, focusEditor]
-    )
 
     return (
         <div className={classNames(styles.searchBox, props.hideHelpButton ? styles.searchBoxShadow : null)}>
@@ -70,7 +62,6 @@ export const SearchBox: React.FunctionComponent<SearchBoxProps> = props => {
                         <SearchContextDropdown
                             {...props}
                             query={queryState.query}
-                            setSelectedSearchContextSpec={setSelectedSearchContextSpecWithEditorFocus}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={styles.searchBoxContextDropdown}
                             onEscapeMenuClose={focusEditor}

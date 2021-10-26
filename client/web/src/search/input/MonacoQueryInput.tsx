@@ -219,6 +219,13 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
         editor.focus()
     }, [editor, autoFocus])
 
+    // Always focus the editor on selectedSearchContextSpec change
+    useEffect(() => {
+        if (selectedSearchContextSpec) {
+            editor?.focus()
+        }
+    }, [editor, selectedSearchContextSpec])
+
     useEffect(() => {
         if (!editor) {
             return
