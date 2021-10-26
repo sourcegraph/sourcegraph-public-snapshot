@@ -20,54 +20,58 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	insertRepo(t, db, 50, "r0")
-	insertRepo(t, db, 51, "r1")
-	insertRepo(t, db, 52, "r2")
-	insertRepo(t, db, 53, "r3")
-	insertRepo(t, db, 54, "r4")
-
-	// 1. multiple matches
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r*"}, 100); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
+	// set repo test data
+	mockInsertedRepos := []struct {
+		ID   int
+		name string
+	}{
+		{50, "r0"},
+		{51, "r1"},
+		{52, "r2"},
+		{53, "r3"},
+		{54, "r4"},
 	}
 
-	// 2. exact ids
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r1"}, 101); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
+	// insert repo test data
+	for _, mock := range mockInsertedRepos {
+		insertRepo(t, db, mock.ID, mock.name)
 	}
 
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r3"}, 102); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
+	// set pattern data
+	testDataList := []struct {
+		pattern     []string
+		policyID    int
+		description string
+	}{
+		{pattern: []string{"r*"}, policyID: 100, description: "multiple matches"},
+		{pattern: []string{"r1"}, policyID: 101, description: "exact ids"},
+		{pattern: []string{"r3"}, policyID: 102, description: "exact ids"},
+		{pattern: []string{"r2"}, policyID: 102, description: "something being overwritten"},
+		{pattern: []string{"r2", "r1"}, policyID: 103, description: "matching one or the other"},
+		{pattern: []string{"r4"}, policyID: 104, description: "deletes it when empty"},
+		{pattern: []string{}, policyID: 104, description: "deletes it when empty"},
 	}
 
-	// 3. something being overwritten
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r2"}, 102); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
+	// execute update repos matching patterns with pattern data above.
+	for _, data := range testDataList {
+		if err := store.UpdateReposMatchingPatterns(ctx, data.pattern, data.policyID); err != nil {
+			t.Fatalf("unexpected error fetching repositories for update: %s for %s", err, data.description)
+		}
 	}
 
-	// 4. matching one or the other
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r2", "r1"}, 103); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
-	}
-
-	// 5. deletes it when empty
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{"r4"}, 104); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
-	}
-
-	if err := store.UpdateReposMatchingPatterns(ctx, []string{}, 104); err != nil {
-		t.Fatalf("unexpected error fetching repositories for update: %s", err)
-	}
-
+	// get everything from the lookup table
 	policies := queryRepositoryPatternLookup(t, db)
 
+	// if all goes well with the insertion above this is what we should see
 	expectedPolicies := map[int][]int{
-		100: {50, 51, 52, 53, 54},
-		101: {51},
-		102: {52},
-		103: {51, 52},
+		100: {50, 51, 52, 53, 54}, // "multiple matches"
+		101: {51},                 // "exact ids"
+		102: {52},                 // "something being overwritten"
+		103: {51, 52},             // "matching one or the other"
+		// deletes it when empty
 	}
 
+	// actual test
 	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
 		t.Errorf("unexpected job (-want +got):\n%s", diff)
 	}
@@ -103,7 +107,7 @@ func scanPolicyRepositories(rows *sql.Rows, queryErr error) (_ map[int][]int, er
 	return policies, nil
 }
 
-func TestRepoIDsByGlobPattern(t *testing.T) {
+func TestRepoIDsByGlobPatternToo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -111,59 +115,45 @@ func TestRepoIDsByGlobPattern(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	insertRepo(t, db, 50, "Darth/Maul")
-	insertRepo(t, db, 51, "DarthVader")
-	insertRepo(t, db, 52, "Jedi Anakin")
-	insertRepo(t, db, 53, "Jediyoda")
-	insertRepo(t, db, 54, "Robot C3PO")
-
-	repoIds, err := store.RepoIDsByGlobPattern(ctx, "Darth*")
-	if err != nil {
-		t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
+	// set repo test data
+	mockInsertedRepos := []struct {
+		ID   int
+		name string
+	}{
+		{50, "Darth/Maul"},
+		{51, "DarthVader"},
+		{52, "Jedi Anakin"},
+		{53, "Jediyoda"},
+		{54, "Robot C3PO"},
 	}
 
-	expectedRepoIds := []int{50, 51}
-	if diff := cmp.Diff(expectedRepoIds, repoIds); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
+	// insert repo test data
+	for _, mock := range mockInsertedRepos {
+		insertRepo(t, db, mock.ID, mock.name)
 	}
 
-	repoIds, err = store.RepoIDsByGlobPattern(ctx, "Darth/*")
-	if err != nil {
-		t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
+	// set test data and expected
+	testData := []struct {
+		pattern  string
+		expected []int
+	}{
+		{pattern: "Darth*", expected: []int{50, 51}},
+		{pattern: "Darth/*", expected: []int{50}},
+		{pattern: "Jedi*", expected: []int{52, 53}},
+		{pattern: "*C3PO*", expected: []int{54}},
+		{pattern: "*Human*", expected: nil},
 	}
 
-	expectedRepoIds = []int{50}
-	if diff := cmp.Diff(expectedRepoIds, repoIds); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
-	}
+	for _, data := range testData {
+		// find pattern
+		repoIds, err := store.RepoIDsByGlobPattern(ctx, data.pattern)
+		if err != nil {
+			t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
+		}
 
-	repoIds, err = store.RepoIDsByGlobPattern(ctx, "Jedi*")
-	if err != nil {
-		t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
-	}
-
-	expectedRepoIds = []int{52, 53}
-	if diff := cmp.Diff(expectedRepoIds, repoIds); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
-	}
-
-	repoIds, err = store.RepoIDsByGlobPattern(ctx, "*C3PO*")
-	if err != nil {
-		t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
-	}
-
-	expectedRepoIds = []int{54}
-	if diff := cmp.Diff(expectedRepoIds, repoIds); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
-	}
-
-	repoIds, err = store.RepoIDsByGlobPattern(ctx, "*Human*")
-	if err != nil {
-		t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
-	}
-
-	expectedRepoIds = nil
-	if diff := cmp.Diff(expectedRepoIds, repoIds); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
+		// Actual test what you get with what is expected
+		if diff := cmp.Diff(data.expected, repoIds); diff != "" {
+			t.Errorf("unexpected job (-want +got):\n%s", diff)
+		}
 	}
 }
