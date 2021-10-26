@@ -353,6 +353,9 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 type OnMissingRepoRevs func([]*search.RepositoryRevisions)
 
 func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
+	if stream == nil {
+		return func([]*search.RepositoryRevisions) {}
+	}
 	return func(repoRevs []*search.RepositoryRevisions) {
 		var status search.RepoStatusMap
 		for _, r := range repoRevs {
