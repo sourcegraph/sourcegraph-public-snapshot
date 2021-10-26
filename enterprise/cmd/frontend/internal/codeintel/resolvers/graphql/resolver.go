@@ -13,9 +13,11 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 const (
@@ -410,6 +412,28 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) ([]*gql.RepositoryResolver, error) {
+	ids, err := r.resolver.PreviewRepositoryFilter(ctx, args.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
+	for _, id := range ids {
+		repo, err := backend.Repos.Get(ctx, api.RepoID(id))
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
+		}
+
+		resolvers = append(resolvers, gql.NewRepositoryResolver(dbconn.Global, repo))
+	}
+
+	return resolvers, nil
 }
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {

@@ -4,6 +4,7 @@ import React, { FunctionComponent, useState, useMemo } from 'react'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
 import { GitObjectPreview } from './GitObjectPreview'
+import { RepositoryPreview } from './RepositoryPreview'
 
 const DEBOUNCED_WAIT = 250
 export interface BranchTargetSettingsProps {
@@ -22,6 +23,8 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     const [pattern, setPattern] = useState(policy.pattern)
     const debouncedSetPattern = useMemo(() => debounce(value => setPattern(value), DEBOUNCED_WAIT), [])
 
+    const [repositoryPatterns, setRepositoryPatterns] = useState<string[]>([])
+
     return (
         <>
             <div className="form-group">
@@ -37,6 +40,62 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                 />
                 <small className="form-text text-muted">Required.</small>
             </div>
+
+            {!repoId && (
+                <>
+                    {repositoryPatterns.length === 0 ? (
+                        <>
+                            <p>Something special here</p>
+
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setRepositoryPatterns(repositoryPatterns.concat(['']))}
+                            >
+                                add first repository pattern
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            {repositoryPatterns.map((p, index) => (
+                                <div className="form-group" key={index}>
+                                    <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
+                                    <input
+                                        id={`repo-pattern-${index}`}
+                                        type="text"
+                                        className="form-control text-monospace"
+                                        value={repositoryPatterns[index]}
+                                        onChange={({ target }) =>
+                                            setRepositoryPatterns(
+                                                repositoryPatterns.map((p, j) => (index === j ? target.value : p))
+                                            )
+                                        }
+                                        disabled={disabled}
+                                        required={true}
+                                    />
+
+                                    <button
+                                        className="btn btn-danger"
+                                        onClick={() =>
+                                            setRepositoryPatterns(repositoryPatterns.filter((_, j) => index !== j))
+                                        }
+                                    >
+                                        remove me
+                                    </button>
+
+                                    <RepositoryPreview pattern={p} />
+                                </div>
+                            ))}
+
+                            <button
+                                className="btn btn-primary"
+                                onClick={() => setRepositoryPatterns(repositoryPatterns.concat(['']))}
+                            >
+                                add new repository pattern
+                            </button>
+                        </>
+                    )}
+                </>
+            )}
             <div className="form-group">
                 <label htmlFor="type">Type</label>
                 <select

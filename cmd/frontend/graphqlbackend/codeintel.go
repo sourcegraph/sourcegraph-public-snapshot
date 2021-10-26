@@ -28,6 +28,7 @@ type CodeIntelResolver interface {
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) ([]*RepositoryResolver, error)
 	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -272,6 +273,10 @@ type IndexConfigurationResolver interface {
 type UpdateRepositoryIndexConfigurationArgs struct {
 	Repository    graphql.ID
 	Configuration string
+}
+
+type PreviewRepositoryFilterArgs struct {
+	Pattern string
 }
 
 type PreviewGitObjectFilterArgs struct {

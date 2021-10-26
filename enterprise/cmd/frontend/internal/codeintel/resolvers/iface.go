@@ -45,6 +45,7 @@ type DBStore interface {
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+	FindRepos(ctx context.Context, pattern string) ([]int, error)
 }
 
 type LSIFStore interface {
