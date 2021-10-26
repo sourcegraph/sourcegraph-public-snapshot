@@ -108,27 +108,14 @@ exports[`GlobalNavbar default 1`] = `
             >
               <a
                 class="dropdown-item"
-                to="/search"
-              >
-                <span
-                  class=""
-                >
-                  Search home
-                </span>
-              </a>
-              <a
-                class="dropdown-item"
+                role="menuitem"
                 to="/contexts"
               >
+                Contexts 
                 <span
-                  class="pl-2"
+                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                 >
-                  Contexts 
-                  <span
-                    class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                  >
-                    new
-                  </span>
+                  new
                 </span>
               </a>
             </div>
@@ -389,27 +376,14 @@ exports[`GlobalNavbar low-profile 1`] = `
             >
               <a
                 class="dropdown-item"
-                to="/search"
-              >
-                <span
-                  class=""
-                >
-                  Search home
-                </span>
-              </a>
-              <a
-                class="dropdown-item"
+                role="menuitem"
                 to="/contexts"
               >
+                Contexts 
                 <span
-                  class="pl-2"
+                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                 >
-                  Contexts 
-                  <span
-                    class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                  >
-                    new
-                  </span>
+                  new
                 </span>
               </a>
             </div>
