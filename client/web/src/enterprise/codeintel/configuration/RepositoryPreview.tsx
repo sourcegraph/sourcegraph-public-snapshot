@@ -19,21 +19,14 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
     return (
         <>
             {pattern === '' ? (
-                <>
-                    <small>Enter a pattern to preview matching repositories.</small>{' '}
-                </>
+                <small>Enter a pattern to preview matching repositories.</small>
             ) : (
                 <div className={styles.wrapper}>
-                    <h3>Preview of Repository filter</h3>
-
                     <small>
                         {preview.preview.length === 0 ? (
-                            <>Configuration policy does not match any known commits.</>
+                            <>Pattern does not match any repositories.</>
                         ) : (
-                            <>
-                                Configuration policy will be applied to the following
-                                {/* {typeText} */}
-                            </>
+                            <>Configuration policy will be applied to the following repositories.</>
                         )}
                     </small>
 
@@ -46,7 +39,7 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
                     ) : (
                         <>
                             {preview.preview.length !== 0 ? (
-                                <div className="mt-2 pt-2">
+                                <div>
                                     <div className={classNames('bg-dark text-light p-2', styles.container)}>
                                         {preview.preview.map(tag => (
                                             <p key={tag.name}>{tag.name}</p>
@@ -54,7 +47,7 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
                                     </div>
                                 </div>
                             ) : (
-                                <div className="mt-2 pt-2">
+                                <div>
                                     <div className={styles.empty}>
                                         <p className="text-monospace">N/A</p>
                                     </div>

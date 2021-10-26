@@ -16,7 +16,16 @@
     }
 }
 
-.add-first-repository-pattern {
+.preview {
+    // Make it full width in the current row.
+    grid-column: 1 / -1;
+    @media (--xs-breakpoint-down) {
+        margin-top: 1rem;
+        padding-bottom: 1rem;
+    }
+}
+
+.add-repository-pattern {
     cursor: pointer;
     text-decoration: underline;
     color: var(--link-color);
