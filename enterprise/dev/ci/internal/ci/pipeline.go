@@ -225,7 +225,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		if c.RunType.Is(MainBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
-			ops.Append(publishExecutorDockerMirror(c.Version))
+			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+				ops.Append(publishExecutorDockerMirror(c.Version))
+			}
 		}
 
 		// Propagate changes elsewhere
