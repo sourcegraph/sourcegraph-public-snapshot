@@ -52,7 +52,7 @@ func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz
 // 🚨 SECURITY: Tests are necessary to ensure security.
 func TestAuthzQueryConds(t *testing.T) {
 	cmpOpts := cmp.AllowUnexported(sqlf.Query{})
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("Conflict with permissions user mapping", func(t *testing.T) {
 		before := globals.PermissionsUserMapping()
@@ -180,7 +180,7 @@ func TestRepos_nonSiteAdminCanViewOwnPrivateCode(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Add a single user who is NOT a site admin
@@ -281,7 +281,7 @@ func TestRepos_List_checkPermissions(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin
@@ -540,7 +540,7 @@ func TestRepos_List_permissionsUserMapping(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Set up three users: alice, bob and admin

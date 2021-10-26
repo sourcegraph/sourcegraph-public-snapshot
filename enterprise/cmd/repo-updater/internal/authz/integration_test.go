@@ -90,7 +90,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewFromDSN(t, *dsn)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -171,7 +171,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewFromDSN(t, *dsn)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -275,7 +275,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewFromDSN(t, *dsn)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})
@@ -360,7 +360,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := dbtest.NewDB(t, *dsn)
+			testDB := dbtest.NewFromDSN(t, *dsn)
 			ctx := actor.WithInternalActor(context.Background())
 
 			reposStore := repos.NewStore(testDB, sql.TxOptions{})

@@ -29,7 +29,7 @@ func TestMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	const mockUserID = 123
 

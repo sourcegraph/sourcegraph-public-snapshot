@@ -24,7 +24,7 @@ import (
 
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	user := ct.CreateTestUser(t, db, true)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
