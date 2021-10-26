@@ -1236,8 +1236,8 @@ func testSearchOther(t *testing.T) {
 		scID1, err := client.CreateSearchContext(
 			gqltestutil.CreateSearchContextInput{Name: "SuggestionSearchContext", Public: true},
 			[]gqltestutil.SearchContextRepositoryRevisionsInput{
-				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
-				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+				{RepositoryID: &repo1.ID, Revisions: []string{"HEAD"}},
+				{RepositoryID: &repo2.ID, Revisions: []string{"HEAD"}},
 			})
 		if err != nil {
 			t.Fatal(err)
@@ -1352,16 +1352,15 @@ func testSearchOther(t *testing.T) {
 func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 	repo1, err := client.Repository("github.com/sgtest/java-langserver")
 	require.NoError(t, err)
-	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
-	require.NoError(t, err)
+	repo2 := "github.com/sgtest/jsonrpc2"
 
 	// Create a search context
 	scName := "TestSearchContext" + strconv.Itoa(int(rand.Int31()))
 	scID, err := client.CreateSearchContext(
 		gqltestutil.CreateSearchContextInput{Name: scName, Description: "test description", Public: true},
 		[]gqltestutil.SearchContextRepositoryRevisionsInput{
-			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
-			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: &repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryName: &repo2, Revisions: []string{"HEAD"}},
 		},
 	)
 	require.NoError(t, err)
@@ -1383,7 +1382,7 @@ func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
 			Description: "Updated description",
 		},
 		[]gqltestutil.SearchContextRepositoryRevisionsInput{
-			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+			{RepositoryID: &repo1.ID, Revisions: []string{"HEAD"}},
 		},
 	)
 	require.NoError(t, err)

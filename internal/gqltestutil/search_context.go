@@ -17,8 +17,9 @@ type UpdateSearchContextInput struct {
 }
 
 type SearchContextRepositoryRevisionsInput struct {
-	RepositoryID string   `json:"repositoryID"`
-	Revisions    []string `json:"revisions"`
+	RepositoryID   *string  `json:"repositoryID"`
+	RepositoryName *string  `json:"repositoryName"`
+	Revisions      []string `json:"revisions"`
 }
 
 // CreateSearchContext creates a new search context with the given input and repository revisions to be searched.
