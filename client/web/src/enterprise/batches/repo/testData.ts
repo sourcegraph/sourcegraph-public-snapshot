@@ -25,7 +25,9 @@ const READY_EXTERNAL_CHANGESET: ChangesetFields = {
     externalURL: {
         url: 'http://test.test/123',
     },
-    labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+    labels: [
+        { __typename: 'ChangesetLabel', color: '93ba13', description: 'Very awesome description', text: 'Some label' },
+    ],
     repository: {
         id: 'repoid',
         name: 'github.com/sourcegraph/awesome',
