@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 
@@ -28,6 +30,7 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 		wantSearchContextName string
 	}{
 		{name: "resolve user search context", searchContextSpec: "@user", wantSearchContextName: "user"},
+		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
 		{name: "resolve global search context", searchContextSpec: "global", wantSearchContextName: "global"},
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
 		{name: "resolve namespaced search context", searchContextSpec: "@user/test", wantSearchContextName: "test"},
@@ -36,7 +39,14 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 
 	db := new(dbtesting.MockDB)
 	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-		return &database.Namespace{Name: name, User: 1}, nil
+		if name == "user" {
+			return &database.Namespace{Name: name, User: 1}, nil
+		}
+		if name == "org" {
+			return &database.Namespace{Name: name, Organization: 1}, nil
+		}
+		t.Fatal("Unexpected namespace name for GetByName. Expected `user` or `org`, received: #{name}")
+		return nil, nil
 	}
 	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		return &types.SearchContext{Name: opts.Name}, nil
@@ -67,6 +77,7 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
 		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
+		{name: "org not found", searchContextSpec: "@org", wantErr: "search context \"@org\" not found"},
 		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
 	}
 
@@ -141,7 +152,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	u := database.Users(db)
 	r := database.Repos(db)
 
@@ -180,7 +191,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	u := database.Users(db)
 
 	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
@@ -300,7 +311,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	u := database.Users(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -401,7 +412,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	u := database.Users(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -485,7 +496,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t, "")
 	u := database.Users(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -493,7 +504,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	autoDefinedSearchContext := GetUserSearchContext(user1.Username, user1.ID)
+	autoDefinedSearchContext := GetUserSearchContext(user1.ID, user1.Username)
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
 	err = DeleteSearchContext(ctx, db, autoDefinedSearchContext)
 

@@ -2,6 +2,7 @@ package searchcontexts
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -68,10 +69,13 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 		if err != nil {
 			return nil, err
 		}
-		if namespace.User == 0 {
+		if namespace.User == 0 && namespace.Organization == 0 {
 			return nil, errors.Errorf("search context %q not found", searchContextSpec)
 		}
-		return GetUserSearchContext(parsedSearchContextSpec.NamespaceName, namespace.User), nil
+		if namespace.User > 0 {
+			return GetUserSearchContext(namespace.User, parsedSearchContextSpec.NamespaceName), nil
+		}
+		return GetOrganizationSearchContext(namespace.Organization, parsedSearchContextSpec.NamespaceName, parsedSearchContextSpec.NamespaceName), nil
 	}
 	// Check if instance-level context
 	return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
@@ -251,7 +255,16 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.S
 		if err != nil {
 			return nil, err
 		}
-		searchContexts = append(searchContexts, GetUserSearchContext(user.Username, a.UID))
+		searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
+
+		organizations, err := database.Orgs(db).GetOrgsWithRepositoriesByUserID(ctx, a.UID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, org := range organizations {
+			searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
+		}
 	}
 	return searchContexts, nil
 }
@@ -290,8 +303,12 @@ func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
 	return searchContext != nil && searchContext.Name == GlobalSearchContextName
 }
 
-func GetUserSearchContext(name string, userID int32) *types.SearchContext {
+func GetUserSearchContext(userID int32, name string) *types.SearchContext {
 	return &types.SearchContext{Name: name, Public: true, Description: "All repositories you've added to Sourcegraph", NamespaceUserID: userID}
+}
+
+func GetOrganizationSearchContext(orgID int32, name string, displayName string) *types.SearchContext {
+	return &types.SearchContext{Name: name, Public: false, Description: fmt.Sprintf("All repositories %s organization added to Sourcegraph", displayName), NamespaceOrgID: orgID}
 }
 
 func GetGlobalSearchContext() *types.SearchContext {
