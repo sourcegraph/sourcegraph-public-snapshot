@@ -21,7 +21,7 @@ This document assumes that you have:
 1. Look for a directory with the name of the repository in the Gitserver. It should be located in the following file path: `data/repos/{name-of-code-host}/{name-of-repo}`
 1. Delete the directory for that repo from the previous step
 
-## To reclon a removed repository
+## To reclone a removed repository
 
 1. Remove the repostiroy from the [exclude list](https://docs.sourcegraph.com/admin/external_service/github#exclude)
 2. The reclone process should start in the next syncing cycle
