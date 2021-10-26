@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -306,7 +305,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
-			"--includeBinaries", fmt.Sprintf("%v", s.FusionConfig.IncludeBinaries),
+			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -350,7 +349,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
-			"--includeBinaries", fmt.Sprintf("%v", s.FusionConfig.IncludeBinaries),
+			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
