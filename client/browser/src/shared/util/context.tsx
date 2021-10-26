@@ -1,9 +1,19 @@
+import { Observable, of } from 'rxjs'
+import { map } from 'rxjs/operators'
+
 import { isFirefox } from '@sourcegraph/shared/src/util/browserDetection'
 
-export const CLOUD_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 
-export function isCloudSourcegraphUrl(url: string): boolean {
-    return url.replace(/\/$/, '') === CLOUD_SOURCEGRAPH_URL
+export const DEFAULT_SOURCEGRAPH_URL = 'https://sourcegraph.com'
+
+export function observeSourcegraphURL(isExtension: boolean): Observable<string> {
+    if (isExtension) {
+        return observeStorageKey('sync', 'sourcegraphURL').pipe(
+            map(sourcegraphURL => sourcegraphURL || DEFAULT_SOURCEGRAPH_URL)
+        )
+    }
+    return of(window.SOURCEGRAPH_URL || window.localStorage.getItem('SOURCEGRAPH_URL') || DEFAULT_SOURCEGRAPH_URL)
 }
 
 /**
@@ -53,4 +63,8 @@ function isSafari(): boolean {
     // Chrome's user agent contains "Safari" as well as "Chrome", so for Safari
     // we must check that it does not include "Chrome"
     return window.navigator.userAgent.includes('Safari') && !window.navigator.userAgent.includes('Chrome')
+}
+
+export function isDefaultSourcegraphUrl(url: string): boolean {
+    return url.replace(/\/$/, '') === DEFAULT_SOURCEGRAPH_URL
 }
