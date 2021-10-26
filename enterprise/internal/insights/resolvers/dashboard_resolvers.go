@@ -162,12 +162,14 @@ type DashboardInsightViewConnectionResolver struct {
 
 func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
-	views, err := d.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: d.ids, WithoutAuthorization: true})
-	if err != nil {
-		return nil, err
-	}
-	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+	if len(d.ids) > 0 {
+		views, err := d.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: d.ids, WithoutAuthorization: true})
+		if err != nil {
+			return nil, err
+		}
+		for i := range views {
+			resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+		}
 	}
 	return resolvers, nil
 }
