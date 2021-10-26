@@ -43,16 +43,25 @@ import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
 
-import { createBatchSpecFromRaw, executeBatchSpec, fetchBatchSpec, replaceBatchSpecInput } from './backend'
+import {
+    createBatchSpecFromRaw as _createBatchSpecFromRaw,
+    executeBatchSpec,
+    fetchBatchSpec,
+    replaceBatchSpecInput,
+} from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
 import styles from './NewCreateBatchChangeContent.module.scss'
 import { excludeRepo } from './yaml-util'
 
-interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {}
+interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
+    /* For testing only. */
+    createBatchSpecFromRaw?: typeof _createBatchSpecFromRaw
+}
 
 export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchChangePageProps> = ({
     isLightTheme,
     settingsCascade,
+    createBatchSpecFromRaw = _createBatchSpecFromRaw,
 }) => {
     const history = useHistory()
 

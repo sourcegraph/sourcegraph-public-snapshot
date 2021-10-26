@@ -105,7 +105,7 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	// Check if step exists.
-	if len(r.workspace.Steps) <= int(args.Index) {
+	if int(args.Index) > len(r.workspace.Steps) {
 		return nil, nil
 	}
 

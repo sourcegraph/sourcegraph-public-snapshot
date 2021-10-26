@@ -5,6 +5,7 @@ import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import CheckIcon from 'mdi-react/CheckIcon'
 import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
 import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
+import SyncIcon from 'mdi-react/SyncIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { useHistory } from 'react-router'
@@ -214,6 +215,11 @@ const WorkspaceNode: React.FunctionComponent<
             {node.startedAt && <Duration start={node.startedAt} end={node.finishedAt ?? undefined} />}
         </div>
         {node.failureMessage && <ErrorAlert error={node.failureMessage} />}
+        {typeof node.placeInQueue === 'number' && (
+            <p>
+                <SyncIcon className="icon-inline text-muted" /> #{node.placeInQueue} in queue
+            </p>
+        )}
         <p>
             <b>Steps</b>
         </p>
