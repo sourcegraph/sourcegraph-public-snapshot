@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { camelCase } from 'lodash'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
@@ -74,6 +74,10 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
         )
     }
 
+    if (!dashboard.owner) {
+        throw new Error('TODO: support GraphQL API')
+    }
+
     // Convert dashboard info to initial form values
     const dashboardInitialValues = dashboard ? { name: dashboard.title, visibility: dashboard.owner.id } : undefined
 
@@ -103,7 +107,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
     const handleCancel = (): void => history.goBack()
 
     return (
-        <Page className={classnames('col-8', styles.page)}>
+        <Page className={classNames('col-8', styles.page)}>
             <PageTitle title="Configure dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />

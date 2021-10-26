@@ -220,6 +220,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
     FetchFeatureFlags: () => ({
         viewerFeatureFlags: [],
     }),
+    OrgFeatureFlagValue: () => ({
+        organizationFeatureFlagValue: false,
+    }),
     GetTemporarySettings: () => ({
         temporarySettings: {
             __typename: 'TemporarySettings',

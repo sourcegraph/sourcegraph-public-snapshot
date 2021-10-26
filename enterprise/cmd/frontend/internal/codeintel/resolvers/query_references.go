@@ -96,7 +96,16 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	}
 
 	// Query a single page of location results
-	locations, hasMore, err := r.pageReferences(ctx, adjustedUploads, orderedMonikers, definitionUploadIDs, uploadsByID, &cursor, limit)
+	locations, hasMore, err := r.pageReferences(
+		ctx,
+		adjustedUploads,
+		orderedMonikers,
+		definitionUploadIDs,
+		uploadsByID,
+		&cursor,
+		limit,
+		traceLog,
+	)
 	if err != nil {
 		return nil, "", err
 	}
@@ -237,7 +246,16 @@ func (r *queryResolver) definitionUploadIDsFromCursor(ctx context.Context, adjus
 // pageReferences returns a slice of the result set denoted by the given cursor. The given cursor will be
 // adjusted to reflect the offsets required to resolve the next page of results. If there are no more pages
 // left in the result set, a false-valued flag is returned.
-func (r *queryResolver) pageReferences(ctx context.Context, adjustedUploads []adjustedUpload, orderedMonikers []precise.QualifiedMonikerData, definitionUploadIDs []int, uploadsByID map[int]dbstore.Dump, cursor *referencesCursor, limit int) ([]lsifstore.Location, bool, error) {
+func (r *queryResolver) pageReferences(
+	ctx context.Context,
+	adjustedUploads []adjustedUpload,
+	orderedMonikers []precise.QualifiedMonikerData,
+	definitionUploadIDs []int,
+	uploadsByID map[int]dbstore.Dump,
+	cursor *referencesCursor,
+	limit int,
+	traceLog observation.TraceLogger,
+) ([]lsifstore.Location, bool, error) {
 	var locations []lsifstore.Location
 
 	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
@@ -246,10 +264,17 @@ func (r *queryResolver) pageReferences(ctx context.Context, adjustedUploads []ad
 
 	if !cursor.RemotePhase {
 		for len(locations) < limit {
-			localLocations, hasMore, err := r.pageLocalReferences(ctx, adjustedUploads, cursor, limit-len(locations))
+			localLocations, hasMore, err := r.pageLocalReferences(
+				ctx,
+				adjustedUploads,
+				cursor,
+				limit-len(locations),
+				traceLog,
+			)
 			if err != nil {
 				return nil, false, err
 			}
+			traceLog(log.Int("pageReferences.numLocalLocations", len(localLocations)))
 			locations = append(locations, localLocations...)
 
 			if !hasMore {
@@ -266,10 +291,20 @@ func (r *queryResolver) pageReferences(ctx context.Context, adjustedUploads []ad
 
 	if cursor.RemotePhase {
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, adjustedUploads, orderedMonikers, definitionUploadIDs, uploadsByID, cursor, limit-len(locations))
+			remoteLocations, hasMore, err := r.pageRemoteReferences(
+				ctx,
+				adjustedUploads,
+				orderedMonikers,
+				definitionUploadIDs,
+				uploadsByID,
+				cursor,
+				limit-len(locations),
+				traceLog,
+			)
 			if err != nil {
 				return nil, false, err
 			}
+			traceLog(log.Int("pageReferences.numRemoteLocations", len(remoteLocations)))
 			locations = append(locations, remoteLocations...)
 
 			if !hasMore {
@@ -285,7 +320,13 @@ func (r *queryResolver) pageReferences(ctx context.Context, adjustedUploads []ad
 // traversing the LSIF graph. The given cursor will be adjusted to reflect the offsets required to resolve
 // the next page of results. If there are no more pages left in the result set, a false-valued flag is
 // returned.
-func (r *queryResolver) pageLocalReferences(ctx context.Context, adjustedUploads []adjustedUpload, cursor *referencesCursor, limit int) ([]lsifstore.Location, bool, error) {
+func (r *queryResolver) pageLocalReferences(
+	ctx context.Context,
+	adjustedUploads []adjustedUpload,
+	cursor *referencesCursor,
+	limit int,
+	traceLog observation.TraceLogger,
+) ([]lsifstore.Location, bool, error) {
 	var allLocations []lsifstore.Location
 	for i := range adjustedUploads {
 		if len(allLocations) >= limit {
@@ -310,7 +351,9 @@ func (r *queryResolver) pageLocalReferences(ctx context.Context, adjustedUploads
 			return nil, false, errors.Wrap(err, "lsifstore.References")
 		}
 
-		cursor.LocalOffset += len(locations)
+		numLocations := len(locations)
+		traceLog(log.Int("pageLocalReferences.numLocations", numLocations))
+		cursor.LocalOffset += numLocations
 
 		if cursor.LocalOffset >= totalCount {
 			// Skip this index on next request
@@ -332,7 +375,16 @@ const maximumIndexesPerMonikerSearch = 50
 // performing a moniker search over a group of indexes. The given cursor will be adjusted to reflect the
 // offsets required to resolve the next page of results. If there are no more pages left in the result set,
 // a false-valued flag is returned.
-func (r *queryResolver) pageRemoteReferences(ctx context.Context, adjustedUploads []adjustedUpload, orderedMonikers []precise.QualifiedMonikerData, definitionUploadIDs []int, uploadsByID map[int]dbstore.Dump, cursor *referencesCursor, limit int) ([]lsifstore.Location, bool, error) {
+func (r *queryResolver) pageRemoteReferences(
+	ctx context.Context,
+	adjustedUploads []adjustedUpload,
+	orderedMonikers []precise.QualifiedMonikerData,
+	definitionUploadIDs []int,
+	uploadsByID map[int]dbstore.Dump,
+	cursor *referencesCursor,
+	limit int,
+	traceLog observation.TraceLogger,
+) ([]lsifstore.Location, bool, error) {
 	for len(cursor.BatchIDs) == 0 {
 		if cursor.RemoteBatchOffset < 0 {
 			// No more batches
@@ -340,7 +392,14 @@ func (r *queryResolver) pageRemoteReferences(ctx context.Context, adjustedUpload
 		}
 
 		// Find the next batch of indexes to perform a moniker search over
-		referenceUploadIDs, recordScanned, totalCount, err := r.uploadIDsWithReferences(ctx, orderedMonikers, definitionUploadIDs, maximumIndexesPerMonikerSearch, cursor.RemoteBatchOffset)
+		referenceUploadIDs, recordScanned, totalCount, err := r.uploadIDsWithReferences(
+			ctx,
+			orderedMonikers,
+			definitionUploadIDs,
+			maximumIndexesPerMonikerSearch,
+			cursor.RemoteBatchOffset,
+			traceLog,
+		)
 		if err != nil {
 			return nil, false, err
 		}
@@ -369,7 +428,9 @@ func (r *queryResolver) pageRemoteReferences(ctx context.Context, adjustedUpload
 		return nil, false, err
 	}
 
-	cursor.RemoteOffset += len(locations)
+	numLocations := len(locations)
+	traceLog(log.Int("pageLocalReferences.pageRemoteReferences", numLocations))
+	cursor.RemoteOffset += numLocations
 
 	if cursor.RemoteOffset >= totalCount {
 		// Require a new batch on next page
@@ -434,7 +495,14 @@ func rangeContainsPosition(r lsifstore.Range, pos lsifstore.Position) bool {
 // will it return uploads which are listed in the given ignored identifier slice. This method also
 // returns the number of records scanned (but possibly filtered out from the return slice) from the
 // database (the offset for the subsequent request) and the total number of records in the database.
-func (r *queryResolver) uploadIDsWithReferences(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData, ignoreIDs []int, limit, offset int) (ids []int, recordsScanned int, totalCount int, err error) {
+func (r *queryResolver) uploadIDsWithReferences(
+	ctx context.Context,
+	orderedMonikers []precise.QualifiedMonikerData,
+	ignoreIDs []int,
+	limit int,
+	offset int,
+	traceLog observation.TraceLogger,
+) (ids []int, recordsScanned int, totalCount int, err error) {
 	scanner, totalCount, err := r.dbStore.ReferenceIDsAndFilters(ctx, r.repositoryID, r.commit, orderedMonikers, limit, offset)
 	if err != nil {
 		return nil, 0, 0, errors.Wrap(err, "dbstore.ReferenceIDsAndFilters")
@@ -486,6 +554,11 @@ func (r *queryResolver) uploadIDsWithReferences(ctx context.Context, orderedMoni
 			filtered[packageReference.DumpID] = struct{}{}
 		}
 	}
+
+	traceLog(
+		log.Int("uploadIDsWithReferences.numFiltered", len(filtered)),
+		log.Int("uploadIDsWithReferences.numRecordsScanned", recordsScanned),
+	)
 
 	flattened := make([]int, 0, len(filtered))
 	for k := range filtered {

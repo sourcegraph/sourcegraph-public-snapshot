@@ -41,6 +41,10 @@ func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.Fe
 	return nil, nil
 }
 
+func (p *fakeProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, nil
+}
+
 func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return nil, nil
 }
@@ -272,7 +276,7 @@ func createGitHubExternalService(t *testing.T, db dbutil.DB, userID int32) *type
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-func TestRepos_getReposBySQL_checkPermissions(t *testing.T) {
+func TestRepos_List_checkPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -531,7 +535,7 @@ VALUES
 }
 
 // 🚨 SECURITY: Tests are necessary to ensure security.
-func TestRepos_getReposBySQL_permissionsUserMapping(t *testing.T) {
+func TestRepos_List_permissionsUserMapping(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

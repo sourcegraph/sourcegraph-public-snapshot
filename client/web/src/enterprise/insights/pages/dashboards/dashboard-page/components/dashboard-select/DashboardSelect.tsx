@@ -1,6 +1,6 @@
 import { ListboxGroup, ListboxGroupLabel, ListboxInput, ListboxList, ListboxPopover } from '@reach/listbox'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import {
@@ -49,8 +49,8 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
             <ListboxInput aria-labelledby={LABEL_ID} value={value ?? 'unknown'} onChange={handleChange}>
                 <MenuButton dashboards={dashboards} />
 
-                <ListboxPopover className={classnames(styles.popover)} portal={true}>
-                    <ListboxList className={classnames(styles.list, 'dropdown-menu')}>
+                <ListboxPopover className={classNames(styles.popover)} portal={true}>
+                    <ListboxList className={classNames(styles.list, 'dropdown-menu')}>
                         <SelectOption
                             value={InsightsDashboardType.All}
                             label="All Insights"
@@ -59,7 +59,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                         {dashboards.some(isPersonalDashboard) && (
                             <ListboxGroup>
-                                <ListboxGroupLabel className={classnames(styles.groupLabel, 'text-muted')}>
+                                <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     Private
                                 </ListboxGroupLabel>
 
@@ -75,7 +75,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                         {dashboards.some(isGlobalDashboard) && (
                             <ListboxGroup>
-                                <ListboxGroupLabel className={classnames(styles.groupLabel, 'text-muted')}>
+                                <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     Global
                                 </ListboxGroupLabel>
 
@@ -91,7 +91,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
 
                         {organizationGroups.map(group => (
                             <ListboxGroup key={group.id}>
-                                <ListboxGroupLabel className={classnames(styles.groupLabel, 'text-muted')}>
+                                <ListboxGroupLabel className={classNames(styles.groupLabel, 'text-muted')}>
                                     {group.name}
                                 </ListboxGroupLabel>
 
@@ -124,6 +124,10 @@ const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): Dashbo
     const groupsDictionary = dashboards
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
+            if (!dashboard.owner) {
+                throw new Error('TODO: support GraphQL API')
+            }
+
             if (!store[dashboard.owner.id]) {
                 store[dashboard.owner.id] = {
                     id: dashboard.owner.id,

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { camelCase } from 'lodash'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
@@ -57,7 +57,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
     }
 
     return (
-        <Page className={classnames('col-8', styles.page)}>
+        <Page className={classNames('col-8', styles.page)}>
             <PageTitle title="Add new dashboard" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />

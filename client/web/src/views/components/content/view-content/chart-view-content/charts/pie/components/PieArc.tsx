@@ -1,7 +1,7 @@
 import { Annotation, Connector } from '@visx/annotation'
 import { Group } from '@visx/group'
 import { PieArcDatum } from '@visx/shape/lib/shapes/Pie'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import { Arc as ArcType } from 'd3-shape'
 import React, { PointerEventHandler, ReactElement } from 'react'
 
@@ -65,7 +65,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const labelX = normalX * CONNECTION_LINE_LENGTH
     const labelY = normalY * CONNECTION_LINE_LENGTH
 
-    const classes = classnames('pie-chart__arc', {
+    const classes = classNames('pie-chart__arc', {
         'pie-chart__arc--with-link': link,
     })
 

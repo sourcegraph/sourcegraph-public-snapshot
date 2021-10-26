@@ -110,6 +110,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
     const bylineElement = (
         <GitCommitNodeByline
             className="d-flex text-muted git-commit-node__byline"
+            avatarClassName={compact ? undefined : 'git-commit-node__signature--user-avatar'}
             author={node.author}
             committer={node.committer}
             // TODO compact needs to be always a boolean

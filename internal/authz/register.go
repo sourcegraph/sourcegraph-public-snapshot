@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 )
 
 var (
@@ -12,7 +14,10 @@ var (
 	// not matched by any authz provider. The default value is true. It is only set to false in
 	// error modes (when the configuration is in a state where interpreting it literally could lead
 	// to leakage of private repositories).
-	allowAccessByDefault = true
+	//
+	// 🚨 SECURITY: We do not want to allow access by default by any means on
+	// dotcom.
+	allowAccessByDefault = !envvar.SourcegraphDotComMode()
 
 	// authzProvidersReady and authzProvidersReadyOnce together indicate when
 	// GetProviders should no longer block. It should block until SetProviders
@@ -34,6 +39,13 @@ func SetProviders(authzAllowByDefault bool, z []Provider) {
 
 	authzProviders = z
 	allowAccessByDefault = authzAllowByDefault
+
+	// 🚨 SECURITY: We do not want to allow access by default by any means on
+	// dotcom.
+	if envvar.SourcegraphDotComMode() {
+		allowAccessByDefault = false
+	}
+
 	authzProvidersReadyOnce.Do(func() {
 		close(authzProvidersReady)
 	})

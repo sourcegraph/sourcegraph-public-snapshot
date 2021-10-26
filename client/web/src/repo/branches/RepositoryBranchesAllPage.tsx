@@ -20,7 +20,7 @@ export class RepositoryBranchesAllPage extends React.PureComponent<Props> {
 
     public render(): JSX.Element | null {
         return (
-            <div className="repository-branches-page">
+            <div>
                 <PageTitle title="All branches" />
                 <FilteredConnection<GitRefFields>
                     className=""
