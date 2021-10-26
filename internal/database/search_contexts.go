@@ -288,7 +288,7 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 }
 
 const deleteSearchContextFmtStr = `
-DELETE search_contexts WHERE id = %d
+DELETE FROM search_contexts WHERE id = %d
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to delete the search context.
