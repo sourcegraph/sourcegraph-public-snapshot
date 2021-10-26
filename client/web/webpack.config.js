@@ -162,13 +162,12 @@ const config = {
       filename: mode === 'production' ? 'styles/[name].[contenthash].bundle.css' : 'styles/[name].bundle.css',
     }),
     new MonacoWebpackPlugin(MONACO_LANGUAGES_AND_FEATURES),
-    !shouldServeIndexHTML &&
-      new WebpackManifestPlugin({
-        writeToFileEmit: true,
-        fileName: 'webpack.manifest.json',
-        // Only output files that are required to run the application
-        filter: ({ isInitial }) => isInitial,
-      }),
+    new WebpackManifestPlugin({
+      writeToFileEmit: true,
+      fileName: 'webpack.manifest.json',
+      // Only output files that are required to run the application
+      filter: ({ isInitial }) => isInitial,
+    }),
     ...(shouldServeIndexHTML ? getHTMLWebpackPlugins() : []),
     shouldAnalyze && new BundleAnalyzerPlugin(),
     isHotReloadEnabled && new webpack.HotModuleReplacementPlugin(),

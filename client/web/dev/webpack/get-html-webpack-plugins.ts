@@ -1,23 +1,36 @@
 import path from 'path'
 
 import HtmlWebpackHarddiskPlugin from 'html-webpack-harddisk-plugin'
-import HtmlWebpackPlugin, { TemplateParameter, Options } from 'html-webpack-plugin'
+import HtmlWebpackPlugin from 'html-webpack-plugin'
 import { WebpackPluginInstance } from 'webpack'
 
 import { createJsContext, environmentConfig, STATIC_ASSETS_PATH } from '../utils'
 
+import { getWebpackManifest, WebpackManifest } from './get-manifest'
+
 const { SOURCEGRAPH_HTTPS_PORT, NODE_ENV } = environmentConfig
 
-interface HTMLPageData {
-    head: string
-    bodyEnd: string
+interface GetHTMLPageParameters {
+    manifest: WebpackManifest
 }
 
 /**
  * Returns an HTML page similar to `cmd/frontend/internal/app/ui/app.html` but when running
  * without the `frontend` service.
+ *
+ * Note: This page should be kept as close as possible to `app.html`, to avoid any inconsistencies
+ * between our development server and the actual production server.
  */
-export const getHTMLPage = ({ head, bodyEnd }: HTMLPageData): string => `
+export const getHTMLPage = ({ manifest }: GetHTMLPageParameters): string => {
+    const {
+        'app.js': appBundlePath,
+        'react.js': reactBundlePath,
+        'runtime.js': runtimeBundlePath,
+        'app.css': cssBundlePath,
+        isModule,
+    } = manifest
+
+    return `
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -26,7 +39,7 @@ export const getHTMLPage = ({ head, bodyEnd }: HTMLPageData): string => `
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
         <meta name="referrer" content="origin-when-cross-origin"/>
         <meta name="color-scheme" content="light dark"/>
-        ${head}
+        ${cssBundlePath ? `<link rel="stylesheet" href="${cssBundlePath}">` : ''}
     </head>
     <body>
         <div id="root"></div>
@@ -39,19 +52,18 @@ export const getHTMLPage = ({ head, bodyEnd }: HTMLPageData): string => `
                 createJsContext({ sourcegraphBaseUrl: `http://localhost:${SOURCEGRAPH_HTTPS_PORT}` })
             )}
         </script>
-        ${bodyEnd}
+
+        ${runtimeBundlePath ? `<script src="${runtimeBundlePath}"></script>` : ''}
+        ${reactBundlePath ? `<script src="${reactBundlePath}" ${isModule ? 'type="module"' : ''}></script>` : ''}
+        <script src="${appBundlePath}" ${isModule ? 'type="module"' : ''}></script>
     </body>
 </html>
 `
+}
 
 export const getHTMLWebpackPlugins = (): WebpackPluginInstance[] => {
     const htmlWebpackPlugin = new HtmlWebpackPlugin({
-        // `TemplateParameter` can be mutated. We need to tell TS that we didn't touch it.
-        templateContent: (({ htmlWebpackPlugin }: TemplateParameter): string =>
-            getHTMLPage({
-                head: htmlWebpackPlugin.tags.headTags.filter(tag => tag.tagName !== 'script').toString(),
-                bodyEnd: htmlWebpackPlugin.tags.headTags.filter(tag => tag.tagName === 'script').toString(),
-            })) as Options['templateContent'],
+        templateContent: getHTMLPage({ manifest: getWebpackManifest() }),
         filename: path.resolve(STATIC_ASSETS_PATH, 'index.html'),
         alwaysWriteToDisk: true,
         inject: false,
