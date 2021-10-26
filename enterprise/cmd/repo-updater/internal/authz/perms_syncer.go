@@ -407,7 +407,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	return repoIDs, nil
 }
 
-// fetchUserPermsViaExternalServices uses user code connections) to list all
+// fetchUserPermsViaExternalServices uses user code connections to list all
 // accessible private repositories on code hosts for the given user.
 func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, userID int32, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, err error) {
 	has, err := s.permsStore.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
