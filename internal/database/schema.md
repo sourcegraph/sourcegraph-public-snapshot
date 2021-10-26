@@ -1781,7 +1781,7 @@ Indexes:
  repo_id           | integer |           | not null | 
  revision          | text    |           | not null | 
 Indexes:
-    "search_context_repos_search_context_id_repo_id_revision_unique" UNIQUE CONSTRAINT, btree (search_context_id, repo_id, revision)
+    "search_context_repos_unique" UNIQUE CONSTRAINT, btree (repo_id, search_context_id, revision)
 Foreign-key constraints:
     "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
@@ -1815,6 +1815,8 @@ Referenced by:
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_search_context_id_fk" FOREIGN KEY (search_context_id) REFERENCES search_contexts(id) ON DELETE CASCADE
 
 ```
+
+**deleted_at**: This column is unused as of Sourcegraph 3.34. Do not refer to it anymore. It will be dropped in a future version.
 
 # Table "public.security_event_logs"
 ```

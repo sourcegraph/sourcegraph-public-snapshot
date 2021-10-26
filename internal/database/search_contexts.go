@@ -69,8 +69,8 @@ SELECT sc.id, sc.name, sc.description, sc.public, sc.namespace_user_id, sc.names
 FROM search_contexts sc
 LEFT JOIN users u on sc.namespace_user_id = u.id
 LEFT JOIN orgs o on sc.namespace_org_id = o.id
-WHERE sc.deleted_at IS NULL
-	AND (%s) -- permission conditions
+WHERE
+	(%s) -- permission conditions
 	AND (%s) -- query conditions
 ORDER BY %s
 LIMIT %d
@@ -82,8 +82,8 @@ SELECT COUNT(*)
 FROM search_contexts sc
 LEFT JOIN users u on sc.namespace_user_id = u.id
 LEFT JOIN orgs o on sc.namespace_org_id = o.id
-WHERE sc.deleted_at IS NULL
-	AND (%s) -- permission conditions
+WHERE
+	(%s) -- permission conditions
 	AND (%s) -- query conditions
 `
 
@@ -288,12 +288,7 @@ func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSear
 }
 
 const deleteSearchContextFmtStr = `
-UPDATE search_contexts
-SET
-    -- Soft-delete the search context and update the name to prevent violating the unique constraint in the future
-    deleted_at = TRANSACTION_TIMESTAMP(),
-    name = soft_deleted_repository_name(name)
-WHERE id = %d AND deleted_at IS NULL
+DELETE FROM search_contexts WHERE id = %d
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to delete the search context.
@@ -334,7 +329,7 @@ SET
 	description = %s,
 	public = %s,
 	updated_at = now()
-WHERE id = %d AND deleted_at IS NULL
+WHERE id = %d
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to update the search context.
@@ -526,17 +521,6 @@ SELECT DISTINCT
 	scr.revision
 FROM
 	search_context_repos scr
--- Only return revisions whose search context has not been soft-deleted
-INNER JOIN (
-  SELECT
-  	id
-  FROM
-  	search_contexts
-  WHERE
-  	deleted_at IS NULL
-) sc
-ON
-	sc.id = scr.search_context_id
 WHERE
 	scr.repo_id = ANY (%s)
 ORDER BY
