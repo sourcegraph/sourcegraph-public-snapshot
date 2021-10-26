@@ -388,11 +388,19 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 	repoClause := apidocs.RepoSearchQuery("tsv", q.PossibleRepos)
 	langTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
 
-	var primaryClauses []*sqlf.Query
-	primaryClauses = append(primaryClauses, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
-	primaryClauses = append(primaryClauses, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
-	primaryClauses = append(primaryClauses, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
-	primaryClauses = append(primaryClauses, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+	// Primary WHERE clauses to use when searching over a smaller subset of repositories.
+	var subsetRepos []*sqlf.Query
+	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
+	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
+	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+
+	// Primary WHERE clauses to use when searching over ALL repositories. Because there is so much
+	// to search over in this case, we do not do prefix/suffix matching (so no reverse index
+	// lookups), and do not use ":*" tsquery prefix matching operators (which are very slow).
+	var allRepos []*sqlf.Query
+	allRepos = append(allRepos, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, false))
+	allRepos = append(allRepos, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, false))
 
 	return s.scanDocumentationSearchResults(s.Store.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(documentationSearchQuery, "$SUFFIX", tableSuffix),
@@ -400,8 +408,9 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 		repoClause,     // matching_repo_names CTE WHERE conditions
 		langTagsClause, // matching_tags CTE WHERE conditions
 
-		sqlf.Sprintf("(%s)", sqlf.Join(primaryClauses, "OR")), // primary WHERE clause
-		debugAPIDocsSearchCandidates,                          // maximum candidates for consideration.
+		sqlf.Sprintf("(%s)", sqlf.Join(subsetRepos, "OR")), // primary WHERE clause for searching over a small set of repos
+		sqlf.Sprintf("(%s)", sqlf.Join(allRepos, "OR")),    // primary WHERE clause for searching over ALL repos
+		debugAPIDocsSearchCandidates,                       // maximum candidates for consideration.
 
 		apidocs.TextSearchRank("search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
 		apidocs.TextSearchRank("search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches), // search_key_reverse_rank
@@ -456,7 +465,14 @@ FROM (
 	JOIN lsif_data_docs_search_repo_names_$SUFFIX reponames ON reponames.id = result.repo_name_id
 	JOIN lsif_data_docs_search_tags_$SUFFIX tags ON tags.id = result.tags_id
 	WHERE
-		((%s))
+		-- If we found matching repo names, then we're searching over a very limited subset of repos
+		-- and can afford to enable the (much) more expensive substring matching which makes search
+		-- fuzzier. This is very nice, but just too expensive to use when searching over all repos.
+		CASE WHEN (SELECT COUNT(*) FROM matching_repo_names) > 0 THEN
+			(%s)
+		ELSE
+			(%s)
+		END
 
 		-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
 		-- have results from multiple uploads (the table is cleaned up asynchronously in the
