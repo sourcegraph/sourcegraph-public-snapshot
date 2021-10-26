@@ -180,11 +180,24 @@ func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []
 		}
 	}
 
-	// Extract all input repositories in a single query
-	repositories, err := database.Repos(r.db).List(ctx, database.ReposListOptions{IDs: repositoryIDs, Names: repositoryNames})
-	if err != nil {
-		return nil, err
+	// Extract all input repositories in two queries: one for IDs and one for names
+	repoStore := database.Repos(r.db)
+	var repositoriesByIDs, repositoriesByNames []*types.Repo
+	var err error
+	if len(repositoryIDs) > 0 {
+		repositoriesByIDs, err = repoStore.List(ctx, database.ReposListOptions{IDs: repositoryIDs})
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	if len(repositoryNames) > 0 {
+		repositoriesByNames, err = repoStore.List(ctx, database.ReposListOptions{Names: repositoryNames})
+		if err != nil {
+			return nil, err
+		}
+	}
+	repositories := append(repositoriesByIDs, repositoriesByNames...)
 
 	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
 	// Match input repositories to the repositories retrieved from the database
