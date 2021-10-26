@@ -4,5 +4,4 @@ package database
 // Deprecated: Use store constructors instead.
 var (
 	GlobalRepos RepoStore = &repoStore{}
-	GlobalUsers           = &UserStore{}
 )
