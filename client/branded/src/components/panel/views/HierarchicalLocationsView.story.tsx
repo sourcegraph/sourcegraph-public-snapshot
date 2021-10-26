@@ -1,4 +1,3 @@
-import { storiesOf } from '@storybook/react'
 import * as H from 'history'
 import React from 'react'
 import { of } from 'rxjs'
@@ -89,27 +88,45 @@ const PROPS: HierarchicalLocationsViewProps = {
     fetchHighlightedFileLineRanges: () => of([['line1\n', 'line2\n', 'line3\n', 'line4']]),
     telemetryService: NOOP_TELEMETRY_SERVICE,
 }
-storiesOf('branded/HierarchicalLocationsView', module)
-    .addDecorator(story => <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>)
 
-    .add('Single repo', () => (
-        <HierarchicalLocationsView
-            {...PROPS}
-            locations={of({
-                isLoading: false,
-                result: LOCATIONS.filter(({ uri }) => uri.includes('github.com/foo/bar')),
-            })}
-        />
-    ))
-    .add('Grouped by repo', () => <HierarchicalLocationsView {...PROPS} />)
-    .add('Grouped by repo and file', () => (
-        <HierarchicalLocationsView
-            {...PROPS}
-            settingsCascade={{
-                subjects: null,
-                final: {
-                    'panel.locations.groupByFile': true,
-                },
-            }}
-        />
-    ))
+export default {
+    title: 'branded/HierarchicalLocationsView',
+
+    decorators: [story => <BrandedStory styles={webStyles}>{() => <div className="p-5">{story()}</div>}</BrandedStory>],
+}
+
+export const SingleRepo = () => (
+    <HierarchicalLocationsView
+        {...PROPS}
+        locations={of({
+            isLoading: false,
+            result: LOCATIONS.filter(({ uri }) => uri.includes('github.com/foo/bar')),
+        })}
+    />
+)
+
+SingleRepo.story = {
+    name: 'Single repo',
+}
+
+export const GroupedByRepo = () => <HierarchicalLocationsView {...PROPS} />
+
+GroupedByRepo.story = {
+    name: 'Grouped by repo',
+}
+
+export const GroupedByRepoAndFile = () => (
+    <HierarchicalLocationsView
+        {...PROPS}
+        settingsCascade={{
+            subjects: null,
+            final: {
+                'panel.locations.groupByFile': true,
+            },
+        }}
+    />
+)
+
+GroupedByRepoAndFile.story = {
+    name: 'Grouped by repo and file',
+}
