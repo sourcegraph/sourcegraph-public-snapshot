@@ -1,6 +1,8 @@
 # How to troubleshoot a failure to update repositories when new repositories are added.
 
-This Document will take you through the steps for investigating the below error while trying to Update Repositories in your Sourcegraph instance.
+This Document will take you through the steps for investigating the error below while trying to Update Repositories in your Sourcegraph instance.
+
+> Please note this is one of the ways to troubleshoot this kind of error.
 
 For instance, You may want to add a new repository to your Sourcegraph instance and then your run into this error below, what do you do?
 
