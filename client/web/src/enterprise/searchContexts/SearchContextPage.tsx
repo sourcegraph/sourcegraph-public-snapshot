@@ -1,4 +1,5 @@
 import classNames from 'classnames'
+import { debounce } from 'lodash'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -34,6 +35,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
     repositories,
 }) => {
     const [filterQuery, setFilterQuery] = useState('')
+    const debouncedSetFilterQuery = useMemo(() => debounce(value => setFilterQuery(value), 250), [setFilterQuery])
     const filteredRepositories = useMemo(
         () =>
             repositories.filter(repositoryRevisions => {
@@ -96,7 +98,7 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                         type="text"
                         className="form-control form-control-md w-50"
                         placeholder="Search repositories and revisions"
-                        onChange={event => setFilterQuery(event.target.value)}
+                        onChange={event => debouncedSetFilterQuery(event.target.value)}
                     />
                 )}
             </div>
