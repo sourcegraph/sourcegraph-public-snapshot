@@ -158,6 +158,7 @@ ExecStart=/usr/local/bin/node_exporter \
   --collector.netdev \
   --collector.netstat \
   --collector.softnet \
+  --collector.edac \
   --collector.pressure \
   --collector.vmstat
 [Install]
