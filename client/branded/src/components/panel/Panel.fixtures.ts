@@ -2,6 +2,8 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of } from 'rxjs'
 
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import { ExtensionDocument } from '@sourcegraph/shared/src/api/extension/api/textDocument'
 import { PanelViewData } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { pretendProxySubscribable, pretendRemote } from '@sourcegraph/shared/src/api/util'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -81,7 +83,25 @@ export const panelProps = {
                 registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
                 haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                 getPanelViews: () => pretendProxySubscribable(of(panels)),
-                getActiveViewComponentChanges: () => pretendProxySubscribable(NEVER),
+                getActiveViewComponentChanges: () =>
+                    pretendProxySubscribable(
+                        of(
+                            new ExtensionCodeEditor(
+                                {
+                                    type: 'CodeEditor',
+                                    viewerId: 'viewer#0',
+                                    resource: 'git://foo?1#/bar.go',
+                                    selections: [],
+                                    isActive: true,
+                                },
+                                new ExtensionDocument({
+                                    uri: 'git://foo?1#/bar.go',
+                                    languageId: 'go',
+                                    text: 'type My[Kingdom For] Generics',
+                                })
+                            )
+                        )
+                    ),
                 getActiveCodeEditorPosition: () => pretendProxySubscribable(NEVER),
             })
         ),
