@@ -72,8 +72,8 @@ func TestTextSearchRank(t *testing.T) {
 			[]interface{}{
 				"public:*",
 				"struct:*",
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-				"mux:* <-> .:* <-> Router:*",
+				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*",
+				"mux <-> . <-> Router:*",
 			},
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]interface{}{
@@ -112,16 +112,11 @@ func TestTextSearchQuery(t *testing.T) {
 				"mux:* <5> Router:*",
 			},
 		})},
-		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]interface{}{
-			"(column @@ $1)",
-			[]interface{}{
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-			},
-		})},
+		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]interface{}{"(column @@ $1)", []interface{}{"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*"}})},
 		{"github.com gorilla mux", true, autogold.Want("separate query terms are matched even if there is distance between using <N>", [2]interface{}{
 			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5)",
 			[]interface{}{
-				"github:* <-> .:* <-> com:*",
+				"github <-> . <-> com:*",
 				"gorilla:* <-> mux:*",
 				"gorilla:* <2> mux:*",
 				"gorilla:* <4> mux:*",
@@ -131,8 +126,8 @@ func TestTextSearchQuery(t *testing.T) {
 		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]interface{}{
 			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5 OR column @@ $6)",
 			[]interface{}{
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-				"mux:* <-> .:* <-> Router:*",
+				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*",
+				"mux <-> . <-> Router:*",
 				"public:* <-> struct:*",
 				"public:* <2> struct:*",
 				"public:* <4> struct:*",
