@@ -71,7 +71,8 @@ func NewRepoFetcher(stream streaming.Sender, args *search.TextParameters) RepoFe
 // allows parameterizing the request to specify a context, for when multiple
 // Get() calls are required with different limits or timeouts.
 func (r *RepoFetcher) Get(ctx context.Context) ([]repoData, error) {
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, r.args, search.TextRequest, r.onMissingRepoRevs)
+	globalSearch := r.args.Mode == search.ZoektGlobalSearch
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, r.args, globalSearch, search.TextRequest, r.onMissingRepoRevs)
 	if err != nil {
 		return nil, err
 	}
