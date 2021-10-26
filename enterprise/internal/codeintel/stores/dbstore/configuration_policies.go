@@ -270,9 +270,8 @@ INSERT INTO lsif_configuration_policies (
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	last_resolved_at
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'now()')
+	index_intermediate_commits
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
@@ -286,8 +285,7 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	last_resolved_at
+	index_intermediate_commits
 `
 
 var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
