@@ -11,6 +11,7 @@ The following is a list of how-tos that show how to use [Sourcegraph Batch Chang
 - [Site admin configuration for Batch Changes](site_admin_configuration.md)
 - [Configuring credentials for Batch Changes](configuring_credentials.md)
 - [Handling errored changesets](handling_errored_changesets.md)
+- [Changeset yaml formatting errors](yaml_changeset_errors.md)
 - [Opting out of batch changes](opting_out_of_batch_changes.md)
 - [Bulk operations on changesets](bulk_operations_on_changesets.md)
 - Batch changes in monorepos
