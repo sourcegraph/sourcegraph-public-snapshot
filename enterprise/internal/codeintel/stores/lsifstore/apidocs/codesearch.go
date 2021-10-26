@@ -112,7 +112,7 @@ func TextSearchVector(s string) string {
 func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query {
 	var rankFunctions []*sqlf.Query
 	for _, term := range strings.Fields(query) {
-		seq := lexemeSequence(Lexemes(term), subStringMatches, " <-> ")
+		seq := lexemeSequence(Lexemes(term), subStringMatches, true, " <-> ")
 		rankFunctions = append(rankFunctions, sqlf.Sprintf("ts_rank_cd("+columnName+", %s, 2)", seq))
 	}
 	return sqlf.Join(rankFunctions, "+")
@@ -124,12 +124,15 @@ func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query
 //
 // If subStringMatches is true, the tsquery `:*` operator ("match prefix") is applied.
 //
+// If substringMatchLastLexemeOnly is true, only the last lexeme has the tsquery `:*` operator
+// applied.
+//
 // Note: This composing a tsquery _value_ and so using fmt.Sprintf instead of sqlf.Sprintf is
 // correct here.
-func lexemeSequence(lexemes []string, subStringMatches bool, distance string) string {
+func lexemeSequence(lexemes []string, subStringMatches, substringMatchLastLexemeOnly bool, distance string) string {
 	sequence := make([]string, 0, len(lexemes))
-	for _, lexeme := range lexemes {
-		if subStringMatches {
+	for i, lexeme := range lexemes {
+		if subStringMatches && (!substringMatchLastLexemeOnly || i == len(lexemes)-1) {
 			sequence = append(sequence, fmt.Sprintf("%s:*", lexeme))
 		} else {
 			sequence = append(sequence, lexeme)
@@ -168,7 +171,7 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 		// sequence ("golang/go" with no lexemes between, "http.StatusNotFound" with no lexemes
 		// between)
 		if len(lexemes) > 1 {
-			sequence := lexemeSequence(lexemes, subStringMatches, " <-> ")
+			sequence := lexemeSequence(lexemes, subStringMatches, true, " <-> ")
 			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", sequence))
 
 			if len(currentDisjointed) > 0 {
@@ -221,11 +224,11 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	for _, disjointedTermLexemes := range contiguousDisjointed {
 		// If only one lexeme, it won't have multiple distances.
 		if len(disjointedTermLexemes) == 1 {
-			tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, "")
+			tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, false, "")
 			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
 		} else {
 			for _, distance := range distances {
-				tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, distance)
+				tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, false, distance)
 				expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
 			}
 		}
@@ -250,7 +253,7 @@ func RepoSearchQuery(columnName string, possibleRepoNames []string) *sqlf.Query 
 	}
 	expressions := make([]*sqlf.Query, 0, len(possibleRepoNames))
 	for _, repoName := range possibleRepoNames {
-		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", lexemeSequence(Lexemes(repoName), false, " <-> ")))
+		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", lexemeSequence(Lexemes(repoName), false, false, " <-> ")))
 	}
 	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
