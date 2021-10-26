@@ -6,7 +6,8 @@ ALTER TABLE lsif_configuration_policies ADD COLUMN last_resolved_at TIMESTAMP WI
 -- Create lookup table for repository pattern matching
 CREATE TABLE IF NOT EXISTS lsif_configuration_policies_repository_pattern_lookup (
     policy_id INTEGER NOT NULL,
-    repo_id INTEGER NOT NULL
+    repo_id INTEGER NOT NULL,
+    PRIMARY KEY (policy_id, repo_id)
 );
 
 COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';

@@ -7,9 +7,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUpdateReposMatchingPatterns(t *testing.T) {
@@ -107,7 +109,7 @@ func scanPolicyRepositories(rows *sql.Rows, queryErr error) (_ map[int][]int, er
 	return policies, nil
 }
 
-func TestRepoIDsByGlobPatternToo(t *testing.T) {
+func TestRepoIDsByGlobPattern(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -156,4 +158,21 @@ func TestRepoIDsByGlobPatternToo(t *testing.T) {
 			t.Errorf("unexpected job (-want +got):\n%s", diff)
 		}
 	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		repoIDs, err := store.RepoIDsByGlobPattern(ctx, "*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(repoIDs) != 0 {
+			t.Fatalf("repoIDs: want 0 but got %v", repoIDs)
+		}
+	})
 }

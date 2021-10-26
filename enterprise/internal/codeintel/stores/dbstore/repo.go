@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -18,12 +19,13 @@ func (s *Store) RepoIDsByGlobPattern(ctx context.Context, pattern string) (_ []i
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternQuery, strings.ReplaceAll(pattern, "*", "%"))))
-}
+	authzConds, err := database.AuthzQueryConds(ctx, s.Store.Handle().DB())
+	if err != nil {
+		return nil, err
+	}
 
-//
-// TODO - authz filters
-//
+	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternQuery, strings.ReplaceAll(pattern, "*", "%"), authzConds)))
+}
 
 const repoIDsByGlobPatternQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/repo.go:FindRepos
@@ -32,7 +34,7 @@ FROM repo
 WHERE
 	name ILIKE %s AND
 	deleted_at IS NULL AND
-	blocked IS NULL
+	blocked IS NULL AND (%s)
 `
 
 // UpdateReposMatchingPatterns updates lsif_configuration_policies_repository_pattern_lookup table
