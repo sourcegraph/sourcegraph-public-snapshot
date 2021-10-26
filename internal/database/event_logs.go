@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -86,43 +87,63 @@ type Event struct {
 }
 
 func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
-	// 🚨 SECURITY: It is important to sanitize event URL before being stored to the
-	// database to help guarantee no malicious data at rest.
-	e.URL = SanitizeEventURL(e.URL)
+	return l.BulkInsert(ctx, []*Event{e})
+}
 
-	argument := e.Argument
-	if argument == nil {
-		argument = json.RawMessage(`{}`)
-	}
-	publicArgument := e.PublicArgument
-	if e.PublicArgument == nil {
-		publicArgument = json.RawMessage(`{}`)
-	}
+func (l *EventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
+	coalesce := func(v json.RawMessage) json.RawMessage {
+		if v != nil {
+			return v
+		}
 
-	featureFlags, err := json.Marshal(e.FeatureFlags)
-	if err != nil {
-		return err
+		return json.RawMessage(`{}`)
 	}
 
-	_, err = l.Handle().DB().ExecContext(
+	rowValues := make(chan []interface{}, len(events))
+	for _, event := range events {
+		featureFlags, err := json.Marshal(event.FeatureFlags)
+		if err != nil {
+			return err
+		}
+
+		rowValues <- []interface{}{
+			event.Name,
+			// 🚨 SECURITY: It is important to sanitize event URL before
+			// being stored to the database to help guarantee no malicious
+			// data at rest.
+			SanitizeEventURL(event.URL),
+			event.UserID,
+			event.AnonymousUserID,
+			event.Source,
+			coalesce(event.Argument),
+			coalesce(event.PublicArgument),
+			version.Version(),
+			event.Timestamp.UTC(),
+			featureFlags,
+			event.CohortID,
+		}
+	}
+	close(rowValues)
+
+	return batch.InsertValues(
 		ctx,
-		"INSERT INTO event_logs(name, url, user_id, anonymous_user_id, source, argument, public_argument, version, timestamp, feature_flags, cohort_id) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
-		e.Name,
-		e.URL,
-		e.UserID,
-		e.AnonymousUserID,
-		e.Source,
-		argument,
-		publicArgument,
-		version.Version(),
-		e.Timestamp.UTC(),
-		featureFlags,
-		e.CohortID,
+		l.Handle().DB(),
+		"event_logs",
+		[]string{
+			"name",
+			"url",
+			"user_id",
+			"anonymous_user_id",
+			"source",
+			"argument",
+			"public_argument",
+			"version",
+			"timestamp",
+			"feature_flags",
+			"cohort_id",
+		},
+		rowValues,
 	)
-	if err != nil {
-		return errors.Wrap(err, "INSERT")
-	}
-	return nil
 }
 
 func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {

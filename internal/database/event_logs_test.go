@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"golang.org/x/sync/errgroup"
@@ -35,17 +36,17 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		{
 			name:  "EmptyName",
 			event: &Event{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
+			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_name_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "InvalidUser",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB"},
-			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
+			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "EmptySource",
 			event: &Event{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			err:   `INSERT: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
+			err:   `inserter.Flush: ERROR: new row for relation "event_logs" violates check constraint "event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "ValidInsert",
@@ -57,7 +58,7 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := EventLogs(db).Insert(ctx, tc.event)
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
+			if have, want := fmt.Sprint(errors.Unwrap(err)), tc.err; have != want {
 				t.Errorf("have %+v, want %+v", have, want)
 			}
 		})
@@ -135,7 +136,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 					e := &Event{
 						UserID:    user,
 						Name:      name,
-						URL:       "test",
+						URL:       "http://sourcegraph.com",
 						Source:    "test",
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
 					}
@@ -231,7 +232,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 						e := &Event{
 							UserID: user,
 							Name:   name,
-							URL:    "test",
+							URL:    "http://sourcegraph.com",
 							Source: source,
 							// Jitter current time +/- 30 minutes
 							Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -303,7 +304,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 			e := &Event{
 				UserID: user,
 				Name:   name,
-				URL:    "test",
+				URL:    "http://sourcegraph.com",
 				Source: "test",
 				// This week; jitter current time +/- 30 minutes
 				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -317,7 +318,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 			e := &Event{
 				UserID: user,
 				Name:   name,
-				URL:    "test",
+				URL:    "http://sourcegraph.com",
 				Source: "test",
 				// This month: jitter current time +/- 30 minutes
 				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
@@ -525,7 +526,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 				e := &Event{
 					UserID:   1,
 					Name:     name,
-					URL:      "test",
+					URL:      "http://sourcegraph.com",
 					Source:   "test",
 					Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 					// Jitter current time +/- 30 minutes
@@ -587,7 +588,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 					e := &Event{
 						UserID:   user,
 						Name:     name,
-						URL:      "test",
+						URL:      "http://sourcegraph.com",
 						Source:   "test",
 						Argument: json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 						// Jitter current time +/- 30 minutes
@@ -648,7 +649,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 		e := &Event{
 			UserID:    1,
 			Name:      "codeintel.searchReferences.xrepo",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Argument:  json.RawMessage(fmt.Sprintf(`{"languageId": "lang-%02d"}`, (i%3)+1)),
 			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
@@ -698,7 +699,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 		e := &Event{
 			UserID: 1,
 			Name:   "search.latencies.structural",
-			URL:    "test",
+			URL:    "http://sourcegraph.com",
 			Source: "test",
 			// Make durations non-uniform to test percent_cont. The values
 			// in this test were hand-checked before being added to the assertion.
@@ -780,7 +781,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 						e := &Event{
 							UserID: user,
 							Name:   name,
-							URL:    "test",
+							URL:    "http://sourcegraph.com",
 							Source: "test",
 							// Make durations non-uniform to test percent_cont. The values
 							// in this test were hand-checked before being added to the assertion.
@@ -803,7 +804,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	e := &Event{
 		UserID: 3,
 		Name:   "SearchResultsQueried",
-		URL:    "test",
+		URL:    "http://sourcegraph.com",
 		Source: "test",
 		Argument: json.RawMessage(`
 {
@@ -910,27 +911,27 @@ func TestEventLogs_ListAll(t *testing.T) {
 		{
 			UserID:    1,
 			Name:      "SearchResultsQueried",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		}, {
 			UserID:    2,
 			Name:      "codeintel",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
 			UserID:    2,
 			Name:      "ViewRepository",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
 			UserID:    2,
 			Name:      "SearchResultsQueried",
-			URL:       "test",
+			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		}}
@@ -981,7 +982,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			{
 				UserID:          0,
 				Name:            "ping",
-				URL:             "test",
+				URL:             "http://sourcegraph.com",
 				AnonymousUserID: "test",
 				Source:          "test",
 				Timestamp:       timestamp,
@@ -989,7 +990,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			}, {
 				UserID:          0,
 				Name:            "ping",
-				URL:             "test",
+				URL:             "http://sourcegraph.com",
 				AnonymousUserID: "test",
 				Source:          "test",
 				Timestamp:       timestamp,
@@ -1030,7 +1031,7 @@ func makeTestEvent(e *Event) *Event {
 		e.UserID = 1
 	}
 	e.Name = "foo"
-	e.URL = "test"
+	e.URL = "http://sourcegraph.com"
 	e.Source = "WEB"
 	e.Timestamp = e.Timestamp.Add(time.Minute * time.Duration(rand.Intn(60*12)))
 	return e
