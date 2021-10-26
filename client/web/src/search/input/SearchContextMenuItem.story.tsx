@@ -1,4 +1,5 @@
 import { storiesOf } from '@storybook/react'
+import { noop } from 'lodash'
 import React from 'react'
 
 import { WebStory } from '../../components/WebStory'
@@ -26,7 +27,8 @@ add(
                     description="Default description"
                     selected={true}
                     isDefault={true}
-                    selectSearchContextSpec={() => {}}
+                    selectSearchContextSpec={noop}
+                    onKeyDown={noop}
                 />
             )}
         </WebStory>
@@ -45,7 +47,8 @@ add(
                     description="Default description"
                     selected={false}
                     isDefault={false}
-                    selectSearchContextSpec={() => {}}
+                    selectSearchContextSpec={noop}
+                    onKeyDown={noop}
                 />
             )}
         </WebStory>
