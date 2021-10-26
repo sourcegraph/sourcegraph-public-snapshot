@@ -380,7 +380,13 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 	q := apidocs.ParseQuery(query)
 	resultLimit := 50
 
-	langRepoTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
+	// In the repo clause we forbid substring matches. Although performance would be fine, asa user
+	// you often do not want e.g. "go net/http" to match a repo like github.com/jane/goexploration
+	// because then your search would be limited to those repos only. Note that substring matching
+	// only applies to lexemes, so
+
+	repoClause := apidocs.RepoSearchQuery("tsv", q.PossibleRepos)
+	langTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
 
 	var primaryClauses []*sqlf.Query
 	primaryClauses = append(primaryClauses, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
@@ -390,9 +396,9 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 
 	return s.scanDocumentationSearchResults(s.Store.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(documentationSearchQuery, "$SUFFIX", tableSuffix),
-		langRepoTagsClause, // matching_lang_names CTE WHERE conditions
-		langRepoTagsClause, // matching_repo_names CTE WHERE conditions
-		langRepoTagsClause, // matching_tags CTE WHERE conditions
+		langTagsClause, // matching_lang_names CTE WHERE conditions
+		repoClause,     // matching_repo_names CTE WHERE conditions
+		langTagsClause, // matching_tags CTE WHERE conditions
 
 		sqlf.Sprintf("(%s)", sqlf.Join(primaryClauses, "OR")), // primary WHERE clause
 		debugAPIDocsSearchCandidates,                          // maximum candidates for consideration.
@@ -416,13 +422,9 @@ WITH
 		WHERE %s LIMIT 1
 	),
 
-	-- Can we find matching repository names? If so, we'll rank results from those higher.
-	--
-	-- We don't filter on repos currently because any term matching a repo name, e.g. "go",
-	-- could accidentally restrict the search to very few repos.
-	--
-	-- TODO(apidocs): search: future: add something that "picks out" likely repo names from
-	-- the query terms and actually filter on those.
+	-- Can we find matching repository names? If so, we'll filter to just those. This helps reduce
+	-- our search space, which means we can use more fuzzy matching (like substring matching) for
+	-- better results - so this is ideal.
 	matching_repo_names AS (
 		SELECT id, repo_name
 		FROM lsif_data_docs_search_repo_names_$SUFFIX
@@ -474,6 +476,11 @@ FROM (
 			result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
 		ELSE result.lang_name_id IS NOT NULL END)
 
+		-- If we found matching repo names, filter to just those.
+		AND (CASE WHEN (SELECT COUNT(*) FROM matching_repo_names) > 0 THEN
+			result.repo_name_id = ANY(array(SELECT id FROM matching_repo_names))
+		ELSE result.repo_name_id IS NOT NULL END)
+
 		-- If we found matching tags, filter to just those.
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
 			result.tags_id = ANY(array(SELECT id FROM matching_tags))
@@ -484,9 +491,6 @@ FROM (
 	LIMIT %s
 ) sub
 ORDER BY
-	-- Rank results from repos that match query terms higher.
-	CASE WHEN repo_id = ANY(SELECT id FROM matching_repo_names) THEN 1 ELSE 0 END,
-
 	-- First rank by search keys, as those are ideally super specific if you write the correct
 	-- format.
 	--
