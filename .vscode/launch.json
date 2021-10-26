@@ -2,12 +2,6 @@
   "version": "0.1.0",
   "configurations": [
     {
-      "name": "Attach to Process",
-      "type": "go",
-      "request": "attach",
-      "mode": "local",
-    },
-    {
       "type": "node",
       "request": "launch",
       "name": "Browser extension E2E Tests",
