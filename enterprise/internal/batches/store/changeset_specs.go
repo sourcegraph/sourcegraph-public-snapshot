@@ -419,7 +419,9 @@ type ChangesetSpecHeadRefConflict struct {
 var listChangesetSpecsWithConflictingHeadQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changeset_specs.go:ListChangesetSpecsWithConflictingHeadRef
 SELECT
-	repo_id, spec->>'headRef', COUNT(*)
+	repo_id,
+	spec->>'headRef' AS head_ref,
+	COUNT(*) AS count
 FROM
 	changeset_specs
 WHERE
@@ -429,6 +431,7 @@ AND
 GROUP BY
 	repo_id, spec->>'headRef'
 HAVING COUNT(*) > 1
+ORDER BY repo_id ASC, head_ref ASC
 `
 
 func (s *Store) ListChangesetSpecsWithConflictingHeadRef(ctx context.Context, batchSpecID int64) (conflicts []ChangesetSpecHeadRefConflict, err error) {

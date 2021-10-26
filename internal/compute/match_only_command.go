@@ -55,7 +55,7 @@ func fromRegexpMatches(matches [][]int, namedGroups []string, lineValue string, 
 	return Match{Value: firstValue, Range: firstRange, Environment: env}
 }
 
-func FromFileMatch(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
+func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 	matches := make([]Match, 0, len(fm.LineMatches))
 	for _, l := range fm.LineMatches {
 		regexpMatches := r.FindAllStringSubmatchIndex(l.Preview, -1)
@@ -67,5 +67,5 @@ func FromFileMatch(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 }
 
 func (c *MatchOnly) Run(_ context.Context, fm *result.FileMatch) (Result, error) {
-	return FromFileMatch(fm, c.MatchPattern.(*Regexp).Value), nil
+	return matchOnly(fm, c.MatchPattern.(*Regexp).Value), nil
 }

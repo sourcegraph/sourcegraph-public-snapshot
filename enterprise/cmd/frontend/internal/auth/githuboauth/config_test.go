@@ -15,7 +15,7 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true

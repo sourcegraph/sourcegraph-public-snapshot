@@ -76,7 +76,7 @@ func TestUsers_ValidUsernames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -102,7 +102,7 @@ func TestUsers_Create_checkPasswordLength(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	minPasswordRunes := conf.AuthMinPasswordLength()
@@ -265,7 +265,7 @@ func TestUsers_CheckAndDecrementInviteQuota(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -315,7 +315,7 @@ func TestUsers_ListCount(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -373,7 +373,7 @@ func TestUsers_Update(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -452,7 +452,7 @@ func TestUsers_GetByVerifiedEmail(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user, err := Users(db).Create(ctx, NewUser{
@@ -487,7 +487,7 @@ func TestUsers_GetByUsername(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -533,7 +533,7 @@ func TestUsers_GetByUsernames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -577,7 +577,7 @@ func TestUsers_Delete(t *testing.T) {
 				t.Skip()
 			}
 			t.Parallel()
-			db := dbtest.NewDB(t, "")
+			db := dbtest.NewDB(t)
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -736,7 +736,7 @@ func TestUsers_HasTag(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	var id int32
@@ -774,7 +774,7 @@ func TestUsers_InvalidateSessions(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	newUsers := []NewUser{
@@ -817,7 +817,7 @@ func TestUsers_SetTag(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	// Create user.
