@@ -294,7 +294,7 @@ type GitObjectFilterPreviewResolver interface {
 
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
-	Repository() *RepositoryResolver
+	Repository(ctx context.Context) (*RepositoryResolver, error)
 	RepositoryPatterns() *[]string
 	Name() string
 	Type() (GitObjectType, error)
