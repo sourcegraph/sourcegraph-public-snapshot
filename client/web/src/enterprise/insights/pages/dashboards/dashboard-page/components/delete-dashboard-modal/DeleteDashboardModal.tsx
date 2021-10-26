@@ -1,6 +1,6 @@
 import Dialog from '@reach/dialog'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import classnames from 'classnames'
+import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React from 'react'
 import { useHistory } from 'react-router-dom'
@@ -25,6 +25,10 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
     const history = useHistory()
 
     const handleDeleteSuccess = (): void => {
+        if (!dashboard.owner) {
+            throw new Error('TODO: support GraphQL API')
+        }
+
         history.push(`/insights/dashboards/${dashboard.owner.id}`)
         onClose()
     }
@@ -38,7 +42,7 @@ export const DeleteDashboardModal: React.FunctionComponent<DeleteDashboardModalP
 
     return (
         <Dialog className={styles.modal} onDismiss={onClose} aria-label="Delete code insight dashboard modal">
-            <button type="button" className={classnames('btn btn-icon', styles.closeButton)} onClick={onClose}>
+            <button type="button" className={classNames('btn btn-icon', styles.closeButton)} onClick={onClose}>
                 <VisuallyHidden>Close</VisuallyHidden>
                 <CloseIcon />
             </button>

@@ -20,6 +20,14 @@
             "pointer": true
           }
         },
+        "codeInsightsGqlApi": {
+          "description": "Enables gql api instead of using setting cascade as a main storage fro code insights entities",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsAllRepos": {
           "deprecated": true,
           "description": "DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.",

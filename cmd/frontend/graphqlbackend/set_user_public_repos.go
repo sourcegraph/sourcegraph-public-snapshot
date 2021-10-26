@@ -70,7 +70,7 @@ func (r *schemaResolver) SetUserPublicRepos(ctx context.Context, args struct {
 // getRepo attempts to find a repo in the database by URI, returning the ID if it's found. If it's not found
 // it will use RepoLookup on repo-updater to fetch the repo info from a code host, store it in the repos table,
 // enqueue a clone for that repo, and return the repo ID
-func getRepo(ctx context.Context, repoStore *database.RepoStore, repoURI string) (repo *types.Repo, err error) {
+func getRepo(ctx context.Context, repoStore database.RepoStore, repoURI string) (repo *types.Repo, err error) {
 	u, err := url.Parse(repoURI)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to parse repository URL "+repoURI)

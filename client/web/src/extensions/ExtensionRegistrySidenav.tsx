@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { useState } from 'react'
 import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -50,13 +50,13 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
     const showDisabled = (): void => setEnablementFilter('disabled')
 
     return (
-        <div className={classnames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
+        <div className={classNames(styles.column, 'mr-4 flex-grow-0 flex-shrink-0')}>
             <SidebarGroup>
                 <SidebarGroupHeader label="Categories" />
                 {['All' as const, ...EXTENSION_CATEGORIES].map(category => (
                     <button
                         type="button"
-                        className={classnames(
+                        className={classNames(
                             'btn text-left sidebar__link--inactive d-flex w-100',
                             selectedCategory === category && 'btn-primary'
                         )}
@@ -69,7 +69,7 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                 ))}
             </SidebarGroup>
 
-            <hr className={classnames('my-3', styles.divider)} />
+            <hr className={classNames('my-3', styles.divider)} />
 
             <ButtonDropdown isOpen={isOpen} toggle={toggleIsOpen} className="ml-2">
                 <DropdownToggle className="btn-sm" caret={true} color="outline-secondary">
@@ -115,8 +115,8 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
 }
 
 const ExtensionSidenavBanner: React.FunctionComponent = () => (
-    <div className={classnames(styles.banner, 'mx-2')}>
-        <img className={classnames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
+    <div className={classNames(styles.banner, 'mx-2')}>
+        <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
         {/* Override h4 font-weight */}
         <h4 className="mt-2 font-weight-bold">Create custom extensions!</h4>
         <small>

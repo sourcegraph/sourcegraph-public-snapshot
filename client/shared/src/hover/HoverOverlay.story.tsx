@@ -1,5 +1,5 @@
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
-import { storiesOf } from '@storybook/react'
+import { Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
@@ -11,8 +11,6 @@ import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
 import { commonProps, FIXTURE_ACTIONS, FIXTURE_CONTENT, FIXTURE_SEMANTIC_BADGE } from './HoverOverlay.fixtures'
 
 registerHighlightContributions()
-
-const { add } = storiesOf('shared/HoverOverlay', module)
 
 const bitbucketClassProps: HoverOverlayClassProps = {
     className: 'aui-dialog',
@@ -29,7 +27,12 @@ const bitbucketClassProps: HoverOverlayClassProps = {
     },
 }
 
-add('Bitbucket styles', () => (
+const config: Meta = {
+    title: 'shared/HoverOverlay',
+}
+export default config
+
+export const BitbucketStyles: Story = () => (
     <>
         <style>{bitbucketStyles}</style>
         <style>{browserExtensionStyles}</style>
@@ -43,4 +46,6 @@ add('Bitbucket styles', () => (
             actionsOrError={FIXTURE_ACTIONS}
         />
     </>
-))
+)
+
+BitbucketStyles.storyName = 'Bitbucket styles'

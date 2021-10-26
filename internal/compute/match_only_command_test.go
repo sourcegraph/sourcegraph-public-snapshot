@@ -25,7 +25,7 @@ func environment(r *MatchContext) interface{} {
 	return env
 }
 
-func TestFromLineMatches(t *testing.T) {
+func Test_matchOnly(t *testing.T) {
 	data := &result.FileMatch{
 		File: result.File{Path: "bedge"},
 		LineMatches: []*result.LineMatch{
@@ -38,7 +38,7 @@ func TestFromLineMatches(t *testing.T) {
 
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
-		result := FromFileMatch(data, r)
+		result := matchOnly(data, r)
 		v, _ := json.MarshalIndent(serialize(result), "", "  ")
 		return string(v)
 	}

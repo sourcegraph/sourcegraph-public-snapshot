@@ -121,6 +121,11 @@
           "type": "integer",
           "default": 2000,
           "minimum": 1
+        },
+        "maxChanges": {
+          "description": "How many changes to fetch during initial clone. The default of -1 will fetch all known changes",
+          "type": "integer",
+          "default": -1
         }
       }
     }

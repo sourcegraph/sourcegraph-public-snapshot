@@ -150,6 +150,7 @@ ExecStart=/usr/local/bin/node_exporter \
   --web.listen-address="127.0.0.1:9100" \
   --collector.disable-defaults \
   --collector.cpu \
+  --collector.loadavg \
   --collector.diskstats \
   --collector.filesystem \
   --collector.meminfo \
