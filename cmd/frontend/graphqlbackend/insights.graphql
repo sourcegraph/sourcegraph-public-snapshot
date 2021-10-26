@@ -556,6 +556,50 @@ input LineChartSearchInsightInput {
 }
 
 """
+Input for updating a line chart search insight.
+"""
+input UpdateLineChartSearchInsightInput {
+    """
+    The complete list of data series on this line chart. Note: excluding a data series will remove it.
+    """
+    dataSeries: [LineChartSearchInsightDataSeriesInput!]!
+
+    """
+    The presentation options for this line chart.
+    """
+    presentationOptions: LineChartOptionsInput!
+
+    """
+    The default values for filters and aggregates for this line chart.
+    """
+    viewControls: InsightViewControlsInput!
+}
+
+"""
+Input for the default values for filters and aggregates for an insight.
+"""
+input InsightViewControlsInput {
+    """
+    Input for the default filters for an insight.
+    """
+    filters: InsightViewFiltersInput!
+}
+
+"""
+Input for the default values by which the insight is filtered.
+"""
+input InsightViewFiltersInput {
+    """
+    A regex string for which to include repositories in a filter.
+    """
+    includeRepoRegex: String
+    """
+    A regex string for which to exclude repositories in a filter.
+    """
+    excludeRepoRegex: String
+}
+
+"""
 Input for a line chart search insight data series.
 """
 input LineChartSearchInsightDataSeriesInput {
@@ -626,9 +670,9 @@ input PieChartOptionsInput {
 }
 
 """
-Payload for an insight view after creation.
+Response wrapper object for insight view mutations.
 """
-type CreateInsightResult {
+type InsightViewPayload {
     """
     The resulting view.
     """
@@ -639,8 +683,13 @@ extend type Mutation {
     """
     Create a line chart backed by search insights.
     """
-    createLineChartSearchInsight(input: LineChartSearchInsightInput!): CreateInsightResult!
+    createLineChartSearchInsight(input: LineChartSearchInsightInput!): InsightViewPayload!
     #    createPieChartSearchInsight(input: PieChartSearchInsightInput!): CreateInsightResult!
+
+    """
+    Update a line chart backed by search insights.
+    """
+    updateLineChartSearchInsight(id: ID!, input: UpdateLineChartSearchInsightInput!): InsightViewPayload!
 }
 
 """
