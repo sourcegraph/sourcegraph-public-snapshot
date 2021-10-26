@@ -264,7 +264,7 @@ func (s *UserExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdUser, err := UsersWith(tx).create(ctx, newUser)
+	createdUser, err := UsersWith(tx).CreateInTransaction(ctx, newUser)
 	if err != nil {
 		return 0, err
 	}
