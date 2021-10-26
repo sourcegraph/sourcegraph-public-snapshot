@@ -28,7 +28,7 @@ Regardless of the deployment option you choose, Sourcegraph can be deployed eith
 
 
 ## Updating your instance 
-New versions of Sourcegraph are release monthly (with patches released in between, as needed). New updates are announced in the [Sourcegraph blog](https://about.sourcegraph.com/blog), and comprehensive update notes are available in the [changelog](https://docs.sourcegraph.com/CHANGELOG). 
+New versions of Sourcegraph are released monthly (with patches released in between, as needed). New updates are announced in the [Sourcegraph blog](https://about.sourcegraph.com/blog), and comprehensive update notes are available in the [changelog](https://docs.sourcegraph.com/CHANGELOG). 
 
 Regardless of the deployment type you choose, the following update rules apply: 
 - **Update one minor version at a time**, e.g., v3.26 –> v3.27 –> v3.28.
