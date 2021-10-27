@@ -75,13 +75,15 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 	return r.workspace.FileMatches
 }
 
-func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	var stepInfo = make(map[int]*btypes.StepInfo)
+	var entryExitCode *int
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
-			stepInfo = btypes.ParseLogLines(logLines)
+			stepInfo = btypes.ParseLogLines(entry, logLines)
+			entryExitCode = entry.ExitCode
 		}
 	}
 
@@ -96,11 +98,20 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 		if !ok {
 			// Step hasn't run yet.
 			si = &btypes.StepInfo{}
+			// But also will never run
+			if entryExitCode != nil {
+				si.Skipped = true
+			}
 		}
+
 		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
 	}
 
 	return resolvers, nil
+}
+
+func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	return r.computeStepResolvers(ctx)
 }
 
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
@@ -109,27 +120,11 @@ func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbacke
 		return nil, nil
 	}
 
-	// TODO: Deduplicate this logic.
-	var stepInfo = make(map[int]*btypes.StepInfo)
-	if r.execution != nil {
-		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
-		if ok {
-			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
-			stepInfo = btypes.ParseLogLines(logLines)
-		}
-	}
-
-	repo, err := r.computeRepo(ctx)
+	resolvers, err := r.computeStepResolvers(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	si, ok := stepInfo[int(args.Index)]
-	if !ok {
-		// Step hasn't run yet.
-		si = &btypes.StepInfo{}
-	}
-	return &batchSpecWorkspaceStepResolver{index: int(args.Index), step: r.workspace.Steps[args.Index-1], stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit}, nil
+	return resolvers[args.Index-1], nil
 }
 
 func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
