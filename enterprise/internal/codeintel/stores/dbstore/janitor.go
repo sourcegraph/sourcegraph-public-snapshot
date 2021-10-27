@@ -132,20 +132,25 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 	}})
 	defer endObservation(1, observation.Args{})
 
-	uploadsAssignmentExpressions := []*sqlf.Query{sqlf.Sprintf("commit_last_checked_at = %s", now)}
-	indexesAssignmentExpressions := []*sqlf.Query{sqlf.Sprintf("commit_last_checked_at = %s", now)}
+	var query *sqlf.Query
 	if delete {
-		uploadsAssignmentExpressions = append(uploadsAssignmentExpressions, sqlf.Sprintf("state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END"))
-		indexesAssignmentExpressions = append(indexesAssignmentExpressions, sqlf.Sprintf("state = 'deleted'"))
+		query = sqlf.Sprintf(
+			refreshCommitResolvabilityDeleteQuery,
+			repositoryID, commit, // candidate_uploads
+			repositoryID, commit, // candidate_indexes
+			now, // delete_uploads
+		)
+	} else {
+		query = sqlf.Sprintf(
+			refreshCommitResolvabilityUpdateQuery,
+			repositoryID, commit, // candidate_uploads
+			repositoryID, commit, // candidate_indexes
+			now, // update_uploads
+			now, // update_indexes
+		)
 	}
 
-	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
-		refreshCommitResolvabilityQuery,
-		repositoryID, commit, // candidate_uploads
-		repositoryID, commit, // candidate_indexes
-		sqlf.Join(uploadsAssignmentExpressions, ", "), // update_uploads
-		sqlf.Join(indexesAssignmentExpressions, ", "), // update_indexes
-	)))
+	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.Query(ctx, query))
 	if err != nil {
 		return 0, 0, err
 	}
@@ -157,9 +162,31 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 	return uploadsUpdated, indexesUpdated, nil
 }
 
-const refreshCommitResolvabilityQuery = `
+const refreshCommitResolvabilityUpdateQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:RefreshCommitResolvability
 WITH
+` + refreshCommitResolvabilityQueryCandidateUploadsCTE + `,
+` + refreshCommitResolvabilityQueryCandidateIndexesCTE + `,
+` + refreshCommitResolvabilityQueryUpdateUploadsCTE + `,
+` + refreshCommitResolvabilityQueryUpdateIndexesCTE + `
+SELECT
+	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
+	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
+`
+
+const refreshCommitResolvabilityDeleteQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:RefreshCommitResolvability
+WITH
+` + refreshCommitResolvabilityQueryCandidateUploadsCTE + `,
+` + refreshCommitResolvabilityQueryCandidateIndexesCTE + `,
+` + refreshCommitResolvabilityQueryDeleteUploadsCTE + `,
+` + refreshCommitResolvabilityQueryDeleteIndexesCTE + `
+SELECT
+	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads,
+	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes
+`
+
+const refreshCommitResolvabilityQueryCandidateUploadsCTE = `
 candidate_uploads AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -168,7 +195,10 @@ candidate_uploads AS (
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_uploads table.
 	ORDER BY u.id FOR UPDATE
-),
+)
+`
+
+const refreshCommitResolvabilityQueryCandidateIndexesCTE = `
 candidate_indexes AS (
 	SELECT u.id
 	FROM lsif_indexes u
@@ -177,22 +207,44 @@ candidate_indexes AS (
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_indexes table.
 	ORDER BY u.id FOR UPDATE
-),
+)
+`
+
+const refreshCommitResolvabilityQueryUpdateUploadsCTE = `
 update_uploads AS (
 	UPDATE lsif_uploads u
-	SET %s
+	SET commit_last_checked_at = %s
 	WHERE id IN (SELECT id FROM candidate_uploads)
 	RETURNING 1
-),
+)
+`
+
+const refreshCommitResolvabilityQueryUpdateIndexesCTE = `
 update_indexes AS (
 	UPDATE lsif_indexes u
-	SET %s
+	SET commit_last_checked_at = %s
 	WHERE id IN (SELECT id FROM candidate_indexes)
 	RETURNING 1
 )
-SELECT
-	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
-	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
+`
+
+const refreshCommitResolvabilityQueryDeleteUploadsCTE = `
+delete_uploads AS (
+	UPDATE lsif_uploads u
+	SET
+		commit_last_checked_at = %s,
+		state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
+	WHERE id IN (SELECT id FROM candidate_uploads)
+	RETURNING 1
+)
+`
+
+const refreshCommitResolvabilityQueryDeleteIndexesCTE = `
+delete_indexes AS (
+	DELETE FROM lsif_indexes u
+	WHERE id IN (SELECT id FROM candidate_indexes)
+	RETURNING 1
+)
 `
 
 func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
