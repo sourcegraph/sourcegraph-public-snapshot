@@ -252,6 +252,12 @@ func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int6
 		return job, []int64{}, err
 	}
 
+	// No ids, take a short path here. Otherwise, we would retrieve _ALL_ changeset
+	// specs from ListChangesetSpecs below.
+	if len(randIDs) == 0 {
+		return job, []int64{}, nil
+	}
+
 	specs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{RandIDs: randIDs})
 	if err != nil {
 		return job, []int64{}, err
