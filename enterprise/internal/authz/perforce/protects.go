@@ -3,7 +3,6 @@ package perforce
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"io"
 	"strings"
 
@@ -116,8 +115,6 @@ func scanProtects(rc io.Reader, processLine func(p4ProtectLine) error) error {
 
 		// Do stuff to line
 		if err := processLine(parsedLine); err != nil {
-			log15.Warn("scanProtects",
-				"line", line, "error", err)
 			return err
 		}
 	}
@@ -253,7 +250,7 @@ func scanAllUsers(ctx context.Context, p *Provider, rc io.ReadCloser) (map[strin
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("scanAllUsers: %w", err)
+		return nil, errors.Wrapf(err, "scanAllUsers")
 	}
 
 	return users, err
