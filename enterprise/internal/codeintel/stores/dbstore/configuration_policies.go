@@ -127,7 +127,7 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 					WHERE repo_id = %s
 				)
 			)
-		`, opts.RepositoryID, opts.RepositoryID))
+		)`, opts.RepositoryID, opts.RepositoryID))
 	}
 	if opts.ForDataRetention {
 		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))
