@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -340,6 +342,16 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		if err != nil {
 			r.err = errors.Wrap(err, "getUserPermissions")
 			return
+		}
+
+		if r.args.Id != nil {
+			var unique string
+			r.err = relay.UnmarshalSpec(*r.args.Id, &unique)
+			if r.err != nil {
+				return
+			}
+			log15.Info("unique_id", "id", unique)
+			args.UniqueID = unique
 		}
 
 		viewSeries, err := r.insightStore.GetAll(ctx, args)

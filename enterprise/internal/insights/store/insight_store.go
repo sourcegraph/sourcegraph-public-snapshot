@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -100,6 +102,7 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(args.UniqueID) > 0 {
+		log15.Info("adding unique")
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
@@ -631,11 +634,11 @@ SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
-WHERE iv.id IN (SELECT insight_view_id
+WHERE (iv.id IN (SELECT insight_view_id
              FROM dashboard db
              JOIN dashboard_insight_view div ON db.id = div.dashboard_id
 				 WHERE deleted_at IS NULL AND db.id IN (%s))
-   OR iv.id IN (%s)
+   OR iv.id IN (%s))
 AND %s
 ORDER BY iv.unique_id
 %s;

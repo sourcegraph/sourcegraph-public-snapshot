@@ -290,4 +290,5 @@ type CreateInsightResultResolver interface {
 type InsightViewQueryArgs struct {
 	First *int32
 	After *string
+	Id    *graphql.ID
 }

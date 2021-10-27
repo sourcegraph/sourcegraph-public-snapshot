@@ -190,7 +190,7 @@ extend type Query {
     """
     Return insight views visible to the authenticated user.
     """
-    insightViews(first: Int, after: String): InsightViewConnection!
+    insightViews(first: Int, after: String, id: ID): InsightViewConnection!
 }
 
 extend type Mutation {
