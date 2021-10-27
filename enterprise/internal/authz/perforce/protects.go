@@ -163,23 +163,23 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) func(p4Pr
 			// be matching on.
 			perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
 			return nil
-		} else {
-			// Otherwise, only include an exclude if a corresponding include exists.
-			for i, prefix := range perms.IncludeContains {
-				if !strings.HasPrefix(depotContains, string(prefix)) {
-					continue
-				}
+		}
 
-				// Perforce ACLs can have conflict rules and the later one wins. So if there is
-				// an exact match for an include prefix, we take it out.
-				if depotContains == string(prefix) {
-					perms.IncludeContains = append(perms.IncludeContains[:i], perms.IncludeContains[i+1:]...)
-					break
-				}
+		// Otherwise, only include an exclude if a corresponding include exists.
+		for i, prefix := range perms.IncludeContains {
+			if !strings.HasPrefix(depotContains, string(prefix)) {
+				continue
+			}
 
-				perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
+			// Perforce ACLs can have conflict rules and the later one wins. So if there is
+			// an exact match for an include prefix, we take it out.
+			if depotContains == string(prefix) {
+				perms.IncludeContains = append(perms.IncludeContains[:i], perms.IncludeContains[i+1:]...)
 				break
 			}
+
+			perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
+			break
 		}
 
 		return nil
