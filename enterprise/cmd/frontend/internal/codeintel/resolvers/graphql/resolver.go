@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 const (
@@ -426,9 +425,6 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 	for _, id := range ids {
 		repo, err := backend.Repos.Get(ctx, api.RepoID(id))
 		if err != nil {
-			if errcode.IsNotFound(err) {
-				return nil, nil
-			}
 			return nil, err
 		}
 
