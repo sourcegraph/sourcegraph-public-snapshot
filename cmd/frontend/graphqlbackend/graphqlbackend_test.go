@@ -83,7 +83,7 @@ func TestResolverTo(t *testing.T) {
 		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: db},
+		&RepositoryResolver{db: database.NewDB(db)},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&repositorySuggestionResolver{},
