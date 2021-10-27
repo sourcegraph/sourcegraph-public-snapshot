@@ -54,6 +54,10 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// RefreshCommitResolvability.
 	RefreshCommitResolvabilityFunc *DBStoreRefreshCommitResolvabilityFunc
+	// RefreshCommitResolvability2Func is an instance of a mock function
+	// object controlling the behavior of the method
+	// RefreshCommitResolvability2.
+	RefreshCommitResolvability2Func *DBStoreRefreshCommitResolvability2Func
 	// SelectRepositoriesForRetentionScanFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// SelectRepositoriesForRetentionScan.
@@ -127,7 +131,12 @@ func NewMockDBStore() *MockDBStore {
 			},
 		},
 		RefreshCommitResolvabilityFunc: &DBStoreRefreshCommitResolvabilityFunc{
-			defaultHook: func(context.Context, int, string, bool, time.Time) (int, int, error) {
+			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
+				return 0, 0, nil
+			},
+		},
+		RefreshCommitResolvability2Func: &DBStoreRefreshCommitResolvability2Func{
+			defaultHook: func(context.Context, int, string, time.Time) (int, int, error) {
 				return 0, 0, nil
 			},
 		},
@@ -195,6 +204,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		RefreshCommitResolvabilityFunc: &DBStoreRefreshCommitResolvabilityFunc{
 			defaultHook: i.RefreshCommitResolvability,
+		},
+		RefreshCommitResolvability2Func: &DBStoreRefreshCommitResolvability2Func{
+			defaultHook: i.RefreshCommitResolvability2,
 		},
 		SelectRepositoriesForRetentionScanFunc: &DBStoreSelectRepositoriesForRetentionScanFunc{
 			defaultHook: i.SelectRepositoriesForRetentionScan,
@@ -1320,24 +1332,24 @@ func (c DBStoreHardDeleteUploadByIDFuncCall) Results() []interface{} {
 // RefreshCommitResolvability method of the parent MockDBStore instance is
 // invoked.
 type DBStoreRefreshCommitResolvabilityFunc struct {
-	defaultHook func(context.Context, int, string, bool, time.Time) (int, int, error)
-	hooks       []func(context.Context, int, string, bool, time.Time) (int, int, error)
+	defaultHook func(context.Context, int, string, time.Time) (int, int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, int, error)
 	history     []DBStoreRefreshCommitResolvabilityFuncCall
 	mutex       sync.Mutex
 }
 
 // RefreshCommitResolvability delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockDBStore) RefreshCommitResolvability(v0 context.Context, v1 int, v2 string, v3 bool, v4 time.Time) (int, int, error) {
-	r0, r1, r2 := m.RefreshCommitResolvabilityFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.RefreshCommitResolvabilityFunc.appendCall(DBStoreRefreshCommitResolvabilityFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+func (m *MockDBStore) RefreshCommitResolvability(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, int, error) {
+	r0, r1, r2 := m.RefreshCommitResolvabilityFunc.nextHook()(v0, v1, v2, v3)
+	m.RefreshCommitResolvabilityFunc.appendCall(DBStoreRefreshCommitResolvabilityFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // RefreshCommitResolvability method of the parent MockDBStore instance is
 // invoked and the hook queue is empty.
-func (f *DBStoreRefreshCommitResolvabilityFunc) SetDefaultHook(hook func(context.Context, int, string, bool, time.Time) (int, int, error)) {
+func (f *DBStoreRefreshCommitResolvabilityFunc) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -1346,7 +1358,7 @@ func (f *DBStoreRefreshCommitResolvabilityFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *DBStoreRefreshCommitResolvabilityFunc) PushHook(hook func(context.Context, int, string, bool, time.Time) (int, int, error)) {
+func (f *DBStoreRefreshCommitResolvabilityFunc) PushHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1355,7 +1367,7 @@ func (f *DBStoreRefreshCommitResolvabilityFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
 func (f *DBStoreRefreshCommitResolvabilityFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string, bool, time.Time) (int, int, error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, int, error) {
 		return r0, r1, r2
 	})
 }
@@ -1363,12 +1375,12 @@ func (f *DBStoreRefreshCommitResolvabilityFunc) SetDefaultReturn(r0 int, r1 int,
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
 func (f *DBStoreRefreshCommitResolvabilityFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, int, string, bool, time.Time) (int, int, error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *DBStoreRefreshCommitResolvabilityFunc) nextHook() func(context.Context, int, string, bool, time.Time) (int, int, error) {
+func (f *DBStoreRefreshCommitResolvabilityFunc) nextHook() func(context.Context, int, string, time.Time) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1413,10 +1425,7 @@ type DBStoreRefreshCommitResolvabilityFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 bool
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 time.Time
+	Arg3 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -1431,12 +1440,133 @@ type DBStoreRefreshCommitResolvabilityFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c DBStoreRefreshCommitResolvabilityFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreRefreshCommitResolvabilityFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// DBStoreRefreshCommitResolvability2Func describes the behavior when the
+// RefreshCommitResolvability2 method of the parent MockDBStore instance is
+// invoked.
+type DBStoreRefreshCommitResolvability2Func struct {
+	defaultHook func(context.Context, int, string, time.Time) (int, int, error)
+	hooks       []func(context.Context, int, string, time.Time) (int, int, error)
+	history     []DBStoreRefreshCommitResolvability2FuncCall
+	mutex       sync.Mutex
+}
+
+// RefreshCommitResolvability2 delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) RefreshCommitResolvability2(v0 context.Context, v1 int, v2 string, v3 time.Time) (int, int, error) {
+	r0, r1, r2 := m.RefreshCommitResolvability2Func.nextHook()(v0, v1, v2, v3)
+	m.RefreshCommitResolvability2Func.appendCall(DBStoreRefreshCommitResolvability2FuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the
+// RefreshCommitResolvability2 method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreRefreshCommitResolvability2Func) SetDefaultHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RefreshCommitResolvability2 method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreRefreshCommitResolvability2Func) PushHook(hook func(context.Context, int, string, time.Time) (int, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreRefreshCommitResolvability2Func) SetDefaultReturn(r0 int, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, string, time.Time) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreRefreshCommitResolvability2Func) PushReturn(r0 int, r1 int, r2 error) {
+	f.PushHook(func(context.Context, int, string, time.Time) (int, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *DBStoreRefreshCommitResolvability2Func) nextHook() func(context.Context, int, string, time.Time) (int, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreRefreshCommitResolvability2Func) appendCall(r0 DBStoreRefreshCommitResolvability2FuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreRefreshCommitResolvability2FuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreRefreshCommitResolvability2Func) History() []DBStoreRefreshCommitResolvability2FuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreRefreshCommitResolvability2FuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreRefreshCommitResolvability2FuncCall is an object that describes an
+// invocation of method RefreshCommitResolvability2 on an instance of
+// MockDBStore.
+type DBStoreRefreshCommitResolvability2FuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 time.Time
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreRefreshCommitResolvability2FuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreRefreshCommitResolvability2FuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
