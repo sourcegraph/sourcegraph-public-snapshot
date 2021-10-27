@@ -161,15 +161,9 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	return nil
 }
 
-// Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
-	defer span.Finish()
-
+func Run(ctx context.Context, args Args) (results []Result, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
-
-	args.MatchOnly = true
 
 	err = PipeTo(ctx, args, w)
 	if err != nil {
@@ -192,11 +186,28 @@ func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
 			log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
 			continue
 		}
-		matches = append(matches, *m)
+		results = append(results, m)
 	}
 
-	if len(matches) > 0 {
-		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(matches)))
+	if len(results) > 0 {
+		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
+	}
+	return results, nil
+}
+
+// Matches returns all matches in all files for which comby finds matches.
+func Matches(ctx context.Context, args Args) ([]FileMatch, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
+	defer span.Finish()
+
+	args.MatchOnly = true
+	results, err := Run(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	var matches []FileMatch
+	for _, r := range results {
+		matches = append(matches, *r.(*FileMatch))
 	}
 	return matches, nil
 }
