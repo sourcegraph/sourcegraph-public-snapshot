@@ -29,7 +29,7 @@ func init() {
 // 🚨 SECURITY: This guarantees the integrity of the identity resolution process (ensuring that new
 // external accounts are linked to the appropriate user account)
 func TestGetAndSaveUser(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	type innerCase struct {
 		description string

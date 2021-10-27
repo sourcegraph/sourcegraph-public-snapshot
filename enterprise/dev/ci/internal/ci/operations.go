@@ -135,7 +135,10 @@ func addWebApp(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":webpack::globe_with_meridians::moneybag: Enterprise build",
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Env("NODE_ENV", "production"),
-		bk.Env("ENTERPRISE", "1"))
+		bk.Env("ENTERPRISE", "1"),
+		bk.Env("CHECK_BUNDLESIZE", "1"),
+		// To ensure the Bundlesize output can be diffed to the baseline on main
+		bk.Env("WEBPACK_USE_NAMED_CHUNKS", "true"))
 
 	// Webapp tests
 	pipeline.AddStep(":jest::globe_with_meridians: Test",
@@ -611,5 +614,33 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 			bk.Cmd("./enterprise/cmd/executor/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: executor image", stepOpts...)
+	}
+}
+
+// ~15m (building executor docker mirror base VM)
+func buildExecutorDockerMirror(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			bk.Key(candidateImageStepKey("executor-docker-mirror")),
+			bk.Env("VERSION", version),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/docker-mirror/build.sh"))
+
+		pipeline.AddStep(":packer: :construction: docker registry mirror image", stepOpts...)
+	}
+}
+
+func publishExecutorDockerMirror(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		candidateBuildStep := candidateImageStepKey("executor-docker-mirror")
+		stepOpts := []bk.StepOpt{
+			bk.DependsOn(candidateBuildStep),
+			bk.Env("VERSION", version),
+		}
+		stepOpts = append(stepOpts,
+			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
+
+		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
 	}
 }

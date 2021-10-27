@@ -7,4 +7,5 @@ const (
 	EmojiSuccess   = "✅"
 	EmojiInfo      = "ℹ️"
 	EmojiLightbulb = "💡"
+	EmojiAsterisk  = "✱"
 )

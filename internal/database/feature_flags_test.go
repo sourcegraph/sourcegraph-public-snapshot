@@ -27,6 +27,7 @@ func TestFeatureFlagStore(t *testing.T) {
 	t.Run("UserFlags", testUserFlags)
 	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
 	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
+	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
@@ -49,7 +50,7 @@ func cleanup(t *testing.T, db *sql.DB) func() {
 
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t, ""))
+	flagStore := FeatureFlags(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	cases := []struct {
@@ -105,7 +106,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t, ""))
+	flagStore := FeatureFlags(dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
@@ -139,7 +140,7 @@ func testListFeatureFlags(t *testing.T) {
 
 func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
@@ -188,7 +189,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
@@ -267,7 +268,7 @@ func testListUserOverrides(t *testing.T) {
 
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	orgs := Orgs(db)
@@ -352,7 +353,7 @@ func testListOrgOverrides(t *testing.T) {
 
 func testUserFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	users := Users(db)
 	orgs := Orgs(db)
@@ -495,7 +496,7 @@ func testUserFlags(t *testing.T) {
 
 func testAnonymousUserFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -539,7 +540,7 @@ func testAnonymousUserFlags(t *testing.T) {
 
 func testUserlessFeatureFlags(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	flagStore := FeatureFlags(db)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -582,5 +583,82 @@ func testUserlessFeatureFlags(t *testing.T) {
 		// but effectively statically random.
 		expected := map[string]bool{}
 		require.Equal(t, expected, got)
+	})
+}
+
+func testOrgFeatureFlag(t *testing.T) {
+	t.Parallel()
+	db := dbtest.NewDB(t)
+	flagStore := FeatureFlags(db)
+	orgs := Orgs(db)
+	ctx := actor.WithInternalActor(context.Background())
+
+	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
+		res, err := flagStore.CreateBool(ctx, name, val)
+		require.NoError(t, err)
+		return res
+	}
+
+	mkOrgOverride := func(org int32, flag string, val bool) *ff.Override {
+		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org, FlagName: flag, Value: val})
+		require.NoError(t, err)
+		return ffo
+	}
+
+	mkOrg := func(name string) *types.Org {
+		o, err := orgs.Create(ctx, name, nil)
+		require.NoError(t, err)
+		return o
+	}
+
+	t.Run("bool vals", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		org := mkOrg("o")
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+
+		got1, err1 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
+		got2, err2 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f2")
+		require.NoError(t, err1)
+		require.NoError(t, err2)
+		expected1 := true
+		expected2 := false
+		require.Equal(t, expected1, got1)
+		require.Equal(t, expected2, got2)
+	})
+
+	t.Run("bool vals with org override", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		org1 := mkOrg("o1")
+		org2 := mkOrg("o2")
+		mkFFBool("f1", true)
+		mkFFBool("f2", false)
+		mkOrgOverride(org1.ID, "f1", false)
+		mkOrgOverride(org1.ID, "f2", true)
+
+		got, err := flagStore.GetOrgFeatureFlag(ctx, org1.ID, "f1")
+		require.NoError(t, err)
+		require.Equal(t, false, got)
+
+		got, err = flagStore.GetOrgFeatureFlag(ctx, org1.ID, "f2")
+		require.NoError(t, err)
+		require.Equal(t, true, got)
+
+		got, err = flagStore.GetOrgFeatureFlag(ctx, org2.ID, "f1")
+		require.NoError(t, err)
+		require.Equal(t, true, got)
+
+		got, err = flagStore.GetOrgFeatureFlag(ctx, org2.ID, "f2")
+		require.NoError(t, err)
+		require.Equal(t, false, got)
+	})
+
+	t.Run("bool vals without flag defined", func(t *testing.T) {
+		t.Cleanup(cleanup(t, db))
+		org := mkOrg("o")
+
+		got, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
+		require.NoError(t, err)
+		require.Equal(t, false, got)
 	})
 }

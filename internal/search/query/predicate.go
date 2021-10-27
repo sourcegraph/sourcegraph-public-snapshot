@@ -25,7 +25,7 @@ type Predicate interface {
 	Plan(parent Basic) (Plan, error)
 }
 
-var DefaultPredicateRegistry = predicateRegistry{
+var DefaultPredicateRegistry = PredicateRegistry{
 	FieldRepo: {
 		"contains":              func() Predicate { return &RepoContainsPredicate{} },
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
@@ -38,11 +38,15 @@ var DefaultPredicateRegistry = predicateRegistry{
 	},
 }
 
-type predicateRegistry map[string]map[string]func() Predicate
+// PredicateTable is a lookup map of one or more predicate names that resolve to the Predicate type.
+type PredicateTable map[string]func() Predicate
+
+// PredicateRegistry is a lookup map of predicate tables associated with all fields.
+type PredicateRegistry map[string]PredicateTable
 
 // Get returns a predicate for the given field with the given name. It assumes
 // it exists, and panics otherwise.
-func (pr predicateRegistry) Get(field, name string) Predicate {
+func (pr PredicateRegistry) Get(field, name string) Predicate {
 	fieldPredicates, ok := pr[field]
 	if !ok {
 		panic("predicate lookup for " + field + " is invalid")
@@ -72,6 +76,14 @@ func ParseAsPredicate(value string) (name, params string) {
 	params = match[paramsIndex]
 	return name, params
 }
+
+// EmptyPredicate is a noop value that satisfies the Predicate interface.
+type EmptyPredicate struct{}
+
+func (EmptyPredicate) Field() string            { return "" }
+func (EmptyPredicate) Name() string             { return "" }
+func (EmptyPredicate) ParseParams(string) error { return nil }
+func (EmptyPredicate) Plan(Basic) (Plan, error) { return nil, nil }
 
 // RepoContainsPredicate represents the `repo:contains()` predicate,
 // which filters to repos that contain either a file or content

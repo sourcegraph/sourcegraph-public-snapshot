@@ -15,7 +15,7 @@ func TestOrgs_ValidNames(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	for _, test := range usernamesForTests {
@@ -40,7 +40,7 @@ func TestOrgs_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	org, err := Orgs(db).Create(ctx, "a", nil)
@@ -70,7 +70,7 @@ func TestOrgs_Delete(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	displayName := "a"

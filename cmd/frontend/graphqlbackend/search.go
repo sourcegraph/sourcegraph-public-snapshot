@@ -343,7 +343,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args.Repos = resolved.RepoRevs
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		return nil, err
 	}

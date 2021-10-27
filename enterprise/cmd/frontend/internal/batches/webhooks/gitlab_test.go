@@ -900,7 +900,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *dat
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore *database.RepoStore, es *types.ExternalService) *types.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore database.RepoStore, es *types.ExternalService) *types.Repo {
 	repo := (&types.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",

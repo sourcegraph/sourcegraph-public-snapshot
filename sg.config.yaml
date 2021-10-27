@@ -326,14 +326,14 @@ commands:
     env:
       ENTERPRISE: 1
 
-  web-standalone:
+  web-standalone-http:
     cmd: yarn workspace @sourcegraph/web serve:dev
     install: yarn --no-progress
     env:
       WEBPACK_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
-  web-standalone-prod:
+  web-standalone-http-prod:
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
@@ -917,26 +917,26 @@ commandsets:
 
   web-standalone:
     commands:
-      - web-standalone
+      - web-standalone-http
       - caddy
     env:
       ENTERPRISE: 1
 
   oss-web-standalone:
     commands:
-      - web-standalone
+      - web-standalone-http
       - caddy
 
   web-standalone-prod:
     commands:
-      - web-standalone-prod
+      - web-standalone-http-prod
       - caddy
     env:
       ENTERPRISE: 1
 
   oss-web-standalone-prod:
     commands:
-      - web-standalone-prod
+      - web-standalone-http-prod
       - caddy
 
 tests:

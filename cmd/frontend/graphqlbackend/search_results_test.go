@@ -949,7 +949,7 @@ func TestSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	tts := []struct {
 		name        string

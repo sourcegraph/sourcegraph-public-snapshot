@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import PuzzleIcon from 'mdi-react/PuzzleIcon'
 import React, { useContext, useMemo, useState } from 'react'
 
@@ -58,7 +58,7 @@ export function BuiltInInsight<D extends keyof ViewContexts>(props: BuiltInInsig
         <ViewCard
             {...otherProps}
             insight={{ id: insight.id, view: data?.view }}
-            className={classnames('extension-insight-card', otherProps.className)}
+            className={classNames('extension-insight-card', otherProps.className)}
             contextMenu={
                 <InsightContextMenu
                     insightID={insight.id}

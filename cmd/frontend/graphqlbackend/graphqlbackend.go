@@ -635,13 +635,7 @@ func (r *schemaResolver) AffiliatedRepositories(ctx context.Context, args *struc
 	Query     *string
 }) (*affiliatedRepositoriesConnection, error) {
 	var userID, orgID int32
-	var err error
-	switch relay.UnmarshalKind(args.Namespace) {
-	case "User":
-		userID, err = UnmarshalUserID(args.Namespace)
-	case "Org":
-		orgID, err = UnmarshalOrgID(args.Namespace)
-	}
+	err := UnmarshalNamespaceID(args.Namespace, &userID, &orgID)
 	if err != nil {
 		return nil, err
 	}

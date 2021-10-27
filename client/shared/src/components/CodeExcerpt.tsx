@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import { range, isEqual } from 'lodash'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import React from 'react'
 import VisibilitySensor from 'react-visibility-sensor'
 import { of, combineLatest, Observable, Subject, Subscription } from 'rxjs'
@@ -139,7 +139,7 @@ export class CodeExcerpt extends React.PureComponent<Props, State> {
                     )}
                     {this.state.blobLinesOrError && isErrorLike(this.state.blobLinesOrError) && (
                         <div className="code-excerpt-alert">
-                            <ErrorIcon className="icon-inline mr-2" />
+                            <AlertCircleIcon className="icon-inline mr-2" />
                             {this.state.blobLinesOrError.message}
                         </div>
                     )}

@@ -36,7 +36,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -594,7 +594,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 
@@ -635,7 +635,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	token := &auth.OAuthBearerToken{Token: "abcdef"}
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
@@ -795,7 +795,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	cstore := store.New(db, &observation.TestContext, et.TestKey{})
 

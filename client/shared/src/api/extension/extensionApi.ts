@@ -1,6 +1,6 @@
 import { proxy, Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, ReplaySubject } from 'rxjs'
+import { BehaviorSubject, EMPTY, ReplaySubject } from 'rxjs'
 import { debounceTime, mapTo } from 'rxjs/operators'
 import * as sourcegraph from 'sourcegraph'
 
@@ -81,7 +81,7 @@ export function createExtensionAPIFactory(
             return state.roots.value
         },
         get versionContext() {
-            return state.versionContext
+            return undefined
         },
         get searchContext() {
             return state.searchContext
@@ -90,7 +90,7 @@ export function createExtensionAPIFactory(
         openedTextDocuments: state.openedTextDocuments.asObservable(),
         onDidChangeRoots: state.roots.pipe(mapTo(undefined)),
         rootChanges: state.rootChanges.asObservable(),
-        versionContextChanges: state.versionContextChanges.asObservable(),
+        versionContextChanges: EMPTY,
         searchContextChanges: state.searchContextChanges.asObservable(),
     }
 

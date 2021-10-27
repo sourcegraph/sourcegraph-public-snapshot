@@ -377,7 +377,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 	c := &ct.TestClock{Time: timeutil.Now()}
 	minAgo := func(m int) time.Time { return c.Now().Add(-time.Duration(m) * time.Minute) }
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import React from 'react'
 
 import { Timestamp } from '../../components/time/Timestamp'
@@ -9,6 +10,7 @@ interface Props {
     author: SignatureFields
     committer: SignatureFields | null
     className?: string
+    avatarClassName?: string
     compact?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
@@ -21,6 +23,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
     author,
     committer,
     className = '',
+    avatarClassName,
     compact,
     messageElement,
     commitMessageBody,
@@ -42,12 +45,12 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
             <div data-testid="git-commit-node-byline" className={className}>
                 <div className="flex-shrink-0">
                     <UserAvatar
-                        className="icon-inline"
+                        className={classNames('icon-inline', avatarClassName)}
                         user={author.person}
                         data-tooltip={`${formatPersonName(author.person)} (author)`}
                     />{' '}
                     <UserAvatar
-                        className="icon-inline mr-2"
+                        className={classNames('icon-inline mr-2', avatarClassName)}
                         user={committer.person}
                         data-tooltip={`${formatPersonName(committer.person)} (committer)`}
                     />
@@ -76,7 +79,7 @@ export const GitCommitNodeByline: React.FunctionComponent<Props> = ({
         <div data-testid="git-commit-node-byline" className={className}>
             <div>
                 <UserAvatar
-                    className="icon-inline mr-1 mr-2"
+                    className={classNames('icon-inline mr-1 mr-2', avatarClassName)}
                     user={author.person}
                     data-tooltip={formatPersonName(author.person)}
                 />

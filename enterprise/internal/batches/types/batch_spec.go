@@ -9,7 +9,7 @@ import (
 
 // NewBatchSpecFromRaw parses and validates the given rawSpec, and returns a BatchSpec
 // containing the result.
-func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
+func NewBatchSpecFromRaw(rawSpec string, allowFiles bool) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
 	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
@@ -17,6 +17,7 @@ func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
 		AllowConditionalExec:   true,
+		AllowFiles:             allowFiles,
 	})
 
 	return c, err
@@ -63,6 +64,8 @@ func (cs *BatchSpec) ExpiresAt() time.Time {
 }
 
 type BatchSpecStats struct {
+	ResolutionDone bool
+
 	Workspaces int
 	Executions int
 
@@ -120,6 +123,14 @@ func (s BatchSpecState) Finished() bool {
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.
 func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
 	if !spec.CreatedFromRaw {
+		return BatchSpecStateCompleted
+	}
+
+	if !stats.ResolutionDone {
+		return BatchSpecStatePending
+	}
+
+	if stats.Workspaces == 0 {
 		return BatchSpecStateCompleted
 	}
 

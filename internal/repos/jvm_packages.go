@@ -101,6 +101,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		totalDBFetched  int
 		totalDBResolved int
 		lastID          int
+		timedOut        int
 	)
 	for {
 		dbDeps, err := s.dbStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
@@ -132,8 +133,12 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 			// should be hit much less frequently than gitservers attempts to get packages, so there should be less
 			// logspam. This may no longer hold true if the extsvc syncs more often than gitserver would, but I
 			// don't foresee that happening (not soon at least).
-			if !coursier.Exists(ctx, s.config, mavenDependency) {
-				log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.CoursierSyntax())
+			if exists, err := coursier.Exists(ctx, s.config, mavenDependency); !exists {
+				if errors.Is(err, context.DeadlineExceeded) {
+					timedOut++
+				} else {
+					log15.Warn("jvm package not resolvable from coursier", "package", mavenDependency.CoursierSyntax())
+				}
 				continue
 			}
 
@@ -146,75 +151,7 @@ func (s *JVMPackagesSource) listDependentRepos(ctx context.Context, results chan
 		}
 	}
 
-	log15.Info("finished listing resolvable maven artifacts", "totalDB", totalDBFetched, "resolvedDB", totalDBResolved, "totalConfig", len(modules))
-}
-
-func (s *JVMPackagesSource) GetRepo(ctx context.Context, artifactPath string) (*types.Repo, error) {
-	module, err := reposource.ParseMavenModule(artifactPath)
-	if err != nil {
-		return nil, err
-	}
-
-	dependencies, err := MavenDependencies(*s.config)
-	if err != nil {
-		return nil, err
-	}
-
-	dbDeps, err := s.dbStore.GetJVMDependencyRepos(ctx, dbstore.GetJVMDependencyReposOpts{
-		ArtifactName: artifactPath,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "dbstore.GetJVMDependencyRepos")
-	}
-
-	for _, dep := range dbDeps {
-		parsedModule, err := reposource.ParseMavenModule(dep.Module)
-		if err != nil {
-			log15.Warn("error parsing maven module", "error", err, "module", dep.Module)
-			continue
-		}
-		dependency := reposource.MavenDependency{
-			MavenModule: parsedModule,
-			Version:     dep.Version,
-		}
-		dependencies = append(dependencies, dependency)
-	}
-
-	nonExistentDependencies := make([]reposource.MavenDependency, 0)
-	hasAtLeastOneValidDependency := false
-	for _, dep := range dependencies {
-		if dep.MavenModule == module {
-			if coursier.Exists(ctx, s.config, dep) {
-				hasAtLeastOneValidDependency = true
-			} else {
-				nonExistentDependencies = append(nonExistentDependencies, dep)
-			}
-		}
-	}
-
-	if !hasAtLeastOneValidDependency {
-		return nil, &jvmDependencyNotFound{
-			dependencies: nonExistentDependencies,
-		}
-	}
-
-	for _, nonExistentDependency := range nonExistentDependencies {
-		// Don't reject all versions if a single version fails to
-		// resolve. Instead, we just log a warning about the unresolved
-		// dependency. A dependency can fail to resolve if it gets
-		// removed from the package host for some reason.
-		log15.Warn("Skipping non-existing JVM package", "nonExistentDependency", nonExistentDependency.CoursierSyntax())
-	}
-
-	return s.makeRepo(module), nil
-}
-
-type jvmDependencyNotFound struct {
-	dependencies []reposource.MavenDependency
-}
-
-func (e *jvmDependencyNotFound) Error() string {
-	return fmt.Sprintf("not found: jvm dependency '%v'", e.dependencies)
+	log15.Info("finished listing resolvable maven artifacts", "totalDB", totalDBFetched, "resolvedDB", totalDBResolved, "totalConfig", len(modules), "timedout", timedOut)
 }
 
 func (s *JVMPackagesSource) makeRepo(module reposource.MavenModule) *types.Repo {

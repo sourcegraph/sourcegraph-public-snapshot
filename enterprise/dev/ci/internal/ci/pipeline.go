@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
@@ -39,6 +40,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		"CI_DEBUG_PROFILE": strconv.FormatBool(c.MessageFlags.ProfilingEnabled),
 		// Bump Node.js memory to prevent OOM crashes
 		"NODE_OPTIONS": "--max_old_space_size=8192",
+
+		// Bundlesize configuration: https://github.com/siddharthkp/bundlesize2#build-status-and-checks-for-github
+		"CI_REPO_OWNER": "sourcegraph",
+		"CI_REPO_NAME":  "sourcegraph",
+		"CI_COMMIT_SHA": os.Getenv("BUILDKITE_COMMIT"),
+		// $ in commit messages must be escaped to not attempt interpolation which will fail.
+		"CI_COMMIT_MESSAGE": strings.ReplaceAll(os.Getenv("BUILDKITE_MESSAGE"), "$", "$$"),
 	}
 
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
@@ -166,6 +174,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			buildExecutorDockerMirror(c.Version),
+			publishExecutorDockerMirror(c.Version),
 		})
 
 	default:
@@ -186,6 +196,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch) {
 			ops.Append(buildExecutor(c.Version, skipHashCompare))
+			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+				ops.Append(buildExecutorDockerMirror(c.Version))
+			}
 		}
 
 		// Slow tests
@@ -212,6 +225,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		if c.RunType.Is(MainBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
+			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+				ops.Append(publishExecutorDockerMirror(c.Version))
+			}
 		}
 
 		// Propagate changes elsewhere

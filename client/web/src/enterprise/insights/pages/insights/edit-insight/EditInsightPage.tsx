@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useContext, useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -60,7 +60,7 @@ export const EditInsightPage: React.FunctionComponent<EditInsightPageProps> = pr
     }
 
     return (
-        <Page className={classnames('col-10', styles.creationPage)}>
+        <Page className={classNames('col-10', styles.creationPage)}>
             <PageTitle title="Edit code insight" />
 
             <div className="mb-5">

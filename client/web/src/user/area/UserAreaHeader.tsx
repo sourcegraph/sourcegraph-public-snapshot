@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import React, { useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 
@@ -9,6 +8,7 @@ import { NavItemWithIconDescriptor } from '../../util/contributions'
 import { UserAvatar } from '../UserAvatar'
 
 import { UserAreaRouteContext } from './UserArea'
+import styles from './UserAreaHeader.module.scss'
 
 interface Props extends UserAreaRouteContext {
     navItems: readonly UserAreaHeaderNavItem[]
@@ -44,14 +44,14 @@ export const UserAreaHeader: React.FunctionComponent<Props> = ({ url, navItems, 
                         )}
                     </span>
                 ),
-                icon: () => <UserAvatar className="user-area-header__avatar" user={props.user} />,
+                icon: () => <UserAvatar className={styles.avatar} user={props.user} />,
             },
         ],
         [props.user]
     )
 
     return (
-        <div className={classNames('user-area-header', className)}>
+        <div className={className}>
             <div className="container">
                 <PageHeader path={path} className="mb-3" />
                 <div className="d-flex align-items-end justify-content-between">

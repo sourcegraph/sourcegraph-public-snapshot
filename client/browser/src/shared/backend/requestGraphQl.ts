@@ -1,6 +1,7 @@
 import { print } from 'graphql'
 import { once } from 'lodash'
 import { from, Observable } from 'rxjs'
+import { switchMap, take } from 'rxjs/operators'
 
 import {
     GraphQLResult,
@@ -12,6 +13,7 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
 import { background } from '../../browser-extension/web-extension-api/runtime'
 import { isBackground } from '../context'
+import { observeSourcegraphURL } from '../util/context'
 
 import { getHeaders } from './headers'
 
@@ -27,7 +29,7 @@ interface GraphQLHelpers {
     requestGraphQL: <T, V = object>(options: RequestGraphQLOptions<V>) => Observable<GraphQLResult<T>>
 }
 
-function createMainThreadExtensionGraphQLHelpers(sourcegraphURL: string): GraphQLHelpers {
+function createMainThreadExtensionGraphQLHelpers(): GraphQLHelpers {
     /**
      * Forward GraphQL request to the background script for execution.
      */
@@ -35,10 +37,7 @@ function createMainThreadExtensionGraphQLHelpers(sourcegraphURL: string): GraphQ
         options: RequestGraphQLOptions<V>
         // Keep both helpers inside of the factory function.
         // eslint-disable-next-line unicorn/consistent-function-scoping
-    ): Observable<GraphQLResult<T>> =>
-        from(
-            background.requestGraphQL<T, V>({ ...options, sourcegraphURL })
-        )
+    ): Observable<GraphQLResult<T>> => from(background.requestGraphQL<T, V>(options))
 
     /**
      * Apollo-Client is not configured yet to execute requests in the background script.
@@ -85,19 +84,25 @@ export function createGraphQLHelpers(sourcegraphURL: string, isExtension: boolea
             console.warn('Check out the implementation of the `requestGraphQLInBackground` function above.')
         }
 
-        return createMainThreadExtensionGraphQLHelpers(sourcegraphURL)
+        return createMainThreadExtensionGraphQLHelpers()
     }
 
     const requestGraphQL = <T, V = object>({
         request,
         variables,
     }: RequestGraphQLOptions<V>): Observable<GraphQLResult<T>> =>
-        requestGraphQLCommon<T, V>({
-            request,
-            variables,
-            baseUrl: sourcegraphURL,
-            credentials: 'include',
-        })
+        observeSourcegraphURL(isExtension).pipe(
+            take(1),
+            switchMap(sourcegraphURL =>
+                requestGraphQLCommon<T, V>({
+                    request,
+                    variables,
+                    baseUrl: sourcegraphURL,
+                    credentials: 'include',
+                })
+            )
+        )
+
     /**
      * Memoized Apollo Client getter. It should be executed once to restore the cache from the local storage.
      * After that, the same instance should be used by all consumers.

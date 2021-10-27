@@ -53,7 +53,12 @@ export function overrideGraphQLExtensions(props: OverrideGraphQLExtensionsProps)
         GetTemporarySettings: () => ({
             temporarySettings: {
                 __typename: 'TemporarySettings',
-                contents: JSON.stringify({ 'insights.freeBetaAccepted': true }),
+                contents: JSON.stringify({
+                    'user.daysActiveCount': 1,
+                    'user.lastDayActive': new Date().toDateString(),
+                    'search.usedNonGlobalContext': true,
+                    'insights.freeBetaAccepted': true,
+                }),
             },
         }),
         Insights: () => ({ insights: { nodes: [] } }),
