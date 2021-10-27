@@ -45,7 +45,8 @@
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
     "build-browser-extension": "yarn --cwd client/browser run build",
-    "install:sg": "dev/sg/install.sh"
+    "install:sg": "dev/sg/install.sh",
+    "optimize-svg-assets": "svgo ui/assets/img --multipass --config=\"./svgo.config.js\""
   },
   "browserslist": [
     "last 1 version",
@@ -307,6 +308,7 @@
     "string-width": "^4.2.0",
     "style-loader": "^3.1.0",
     "stylelint": "^13.8.0",
+    "svgo": "^2.7.0",
     "term-size": "^2.2.0",
     "terser-webpack-plugin": "^5.1.4",
     "thread-loader": "^3.0.4",
@@ -340,6 +342,7 @@
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
+    "@types/svgo": "^2.6.0",
     "@visx/annotation": "^1.7.2",
     "@visx/axis": "^1.7.0",
     "@visx/glyph": "^1.7.0",
