@@ -196,7 +196,7 @@ const Temporary: FunctionComponent<TemporaryProps> = ({ index, pattern, setPatte
 
     return (
         <>
-            <div className={classNames(styles.name, 'form-group d-flex flex-column mb-0')}>
+            <div className="form-group d-flex flex-column mb-0">
                 <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
                 <input
                     type="text"
