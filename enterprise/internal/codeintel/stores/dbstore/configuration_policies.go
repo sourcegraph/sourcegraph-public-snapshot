@@ -37,6 +37,7 @@ type ConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
+	LastResolvedAt            *time.Time
 }
 
 // scanConfigurationPolicies scans a slice of configuration policies from the return value of `*Store.query`.
@@ -67,6 +68,7 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			&configurationPolicy.IndexingEnabled,
 			&indexCommitMaxAgeHours,
 			&configurationPolicy.IndexIntermediateCommits,
+			&configurationPolicy.LastResolvedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -168,7 +170,8 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits
+	p.index_intermediate_commits,
+	last_resolved_at
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 WHERE %s
@@ -205,7 +208,8 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits
+	p.index_intermediate_commits,
+	last_resolved_at
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 -- Global policies are visible to anyone
@@ -369,7 +373,8 @@ SELECT
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
+	index_intermediate_commits,
+	last_resolved_at
 FROM lsif_configuration_policies
 WHERE id = %s
 FOR UPDATE
@@ -451,9 +456,9 @@ WITH
 		LIMIT %d
 	),
 	locked_policies AS (
-		SELECT p.id
-		FROM candidate_policies
-		ORDER BY p.id FOR UPDATE
+		SELECT c.id
+		FROM candidate_policies c
+		ORDER BY c.id FOR UPDATE
 	)
 UPDATE lsif_configuration_policies
 SET last_resolved_At = NOW()
@@ -471,5 +476,6 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
+	index_intermediate_commits,
+	last_resolved_at
 `

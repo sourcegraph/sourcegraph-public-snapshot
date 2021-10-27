@@ -618,3 +618,61 @@ func TestDeleteConfigurationProtectedPolicy(t *testing.T) {
 		t.Fatalf("expected record")
 	}
 }
+
+func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	query := sqlf.Sprintf(`
+		INSERT INTO lsif_configuration_policies (
+			id,
+			repository_id,
+			name,
+			type,
+			pattern,
+			repository_patterns,
+			retention_enabled,
+			retention_duration_hours,
+			retain_intermediate_commits,
+			indexing_enabled,
+			index_commit_max_age_hours,
+			index_intermediate_commits
+		) VALUES
+			(1, NULL,   'policy 1', 'GIT_TREE',   'ab/',      null,           true,  2, false, false, 3, true),
+			(2, NULL,   'policy 2', 'GIT_TREE',   'nm/',      null,           false, 3, true,  false, 4, false),
+			(3, NULL, 'policy 3', 'GIT_TREE',   'xy/',      null,           true,  4, false, true,  5, false)
+	`)
+	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
+	}
+
+	// fill table with test data from query above
+	policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{})
+	if err != nil {
+		t.Fatalf("unexpected error fetching configuration policies: %s", err)
+	}
+
+	// test insert doesn't add any last_resolved_at
+	for _, policy := range policies {
+		if policy.LastResolvedAt != nil {
+			t.Fatalf("expected policy to have no last resolved")
+		}
+	}
+
+	// call selectPoliciesForRepositoryMembershipUpdate to update last_resolved_at
+	selectedPolicies, err := store.SelectPoliciesForRepositoryMembershipUpdate(ctx, len(policies))
+	if err != nil {
+		t.Fatalf("unexpected error select policies for repository membership update: %s", err)
+	}
+
+	// test update adds last_resolved_at
+	for _, selected := range selectedPolicies {
+		if selected.LastResolvedAt == nil {
+			t.Fatalf("expected policy to have last resolved")
+		}
+	}
+}
