@@ -688,3 +688,15 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
 	}
 }
+
+func uploadBuildLogs() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			// Allow the upload to fail without failing the build.
+			bk.SoftFail(1),
+			bk.AllowDependencyFailure(),
+			bk.Cmd("./enterprise/dev/upload-build-logs.sh"),
+		}
+		pipeline.AddEnsureStep(":file_cabinet: Uploading build logs", stepOpts...)
+	}
+}

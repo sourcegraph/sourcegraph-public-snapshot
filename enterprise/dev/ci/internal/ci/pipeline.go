@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
@@ -104,7 +105,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
 	case BackendIntegrationTests:
@@ -241,10 +241,31 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 	}
 
+	// Collect all build failures (if any) and upload them on Grafana Cloud.
+	ops.Append(uploadBuildLogs())
+
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
 	ops.Apply(pipeline)
+	if err := ensureUniqueKeys(pipeline); err != nil {
+		return nil, err
+	}
 	return pipeline, nil
+}
+
+func ensureUniqueKeys(pipeline *bk.Pipeline) error {
+	occurences := map[string]int{}
+	for _, step := range pipeline.Steps {
+		if s, ok := step.(*buildkite.Step); ok {
+			occurences[s.Key] += 1
+		}
+	}
+	for k, count := range occurences {
+		if count > 1 {
+			return fmt.Errorf("non unique key on step %s", k)
+		}
+	}
+	return nil
 }
