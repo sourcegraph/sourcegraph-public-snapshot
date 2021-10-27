@@ -37,7 +37,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	}
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 2
@@ -115,7 +115,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/Encryption", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -182,7 +182,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -244,7 +244,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/InvalidKey", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -275,7 +275,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalServiceConfigMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -402,7 +402,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	}
 
 	t.Run("Up/Down/Progress", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 2
@@ -472,7 +472,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/Encryption", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -529,7 +529,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -583,7 +583,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Up/InvalidKey", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10
@@ -606,7 +606,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 	})
 
 	t.Run("Down/Disabled Decryption", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 
 		migrator := NewExternalAccountsMigratorWithDB(db)
 		migrator.BatchSize = 10

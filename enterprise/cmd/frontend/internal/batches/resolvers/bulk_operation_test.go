@@ -24,7 +24,7 @@ func TestBulkOperationResolver(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	userID := ct.CreateTestUser(t, db, false).ID
 

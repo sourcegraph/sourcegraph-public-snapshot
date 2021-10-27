@@ -4,7 +4,7 @@ import { map, distinctUntilChanged } from 'rxjs/operators'
 import { observeStorageKey } from '../../browser-extension/web-extension-api/storage'
 import { isExtension } from '../context'
 
-import { isCloudSourcegraphUrl } from './context'
+import { isDefaultSourcegraphUrl } from './context'
 
 const OPTION_FLAGS_SYNC_STORAGE_KEY = 'featureFlags'
 
@@ -91,7 +91,7 @@ export function shouldOverrideSendTelemetry(isFirefox: boolean, isExtension: boo
         return true
     }
 
-    if (!isCloudSourcegraphUrl(sourcegraphUrl)) {
+    if (!isDefaultSourcegraphUrl(sourcegraphUrl)) {
         return true
     }
 

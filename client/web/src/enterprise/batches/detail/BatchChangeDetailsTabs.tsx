@@ -23,7 +23,6 @@ import {
 import { BatchSpec, BatchSpecDownloadLink, BatchSpecMeta } from '../BatchSpec'
 
 import {
-    queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryChangesetCountsOverTime as _queryChangesetCountsOverTime,
     queryAllChangesetIDs as _queryAllChangesetIDs,
@@ -50,8 +49,6 @@ export interface BatchChangeDetailsProps
     location: H.Location
 
     /** For testing only. */
-    queryChangesets?: typeof _queryChangesets
-    /** For testing only. */
     queryExternalChangesetWithFileDiffs?: typeof _queryExternalChangesetWithFileDiffs
     /** For testing only. */
     queryChangesetCountsOverTime?: typeof _queryChangesetCountsOverTime
@@ -72,7 +69,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
     location,
     platformContext,
     queryChangesetCountsOverTime,
-    queryChangesets,
     queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs,
     refetchBatchChange,
@@ -142,7 +138,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
-                    queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     queryAllChangesetIDs={queryAllChangesetIDs}
                     onlyArchived={false}
@@ -181,7 +176,6 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                     extensionsController={extensionsController}
                     platformContext={platformContext}
                     telemetryService={telemetryService}
-                    queryChangesets={queryChangesets}
                     queryExternalChangesetWithFileDiffs={queryExternalChangesetWithFileDiffs}
                     onlyArchived={true}
                     refetchBatchChange={refetchBatchChange}

@@ -44,7 +44,6 @@ export interface FlatExtensionHostAPI {
     getWorkspaceRoots: () => ProxySubscribable<clientType.WorkspaceRoot[]>
     removeWorkspaceRoot: (uri: string) => void
 
-    setVersionContext: (versionContext: string | undefined) => void
     setSearchContext: (searchContext: string | undefined) => void
 
     // Search

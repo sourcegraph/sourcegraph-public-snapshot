@@ -28,7 +28,7 @@ func createSearchContexts(ctx context.Context, store *SearchContextsStore, searc
 }
 
 func TestSearchContexts_Get(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -80,7 +80,7 @@ func TestSearchContexts_Get(t *testing.T) {
 }
 
 func TestSearchContexts_Update(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -152,7 +152,7 @@ func TestSearchContexts_Update(t *testing.T) {
 }
 
 func TestSearchContexts_List(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -199,7 +199,7 @@ func TestSearchContexts_List(t *testing.T) {
 }
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -297,7 +297,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 }
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -358,7 +358,7 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 }
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := SearchContexts(db)
@@ -420,7 +420,7 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 }
 
 func TestSearchContexts_Permissions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -623,7 +623,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 }
 
 func TestSearchContexts_Delete(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	ctx := context.Background()
 	sc := SearchContexts(db)
@@ -673,7 +673,7 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 }
 
 func TestSearchContexts_OrderBy(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := Users(db)
@@ -785,7 +785,7 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 }
 
 func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	t.Parallel()
 	// Required for this DB query.
 	internalCtx := actor.WithInternalActor(context.Background())

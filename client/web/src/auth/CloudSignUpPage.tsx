@@ -67,10 +67,7 @@ export const CloudSignUpPage: React.FunctionComponent<Props> = ({
 
     const logEvent = (type: AuthProvider['serviceType']): void => {
         const eventType = type === 'builtin' ? 'form' : type
-
-        if (sourceIsValid) {
-            telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
-        }
+        telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
     }
 
     const signUpForm = (

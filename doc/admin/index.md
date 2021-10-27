@@ -4,7 +4,7 @@
 Administration guides and documentation for <a href="install">self-hosted Sourcegraph instances</a>.
 </p>
 
-Administration is usually handled by site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on a Sourcegraph instance.
+Administration is usually handled by site administrators are the admins responsible for deploying, managing, and configuring Sourcegraph for regular users. They have [special privileges](privileges.md) on a Sourcegraph instance. Check out this [quickstart guide](how-to/site-admin-quickstart.md) for more info on Site Administration.
 
 ## [Install Sourcegraph](install/index.md)
 
@@ -22,6 +22,7 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Configuration](config/index.md)
 
+- [Site Administrator Quickstart](how-to/site-admin-quickstart.md)
 - [Integrations](../integration/index.md)
 - [Adding Git repositories](repo/add.md) (from a code host or clone URL)
   - [Monorepo](monorepo.md)

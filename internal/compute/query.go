@@ -105,12 +105,13 @@ func toRegexpPattern(value string) (*Regexp, error) {
 var ComputePredicateRegistry = query.PredicateRegistry{
 	query.FieldContent: {
 		"replace": func() query.Predicate { return query.EmptyPredicate{} },
+		"output":  func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
 var arrowSyntax = lazyregexp.New(`\s*->\s*`)
 
-func parseReplace(pattern *query.Pattern) (*Replace, bool, error) {
+func parseReplace(pattern *query.Pattern) (Command, bool, error) {
 	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
 		// pattern is not set via `content:`, so it cannot be a replace command.
 		return nil, false, nil
@@ -131,21 +132,41 @@ func parseReplace(pattern *query.Pattern) (*Replace, bool, error) {
 	return &Replace{MatchPattern: rp, ReplacePattern: parts[1]}, true, nil
 }
 
-func toCommand(pattern *query.Pattern) (Command, error) {
-	command, ok, err := parseReplace(pattern)
-	if err != nil {
-		return nil, err
-	}
-	if ok {
-		return command, nil
-	}
+func parseOutput(pattern *query.Pattern) (Command, bool, error) {
+	return nil, false, nil
+}
 
+func parseMatchOnly(pattern *query.Pattern) (Command, bool, error) {
 	rp, err := toRegexpPattern(pattern.Value)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return &MatchOnly{MatchPattern: rp}, nil
+	return &MatchOnly{MatchPattern: rp}, true, nil
 }
+
+type commandParser func(pattern *query.Pattern) (Command, bool, error)
+
+// first returns the first parser that succeeds at parsing a command from a pattern.
+func first(parsers ...commandParser) commandParser {
+	return func(pattern *query.Pattern) (Command, bool, error) {
+		for _, parse := range parsers {
+			command, ok, err := parse(pattern)
+			if err != nil {
+				return nil, false, err
+			}
+			if ok {
+				return command, true, nil
+			}
+		}
+		return nil, false, errors.Errorf("could not parse valid compute command from pattern %s", pattern.Value)
+	}
+}
+
+var parseCommand = first(
+	parseReplace,
+	parseOutput,
+	parseMatchOnly,
+)
 
 func toComputeQuery(plan query.Plan) (*Query, error) {
 	if len(plan) != 1 {
@@ -155,7 +176,7 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	command, err := toCommand(pattern)
+	command, _, err := parseCommand(pattern)
 	if err != nil {
 		return nil, err
 	}

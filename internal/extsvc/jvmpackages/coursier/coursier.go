@@ -10,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
@@ -18,6 +19,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -29,6 +31,7 @@ var (
 	coursierCacheDir   string
 	observationContext *observation.Context
 	operations         *Operations
+	invocTimeout, _    = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
 )
 
 func init() {
@@ -110,8 +113,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	)
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) bool {
-	var err error
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency reposource.MavenDependency) (exists bool, err error) {
 	ctx, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("dependency", dependency.CoursierSyntax()),
 	}})
@@ -120,7 +122,7 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 	if dependency.IsJDK() {
 		var sources []string
 		sources, err = FetchSources(ctx, config, dependency)
-		return err == nil && len(sources) == 1
+		return err == nil && len(sources) == 1, err
 	}
 	_, err = runCoursierCommand(
 		ctx,
@@ -129,10 +131,13 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 		"--quiet", "--quiet",
 		"--intransitive", dependency.CoursierSyntax(),
 	)
-	return err == nil
+	return err == nil, err
 }
 
 func runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (_ []string, err error) {
+	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
+	defer cancel()
+
 	ctx, traceLog, endObservation := operations.runCommand.WithAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
 		otlog.String("args", strings.Join(args, ", ")),
