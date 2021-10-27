@@ -61,7 +61,7 @@ func TestOrganization(t *testing.T) {
 			}
 		}
 		// Removing all members from an organization is not allowed - add a new user to the organization to verify cascading settings below
-		cleanupFn, err := createOrganizationUser(orgID)
+		cleanup, err := createOrganizationUser(orgID)
 		if err != nil {
 			t.Fatal(err)
 		}
