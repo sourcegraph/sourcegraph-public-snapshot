@@ -182,7 +182,7 @@ type StructuralSearch struct {
 	SearcherArgs search.SearcherParameters
 }
 
-func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender) error {
+func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, _ []*search.RepositoryRevisions) error {
 	return runStructuralSearch(ctx, &s.SearcherArgs, &s.RepoFetcher, stream)
 }
 
