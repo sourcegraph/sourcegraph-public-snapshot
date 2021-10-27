@@ -144,7 +144,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Errorf("got %d, want %d", count, want)
 	}
 
-	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -190,7 +190,7 @@ func TestRepos_Delete(t *testing.T) {
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
-	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -232,7 +232,7 @@ func TestRepos_Upsert(t *testing.T) {
 		}
 	}
 
-	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -251,7 +251,7 @@ func TestRepos_Upsert(t *testing.T) {
 		ServiceID:   "ext:test",
 	}
 
-	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -271,7 +271,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 
 	// Rename. Detected by external repo
-	if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo/renamed", Description: "asdfasdf", Fork: false, ExternalRepo: ext}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -313,7 +313,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 			i++
 			name := api.RepoName(fmt.Sprintf("myrepo-%d", i))
 
-			if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
+			if err := upsertRepo(ctx, db, InsertRepoOp{Name: name, Fork: fork, Archived: archived}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -595,77 +595,4 @@ func TestRepoStore_Metadata(t *testing.T) {
 	md, err := r.Metadata(ctx, 1, 2)
 	require.NoError(t, err)
 	require.ElementsMatch(t, expected, md)
-}
-
-func TestRepoStore_Blocking(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	rs := Repos(db)
-
-	ctx := context.Background()
-
-	repos := []*types.Repo{
-		{
-			ID:      1,
-			Name:    "foo",
-			URI:     "foo-uri",
-			Sources: map[string]*types.SourceInfo{},
-		},
-		{
-			ID:      2,
-			Name:    "bar",
-			URI:     "bar-uri",
-			Sources: map[string]*types.SourceInfo{},
-		},
-	}
-
-	err := rs.Create(ctx, repos...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = rs.Block(ctx, "too big", repos[1].ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Run("GetByName_Name", func(t *testing.T) {
-		_, err := rs.GetByName(ctx, repos[0].Name)
-		if have, want := fmt.Sprint(err), "<nil>"; have != want {
-			t.Errorf("error, have: %q, want: %q", have, want)
-		}
-
-		_, err = rs.GetByName(ctx, repos[1].Name)
-		if have, want := fmt.Sprint(err), `repository bar has been blocked. reason: too big`; have != want {
-			t.Errorf("error, have: %q, want: %q", have, want)
-		}
-	})
-
-	t.Run("GetByName_URI", func(t *testing.T) {
-		_, err := rs.GetByName(ctx, api.RepoName(repos[0].URI))
-		if have, want := fmt.Sprint(err), "<nil>"; have != want {
-			t.Errorf("error, have: %q, want: %q", have, want)
-		}
-
-		_, err = rs.GetByName(ctx, api.RepoName(repos[1].URI))
-		if have, want := fmt.Sprint(err), `repository bar has been blocked. reason: too big`; have != want {
-			t.Errorf("error, have: %q, want: %q", have, want)
-		}
-	})
-
-	t.Run("List", func(t *testing.T) {
-		have, err := rs.List(ctx, ReposListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		want := repos[:1]
-		if !cmp.Equal(have, want) {
-			t.Errorf("mismatch: (-have, +want):\n:%s", cmp.Diff(have, want))
-		}
-	})
 }
