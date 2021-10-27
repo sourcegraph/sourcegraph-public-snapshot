@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -eu -o pipefail
 
-echo "--- Check static SVGS for optimizations"
+echo "--- Check static SVGs for optimizations"
 
 # mutex is necessary since CI runs various yarn installs in parallel
 yarn --mutex network --frozen-lockfile --ignore-scripts
