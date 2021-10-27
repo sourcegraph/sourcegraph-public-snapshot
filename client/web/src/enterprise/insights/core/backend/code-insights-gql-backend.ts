@@ -1,15 +1,18 @@
-import { Observable, throwError, of } from 'rxjs'
+import { ApolloClient, gql } from '@apollo/client'
+import { Observable, throwError, of, from } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
-import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
-
-import { requestGraphQL } from '../../../../backend/graphql'
+import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import {
+    CreateDashboardResult,
     CreateInsightsDashboardInput,
+    DeleteDashboardResult,
     InsightsDashboardsResult,
+    UpdateDashboardResult,
     UpdateInsightsDashboardInput,
-} from '../../../../graphql-operations'
+} from '@sourcegraph/web/src/graphql-operations'
+
 import { InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
@@ -24,6 +27,8 @@ import {
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
+    constructor(private apolloClient: ApolloClient<object>) {}
+
     // Insights
     public getInsights = errorMockMethod('getInsights')
     public getInsightById = errorMockMethod('getInsightById')
@@ -43,26 +48,26 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // Dashboards
     public getDashboards = (): Observable<InsightDashboard[]> =>
-        requestGraphQL<InsightsDashboardsResult>(
-            gql`
-                query InsightsDashboards {
-                    insightsDashboards {
-                        nodes {
-                            id
-                            title
-                            views {
-                                nodes {
-                                    id
+        fromObservableQuery(
+            this.apolloClient.watchQuery<InsightsDashboardsResult>({
+                query: gql`
+                    query InsightsDashboards {
+                        insightsDashboards {
+                            nodes {
+                                id
+                                title
+                                views {
+                                    nodes {
+                                        id
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            `,
-            {}
+                `,
+            })
         ).pipe(
-            map(dataOrThrowErrors),
-            map(data =>
+            map(({ data }) =>
                 data.insightsDashboards.nodes.map(dashboard => ({
                     id: dashboard.id,
                     title: dashboard.title,
@@ -83,34 +88,38 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             grants: input.grants,
         }
 
-        return requestGraphQL(
-            gql`
-                mutation CreateDashboard($input: CreateInsightsDashboardInput!) {
-                    createInsightsDashboard(input: $input) {
-                        dashboard {
-                            id
+        return from(
+            this.apolloClient.mutate<CreateDashboardResult>({
+                mutation: gql`
+                    mutation CreateDashboard($input: CreateInsightsDashboardInput!) {
+                        createInsightsDashboard(input: $input) {
+                            dashboard {
+                                id
+                            }
                         }
                     }
-                }
-            `,
-            { input: mappedInput }
+                `,
+                variables: { input: mappedInput },
+            })
         ).pipe(mapTo(undefined))
     }
 
-    public deleteDashboard = (input: DashboardDeleteInput): Observable<void> => {
-        if (!input.id) {
+    public deleteDashboard = ({ id }: DashboardDeleteInput): Observable<void> => {
+        if (!id) {
             throw new Error('`id` is required to delete a dashboard')
         }
 
-        return requestGraphQL(
-            gql`
-                mutation DeleteDashboard($id: ID!) {
-                    deleteInsightsDashboard(id: $id) {
-                        alwaysNil
+        return from(
+            this.apolloClient.mutate<DeleteDashboardResult>({
+                mutation: gql`
+                    mutation DeleteDashboard($id: ID!) {
+                        deleteInsightsDashboard(id: $id) {
+                            alwaysNil
+                        }
                     }
-                }
-            `,
-            input.id
+                `,
+                variables: { id },
+            })
         ).pipe(mapTo(undefined))
     }
 
@@ -123,25 +132,27 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             throw new Error('`grants` are required to update a dashboard')
         }
 
-        const mappedInput: UpdateInsightsDashboardInput = {
+        const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
             grants: nextDashboardInput.grants,
         }
 
-        return requestGraphQL(
-            gql`
-                mutation UpdateDashboard($id: ID!, $input: UpdateInsightsDashboardInput!) {
-                    updateInsightsDashboard(id: $id, input: $input) {
-                        dashboard {
-                            id
+        return from(
+            this.apolloClient.mutate<UpdateDashboardResult>({
+                mutation: gql`
+                    mutation UpdateDashboard($id: ID!, $input: UpdateInsightsDashboardInput!) {
+                        updateInsightsDashboard(id: $id, input: $input) {
+                            dashboard {
+                                id
+                            }
                         }
                     }
-                }
-            `,
-            {
-                id,
-                input: mappedInput,
-            }
+                `,
+                variables: {
+                    id,
+                    input,
+                },
+            })
         ).pipe(mapTo(undefined))
     }
 
