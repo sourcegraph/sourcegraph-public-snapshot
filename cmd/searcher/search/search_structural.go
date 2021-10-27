@@ -73,7 +73,7 @@ func highlightMultipleLines(r *comby.Match) (matches []protocol.LineMatch) {
 	return matches
 }
 
-func toFileMatch(combyMatch comby.FileMatch) protocol.FileMatch {
+func toFileMatch(combyMatch *comby.FileMatch) protocol.FileMatch {
 	var lineMatches []protocol.LineMatch
 	for _, r := range combyMatch.Matches {
 		lineMatches = append(lineMatches, highlightMultipleLines(&r)...)
