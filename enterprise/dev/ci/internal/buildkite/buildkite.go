@@ -186,6 +186,8 @@ func Concurrency(limit int) StepOpt {
 	}
 }
 
+// Parallelism tells Buildkite to run this job multiple time in parallel,
+// which is very useful to QA a flake fix.
 func Parallelism(count int) StepOpt {
 	return func(step *Step) {
 		step.Parallelism = count
