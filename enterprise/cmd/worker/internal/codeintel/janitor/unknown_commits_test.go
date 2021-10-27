@@ -86,7 +86,7 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	janitor := newJanitor(dbStore, time.Minute, 100, newMetrics(&observation.TestContext), clock)
 
 	if err := janitor.Handle(context.Background()); err != nil {
-		t.Fatalf("unexpected error running janitor")
+		t.Fatalf("unexpected error running janitor: %s", err)
 	}
 
 	var sanitizedCalls []refreshCommitResolvabilityFuncInvocation

@@ -36,7 +36,7 @@ func TestStaleSourcedCommits(t *testing.T) {
 
 	sourcedCommits, err := store.StaleSourcedCommits(context.Background(), time.Minute, 5, now)
 	if err != nil {
-		t.Fatalf("unexpected error getting stale sourced commits")
+		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
 	expectedCommits := []SourcedCommits{
 		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1), makeCommit(2), makeCommit(3)}},
@@ -48,17 +48,17 @@ func TestStaleSourcedCommits(t *testing.T) {
 
 	// 120s away from next check (threshold is 60s)
 	if _, _, err := store.RefreshCommitResolvability(context.Background(), 50, makeCommit(1), false, now); err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability")
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
 	// 30s away from next check (threshold is 60s)
 	if _, _, err := store.RefreshCommitResolvability(context.Background(), 50, makeCommit(2), false, now.Add(time.Second*90)); err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability")
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
 	sourcedCommits, err = store.StaleSourcedCommits(context.Background(), time.Minute, 5, now.Add(time.Minute*2))
 	if err != nil {
-		t.Fatalf("unexpected error getting stale sourced commits")
+		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
 	}
 	expectedCommits = []SourcedCommits{
 		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1), makeCommit(3)}},
@@ -96,7 +96,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 
 	uploadsUpdated, indexesUpdated, err := store.RefreshCommitResolvability(context.Background(), 50, makeCommit(1), false, now)
 	if err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability")
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 	if uploadsUpdated != 2 {
 		t.Fatalf("unexpected uploads updated. want=%d have=%d", 2, uploadsUpdated)
@@ -107,7 +107,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 
 	uploadsUpdated, indexesUpdated, err = store.RefreshCommitResolvability(context.Background(), 52, makeCommit(7), true, now)
 	if err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability")
+		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 	if uploadsUpdated != 2 {
 		t.Fatalf("unexpected uploads updated. want=%d have=%d", 1, uploadsUpdated)
