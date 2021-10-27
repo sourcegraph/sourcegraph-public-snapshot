@@ -139,21 +139,12 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 		indexesAssignmentExpressions = append(indexesAssignmentExpressions, sqlf.Sprintf("state = 'deleted'"))
 	}
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(
+	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
 		refreshCommitResolvabilityQuery,
 		repositoryID, commit, sqlf.Join(uploadsAssignmentExpressions, ", "),
 		repositoryID, commit, sqlf.Join(indexesAssignmentExpressions, ", "),
-	))
+	)))
 	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if !rows.Next() {
-		return 0, 0, nil
-	}
-
-	if err := rows.Scan(&uploadsUpdated, &indexesUpdated); err != nil {
 		return 0, 0, err
 	}
 	traceLog(
@@ -201,3 +192,18 @@ SELECT
 	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
 	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
 `
+
+func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
+	if queryErr != nil {
+		return 0, 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return value1, value2, nil
+}
