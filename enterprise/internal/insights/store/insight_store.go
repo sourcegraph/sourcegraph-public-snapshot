@@ -600,7 +600,6 @@ i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_
 FROM insight_view iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
-         JOIN insight_view_grants ivg ON iv.id = ivg.insight_view_id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
 `

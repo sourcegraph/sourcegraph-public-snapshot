@@ -359,12 +359,6 @@ const getDashboardGrantsSql = `
 SELECT * FROM dashboard_grants where dashboard_id = %s
 `
 
-// const getDashboardGrantsByPermissionsSql = `
-// -- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
-// SELECT COUNT(*) FROM dashboard_grants as dg
-// WHERE dg.dashboard_id = %s AND %s
-// `
-
 const getDashboardGrantsByPermissionsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
 SELECT COUNT(*) FROM dashboard
