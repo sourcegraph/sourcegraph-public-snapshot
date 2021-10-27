@@ -241,12 +241,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 	}
 
+	// Collect all build failures (if any) and upload them on Grafana Cloud.
+	ops.Append(uploadBuildLogs())
+
 	// Construct pipeline
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
-
-	ops.Append(uploadBuildLogs())
 	ops.Apply(pipeline)
 	if err := ensureUniqueKeys(pipeline); err != nil {
 		return nil, err
