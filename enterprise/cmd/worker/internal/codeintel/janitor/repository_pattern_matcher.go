@@ -25,7 +25,6 @@ var _ goroutine.ErrorHandler = &repositoryPatternMatcher{}
 // The lookup table updates periodically with new patterns set in the repository_pattern column. Should that column be empty we delete
 // all the rows with that id in the lookup table.
 func NewRepositoryPatternMatcher(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, batchSize int, metrics *metrics) goroutine.BackgroundRoutine {
-	interval = time.Second
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &repositoryPatternMatcher{
 		dbStore:   dbStore,
 		lsifstore: lsifStore,
