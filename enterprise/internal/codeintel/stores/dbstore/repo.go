@@ -62,21 +62,21 @@ func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 const updateReposMatchingPatternsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/repo.go:UpdateReposMatchingPatterns
 WITH
-repos AS (
-	SELECT id
-	FROM repo
-	WHERE
-		deleted_at IS NULL AND
-		blocked IS NULL AND
-		(%s)
-),
-deleted AS (
-	DELETE FROM lsif_configuration_policies_repository_pattern_lookup
-	WHERE
-		policy_id = %s AND
-		-- Do not delete repos we're inserting
-		repo_id NOT IN (SELECT id FROM repos)
-)
+	repos AS (
+		SELECT id
+		FROM repo
+		WHERE
+			deleted_at IS NULL AND
+			blocked IS NULL AND
+			(%s)
+	),
+	deleted AS (
+		DELETE FROM lsif_configuration_policies_repository_pattern_lookup
+		WHERE
+			policy_id = %s AND
+			-- Do not delete repos we're inserting
+			repo_id NOT IN (SELECT id FROM repos)
+	)
 INSERT INTO lsif_configuration_policies_repository_pattern_lookup(policy_id, repo_id)
 SELECT %s, repos.id
 FROM repos
