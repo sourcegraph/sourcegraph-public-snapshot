@@ -8,6 +8,7 @@ import { MaybeLink } from '../MaybeLink'
 
 import { PieArc } from './components/PieArc'
 import { distributePieArcs } from './distribute-pie-data'
+import styles from './PieChart.module.scss'
 
 // Visual settings
 const DEFAULT_FILL_COLOR = 'var(--color-bg-3)'
@@ -83,7 +84,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
     }
 
     return (
-        <svg aria-label="Pie chart" className="pie-chart" width={width} height={height}>
+        <svg aria-label="Pie chart" width={width} height={height}>
             <Group top={centerY + padding.top} left={centerX + padding.left}>
                 <Pie
                     data={sortedData}
@@ -107,7 +108,7 @@ export function PieChart<Datum extends object>(props: PieChartProps<Datum>): Rea
                                         to={getLink(arc)}
                                         target="_blank"
                                         rel="noopener"
-                                        className="pie-chart__link"
+                                        className={styles.link}
                                         role={getLink(arc) ? 'link' : 'graphics-dataunit'}
                                         aria-label={`Element ${index + 1} of ${arcs.length}. Name: ${getKey(
                                             arc
