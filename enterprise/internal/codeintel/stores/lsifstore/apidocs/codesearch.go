@@ -222,7 +222,6 @@ func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Quer
 	}
 	if len(currentDisjointed) > 0 {
 		contiguousDisjointed = append(contiguousDisjointed, currentDisjointed)
-		currentDisjointed = currentDisjointed[:0]
 	}
 
 	distances := []string{" <-> ", " <2> ", " <4> ", " <5> "}
