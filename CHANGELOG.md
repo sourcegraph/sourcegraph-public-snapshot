@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.33.3
+
+### Fixed
+
+- Removed debug output that could lead to glitches in the `src batch [preview|apply]` TUI.
+
 ## 3.33.2
 
 ### Changed
