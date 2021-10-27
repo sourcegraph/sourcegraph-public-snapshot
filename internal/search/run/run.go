@@ -25,9 +25,11 @@ type SearchInputs struct {
 // object runs a search. The relation with SearchInputs and Jobs is that
 // SearchInputs are static values, parsed and validated, to produce Jobs. Jobs
 // express semantic behavior at runtime across different backends and system
-// architecture.
+// architecture. The third argument accepts resolved repositories (which may or
+// may not be required, depending on the job. E.g., a global search job does not
+// require upfront repository resolution).
 type Job interface {
-	Run(context.Context, streaming.Sender) error
+	Run(context.Context, streaming.Sender, []*search.RepositoryRevisions) error
 	Name() string
 }
 

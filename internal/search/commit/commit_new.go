@@ -24,23 +24,22 @@ import (
 
 type CommitSearch struct {
 	Query         gitprotocol.Node
-	Repos         []*search.RepositoryRevisions
 	Diff          bool
 	HasTimeFilter bool
 	Limit         int
 }
 
-func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender) error {
+func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
 	resultType := "commit"
 	if j.Diff {
 		resultType = "diff"
 	}
-	if err := CheckSearchLimits(j.HasTimeFilter, len(j.Repos), resultType); err != nil {
+	if err := CheckSearchLimits(j.HasTimeFilter, len(repos), resultType); err != nil {
 		return err
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range j.Repos {
+	for _, repoRev := range repos {
 		repoRev := repoRev // we close over repoRev in onMatches
 
 		// Skip the repo if no revisions were resolved for it
@@ -125,10 +124,9 @@ func HasTimeFilter(q query.Q) bool {
 	return hasTimeFilter
 }
 
-func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*CommitSearch, error) {
+func NewSearchJob(q query.Q, diff bool, limit int) (*CommitSearch, error) {
 	return &CommitSearch{
 		Query:         queryToGitQuery(q, diff),
-		Repos:         repos,
 		Diff:          diff,
 		Limit:         limit,
 		HasTimeFilter: HasTimeFilter(q),

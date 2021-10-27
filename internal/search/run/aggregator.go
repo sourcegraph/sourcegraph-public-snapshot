@@ -81,7 +81,7 @@ func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParamete
 	return errors.Wrap(err, "repository search failed")
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSearchMode) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos []*search.RepositoryRevisions, mode search.GlobalSearchMode) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
@@ -90,7 +90,7 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSe
 		tr.Finish()
 	}()
 
-	err = job.Run(ctx, a)
+	err = job.Run(ctx, a, repos)
 	return errors.Wrap(err, job.Name()+" search failed")
 
 }
