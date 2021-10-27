@@ -117,8 +117,9 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 
 	conds := make([]*sqlf.Query, 0, 3)
 	if opts.RepositoryID == 0 {
-		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL"))
+		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL AND p.repository_patterns IS NULL"))
 	} else {
+		// ?TODO: make use of repo pattern
 		conds = append(conds, sqlf.Sprintf("p.repository_id = %s", opts.RepositoryID))
 	}
 	if opts.ForDataRetention {
@@ -262,8 +263,9 @@ INSERT INTO lsif_configuration_policies (
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	index_intermediate_commits,
+	modified_at
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'now()')
 RETURNING
 	id,
 	repository_id,
@@ -277,7 +279,8 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
+	index_intermediate_commits,
+	modified_at
 `
 
 var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
@@ -379,7 +382,8 @@ UPDATE lsif_configuration_policies SET
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
 	index_commit_max_age_hours = %s,
-	index_intermediate_commits = %s
+	index_intermediate_commits = %s,
+	modified_at = now()
 WHERE id = %s
 `
 
@@ -413,8 +417,50 @@ candidate AS (
 	WHERE id = %s
 	ORDER BY id FOR UPDATE
 ),
-deletd AS (
+deleted AS (
 	DELETE FROM lsif_configuration_policies WHERE id IN (SELECT id FROM candidate WHERE NOT protected)
 )
 SELECT protected FROM candidate
 `
+
+const getAllConfigurationPolicies = `
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetAllConfigurationPolicies
+WITH policy AS (
+    SELECT
+	p.id
+    FROM lsif_configuration_policies p
+    ORDER BY p.last_resolved_at NULLS FIRST
+    LIMIT %d
+)
+UPDATE lsif_configuration_policies
+    SET last_resolved_At = NOW()
+    WHERE id IN (SELECT id FROM policy)
+	RETURNING
+		id,
+		repository_id,
+		repository_patterns,
+		name,
+		type,
+		pattern,
+		protected,
+		retention_enabled,
+		retention_duration_hours,
+		retain_intermediate_commits,
+		indexing_enabled,
+		index_commit_max_age_hours,
+		index_intermediate_commits
+`
+
+// TODO: Add comments
+func (s *Store) GetAllConfigurationPolicies(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
+	ctx, traceLog, endObservation := s.operations.createConfigurationPolicy.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getAllConfigurationPolicies, batchSize)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+
+	return configurationPolicies, nil
+}
