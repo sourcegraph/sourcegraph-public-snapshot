@@ -53,6 +53,13 @@ type MockDBStore struct {
 	// HardDeleteUploadByIDFunc is an instance of a mock function object
 	// controlling the behavior of the method HardDeleteUploadByID.
 	HardDeleteUploadByIDFunc *DBStoreHardDeleteUploadByIDFunc
+	// RepoIDsByGlobPatternFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoIDsByGlobPattern.
+	RepoIDsByGlobPatternFunc *DBStoreRepoIDsByGlobPatternFunc
+	// SelectPoliciesForRepositoryMembershipUpdateFunc is an instance of a
+	// mock function object controlling the behavior of the method
+	// SelectPoliciesForRepositoryMembershipUpdate.
+	SelectPoliciesForRepositoryMembershipUpdateFunc *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc
 	// SelectRepositoriesForRetentionScanFunc is an instance of a mock
 	// function object controlling the behavior of the method
 	// SelectRepositoriesForRetentionScan.
@@ -66,6 +73,10 @@ type MockDBStore struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *DBStoreTransactFunc
+	// UpdateReposMatchingPatternsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UpdateReposMatchingPatterns.
+	UpdateReposMatchingPatternsFunc *DBStoreUpdateReposMatchingPatternsFunc
 	// UpdateSourcedCommitsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateSourcedCommits.
 	UpdateSourcedCommitsFunc *DBStoreUpdateSourcedCommitsFunc
@@ -133,6 +144,16 @@ func NewMockDBStore() *MockDBStore {
 				return nil
 			},
 		},
+		RepoIDsByGlobPatternFunc: &DBStoreRepoIDsByGlobPatternFunc{
+			defaultHook: func(context.Context, string) ([]int, error) {
+				return nil, nil
+			},
+		},
+		SelectPoliciesForRepositoryMembershipUpdateFunc: &DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc{
+			defaultHook: func(context.Context, int) ([]dbstore.ConfigurationPolicy, error) {
+				return nil, nil
+			},
+		},
 		SelectRepositoriesForRetentionScanFunc: &DBStoreSelectRepositoriesForRetentionScanFunc{
 			defaultHook: func(context.Context, time.Duration, int) ([]int, error) {
 				return nil, nil
@@ -151,6 +172,11 @@ func NewMockDBStore() *MockDBStore {
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: func(context.Context) (DBStore, error) {
 				return nil, nil
+			},
+		},
+		UpdateReposMatchingPatternsFunc: &DBStoreUpdateReposMatchingPatternsFunc{
+			defaultHook: func(context.Context, []string, int) error {
+				return nil
 			},
 		},
 		UpdateSourcedCommitsFunc: &DBStoreUpdateSourcedCommitsFunc{
@@ -203,6 +229,12 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		HardDeleteUploadByIDFunc: &DBStoreHardDeleteUploadByIDFunc{
 			defaultHook: i.HardDeleteUploadByID,
 		},
+		RepoIDsByGlobPatternFunc: &DBStoreRepoIDsByGlobPatternFunc{
+			defaultHook: i.RepoIDsByGlobPattern,
+		},
+		SelectPoliciesForRepositoryMembershipUpdateFunc: &DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc{
+			defaultHook: i.SelectPoliciesForRepositoryMembershipUpdate,
+		},
 		SelectRepositoriesForRetentionScanFunc: &DBStoreSelectRepositoriesForRetentionScanFunc{
 			defaultHook: i.SelectRepositoriesForRetentionScan,
 		},
@@ -214,6 +246,9 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		TransactFunc: &DBStoreTransactFunc{
 			defaultHook: i.Transact,
+		},
+		UpdateReposMatchingPatternsFunc: &DBStoreUpdateReposMatchingPatternsFunc{
+			defaultHook: i.UpdateReposMatchingPatterns,
 		},
 		UpdateSourcedCommitsFunc: &DBStoreUpdateSourcedCommitsFunc{
 			defaultHook: i.UpdateSourcedCommits,
@@ -1445,6 +1480,231 @@ func (c DBStoreHardDeleteUploadByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBStoreRepoIDsByGlobPatternFunc describes the behavior when the
+// RepoIDsByGlobPattern method of the parent MockDBStore instance is
+// invoked.
+type DBStoreRepoIDsByGlobPatternFunc struct {
+	defaultHook func(context.Context, string) ([]int, error)
+	hooks       []func(context.Context, string) ([]int, error)
+	history     []DBStoreRepoIDsByGlobPatternFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoIDsByGlobPattern delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDBStore) RepoIDsByGlobPattern(v0 context.Context, v1 string) ([]int, error) {
+	r0, r1 := m.RepoIDsByGlobPatternFunc.nextHook()(v0, v1)
+	m.RepoIDsByGlobPatternFunc.appendCall(DBStoreRepoIDsByGlobPatternFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoIDsByGlobPattern
+// method of the parent MockDBStore instance is invoked and the hook queue
+// is empty.
+func (f *DBStoreRepoIDsByGlobPatternFunc) SetDefaultHook(hook func(context.Context, string) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoIDsByGlobPattern method of the parent MockDBStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *DBStoreRepoIDsByGlobPatternFunc) PushHook(hook func(context.Context, string) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreRepoIDsByGlobPatternFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreRepoIDsByGlobPatternFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, string) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreRepoIDsByGlobPatternFunc) nextHook() func(context.Context, string) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreRepoIDsByGlobPatternFunc) appendCall(r0 DBStoreRepoIDsByGlobPatternFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreRepoIDsByGlobPatternFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreRepoIDsByGlobPatternFunc) History() []DBStoreRepoIDsByGlobPatternFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreRepoIDsByGlobPatternFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreRepoIDsByGlobPatternFuncCall is an object that describes an
+// invocation of method RepoIDsByGlobPattern on an instance of MockDBStore.
+type DBStoreRepoIDsByGlobPatternFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreRepoIDsByGlobPatternFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreRepoIDsByGlobPatternFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc describes the
+// behavior when the SelectPoliciesForRepositoryMembershipUpdate method of
+// the parent MockDBStore instance is invoked.
+type DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc struct {
+	defaultHook func(context.Context, int) ([]dbstore.ConfigurationPolicy, error)
+	hooks       []func(context.Context, int) ([]dbstore.ConfigurationPolicy, error)
+	history     []DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall
+	mutex       sync.Mutex
+}
+
+// SelectPoliciesForRepositoryMembershipUpdate delegates to the next hook
+// function in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockDBStore) SelectPoliciesForRepositoryMembershipUpdate(v0 context.Context, v1 int) ([]dbstore.ConfigurationPolicy, error) {
+	r0, r1 := m.SelectPoliciesForRepositoryMembershipUpdateFunc.nextHook()(v0, v1)
+	m.SelectPoliciesForRepositoryMembershipUpdateFunc.appendCall(DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SelectPoliciesForRepositoryMembershipUpdate method of the parent
+// MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultHook(hook func(context.Context, int) ([]dbstore.ConfigurationPolicy, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SelectPoliciesForRepositoryMembershipUpdate method of the parent
+// MockDBStore instance invokes the hook at the front of the queue and
+// discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushHook(hook func(context.Context, int) ([]dbstore.ConfigurationPolicy, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) SetDefaultReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) PushReturn(r0 []dbstore.ConfigurationPolicy, r1 error) {
+	f.PushHook(func(context.Context, int) ([]dbstore.ConfigurationPolicy, error) {
+		return r0, r1
+	})
+}
+
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) nextHook() func(context.Context, int) ([]dbstore.ConfigurationPolicy, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) appendCall(r0 DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreSelectPoliciesForRepositoryMembershipUpdateFunc) History() []DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall is an object
+// that describes an invocation of method
+// SelectPoliciesForRepositoryMembershipUpdate on an instance of
+// MockDBStore.
+type DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []dbstore.ConfigurationPolicy
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreSelectPoliciesForRepositoryMembershipUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // DBStoreSelectRepositoriesForRetentionScanFunc describes the behavior when
 // the SelectRepositoriesForRetentionScan method of the parent MockDBStore
 // instance is invoked.
@@ -1888,6 +2148,118 @@ func (c DBStoreTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreUpdateReposMatchingPatternsFunc describes the behavior when the
+// UpdateReposMatchingPatterns method of the parent MockDBStore instance is
+// invoked.
+type DBStoreUpdateReposMatchingPatternsFunc struct {
+	defaultHook func(context.Context, []string, int) error
+	hooks       []func(context.Context, []string, int) error
+	history     []DBStoreUpdateReposMatchingPatternsFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateReposMatchingPatterns delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockDBStore) UpdateReposMatchingPatterns(v0 context.Context, v1 []string, v2 int) error {
+	r0 := m.UpdateReposMatchingPatternsFunc.nextHook()(v0, v1, v2)
+	m.UpdateReposMatchingPatternsFunc.appendCall(DBStoreUpdateReposMatchingPatternsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// UpdateReposMatchingPatterns method of the parent MockDBStore instance is
+// invoked and the hook queue is empty.
+func (f *DBStoreUpdateReposMatchingPatternsFunc) SetDefaultHook(hook func(context.Context, []string, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateReposMatchingPatterns method of the parent MockDBStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *DBStoreUpdateReposMatchingPatternsFunc) PushHook(hook func(context.Context, []string, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBStoreUpdateReposMatchingPatternsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []string, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBStoreUpdateReposMatchingPatternsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []string, int) error {
+		return r0
+	})
+}
+
+func (f *DBStoreUpdateReposMatchingPatternsFunc) nextHook() func(context.Context, []string, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreUpdateReposMatchingPatternsFunc) appendCall(r0 DBStoreUpdateReposMatchingPatternsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreUpdateReposMatchingPatternsFuncCall
+// objects describing the invocations of this function.
+func (f *DBStoreUpdateReposMatchingPatternsFunc) History() []DBStoreUpdateReposMatchingPatternsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreUpdateReposMatchingPatternsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreUpdateReposMatchingPatternsFuncCall is an object that describes an
+// invocation of method UpdateReposMatchingPatterns on an instance of
+// MockDBStore.
+type DBStoreUpdateReposMatchingPatternsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreUpdateReposMatchingPatternsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreUpdateReposMatchingPatternsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBStoreUpdateSourcedCommitsFunc describes the behavior when the
