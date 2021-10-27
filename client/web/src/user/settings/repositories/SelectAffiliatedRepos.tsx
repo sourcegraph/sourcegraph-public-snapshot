@@ -8,7 +8,7 @@ import { ErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { Container, PageSelector } from '@sourcegraph/wildcard'
 
 import { RepoSelectionMode } from '../../../auth/PostSignUpPage'
-import { useSteps } from '@sourcegraph/wildcard/src/components/Steps/context'
+import { useSteps } from '@sourcegraph/wildcard'
 import { useAffiliatedRepos } from '../../../auth/useAffiliatedRepos'
 import { useExternalServices } from '../../../auth/useExternalServices'
 import { useSelectedRepos, selectedReposVar, MinSelectedRepo } from '../../../auth/useSelectedRepos'
