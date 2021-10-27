@@ -207,24 +207,6 @@ exports[`UserNavItem simple 1`] = `
                   </Link>
                   <Link
                     className="dropdown-item"
-                    to="/extensions"
-                  >
-                    <LinkAnchor
-                      className="dropdown-item"
-                      href="/extensions"
-                      navigate={[Function]}
-                    >
-                      <a
-                        className="dropdown-item"
-                        href="/extensions"
-                        onClick={[Function]}
-                      >
-                        Extensions
-                      </a>
-                    </LinkAnchor>
-                  </Link>
-                  <Link
-                    className="dropdown-item"
                     to="/users/alice/settings/repositories"
                   >
                     <LinkAnchor
@@ -422,6 +404,13 @@ exports[`UserNavItem simple 1`] = `
                       </a>
                     </LinkAnchor>
                   </Link>
+                  <button
+                    className="dropdown-item"
+                    onClick={[Function]}
+                    type="button"
+                  >
+                    Keyboard shortcuts
+                  </button>
                   <a
                     className="dropdown-item"
                     href="/-/sign-out"
