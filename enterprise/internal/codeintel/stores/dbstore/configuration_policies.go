@@ -443,28 +443,33 @@ func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context,
 
 const selectPoliciesForRepositoryMembershipUpdate = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:SelectPoliciesForRepositoryMembershipUpdate
-WITH policy AS (
-    SELECT
-	p.id
-    FROM lsif_configuration_policies p
-    ORDER BY p.last_resolved_at NULLS FIRST
-    LIMIT %d
+WITH
+candidate_policies AS (
+	SELECT p.id
+	FROM lsif_configuration_policies p
+	ORDER BY p.last_resolved_at NULLS FIRST
+	LIMIT %d
+),
+locked_policies AS (
+	SELECT p.id
+	FROM candidate_policies
+	ORDER BY p.id FOR UPDATE
 )
 UPDATE lsif_configuration_policies
-    SET last_resolved_At = NOW()
-    WHERE id IN (SELECT id FROM policy)
-	RETURNING
-		id,
-		repository_id,
-		repository_patterns,
-		name,
-		type,
-		pattern,
-		protected,
-		retention_enabled,
-		retention_duration_hours,
-		retain_intermediate_commits,
-		indexing_enabled,
-		index_commit_max_age_hours,
-		index_intermediate_commits
+SET last_resolved_At = NOW()
+WHERE id IN (SELECT id FROM locked_policies)
+RETURNING
+	id,
+	repository_id,
+	repository_patterns,
+	name,
+	type,
+	pattern,
+	protected,
+	retention_enabled,
+	retention_duration_hours,
+	retain_intermediate_commits,
+	indexing_enabled,
+	index_commit_max_age_hours,
+	index_intermediate_commits
 `
