@@ -94,7 +94,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(database.NewDB(db), &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
 				r := toGitCommitResolver(repo, db, "c1", nil)

@@ -60,6 +60,11 @@ A series of data about a code insight.
 """
 type InsightsSeries {
     """
+    Unique ID for the series.
+    """
+    seriesId: String!
+
+    """
     The label used to describe this series of data points.
     """
     label: String!
@@ -771,7 +776,7 @@ Defines an insight data series that is constructed from a Sourcegraph search que
 """
 type SearchInsightDataSeriesDefinition {
     """
-    The unique ID for the series.
+    Unique ID for the series.
     """
     seriesId: String!
     """

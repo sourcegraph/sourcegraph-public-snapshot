@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -138,41 +137,6 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 	return nil, nil
 }
 
-// canRevokeReadAccess returns true if the given access level is able to revoke
-// read account for a depot prefix.
-func (p *Provider) canRevokeReadAccess(level string) bool {
-	_, canRevokeReadAccess := map[string]struct{}{
-		"list":   {},
-		"read":   {},
-		"=read":  {},
-		"open":   {},
-		"write":  {},
-		"review": {},
-		"owner":  {},
-		"admin":  {},
-		"super":  {},
-	}[level]
-	return canRevokeReadAccess
-}
-
-// canGrantReadAccess returns true if the given access level is able to grant
-// read account for a depot prefix.
-func (p *Provider) canGrantReadAccess(level string) bool {
-	_, canGrantReadAccess := map[string]struct{}{
-		"read":   {},
-		"=read":  {},
-		"open":   {},
-		"=open":  {},
-		"write":  {},
-		"=write": {},
-		"review": {},
-		"owner":  {},
-		"admin":  {},
-		"super":  {},
-	}[level]
-	return canGrantReadAccess
-}
-
 // FetchUserPerms returns a list of depot prefixes that the given user has
 // access to on the Perforce Server.
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
@@ -198,109 +162,21 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 	defer func() { _ = rc.Close() }()
 
-	const (
-		wildcardMatchAll       = "%"     // for Perforce '...'
-		wildcardMatchDirectory = "[^/]+" // for Perforce '*'
-	)
-
-	var includeContains, excludeContains []extsvc.RepoID
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Skip comments
-		if strings.HasPrefix(line, "##") {
-			continue
-		}
-
-		// Trim comments
-		i := strings.Index(line, "##")
-		if i > -1 {
-			line = line[:i]
-		}
-
-		// e.g. read user alice * //Sourcegraph/...
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			continue
-		}
-		level := fields[0]      // e.g. read
-		depotMatch := fields[4] // e.g. //Sourcegraph/*/dir/...
-
-		// NOTE: Manipulations made to `depotContains` will affect the behaviour of
-		// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
-		depotContains := depotMatch
-
-		// '...' matches all files under the current working directory and all subdirectories.
-		// Matches anything, including slashes, and does so across subdirectories.
-		// Replace with '%' for PostgreSQL's LIKE and SIMILAR TO.
-		//
-		// At first, we drop trailing '...' so that we can check for prefixes (see below).
-		// We assume all paths are prefixes, so add 'wildcardMatchAll' to all contains
-		// later on.
-		depotContains = strings.TrimRight(depotContains, ".")
-		depotContains = strings.ReplaceAll(depotContains, "...", wildcardMatchAll)
-
-		// '*' matches all characters except slashes within one directory.
-		// Replace with character class that matches anything except another '/' supported
-		// by PostgreSQL's SIMILAR TO.
-		depotContains = strings.ReplaceAll(depotContains, "*", wildcardMatchDirectory)
-
-		// Rule that starts with a "-" in depot prefix means exclusion (i.e. revoke access)
-		if strings.HasPrefix(depotContains, "-") {
-			depotContains = depotContains[1:]
-
-			if !p.canRevokeReadAccess(level) {
-				continue
-			}
-
-			if strings.Contains(depotContains, wildcardMatchAll) ||
-				strings.Contains(depotContains, wildcardMatchDirectory) {
-				// Always include wildcard matches, because we don't know what they might
-				// be matching on.
-				excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
-			} else {
-				// Otherwise, only include an exclude if a corresponding include exists.
-				for i, prefix := range includeContains {
-					if !strings.HasPrefix(depotContains, string(prefix)) {
-						continue
-					}
-
-					// Perforce ACLs can have conflict rules and the later one wins. So if there is
-					// an exact match for an include prefix, we take it out.
-					if depotContains == string(prefix) {
-						includeContains = append(includeContains[:i], includeContains[i+1:]...)
-						break
-					}
-
-					excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
-					break
-				}
-			}
-
-		} else {
-			if !p.canGrantReadAccess(level) {
-				continue
-			}
-
-			includeContains = append(includeContains, extsvc.RepoID(depotContains))
-		}
-	}
+	// Pull permissions from protects file.
+	perms := &authz.ExternalUserPermissions{}
+	err = scanProtects(rc, repoIncludesExcludesScanner(perms))
 
 	// Treat all paths as prefixes.
-	for i, include := range includeContains {
-		includeContains[i] = extsvc.RepoID(string(include) + wildcardMatchAll)
+	for i, include := range perms.IncludeContains {
+		perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresWildcardMatchAll)
 	}
-	for i, exclude := range excludeContains {
-		excludeContains[i] = extsvc.RepoID(string(exclude) + wildcardMatchAll)
+	for i, exclude := range perms.ExcludeContains {
+		perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresWildcardMatchAll)
 	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
-	return &authz.ExternalUserPermissions{
-		IncludeContains: includeContains,
-		ExcludeContains: excludeContains,
-	}, errors.Wrap(scanner.Err(), "scanner.Err")
+	return perms, errors.Wrap(err, "scanRepoIncludesExcludes.Err")
 }
 
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
@@ -412,8 +288,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	}
 	defer func() { _ = rc.Close() }()
 
-	users, err := p.scanAllUsers(ctx, rc)
-	if err != nil {
+	users := make(map[string]struct{})
+	if err := scanProtects(rc, allUsersScanner(ctx, p, users)); err != nil {
 		return nil, errors.Wrap(err, "scanning protects")
 	}
 
@@ -430,103 +306,6 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 		extIDs = append(extIDs, extsvc.AccountID(email))
 	}
 	return extIDs, nil
-}
-
-// scanAllUsers is intended to scan the output of `protects -a` and will
-// return a map of users
-func (p *Provider) scanAllUsers(ctx context.Context, rc io.ReadCloser) (map[string]struct{}, error) {
-	users := make(map[string]struct{})
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Skip comments
-		if strings.HasPrefix(line, "##") {
-			continue
-		}
-
-		// Trim trailing comments
-		i := strings.Index(line, "##")
-		if i > -1 {
-			line = line[:i]
-		}
-
-		// Trim whitespace
-		line = strings.TrimSpace(line)
-
-		// e.g. write user alice * //Sourcegraph/...
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			continue
-		}
-		level := fields[0]                              // e.g. read
-		typ := fields[1]                                // e.g. user
-		name := fields[2]                               // e.g. alice
-		depotMatch := strings.TrimRight(fields[4], ".") // e.g. //Sourcegraph/
-
-		// Rule that starts with a "-" in depot match means exclusion (i.e. revoke access)
-		if strings.HasPrefix(depotMatch, "-") {
-			if !p.canRevokeReadAccess(level) {
-				continue
-			}
-
-			switch typ {
-			case "user":
-				if name == "*" {
-					users = make(map[string]struct{})
-				} else {
-					delete(users, name)
-				}
-			case "group":
-				members, err := p.getGroupMembers(ctx, name)
-				if err != nil {
-					return nil, errors.Wrapf(err, "list members of group %q", name)
-				}
-				for _, member := range members {
-					delete(users, member)
-				}
-
-			default:
-				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
-			}
-		} else {
-			if !p.canGrantReadAccess(level) {
-				continue
-			}
-
-			switch typ {
-			case "user":
-				if name == "*" {
-					all, err := p.getAllUsers(ctx)
-					if err != nil {
-						return nil, errors.Wrap(err, "list all users")
-					}
-					for _, user := range all {
-						users[user] = struct{}{}
-					}
-				} else {
-					users[name] = struct{}{}
-				}
-			case "group":
-				members, err := p.getGroupMembers(ctx, name)
-				if err != nil {
-					return nil, errors.Wrapf(err, "list members of group %q", name)
-				}
-				for _, member := range members {
-					users[member] = struct{}{}
-				}
-
-			default:
-				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", typ)
-			}
-		}
-
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanner.Err")
-	}
-
-	return users, nil
 }
 
 func (p *Provider) ServiceType() string {
