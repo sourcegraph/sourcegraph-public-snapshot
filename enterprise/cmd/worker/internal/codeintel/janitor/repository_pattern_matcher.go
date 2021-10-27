@@ -44,10 +44,7 @@ func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
 	for _, policy := range policies {
 		var patterns []string
 		if policy.RepositoryPatterns != nil {
-			patterns = make([]string, 0, len(*policy.RepositoryPatterns))
-			for _, pattern := range *policy.RepositoryPatterns {
-				patterns = append(patterns, pattern)
-			}
+			patterns = *policy.RepositoryPatterns
 		}
 
 		if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID); err != nil {
