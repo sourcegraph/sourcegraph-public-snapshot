@@ -341,7 +341,6 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		}
 
 		r.views = r.insightStore.GroupByView(ctx, viewSeries)
-		log15.Info("computeInsightViews", "count", len(r.views))
 
 		// r.dashboards = dashboards
 		// for _, dashboard := range dashboards {

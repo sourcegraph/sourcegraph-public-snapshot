@@ -106,7 +106,6 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 // dashboards with a global grant.
 func getUserPermissions(ctx context.Context, orgStore *database.OrgStore) (userIds []int, orgIds []int, err error) {
 	userId := actor.FromContext(ctx).UID
-	log15.Info("getUserPermissions", "uid", userId)
 	if userId != 0 {
 		var orgs []*types.Org
 		orgs, err = orgStore.GetByUserID(ctx, userId)
