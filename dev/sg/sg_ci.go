@@ -244,8 +244,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					return err
 				}
 
-				var build *buildkite.Build
-				build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				build, err := client.GetMostRecentBuild(ctx, "sourcegraph", branch)
 				if err != nil {
 					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 				}
