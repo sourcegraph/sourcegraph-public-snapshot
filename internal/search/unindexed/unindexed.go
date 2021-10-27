@@ -303,6 +303,7 @@ func callSearcherOverRepos(
 }
 
 type TextSearch struct {
+	RepoFetcher     RepoFetcher
 	Zoekt           zoektutil.IndexedSearchRequest
 	Searcher        *search.SearcherParameters
 	NotSearcherOnly bool

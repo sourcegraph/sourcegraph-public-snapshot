@@ -56,6 +56,10 @@ func NewRepoFetcher(stream streaming.Sender, args *search.TextParameters) RepoFe
 	}
 }
 
+func (r *RepoFetcher) Get(ctx context.Context) ([]*search.RepositoryRevisions, error) {
+
+}
+
 // GetPartition returns the repository data to run structural search on. Importantly, it
 // allows parameterizing the request to specify a context, for when multiple
 // Get() calls are required with different limits or timeouts.
