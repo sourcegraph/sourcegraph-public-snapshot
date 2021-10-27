@@ -57,7 +57,7 @@ func newBatchSpecWorkspaceExecutionWorkerResetter(workerStore dbworkerstore.Stor
 var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 	Name:              "batch_spec_workspace_execution_worker_store",
 	TableName:         "batch_spec_workspace_execution_jobs",
-	ColumnExpressions: store.BatchSpecWorkspaceExecutionJobColums.ToSqlf(),
+	ColumnExpressions: store.BatchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
 	Scan:              scanFirstBatchSpecWorkspaceExecutionJobRecord,
 	// This needs to be kept in sync with the placeInQueue fragment in the batch
 	// spec execution jobs store.
@@ -169,7 +169,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	if err != nil {
 		// Rollback transaction but ignore rollback errors
 		tx.Done(err)
-		return s.Store.With(tx).MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
+		return s.Store.MarkFailed(ctx, id, fmt.Sprintf("failed to extract changeset IDs ID: %s", err), options)
 	}
 
 	err = deleteAccessToken(ctx, tx, job.AccessTokenID)
@@ -190,21 +190,38 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 	return ok, tx.Done(err)
 }
 
-const setChangesetSpecIDsOnBatchSpecWorkspace = `
-UPDATE batch_spec_workspaces SET changeset_spec_ids = %s WHERE id = %s
+const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
+UPDATE
+	batch_spec_workspaces
+SET
+	changeset_spec_ids = %s
+WHERE id = %s
 `
 
-const setBatchSpecIDOnChangesetSpecs = `
-UPDATE changeset_specs
-SET batch_spec_id = (SELECT batch_spec_id FROM batch_spec_workspaces WHERE id = %s LIMIT 1)
-WHERE id = ANY (%s)
+const setBatchSpecIDOnChangesetSpecsQueryFmtstr = `
+UPDATE
+	changeset_specs
+SET
+	batch_spec_id = (
+		SELECT
+			batch_spec_workspaces.batch_spec_id
+		FROM
+			batch_spec_workspaces
+		WHERE
+			batch_spec_workspaces.id = %s
+		LIMIT 1
+	)
+WHERE
+	changeset_specs.id = ANY (%s)
 `
 
 func setChangesetSpecIDs(ctx context.Context, tx *store.Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
-	// Set the batch_spec_id on the changeset_specs that were created
-	err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecs, batchSpecWorkspaceID, pq.Array(changesetSpecIDs)))
-	if err != nil {
-		return err
+	if len(changesetSpecIDs) > 0 {
+		// Set the batch_spec_id on the changeset_specs that were created.
+		err := tx.Exec(ctx, sqlf.Sprintf(setBatchSpecIDOnChangesetSpecsQueryFmtstr, batchSpecWorkspaceID, pq.Array(changesetSpecIDs)))
+		if err != nil {
+			return err
+		}
 	}
 
 	m := make(map[int64]struct{}, len(changesetSpecIDs))
@@ -217,7 +234,7 @@ func setChangesetSpecIDs(ctx context.Context, tx *store.Store, batchSpecWorkspac
 	}
 
 	// Set changeset_spec_ids on the batch_spec_workspace
-	return tx.Exec(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspace, marshaledIDs, batchSpecWorkspaceID))
+	return tx.Exec(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr, marshaledIDs, batchSpecWorkspaceID))
 }
 
 func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int64) (*btypes.BatchSpecWorkspaceExecutionJob, []int64, error) {
@@ -235,7 +252,7 @@ func loadAndExtractChangesetSpecIDs(ctx context.Context, s *store.Store, id int6
 		return job, []int64{}, err
 	}
 
-	specs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{LimitOpts: store.LimitOpts{Limit: 0}, RandIDs: randIDs})
+	specs, _, err := s.ListChangesetSpecs(ctx, store.ListChangesetSpecsOpts{RandIDs: randIDs})
 	if err != nil {
 		return job, []int64{}, err
 	}
@@ -275,7 +292,8 @@ func extractChangesetSpecRandIDs(logs []workerutil.ExecutionLogEntry) ([]string,
 		if m, ok := l.Metadata.(*batcheslib.UploadingChangesetSpecsMetadata); ok {
 			rawIDs := m.IDs
 			if len(rawIDs) == 0 {
-				return nil, ErrNoChangesetSpecIDs
+				// No changesets were the result of this execution. That's fine!
+				return []string{}, nil
 			}
 
 			var randIDs []string

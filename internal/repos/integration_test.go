@@ -51,7 +51,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			db := dbtest.NewDB(t, *dsn)
+			db := dbtest.NewFromDSN(t, *dsn)
 			dbconn.Global = db
 
 			store := repos.NewStore(db, sql.TxOptions{Isolation: sql.LevelReadCommitted})

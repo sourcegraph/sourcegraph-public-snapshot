@@ -7,3 +7,4 @@ export { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from './Nav
 export { PageHeader } from './PageHeader'
 export { PageSelector } from './PageSelector'
 export { Tabs, Tab, TabList, TabPanel, TabPanels } from './Tabs'
+export { SourcegraphIcon } from './SourcegraphIcon'

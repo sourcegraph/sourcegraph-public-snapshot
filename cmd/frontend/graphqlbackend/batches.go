@@ -223,6 +223,10 @@ type ListImportingChangesetsArgs struct {
 	Search *string
 }
 
+type BatchSpecWorkspaceStepArgs struct {
+	Index int32
+}
+
 type BatchChangesResolver interface {
 	//
 	// MUTATIONS
@@ -755,6 +759,7 @@ type BatchSpecWorkspaceResolver interface {
 	ID() graphql.ID
 
 	State() string
+	QueuedAt() *DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	FailureMessage() *string
@@ -767,6 +772,7 @@ type BatchSpecWorkspaceResolver interface {
 
 	Branch(ctx context.Context) (*GitRefResolver, error)
 	Path() string
+	Step(ctx context.Context, args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
 	Steps(ctx context.Context) ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
 	OnlyFetchWorkspace() bool

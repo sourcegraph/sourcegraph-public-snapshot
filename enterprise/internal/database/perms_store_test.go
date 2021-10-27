@@ -17,17 +17,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func cleanupPermsTables(t *testing.T, s *PermsStore) {
@@ -2709,8 +2704,7 @@ func testPermsStore_ReposIDsWithOldestPerms(db *sql.DB) func(*testing.T) {
 				return
 			}
 
-			q := `TRUNCATE TABLE external_services, repo CASCADE`
-			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+			if err := s.execute(ctx, sqlf.Sprintf(`DELETE FROM repo`)); err != nil {
 				t.Fatal(err)
 			}
 		})
@@ -2802,88 +2796,6 @@ WHERE repo_id = 2`, clock().AddDate(1, 0, 0))
 		if diff := cmp.Diff(wantResults, results); diff != "" {
 			t.Fatalf("Results mismatch (-want +got):\n%s", diff)
 		}
-	}
-}
-
-func testPermsStore_UserIsMemberOfOrgHasCodeHostConnection(db *sql.DB) func(*testing.T) {
-	return func(t *testing.T) {
-		s := Perms(db, clock)
-		ctx := context.Background()
-		t.Cleanup(func() {
-			if t.Failed() {
-				return
-			}
-
-			q := `TRUNCATE TABLE external_services, orgs, users CASCADE`
-			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
-				t.Fatal(err)
-			}
-		})
-
-		// Set up users with:
-		//  1. Is not a member of any organization
-		//  2. Is a member of an organization without a code host connection
-		//  3. Is a member of an organization with a code host connection
-		users := database.Users(db)
-		alice, err := users.Create(ctx,
-			database.NewUser{
-				Email:           "alice@example.com",
-				Username:        "alice",
-				EmailIsVerified: true,
-			},
-		)
-		require.NoError(t, err)
-		bob, err := users.Create(ctx,
-			database.NewUser{
-				Email:           "bob@example.com",
-				Username:        "bob",
-				EmailIsVerified: true,
-			},
-		)
-		require.NoError(t, err)
-		cindy, err := users.Create(ctx,
-			database.NewUser{
-				Email:           "cindy@example.com",
-				Username:        "cindy",
-				EmailIsVerified: true,
-			},
-		)
-		require.NoError(t, err)
-
-		orgs := database.Orgs(db)
-		bobOrg, err := orgs.Create(ctx, "bob-org", nil)
-		require.NoError(t, err)
-		cindyOrg, err := orgs.Create(ctx, "cindy-org", nil)
-		require.NoError(t, err)
-
-		orgMembers := database.OrgMembers(db)
-		_, err = orgMembers.Create(ctx, bobOrg.ID, bob.ID)
-		require.NoError(t, err)
-		_, err = orgMembers.Create(ctx, cindyOrg.ID, cindy.ID)
-		require.NoError(t, err)
-
-		err = database.ExternalServices(db).Create(ctx,
-			func() *conf.Unified { return &conf.Unified{} },
-			&types.ExternalService{
-				Kind:           extsvc.KindGitHub,
-				DisplayName:    "GitHub (cindy-org)",
-				Config:         `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-				NamespaceOrgID: cindyOrg.ID,
-			},
-		)
-		require.NoError(t, err)
-
-		has, err := s.UserIsMemberOfOrgHasCodeHostConnection(ctx, alice.ID)
-		assert.NoError(t, err)
-		assert.False(t, has)
-
-		has, err = s.UserIsMemberOfOrgHasCodeHostConnection(ctx, bob.ID)
-		assert.NoError(t, err)
-		assert.False(t, has)
-
-		has, err = s.UserIsMemberOfOrgHasCodeHostConnection(ctx, cindy.ID)
-		assert.NoError(t, err)
-		assert.True(t, has)
 	}
 }
 

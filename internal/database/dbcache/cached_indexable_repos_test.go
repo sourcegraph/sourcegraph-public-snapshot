@@ -38,7 +38,7 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Run("user-added repos", func(t *testing.T) {
-		db := dbtest.NewDB(t, "")
+		db := dbtest.NewDB(t)
 		ctx := context.Background()
 
 		es := createExternalService(ctx, db)
@@ -130,7 +130,7 @@ func TestListIndexableRepos(t *testing.T) {
 }
 
 func BenchmarkIndexableRepos_List_Empty(b *testing.B) {
-	db := dbtest.NewDB(b, "")
+	db := dbtest.NewDB(b)
 
 	ctx := context.Background()
 	select {

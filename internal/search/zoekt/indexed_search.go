@@ -205,7 +205,7 @@ func fallbackUnindexed(repos []*search.RepositoryRevisions, limit int, onMissing
 	}
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, globalSearch bool, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
 	// If Zoekt is disabled just fallback to Unindexed.
 	if args.Zoekt == nil {
 		if args.PatternInfo.Index == query.Only {
@@ -234,7 +234,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, t
 		Zoekt:          args.Zoekt,
 	}
 
-	if args.Mode == search.ZoektGlobalSearch {
+	if globalSearch {
 		// performance: optimize global searches where Zoekt searches
 		// all shards anyway.
 		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
@@ -353,6 +353,9 @@ const maxUnindexedRepoRevSearchesPerQuery = 200
 type OnMissingRepoRevs func([]*search.RepositoryRevisions)
 
 func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
+	if stream == nil {
+		return func([]*search.RepositoryRevisions) {}
+	}
 	return func(repoRevs []*search.RepositoryRevisions) {
 		var status search.RepoStatusMap
 		for _, r := range repoRevs {
