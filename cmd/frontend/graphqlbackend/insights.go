@@ -17,6 +17,7 @@ type InsightsResolver interface {
 	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -284,4 +285,9 @@ type LineChartOptionsInput struct {
 
 type CreateInsightResultResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
+}
+
+type InsightViewQueryArgs struct {
+	First *int32
+	After *string
 }

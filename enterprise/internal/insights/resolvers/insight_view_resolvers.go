@@ -2,7 +2,14 @@ package resolvers
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 
 	"github.com/cockroachdb/errors"
 
@@ -30,6 +37,7 @@ var _ graphqlbackend.CreateInsightResultResolver = &createInsightResultResolver{
 var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
 var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
 var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
+var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
 
 type insightViewResolver struct {
 	view *types.Insight
@@ -264,4 +272,83 @@ type insightDataSeriesDefinitionUnionResolver struct {
 func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefinition() (graphqlbackend.SearchInsightDataSeriesDefinitionResolver, bool) {
 	res, ok := r.resolver.(*searchInsightDataSeriesDefinitionResolver)
 	return res, ok
+}
+
+func (r *Resolver) InsightViews(ctx context.Context, args *graphqlbackend.InsightViewQueryArgs) (graphqlbackend.InsightViewConnectionResolver, error) {
+	return &InsightViewQueryConnectionResolver{
+		baseInsightResolver: r.baseInsightResolver,
+		args:                args,
+	}, nil
+}
+
+type InsightViewQueryConnectionResolver struct {
+	baseInsightResolver
+
+	args *graphqlbackend.InsightViewQueryArgs
+
+	// Cache results because they are used by multiple fields
+	once  sync.Once
+	views []types.Insight
+	next  int64
+	err   error
+}
+
+func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
+	resolvers := make([]graphqlbackend.InsightViewResolver, 0)
+
+	views, _, err := d.computeViews(ctx)
+	if err != nil {
+		return nil, err
+	}
+	for i := range views {
+		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+	}
+	return resolvers, nil
+}
+
+func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return graphqlutil.HasNextPage(false), nil
+}
+
+func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, int64, error) {
+	r.once.Do(func() {
+		orgStore := database.Orgs(r.postgresDB)
+
+		args := store.InsightQueryArgs{}
+		if r.args.After != nil {
+			var afterID string
+			err := relay.UnmarshalSpec(graphql.ID(*r.args.After), &afterID)
+			if err != nil {
+				r.err = errors.Wrap(err, "unmarshalID")
+				return
+			}
+			args.After = afterID
+		}
+		if r.args.First != nil {
+			args.Limit = int(*r.args.First)
+		}
+		var err error
+		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+		if err != nil {
+			r.err = errors.Wrap(err, "getUserPermissions")
+			return
+		}
+
+		viewSeries, err := r.insightStore.GetAll(ctx, args)
+		if err != nil {
+			r.err = err
+			return
+		}
+
+		r.views = r.insightStore.GroupByView(ctx, viewSeries)
+		log15.Info("computeInsightViews", "count", len(r.views))
+
+		// r.dashboards = dashboards
+		// for _, dashboard := range dashboards {
+		// 	if int64(dashboarr.ID) > r.next {
+		// 		r.next = int64(dashboarr.ID)
+		// 	}
+		// }
+	})
+	return r.views, r.next, r.err
 }
