@@ -1191,6 +1191,8 @@ type ParentSourcegraph struct {
 
 // PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
 type PerforceAuthorization struct {
+	// SubRepoPermissions description: Experimental: infer sub-repository permissions from protection rules.
+	SubRepoPermissions bool `json:"subRepoPermissions,omitempty"`
 }
 
 // PerforceConnection description: Configuration for a connection to Perforce Server.
