@@ -77,7 +77,8 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     },
     submitSearch: (parameters, updates = []) => {
         const query = updateQuery(get().queryState.query, updates)
-        if (query !== '') {
+        // A standalone context: filter is also a valid search query
+        if (query !== '' || parameters.selectedSearchContextSpec) {
             submitSearch({ ...parameters, query })
         }
     },
