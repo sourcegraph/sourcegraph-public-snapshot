@@ -62,7 +62,7 @@ func (p *p4ProtectLine) grantsReadAccess() bool {
 	return canGrantReadAccess
 }
 
-// affectsReadAccess returns true if this line changes read access
+// affectsReadAccess returns true if this line changes read access.
 func (p *p4ProtectLine) affectsReadAccess() bool {
 	return (p.isExclusion && p.revokesReadAccess()) ||
 		(!p.isExclusion && p.grantsReadAccess())
