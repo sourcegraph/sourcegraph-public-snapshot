@@ -45,7 +45,7 @@ func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
 		var patterns []string
 		if policy.RepositoryPatterns != nil {
 			patterns = make([]string, 0, len(*policy.RepositoryPatterns))
-			for _, pattern := range patterns {
+			for _, pattern := range *policy.RepositoryPatterns {
 				patterns = append(patterns, pattern)
 			}
 		}
