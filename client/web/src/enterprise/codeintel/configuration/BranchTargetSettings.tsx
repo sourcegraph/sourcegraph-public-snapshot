@@ -134,7 +134,7 @@ const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps>
             <>
                 <div className={styles.grid}>
                     {policy.repositoryPatterns.map((repositoryPattern, index) => (
-                        <Temporary
+                        <ReposMatchingPattern
                             key={index}
                             index={index}
                             pattern={repositoryPattern}
@@ -182,7 +182,7 @@ const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps>
     </div>
 )
 
-interface TemporaryProps {
+interface ReposMatchingPatternProps {
     index: number
     pattern: string
     setPattern: (value: string) => void
@@ -190,7 +190,13 @@ interface TemporaryProps {
     disabled: boolean
 }
 
-const Temporary: FunctionComponent<TemporaryProps> = ({ index, pattern, setPattern, onDelete, disabled }) => {
+const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> = ({
+    index,
+    pattern,
+    setPattern,
+    onDelete,
+    disabled,
+}) => {
     const [previewPattern, setPreviewPattern] = useState(pattern)
     const debouncedSetPattern = useMemo(() => debounce(value => setPreviewPattern(value), DEBOUNCED_WAIT), [])
 
