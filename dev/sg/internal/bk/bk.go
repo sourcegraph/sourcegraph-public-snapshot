@@ -3,7 +3,6 @@ package bk
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -24,11 +23,6 @@ type buildkiteSecrets struct {
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
 func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
-	if tok := os.Getenv("BUILDKITE_API_TOKEN"); tok != "" {
-		// If the token is provided by the environment, use that one.
-		return tok, nil
-	}
-
 	sec := secrets.FromContext(ctx)
 	bkSecrets := buildkiteSecrets{}
 	err := sec.Get("buildkite", &bkSecrets)
@@ -93,7 +87,6 @@ func (c *Client) GetMostRecentBuild(ctx context.Context, pipeline, branch string
 	if len(builds) == 0 {
 		return nil, errors.New("no builds found")
 	}
-
 	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
 	return &builds[0], nil
 }
