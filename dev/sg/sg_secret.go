@@ -6,6 +6,7 @@ import (
 	"flag"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
 var (
@@ -64,7 +65,7 @@ func listSecretExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	secretsStore.Display()
+	secrets.List(secretsStore)
 
 	return nil
 }
