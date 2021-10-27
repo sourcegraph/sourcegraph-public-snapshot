@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -134,30 +135,44 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func repositoryByID(ctx context.Context, id graphql.ID, db dbutil.DB) (*graphqlbackend.RepositoryResolver, error) {
+func unmarshalRepositoryID(id graphql.ID) (*api.RepoID, error) {
 	var repoID api.RepoID
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := database.Repos(db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewRepositoryResolver(db, repo), nil
+	return &repoID, nil
 }
 
 func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	repoIDs := make([]api.RepoID, 0, len(args))
 	for _, repository := range args {
-		repoResolver, err := repositoryByID(ctx, repository.RepositoryID, r.db)
+		repoID, err := unmarshalRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
+		repoIDs = append(repoIDs, *repoID)
+	}
+	repos, err := database.Repos(r.db).List(ctx, database.ReposListOptions{IDs: repoIDs})
+	if err != nil {
+		return nil, err
+	}
+	idToRepo := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, repo := range repos {
+		idToRepo[repo.ID] = repo
+	}
+
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	for _, repository := range args {
+		repoID, err := unmarshalRepositoryID(repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+		repo, ok := idToRepo[*repoID]
+		if !ok {
+			return nil, errors.Errorf("cannot find repo with id: %v", repository.RepositoryID)
+		}
 		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo: types.RepoName{
-				ID:   repoResolver.IDInt32(),
-				Name: repoResolver.RepoName(),
-			},
+			Repo:      types.RepoName{ID: repo.ID, Name: repo.Name},
 			Revisions: repository.Revisions,
 		})
 	}
