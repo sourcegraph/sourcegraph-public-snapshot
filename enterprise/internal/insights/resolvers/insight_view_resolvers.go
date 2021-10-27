@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -45,8 +43,10 @@ type insightViewResolver struct {
 	baseInsightResolver
 }
 
+const insightKind = "insight_view"
+
 func (i *insightViewResolver) ID() graphql.ID {
-	return relay.MarshalID("insight_view", i.view.UniqueID)
+	return relay.MarshalID(insightKind, i.view.UniqueID)
 }
 
 func (i *insightViewResolver) DefaultFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
@@ -289,7 +289,7 @@ type InsightViewQueryConnectionResolver struct {
 	// Cache results because they are used by multiple fields
 	once  sync.Once
 	views []types.Insight
-	next  int64
+	next  string
 	err   error
 }
 
@@ -307,10 +307,18 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 }
 
 func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	_, next, err := d.computeViews(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if next != "" {
+		return graphqlutil.NextPageCursor(string(relay.MarshalID(insightKind, d.next))), nil
+	}
 	return graphqlutil.HasNextPage(false), nil
 }
 
-func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, int64, error) {
+func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) ([]types.Insight, string, error) {
 	r.once.Do(func() {
 		orgStore := database.Orgs(r.postgresDB)
 
@@ -342,12 +350,9 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 
 		r.views = r.insightStore.GroupByView(ctx, viewSeries)
 
-		// r.dashboards = dashboards
-		// for _, dashboard := range dashboards {
-		// 	if int64(dashboarr.ID) > r.next {
-		// 		r.next = int64(dashboarr.ID)
-		// 	}
-		// }
+		if len(r.views) > 0 {
+			r.next = r.views[len(r.views)-1].UniqueID
+		}
 	})
 	return r.views, r.next, r.err
 }

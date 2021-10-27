@@ -104,7 +104,20 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 
-	q := sqlf.Sprintf(getInsightsVisibleToUserSql, visibleDashboardsQuery(args.UserID, args.OrgID), visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
+	if args.After != "" {
+		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
+	}
+
+	var limitClause *sqlf.Query
+	if args.Limit > 0 {
+		limitClause = sqlf.Sprintf("LIMIT %s", args.Limit)
+	} else {
+		limitClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(getInsightsVisibleToUserSql,
+		visibleDashboardsQuery(args.UserID, args.OrgID),
+		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"), limitClause)
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -624,5 +637,6 @@ WHERE iv.id IN (SELECT insight_view_id
 				 WHERE deleted_at IS NULL AND db.id IN (%s))
    OR iv.id IN (%s)
 AND %s
-ORDER BY iv.unique_id;
+ORDER BY iv.unique_id
+%s;
 `
