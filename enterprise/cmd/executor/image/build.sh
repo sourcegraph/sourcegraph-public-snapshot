@@ -160,7 +160,7 @@ ExecStart=/usr/local/bin/node_exporter \
   --collector.softnet \
   --collector.pressure \
   --collector.vmstat \
-  --collector.vmstat.fields '^(oom_kill|pgpg|pswp|pg.*fault|pgscan).*'
+  --collector.vmstat.fields '^(oom_kill|pgpg|pswp|pg.*fault|pgscan|pgsteal).*'
 [Install]
 WantedBy=multi-user.target
 EOF
