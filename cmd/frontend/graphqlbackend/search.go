@@ -29,10 +29,9 @@ import (
 var mockResolveRepositories func() (resolved searchrepos.Resolved, err error)
 
 type SearchArgs struct {
-	Version        string
-	PatternType    *string
-	Query          string
-	VersionContext *string
+	Version     string
+	PatternType *string
+	Query       string
 
 	// Stream if non-nil will stream all SearchEvents.
 	//
@@ -109,13 +108,12 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	return &searchResolver{
 		db: db,
 		SearchInputs: &run.SearchInputs{
-			Plan:           plan,
-			Query:          plan.ToParseTree(),
-			OriginalQuery:  args.Query,
-			VersionContext: args.VersionContext,
-			UserSettings:   settings,
-			PatternType:    searchType,
-			DefaultLimit:   defaultLimit,
+			Plan:          plan,
+			Query:         plan.ToParseTree(),
+			OriginalQuery: args.Query,
+			UserSettings:  settings,
+			PatternType:   searchType,
+			DefaultLimit:  defaultLimit,
 		},
 
 		stream: args.Stream,
@@ -345,7 +343,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args.Repos = resolved.RepoRevs
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		return nil, err
 	}

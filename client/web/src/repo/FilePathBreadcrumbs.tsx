@@ -6,6 +6,8 @@ import { RepoRevision, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { toTreeURL } from '../util/url'
 
+import styles from './FilePathBreadcrumbs.module.scss'
+
 /**
  * Displays a file path in a repository in breadcrumb style, with ancestor path
  * links.
@@ -26,12 +28,14 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
         return toPrettyBlobURL({ repoName, revision, filePath: partPath })
     }
     const partToClassName = (index: number): string =>
-        index === parts.length - 1 ? 'test-breadcrumb-part-last' : 'part-directory test-breadcrumb-part-directory'
+        index === parts.length - 1
+            ? 'test-breadcrumb-part-last'
+            : classNames('test-breadcrumb-part-directory', styles.partDirectory)
 
     const spans: JSX.Element[] = [
         <LinkOrSpan
             key="root-dir"
-            className="part-directory test-breadcrumb-part-directory"
+            className={classNames('test-breadcrumb-part-directory', styles.partDirectory)}
             to={repoUrl}
             aria-current={false}
         >
@@ -40,7 +44,7 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     ]
     for (const [index, part] of parts.entries()) {
         const link = partToUrl(index)
-        const className = classNames('part', partToClassName?.(index))
+        const className = classNames(styles.part, partToClassName?.(index))
         spans.push(
             <LinkOrSpan
                 key={`link-${index}`}
@@ -54,5 +58,5 @@ export const FilePathBreadcrumbs: React.FunctionComponent<
     }
 
     // Important: do not put spaces between the breadcrumbs or spaces will get added when copying the path
-    return <span className="file-path-breadcrumbs">{spans}</span>
+    return <span className={styles.filePathBreadcrumbs}>{spans}</span>
 }

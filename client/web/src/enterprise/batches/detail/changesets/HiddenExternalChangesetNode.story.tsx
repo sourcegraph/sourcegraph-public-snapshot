@@ -3,8 +3,8 @@ import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import React from 'react'
 
+import { WebStory } from '../../../../components/WebStory'
 import { ChangesetState } from '../../../../graphql-operations'
-import { EnterpriseWebStory } from '../../../components/EnterpriseWebStory'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 import { HiddenExternalChangesetNode } from './HiddenExternalChangesetNode'
@@ -16,7 +16,7 @@ const { add } = storiesOf('web/batches/HiddenExternalChangesetNode', module).add
 add('All states', () => {
     const now = new Date()
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <>
                     {Object.values(ChangesetState).map((state, index) => (
@@ -34,6 +34,6 @@ add('All states', () => {
                     ))}
                 </>
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

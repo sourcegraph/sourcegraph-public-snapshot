@@ -250,13 +250,15 @@ func main() {
 func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	// Set up default settings first
 	fc := server.FusionConfig{
-		Enabled:        conn.UseFusionClient,
-		Client:         conn.P4Client,
-		LookAhead:      2000,
-		NetworkThreads: 12,
-		PrintBatch:     10,
-		Refresh:        100,
-		Retries:        10,
+		Enabled:         conn.UseFusionClient,
+		Client:          conn.P4Client,
+		LookAhead:       2000,
+		NetworkThreads:  12,
+		PrintBatch:      10,
+		Refresh:         100,
+		Retries:         10,
+		MaxChanges:      -1,
+		IncludeBinaries: false,
 	}
 
 	if conn.FusionClient == nil {
@@ -269,6 +271,8 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	fc.PrintBatch = conn.FusionClient.PrintBatch
 	fc.Refresh = conn.FusionClient.Refresh
 	fc.Retries = conn.FusionClient.Retries
+	fc.MaxChanges = conn.FusionClient.MaxChanges
+	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
 
 	return fc
 }

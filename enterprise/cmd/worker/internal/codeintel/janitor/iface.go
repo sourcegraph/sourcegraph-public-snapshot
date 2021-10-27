@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
@@ -45,7 +46,25 @@ func (s *DBStoreShim) Transact(ctx context.Context) (DBStore, error) {
 }
 
 type LSIFStore interface {
+	Transact(ctx context.Context) (LSIFStore, error)
+	Done(err error) error
+
 	Clear(ctx context.Context, bundleIDs ...int) error
+	DeleteOldPublicSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int) (int, error)
+	DeleteOldPrivateSearchRecords(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int) (int, error)
+}
+
+type LSIFStoreShim struct {
+	*lsifstore.Store
+}
+
+func (s *LSIFStoreShim) Transact(ctx context.Context) (LSIFStore, error) {
+	store, err := s.Store.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &LSIFStoreShim{store}, nil
 }
 
 type PolicyMatcher interface {

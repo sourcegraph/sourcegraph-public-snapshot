@@ -46,7 +46,7 @@ type SourcerStore interface {
 	DB() dbutil.DB
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
-	Repos() *database.RepoStore
+	Repos() database.RepoStore
 	ExternalServices() *database.ExternalServiceStore
 	UserCredentials() *database.UserCredentialsStore
 }

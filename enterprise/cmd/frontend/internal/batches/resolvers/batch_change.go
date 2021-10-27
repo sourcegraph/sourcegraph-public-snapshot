@@ -30,9 +30,6 @@ type batchChangeResolver struct {
 	namespaceOnce sync.Once
 	namespace     graphqlbackend.NamespaceResolver
 	namespaceErr  error
-
-	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-	shouldActAsCampaign bool
 }
 
 const batchChangeIDKind = "BatchChange"
@@ -44,10 +41,6 @@ func marshalBatchChangeID(id int64) graphql.ID {
 func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
 	err = relay.UnmarshalSpec(id, &batchChangeID)
 	return
-}
-
-func (r *batchChangeResolver) ActAsCampaign() bool {
-	return r.shouldActAsCampaign
 }
 
 func (r *batchChangeResolver) ID() graphql.ID {

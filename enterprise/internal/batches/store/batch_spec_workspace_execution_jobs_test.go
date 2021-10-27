@@ -17,7 +17,7 @@ import (
 )
 
 func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
-	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 2)
+	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 3)
 	for i := 0; i < cap(jobs); i++ {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
 			BatchSpecWorkspaceID: int64(i + 456),
@@ -27,8 +27,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 	}
 
 	t.Run("Create", func(t *testing.T) {
-		for _, job := range jobs {
-			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+		for idx, job := range jobs {
+			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
 			}
 
@@ -44,6 +44,8 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatal(diff)
 			}
+
+			job.PlaceInQueue = int64(idx + 1)
 		}
 	})
 
@@ -97,15 +99,16 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			case 0:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateQueued
 				job.Cancel = true
+				job.PlaceInQueue = 1
 			case 1:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+				job.PlaceInQueue = 0
 			case 2:
 				job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+				job.PlaceInQueue = 0
 			}
 
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET worker_hostname = %s, state = %s, cancel = %s WHERE id = %s", job.WorkerHostname, job.State, job.Cancel, job.ID)); err != nil {
-				t.Fatal(err)
-			}
+			ct.UpdateJobState(t, ctx, s, job)
 		}
 
 		t.Run("All", func(t *testing.T) {
@@ -158,6 +161,82 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
 				}
 			}
+		})
+
+		t.Run("WithFailureMessage", func(t *testing.T) {
+			message1 := "failure message 1"
+			message2 := "failure message 2"
+			message3 := "failure message 3"
+
+			jobs[0].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+			jobs[0].FailureMessage = &message1
+			ct.UpdateJobState(t, ctx, s, jobs[0])
+
+			// has a failure message, but it's outdated, because job is processing
+			jobs[1].State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+			jobs[1].FailureMessage = &message2
+			ct.UpdateJobState(t, ctx, s, jobs[1])
+
+			jobs[2].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+			jobs[2].FailureMessage = &message3
+			ct.UpdateJobState(t, ctx, s, jobs[2])
+
+			wantIDs := []int64{jobs[0].ID, jobs[2].ID}
+
+			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				OnlyWithFailureMessage: true,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(have) != 2 {
+				t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 2, len(have))
+			}
+			haveIDs := []int64{have[0].ID, have[1].ID}
+
+			if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+
+		t.Run("BatchSpecID", func(t *testing.T) {
+			workspaceIDByBatchSpecID := map[int64]int64{}
+			for i := 0; i < 3; i++ {
+				batchSpec := &btypes.BatchSpec{UserID: 500, NamespaceUserID: 500}
+				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
+					t.Fatal(err)
+				}
+
+				ws := &btypes.BatchSpecWorkspace{
+					BatchSpecID: batchSpec.ID,
+					Steps:       []batches.Step{{Run: "hello"}},
+				}
+				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+					t.Fatal(err)
+				}
+
+				if err := s.CreateBatchSpecWorkspaceExecutionJobs(ctx, ws.BatchSpecID); err != nil {
+					t.Fatal(err)
+				}
+				workspaceIDByBatchSpecID[batchSpec.ID] = ws.ID
+			}
+
+			for batchSpecID, workspaceID := range workspaceIDByBatchSpecID {
+				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+					BatchSpecID: batchSpecID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				if len(have) != 1 {
+					t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 1, len(have))
+				}
+
+				if have[0].BatchSpecWorkspaceID != workspaceID {
+					t.Fatalf("wrong job returned. want=%d, have=%d", workspaceID, have[0].BatchSpecWorkspaceID)
+				}
+			}
+
 		})
 	})
 
@@ -254,7 +333,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				}
 
 				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
-				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 				specJobIDs = append(specJobIDs, job.ID)

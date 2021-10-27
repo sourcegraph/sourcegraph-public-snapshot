@@ -72,6 +72,7 @@ describe('Search onboarding', () => {
             }),
             GetTemporarySettings: () => ({
                 temporarySettings: {
+                    __typename: 'TemporarySettings',
                     contents: JSON.stringify({
                         'user.daysActiveCount': 1,
                         'user.lastDayActive': new Date().toDateString(),
@@ -120,7 +121,7 @@ describe('Search onboarding', () => {
 
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('typesc')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             await driver.page.keyboard.press('Tab')
             await driver.page.waitForSelector('.test-tour-step-3')
             await driver.page.keyboard.press('Space')
@@ -163,7 +164,7 @@ describe('Search onboarding', () => {
             assert.strictEqual(inputContents, 'lang:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('TypeScr')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep2).toBeTruthy()
@@ -188,7 +189,7 @@ describe('Search onboarding', () => {
             assert.strictEqual(inputContents, 'repo:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep2).toBeTruthy()
@@ -213,7 +214,7 @@ describe('Search onboarding', () => {
             assert.strictEqual(inputContents, 'repo:')
             await driver.page.waitForSelector('.test-tour-step-2')
             await driver.page.keyboard.type('sourcegraph/sourcegraph')
-            await driver.page.waitForSelector('.monaco-query-input .suggest-widget.visible')
+            await driver.page.waitForSelector('#monaco-query-input .suggest-widget.visible')
             let tourStep2 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-2'))
             let tourStep3 = await driver.page.evaluate(() => document.querySelector('.test-tour-step-3'))
             expect(tourStep2).toBeTruthy()

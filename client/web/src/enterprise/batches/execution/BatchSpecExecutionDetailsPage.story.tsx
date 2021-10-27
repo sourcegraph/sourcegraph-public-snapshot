@@ -3,8 +3,8 @@ import { subDays, addMinutes, addHours } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import { BatchSpecExecutionFields, BatchSpecState } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 
 import { BatchSpecExecutionDetailsPage } from './BatchSpecExecutionDetailsPage'
 
@@ -43,6 +43,15 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
+    __typename: 'BatchSpec',
 })
 
 const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
@@ -64,10 +73,18 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
 })
 
 add('Completed', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
@@ -76,11 +93,11 @@ add('Completed', () => (
                 expandStage="srcPreview"
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))
 
 add('Failed', () => (
-    <EnterpriseWebStory>
+    <WebStory>
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
@@ -89,5 +106,5 @@ add('Failed', () => (
                 expandStage="srcPreview"
             />
         )}
-    </EnterpriseWebStory>
+    </WebStory>
 ))

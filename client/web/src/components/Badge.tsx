@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React from 'react'
 
 import styles from './Badge.module.scss'
@@ -13,28 +13,43 @@ const statusStyleMapping: Record<BadgeStatus, string> = {
     new: 'badge-info',
 }
 
+type Extends<T, U extends T> = U
+type BadgeStatusLinked = Extends<BadgeStatus, 'beta' | 'experimental'>
+
+const statusLinkMapping: Record<BadgeStatusLinked, string> = {
+    experimental: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#experimental-features',
+    beta: 'https://docs.sourcegraph.com/admin/beta_and_experimental_features#beta-features',
+}
+
 export interface BadgeProps {
     status: BadgeStatus
     tooltip?: string
     className?: string
+    useLink?: boolean
 }
 
 export const Badge: React.FunctionComponent<BadgeProps> = props => {
-    const { className, status, tooltip } = props
+    const { className, status, tooltip, useLink } = props
 
-    return (
-        <span
-            data-tooltip={tooltip}
-            className={classnames(
-                'badge',
-                styles.badgeCapitalized,
-                'd-inline-flex',
-                'align-items-center',
-                statusStyleMapping[status],
-                className
-            )}
-        >
-            {status}
-        </span>
-    )
+    const commonProps = {
+        'data-tooltip': tooltip,
+        className: classNames(
+            'badge',
+            styles.badgeCapitalized,
+            'd-inline-flex',
+            'align-items-center',
+            statusStyleMapping[status],
+            className
+        ),
+    }
+
+    if (useLink && statusLinkMapping[status as BadgeStatusLinked]) {
+        return (
+            <a href={statusLinkMapping[status as BadgeStatusLinked]} rel="noopener" target="_blank" {...commonProps}>
+                {status}
+            </a>
+        )
+    }
+
+    return <span {...commonProps}>{status}</span>
 }

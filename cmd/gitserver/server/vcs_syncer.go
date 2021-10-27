@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -124,21 +123,30 @@ func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.UR
 	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
+// FusionConfig allows configuration of the p4-fusion client
 type FusionConfig struct {
 	// Enabled: Enable the p4-fusion client for cloning and fetching repos
 	Enabled bool
 	// Client: The client spec tht should be used
 	Client string
-	// LookAhead: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
+	// LookAhead: How many CLs in the future, at most, shall we keep downloaded by
+	// the time it is to commit them
 	LookAhead int
-	// NetworkThreads: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
+	// NetworkThreads: The number of threads in the threadpool for running network
+	// calls. Defaults to the number of logical CPUs.
 	NetworkThreads int
 	// PrintBatch:  The p4 print batch size
 	PrintBatch int
 	// Refresh: How many times a connection should be reused before it is refreshed
 	Refresh int
-	// Retries: How many times a command should be retried before the process exits in a failure
+	// Retries: How many times a command should be retried before the process exits
+	// in a failure
 	Retries int
+	// MaxChanges limits how many changes to fetch during the initial clone. A
+	// default of -1 means fetch all changes
+	MaxChanges int
+	// IncludeBinaries sets whether to include binary files
+	IncludeBinaries bool
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
@@ -296,7 +304,9 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--bare", "true")
+			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
 		args := append([]string{"p4", "clone", "--bare"}, s.p4CommandOptions()...)
@@ -325,10 +335,8 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 
 	var cmd *exec.Cmd
 	if s.FusionConfig.Enabled {
-		// Fetching is done by adding the extra "autoResume param"
-		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100 --autoresume true
+		// Example: p4-fusion --path //depot/... --user $P4USER --src clones/ --networkThreads 64 --printBatch 10 --port $P4PORT --lookAhead 2000 --retries 10 --refresh 100
 		root, _ := filepath.Split(string(dir))
-		log15.Info("Fetching", "root", root)
 		cmd = exec.CommandContext(ctx, "p4-fusion",
 			"--path", depot+"...",
 			"--client", s.FusionConfig.Client,
@@ -340,8 +348,9 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--lookAhead", strconv.Itoa(s.FusionConfig.LookAhead),
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
-			"--autoResume", "true",
-			"--bare", "true")
+			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
+		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)
 	}

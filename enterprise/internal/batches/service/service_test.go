@@ -11,7 +11,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -39,7 +38,7 @@ func TestServicePermissionLevels(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -211,7 +210,7 @@ func TestService(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	admin := ct.CreateTestUser(t, db, true)
 	user := ct.CreateTestUser(t, db, false)
@@ -1322,13 +1321,13 @@ func TestService(t *testing.T) {
 				job := &btypes.BatchSpecWorkspaceExecutionJob{
 					BatchSpecWorkspaceID: ws.ID,
 				}
-				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
+				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+				job.StartedAt = time.Now()
+				ct.UpdateJobState(t, ctx, s, job)
 
 				jobIDs = append(jobIDs, job.ID)
 			}
@@ -1379,13 +1378,14 @@ func TestService(t *testing.T) {
 			job := &btypes.BatchSpecWorkspaceExecutionJob{
 				BatchSpecWorkspaceID: ws.ID,
 			}
-			if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
 			}
 
-			if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed', started_at = now(), finished_at = now() WHERE id = %s", job.ID)); err != nil {
-				t.Fatal(err)
-			}
+			job.State = btypes.BatchSpecWorkspaceExecutionJobStateCompleted
+			job.StartedAt = time.Now()
+			job.FinishedAt = time.Now()
+			ct.UpdateJobState(t, ctx, s, job)
 
 			_, err := svc.CancelBatchSpec(ctx, CancelBatchSpecOpts{BatchSpecRandID: spec.RandID})
 			if !errors.Is(err, ErrBatchSpecNotCancelable) {
@@ -1700,30 +1700,36 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			startedAt := clock()
 			for _, repo := range rs {
 				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
 				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
 					t.Fatal(err)
 				}
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{
-					BatchSpecWorkspaceID: ws.ID,
-				}
-				if err := s.CreateBatchSpecWorkspaceExecutionJob(ctx, job); err != nil {
+				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
+				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", job.ID)); err != nil {
-					t.Fatal(err)
-				}
+				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
+				job.StartedAt = startedAt
+				ct.UpdateJobState(t, ctx, s, job)
 			}
 
-			have, err := svc.ComputeBatchSpecState(ctx, spec)
+			have, err := svc.LoadBatchSpecStats(ctx, spec)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := btypes.BatchSpecStateProcessing; have != want {
-				t.Fatalf("wrong state for batch spec. want=%s, have=%s", want, have)
+			want := btypes.BatchSpecStats{
+				Workspaces: len(rs),
+				Executions: len(rs),
+				Processing: len(rs),
+				StartedAt:  startedAt,
+			}
+
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("wrong stats: %s", diff)
 			}
 		})
 	})

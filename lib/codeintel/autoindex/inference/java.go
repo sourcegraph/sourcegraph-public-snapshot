@@ -16,7 +16,7 @@ func InferJavaIndexJobs(gitserver GitClient, paths []string) (indexes []config.I
 		indexes = append(indexes, config.IndexJob{
 			Indexer: "sourcegraph/lsif-java",
 			IndexerArgs: []string{
-				"/coursier launch --contrib --ttl 0 lsif-java -- index --build-tool=" + buildTool,
+				"lsif-java index --build-tool=" + buildTool,
 			},
 			Outfile: "dump.lsif",
 			Root:    "",
@@ -31,6 +31,7 @@ func JavaPatterns() []*regexp.Regexp {
 		suffixPattern(rawPattern("lsif-java.json")),
 		suffixPattern(rawPattern(".java")),
 		suffixPattern(rawPattern(".scala")),
+		suffixPattern(rawPattern(".kt")),
 	}
 }
 
@@ -59,5 +60,6 @@ func javaBuildTool(paths []string) string {
 
 func isLsifJavaIndexablePath(path string) bool {
 	return strings.HasSuffix(path, ".java") ||
-		strings.HasSuffix(path, ".scala")
+		strings.HasSuffix(path, ".scala") ||
+		strings.HasSuffix(path, ".kt")
 }

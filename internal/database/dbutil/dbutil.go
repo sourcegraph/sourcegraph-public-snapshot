@@ -311,7 +311,7 @@ func (c CommitBytea) Value() (driver.Value, error) {
 	return hex.DecodeString(string(c))
 }
 
-// Scanner captures the Scan method of sql.Rows and sql.Row
+// Scanner captures the Scan method of sql.Rows and sql.Row.
 type Scanner interface {
 	Scan(dst ...interface{}) error
 }

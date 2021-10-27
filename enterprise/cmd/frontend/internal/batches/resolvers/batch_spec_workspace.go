@@ -75,17 +75,15 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 	return r.workspace.FileMatches
 }
 
-func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
-	if r.workspace.Skipped {
-		return []graphqlbackend.BatchSpecWorkspaceStepResolver{}, nil
-	}
-
+func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	var stepInfo = make(map[int]*btypes.StepInfo)
+	var entryExitCode *int
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
-			stepInfo = btypes.ParseLogLines(logLines)
+			stepInfo = btypes.ParseLogLines(entry, logLines)
+			entryExitCode = entry.ExitCode
 		}
 	}
 
@@ -100,11 +98,33 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 		if !ok {
 			// Step hasn't run yet.
 			si = &btypes.StepInfo{}
+			// But also will never run
+			if entryExitCode != nil {
+				si.Skipped = true
+			}
 		}
+
 		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
 	}
 
 	return resolvers, nil
+}
+
+func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	return r.computeStepResolvers(ctx)
+}
+
+func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	// Check if step exists.
+	if int(args.Index) > len(r.workspace.Steps) {
+		return nil, nil
+	}
+
+	resolvers, err := r.computeStepResolvers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return resolvers[args.Index-1], nil
 }
 
 func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
@@ -149,6 +169,19 @@ func (r *batchSpecWorkspaceResolver) StartedAt() *graphqlbackend.DateTime {
 		return nil
 	}
 	return &graphqlbackend.DateTime{Time: r.execution.StartedAt}
+}
+
+func (r *batchSpecWorkspaceResolver) QueuedAt() *graphqlbackend.DateTime {
+	if r.workspace.Skipped {
+		return nil
+	}
+	if r.execution == nil {
+		return nil
+	}
+	if r.execution.CreatedAt.IsZero() {
+		return nil
+	}
+	return &graphqlbackend.DateTime{Time: r.execution.CreatedAt}
 }
 
 func (r *batchSpecWorkspaceResolver) FinishedAt() *graphqlbackend.DateTime {
@@ -209,8 +242,15 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 }
 
 func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
-	// TODO(ssbc): not implemented
-	return nil
+	if r.execution == nil {
+		return nil
+	}
+	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateQueued {
+		return nil
+	}
+
+	i32 := int32(r.execution.PlaceInQueue)
+	return &i32
 }
 
 type batchSpecWorkspaceStagesResolver struct {

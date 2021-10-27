@@ -162,7 +162,8 @@ describe('SearchContextMenu', () => {
                 </DropdownMenu>
             </UncontrolledDropdown>
         )
-        const button = root.find('.search-context-menu__header-input').at(0)
+
+        const button = root.find('[data-testid="search-context-menu-header-input"]').at(0)
         button.simulate('keydown', { key: 'Escape' })
         sinon.assert.calledOnce(closeMenu)
     })

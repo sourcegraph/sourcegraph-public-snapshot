@@ -5,6 +5,7 @@ import { subDays } from 'date-fns'
 import React from 'react'
 import { of } from 'rxjs'
 
+import { WebStory } from '../../../components/WebStory'
 import {
     ChangesetCheckState,
     ChangesetReviewState,
@@ -12,7 +13,6 @@ import {
     ChangesetState,
     BatchChangeFields,
 } from '../../../graphql-operations'
-import { EnterpriseWebStory } from '../../components/EnterpriseWebStory'
 import {
     queryChangesets as _queryChangesets,
     queryExternalChangesetWithFileDiffs,
@@ -83,6 +83,7 @@ const batchChangeDefaults: BatchChangeFields = {
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
+        __typename: 'ChangesetConnection',
         pageInfo: {
             endCursor: null,
             hasNextPage: false,
@@ -135,7 +136,14 @@ const queryChangesets: typeof _queryChangesets = () =>
                 externalURL: {
                     url: 'http://test.test/123',
                 },
-                labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                labels: [
+                    {
+                        __typename: 'ChangesetLabel',
+                        color: '93ba13',
+                        description: 'Very awesome description',
+                        text: 'Some label',
+                    },
+                ],
                 repository: {
                     id: 'repoid',
                     name: 'github.com/sourcegraph/awesome',
@@ -224,7 +232,7 @@ add('Overview', () => {
     )
     const fetchBatchChange: typeof fetchBatchChangeByNamespace = useCallback(() => of(batchChange), [batchChange])
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -237,7 +245,7 @@ add('Overview', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })
 
@@ -247,6 +255,7 @@ add('No open changesets', () => {
     const queryEmptyChangesets = useCallback(
         () =>
             of({
+                __typename: 'ChangesetConnection' as const,
                 pageInfo: {
                     endCursor: null,
                     hasNextPage: false,
@@ -257,7 +266,7 @@ add('No open changesets', () => {
         []
     )
     return (
-        <EnterpriseWebStory>
+        <WebStory>
             {props => (
                 <BatchChangeClosePage
                     {...props}
@@ -270,6 +279,6 @@ add('No open changesets', () => {
                     platformContext={{} as any}
                 />
             )}
-        </EnterpriseWebStory>
+        </WebStory>
     )
 })

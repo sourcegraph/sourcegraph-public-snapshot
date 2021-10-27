@@ -153,7 +153,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, true)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +503,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	defer endObservation(1, observation.Args{})
 
 	// Before we hit the database, validate the new spec.
-	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
 	if err != nil {
 		return nil, err
 	}
@@ -1117,19 +1117,27 @@ func formatChangesetSpecHeadRefConflicts(es []error) string {
 		len(es), strings.Join(points, "\n"))
 }
 
-func (s *Service) ComputeBatchSpecState(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
-	return computeBatchSpecState(ctx, s.store, batchSpec)
+func (s *Service) LoadBatchSpecStats(ctx context.Context, batchSpec *btypes.BatchSpec) (btypes.BatchSpecStats, error) {
+	return loadBatchSpecStats(ctx, s.store, batchSpec)
 }
 
-func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
-	statsMap, err := s.GetBatchSpecStats(ctx, []int64{spec.ID})
+func loadBatchSpecStats(ctx context.Context, bstore *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecStats, error) {
+	statsMap, err := bstore.GetBatchSpecStats(ctx, []int64{spec.ID})
 	if err != nil {
-		return "", err
+		return btypes.BatchSpecStats{}, err
 	}
 
 	stats, ok := statsMap[spec.ID]
 	if !ok {
-		return "", store.ErrNoResults
+		return btypes.BatchSpecStats{}, store.ErrNoResults
+	}
+	return stats, nil
+}
+
+func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.BatchSpec) (btypes.BatchSpecState, error) {
+	stats, err := loadBatchSpecStats(ctx, s, spec)
+	if err != nil {
+		return "", err
 	}
 
 	return btypes.ComputeBatchSpecState(spec, stats), nil

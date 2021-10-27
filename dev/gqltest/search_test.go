@@ -1258,13 +1258,37 @@ func testSearchOther(t *testing.T) {
 		}()
 
 		tests := []struct {
-			query           string
-			suggestionCount int
-		}{
-			{query: `repo:sourcegraph-typescript$ type:file file:deploy`, suggestionCount: 11},
-			{query: `context:SuggestionSearchContext repo:`, suggestionCount: 3},
-			{query: `context:Empty`, suggestionCount: 1},
-		}
+			query string
+			want  []string
+		}{{
+			query: `repo:sourcegraph-typescript$ type:file file:deploy`,
+			want: []string{
+				"lang:json",
+				"lang:text",
+				"lang:yaml",
+				"lang:shell",
+				"lang:markdown",
+				"lang:codeowners",
+				"lang:dockerfile",
+				"lang:javascript",
+				"lang:typescript",
+				"lang:ignore list",
+				"lang:editorconfig",
+				"file:deploy.sh",
+			},
+		}, {
+			query: `context:SuggestionSearchContext repo:`,
+			want: []string{
+				"repo:github.com/sgtest/java-langserver",
+				"repo:github.com/sgtest/jsonrpc2",
+				"context:SuggestionSearchContext",
+			},
+		}, {
+			query: `context:Empty`,
+			want: []string{
+				"context:EmptySearchContext",
+			},
+		}}
 
 		for _, test := range tests {
 			t.Run(test.query, func(t *testing.T) {
@@ -1272,9 +1296,16 @@ func testSearchOther(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
+				var got []string
+				for _, r := range results {
+					got = append(got, r.String())
+				}
 
-				if len(results) != test.suggestionCount {
-					t.Fatalf("expected %d results, but got %d", test.suggestionCount, len(results))
+				sort.Strings(test.want)
+				sort.Strings(got)
+
+				if d := cmp.Diff(test.want, got); d != "" {
+					t.Fatalf("mismatch (-want, +got)\n%s", d)
 				}
 			})
 		}

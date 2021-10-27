@@ -184,7 +184,7 @@ export const UserArea: React.FunctionComponent<UserAreaProps> = ({
     }
 
     return (
-        <Page className="user-area">
+        <Page>
             <UserAreaHeader {...props} {...context} navItems={props.userAreaHeaderNavItems} />
             <div className="container mt-3">
                 <ErrorBoundary location={props.location}>

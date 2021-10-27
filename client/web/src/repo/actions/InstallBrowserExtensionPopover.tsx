@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import ExportIcon from 'mdi-react/ExportIcon'
 import PlusThickIcon from 'mdi-react/PlusThickIcon'
 import React, { useMemo } from 'react'
@@ -10,6 +11,7 @@ import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql/schema'
 import { SourcegraphIcon } from '../../auth/icons'
 
 import { serviceKindDisplayNameAndIcon } from './GoToCodeHostAction'
+import styles from './InstallBrowserExtensionPopover.module.scss'
 
 interface Props {
     url: string
@@ -43,7 +45,7 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
             toggle={toggle}
             target={targetID}
             isOpen={isOpen}
-            popperClassName="shadow border install-browser-extension-popover"
+            popperClassName={classNames('shadow border', styles.installBrowserExtensionPopover)}
             innerClassName="border-0"
             placement="bottom"
             boundariesElement="window"
@@ -71,10 +73,15 @@ export const InstallBrowserExtensionPopover: React.FunctionComponent<Props> = ({
                             on {displayName} or any other connected code host.
                         </p>
 
-                        <div className="mx-auto install-browser-extension-popover__graphic-container d-flex justify-content-between align-items-center">
-                            <SourcegraphIcon className="install-browser-extension-popover__logo p-1" />
-                            <PlusThickIcon className="install-browser-extension-popover__plus-icon" />
-                            <Icon className="install-browser-extension-popover__logo" />
+                        <div
+                            className={classNames(
+                                'mx-auto d-flex justify-content-between align-items-center',
+                                styles.graphicContainer
+                            )}
+                        >
+                            <SourcegraphIcon className={classNames('p-1', styles.logo)} />
+                            <PlusThickIcon className={styles.plusIcon} />
+                            <Icon className={styles.logo} />
                         </div>
 
                         <div className="d-flex justify-content-end">

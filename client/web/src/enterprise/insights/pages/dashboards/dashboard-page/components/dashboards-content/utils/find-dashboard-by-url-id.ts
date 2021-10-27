@@ -22,7 +22,7 @@ export function findDashboardByUrlId(
             dashboard.id === dashboardID ||
             dashboard.title.toLowerCase() === dashboardID?.toLowerCase() ||
             (isSettingsBasedInsightsDashboard(dashboard) &&
-                dashboard.settingsKey.toLowerCase() === dashboardID?.toLowerCase())
+                dashboard.settingsKey?.toLowerCase() === dashboardID?.toLowerCase())
         )
     })
 }

@@ -1,6 +1,7 @@
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import AccountIcon from 'mdi-react/AccountIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import BrainIcon from 'mdi-react/BrainIcon'
 import FolderIcon from 'mdi-react/FolderIcon'
 import HistoryIcon from 'mdi-react/HistoryIcon'
@@ -9,7 +10,6 @@ import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 import TagIcon from 'mdi-react/TagIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Link, Redirect } from 'react-router-dom'
 import { Observable, EMPTY } from 'rxjs'
@@ -26,7 +26,6 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { gql, dataOrThrowErrors } from '@sourcegraph/shared/src/graphql/graphql'
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -115,7 +114,6 @@ interface Props
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        VersionContextProps,
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps,
@@ -357,7 +355,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                                 className="btn btn-outline-secondary"
                                                 to={`${treeOrError.url}/-/docs`}
                                             >
-                                                <BookOpenVariantIcon className="icon-inline" /> API docs
+                                                <BookOpenBlankVariantIcon className="icon-inline" /> API docs
                                             </Link>
                                         )}
                                         <Link className="btn btn-outline-secondary" to={`${treeOrError.url}/-/commits`}>
@@ -391,7 +389,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                                             className="btn btn-outline-secondary"
                                             to={`/${encodeURIPathComponent(repo.name)}/-/stats/contributors`}
                                         >
-                                            <UserIcon className="icon-inline" /> Contributors
+                                            <AccountIcon className="icon-inline" /> Contributors
                                         </Link>
                                         {codeIntelligenceEnabled && (
                                             <Link

@@ -9,7 +9,7 @@ import (
 
 // NewBatchSpecFromRaw parses and validates the given rawSpec, and returns a BatchSpec
 // containing the result.
-func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
+func NewBatchSpecFromRaw(rawSpec string, allowFiles bool) (_ *BatchSpec, err error) {
 	c := &BatchSpec{RawSpec: rawSpec}
 
 	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec), batcheslib.ParseBatchSpecOptions{
@@ -17,6 +17,7 @@ func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
 		AllowArrayEnvironments: true,
 		AllowTransformChanges:  true,
 		AllowConditionalExec:   true,
+		AllowFiles:             allowFiles,
 	})
 
 	return c, err
@@ -63,6 +64,8 @@ func (cs *BatchSpec) ExpiresAt() time.Time {
 }
 
 type BatchSpecStats struct {
+	ResolutionDone bool
+
 	Workspaces int
 	Executions int
 
@@ -72,6 +75,9 @@ type BatchSpecStats struct {
 	Canceling  int
 	Canceled   int
 	Failed     int
+
+	StartedAt  time.Time
+	FinishedAt time.Time
 }
 
 // BatchSpecState defines the possible states of a BatchSpec that was created
@@ -101,9 +107,30 @@ func (s BatchSpecState) Cancelable() bool {
 	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
 }
 
+// Started returns whether the execution of the BatchSpec has started.
+func (s BatchSpecState) Started() bool {
+	return s != BatchSpecStateQueued && s != BatchSpecStatePending
+}
+
+// Finished returns whether the execution of the BatchSpec has finished.
+func (s BatchSpecState) Finished() bool {
+	return s == BatchSpecStateCompleted ||
+		s == BatchSpecStateFailed ||
+		s == BatchSpecStateErrored ||
+		s == BatchSpecStateCanceled
+}
+
 // ComputeBatchSpecState computes the BatchSpecState based on the given stats.
 func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
 	if !spec.CreatedFromRaw {
+		return BatchSpecStateCompleted
+	}
+
+	if !stats.ResolutionDone {
+		return BatchSpecStatePending
+	}
+
+	if stats.Workspaces == 0 {
 		return BatchSpecStateCompleted
 	}
 

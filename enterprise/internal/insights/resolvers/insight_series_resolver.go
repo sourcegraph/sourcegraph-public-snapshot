@@ -21,6 +21,8 @@ type insightSeriesResolver struct {
 	metadataStore   store.InsightMetadataStore
 }
 
+func (r *insightSeriesResolver) SeriesId() string { return r.series.SeriesID }
+
 func (r *insightSeriesResolver) Label() string { return r.series.Label }
 
 func (r *insightSeriesResolver) Points(ctx context.Context, args *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {

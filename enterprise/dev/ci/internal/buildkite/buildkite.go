@@ -7,6 +7,7 @@
 package buildkite
 
 import (
+	"encoding/json"
 	"io"
 	"strings"
 
@@ -26,6 +27,34 @@ type BuildOptions struct {
 	Env      map[string]string      `json:"env,omitempty"`
 }
 
+func (bo BuildOptions) MarshalJSON() ([]byte, error) {
+	type buildOptions BuildOptions
+	boCopy := buildOptions(bo)
+	// Buildkite pipeline upload command will interpolate if it sees a $var
+	// which can cause the pipeline generation to fail because that
+	// variable do not exists.
+	// By replacing $ into $$ in the commit messages we can prevent those
+	// failures to happen.
+	//
+	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
+	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
+	return json.Marshal(boCopy)
+}
+
+func (bo BuildOptions) MarshalYAML() ([]byte, error) {
+	type buildOptions BuildOptions
+	boCopy := buildOptions(bo)
+	// Buildkite pipeline upload command will interpolate if it sees a $var
+	// which can cause the pipeline generation to fail because that
+	// variable do not exists.
+	// By replacing $ into $$ in the commit messages we can prevent those
+	// failures to happen.
+	//
+	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
+	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
+	return yaml.Marshal(boCopy)
+}
+
 // Matches Buildkite pipeline JSON schema:
 // https://github.com/buildkite/pipeline-schema/blob/master/schema.json
 type Step struct {
@@ -43,6 +72,7 @@ type Step struct {
 	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
 	Concurrency            int                    `json:"concurrency,omitempty"`
+	Parallelism            int                    `json:"parallelism,omitempty"`
 	Skip                   string                 `json:"skip,omitempty"`
 	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
 	Retry                  *RetryOptions          `json:"retry,omitempty"`
@@ -100,16 +130,21 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 	p.Steps = append(p.Steps, step)
 }
 
-func (p *Pipeline) WriteTo(w io.Writer) (int64, error) {
+func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
+	output, err := json.MarshalIndent(p, "", "  ")
+	if err != nil {
+		return 0, err
+	}
+	n, err := w.Write([]byte(output))
+	return int64(n), err
+}
+
+func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 	output, err := yaml.Marshal(p)
 	if err != nil {
 		return 0, err
 	}
-
-	cleanedOutput := strings.ReplaceAll(string(output), "$", `\$`)
-	cleanedOutput = strings.ReplaceAll(cleanedOutput, "`", "\\`")
-
-	n, err := w.Write([]byte(cleanedOutput))
+	n, err := w.Write([]byte(output))
 	return int64(n), err
 }
 
@@ -148,6 +183,14 @@ func ConcurrencyGroup(group string) StepOpt {
 func Concurrency(limit int) StepOpt {
 	return func(step *Step) {
 		step.Concurrency = limit
+	}
+}
+
+// Parallelism tells Buildkite to run this job multiple time in parallel,
+// which is very useful to QA a flake fix.
+func Parallelism(count int) StepOpt {
+	return func(step *Step) {
+		step.Parallelism = count
 	}
 }
 

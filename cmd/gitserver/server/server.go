@@ -41,6 +41,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -356,6 +358,26 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux.Handle("/git/", http.StripPrefix("/git", s.gitServiceHandler()))
+
+	// Migration to hexagonal architecture starting here:
+
+	gitAdapter := &adapters.Git{
+		ReposDir: s.ReposDir,
+	}
+	getObjectService := gitdomain.GetObjectService{
+		RevParse:      gitAdapter.RevParse,
+		GetObjectType: gitAdapter.GetObjectType,
+	}
+	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+		// Tracing is server concern, so add it here. Once generics lands we should be
+		// able to create some simple wrappers
+		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject")
+		span.SetTag("objectName", objectName)
+		defer span.Finish()
+		return getObjectService.GetObject(ctx, repo, objectName)
+	})
+
+	mux.HandleFunc("/commands/get-object", handleGetObject(getObjectFunc))
 
 	return mux
 }
@@ -795,7 +817,14 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// optimistically, we assume that our cloning attempt might
 		// succeed.
 		resp.CloneInProgress = true
-		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true})
+
+		// We do not need to check if req.MigrateFrom is non-zero here since that has no effect on
+		// the code path at this point. Since the repo is already not cloned at this point, either
+		// this request was received for a repo migration or a regular clone - for both of which we
+		// want to go ahead and clone the repo. The responsibility of figuring out where to clone
+		// the repo from (upstream URL of the external service or the gitserver instance) lies with
+		// the implementation details of cloneRepo.
+		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, MigrateFrom: req.MigrateFrom})
 		if err != nil {
 			log15.Warn("error cloning repo", "repo", req.Repo, "err", err)
 			resp.Error = err.Error()
@@ -925,7 +954,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 				Repo: args.Repo,
 			}))
 			return
@@ -933,7 +962,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
@@ -944,14 +973,14 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
 			}))
 			return
 		}
 
-		eventWriter.Event("done", protocol.NewSearchEventDone(false, &vcs.RepoNotExistError{
+		eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
 			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
@@ -1534,6 +1563,14 @@ type cloneOptions struct {
 
 	// Overwrite will overwrite the existing clone.
 	Overwrite bool
+
+	// MigrateFrom is the name of the gitserver instance which is the current owner of the
+	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
+	// the current gitserver instance instead of the upstream repo URL of the external service.
+	//
+	// Once migration is complete for all repos in Sourcegraph, there is no need for this attribute
+	// and it should be removed.
+	MigrateFrom string
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -1686,7 +1723,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(newURLRedactor(remoteURL), lock, pr)
+	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
 
 	if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
@@ -1746,7 +1783,20 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader) {
+func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+	var logFile *os.File
+	var err error
+
+	if conf.Get().CloneProgressLog {
+		logFile, err = os.CreateTemp("", "")
+		if err != nil {
+			log15.Warn("failed to create temporary clone log file", "error", err, "repo", repo)
+		} else {
+			log15.Info("logging clone output", "file", logFile.Name(), "repo", repo)
+			defer logFile.Close()
+		}
+	}
+
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	for scan.Scan() {
@@ -1762,6 +1812,12 @@ func readCloneProgress(redactor *urlRedactor, lock *RepositoryLock, pr io.Reader
 		redactedProgress := redactor.redact(progress)
 
 		lock.SetStatus(redactedProgress)
+
+		if logFile != nil {
+			// Failing to write here is non-fatal and we don't want to spam our logs if there
+			// are issues
+			_, _ = fmt.Fprintln(logFile, progress)
+		}
 	}
 	if err := scan.Err(); err != nil {
 		log15.Error("error reporting progress", "error", err)

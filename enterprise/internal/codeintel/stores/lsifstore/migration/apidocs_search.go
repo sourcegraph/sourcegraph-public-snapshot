@@ -31,7 +31,7 @@ const APIDocsSearchMigrationID = 12
 func NewAPIDocsSearchMigrator(
 	store *lsifstore.Store,
 	dbStore *dbstore.Store,
-	repoStore *database.RepoStore,
+	repoStore database.RepoStore,
 	gitserverClient GitserverClient,
 	batchSize int,
 ) oobmigration.Migrator {
@@ -49,7 +49,7 @@ func NewAPIDocsSearchMigrator(
 type apiDocsSearchMigrator struct {
 	store           *lsifstore.Store
 	dbStore         *dbstore.Store
-	repoStore       *database.RepoStore
+	repoStore       database.RepoStore
 	gitserverClient GitserverClient
 	serializer      *lsifstore.Serializer
 	batchSize       int
@@ -179,7 +179,12 @@ func (m *apiDocsSearchMigrator) processUpload(ctx context.Context, uploadID int)
 		}
 		pages = append(pages, page)
 	}
-	if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages); err != nil {
+
+	repositoryNameID, languageNameID, err := tx.WriteDocumentationSearchPrework(ctx, upload, repo, isDefaultBranch)
+	if err != nil {
+		return errors.Wrap(err, "WriteDocumentationSearchPrework")
+	}
+	if err := tx.WriteDocumentationSearch(ctx, upload, repo, isDefaultBranch, pages, repositoryNameID, languageNameID); err != nil {
 		return errors.Wrap(err, "WriteDocumentationSearch")
 	}
 	if err := m.store.Exec(ctx, sqlf.Sprintf(apiDocsSearchMigratorProcessedDumpQuery, uploadID)); err != nil {

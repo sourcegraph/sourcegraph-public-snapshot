@@ -2,7 +2,9 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -56,16 +58,13 @@ type batchSpecResolver struct {
 	validateSpecsOnce sync.Once
 	validateSpecsErr  error
 
+	statsOnce sync.Once
+	stats     btypes.BatchSpecStats
+	statsErr  error
+
 	stateOnce sync.Once
 	state     btypes.BatchSpecState
 	stateErr  error
-
-	// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely
-	shouldActAsCampaignSpec bool
-}
-
-func (r *batchSpecResolver) ActAsCampaignSpec() bool {
-	return r.shouldActAsCampaignSpec
 }
 
 func (r *batchSpecResolver) ID() graphql.ID {
@@ -245,11 +244,6 @@ func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffS
 	return totalStat, nil
 }
 
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *batchSpecResolver) AppliesToCampaign(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
-	return r.AppliesToBatchChange(ctx)
-}
-
 func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
 	svc := service.New(r.store)
 	batchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, r.batchSpec)
@@ -264,11 +258,6 @@ func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlba
 		store:       r.store,
 		batchChange: batchChange,
 	}, nil
-}
-
-// TODO(campaigns-deprecation): This should be removed once we remove campaigns completely.
-func (r *batchSpecResolver) SupersedingCampaignSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	return r.SupersedingBatchSpec(ctx)
 }
 
 func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
@@ -320,6 +309,13 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		return nil, err
 	}
 
+	repoIDs := specs.RepoIDs()
+
+	// If no changeset specs match, we don't need to compute anything.
+	if len(repoIDs) == 0 {
+		return &emptyEatchChangesCodeHostConnectionResolver{}, nil
+	}
+
 	offset := 0
 	if args.After != nil {
 		offset, err = strconv.Atoi(*args.After)
@@ -333,7 +329,7 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{
-			RepoIDs: specs.RepoIDs(),
+			RepoIDs: repoIDs,
 		},
 		limitOffset: database.LimitOffset{
 			Limit:  int(args.First),
@@ -370,41 +366,53 @@ func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
 }
 
 func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	resolution, err := r.computeResolutionJob(ctx)
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution == nil {
+
+	if !state.Started() {
 		return nil, nil
 	}
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+
+	stats, err := r.computeStats(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspaces) == 0 {
+	if stats.StartedAt.IsZero() {
 		return nil, nil
 	}
-	// TODO: Look at earliest started_at time among all workspaces.
-	return nil, nil
+
+	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
 }
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
-	resolution, err := r.computeResolutionJob(ctx)
+	if !r.batchSpec.CreatedFromRaw {
+		return nil, nil
+	}
+
+	state, err := r.computeState(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution == nil {
+
+	if !state.Finished() {
 		return nil, nil
 	}
-	workspaces, err := r.computeBatchSpecWorkspaces(ctx)
+
+	stats, err := r.computeStats(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspaces) == 0 {
+	if stats.FinishedAt.IsZero() {
 		return nil, nil
 	}
-	// TODO: Look at latest finished_at time among all workspaces, and ensure all are in a final state.
-	return nil, nil
+
+	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
@@ -422,8 +430,32 @@ func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error)
 		return &message, nil
 	}
 
-	// TODO: look at execution jobs.
-	return nil, nil
+	failedJobs, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		OnlyWithFailureMessage: true,
+		BatchSpecID:            r.batchSpec.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(failedJobs) == 0 {
+		return nil, nil
+	}
+
+	var message strings.Builder
+	message.WriteString("Failures:\n\n")
+	for i, job := range failedJobs {
+		message.WriteString("* " + *job.FailureMessage + "\n")
+
+		if i == 4 {
+			break
+		}
+	}
+	if len(failedJobs) > 5 {
+		message.WriteString(fmt.Sprintf("\nand %d more", len(failedJobs)-5))
+	}
+
+	str := message.String()
+	return &str, nil
 }
 
 func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
@@ -538,14 +570,23 @@ func (r *batchSpecResolver) computeBatchSpecWorkspaces(ctx context.Context) ([]*
 	return r.workspaces, r.workspacesErr
 }
 
+func (r *batchSpecResolver) computeStats(ctx context.Context) (btypes.BatchSpecStats, error) {
+	r.statsOnce.Do(func() {
+		svc := service.New(r.store)
+		r.stats, r.statsErr = svc.LoadBatchSpecStats(ctx, r.batchSpec)
+	})
+	return r.stats, r.statsErr
+}
+
 func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
 	r.stateOnce.Do(func() {
 		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
-			svc := service.New(r.store)
-			state, err := svc.ComputeBatchSpecState(ctx, r.batchSpec)
+			stats, err := r.computeStats(ctx)
 			if err != nil {
-				return state, err
+				return "", err
 			}
+
+			state := btypes.ComputeBatchSpecState(r.batchSpec, stats)
 
 			// If the BatchSpec finished execution successfully, we validate
 			// the changeset specs.

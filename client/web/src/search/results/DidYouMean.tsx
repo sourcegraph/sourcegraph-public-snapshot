@@ -6,7 +6,6 @@ import { ALL_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilt
 import { stringHuman } from '@sourcegraph/shared/src/search/query/printer'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral, Pattern, Token } from '@sourcegraph/shared/src/search/query/token'
-import { VersionContextProps } from '@sourcegraph/shared/src/search/util'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -120,7 +119,6 @@ interface DidYouMeanProps
     extends Pick<ParsedSearchQueryProps, 'parsedSearchQuery'>,
         Pick<PatternTypeProps, 'patternType'>,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
-        Pick<VersionContextProps, 'versionContext'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps {}
 
@@ -129,7 +127,6 @@ export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
     parsedSearchQuery,
     patternType,
     caseSensitive,
-    versionContext,
     selectedSearchContextSpec,
 }) => {
     const suggestions = useMemo(() => getQuerySuggestions(parsedSearchQuery, patternType), [
@@ -153,7 +150,6 @@ export const DidYouMean: React.FunctionComponent<DidYouMeanProps> = ({
                             suggestion.query,
                             patternType,
                             caseSensitive,
-                            versionContext,
                             selectedSearchContextSpec
                         )
                         return (

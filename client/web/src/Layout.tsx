@@ -45,6 +45,7 @@ import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
+import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { Settings } from './schema/settings.schema'
 import {
     parseSearchURLQuery,
@@ -54,7 +55,6 @@ import {
     HomePanelsProps,
     SearchStreamingProps,
     ParsedSearchQueryProps,
-    MutableVersionContextProps,
     parseSearchURL,
     SearchContextProps,
     getGlobalSearchContextFilter,
@@ -81,7 +81,6 @@ export interface LayoutProps
         ParsedSearchQueryProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        MutableVersionContextProps,
         OnboardingTourProps,
         SearchContextProps,
         HomePanelsProps,
@@ -141,25 +140,21 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     const isSearchNotebookPage = routeMatch?.startsWith('/search/notebook')
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
-    // Update parsedSearchQuery, patternType, caseSensitivity, versionContext, and selectedSearchContextSpec based on current URL
+    // Update parsedSearchQuery, patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
     const {
         history,
         parsedSearchQuery: currentQuery,
         patternType: currentPatternType,
         caseSensitive: currentCaseSensitive,
-        versionContext: currentVersionContext,
         selectedSearchContextSpec,
         location,
         setParsedSearchQuery,
         setPatternType,
         setCaseSensitivity,
-        setVersionContext,
         setSelectedSearchContextSpec,
     } = props
 
-    const { query = '', patternType, caseSensitive, versionContext } = useMemo(() => parseSearchURL(location.search), [
-        location.search,
-    ])
+    const { query = '', patternType, caseSensitive } = useMemo(() => parseSearchURL(location.search), [location.search])
 
     const searchContextSpec = useMemo(() => getGlobalSearchContextFilter(query)?.spec, [query])
 
@@ -178,12 +173,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 setCaseSensitivity(caseSensitive)
             }
 
-            if (versionContext !== currentVersionContext) {
-                setVersionContext(versionContext).catch(error => {
-                    console.error('Error sending version context to extensions', error)
-                })
-            }
-
             if (searchContextSpec && searchContextSpec !== selectedSearchContextSpec) {
                 setSelectedSearchContextSpec(searchContextSpec)
             }
@@ -194,15 +183,12 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
         currentCaseSensitive,
         currentPatternType,
         currentQuery,
-        currentVersionContext,
         selectedSearchContextSpec,
         patternType,
         query,
         setCaseSensitivity,
         setParsedSearchQuery,
         setPatternType,
-        setVersionContext,
-        versionContext,
         setSelectedSearchContextSpec,
         searchContextSpec,
     ])
@@ -220,17 +206,17 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     // TODO add a component layer as the parent of the Layout component rendering "top-level" routes that do not render the navbar,
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
-    const isSiteInit = props.location.pathname === '/site-admin/init'
+    const isSiteInit = props.location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
-        props.location.pathname === '/sign-in' ||
-        props.location.pathname === '/sign-up' ||
-        props.location.pathname === '/password-reset' ||
-        props.location.pathname === '/welcome'
+        props.location.pathname === PageRoutes.SignIn ||
+        props.location.pathname === PageRoutes.SignUp ||
+        props.location.pathname === PageRoutes.PasswordReset ||
+        props.location.pathname === PageRoutes.Welcome
 
     // TODO Change this behavior when we have global focus management system
     // Need to know this for disable autofocus on nav search input
     // and preserve autofocus for first textarea at survey page, creation UI etc.
-    const isSearchAutoFocusRequired = routeMatch === '/survey/:score?' || routeMatch === '/insights'
+    const isSearchAutoFocusRequired = routeMatch === PageRoutes.Survey || routeMatch === EnterprisePageRoutes.Insights
 
     const authRequired = useObservable(authRequiredObservable)
 
@@ -322,7 +308,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                 </Suspense>
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
-                props.location.pathname !== '/sign-in' && (
+                props.location.pathname !== PageRoutes.SignIn && (
                     <ResizablePanel
                         {...props}
                         {...themeProps}

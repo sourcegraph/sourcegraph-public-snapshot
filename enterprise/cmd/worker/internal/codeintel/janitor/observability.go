@@ -8,14 +8,15 @@ import (
 
 type metrics struct {
 	// Data retention metrics
-	numRepositoriesScanned  prometheus.Counter
-	numUploadsScanned       prometheus.Counter
-	numCommitsScanned       prometheus.Counter
-	numUploadsExpired       prometheus.Counter
-	numUploadRecordsRemoved prometheus.Counter
-	numIndexRecordsRemoved  prometheus.Counter
-	numUploadsPurged        prometheus.Counter
-	numErrors               prometheus.Counter
+	numRepositoriesScanned          prometheus.Counter
+	numUploadsScanned               prometheus.Counter
+	numCommitsScanned               prometheus.Counter
+	numUploadsExpired               prometheus.Counter
+	numUploadRecordsRemoved         prometheus.Counter
+	numIndexRecordsRemoved          prometheus.Counter
+	numUploadsPurged                prometheus.Counter
+	numDocumentSearchRecordsRemoved prometheus.Counter
+	numErrors                       prometheus.Counter
 
 	// Resetter metrics
 	numUploadResets                 prometheus.Counter
@@ -70,6 +71,10 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		"src_codeintel_background_uploads_purged_total",
 		"The number of uploads for which records in the codeintel database were removed.",
 	)
+	numDocumentSearchRecordsRemoved := counter(
+		"src_codeintel_background_documentation_search_records_removed_total",
+		"The number of documentation search records removed.",
+	)
 	numErrors := counter(
 		"src_codeintel_background_errors_total",
 		"The number of errors that occur during a codeintel expiration job.",
@@ -122,6 +127,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 		numUploadRecordsRemoved:         numUploadRecordsRemoved,
 		numIndexRecordsRemoved:          numIndexRecordsRemoved,
 		numUploadsPurged:                numUploadsPurged,
+		numDocumentSearchRecordsRemoved: numDocumentSearchRecordsRemoved,
 		numErrors:                       numErrors,
 		numUploadResets:                 numUploadResets,
 		numUploadResetFailures:          numUploadResetFailures,

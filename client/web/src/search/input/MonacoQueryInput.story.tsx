@@ -21,7 +21,6 @@ const defaultProps: MonacoQueryInputProps = {
     isSourcegraphDotCom: false,
     patternType: SearchPatternType.literal,
     caseSensitive: false,
-    versionContext: undefined,
     selectedSearchContextSpec: 'global',
     onChange: () => {},
     onSubmit: () => {},

@@ -1,4 +1,4 @@
-import classnames from 'classnames'
+import classNames from 'classnames'
 import React, { InputHTMLAttributes } from 'react'
 
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -22,7 +22,7 @@ export const FormRadioInput: React.FunctionComponent<RadioInputProps> = props =>
         <label
             data-placement={labelTooltipPosition}
             data-tooltip={labelTooltipText}
-            className={classnames('d-flex flex-wrap align-items-center', className, {
+            className={classNames('d-flex flex-wrap align-items-center', className, {
                 'text-muted': otherProps.disabled,
             })}
         >

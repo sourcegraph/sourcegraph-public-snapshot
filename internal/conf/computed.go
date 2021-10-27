@@ -213,12 +213,6 @@ func SearchIndexEnabled() bool {
 }
 
 func BatchChangesEnabled() bool {
-	// TODO(campaigns-deprecation): This check can be removed once we remove
-	// the deprecated site-config settings.
-	if deprecated := Get().CampaignsEnabled; deprecated != nil {
-		return *deprecated
-	}
-
 	if enabled := Get().BatchChangesEnabled; enabled != nil {
 		return *enabled
 	}
@@ -226,12 +220,6 @@ func BatchChangesEnabled() bool {
 }
 
 func BatchChangesRestrictedToAdmins() bool {
-	// TODO(campaigns-deprecation): This check can be removed once we remove
-	// the deprecated site-config settings.
-	if deprecated := Get().CampaignsRestrictToAdmins; deprecated != nil {
-		return *deprecated
-	}
-
 	if restricted := Get().BatchChangesRestrictToAdmins; restricted != nil {
 		return *restricted
 	}
@@ -301,7 +289,7 @@ func EventLoggingEnabled() bool {
 func APIDocsSearchIndexingEnabled() bool {
 	val := ExperimentalFeatures().ApidocsSearchIndexing
 	if val == "" {
-		return true
+		return false // off by default until API docs search indexing stabilizes, see https://github.com/sourcegraph/sourcegraph/issues/26292
 	}
 	return val == "enabled"
 }

@@ -40,11 +40,11 @@ func Lstat(ctx context.Context, repo api.RepoName, commit api.CommitID, path str
 
 	if path == "." {
 		// Special case root, which is not returned by `git ls-tree`.
-		rootTree, _, err := GetObject(ctx, repo, string(commit)+"^{tree}")
+		obj, err := gitserver.DefaultClient.GetObject(ctx, repo, string(commit)+"^{tree}")
 		if err != nil {
 			return nil, err
 		}
-		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(rootTree)}, nil
+		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
 	}
 
 	fis, err := lsTree(ctx, repo, commit, path, false)

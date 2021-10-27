@@ -41,7 +41,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 
-		postgres := dbtest.NewDB(t, "")
+		postgres := dbtest.NewDB(t)
 		resolver := newWithClock(timescale, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
@@ -52,18 +52,17 @@ func TestResolver_InsightConnection(t *testing.T) {
 				Description: "desc1",
 				Series: []types.InsightViewSeries{
 					{
-						UniqueID:              "unique1",
-						SeriesID:              "1234567",
-						Title:                 "title1",
-						Description:           "desc1",
-						Query:                 "query1",
-						CreatedAt:             now,
-						OldestHistoricalAt:    now,
-						LastRecordedAt:        now,
-						NextRecordingAfter:    now,
-						RecordingIntervalDays: 1,
-						Label:                 "label1",
-						Stroke:                "color1",
+						UniqueID:           "unique1",
+						SeriesID:           "1234567",
+						Title:              "title1",
+						Description:        "desc1",
+						Query:              "query1",
+						CreatedAt:          now,
+						OldestHistoricalAt: now,
+						LastRecordedAt:     now,
+						NextRecordingAfter: now,
+						Label:              "label1",
+						LineColor:          "color1",
 					},
 				},
 			},
@@ -126,7 +125,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	}
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }
@@ -217,18 +216,17 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 				Description: "desc1",
 				Series: []types.InsightViewSeries{
 					{
-						UniqueID:              "unique1",
-						SeriesID:              "s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E",
-						Title:                 "title1",
-						Description:           "desc1",
-						Query:                 "query1",
-						CreatedAt:             now,
-						OldestHistoricalAt:    now,
-						LastRecordedAt:        now,
-						NextRecordingAfter:    now,
-						RecordingIntervalDays: 1,
-						Label:                 "label1",
-						Stroke:                "color1",
+						UniqueID:           "unique1",
+						SeriesID:           "s:087855E6A24440837303FD8A252E9893E8ABDFECA55B61AC83DA1B521906626E",
+						Title:              "title1",
+						Description:        "desc1",
+						Query:              "query1",
+						CreatedAt:          now,
+						OldestHistoricalAt: now,
+						LastRecordedAt:     now,
+						NextRecordingAfter: now,
+						Label:              "label1",
+						LineColor:          "color1",
 					},
 				},
 			},
