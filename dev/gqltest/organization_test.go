@@ -65,7 +65,7 @@ func TestOrganization(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer cleanupFn(t)
+		defer cleanup(t)
 		// Remove authenticate user (gqltest-admin) from organization (gqltest-org) should
 		// no longer get cascaded settings from this organization.
 		err = client.RemoveUserFromOrganization(client.AuthenticatedUserID(), orgID)
