@@ -380,7 +380,7 @@
     "linguist-languages": "^7.14.0",
     "lodash": "^4.17.20",
     "marked": "^2.0.3",
-    "mdi-react": "^7.3.0",
+    "mdi-react": "^8.1.0",
     "minimatch": "^3.0.4",
     "monaco-editor": "^0.24.0",
     "monaco-yaml": "^3.2.1",

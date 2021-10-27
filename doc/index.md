@@ -84,6 +84,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Extensions](extensions/index.md)
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
+- [Site Administrator Quickstart](admin/how-to/site-admin-quickstart.md)
 
 ### Reference
 

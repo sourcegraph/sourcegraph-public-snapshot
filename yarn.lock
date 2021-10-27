@@ -16682,10 +16682,10 @@ mdast-util-to-string@^2.0.0:
   resolved "https://registry.npmjs.org/mdast-util-to-string/-/mdast-util-to-string-2.0.0.tgz#b8cfe6a713e1091cb5b728fc48885a4767f8b97b"
   integrity sha512-AW4DRS3QbBayY/jJmD8437V1Gombjf8RSOUCMFBuo5iHi58AGEgVCKQ+ezHkZZDpAQS75hcBMpLqjpJTjtUL7w==
 
-mdi-react@^7.3.0:
-  version "7.3.0"
-  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-7.3.0.tgz#70a3d1ebe892e0b4cc18f413472d1b83b9158ba2"
-  integrity sha512-pG7nAhzUMHzlI/6jRMvyujMSpuM93gGcTIirpQBYq5zheNf6MkqR4BAMWcwWnK5759MRBqgTusbQm1YHnkJe9Q==
+mdi-react@^8.1.0:
+  version "8.1.0"
+  resolved "https://registry.npmjs.org/mdi-react/-/mdi-react-8.1.0.tgz#faaa1d20e69b70c03e60588d989c6d58031263f3"
+  integrity sha512-MK/u2TbzyTW61DTzqPdewFjwt/joHndswlEpLRIHXhzbs7E//wncS1C4LVy/U6MLUVTjEc/9Vm70Y7qRFN0StA==
 
 mdn-browser-compat-data@1.0.15:
   version "1.0.15"

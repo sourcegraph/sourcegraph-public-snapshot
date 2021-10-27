@@ -5,6 +5,11 @@ import {
     BulkOperationState,
     BulkOperationType,
     BatchChangeBulkOperationsResult,
+    ChangesetReviewState,
+    ChangesetSpecType,
+    ChangesetState,
+    BatchChangeChangesetsResult,
+    ChangesetCheckState,
 } from '../../../graphql-operations'
 
 const now = new Date()
@@ -153,5 +158,147 @@ export const MOCK_BULK_OPERATIONS: BatchChangeBulkOperationsResult = {
                 },
             ],
         },
+    },
+}
+
+export const BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node'] = {
+    ...MOCK_BATCH_CHANGE,
+    changesets: {
+        __typename: 'ChangesetConnection',
+        totalCount: 7,
+        nodes: [
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.UNPUBLISHED,
+                id: 'someh1',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.PROCESSING,
+                id: 'someh2',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.RETRYING,
+                id: 'someh3',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.FAILED,
+                id: 'someh4',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'HiddenExternalChangeset',
+                createdAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.OPEN,
+                id: 'someh5',
+                nextSyncAt: null,
+                updatedAt: subDays(now, 5).toISOString(),
+            },
+            {
+                __typename: 'ExternalChangeset',
+                body: 'body',
+                checkState: ChangesetCheckState.PASSED,
+                diffStat: {
+                    __typename: 'DiffStat',
+                    added: 10,
+                    changed: 9,
+                    deleted: 1,
+                },
+                externalID: '123',
+                externalURL: {
+                    url: 'http://test.test/123',
+                },
+                labels: [
+                    {
+                        __typename: 'ChangesetLabel',
+                        color: '93ba13',
+                        description: 'Very awesome description',
+                        text: 'Some label',
+                    },
+                ],
+                repository: {
+                    id: 'repoid',
+                    name: 'github.com/sourcegraph/awesome',
+                    url: 'http://test.test/awesome',
+                },
+                reviewState: ChangesetReviewState.COMMENTED,
+                title: 'Add prettier to all projects',
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.OPEN,
+                nextSyncAt: null,
+                id: 'somev1',
+                error: null,
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-1',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
+            },
+            {
+                __typename: 'ExternalChangeset',
+                body: 'body',
+                checkState: null,
+                diffStat: {
+                    __typename: 'DiffStat',
+                    added: 10,
+                    changed: 9,
+                    deleted: 1,
+                },
+                externalID: null,
+                externalURL: null,
+                labels: [],
+                repository: {
+                    id: 'repoid',
+                    name: 'github.com/sourcegraph/awesome',
+                    url: 'http://test.test/awesome',
+                },
+                reviewState: null,
+                title: 'Add prettier to all projects',
+                createdAt: subDays(now, 5).toISOString(),
+                updatedAt: subDays(now, 5).toISOString(),
+                state: ChangesetState.RETRYING,
+                nextSyncAt: null,
+                id: 'somev2',
+                error: 'Cannot create PR, insufficient token scope.',
+                syncerError: null,
+                currentSpec: {
+                    id: 'spec-rand-id-2',
+                    type: ChangesetSpecType.BRANCH,
+                    description: {
+                        __typename: 'GitBranchChangesetDescription',
+                        headRef: 'my-branch',
+                    },
+                },
+            },
+        ],
+        pageInfo: { endCursor: null, hasNextPage: false },
+    },
+}
+
+export const EMPTY_BATCH_CHANGE_CHANGESETS_RESULT: BatchChangeChangesetsResult['node'] = {
+    ...MOCK_BATCH_CHANGE,
+    changesets: {
+        __typename: 'ChangesetConnection',
+        totalCount: 0,
+        nodes: [],
+        pageInfo: { endCursor: null, hasNextPage: false },
     },
 }

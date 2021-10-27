@@ -38,7 +38,7 @@ const batchSpecExecutionFieldsFragment = gql`
             namespaceName
         }
         workspaceResolution {
-            workspaces {
+            workspaces(first: 10000) {
                 totalCount
                 pageInfo {
                     endCursor

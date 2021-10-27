@@ -1,4 +1,4 @@
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
 import React, { useCallback } from 'react'
 import { Observable } from 'rxjs'
@@ -76,7 +76,7 @@ export const SiteAdminProductSubscriptionBillingLink: React.FunctionComponent<Pr
                     </a>
                 )}
                 {isErrorLike(update) && (
-                    <ErrorIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />
+                    <AlertCircleIcon className="icon-inline text-danger mr-2" data-tooltip={update.message} />
                 )}
                 <button
                     type="button"
