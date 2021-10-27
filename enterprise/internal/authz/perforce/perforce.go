@@ -162,14 +162,21 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	}
 	defer func() { _ = rc.Close() }()
 
-	includeContains, excludeContains, err := scanRepoIncludesExcludes(rc)
+	// Pull permissions from protects file.
+	perms := &authz.ExternalUserPermissions{}
+	err = scanProtects(rc, repoIncludesExcludesScanner(perms))
+
+	// Treat all paths as prefixes.
+	for i, include := range perms.IncludeContains {
+		perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresWildcardMatchAll)
+	}
+	for i, exclude := range perms.ExcludeContains {
+		perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresWildcardMatchAll)
+	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
-	return &authz.ExternalUserPermissions{
-		IncludeContains: includeContains,
-		ExcludeContains: excludeContains,
-	}, errors.Wrap(err, "scanRepoIncludesExcludes.Err")
+	return perms, errors.Wrap(err, "scanRepoIncludesExcludes.Err")
 }
 
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
@@ -281,8 +288,8 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	}
 	defer func() { _ = rc.Close() }()
 
-	users, err := scanAllUsers(ctx, p, rc)
-	if err != nil {
+	users := make(map[string]struct{})
+	if err := scanProtects(rc, allUsersScanner(ctx, p, users)); err != nil {
 		return nil, errors.Wrap(err, "scanning protects")
 	}
 

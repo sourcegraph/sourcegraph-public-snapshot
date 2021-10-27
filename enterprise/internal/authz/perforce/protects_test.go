@@ -41,8 +41,8 @@ func TestScanAllUsers(t *testing.T) {
 		"user2": "user2@example.com",
 	}
 
-	users, err := scanAllUsers(ctx, p, rc)
-	if err != nil {
+	users := make(map[string]struct{})
+	if err := scanProtects(rc, allUsersScanner(ctx, p, users)); err != nil {
 		t.Fatal(err)
 	}
 	want := map[string]struct{}{

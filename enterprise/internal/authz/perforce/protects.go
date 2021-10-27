@@ -9,6 +9,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -121,47 +122,50 @@ func scanProtects(rc io.Reader, processLine func(p4ProtectLine) error) error {
 	return nil
 }
 
+const (
+	// PostgreSQL's SIMILAR TO equivalent for Perforce '...'
+	//
+	// '...' matches all files under the current working directory and all subdirectories.
+	// Matches anything, including slashes, and does so across subdirectories.
+	// Replace with '%' for PostgreSQL's LIKE and SIMILAR TO.
+	postgresWildcardMatchAll = "%"
+	// PostgreSQL's SIMILAR TO equivalent for Perforce '*'
+	//
+	// '*' matches all characters except slashes within one directory.
+	// Replace with character class that matches anything except another '/' supported
+	// by PostgreSQL's SIMILAR TO.
+	postgresWildcardMatchDirectory = "[^/]+"
+)
+
 // scanRepoIncludesExcludes converts `p4 protects` to Postgres SIMILAR TO-compatible
 // entries for including and excluding repositories.
-func scanRepoIncludesExcludes(rc io.ReadCloser) (includeContains []extsvc.RepoID, excludeContains []extsvc.RepoID, err error) {
-	const (
-		wildcardMatchAll       = "%"     // for Perforce '...'
-		wildcardMatchDirectory = "[^/]+" // for Perforce '*'
-	)
-
-	err = scanProtects(rc, func(line p4ProtectLine) error {
+func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) func(p4ProtectLine) error {
+	return func(line p4ProtectLine) error {
 		// NOTE: Manipulations made to `depotContains` will affect the behaviour of
 		// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
 		depotContains := line.match
 
-		// '...' matches all files under the current working directory and all subdirectories.
-		// Matches anything, including slashes, and does so across subdirectories.
-		// Replace with '%' for PostgreSQL's LIKE and SIMILAR TO.
-		//
-		// At first, we drop trailing '...' so that we can check for prefixes (see below).
-		// We assume all paths are prefixes, so add 'wildcardMatchAll' to all contains
-		// later on.
+		// We drop trailing '...' so that we can check for prefixes (see below).
 		depotContains = strings.TrimRight(depotContains, ".")
-		depotContains = strings.ReplaceAll(depotContains, "...", wildcardMatchAll)
 
-		// '*' matches all characters except slashes within one directory.
-		// Replace with character class that matches anything except another '/' supported
-		// by PostgreSQL's SIMILAR TO.
-		depotContains = strings.ReplaceAll(depotContains, "*", wildcardMatchDirectory)
+		// Replace supported patterns with PostgreSQL equivalents.
+		depotContains = strings.ReplaceAll(depotContains, "...", postgresWildcardMatchAll)
+		depotContains = strings.ReplaceAll(depotContains, "*", postgresWildcardMatchDirectory)
 
 		if !line.isExclusion {
-			includeContains = append(includeContains, extsvc.RepoID(depotContains))
+			perms.IncludeContains = append(perms.IncludeContains, extsvc.RepoID(depotContains))
 			return nil
 		}
 
-		if strings.Contains(depotContains, wildcardMatchAll) ||
-			strings.Contains(depotContains, wildcardMatchDirectory) {
+		if strings.Contains(depotContains, postgresWildcardMatchAll) ||
+			strings.Contains(depotContains, postgresWildcardMatchDirectory) {
 			// Always include wildcard matches, because we don't know what they might
 			// be matching on.
-			excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
+			perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
+			return nil
 		} else {
 			// Otherwise, only include an exclude if a corresponding include exists.
-			for i, prefix := range includeContains {
+			for i, prefix := range perms.IncludeContains {
 				if !strings.HasPrefix(depotContains, string(prefix)) {
 					continue
 				}
@@ -169,39 +173,29 @@ func scanRepoIncludesExcludes(rc io.ReadCloser) (includeContains []extsvc.RepoID
 				// Perforce ACLs can have conflict rules and the later one wins. So if there is
 				// an exact match for an include prefix, we take it out.
 				if depotContains == string(prefix) {
-					includeContains = append(includeContains[:i], includeContains[i+1:]...)
+					perms.IncludeContains = append(perms.IncludeContains[:i], perms.IncludeContains[i+1:]...)
 					break
 				}
 
-				excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
+				perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
 				break
 			}
 		}
 
 		return nil
-	})
-
-	// Treat all paths as prefixes.
-	for i, include := range includeContains {
-		includeContains[i] = extsvc.RepoID(string(include) + wildcardMatchAll)
 	}
-	for i, exclude := range excludeContains {
-		excludeContains[i] = extsvc.RepoID(string(exclude) + wildcardMatchAll)
-	}
-
-	return
 }
 
-// scanAllUsers converts `p4 protects` to a map of users within the protection rules.
-func scanAllUsers(ctx context.Context, p *Provider, rc io.ReadCloser) (map[string]struct{}, error) {
-	users := make(map[string]struct{})
-
-	err := scanProtects(rc, func(line p4ProtectLine) error {
+// allUsersScanner converts `p4 protects` to a map of users within the protection rules.
+func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) func(p4ProtectLine) error {
+	return func(line p4ProtectLine) error {
 		if line.isExclusion {
 			switch line.entityType {
 			case "user":
 				if line.name == "*" {
-					users = make(map[string]struct{})
+					for u := range users {
+						delete(users, u)
+					}
 				} else {
 					delete(users, line.name)
 				}
@@ -248,10 +242,5 @@ func scanAllUsers(ctx context.Context, p *Provider, rc io.ReadCloser) (map[strin
 		}
 
 		return nil
-	})
-	if err != nil {
-		return nil, errors.Wrapf(err, "scanAllUsers")
 	}
-
-	return users, err
 }
