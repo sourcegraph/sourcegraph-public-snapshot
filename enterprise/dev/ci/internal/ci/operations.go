@@ -82,8 +82,6 @@ func CoreTestOperations(changedFiles changed.Files, opts CoreTestOperationsOptio
 		ops.Append(addDocs)
 	}
 
-	// wait for all steps to pass
-	ops.Append(wait)
 	return &ops
 }
 
@@ -371,70 +369,119 @@ func triggerUpdaterPipeline(pipeline *bk.Pipeline) {
 	)
 }
 
-// images used by cluster-qa test
-func clusterDockerImages(images []string) string {
-	var clusterImages []string
-	imagesToRemove := map[string]bool{"server": true, "ignite-ubuntu": true}
-	for _, image := range images {
-		if _, exists := imagesToRemove[image]; !exists {
-			clusterImages = append(clusterImages, image)
-		}
-	}
-	return strings.Join(clusterImages, "\n")
-}
+func codeIntelQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::brain: Code Intel QA",
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
 
-type e2eAndQAOptions struct {
-	candidateImage string
-	buildOptions   bk.BuildOptions
-	async          bool
-}
-
-// copyEnv copies a subset of env variables from the given BuildOptions
-func (opts *e2eAndQAOptions) copyEnv(keys ...string) map[string]string {
-	m := map[string]string{}
-	for _, k := range keys {
-		if v, ok := opts.buildOptions.Env[k]; ok {
-			m[k] = v
-		}
-	}
-	return m
-}
-
-func triggerE2EandQA(opts e2eAndQAOptions) operations.Operation {
-	customOptions := bk.BuildOptions{
-		Message: opts.buildOptions.Message,
-		Branch:  opts.buildOptions.Branch,
-		Commit:  opts.buildOptions.Commit,
-		Env: opts.copyEnv(
-			"BUILDKITE_PULL_REQUEST",
-			"BUILDKITE_PULL_REQUEST_BASE_BRANCH",
-			"BUILDKITE_PULL_REQUEST_REPO",
-			"COMMIT_SHA",
-			"DATE",
-			"VERSION",
-			"CI_DEBUG_PROFILE",
-		),
-	}
-
-	// Set variables that indicate the tag for 'us.gcr.io/sourcegraph-dev' images built
-	// from this CI run's commit, and credentials to access them.
-	customOptions.Env["CANDIDATE_VERSION"] = opts.candidateImage
-	customOptions.Env["VAGRANT_SERVICE_ACCOUNT"] = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
-
-	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-	customOptions.Env["MINIMUM_UPGRADEABLE_VERSION"] = "3.32.0"
-
-	// Docker images used in cluster tests
-	customOptions.Env["DOCKER_CLUSTER_IMAGES_TXT"] = clusterDockerImages(images.SourcegraphDockerImages)
-
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":chromium: Trigger QA pipeline",
-			bk.Trigger("qa"),
-			bk.Async(opts.async),
-			bk.Build(customOptions),
-		)
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Cmd("dev/ci/test/code-intel/test.sh"),
+			bk.ArtifactPaths("./*.log"))
 	}
 }
+
+const vagrantServiceAccount = "buildkite@sourcegraph-ci.iam.gserviceaccount.com"
+
+func serverE2E(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":chromium: Sourcegraph E2E",
+			bk.Agent("queue", "baremetal"),
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+
+			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
+
+			// TODO need doc
+			bk.Env("JEST_CIRCUS", "0"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-e2e"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
+func serverQA(candidateTag string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::chromium: Sourcegraph QA",
+			bk.Agent("queue", "baremetal"),
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+
+			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
+
+			// TODO need doc
+			bk.Env("JEST_CIRCUS", "0"),
+			bk.Env("LOG_STATUS_MESSAGES", "true"),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
+func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Operation {
+	return func(p *bk.Pipeline) {
+		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
+			bk.Agent("queue", "baremetal"),
+			// Run tests against the candidate server image
+			bk.DependsOn(candidateImageStepKey("server")),
+			bk.Env("CANDIDATE_VERSION", candidateTag),
+			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
+
+			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+			bk.Env("VAGRANT_RUN_ENV", "CI"),
+			bk.Env("DISPLAY", ":99"),
+
+			bk.Env("LOG_STATUS_MESSAGES", "true"),
+			bk.Env("NO_CLEANUP", "false"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-upgrade"),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
+// Flaky deployment. See https://github.com/sourcegraph/sourcegraph/issues/25977
+// func clusterQA(candidateTag string) operations.Operation {
+// 	return func(p *bk.Pipeline) {
+// 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
+// 			bk.Agent("queue", "baremetal"),
+// 			bk.Env("CANDIDATE_VERSION", candidateTag),
+// 			bk.Env("DOCKER_CLUSTER_IMAGES_TXT", strings.Join(images.DeploySourcegraphDockerImages, "\n")),
+//
+// 			bk.Env("VAGRANT_SERVICE_ACCOUNT", vagrantServiceAccount),
+// 			bk.Env("VAGRANT_RUN_ENV", "CI"),
+//
+// 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+// 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+// 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+// 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+// 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+// 			bk.Cmd(".buildkite/vagrant-run.sh sourcegraph-qa-test"),
+// 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+// 	}
+// }
 
 // candidateImageStepKey is the key for the given app (see the `images` package). Useful for
 // adding dependencies on a step.
