@@ -105,8 +105,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-
-		// ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
+		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
 	case BackendIntegrationTests:
 		ops.Append(
@@ -246,13 +245,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	pipeline := &bk.Pipeline{
 		Env: env,
 	}
-	// TODO(JH) drop this simulating steps
-	ops.Append(fault())
-	ops.Append(depfault())
-	// ---
 
 	ops.Append(uploadBuildLogs())
-
 	ops.Apply(pipeline)
 	if err := ensureUniqueKeys(pipeline); err != nil {
 		return nil, err

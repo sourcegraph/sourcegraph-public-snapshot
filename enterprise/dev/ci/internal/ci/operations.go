@@ -689,28 +689,6 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-// TODO(JH) drop this simulating steps
-func fault() operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		stepOpts := []bk.StepOpt{
-			bk.Cmd("fail here"),
-			bk.Key("failing"),
-		}
-		pipeline.AddStep(":red_circle: failing on purpose", stepOpts...)
-	}
-}
-
-// TODO(JH) drop this simulating steps
-func depfault() operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		stepOpts := []bk.StepOpt{
-			bk.Cmd("ls -al"),
-			bk.DependsOn("failing"),
-		}
-		pipeline.AddStep(":question: dep on the failing step", stepOpts...)
-	}
-}
-
 func uploadBuildLogs() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
