@@ -37,6 +37,7 @@ var (
 	ciLogsJobQuery   = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
 	ciLogsOut        = ciLogsFlagSet.String("out", ciLogsOutStdout,
 		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
+
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
@@ -51,9 +52,6 @@ func getCIBranch() (branch string, fromFlag bool, err error) {
 	case *ciStatusBranchFlag != "":
 		branch = *ciStatusBranchFlag
 	default:
-		if os.Getenv("BUILDKITE") == "true" {
-			return "", false, fmt.Errorf("getCIBranch should not be used within the CI. Specifiy a branch manually instead")
-		}
 		branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
 		fromFlag = false
 	}

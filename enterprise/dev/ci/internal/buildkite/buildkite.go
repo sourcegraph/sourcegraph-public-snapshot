@@ -79,13 +79,6 @@ type Step struct {
 	Agents                 map[string]string      `json:"agents,omitempty"`
 }
 
-// GenerateKey will automatically generate a key based on the
-// step label, and return it.
-func (s *Step) GenerateKey() string {
-	s.Key = strings.ReplaceAll(s.Label, " ", "_")
-	return s.Key
-}
-
 type RetryOptions struct {
 	Automatic *AutomaticRetryOptions `json:"automatic,omitempty"`
 	Manual    *ManualRetryOptions    `json:"manual,omitempty"`
@@ -124,26 +117,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	for _, opt := range AfterEveryStepOpts {
 		opt(step)
 	}
-
-	if step.Key == "" {
-		step.GenerateKey()
-	}
-
 	p.Steps = append(p.Steps, step)
-}
-
-func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
-	p.AddStep(label, opts...)
-	lastStep := p.Steps[len(p.Steps)-1].(*Step)
-
-	// Collect all keys to make this step depends on all others.
-	keys := []string{}
-	for _, step := range p.Steps {
-		if s, ok := step.(*Step); ok && step != lastStep {
-			keys = append(keys, s.Key)
-		}
-	}
-	lastStep.DependsOn = keys
 }
 
 func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {

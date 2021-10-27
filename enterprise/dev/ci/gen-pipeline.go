@@ -71,10 +71,7 @@ func previewPipeline(w io.Writer, c ci.Config, bk *buildkite.Pipeline) {
 	for _, raw := range bk.Steps {
 		if step, ok := raw.(*buildkite.Step); ok {
 			fmt.Fprintf(w, "\t%s\n", step.Label)
-			switch {
-			case len(step.DependsOn) > 5:
-				fmt.Fprintf(w, "\t→ depends on %s, ...\n", strings.Join(step.DependsOn[0:5], ", "))
-			case len(step.DependsOn) > 0:
+			if len(step.DependsOn) > 0 {
 				fmt.Fprintf(w, "\t→ depends on %s\n", strings.Join(step.DependsOn, " "))
 			}
 		}
