@@ -1633,9 +1633,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			goroutine.Go(func() {
 				defer wg.Done()
 
-				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(args.PatternInfo.FileMatchLimit))
-				defer cleanup()
-
 				// This code path implies we've already decided to run global-search (3rd arg is always false).
 				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, false, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
 				if err != nil {
@@ -1649,9 +1646,14 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				notSearcherOnly := !searcherOnly
+				textSearchJob := &unindexed.TextSearch{
+					Zoekt:           zoektArgs,
+					Searcher:        searcherArgs,
+					NotSearcherOnly: !searcherOnly,
+					FileMatchLimit:  args.PatternInfo.FileMatchLimit,
+				}
 
-				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
+				jobs = append([]run.Job{textSearchJob}, jobs...)
 			})
 		}
 	}

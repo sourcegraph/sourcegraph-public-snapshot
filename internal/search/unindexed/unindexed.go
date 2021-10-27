@@ -305,11 +305,15 @@ func callSearcherOverRepos(
 type TextSearch struct {
 	Zoekt           zoektutil.IndexedSearchRequest
 	Searcher        *search.SearcherParameters
-	notSearcherOnly bool
+	NotSearcherOnly bool
+	FileMatchLimit  int32
 }
 
 func (t *TextSearch) Run(ctx context.Context, stream streaming.Sender) error {
-	return SearchFilesInRepos(ctx, t.Zoekt, t.Searcher, t.notSearcherOnly, stream)
+	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
+	defer cleanup()
+
+	return SearchFilesInRepos(ctx, t.Zoekt, t.Searcher, t.NotSearcherOnly, stream)
 }
 
 func (*TextSearch) Name() string {
