@@ -4,13 +4,13 @@ import path from 'path'
 import * as esbuild from 'esbuild'
 
 import { STATIC_ASSETS_PATH } from '../utils'
-import { WebpackManifest } from '../webpack/get-manifest'
+import { WebpackManifest } from '../webpack/get-html-webpack-plugins'
 
 export const assetPathPrefix = '/.assets'
 
-export const getWebpackLikeManifest = (): WebpackManifest => ({
-    'app.js': path.join(assetPathPrefix, 'scripts/app.js'),
-    'app.css': path.join(assetPathPrefix, 'scripts/app.css'),
+export const getManifest = (): WebpackManifest => ({
+    appBundle: path.join(assetPathPrefix, 'scripts/app.js'),
+    cssBundle: path.join(assetPathPrefix, 'scripts/app.css'),
     isModule: true,
 })
 
@@ -30,7 +30,7 @@ export const manifestPlugin: esbuild.Plugin = {
             // The bug https://github.com/evanw/esbuild/issues/1384 means that onEnd isn't called in
             // serve mode, so write it here instead of waiting for onEnd. This is OK because we
             // don't actually need any information that's only available in onEnd.
-            await writeManifest(getWebpackLikeManifest())
+            await writeManifest(getManifest())
         })
     },
 }

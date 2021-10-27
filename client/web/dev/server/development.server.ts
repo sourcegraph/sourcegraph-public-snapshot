@@ -7,7 +7,7 @@ import signale from 'signale'
 import createWebpackCompiler, { Configuration } from 'webpack'
 import WebpackDevServer, { ProxyConfigArrayItem } from 'webpack-dev-server'
 
-import { getWebpackLikeManifest } from '../esbuild/manifestPlugin'
+import { getManifest } from '../esbuild/manifestPlugin'
 import { esbuildDevelopmentServer } from '../esbuild/server'
 import {
     getCSRFTokenCookieMiddleware,
@@ -135,7 +135,8 @@ async function startEsbuildDevelopmentServer({
     proxyMiddlewareOptions,
     csrfTokenCookieMiddleware,
 }: DevelopmentServerInit): Promise<void> {
-    const htmlPage = getHTMLPage({ manifest: getWebpackLikeManifest() })
+    const manifest = getManifest()
+    const htmlPage = getHTMLPage(manifest)
 
     await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
         app.use(csrfTokenCookieMiddleware)
