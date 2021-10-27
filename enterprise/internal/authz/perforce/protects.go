@@ -152,32 +152,33 @@ func scanRepoIncludesExcludes(rc io.ReadCloser) (includeContains []extsvc.RepoID
 		// by PostgreSQL's SIMILAR TO.
 		depotContains = strings.ReplaceAll(depotContains, "*", wildcardMatchDirectory)
 
-		if line.isExclusion {
-			if strings.Contains(depotContains, wildcardMatchAll) ||
-				strings.Contains(depotContains, wildcardMatchDirectory) {
-				// Always include wildcard matches, because we don't know what they might
-				// be matching on.
-				excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
-			} else {
-				// Otherwise, only include an exclude if a corresponding include exists.
-				for i, prefix := range includeContains {
-					if !strings.HasPrefix(depotContains, string(prefix)) {
-						continue
-					}
+		if !line.isExclusion {
+			includeContains = append(includeContains, extsvc.RepoID(depotContains))
+			return nil
+		}
 
-					// Perforce ACLs can have conflict rules and the later one wins. So if there is
-					// an exact match for an include prefix, we take it out.
-					if depotContains == string(prefix) {
-						includeContains = append(includeContains[:i], includeContains[i+1:]...)
-						break
-					}
+		if strings.Contains(depotContains, wildcardMatchAll) ||
+			strings.Contains(depotContains, wildcardMatchDirectory) {
+			// Always include wildcard matches, because we don't know what they might
+			// be matching on.
+			excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
+		} else {
+			// Otherwise, only include an exclude if a corresponding include exists.
+			for i, prefix := range includeContains {
+				if !strings.HasPrefix(depotContains, string(prefix)) {
+					continue
+				}
 
-					excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
+				// Perforce ACLs can have conflict rules and the later one wins. So if there is
+				// an exact match for an include prefix, we take it out.
+				if depotContains == string(prefix) {
+					includeContains = append(includeContains[:i], includeContains[i+1:]...)
 					break
 				}
+
+				excludeContains = append(excludeContains, extsvc.RepoID(depotContains))
+				break
 			}
-		} else {
-			includeContains = append(includeContains, extsvc.RepoID(depotContains))
 		}
 
 		return nil
@@ -219,32 +220,34 @@ func scanAllUsers(ctx context.Context, p *Provider, rc io.ReadCloser) (map[strin
 			default:
 				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
 			}
-		} else {
-			switch line.entityType {
-			case "user":
-				if line.name == "*" {
-					all, err := p.getAllUsers(ctx)
-					if err != nil {
-						return errors.Wrap(err, "list all users")
-					}
-					for _, user := range all {
-						users[user] = struct{}{}
-					}
-				} else {
-					users[line.name] = struct{}{}
-				}
-			case "group":
-				members, err := p.getGroupMembers(ctx, line.name)
-				if err != nil {
-					return errors.Wrapf(err, "list members of group %q", line.name)
-				}
-				for _, member := range members {
-					users[member] = struct{}{}
-				}
 
-			default:
-				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
+			return nil
+		}
+
+		switch line.entityType {
+		case "user":
+			if line.name == "*" {
+				all, err := p.getAllUsers(ctx)
+				if err != nil {
+					return errors.Wrap(err, "list all users")
+				}
+				for _, user := range all {
+					users[user] = struct{}{}
+				}
+			} else {
+				users[line.name] = struct{}{}
 			}
+		case "group":
+			members, err := p.getGroupMembers(ctx, line.name)
+			if err != nil {
+				return errors.Wrapf(err, "list members of group %q", line.name)
+			}
+			for _, member := range members {
+				users[member] = struct{}{}
+			}
+
+		default:
+			log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
 		}
 
 		return nil
