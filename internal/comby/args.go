@@ -19,7 +19,7 @@ func (args Args) String() string {
 		s = append(s, fmt.Sprintf("-f (%d file patterns)", len(args.FilePatterns)))
 	}
 
-	if args.MatchOnly {
+	if args.ResultKind == MatchOnly {
 		s = append(s, "-match-only")
 	} else {
 		s = append(s, "-json-only-diff")

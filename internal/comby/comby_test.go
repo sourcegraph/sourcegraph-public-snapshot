@@ -103,6 +103,7 @@ func main() {
 				Input:           ZipPath(zipPath),
 				MatchTemplate:   "func",
 				RewriteTemplate: "derp",
+				ResultKind:      Diff,
 				FilePatterns:    []string{".go"},
 				Matcher:         ".go",
 			},

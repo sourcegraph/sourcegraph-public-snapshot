@@ -38,7 +38,7 @@ func rawArgs(args Args) (rawArgs []string) {
 	}
 	rawArgs = append(rawArgs, "-json-lines")
 
-	if args.MatchOnly {
+	if args.ResultKind == MatchOnly {
 		rawArgs = append(rawArgs, "-match-only")
 	} else {
 		rawArgs = append(rawArgs, "-json-only-diff")
@@ -207,7 +207,7 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
 	defer span.Finish()
 
-	args.MatchOnly = true
+	args.ResultKind = MatchOnly
 	results, err := Run(ctx, args, toFileMatch)
 	if err != nil {
 		return nil, err
