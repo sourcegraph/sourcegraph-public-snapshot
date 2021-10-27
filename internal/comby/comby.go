@@ -161,7 +161,18 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	return nil
 }
 
-func Run(ctx context.Context, args Args) (results []Result, err error) {
+type unmarshaller func([]byte) Result
+
+func toFileMatch(b []byte) Result {
+	var m *FileMatch
+	if err := json.Unmarshal(b, &m); err != nil {
+		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		return nil
+	}
+	return m
+}
+
+func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
 
@@ -180,13 +191,9 @@ func Run(ctx context.Context, args Args) (results []Result, err error) {
 			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
 			continue
 		}
-		var m *FileMatch
-		if err := json.Unmarshal(b, &m); err != nil {
-			// warn on decode errors and skip
-			log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
-			continue
+		if r := unmarshal(b); r != nil {
+			results = append(results, r)
 		}
-		results = append(results, m)
 	}
 
 	if len(results) > 0 {
@@ -201,7 +208,7 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 	defer span.Finish()
 
 	args.MatchOnly = true
-	results, err := Run(ctx, args)
+	results, err := Run(ctx, args, toFileMatch)
 	if err != nil {
 		return nil, err
 	}
