@@ -1,5 +1,5 @@
 import { Observable, throwError, of } from 'rxjs'
-import { map, mapTo, mergeMap } from 'rxjs/operators'
+import { map, mapTo } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/shared/src/graphql/graphql'
@@ -70,15 +70,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 }))
             )
         )
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
-        this.getDashboards().pipe(mergeMap(dashboards => dashboards.filter(dashboard => dashboard.id === dashboardId)))
+    public getDashboardById = errorMockMethod('getDashboardById')
+    public findDashboardByName = errorMockMethod('findDashboardByName')
 
-    public findDashboardByName = (name: string): Observable<InsightDashboard | null> =>
-        this.getDashboards().pipe(
-            mergeMap(dashboards => dashboards.filter(dashboard => 'title' in dashboard && dashboard.title === name))
-        )
-
-    // TODO: Update input to use CreateInsightsDashboardInput directly
     public createDashboard = (input: DashboardCreateInput): Observable<void> => {
         if (!input.grants) {
             throw new Error('`grants` are required to create a new dashboard')
@@ -103,7 +97,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    // TODO: Update input to use ID directly
     public deleteDashboard = (input: DashboardDeleteInput): Observable<void> => {
         if (!input.id) {
             throw new Error('`id` is required to delete a dashboard')
@@ -121,7 +114,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         ).pipe(mapTo(undefined))
     }
 
-    // TODO: Update input to use UpdateInsightsDashboardInput directly
     public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<void> => {
         if (!id) {
             throw new Error('`id` is required to update a dashboard')
