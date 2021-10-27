@@ -35,10 +35,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
 import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
-import { ErrorAlert } from '../../../components/alerts'
 import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
@@ -50,7 +50,7 @@ import {
     replaceBatchSpecInput,
 } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import styles from './NewCreateBatchChangeContent.module.scss'
+import styles from './NewCreateBatchChangePage.module.scss'
 import { excludeRepo } from './yaml-util'
 
 interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
@@ -58,7 +58,7 @@ interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Se
     createBatchSpecFromRaw?: typeof _createBatchSpecFromRaw
 }
 
-export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchChangePageProps> = ({
+export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     isLightTheme,
     settingsCascade,
     createBatchSpecFromRaw = _createBatchSpecFromRaw,

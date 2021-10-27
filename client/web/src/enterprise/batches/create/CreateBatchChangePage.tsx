@@ -10,7 +10,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { Settings } from '../../../schema/settings.schema'
 
 import { createBatchSpecFromRaw as _createBatchSpecFromRaw } from './backend'
-import { NewCreateBatchChangeContent } from './NewCreateBatchChangeContent'
+import { NewCreateBatchChangePage } from './NewCreateBatchChangePage'
 import { OldBatchChangePageContent } from './OldCreateBatchChangeContent'
 
 export interface CreateBatchChangePageProps extends SettingsCascadeProps<Settings>, ThemeProps {
@@ -24,30 +24,29 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
     isLightTheme,
     headingElement,
     createBatchSpecFromRaw,
-}) => (
-    <>
-        <PageTitle title="Create batch change" />
-        <PageHeader
-            path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]}
-            headingElement={headingElement}
-            description={
-                <>
-                    Follow these steps to create a Batch Change. Need help? View the{' '}
-                    <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
-                        documentation.
-                    </a>
-                </>
-            }
-            className="mb-3"
+}) =>
+    isBatchChangesExecutionEnabled(settingsCascade) ? (
+        <NewCreateBatchChangePage
+            createBatchSpecFromRaw={createBatchSpecFromRaw}
+            isLightTheme={isLightTheme}
+            settingsCascade={settingsCascade}
         />
-        {isBatchChangesExecutionEnabled(settingsCascade) ? (
-            <NewCreateBatchChangeContent
-                createBatchSpecFromRaw={createBatchSpecFromRaw}
-                isLightTheme={isLightTheme}
-                settingsCascade={settingsCascade}
+    ) : (
+        <>
+            <PageTitle title="Create batch change" />
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]}
+                headingElement={headingElement}
+                description={
+                    <>
+                        Follow these steps to create a Batch Change. Need help? View the{' '}
+                        <a href="/help/batch_changes" rel="noopener noreferrer" target="_blank">
+                            documentation.
+                        </a>
+                    </>
+                }
+                className="mb-3"
             />
-        ) : (
             <OldBatchChangePageContent />
-        )}
-    </>
-)
+        </>
+    )
