@@ -883,20 +883,22 @@ Stores data points for a code insight that do not need to be queried directly, b
 
 # Table "public.lsif_configuration_policies"
 ```
-           Column            |  Type   | Collation | Nullable |                         Default                         
------------------------------+---------+-----------+----------+---------------------------------------------------------
- id                          | integer |           | not null | nextval('lsif_configuration_policies_id_seq'::regclass)
- repository_id               | integer |           |          | 
- name                        | text    |           |          | 
- type                        | text    |           | not null | 
- pattern                     | text    |           | not null | 
- retention_enabled           | boolean |           | not null | 
- retention_duration_hours    | integer |           |          | 
- retain_intermediate_commits | boolean |           | not null | 
- indexing_enabled            | boolean |           | not null | 
- index_commit_max_age_hours  | integer |           |          | 
- index_intermediate_commits  | boolean |           | not null | 
- protected                   | boolean |           | not null | false
+           Column            |           Type           | Collation | Nullable |                         Default                         
+-----------------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                          | integer                  |           | not null | nextval('lsif_configuration_policies_id_seq'::regclass)
+ repository_id               | integer                  |           |          | 
+ name                        | text                     |           |          | 
+ type                        | text                     |           | not null | 
+ pattern                     | text                     |           | not null | 
+ retention_enabled           | boolean                  |           | not null | 
+ retention_duration_hours    | integer                  |           |          | 
+ retain_intermediate_commits | boolean                  |           | not null | 
+ indexing_enabled            | boolean                  |           | not null | 
+ index_commit_max_age_hours  | integer                  |           |          | 
+ index_intermediate_commits  | boolean                  |           | not null | 
+ protected                   | boolean                  |           | not null | false
+ repository_patterns         | text[]                   |           |          | 
+ last_resolved_at            | timestamp with time zone |           |          | 
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -915,6 +917,8 @@ Indexes:
 
 **repository_id**: The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.
 
+**repository_patterns**: The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.
+
 **retain_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **retention_duration_hours**: The max age of data retained by this configuration policy. If null, the age is unbounded.
@@ -922,6 +926,23 @@ Indexes:
 **retention_enabled**: Whether or not this configuration policy affects data retention rules.
 
 **type**: The type of Git object (e.g., COMMIT, BRANCH, TAG).
+
+# Table "public.lsif_configuration_policies_repository_pattern_lookup"
+```
+  Column   |  Type   | Collation | Nullable | Default 
+-----------+---------+-----------+----------+---------
+ policy_id | integer |           | not null | 
+ repo_id   | integer |           | not null | 
+Indexes:
+    "lsif_configuration_policies_repository_pattern_lookup_pkey" PRIMARY KEY, btree (policy_id, repo_id)
+
+```
+
+A lookup table to get all the repository patterns by repository id that apply to a configuration policy.
+
+**policy_id**: The policy identifier associated with the repository.
+
+**repo_id**: The repository identifier associated with the policy.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
