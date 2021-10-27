@@ -22,8 +22,8 @@ var (
 
 func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) (int, error) {
 	nameWithOwner := strings.TrimPrefix(repoName, "github.com/")
-	owner, name, appErr := github.SplitRepositoryNameWithOwner(nameWithOwner)
-	if appErr != nil {
+	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	if err != nil {
 		return http.StatusNotFound, errors.New("invalid GitHub repository: nameWithOwner=" + nameWithOwner)
 	}
 
