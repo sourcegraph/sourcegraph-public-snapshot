@@ -32,7 +32,7 @@ type DBStore interface {
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	RefreshCommitResolvability(ctx context.Context, repositoryID int, commit string, delete bool, now time.Time) (int, int, error)
-	GetAllConfigurationPolicies(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
+	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
 	FindRepos(ctx context.Context, pattern string) ([]int, error)
 	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error)
 }

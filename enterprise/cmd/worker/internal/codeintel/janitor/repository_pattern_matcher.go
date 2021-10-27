@@ -13,25 +13,31 @@ import (
 type repositoryPatternMatcher struct {
 	dbStore DBStore
 	lsifstore LSIFStore
+	batchSize int
 	metrics *metrics
 }
 
 var _ goroutine.Handler = &repositoryPatternMatcher{}
 var _ goroutine.ErrorHandler = &repositoryPatternMatcher{}
 
-// TODO: add readme notes
-func NewRepositoryPatternMatcher(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, metrics *metrics) goroutine.BackgroundRoutine {
+// NewRepositoryPatternMatcher returns a background routine that periodically updates the lookup table
+// lsif_configuration_policies_repository_pattern_lookup from the patterns set in the repository_pattern column from repos tables.
+//
+// The lookup table updates periodically with new patterns set in the repository_pattern column. Should that column be empty we delete
+// all the rows with that id in the lookup table.
+func NewRepositoryPatternMatcher(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, batchSize int, metrics *metrics) goroutine.BackgroundRoutine {
+	interval = time.Second
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &repositoryPatternMatcher{
 		dbStore: dbStore,
 		lsifstore: lsifStore,
 		metrics: metrics,
+		batchSize: batchSize,
 	})
 }
 
 func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
 	// Get all policies (nulls first)
-	batchSize := 100
-	policies, err := r.dbStore.GetAllConfigurationPolicies(ctx, batchSize)
+	policies, err := r.dbStore.SelectPoliciesForRepositoryMembershipUpdate(ctx, r.batchSize)
 	if err != nil {
 		return err
 	}
@@ -46,8 +52,8 @@ func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
 			if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID); err != nil {
 				return err
 			}
-
 		}
+		r.metrics.numPoliciesUpdated.Inc()
 	}
 
 	return nil

@@ -264,7 +264,7 @@ INSERT INTO lsif_configuration_policies (
 	indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits,
-	modified_at
+	last_resolved_at
 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'now()')
 RETURNING
 	id,
@@ -280,7 +280,7 @@ RETURNING
 	indexing_enabled,
 	index_commit_max_age_hours,
 	index_intermediate_commits,
-	modified_at
+	last_resolved_at
 `
 
 var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
@@ -382,8 +382,7 @@ UPDATE lsif_configuration_policies SET
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
 	index_commit_max_age_hours = %s,
-	index_intermediate_commits = %s,
-	modified_at = now()
+	index_intermediate_commits = %s
 WHERE id = %s
 `
 
@@ -423,8 +422,22 @@ deleted AS (
 SELECT protected FROM candidate
 `
 
-const getAllConfigurationPolicies = `
--- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:GetAllConfigurationPolicies
+// SelectPoliciesForRepositoryMembershipUpdate selects all the policies that will be updated limited by the batchSize.
+func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
+	ctx, traceLog, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize)))
+	if err != nil {
+		return nil, err
+	}
+	traceLog(log.Int("numConfigurationPolicies", len(configurationPolicies)))
+
+	return configurationPolicies, nil
+}
+
+const selectPoliciesForRepositoryMembershipUpdate = `
+-- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:SelectPoliciesForRepositoryMembershipUpdate
 WITH policy AS (
     SELECT
 	p.id
@@ -450,17 +463,3 @@ UPDATE lsif_configuration_policies
 		index_commit_max_age_hours,
 		index_intermediate_commits
 `
-
-// TODO: Add comments
-func (s *Store) GetAllConfigurationPolicies(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
-	ctx, traceLog, endObservation := s.operations.createConfigurationPolicy.WithAndLogger(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getAllConfigurationPolicies, batchSize)))
-	if err != nil {
-		return nil, err
-	}
-	traceLog(log.Int("numConfigurationPolicies", len(configurationPolicies)))
-
-	return configurationPolicies, nil
-}

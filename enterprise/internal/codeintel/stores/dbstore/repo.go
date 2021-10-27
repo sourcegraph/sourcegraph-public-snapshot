@@ -48,9 +48,16 @@ func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 	defer endObservation(1, observation.Args{})
 
 	conds := make([]*sqlf.Query, 0, len(patterns))
-	for _, pattern := range patterns {
-		conds = append(conds, sqlf.Sprintf("name ILIKE %s", pattern))
+	if len(patterns) == 0 {
+		// When patterns is zero, we set the WHERE clause to FALSE
+		// to make sure `repos` is empty so we can just trigger the `deleted` CTE.
+		conds = append(conds, sqlf.Sprintf("FALSE"))
+	} else {
+		for _, pattern := range patterns {
+			conds = append(conds, sqlf.Sprintf("name ILIKE %s", pattern))
+		}
 	}
+
 
 	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatterns, sqlf.Join(conds, "OR"), policyID, policyID))
 }
