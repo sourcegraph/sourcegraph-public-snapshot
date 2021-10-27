@@ -171,7 +171,7 @@ describe('Search contexts', () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
             RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names?.map((name, index) => ({ id: `index-${index}`, name })) ?? [] },
+                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
             }),
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
@@ -241,7 +241,7 @@ describe('Search contexts', () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
             RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names?.map((name, index) => ({ id: `index-${index}`, name })) ?? [] },
+                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
             }),
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {

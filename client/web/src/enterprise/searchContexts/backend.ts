@@ -11,7 +11,7 @@ export function fetchRepositoriesByNames(
 ): Observable<RepositoriesByNamesResult['repositories']['nodes']> {
     return requestGraphQL<RepositoriesByNamesResult, RepositoriesByNamesVariables>(
         gql`
-            query RepositoriesByNames($names: [String!]) {
+            query RepositoriesByNames($names: [String!]!) {
                 repositories(names: $names) {
                     nodes {
                         id
