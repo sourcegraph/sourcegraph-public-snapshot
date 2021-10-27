@@ -89,7 +89,8 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                 : userQueryState.query
 
-            if (query !== '') {
+            // A standalone context: filter is also a valid search query
+            if (query !== '' || props.selectedSearchContextSpec) {
                 submitSearch({
                     source: 'home',
                     query,
