@@ -189,20 +189,16 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 
 	ids := make([]graphql.ChangesetSpecID, len(specs))
 
-	if len(specs) > 0 {
-		opts.ui.UploadingChangesetSpecs(len(specs))
-
-		for i, spec := range specs {
-			id, err := svc.CreateChangesetSpec(ctx, spec)
-			if err != nil {
-				return err
-			}
-			ids[i] = id
-			opts.ui.UploadingChangesetSpecsProgress(i+1, len(specs))
+	opts.ui.UploadingChangesetSpecs(len(specs))
+	for i, spec := range specs {
+		id, err := svc.CreateChangesetSpec(ctx, spec)
+		if err != nil {
+			return err
 		}
-
-		opts.ui.UploadingChangesetSpecsSuccess(ids)
+		ids[i] = id
+		opts.ui.UploadingChangesetSpecsProgress(i+1, len(specs))
 	}
+	opts.ui.UploadingChangesetSpecsSuccess(ids)
 
 	return nil
 }
