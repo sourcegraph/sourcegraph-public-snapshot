@@ -987,7 +987,7 @@ func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, pay
 }
 
 // httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
-// use the predeterimned hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
+// use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
 // instance to which the HTTP POST request is sent.
 func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
