@@ -56,10 +56,10 @@ func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 		}
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatterns, sqlf.Join(conds, "OR"), policyID, policyID))
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), policyID, policyID))
 }
 
-const updateReposMatchingPatterns = `
+const updateReposMatchingPatternsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/repo.go:UpdateReposMatchingPatterns
 WITH
 repos AS (
