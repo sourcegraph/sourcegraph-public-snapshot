@@ -647,7 +647,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 			bk.Env("VERSION", version),
 		}
 		if !skipHashCompare {
-			// Publish if not soft-failed on previous step
+			// Publish iff not soft-failed on previous step
 			checkDependencySoftFailScript := "./enterprise/dev/ci/scripts/check-dependency-soft-fail.sh"
 			stepOpts = append(stepOpts,
 				// Soft-fail with code 222 if nothing has changed
