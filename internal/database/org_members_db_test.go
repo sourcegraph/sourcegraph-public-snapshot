@@ -115,7 +115,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	// Create fixtures.
 	org1, err := Orgs(db).Create(ctx, "org1", nil)
