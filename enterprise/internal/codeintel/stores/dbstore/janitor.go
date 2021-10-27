@@ -141,8 +141,10 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 
 	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
 		refreshCommitResolvabilityQuery,
-		repositoryID, commit, sqlf.Join(uploadsAssignmentExpressions, ", "),
-		repositoryID, commit, sqlf.Join(indexesAssignmentExpressions, ", "),
+		repositoryID, commit, // candidate_uploads
+		repositoryID, commit, // candidate_indexes
+		sqlf.Join(uploadsAssignmentExpressions, ", "), // update_uploads
+		sqlf.Join(indexesAssignmentExpressions, ", "), // update_indexes
 	)))
 	if err != nil {
 		return 0, 0, err
@@ -167,12 +169,6 @@ candidate_uploads AS (
 	-- deadlock with other processes updating the lsif_uploads table.
 	ORDER BY u.id FOR UPDATE
 ),
-update_uploads AS (
-	UPDATE lsif_uploads u
-	SET %s
-	WHERE id IN (SELECT id FROM candidate_uploads)
-	RETURNING 1
-),
 candidate_indexes AS (
 	SELECT u.id
 	FROM lsif_indexes u
@@ -181,6 +177,12 @@ candidate_indexes AS (
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_indexes table.
 	ORDER BY u.id FOR UPDATE
+),
+update_uploads AS (
+	UPDATE lsif_uploads u
+	SET %s
+	WHERE id IN (SELECT id FROM candidate_uploads)
+	RETURNING 1
 ),
 update_indexes AS (
 	UPDATE lsif_indexes u
