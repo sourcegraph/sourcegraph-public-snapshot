@@ -119,7 +119,7 @@ const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps>
                             onClick={() =>
                                 setPolicy({
                                     ...policy,
-                                    repositoryPatterns: [...(policy.repositoryPatterns || [''])],
+                                    repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
                                 })
                             }
                             aria-hidden="true"
@@ -167,7 +167,7 @@ const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps>
                                 onClick={() =>
                                     setPolicy({
                                         ...policy,
-                                        repositoryPatterns: [...(policy.repositoryPatterns || [''])],
+                                        repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
                                     })
                                 }
                                 aria-hidden="true"
