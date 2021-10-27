@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -49,14 +50,8 @@ func (s *SubRepoPermsStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-// TODO: Replace with type from authz package when ready
-type Rules struct {
-	PathIncludes []string
-	PathExcludes []string
-}
-
 // Upsert will upsert sub repo permissions data
-func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID, repoID int32, rules Rules) error {
+func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID, repoID int32, perms authz.SubRepoPermissions) error {
 	// TODO: Replace params with authz type once merged
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, updated_at)
@@ -64,12 +59,12 @@ VALUES (%s, %s, %s, %s, now())
 ON CONFLICT (user_id, repo_id) DO UPDATE
 SET (user_id, repo_id, path_includes, path_excludes, updated_at) =
 (EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, now())
-`, userID, repoID, pq.Array(rules.PathIncludes), pq.Array(rules.PathExcludes))
+`, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes))
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
 // GetRules will fetch sub repo rules for the given repo and user combination
-func (s *SubRepoPermsStore) GetRules(ctx context.Context, userID, repoID int32) (*Rules, error) {
+func (s *SubRepoPermsStore) GetRules(ctx context.Context, userID, repoID int32) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
@@ -79,25 +74,25 @@ AND repo_id = %s
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting sub repo permission rules")
+		return nil, errors.Wrap(err, "getting sub repo permissions")
 	}
 
-	rules := new(Rules)
+	perms := new(authz.SubRepoPermissions)
 	for rows.Next() {
 		var includes []string
 		var excludes []string
 		if err := rows.Scan(pq.Array(&includes), pq.Array(&excludes)); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
-		rules.PathIncludes = append(rules.PathIncludes, includes...)
-		rules.PathExcludes = append(rules.PathExcludes, excludes...)
+		perms.PathIncludes = append(perms.PathIncludes, includes...)
+		perms.PathExcludes = append(perms.PathExcludes, excludes...)
 	}
 
 	if err := rows.Close(); err != nil {
 		return nil, errors.Wrap(err, "closing rows")
 	}
 
-	return rules, nil
+	return perms, nil
 }
 
 type MockSubRepoPerms struct {

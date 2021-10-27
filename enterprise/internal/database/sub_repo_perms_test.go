@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-
 	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestSubRepoPermsInsert(t *testing.T) {
@@ -25,11 +25,11 @@ func TestSubRepoPermsInsert(t *testing.T) {
 
 	userID := int32(1)
 	repoID := int32(1)
-	rules := Rules{
+	perms := authz.SubRepoPermissions{
 		PathIncludes: []string{"/src/foo/*"},
 		PathExcludes: []string{"/src/bar/*"},
 	}
-	if err := s.Upsert(ctx, userID, repoID, rules); err != nil {
+	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
 		t.Fatal(err)
 	}
 
@@ -38,7 +38,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(&rules, have); diff != "" {
+	if diff := cmp.Diff(&perms, have); diff != "" {
 		t.Fatal(diff)
 	}
 }
@@ -57,21 +57,21 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 
 	userID := int32(1)
 	repoID := int32(1)
-	rules := Rules{
+	perms := authz.SubRepoPermissions{
 		PathIncludes: []string{"/src/foo/*"},
 		PathExcludes: []string{"/src/bar/*"},
 	}
 	// Insert initial data
-	if err := s.Upsert(ctx, userID, repoID, rules); err != nil {
+	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
 		t.Fatal(err)
 	}
 
-	// Upsert to change rules
-	rules = Rules{
+	// Upsert to change perms
+	perms = authz.SubRepoPermissions{
 		PathIncludes: []string{"/src/foo_upsert/*"},
 		PathExcludes: []string{"/src/bar_upsert/*"},
 	}
-	if err := s.Upsert(ctx, userID, repoID, rules); err != nil {
+	if err := s.Upsert(ctx, userID, repoID, perms); err != nil {
 		t.Fatal(err)
 	}
 
@@ -80,7 +80,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(&rules, have); diff != "" {
+	if diff := cmp.Diff(&perms, have); diff != "" {
 		t.Fatal(diff)
 	}
 }
