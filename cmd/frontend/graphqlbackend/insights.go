@@ -58,6 +58,7 @@ type InsightsPointsArgs struct {
 }
 
 type InsightSeriesResolver interface {
+	SeriesId() string
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 	Status(ctx context.Context) (InsightStatusResolver, error)
