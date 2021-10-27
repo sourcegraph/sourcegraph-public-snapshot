@@ -28,6 +28,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			name,
 			type,
 			pattern,
+			repository_patterns,
 			retention_enabled,
 			retention_duration_hours,
 			retain_intermediate_commits,
@@ -35,11 +36,12 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, 42,   'policy 1', 'GIT_TREE',   'ab/',      true,  2, false, false, 3, true),
-			(2, 42,   'policy 2', 'GIT_TREE',   'nm/',      false, 3, true,  false, 4, false),
-			(3, 43,   'policy 3', 'GIT_TREE',   'xy/',      true,  4, false, true,  5, false),
-			(4, NULL, 'policy 4', 'GIT_COMMIT', 'deadbeef', false, 5, true,  false, 6, true),
-			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      false, 6, false, true,  6, false)
+			(1, 42,   'policy 1', 'GIT_TREE',   'ab/',      null,           true,  2, false, false, 3, true),
+			(2, 42,   'policy 2', 'GIT_TREE',   'nm/',      null,           false, 3, true,  false, 4, false),
+			(3, 43,   'policy 3', 'GIT_TREE',   'xy/',      null,           true, 4, false, true,  5, false),
+			(4, NULL, 'policy 4', 'GIT_COMMIT', 'deadbeef', null,           false, 5, true,  false, 6, true),
+			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      null,           false, 6, false, true,  6, false),
+			(6, 44,   'policy 6', 'GIT_TAG',    '',         '{*/policy 1}', false, 6, false, true,  6, false)
 	`)
 	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -61,6 +63,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Name:                      "policy 4",
 				Type:                      GitObjectTypeCommit,
 				Pattern:                   "deadbeef",
+				RepositoryPatterns:        nil,
 				RetentionEnabled:          false,
 				RetentionDuration:         &d1,
 				RetainIntermediateCommits: true,
@@ -74,6 +77,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Name:                      "policy 5",
 				Type:                      GitObjectTypeTag,
 				Pattern:                   "3.0",
+				RepositoryPatterns:        nil,
 				RetentionEnabled:          false,
 				RetentionDuration:         &d2,
 				RetainIntermediateCommits: false,
@@ -109,6 +113,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Name:                      "policy 1",
 				Type:                      GitObjectTypeTree,
 				Pattern:                   "ab/",
+				RepositoryPatterns:        nil,
 				RetentionEnabled:          true,
 				RetentionDuration:         &d1,
 				RetainIntermediateCommits: false,
@@ -122,11 +127,46 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Name:                      "policy 2",
 				Type:                      GitObjectTypeTree,
 				Pattern:                   "nm/",
+				RepositoryPatterns:        nil,
 				RetentionEnabled:          false,
 				RetentionDuration:         &d3,
 				RetainIntermediateCommits: true,
 				IndexingEnabled:           false,
 				IndexCommitMaxAge:         &d4,
+				IndexIntermediateCommits:  false,
+			},
+		}
+		if diff := cmp.Diff(expected, policies); diff != "" {
+			t.Errorf("unexpected configuration policies (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("repository pattern", func(t *testing.T) {
+		repositoryID := 44
+
+		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
+			RepositoryID: repositoryID,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error fetching configuration policies: %s", err)
+		}
+
+		d6 := time.Hour * 6
+		repositoryPattern := []string{"*/policy 1"}
+
+		expected := []ConfigurationPolicy{
+			{
+				ID:                        6,
+				RepositoryID:              &repositoryID,
+				Name:                      "policy 6",
+				Type:                      GitObjectTypeTag,
+				Pattern:                   "",
+				RepositoryPatterns:        &repositoryPattern,
+				RetentionEnabled:          false,
+				RetentionDuration:         &d6,
+				RetainIntermediateCommits: false,
+				IndexingEnabled:           true,
+				IndexCommitMaxAge:         &d6,
 				IndexIntermediateCommits:  false,
 			},
 		}
