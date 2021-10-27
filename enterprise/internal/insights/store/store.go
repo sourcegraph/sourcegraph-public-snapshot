@@ -300,6 +300,9 @@ func countDataQuery(opts CountDataOpts) *sqlf.Query {
 }
 
 func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries) error {
+	if series == nil {
+		return errors.New("invalid input for Delete Snapshots")
+	}
 	err := s.Exec(ctx, sqlf.Sprintf(deleteSnapshotsSql, sqlf.Sprintf(snapshotsTable), series.SeriesID))
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)

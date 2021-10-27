@@ -79,7 +79,7 @@ http:
   headers:
     X-Content-Type-Options: [nosniff]
   debug:
-    addr: localhost:5001
+    addr: :5001
     prometheus:
       enabled: true
       path: /metrics
@@ -93,7 +93,7 @@ proxy:
 EOF
 
   # Run registry as a persistent daemon container.
-  docker run -d --restart=always -p 5000:5000 -v ${DOCKER_REGISTRY_CONFIG_FILE}:/etc/docker/registry/config.yml --name registry registry:2
+  docker run -d --restart=always -p 5000:5000 -p 5001:5001 -v ${DOCKER_REGISTRY_CONFIG_FILE}:/etc/docker/registry/config.yml --name registry registry:2
 }
 
 function install_node_exporter() {

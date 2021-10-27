@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 
 	"github.com/graph-gophers/graphql-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -26,7 +27,7 @@ var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightD
 var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
 var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
 var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
-var _ graphqlbackend.CreateInsightResultResolver = &createInsightResultResolver{}
+var _ graphqlbackend.InsightViewPayloadResolver = &insightPayloadResolver{}
 var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
 var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
 var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
@@ -169,7 +170,7 @@ func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (st
 	return l.series.LineColor, nil
 }
 
-func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.CreateInsightResultResolver, err error) {
+func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
 	uid := actor.FromContext(ctx).UID
 
 	tx, err := r.insightStore.Transact(ctx)
@@ -207,15 +208,46 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			return nil, errors.Wrap(err, "AttachSeriesToView")
 		}
 	}
-	return &createInsightResultResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
 }
 
-type createInsightResultResolver struct {
+func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
+	tx, err := r.insightStore.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	var insightViewId string
+	err = relay.UnmarshalSpec(args.Id, &insightViewId)
+	if err != nil {
+		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	}
+
+	// TODO: Check permissions #25971
+
+	_, err = tx.UpdateView(ctx, types.InsightView{
+		UniqueID: insightViewId,
+		Title:    emptyIfNil(args.Input.PresentationOptions.Title),
+		Filters: types.InsightViewFilters{
+			IncludeRepoRegex: args.Input.ViewControls.Filters.IncludeRepoRegex,
+			ExcludeRepoRegex: args.Input.ViewControls.Filters.ExcludeRepoRegex},
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "UpdateView")
+	}
+
+	// TODO: Update data series here #25979
+
+	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
+}
+
+type insightPayloadResolver struct {
 	viewId string
 	baseInsightResolver
 }
 
-func (c *createInsightResultResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
+func (c *insightPayloadResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
 	mapped, err := c.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: []int{int(actor.FromContext(ctx).UID)}})
 	if err != nil {
 		return nil, err
