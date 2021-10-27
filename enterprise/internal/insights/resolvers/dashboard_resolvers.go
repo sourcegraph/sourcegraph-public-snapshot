@@ -28,7 +28,7 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	orgStore *database.OrgStore
+	orgStore database.OrgStore
 	args     *graphqlbackend.InsightsDashboardsArgs
 
 	baseInsightResolver
