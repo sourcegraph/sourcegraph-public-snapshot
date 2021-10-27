@@ -166,19 +166,24 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 
 	// Pull permissions from protects file.
 	perms := &authz.ExternalUserPermissions{}
-	err = scanProtects(rc, repoIncludesExcludesScanner(perms))
+	if len(p.depots) == 0 {
+		err = errors.Wrap(scanProtects(rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
+	} else {
+		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
+		err = errors.Wrap(scanProtects(rc, fullRepoPermsScanner(perms, p.depots)), "fullRepoPermsScanner")
+	}
 
-	// Treat all paths as prefixes.
+	// Treat all Contains paths as prefixes.
 	for i, include := range perms.IncludeContains {
-		perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresWildcardMatchAll)
+		perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresMatchSyntax[perforceWildcardMatchAll])
 	}
 	for i, exclude := range perms.ExcludeContains {
-		perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresWildcardMatchAll)
+		perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresMatchSyntax[perforceWildcardMatchAll])
 	}
 
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
-	return perms, errors.Wrap(err, "scanRepoIncludesExcludes.Err")
+	return perms, errors.Wrap(err, "FetchUserPerms")
 }
 
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
