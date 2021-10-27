@@ -6,8 +6,8 @@ import { useHistory, useLocation } from 'react-router'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
-import { hasTouchScreen } from '@sourcegraph/shared/src/util/mobileDetection'
 
+import styles from './NavDropdown.module.scss'
 import navItemStyles from './NavItem.module.scss'
 
 import { NavItem, NavLink } from '.'
@@ -27,22 +27,23 @@ interface NavDropdownProps {
 }
 
 export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
-    const isMobile = useMemo(() => hasTouchScreen(), [])
     const location = useLocation()
     const history = useHistory()
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggle = useCallback(
         (event: React.KeyboardEvent | React.MouseEvent) => {
-            const isClick = event.type === 'click'
-            const isEnter = event.type === 'keydown' && (event as React.KeyboardEvent).key === 'Enter'
-            if (!isMobile && (isClick || isEnter)) {
+            // Handle toggling the dropdown through keyboard events. Enter key is used to navigate to toggle item path.
+            if (event.type !== 'keydown') {
+                return
+            }
+            if ((event as React.KeyboardEvent).key === 'Enter') {
                 history.push(toggleItem.path)
                 return
             }
             setIsDropdownOpen(!isDropdownOpen)
         },
-        [history, isDropdownOpen, isMobile, toggleItem.path]
+        [history, isDropdownOpen, toggleItem.path]
     )
 
     const isItemSelected = useMemo(
@@ -50,12 +51,6 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
             items.some(item => location.pathname.startsWith(item.path)) ||
             location.pathname.startsWith(toggleItem.path),
         [items, toggleItem, location.pathname]
-    )
-
-    // Add mobileHomeItem to dropdown items on mobile screens
-    const dropdownItems = useMemo(
-        () => (isMobile ? [{ ...mobileHomeItem, path: toggleItem.path }] : []).concat(items),
-        [isMobile, toggleItem, mobileHomeItem, items]
     )
 
     // We render the bigger screen version (dropdown) together with the smaller screen version (list of nav items)
@@ -66,7 +61,11 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
             <NavItem className="d-none d-md-flex">
                 <ButtonDropdown
                     isOpen={isDropdownOpen}
-                    onMouseLeave={() => !isMobile && setIsDropdownOpen(false)}
+                    onPointerLeave={(event: React.PointerEvent) => {
+                        if (event.pointerType === 'mouse') {
+                            setIsDropdownOpen(false)
+                        }
+                    }}
                     toggle={toggle}
                 >
                     <DropdownToggle
@@ -78,7 +77,13 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             'p-0'
                         )}
                         nav={true}
-                        onMouseEnter={() => !isMobile && setIsDropdownOpen(true)}
+                        onPointerEnter={() => setIsDropdownOpen(true)}
+                        onPointerDown={(event: React.PointerEvent) => {
+                            // Navigate to toggle item path on mouse click.
+                            if (event.pointerType === 'mouse') {
+                                history.push(toggleItem.path)
+                            }
+                        }}
                     >
                         <span className={navItemStyles.linkContent}>
                             <toggleItem.icon className={classNames('icon-inline', navItemStyles.icon)} />
@@ -106,17 +111,28 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             },
                         }}
                     >
-                        {dropdownItems.map(item => (
+                        <>
+                            {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
                             <Link
-                                key={item.path}
-                                to={item.path}
-                                className="dropdown-item"
+                                key={toggleItem.path}
+                                to={toggleItem.path}
+                                className={classNames('dropdown-item', styles.showOnTouchScreen)}
                                 onClick={() => setIsDropdownOpen(false)}
-                                role="menuitem"
                             >
-                                {item.content}
+                                {mobileHomeItem.content}
                             </Link>
-                        ))}
+                            {items.map(item => (
+                                <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    className="dropdown-item"
+                                    onClick={() => setIsDropdownOpen(false)}
+                                    role="menuitem"
+                                >
+                                    {item.content}
+                                </Link>
+                            ))}
+                        </>
                     </DropdownMenu>
                 </ButtonDropdown>
             </NavItem>
