@@ -95,7 +95,7 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSe
 
 }
 
-func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) (err error) {
+func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int) (err error) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
 	defer func() {
 		a.Error(err)
@@ -103,7 +103,7 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = symbol.Search(ctx, args, limit, a)
+	err = symbol.Search(ctx, args, notSearcherOnly, globalSearch, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 

@@ -1546,7 +1546,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoSymbolSearch(ctx, &argsIndexed, limit)
+				// This code path implies not-only-searcher is run (3rd arg is true) and global-search is run (4rd arg is true)
+				_ = agg.DoSymbolSearch(ctx, &argsIndexed, true, true, limit)
 			})
 		}
 
@@ -1611,7 +1612,10 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoSymbolSearch(ctx, args, limit)
+
+				notSearcherOnly := args.Mode != search.SearcherOnly
+
+				_ = agg.DoSymbolSearch(ctx, args, notSearcherOnly, false, limit)
 			})
 		}
 	}
