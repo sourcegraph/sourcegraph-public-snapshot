@@ -255,7 +255,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 		return nil, err
 	}
 	if memberCount == 1 {
-		return nil, errors.Errorf("you can’t remove the only member of an organization")
+		return nil, errors.New("you can’t remove the only member of an organization")
 	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
 	return nil, database.OrgMembers(r.db).Remove(ctx, orgID, userID)
