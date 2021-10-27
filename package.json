@@ -46,7 +46,7 @@
     "download-puppeteer-browser": "yarn --cwd client/shared download-puppeteer-browser",
     "build-browser-extension": "yarn --cwd client/browser run build",
     "install:sg": "dev/sg/install.sh",
-    "optimize-svg-assets": "svgo ui/assets/img"
+    "optimize-svg-assets": "svgo ui/assets/img --multipass --config=\"./svgo.config.js\""
   },
   "browserslist": [
     "last 1 version",
@@ -340,6 +340,7 @@
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@sourcegraph/react-loading-spinner": "0.0.7",
     "@sqs/jsonc-parser": "^1.0.3",
+    "@types/svgo": "^2.6.0",
     "@visx/annotation": "^1.7.2",
     "@visx/axis": "^1.7.0",
     "@visx/glyph": "^1.7.0",

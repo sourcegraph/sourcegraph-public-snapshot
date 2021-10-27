@@ -5642,6 +5642,13 @@
   resolved "https://registry.npmjs.org/@types/stripe-v3/-/stripe-v3-3.0.8.tgz#9c2816acf34dcf0948236fc81ce99442344ebfb4"
   integrity sha512-66qa6x17+HCqc/tRTwYqSOYHsSAoGPAr4gLJFIQwY/em1JjePDXa2lcBqB3mUrVuMhFyn/CP4fJy2yIE6gwqjw==
 
+"@types/svgo@^2.6.0":
+  version "2.6.0"
+  resolved "https://registry.npmjs.org/@types/svgo/-/svgo-2.6.0.tgz#f0c50eed286422f63b4e3346d8a309b0ea67d58a"
+  integrity sha512-VSdhb3KTOglle1SLQD4+TB6ezj/MS3rN98gOUkXzbTUhG8VjFKHXN3OVgEFlTnW5fYBxt+lzZlD3PFqkwMj36Q==
+  dependencies:
+    "@types/node" "*"
+
 "@types/tapable@^1", "@types/tapable@^1.0.5":
   version "1.0.7"
   resolved "https://registry.npmjs.org/@types/tapable/-/tapable-1.0.7.tgz#545158342f949e8fd3bfd813224971ecddc3fac4"
