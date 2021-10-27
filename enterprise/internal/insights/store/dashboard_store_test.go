@@ -125,7 +125,7 @@ func TestCreateDashboard(t *testing.T) {
 			ID:           1,
 			Title:        "test dashboard 1",
 			UserIdGrants: []int64{},
-			OrgIdGrants:  []int64{},
+			OrgIdGrants:  []int64{1},
 			GlobalGrant:  true,
 		}}).Equal(t, got)
 
