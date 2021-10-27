@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -50,8 +52,8 @@ func (s *SubRepoPermsStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-// Upsert will upsert sub repo permissions data
-func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID, repoID int32, perms authz.SubRepoPermissions) error {
+// Upsert will upsert sub repo permissions data.
+func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, updated_at)
 VALUES (%s, %s, %s, %s, now())
@@ -62,8 +64,8 @@ SET (user_id, repo_id, path_includes, path_excludes, updated_at) =
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
-// Get will fetch sub repo rules for the given repo and user combination
-func (s *SubRepoPermsStore) Get(ctx context.Context, userID, repoID int32) (*authz.SubRepoPermissions, error) {
+// Get will fetch sub repo rules for the given repo and user combination.
+func (s *SubRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
@@ -92,6 +94,36 @@ AND repo_id = %s
 	}
 
 	return perms, nil
+}
+
+// GetByUser fetches all sub repo perms for a user keyed by repo.
+func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoID]authz.SubRepoPermissions, error) {
+	q := sqlf.Sprintf(`
+SELECT repo_id, path_includes, path_excludes
+FROM sub_repo_permissions
+WHERE user_id = %s
+`, userID)
+
+	rows, err := s.Query(ctx, q)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting sub repo permissions by user")
+	}
+
+	result := make(map[api.RepoID]authz.SubRepoPermissions)
+	for rows.Next() {
+		var perms authz.SubRepoPermissions
+		var repoID api.RepoID
+		if err := rows.Scan(&repoID, pq.Array(&perms.PathIncludes), pq.Array(&perms.PathExcludes)); err != nil {
+			return nil, errors.Wrap(err, "scanning row")
+		}
+		result[repoID] = perms
+	}
+
+	if err := rows.Close(); err != nil {
+		return nil, errors.Wrap(err, "closing rows")
+	}
+
+	return result, nil
 }
 
 type MockSubRepoPerms struct {
