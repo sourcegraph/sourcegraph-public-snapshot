@@ -196,7 +196,7 @@ func Run(ctx context.Context, args Args) (results []Result, err error) {
 }
 
 // Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args) ([]FileMatch, error) {
+func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
 	defer span.Finish()
 
@@ -205,9 +205,9 @@ func Matches(ctx context.Context, args Args) ([]FileMatch, error) {
 	if err != nil {
 		return nil, err
 	}
-	var matches []FileMatch
+	var matches []*FileMatch
 	for _, r := range results {
-		matches = append(matches, *r.(*FileMatch))
+		matches = append(matches, r.(*FileMatch))
 	}
 	return matches, nil
 }
