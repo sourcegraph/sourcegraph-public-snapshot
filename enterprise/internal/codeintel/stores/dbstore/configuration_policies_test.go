@@ -310,6 +310,7 @@ func TestCreateConfigurationPolicy(t *testing.T) {
 		RepositoryID:              &repositoryID,
 		Name:                      "name",
 		Type:                      GitObjectTypeCommit,
+		RepositoryPatterns:        &[]string{"a/", "b/"},
 		Pattern:                   "deadbeef",
 		RetentionEnabled:          false,
 		RetentionDuration:         &d1,
