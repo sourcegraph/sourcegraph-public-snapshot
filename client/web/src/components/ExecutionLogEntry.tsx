@@ -1,6 +1,6 @@
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import React from 'react'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
@@ -40,7 +40,7 @@ export const ExecutionLogEntry: React.FunctionComponent<ExecutionLogEntryProps> 
                         {logEntry.exitCode === 0 ? (
                             <CheckCircleIcon className="text-success mr-1" />
                         ) : (
-                            <ErrorIcon className="text-danger mr-1" />
+                            <AlertCircleIcon className="text-danger mr-1" />
                         )}
                     </>
                 )}

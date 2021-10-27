@@ -364,6 +364,26 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 	return view, nil
 }
 
+func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (_ types.InsightView, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.InsightView{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	row := tx.QueryRow(ctx, sqlf.Sprintf(updateInsightViewSql,
+		view.Title,
+		view.Description,
+		view.Filters.IncludeRepoRegex,
+		view.Filters.ExcludeRepoRegex,
+		view.UniqueID,
+	))
+	if row.Err() != nil {
+		return types.InsightView{}, row.Err()
+	}
+	return view, nil
+}
+
 func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView, grants []InsightViewGrant) error {
 	if view.ID == 0 {
 		return errors.New("unable to grant view permissions invalid insight view id")
@@ -546,6 +566,11 @@ const createInsightViewSql = `
 INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
 VALUES (%s, %s, %s, %s, %s)
 returning id;`
+
+const updateInsightViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateView
+UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s
+WHERE unique_id = %s;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
