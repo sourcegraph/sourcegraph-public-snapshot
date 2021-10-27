@@ -244,6 +244,11 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		repositoryPatterns = pq.Array(*configurationPolicy.RepositoryPatterns)
 	}
 
+	// Set last_resolved_at to null at creation as this is handled by a janitor background job
+	if configurationPolicy.LastResolvedAt != nil {
+		configurationPolicy.LastResolvedAt = nil
+	}
+
 	hydratedConfigurationPolicy, _, err := scanFirstConfigurationPolicy(s.Query(ctx, sqlf.Sprintf(
 		createConfigurationPolicyQuery,
 		configurationPolicy.RepositoryID,
@@ -257,6 +262,7 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		configurationPolicy.IndexingEnabled,
 		indexingCommitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
+		configurationPolicy.LastResolvedAt,
 	)))
 	if err != nil {
 		return ConfigurationPolicy{}, err
@@ -278,8 +284,9 @@ INSERT INTO lsif_configuration_policies (
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	index_intermediate_commits,
+	last_resolved_at
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
@@ -293,7 +300,8 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
+	index_intermediate_commits,
+	last_resolved_at
 `
 
 var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
