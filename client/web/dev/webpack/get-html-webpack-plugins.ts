@@ -17,7 +17,7 @@ export interface WebpackManifest {
     runtimeBundle?: string
     /** React entry bundle, only used in production mode */
     reactBundle?: string
-    /** If script files should be treated as JS modules */
+    /** If script files should be treated as JS modules. Required for esbuild bundle. */
     isModule?: boolean
 }
 
