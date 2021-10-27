@@ -10,7 +10,7 @@ import {
     InsightsDashboardsResult,
     UpdateInsightsDashboardInput,
 } from '../../../../graphql-operations'
-import { InsightDashboard, InsightsDashboardType } from '../types'
+import { InsightDashboard } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { CodeInsightsBackend } from './code-insights-backend'
@@ -80,13 +80,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // TODO: Update input to use CreateInsightsDashboardInput directly
     public createDashboard = (input: DashboardCreateInput): Observable<void> => {
+        if (!input.grants) {
+            throw new Error('`grants` are required to create a new dashboard')
+        }
+
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
-            grants: {
-                global: input.visibility === InsightsDashboardType.Global,
-                users: input.visibility === InsightsDashboardType.Personal ? ['TODO: Get userID'] : [],
-                organizations: input.visibility === InsightsDashboardType.Organization ? ['TODO: Get orgID'] : [],
-            },
+            grants: input.grants,
         }
 
         return requestGraphQL(
@@ -105,7 +105,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     // TODO: Update input to use ID directly
     public deleteDashboard = (input: DashboardDeleteInput): Observable<void> => {
-        const mappedInput: { id: string } = { id: input.dashboardSettingKey }
+        if (!input.id) {
+            throw new Error('`id` is required to delete a dashboard')
+        }
+
         return requestGraphQL(
             gql`
                 mutation DeleteDashboard($id: ID!) {
@@ -114,23 +117,23 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 }
             `,
-            mappedInput
+            input.id
         ).pipe(mapTo(undefined))
     }
 
     // TODO: Update input to use UpdateInsightsDashboardInput directly
-    public updateDashboard = (input: DashboardUpdateInput): Observable<void> => {
+    public updateDashboard = ({ id, nextDashboardInput }: DashboardUpdateInput): Observable<void> => {
+        if (!id) {
+            throw new Error('`id` is required to update a dashboard')
+        }
+
+        if (!nextDashboardInput.grants) {
+            throw new Error('`grants` are required to update a dashboard')
+        }
+
         const mappedInput: UpdateInsightsDashboardInput = {
-            title: input.nextDashboardInput.name,
-            grants: {
-                global: input.nextDashboardInput.visibility === InsightsDashboardType.Global,
-                users:
-                    input.nextDashboardInput.visibility === InsightsDashboardType.Personal ? ['TODO: Get userID'] : [],
-                organizations:
-                    input.nextDashboardInput.visibility === InsightsDashboardType.Organization
-                        ? ['TODO: Get orgID']
-                        : [],
-            },
+            title: nextDashboardInput.name,
+            grants: nextDashboardInput.grants,
         }
 
         return requestGraphQL(
@@ -143,7 +146,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     }
                 }
             `,
-            mappedInput
+            {
+                id,
+                input: mappedInput,
+            }
         ).pipe(mapTo(undefined))
     }
 
