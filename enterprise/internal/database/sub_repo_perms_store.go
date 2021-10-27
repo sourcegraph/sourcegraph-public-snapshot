@@ -52,7 +52,6 @@ func (s *SubRepoPermsStore) Done(err error) error {
 
 // Upsert will upsert sub repo permissions data
 func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID, repoID int32, perms authz.SubRepoPermissions) error {
-	// TODO: Replace params with authz type once merged
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, updated_at)
 VALUES (%s, %s, %s, %s, now())
@@ -63,8 +62,8 @@ SET (user_id, repo_id, path_includes, path_excludes, updated_at) =
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
-// GetRules will fetch sub repo rules for the given repo and user combination
-func (s *SubRepoPermsStore) GetRules(ctx context.Context, userID, repoID int32) (*authz.SubRepoPermissions, error) {
+// Get will fetch sub repo rules for the given repo and user combination
+func (s *SubRepoPermsStore) Get(ctx context.Context, userID, repoID int32) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions

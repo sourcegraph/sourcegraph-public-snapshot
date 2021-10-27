@@ -33,7 +33,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := s.GetRules(ctx, userID, repoID)
+	have, err := s.Get(ctx, userID, repoID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := s.GetRules(ctx, userID, repoID)
+	have, err := s.Get(ctx, userID, repoID)
 	if err != nil {
 		t.Fatal(err)
 	}
