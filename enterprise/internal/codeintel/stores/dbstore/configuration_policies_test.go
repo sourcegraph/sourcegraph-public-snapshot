@@ -38,10 +38,11 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		) VALUES
 			(1, 42,   'policy 1', 'GIT_TREE',   'ab/',      null,           true,  2, false, false, 3, true),
 			(2, 42,   'policy 2', 'GIT_TREE',   'nm/',      null,           false, 3, true,  false, 4, false),
-			(3, 43,   'policy 3', 'GIT_TREE',   'xy/',      null,           true, 4, false, true,  5, false),
+			(3, 43,   'policy 3', 'GIT_TREE',   'xy/',      null,           true,  4, false, true,  5, false),
 			(4, NULL, 'policy 4', 'GIT_COMMIT', 'deadbeef', null,           false, 5, true,  false, 6, true),
 			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      null,           false, 6, false, true,  6, false),
-			(6, 44,   'policy 6', 'GIT_TAG',    '',         '{*/policy 1}', false, 6, false, true,  6, false)
+			(6, 44,   'policy 6', 'GIT_TAG',    '',         '{*/policy 1}', false, 6, false, true,  6, false),
+			(7, NULL, 'policy 7', 'GIT_TAG',    '3.0',      '{*/policy 3}', false, 7, false, true,  7, false)
 	`)
 	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -85,6 +86,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				IndexCommitMaxAge:         &d2,
 				IndexIntermediateCommits:  false,
 			},
+			// Should not contain ID 7 because it contains a repository pattern.
 		}
 		if diff := cmp.Diff(expected, policies); diff != "" {
 			t.Errorf("unexpected configuration policies (-want +got):\n%s", diff)
@@ -141,7 +143,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 	})
 
-	t.Run("repository pattern", func(t *testing.T) {
+	t.Run("no repository pattern", func(t *testing.T) {
 		repositoryID := 44
 
 		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
