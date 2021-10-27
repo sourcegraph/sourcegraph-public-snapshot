@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/cockroachdb/errors"
@@ -253,7 +252,6 @@ func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, spec *batchesl
 	// Add external changeset specs.
 	if c.opts.ImportChangesets {
 		for _, ic := range spec.ImportChangesets {
-			fmt.Println("Horse!")
 			repo, err := c.opts.ResolveRepoName(ctx, ic.Repository)
 			if err != nil {
 				wrapped := errors.Wrapf(err, "resolving repository name %q", ic.Repository)
