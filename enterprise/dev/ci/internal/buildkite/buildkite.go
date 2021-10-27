@@ -83,6 +83,7 @@ type Step struct {
 // step label, and return it.
 func (s *Step) GenerateKey() string {
 	s.Key = strings.ReplaceAll(s.Label, " ", "_")
+	s.Key = strings.ReplaceAll(s.Key, ".", "-")
 	return s.Key
 }
 
