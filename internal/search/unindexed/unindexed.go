@@ -301,3 +301,17 @@ func callSearcherOverRepos(
 
 	return g.Wait()
 }
+
+type TextSearch struct {
+	Zoekt           zoektutil.IndexedSearchRequest
+	Searcher        *search.SearcherParameters
+	notSearcherOnly bool
+}
+
+func (t *TextSearch) Run(ctx context.Context, stream streaming.Sender) error {
+	return SearchFilesInRepos(ctx, t.Zoekt, t.Searcher, t.notSearcherOnly, stream)
+}
+
+func (*TextSearch) Name() string {
+	return "Text"
+}
