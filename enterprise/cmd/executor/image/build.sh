@@ -158,9 +158,9 @@ ExecStart=/usr/local/bin/node_exporter \
   --collector.netdev \
   --collector.netstat \
   --collector.softnet \
-  --collector.edac \
   --collector.pressure \
-  --collector.vmstat
+  --collector.vmstat \
+  --collector.vmstat.fields '^(oom_kill|pgpg|pswp|pg.*fault|pgscan).*'
 [Install]
 WantedBy=multi-user.target
 EOF
