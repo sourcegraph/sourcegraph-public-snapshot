@@ -55,6 +55,20 @@ type Match struct {
 	Matched string `json:"matched"`
 }
 
+type Result interface {
+	result()
+}
+
+var (
+	_ Result = (*FileMatch)(nil)
+	_ Result = (*FileDiff)(nil)
+	_ Result = (*FileReplacement)(nil)
+)
+
+func (*FileMatch) result()       {}
+func (*FileDiff) result()        {}
+func (*FileReplacement) result() {}
+
 // FileMatch represents all the matches in a single file
 type FileMatch struct {
 	URI     string  `json:"uri"`
@@ -65,4 +79,10 @@ type FileMatch struct {
 type FileDiff struct {
 	URI  string `json:"uri"`
 	Diff string `json:"diff"`
+}
+
+// FileReplacement represents a file content been modified by a rewrite operation.
+type FileReplacement struct {
+	URI     string `json:"uri"`
+	Content string `json:"content"`
 }
