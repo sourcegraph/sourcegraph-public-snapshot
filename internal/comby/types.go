@@ -10,6 +10,17 @@ type DirPath string
 func (ZipPath) Value() {}
 func (DirPath) Value() {}
 
+type resultKind int
+
+const (
+	// MatchOnly means comby returns matches satisfying a pattern (no replacement)
+	MatchOnly resultKind = iota
+	// Replacement means comby returns the result of performing an in-place operation on file contents
+	Replacement
+	// Diff means comby returns a diff after performing an in-place operation on file contents
+	Diff
+)
+
 type Args struct {
 	// An Input to process (either a path to a directory or zip file)
 	Input
@@ -26,8 +37,7 @@ type Args struct {
 	// Matcher is a file extension (e.g., '.go') which denotes which language parser to use
 	Matcher string
 
-	// If MatchOnly is set to true, then comby will only find matches and not perform replacement
-	MatchOnly bool
+	ResultKind resultKind
 
 	// FilePatterns is a list of file patterns (suffixes) to filter and process
 	FilePatterns []string
@@ -55,6 +65,20 @@ type Match struct {
 	Matched string `json:"matched"`
 }
 
+type Result interface {
+	result()
+}
+
+var (
+	_ Result = (*FileMatch)(nil)
+	_ Result = (*FileDiff)(nil)
+	_ Result = (*FileReplacement)(nil)
+)
+
+func (*FileMatch) result()       {}
+func (*FileDiff) result()        {}
+func (*FileReplacement) result() {}
+
 // FileMatch represents all the matches in a single file
 type FileMatch struct {
 	URI     string  `json:"uri"`
@@ -65,4 +89,10 @@ type FileMatch struct {
 type FileDiff struct {
 	URI  string `json:"uri"`
 	Diff string `json:"diff"`
+}
+
+// FileReplacement represents a file content been modified by a rewrite operation.
+type FileReplacement struct {
+	URI     string `json:"uri"`
+	Content string `json:"rewritten_source"`
 }

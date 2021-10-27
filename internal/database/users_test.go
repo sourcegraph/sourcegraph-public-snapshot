@@ -619,7 +619,7 @@ func TestUsers_Delete(t *testing.T) {
 			}
 
 			// Create a repository to comply with the postgres repo constraint.
-			if err := Repos(db).Upsert(ctx, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
+			if err := upsertRepo(ctx, db, InsertRepoOp{Name: "myrepo", Description: "", Fork: false}); err != nil {
 				t.Fatal(err)
 			}
 

@@ -57,7 +57,7 @@ func HandleResetPasswordInit(db dbutil.DB) func(w http.ResponseWriter, r *http.R
 			return
 		}
 
-		resetURL, err := backend.MakePasswordResetURL(ctx, usr.ID)
+		resetURL, err := backend.MakePasswordResetURL(ctx, db, usr.ID)
 		if err == database.ErrPasswordResetRateLimit {
 			httpLogAndError(w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, "err", err)
 			return
@@ -117,7 +117,7 @@ func HandleSetPasswordEmail(ctx context.Context, db dbutil.DB, id int32) (string
 		return "", errors.Wrap(err, "get user by ID")
 	}
 
-	ru, err := backend.MakePasswordResetURL(ctx, id)
+	ru, err := backend.MakePasswordResetURL(ctx, db, id)
 	if err == database.ErrPasswordResetRateLimit {
 		return "", err
 	} else if err != nil {

@@ -504,7 +504,6 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("IMAGE", localImage),
 			bk.Env("VERSION", version),
-			bk.Cmd("yes | gcloud auth configure-docker"),
 		}
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
