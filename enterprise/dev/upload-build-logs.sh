@@ -30,4 +30,4 @@ echo "--- :go: Building sg"
 )
 
 echo "--- :arrow_up: Uploading logs (if build failed)"
-./ci_sg ci logs --out="$LOKI_URL" --state="failed"
+./ci_sg ci logs --out="$LOKI_URL" --state="failed" --branch="$BUILDKITE_BRANCH"
