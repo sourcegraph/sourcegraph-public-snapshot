@@ -136,10 +136,7 @@ async function startEsbuildDevelopmentServer({
     csrfTokenCookieMiddleware,
 }: DevelopmentServerInit): Promise<void> {
     const manifest = getManifest()
-    const htmlPage = getHTMLPage({
-        head: `<link rel="stylesheet" href="${manifest['app.css']}">`,
-        bodyEnd: `<script src="${manifest['app.js']}" type="module"></script>`,
-    })
+    const htmlPage = getHTMLPage(manifest)
 
     await esbuildDevelopmentServer({ host: '0.0.0.0', port: SOURCEGRAPH_HTTPS_PORT }, app => {
         app.use(csrfTokenCookieMiddleware)
