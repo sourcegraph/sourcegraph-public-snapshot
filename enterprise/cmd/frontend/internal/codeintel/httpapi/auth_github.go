@@ -60,7 +60,7 @@ func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Reque
 	// https://developer.github.com/v3/repos/#get endpoint to see if the user
 	// has write access to the given repository.
 	repo, userRequestErr := client.GetRepository(ctx, owner, name)
-	if userRequestErr != nil {
+	if userRequestErr == nil {
 		switch repo.ViewerPermission {
 		case "ADMIN", "MAINTAIN", "WRITE":
 			return 0, nil
