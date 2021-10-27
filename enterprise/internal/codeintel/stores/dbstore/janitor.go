@@ -119,21 +119,18 @@ WHERE
 GROUP BY repository_id, commit
 `
 
-// TODO - redocument
-// RefreshCommitResolvability will update each upload and index record belonging to the
-// given repository identifier and commit. If the delete flag is true, then the state of
-// each matching record will be soft-deleted. Regardless, the commit_last_checked_at value
-// will be bumped to the current (given) time. This method returns the count of upload and
-// index records modified, respectively.
-func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
-	ctx, traceLog, endObservation := s.operations.refreshCommitResolvability.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+// UpdateSourcedCommits updates the commit_last_checked_at field of each upload and index records belonging
+// to the given repository identifier and commit. This method returns the count of upload and index records
+// modified, respectively.
+func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
+	ctx, traceLog, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
-		refreshCommitResolvabilityQuery,
+		updateSourcedCommitsQuery,
 		repositoryID, commit, // candidate_uploads
 		repositoryID, commit, // candidate_indexes
 		now, now, // update_uploads, update_indexes
@@ -149,33 +146,64 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 	return uploadsUpdated, indexesUpdated, nil
 }
 
-const refreshCommitResolvabilityQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:RefreshCommitResolvability
+const updateSourcedCommitsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:UpdateSourcedCommits
 WITH
-` + refreshCommitResolvabilityQueryCandidateUploadsCTE + `,
-` + refreshCommitResolvabilityQueryCandidateIndexesCTE + `,
-` + refreshCommitResolvabilityQueryUpdateUploadsCTE + `,
-` + refreshCommitResolvabilityQueryUpdateIndexesCTE + `
+` + sourcedCommitsCandidateUploadsCTE + `,
+` + sourcedCommitsCandidateIndexesCTE + `,
+update_uploads AS (
+	UPDATE lsif_uploads u
+	SET commit_last_checked_at = %s
+	WHERE id IN (SELECT id FROM candidate_uploads)
+	RETURNING 1
+),
+update_indexes AS (
+	UPDATE lsif_indexes u
+	SET commit_last_checked_at = %s
+	WHERE id IN (SELECT id FROM candidate_indexes)
+	RETURNING 1
+)
 SELECT
 	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
 	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
 `
 
-// TODO - rename
-// RefreshCommitResolvability will update each upload and index record belonging to the
-// given repository identifier and commit. If the delete flag is true, then the state of
-// each matching record will be soft-deleted. Regardless, the commit_last_checked_at value
-// will be bumped to the current (given) time. This method returns the count of upload and
+const sourcedCommitsCandidateUploadsCTE = `
+candidate_uploads AS (
+	SELECT u.id
+	FROM lsif_uploads u
+	WHERE u.repository_id = %s AND u.commit = %s
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_uploads table.
+	ORDER BY u.id FOR UPDATE
+)
+`
+
+const sourcedCommitsCandidateIndexesCTE = `
+candidate_indexes AS (
+	SELECT u.id
+	FROM lsif_indexes u
+	WHERE u.repository_id = %s AND u.commit = %s
+
+	-- Lock these rows in a deterministic order so that we don't
+	-- deadlock with other processes updating the lsif_indexes table.
+	ORDER BY u.id FOR UPDATE
+)
+`
+
+// DeleteSourcedCommits deletes each upload and index records belonging to the given repository identifier and
+// commit. Uploads are soft deleted and indexes are hard-deleted. This method returns the count of upload and
 // index records modified, respectively.
-func (s *Store) RefreshCommitResolvability2(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsDeleted int, indexesDeleted int, err error) {
-	ctx, traceLog, endObservation := s.operations.refreshCommitResolvability.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsDeleted int, indexesDeleted int, err error) {
+	ctx, traceLog, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	uploadsDeleted, indexesDeleted, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
-		refreshCommitResolvability2Query,
+		deleteSourcedCommitsQuery,
 		repositoryID, commit, // candidate_uploads
 		repositoryID, commit, // candidate_indexes
 	)))
@@ -190,78 +218,25 @@ func (s *Store) RefreshCommitResolvability2(ctx context.Context, repositoryID in
 	return uploadsDeleted, indexesDeleted, nil
 }
 
-const refreshCommitResolvability2Query = `
--- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:RefreshCommitResolvability2
+const deleteSourcedCommitsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:DeleteSourcedCommits
 WITH
-` + refreshCommitResolvabilityQueryCandidateUploadsCTE + `,
-` + refreshCommitResolvabilityQueryCandidateIndexesCTE + `,
-` + refreshCommitResolvabilityQueryDeleteUploadsCTE + `,
-` + refreshCommitResolvabilityQueryDeleteIndexesCTE + `
-SELECT
-	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads,
-	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes
-`
-
-//
-//
-
-const refreshCommitResolvabilityQueryCandidateUploadsCTE = `
-candidate_uploads AS (
-	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.repository_id = %s AND u.commit = %s
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
-	ORDER BY u.id FOR UPDATE
-)
-`
-
-const refreshCommitResolvabilityQueryCandidateIndexesCTE = `
-candidate_indexes AS (
-	SELECT u.id
-	FROM lsif_indexes u
-	WHERE u.repository_id = %s AND u.commit = %s
-
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_indexes table.
-	ORDER BY u.id FOR UPDATE
-)
-`
-
-const refreshCommitResolvabilityQueryUpdateUploadsCTE = `
-update_uploads AS (
-	UPDATE lsif_uploads u
-	SET commit_last_checked_at = %s
-	WHERE id IN (SELECT id FROM candidate_uploads)
-	RETURNING 1
-)
-`
-
-const refreshCommitResolvabilityQueryUpdateIndexesCTE = `
-update_indexes AS (
-	UPDATE lsif_indexes u
-	SET commit_last_checked_at = %s
-	WHERE id IN (SELECT id FROM candidate_indexes)
-	RETURNING 1
-)
-`
-
-const refreshCommitResolvabilityQueryDeleteUploadsCTE = `
+` + sourcedCommitsCandidateUploadsCTE + `,
+` + sourcedCommitsCandidateIndexesCTE + `,
 delete_uploads AS (
 	UPDATE lsif_uploads u
 	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
 	WHERE id IN (SELECT id FROM candidate_uploads)
 	RETURNING 1
-)
-`
-
-const refreshCommitResolvabilityQueryDeleteIndexesCTE = `
+),
 delete_indexes AS (
 	DELETE FROM lsif_indexes u
 	WHERE id IN (SELECT id FROM candidate_indexes)
 	RETURNING 1
 )
+SELECT
+	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads,
+	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes
 `
 
 func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {

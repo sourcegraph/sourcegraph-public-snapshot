@@ -91,14 +91,14 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	}
 
 	var sanitizedCalls []updateInvocation
-	for _, call := range dbStore.RefreshCommitResolvabilityFunc.History() {
+	for _, call := range dbStore.UpdateSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
 			Delete:       false,
 		})
 	}
-	for _, call := range dbStore.RefreshCommitResolvability2Func.History() {
+	for _, call := range dbStore.DeleteSourcedCommitsFunc.History() {
 		sanitizedCalls = append(sanitizedCalls, updateInvocation{
 			RepositoryID: call.Arg1,
 			Commit:       call.Arg2,
@@ -114,6 +114,6 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	})
 
 	if diff := cmp.Diff(expectedCalls, sanitizedCalls); diff != "" {
-		t.Errorf("unexpected calls to RefreshCommitResolvability (-want +got):\n%s", diff)
+		t.Errorf("unexpected calls to UpdateSourcedCommits and DeleteSourcedCommits (-want +got):\n%s", diff)
 	}
 }

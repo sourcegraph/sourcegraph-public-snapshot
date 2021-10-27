@@ -47,12 +47,12 @@ func TestStaleSourcedCommits(t *testing.T) {
 	}
 
 	// 120s away from next check (threshold is 60s)
-	if _, _, err := store.RefreshCommitResolvability(context.Background(), 50, makeCommit(1), now); err != nil {
+	if _, _, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now); err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
 	// 30s away from next check (threshold is 60s)
-	if _, _, err := store.RefreshCommitResolvability(context.Background(), 50, makeCommit(2), now.Add(time.Second*90)); err != nil {
+	if _, _, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(2), now.Add(time.Second*90)); err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
 
@@ -69,7 +69,7 @@ func TestStaleSourcedCommits(t *testing.T) {
 	}
 }
 
-func TestRefreshCommitResolvability(t *testing.T) {
+func TestUpdateSourcedCommits(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -94,7 +94,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 		Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
 	)
 
-	uploadsUpdated, indexesUpdated, err := store.RefreshCommitResolvability(context.Background(), 50, makeCommit(1), now)
+	uploadsUpdated, indexesUpdated, err := store.UpdateSourcedCommits(context.Background(), 50, makeCommit(1), now)
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
@@ -137,7 +137,7 @@ func TestRefreshCommitResolvability(t *testing.T) {
 	}
 }
 
-func TestRefreshCommitResolvability2(t *testing.T) {
+func TestDeleteSourcedCommits(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -162,7 +162,7 @@ func TestRefreshCommitResolvability2(t *testing.T) {
 		Index{ID: 5, RepositoryID: 50, Commit: makeCommit(1)},
 	)
 
-	uploadsUpdated, indexesUpdated, err := store.RefreshCommitResolvability2(context.Background(), 52, makeCommit(7), now)
+	uploadsUpdated, indexesUpdated, err := store.DeleteSourcedCommits(context.Background(), 52, makeCommit(7), now)
 	if err != nil {
 		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
 	}
