@@ -11,6 +11,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
@@ -41,7 +42,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (*gql.Repo
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(dbconn.Global, repo), nil
+	return gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo), nil
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {

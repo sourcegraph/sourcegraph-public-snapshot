@@ -15,6 +15,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -428,7 +429,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 			return nil, err
 		}
 
-		resolvers = append(resolvers, gql.NewRepositoryResolver(dbconn.Global, repo))
+		resolvers = append(resolvers, gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo))
 	}
 
 	return resolvers, nil
