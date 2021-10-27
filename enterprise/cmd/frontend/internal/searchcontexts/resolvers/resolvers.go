@@ -135,41 +135,29 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func unmarshalRepositoryID(id graphql.ID) (*api.RepoID, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
-		return nil, err
-	}
-	return &repoID, nil
-}
-
 func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
 	repoIDs := make([]api.RepoID, 0, len(args))
 	for _, repository := range args {
-		repoID, err := unmarshalRepositoryID(repository.RepositoryID)
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
-		repoIDs = append(repoIDs, *repoID)
+		repoIDs = append(repoIDs, repoID)
 	}
-	repos, err := database.Repos(r.db).List(ctx, database.ReposListOptions{IDs: repoIDs})
+	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
-	}
-	idToRepo := make(map[api.RepoID]*types.Repo, len(repos))
-	for _, repo := range repos {
-		idToRepo[repo.ID] = repo
 	}
 
 	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
 	for _, repository := range args {
-		repoID, err := unmarshalRepositoryID(repository.RepositoryID)
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
-		repo, ok := idToRepo[*repoID]
+		repo, ok := idToRepo[repoID]
 		if !ok {
-			return nil, errors.Errorf("cannot find repo with id: %v", repository.RepositoryID)
+			return nil, errors.Errorf("cannot find repo with id: %q", repository.RepositoryID)
 		}
 		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
 			Repo:      types.RepoName{ID: repo.ID, Name: repo.Name},
