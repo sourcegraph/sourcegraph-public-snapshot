@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useHistory, useLocation } from 'react-router'
 import { ButtonDropdown, DropdownMenu, DropdownToggle } from 'reactstrap'
 
@@ -26,25 +26,37 @@ interface NavDropdownProps {
     items: NavDropdownItem[]
 }
 
+const DROPDOWN_MODIFIERS = {
+    flip: {
+        enabled: false,
+    },
+    offset: {
+        enabled: true,
+        // Offset menu to the top so that the menu overlaps with the toggle button.
+        // This prevents the menu from closing when moving mouse cursor from the button
+        // to the menu.
+        offset: '-10,-2',
+    },
+}
+
 export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleItem, mobileHomeItem, items }) => {
     const location = useLocation()
     const history = useHistory()
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const toggle = useCallback(
-        (event: React.KeyboardEvent | React.MouseEvent) => {
-            // Handle toggling the dropdown through keyboard events. Enter key is used to navigate to toggle item path.
-            if (event.type !== 'keydown') {
-                return
-            }
-            if ((event as React.KeyboardEvent).key === 'Enter') {
-                history.push(toggleItem.path)
-                return
-            }
-            setIsDropdownOpen(!isDropdownOpen)
-        },
-        [history, isDropdownOpen, toggleItem.path]
-    )
+    const toggle = (event: React.KeyboardEvent | React.MouseEvent): void => {
+        // Handle toggling the dropdown through keyboard events. Enter key is used to navigate to toggle item path.
+        if (event.type !== 'keydown') {
+            return
+        }
+        if ((event as React.KeyboardEvent).key === 'Enter') {
+            history.push(toggleItem.path)
+            return
+        }
+        setIsDropdownOpen(!isDropdownOpen)
+    }
+
+    const closeDropdown = (): void => setIsDropdownOpen(false)
 
     const isItemSelected = useMemo(
         () =>
@@ -63,7 +75,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                     isOpen={isDropdownOpen}
                     onPointerLeave={(event: React.PointerEvent) => {
                         if (event.pointerType === 'mouse') {
-                            setIsDropdownOpen(false)
+                            closeDropdown()
                         }
                     }}
                     toggle={toggle}
@@ -97,27 +109,14 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             )}
                         </span>
                     </DropdownToggle>
-                    <DropdownMenu
-                        modifiers={{
-                            flip: {
-                                enabled: false,
-                            },
-                            offset: {
-                                enabled: true,
-                                // Offset menu to the top so that the menu overlaps with the toggle button.
-                                // This prevents the menu from closing when moving mouse cursor from the button
-                                // to the menu.
-                                offset: '0,-2',
-                            },
-                        }}
-                    >
+                    <DropdownMenu modifiers={DROPDOWN_MODIFIERS}>
                         <>
                             {/* This link does not have a role="menuitem" set, because it breaks the keyboard navigation for the dropdown when hidden. */}
                             <Link
                                 key={toggleItem.path}
                                 to={toggleItem.path}
                                 className={classNames('dropdown-item', styles.showOnTouchScreen)}
-                                onClick={() => setIsDropdownOpen(false)}
+                                onClick={closeDropdown}
                             >
                                 {mobileHomeItem.content}
                             </Link>
@@ -126,7 +125,7 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                                     key={item.path}
                                     to={item.path}
                                     className="dropdown-item"
-                                    onClick={() => setIsDropdownOpen(false)}
+                                    onClick={closeDropdown}
                                     role="menuitem"
                                 >
                                     {item.content}
