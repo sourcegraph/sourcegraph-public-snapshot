@@ -281,15 +281,6 @@ func (s *Store) writeMonikers(ctx context.Context, bundleID int, tableName strin
 		return err
 	}
 
-	// Drop the temporary table.
-	err = tx.Exec(ctx, sqlf.Sprintf(
-		dropLocationsTemporaryTableQuery,
-		sqlf.Sprintf(tableName),
-	))
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -309,11 +300,6 @@ INSERT INTO %s (dump_id, schema_version, scheme, identifier, data, num_locations
 SELECT %s, %s, source.scheme, source.identifier, source.data, source.num_locations
 FROM t_%s source
 ON CONFLICT DO NOTHING
-`
-
-const dropLocationsTemporaryTableQuery = `
--- source: enterprise/internal/codeintel/stores/lsifstore/data_write.go:writeLocations
-DROP TABLE T_%s
 `
 
 // withBatchInserter runs batch.WithInserter in a number of goroutines proportional to
