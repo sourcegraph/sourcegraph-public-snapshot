@@ -1896,13 +1896,14 @@ Foreign-key constraints:
 
 # Table "public.sub_repo_permissions"
 ```
-    Column     |  Type   | Collation | Nullable | Default 
----------------+---------+-----------+----------+---------
- repo_id       | integer |           | not null | 
- user_id       | integer |           | not null | 
- version       | integer |           | not null | 1
- path_includes | text[]  |           |          | 
- path_excludes | text[]  |           |          | 
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ repo_id       | integer                  |           | not null | 
+ user_id       | integer                  |           | not null | 
+ version       | integer                  |           | not null | 1
+ path_includes | text[]                   |           |          | 
+ path_excludes | text[]                   |           |          | 
+ updated_at    | timestamp with time zone |           | not null | now()
 Indexes:
     "sub_repo_permissions_repo_id_user_id_uindex" UNIQUE, btree (repo_id, user_id)
 Foreign-key constraints:

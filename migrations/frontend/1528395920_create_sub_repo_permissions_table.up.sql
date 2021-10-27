@@ -12,7 +12,8 @@ create table sub_repo_permissions
             on delete cascade,
     version       int default 1 not null,
     path_includes text[],
-    path_excludes text[]
+    path_excludes text[],
+    updated_at timestamp with time zone default now() not null
 );
 
 comment on table sub_repo_permissions is 'Responsible for storing permissions at a finer granularity than repo';
