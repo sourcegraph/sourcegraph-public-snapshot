@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -231,7 +230,7 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 }
 
 func (r *resolver) PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error) {
-	return r.dbStore.FindRepos(ctx, strings.ReplaceAll(pattern, "*", "%"))
+	return r.dbStore.RepoIDsByGlobPattern(ctx, pattern)
 }
 
 func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {

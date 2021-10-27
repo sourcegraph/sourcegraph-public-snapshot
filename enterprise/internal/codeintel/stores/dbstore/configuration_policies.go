@@ -119,8 +119,15 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if opts.RepositoryID == 0 {
 		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL AND p.repository_patterns IS NULL"))
 	} else {
-		// ?TODO: make use of repo pattern
-		conds = append(conds, sqlf.Sprintf("p.repository_id = %s", opts.RepositoryID))
+		conds = append(conds, sqlf.Sprintf(`(
+			p.repository_id = %s OR (
+				p.id IN (
+					SELECT policy_id
+					FROM lsif_configuration_policies_repository_pattern_lookup
+					WHERE repo_id = %s
+				)
+			)
+		`, opts.RepositoryID, opts.RepositoryID))
 	}
 	if opts.ForDataRetention {
 		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))

@@ -27,7 +27,6 @@ type operations struct {
 	dirtyRepositories                           *observation.Operation
 	findClosestDumps                            *observation.Operation
 	findClosestDumpsFromGraphFragment           *observation.Operation
-	findRepos                                   *observation.Operation
 	getConfigurationPolicies                    *observation.Operation
 	getConfigurationPolicyByID                  *observation.Operation
 	getDumpsByIDs                               *observation.Operation
@@ -60,6 +59,7 @@ type operations struct {
 	referenceIDsAndFilters                      *observation.Operation
 	referencesForUpload                         *observation.Operation
 	refreshCommitResolvability                  *observation.Operation
+	repoIDsByGlobPattern                        *observation.Operation
 	repoName                                    *observation.Operation
 	requeue                                     *observation.Operation
 	requeueIndex                                *observation.Operation
@@ -123,7 +123,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		dirtyRepositories:                   op("DirtyRepositories"),
 		findClosestDumps:                    op("FindClosestDumps"),
 		findClosestDumpsFromGraphFragment:   op("FindClosestDumpsFromGraphFragment"),
-		findRepos:                           op("FindRepos"),
 		getConfigurationPolicies:            op("GetConfigurationPolicies"),
 		getConfigurationPolicyByID:          op("GetConfigurationPolicyByID"),
 		getDumpsByIDs:                       op("GetDumpsByIDs"),
@@ -156,6 +155,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		referenceIDsAndFilters:              op("ReferenceIDsAndFilters"),
 		referencesForUpload:                 op("ReferencesForUpload"),
 		refreshCommitResolvability:          op("RefreshCommitResolvability"),
+		repoIDsByGlobPattern:                op("repoIDsByGlobPattern"),
 		repoName:                            op("RepoName"),
 		requeue:                             op("Requeue"),
 		requeueIndex:                        op("RequeueIndex"),
