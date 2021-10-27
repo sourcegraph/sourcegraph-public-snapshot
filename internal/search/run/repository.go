@@ -45,7 +45,6 @@ func SearchRepositories(ctx context.Context, args *search.TextParameters, limit 
 
 	fieldAllowlist := map[string]struct{}{
 		query.FieldRepo:               {},
-		query.FieldRepoGroup:          {},
 		query.FieldContext:            {},
 		query.FieldType:               {},
 		query.FieldDefault:            {},

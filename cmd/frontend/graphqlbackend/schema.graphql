@@ -1251,10 +1251,6 @@ type Query {
     """
     savedSearches: [SavedSearch!]!
     """
-    All repository groups for the current user, merged from all configurations.
-    """
-    repoGroups: [RepoGroup!]!
-    """
     (experimental) Return the parse tree of a search query.
     """
     parseSearchQuery(
@@ -1594,10 +1590,6 @@ Predefined suggestions for search filters when backfill.
 """
 type SearchFilterSuggestions {
     """
-    The suggestions for search filter "repogroup:".
-    """
-    repogroup: [String!]!
-    """
     The suggestions for search filter "repo:".
     """
     repo: [String!]!
@@ -1883,20 +1875,6 @@ type SearchQueryDescription {
     The query.
     """
     query: String!
-}
-
-"""
-A group of repositories.
-"""
-type RepoGroup {
-    """
-    The name.
-    """
-    name: String!
-    """
-    The repositories.
-    """
-    repositories: [String!]!
 }
 
 """
