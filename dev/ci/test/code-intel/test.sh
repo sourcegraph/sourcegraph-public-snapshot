@@ -12,5 +12,10 @@ export IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 # us.gcr.io is a private registry, ensure we can pull
 yes | gcloud auth configure-docker
 
+# TODO(JH) Remove that before merging the PR
+if [[ -n "$DUP_GITHUB_TOKEN" ]]; then
+  GITHUB_TOKEN=$DUP_GITHUB_TOKEN
+fi
+
 # Setup single-server instance and run tests
-./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/test/code-intel/test-against-server.sh"
+GITHUB_TOKEN=$GITHUB_TOKEN ./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/test/code-intel/test-against-server.sh"
