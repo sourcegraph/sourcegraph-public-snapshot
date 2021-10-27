@@ -168,6 +168,7 @@ const batchChangeFragment = gql`
 
 const changesetLabelFragment = gql`
     fragment ChangesetLabelFields on ChangesetLabel {
+        __typename
         color
         description
         text
@@ -280,6 +281,60 @@ export const changesetFieldsFragment = gql`
     ${externalChangesetFieldsFragment}
 `
 
+export const CHANGESETS = gql`
+    query BatchChangeChangesets(
+        $batchChange: ID!
+        $first: Int
+        $after: String
+        $state: ChangesetState
+        $reviewState: ChangesetReviewState
+        $checkState: ChangesetCheckState
+        $onlyPublishedByThisBatchChange: Boolean
+        $search: String
+        $onlyArchived: Boolean
+    ) {
+        node(id: $batchChange) {
+            __typename
+            ... on BatchChange {
+                changesets(
+                    first: $first
+                    after: $after
+                    state: $state
+                    reviewState: $reviewState
+                    checkState: $checkState
+                    onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
+                    search: $search
+                    onlyArchived: $onlyArchived
+                ) {
+                    __typename
+                    totalCount
+                    pageInfo {
+                        endCursor
+                        hasNextPage
+                    }
+                    nodes {
+                        # NOTE: Apollo typename resolution fails if we form a fragment on a union type (e.g. "on Changeset")
+                        __typename
+                        ... on HiddenExternalChangeset {
+                            ...HiddenExternalChangesetFields
+                        }
+                        ... on ExternalChangeset {
+                            ...ExternalChangesetFields
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    ${hiddenExternalChangesetFieldsFragment}
+
+    ${externalChangesetFieldsFragment}
+`
+
+// TODO: This has been superseded by CHANGESETS below, but the "Close" page still uses
+// this older `requestGraphQL` one. The variables and result types are the same, so
+// eventually this can just go away when we refactor the requests from the "Close" page.
 export const queryChangesets = ({
     batchChange,
     first,
@@ -293,59 +348,17 @@ export const queryChangesets = ({
 }: BatchChangeChangesetsVariables): Observable<
     (BatchChangeChangesetsResult['node'] & { __typename: 'BatchChange' })['changesets']
 > =>
-    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(
-        gql`
-            query BatchChangeChangesets(
-                $batchChange: ID!
-                $first: Int
-                $after: String
-                $state: ChangesetState
-                $reviewState: ChangesetReviewState
-                $checkState: ChangesetCheckState
-                $onlyPublishedByThisBatchChange: Boolean
-                $search: String
-                $onlyArchived: Boolean
-            ) {
-                node(id: $batchChange) {
-                    __typename
-                    ... on BatchChange {
-                        changesets(
-                            first: $first
-                            after: $after
-                            state: $state
-                            reviewState: $reviewState
-                            checkState: $checkState
-                            onlyPublishedByThisBatchChange: $onlyPublishedByThisBatchChange
-                            search: $search
-                            onlyArchived: $onlyArchived
-                        ) {
-                            totalCount
-                            pageInfo {
-                                endCursor
-                                hasNextPage
-                            }
-                            nodes {
-                                ...ChangesetFields
-                            }
-                        }
-                    }
-                }
-            }
-
-            ${changesetFieldsFragment}
-        `,
-        {
-            batchChange,
-            first,
-            after,
-            state,
-            reviewState,
-            checkState,
-            onlyPublishedByThisBatchChange,
-            search,
-            onlyArchived,
-        }
-    ).pipe(
+    requestGraphQL<BatchChangeChangesetsResult, BatchChangeChangesetsVariables>(CHANGESETS, {
+        batchChange,
+        first,
+        after,
+        state,
+        reviewState,
+        checkState,
+        onlyPublishedByThisBatchChange,
+        search,
+        onlyArchived,
+    }).pipe(
         map(dataOrThrowErrors),
         map(({ node }) => {
             if (!node) {
@@ -552,7 +565,6 @@ const changesetDiffFragment = gql`
         currentSpec {
             description {
                 ... on GitBranchChangesetDescription {
-                    __typename
                     commits {
                         diff
                     }

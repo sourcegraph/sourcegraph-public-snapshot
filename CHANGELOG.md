@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- An issue that causes the server to panic when performing a structural search via the GQL API for a query that also matches missing repos (affected versions 3.33.0 and 3.32.0). [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
 
 ### Removed
 

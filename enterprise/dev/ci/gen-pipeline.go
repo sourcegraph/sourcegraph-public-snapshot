@@ -56,12 +56,13 @@ func previewPipeline(w io.Writer, c ci.Config, bk *buildkite.Pipeline) {
 
 	fmt.Fprintln(w, "Detected changes:")
 	for affects, doesAffects := range map[string]bool{
-		"Go":          c.ChangedFiles.AffectsGo(),
-		"Client":      c.ChangedFiles.AffectsClient(),
-		"Docs":        c.ChangedFiles.AffectsDocs(),
-		"Dockerfiles": c.ChangedFiles.AffectsDockerfiles(),
-		"GraphQL":     c.ChangedFiles.AffectsGraphQL(),
-		"SG":          c.ChangedFiles.AffectsSg(),
+		"Go":                           c.ChangedFiles.AffectsGo(),
+		"Client":                       c.ChangedFiles.AffectsClient(),
+		"Docs":                         c.ChangedFiles.AffectsDocs(),
+		"Dockerfiles":                  c.ChangedFiles.AffectsDockerfiles(),
+		"GraphQL":                      c.ChangedFiles.AffectsGraphQL(),
+		"SG":                           c.ChangedFiles.AffectsSg(),
+		"ExecutorDockerRegistryMirror": c.ChangedFiles.AffectsExecutorDockerRegistryMirror(),
 	} {
 		fmt.Fprintf(w, "\tAffects %s: %t\n", affects, doesAffects)
 	}

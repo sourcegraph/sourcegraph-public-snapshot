@@ -134,7 +134,7 @@ func TestRepos_Count(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -186,7 +186,7 @@ func TestRepos_Delete(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -220,7 +220,7 @@ func TestRepos_Upsert(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -303,7 +303,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -341,7 +341,7 @@ func TestRepos_Create(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -391,7 +391,7 @@ func TestListIndexableRepos(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	reposToAdd := []types.Repo{
 		{
@@ -519,7 +519,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
 
@@ -603,7 +603,7 @@ func TestRepoStore_Blocking(t *testing.T) {
 	}
 
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	rs := Repos(db)
 
 	ctx := context.Background()

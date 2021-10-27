@@ -43,6 +43,15 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
+    __typename: 'BatchSpec',
 })
 
 const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
@@ -63,6 +72,14 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
         id: 'VXNlcjox',
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
+    },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
     },
 })
 

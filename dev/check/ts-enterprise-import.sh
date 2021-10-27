@@ -23,7 +23,7 @@ if [ -n "$IMPORT_MATCHES" ]; then
 Importing from enterprise in non-enterprise modules is forbidden. The OSS product may not
 pull in any code from the enterprise codebase, to stay a 100% open-source program. See
 this page for more information:
-https://about.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source
+https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source
 
 To make this check pass, remove that import. Usually this works by:
 - Pulling shared code out of the enterprise directory.
