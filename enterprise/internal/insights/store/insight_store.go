@@ -6,8 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -107,7 +105,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 
 	q := sqlf.Sprintf(getInsightsVisibleToUserSql, visibleDashboardsQuery(args.UserID, args.OrgID), visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
-	log15.Info("GetAll", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -627,5 +624,5 @@ WHERE iv.id IN (SELECT insight_view_id
 				 WHERE deleted_at IS NULL AND db.id IN (%s))
    OR iv.id IN (%s)
 AND %s
-ORDER BY iv.id;
+ORDER BY iv.unique_id;
 `
