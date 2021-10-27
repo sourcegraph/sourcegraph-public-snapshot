@@ -613,7 +613,6 @@ func TestHandleRepoUpdate(t *testing.T) {
 	reposDir := t.TempDir()
 
 	s := makeTestServer(ctx, reposDir, remote, db)
-	s.ctx = context.Background()
 
 	// We need some of the side effects here
 	_ = s.Handler()
@@ -921,7 +920,6 @@ func TestSyncRepoState(t *testing.T) {
 
 	s := makeTestServer(ctx, reposDir, remoteDir, db)
 	s.Hostname = hostname
-	s.ctx = ctx
 
 	dbRepo := &types.Repo{
 		Name:        repoName,
