@@ -19,6 +19,10 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.33.4
+
+- For internal use only: always log uploading changesets event.
+
 ## 3.33.3
 
 ### Fixed
