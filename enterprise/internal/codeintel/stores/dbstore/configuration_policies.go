@@ -51,6 +51,7 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 	for rows.Next() {
 		var configurationPolicy ConfigurationPolicy
 		var retentionDurationHours, indexCommitMaxAgeHours *int
+		var lastResolvedAt *time.Time
 
 		var repositoryPatterns []string
 
@@ -68,7 +69,7 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			&configurationPolicy.IndexingEnabled,
 			&indexCommitMaxAgeHours,
 			&configurationPolicy.IndexIntermediateCommits,
-			&configurationPolicy.LastResolvedAt,
+			&lastResolvedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -84,6 +85,9 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 		if indexCommitMaxAgeHours != nil {
 			duration := time.Duration(*indexCommitMaxAgeHours) * time.Hour
 			configurationPolicy.IndexCommitMaxAge = &duration
+		}
+		if lastResolvedAt != nil {
+			configurationPolicy.LastResolvedAt = lastResolvedAt
 		}
 
 		configurationPolicies = append(configurationPolicies, configurationPolicy)
