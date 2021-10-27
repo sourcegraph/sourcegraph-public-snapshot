@@ -1000,14 +1000,14 @@ func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri str
 
 // do performs a request to a gitserver instance based on the address in the uri argument.
 func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
-	url, err := url.ParseRequestURI(uri)
+	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
-		span.LogKV("repo", string(repo), "method", method, "path", url.Path)
+		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
