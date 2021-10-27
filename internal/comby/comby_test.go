@@ -125,3 +125,52 @@ func main() {
 		}
 	}
 }
+
+func TestReplacements(t *testing.T) {
+	// If we are not on CI skip the test if comby is not installed.
+	if os.Getenv("CI") == "" && !exists() {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	files := map[string]string{
+		"main.go": `package tuesday`,
+	}
+
+	zipPath, cleanup, err := storetest.TempZipFromFiles(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup()
+
+	cases := []struct {
+		args Args
+		want string
+	}{
+		{
+			args: Args{
+				Input:           ZipPath(zipPath),
+				MatchTemplate:   "tuesday",
+				RewriteTemplate: "wednesday",
+				ResultKind:      Replacement,
+				FilePatterns:    []string{".go"},
+				Matcher:         ".go",
+			},
+			want: "package wednesday",
+		},
+	}
+
+	for _, test := range cases {
+		r, _ := Replacements(ctx, test.args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := r[0].Content
+		if got != test.want {
+			t.Errorf("got %v, want %v", got, test.want)
+			continue
+		}
+	}
+}
