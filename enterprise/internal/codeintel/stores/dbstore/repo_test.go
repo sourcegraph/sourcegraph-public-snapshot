@@ -14,6 +14,74 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestRepoIDsByGlobPattern(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtesting.GetDB(t)
+	store := testStore(db)
+	ctx := context.Background()
+
+	// set repo test data
+	mockInsertedRepos := []struct {
+		ID   int
+		name string
+	}{
+		{50, "Darth/Maul"},
+		{51, "DarthVader"},
+		{52, "Jedi Anakin"},
+		{53, "Jediyoda"},
+		{54, "Robot C3PO"},
+	}
+
+	// insert repo test data
+	for _, mock := range mockInsertedRepos {
+		insertRepo(t, db, mock.ID, mock.name)
+	}
+
+	// set test data and expected
+	testData := []struct {
+		pattern  string
+		expected []int
+	}{
+		{pattern: "Darth*", expected: []int{50, 51}},
+		{pattern: "Darth/*", expected: []int{50}},
+		{pattern: "Jedi*", expected: []int{52, 53}},
+		{pattern: "*C3PO*", expected: []int{54}},
+		{pattern: "*Human*", expected: nil},
+	}
+
+	for _, data := range testData {
+		// find pattern
+		repoIds, err := store.RepoIDsByGlobPattern(ctx, data.pattern)
+		if err != nil {
+			t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
+		}
+
+		// Actual test what you get with what is expected
+		if diff := cmp.Diff(data.expected, repoIds); diff != "" {
+			t.Errorf("unexpected job (-want +got):\n%s", diff)
+		}
+	}
+
+	t.Run("enforce repository permissions", func(t *testing.T) {
+		// Enable permissions user mapping forces checking repository permissions
+		// against permissions tables in the database, which should effectively block
+		// all access because permissions tables are empty.
+		before := globals.PermissionsUserMapping()
+		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+		defer globals.SetPermissionsUserMapping(before)
+
+		repoIDs, err := store.RepoIDsByGlobPattern(ctx, "*")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(repoIDs) != 0 {
+			t.Fatalf("repoIDs: want 0 but got %v", repoIDs)
+		}
+	})
+}
+
 func TestUpdateReposMatchingPatterns(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -107,72 +175,4 @@ func scanPolicyRepositories(rows *sql.Rows, queryErr error) (_ map[int][]int, er
 	}
 
 	return policies, nil
-}
-
-func TestRepoIDsByGlobPattern(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-	db := dbtesting.GetDB(t)
-	store := testStore(db)
-	ctx := context.Background()
-
-	// set repo test data
-	mockInsertedRepos := []struct {
-		ID   int
-		name string
-	}{
-		{50, "Darth/Maul"},
-		{51, "DarthVader"},
-		{52, "Jedi Anakin"},
-		{53, "Jediyoda"},
-		{54, "Robot C3PO"},
-	}
-
-	// insert repo test data
-	for _, mock := range mockInsertedRepos {
-		insertRepo(t, db, mock.ID, mock.name)
-	}
-
-	// set test data and expected
-	testData := []struct {
-		pattern  string
-		expected []int
-	}{
-		{pattern: "Darth*", expected: []int{50, 51}},
-		{pattern: "Darth/*", expected: []int{50}},
-		{pattern: "Jedi*", expected: []int{52, 53}},
-		{pattern: "*C3PO*", expected: []int{54}},
-		{pattern: "*Human*", expected: nil},
-	}
-
-	for _, data := range testData {
-		// find pattern
-		repoIds, err := store.RepoIDsByGlobPattern(ctx, data.pattern)
-		if err != nil {
-			t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
-		}
-
-		// Actual test what you get with what is expected
-		if diff := cmp.Diff(data.expected, repoIds); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
-		}
-	}
-
-	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
-
-		repoIDs, err := store.RepoIDsByGlobPattern(ctx, "*")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(repoIDs) != 0 {
-			t.Fatalf("repoIDs: want 0 but got %v", repoIDs)
-		}
-	})
 }
