@@ -21,4 +21,7 @@ comment on table sub_repo_permissions is 'Responsible for storing permissions at
 create unique index sub_repo_permissions_repo_id_user_id_uindex
     on sub_repo_permissions (repo_id, user_id);
 
+create index sub_repo_perms_user_id ON sub_repo_permissions (user_id);
+create index sub_repo_perms_repo_id ON sub_repo_permissions (repo_id);
+
 COMMIT;
