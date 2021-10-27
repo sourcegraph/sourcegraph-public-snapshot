@@ -14,6 +14,7 @@ import {
 } from './CodeIntelConfigurationPolicyPage'
 import { POLICY_CONFIGURATION_BY_ID } from './usePoliciesConfigurations'
 import { PREVIEW_GIT_OBJECT_FILTER } from './useSearchGit'
+import { PREVIEW_REPOSITORY_FILTER } from './useSearchRepositories'
 
 const policy: CodeIntelligenceConfigurationPolicyFields = {
     __typename: 'CodeIntelligenceConfigurationPolicy' as const,
@@ -21,6 +22,7 @@ const policy: CodeIntelligenceConfigurationPolicyFields = {
     name: "Eric's feature branches",
     type: GitObjectType.GIT_TREE,
     pattern: 'ef/',
+    repositoryPatterns: [],
     protected: false,
     retentionEnabled: true,
     retentionDurationHours: 168,
@@ -28,6 +30,7 @@ const policy: CodeIntelligenceConfigurationPolicyFields = {
     indexingEnabled: true,
     indexCommitMaxAgeHours: 672,
     indexIntermediateCommits: true,
+    repository: null,
 }
 
 const repoResult = {
@@ -97,6 +100,27 @@ const commitRequest = {
     },
 }
 
+const previewRepositoryFilterRequest = {
+    request: {
+        query: getDocumentNode(PREVIEW_REPOSITORY_FILTER),
+        variables: {
+            pattern: 'github.com/sourcegraph/sourcegraph',
+        },
+    },
+    result: {
+        data: {
+            previewRepositoryFilter: [
+                {
+                    name: 'github.com/sourcegraph/sourcegraph',
+                },
+                {
+                    name: '*',
+                },
+            ],
+        },
+    },
+}
+
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelConfigurationPolicyPage',
     decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
@@ -110,7 +134,18 @@ const story: Meta = {
 export default story
 
 const Template: Story<CodeIntelConfigurationPolicyPageProps> = args => (
-    <WebStory mocks={[policyRequest, branchRequest, branchRequest, tagRequest, tagRequest, commitRequest]}>
+    <WebStory
+        mocks={[
+            policyRequest,
+            branchRequest,
+            branchRequest,
+            tagRequest,
+            tagRequest,
+            commitRequest,
+            previewRepositoryFilterRequest,
+            previewRepositoryFilterRequest,
+        ]}
+    >
         {props => (
             <CodeIntelConfigurationPolicyPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
         )}

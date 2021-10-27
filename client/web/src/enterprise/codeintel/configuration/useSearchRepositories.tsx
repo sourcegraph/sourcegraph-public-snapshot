@@ -1,6 +1,7 @@
 import { ApolloError } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
+
 import { PreviewRepositoryFilterResult, PreviewRepositoryFilterVariables } from '../../../graphql-operations'
 
 interface SearchRepositoriesResult {

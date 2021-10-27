@@ -46,7 +46,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                 <small className="form-text text-muted">Required.</small>
             </div>
 
-            {!repoId && <TemporaryList policy={policy} setPolicy={setPolicy} disabled={disabled} />}
+            {!repoId && <ReposMatchingPatternList policy={policy} setPolicy={setPolicy} disabled={disabled} />}
 
             <div className="form-group">
                 <label htmlFor="type">Type</label>
@@ -58,12 +58,10 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                         setPolicy({
                             ...policy,
                             type: value as GitObjectType,
-                            ...(value !== GitObjectType.GIT_TREE
-                                ? {
-                                      retainIntermediateCommits: false,
-                                      indexIntermediateCommits: false,
-                                  }
-                                : {}),
+                            ...(value !== GitObjectType.GIT_TREE && {
+                                retainIntermediateCommits: false,
+                                indexIntermediateCommits: false,
+                            }),
                         })
                     }
                     disabled={disabled}
@@ -98,13 +96,17 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
     )
 }
 
-interface TemporaryListProps {
+interface ReposMatchingPatternListProps {
     policy: CodeIntelligenceConfigurationPolicyFields
     setPolicy: (policy: CodeIntelligenceConfigurationPolicyFields) => void
     disabled: boolean
 }
 
-const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolicy, disabled }) => (
+const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps> = ({
+    policy,
+    setPolicy,
+    disabled,
+}) => (
     <div className="mb-2">
         {policy.repositoryPatterns === null ? (
             <>
@@ -117,7 +119,7 @@ const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolic
                             onClick={() =>
                                 setPolicy({
                                     ...policy,
-                                    repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
+                                    repositoryPatterns: [...(policy.repositoryPatterns || [''])],
                                 })
                             }
                             aria-hidden="true"
@@ -139,15 +141,17 @@ const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolic
                             setPattern={value =>
                                 setPolicy({
                                     ...policy,
-                                    repositoryPatterns: (policy.repositoryPatterns || []).map((v, j) =>
-                                        index === j ? value : v
+                                    repositoryPatterns: (policy.repositoryPatterns || []).map((value_, index_) =>
+                                        index === index_ ? value : value_
                                     ),
                                 })
                             }
                             onDelete={() =>
                                 setPolicy({
                                     ...policy,
-                                    repositoryPatterns: (policy.repositoryPatterns || []).filter((v, j) => index !== j),
+                                    repositoryPatterns: (policy.repositoryPatterns || []).filter(
+                                        (___, index_) => index !== index_
+                                    ),
                                 })
                             }
                             disabled={disabled}
@@ -163,7 +167,7 @@ const TemporaryList: FunctionComponent<TemporaryListProps> = ({ policy, setPolic
                                 onClick={() =>
                                     setPolicy({
                                         ...policy,
-                                        repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
+                                        repositoryPatterns: [...(policy.repositoryPatterns || [''])],
                                     })
                                 }
                                 aria-hidden="true"

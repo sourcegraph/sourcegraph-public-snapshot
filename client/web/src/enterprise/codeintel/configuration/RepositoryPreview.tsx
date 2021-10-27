@@ -29,7 +29,7 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
     }
 
     return (
-        <div className={styles.wrapper}>
+        <div>
             {preview.preview.length === 0 ? (
                 <>
                     <small>Pattern does not match any repositories.</small>
