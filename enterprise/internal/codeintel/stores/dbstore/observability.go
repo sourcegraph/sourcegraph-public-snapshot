@@ -75,6 +75,7 @@ type operations struct {
 	updateNumReferences                         *observation.Operation
 	updatePackageReferences                     *observation.Operation
 	updatePackages                              *observation.Operation
+	updateReposMatchingPatterns                 *observation.Operation
 	updateSourcedCommits                        *observation.Operation
 	updateUploadRetention                       *observation.Operation
 
@@ -170,6 +171,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		updateNumReferences:                         op("UpdateNumReferences"),
 		updatePackageReferences:                     op("UpdatePackageReferences"),
 		updatePackages:                              op("UpdatePackages"),
+		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
 		updateSourcedCommits:                        op("UpdateSourcedCommits"),
 		updateUploadRetention:                       op("UpdateUploadRetention"),
 

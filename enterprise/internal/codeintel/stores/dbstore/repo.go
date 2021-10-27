@@ -42,7 +42,7 @@ SELECT %s, repos.id FROM repos
 `
 
 func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error) {
-	ctx, endObservation := s.operations.findRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("pattern", strings.Join(patterns, ",")),
 	}})
 	defer endObservation(1, observation.Args{})
