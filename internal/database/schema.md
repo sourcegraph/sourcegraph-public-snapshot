@@ -656,6 +656,7 @@ Check constraints:
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
+    "external_service_repos_org_id_idx" btree (org_id)
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
