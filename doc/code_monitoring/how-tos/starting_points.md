@@ -37,4 +37,4 @@ You may want to get notified when a given file is changed, regardless of the dif
 repo:^github\.com/sourcegraph/sourcegraph$ type:diff select:commit.diff.added Sprintf
 ```
 
-You may want to monitor new additions of a specific function call, for example a deprecated function or a function that introduces a security concern.  This query will alert new additions of Sprintf calls in the Sourcegraph/Sourcegraph repository.
+You may want to monitor new additions of a specific function call, for example a deprecated function or a function that introduces a security concern.  This query will alert new additions of `Sprintf` calls in the `sourcegraph/sourcegraph` repository.
