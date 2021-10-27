@@ -107,6 +107,12 @@ exports[`GlobalNavbar default 1`] = `
               tabindex="-1"
             >
               <a
+                class="dropdown-item showOnTouchScreen"
+                to="/search"
+              >
+                Search home
+              </a>
+              <a
                 class="dropdown-item"
                 role="menuitem"
                 to="/contexts"
@@ -374,6 +380,12 @@ exports[`GlobalNavbar low-profile 1`] = `
               role="menu"
               tabindex="-1"
             >
+              <a
+                class="dropdown-item showOnTouchScreen"
+                to="/search"
+              >
+                Search home
+              </a>
               <a
                 class="dropdown-item"
                 role="menuitem"
