@@ -998,8 +998,7 @@ func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri str
 	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// do performs a request to a gitserver, sharding based on the given
-// repo name (the repo name is otherwise not used).
+// do performs a request to a gitserver instance based on the address in the uri argument.
 func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	url, err := url.ParseRequestURI(uri)
 	if err != nil {
