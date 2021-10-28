@@ -439,6 +439,92 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	}
 }
 
+func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
+	p := &mockProvider{
+		serviceType: extsvc.TypePerforce,
+		serviceID:   "ssl:111.222.333.444:1666",
+	}
+	authz.SetProviders(false, []authz.Provider{p})
+	defer authz.SetProviders(true, nil)
+
+	extAccount := extsvc.Account{
+		AccountSpec: extsvc.AccountSpec{
+			ServiceType: p.ServiceType(),
+			ServiceID:   p.ServiceID(),
+		},
+	}
+
+	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+		return &types.User{ID: id}, nil
+	}
+	database.Mocks.ExternalAccounts.TouchLastValid = func(ctx context.Context, id int32) error {
+		return nil
+	}
+	edb.Mocks.Perms.ListExternalAccounts = func(context.Context, int32) ([]*extsvc.Account, error) {
+		return []*extsvc.Account{&extAccount}, nil
+	}
+	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
+		return nil
+	}
+	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
+		if !args.OnlyPrivate {
+			return nil, errors.New("OnlyPrivate want true but got false")
+		} else if len(args.ExternalRepoIncludeContains) == 0 {
+			return nil, errors.New("ExternalRepoIncludeContains want non-zero but got zero")
+		} else if len(args.ExternalRepoExcludeContains) == 0 {
+			return nil, errors.New("ExternalRepoExcludeContains want non-zero but got zero")
+		}
+		return []types.RepoName{{ID: 1}}, nil
+	}
+	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return nil, nil
+	}
+	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
+		return []api.RepoID{}, nil
+	}
+	var upsertWithSpecCalled int
+	edb.Mocks.SubRepoPerms.UpsertWithSpec = func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+		upsertWithSpecCalled++
+		return nil
+	}
+	defer func() {
+		database.Mocks = database.MockStores{}
+		edb.Mocks.Perms = edb.MockPerms{}
+		edb.Mocks.SubRepoPerms = edb.MockSubRepoPerms{}
+	}()
+
+	permsStore := edb.Perms(nil, timeutil.Now)
+	s := NewPermsSyncer(repos.NewStore(&dbtesting.MockDB{}, sql.TxOptions{}), permsStore, timeutil.Now, nil)
+
+	p.fetchUserPerms = func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error) {
+		return &authz.ExternalUserPermissions{
+			IncludeContains: []extsvc.RepoID{"//Engineering/"},
+			ExcludeContains: []extsvc.RepoID{"//Engineering/Security/"},
+
+			SubRepoPermissions: map[extsvc.RepoID]authz.SubRepoPermissions{
+				"abc": {
+					PathIncludes: []string{"include1", "include2"},
+					PathExcludes: []string{"exclude1", "exclude2"},
+				},
+				"def": {
+					PathIncludes: []string{"include1", "include2"},
+					PathExcludes: []string{"exclude1", "exclude2"},
+				},
+			},
+		}, nil
+	}
+
+	err := s.syncUserPerms(context.Background(), 1, false, authz.FetchPermsOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedCalls := 2
+	if upsertWithSpecCalled != expectedCalls {
+		t.Fatalf("UpsertWithSpec should have been called %d times", expectedCalls)
+	}
+}
+
 func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	newPermsSyncer := func(store *repos.Store) *PermsSyncer {
 		return NewPermsSyncer(store, edb.Perms(nil, timeutil.Now), timeutil.Now, nil)

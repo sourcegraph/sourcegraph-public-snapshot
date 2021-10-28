@@ -39,7 +39,7 @@ func (s *SubRepoPermsStore) With(other basestore.ShareableStore) *SubRepoPermsSt
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
 func (s *SubRepoPermsStore) Transact(ctx context.Context) (*SubRepoPermsStore, error) {
-	if Mocks.Perms.Transact != nil {
+	if Mocks.SubRepoPerms.Transact != nil {
 		return Mocks.SubRepoPerms.Transact(ctx)
 	}
 
@@ -48,7 +48,7 @@ func (s *SubRepoPermsStore) Transact(ctx context.Context) (*SubRepoPermsStore, e
 }
 
 func (s *SubRepoPermsStore) Done(err error) error {
-	if Mocks.Perms.Transact != nil {
+	if Mocks.SubRepoPerms.Transact != nil {
 		return err
 	}
 
@@ -71,6 +71,10 @@ SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
 // external repo spec to map to out internal repo id. If there is no mapping,
 // nothing is written.
 func (s *SubRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+	if Mocks.SubRepoPerms.UpsertWithSpec != nil {
+		return Mocks.SubRepoPerms.UpsertWithSpec(ctx, userID, spec, perms)
+	}
+
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 SELECT %s, id, %s, %s, %s, now()
@@ -151,5 +155,6 @@ AND version = %s
 }
 
 type MockSubRepoPerms struct {
-	Transact func(ctx context.Context) (*SubRepoPermsStore, error)
+	Transact       func(ctx context.Context) (*SubRepoPermsStore, error)
+	UpsertWithSpec func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 }
