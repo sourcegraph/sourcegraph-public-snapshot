@@ -45,14 +45,13 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
 
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const toggle = (event: React.KeyboardEvent | React.MouseEvent): void => {
-        // Handle toggling the dropdown through keyboard events. Enter key is used to navigate to toggle item path.
-        if (event.type !== 'keydown') {
-            return
-        }
-        if ((event as React.KeyboardEvent).key === 'Enter') {
+        // Don't toggle dropdown with Enter key; instead, navigate to the home item of the dropdown.
+        // This matches the behavior of the rest of the nav items.
+        if (event.type === 'keydown' && (event as React.KeyboardEvent).key === 'Enter') {
             history.push(toggleItem.path)
             return
         }
+        // For all other events that toggle the dropdown (e.g. space, arrow keys, clicking outside of the dropdown), toggle as normal.
         setIsDropdownOpen(!isDropdownOpen)
     }
 
@@ -89,7 +88,11 @@ export const NavDropdown: React.FunctionComponent<NavDropdownProps> = ({ toggleI
                             'p-0'
                         )}
                         nav={true}
-                        onPointerEnter={() => setIsDropdownOpen(true)}
+                        onPointerEnter={(event: React.PointerEvent) => {
+                            if (event.pointerType === 'mouse') {
+                                setIsDropdownOpen(true)
+                            }
+                        }}
                         onPointerDown={(event: React.PointerEvent) => {
                             // Navigate to toggle item path on mouse click.
                             if (event.pointerType === 'mouse') {
