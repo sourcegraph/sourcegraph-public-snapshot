@@ -169,12 +169,18 @@ type ExternalServicesListOptions struct {
 	// When true, only external services without has_webhooks set will be
 	// returned. For use by ExternalServiceWebhookMigrator only.
 	noCachedWebhooks bool
-	// When true, records will be locked.
+	// When true, records will be locked. For use by
+	// ExternalServiceWebhookMigrator only.
 	forUpdate bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	conds := []*sqlf.Query{}
+	if o.IncludeDeleted {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	} else {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 	if len(o.IDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(o.IDs))
 		for _, id := range o.IDs {
@@ -201,9 +207,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
-	}
-	if !o.IncludeDeleted {
-		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
 	}
 	if o.noCachedWebhooks {
 		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
@@ -596,7 +599,11 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 			return err
 		}
 	}
-	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
+
+	// Ensure the calculated fields in the external service are up to date.
+	if err := e.recalculateFields(es, string(normalized)); err != nil {
+		return err
+	}
 
 	config, keyID, err := e.maybeEncryptConfig(ctx, es.Config)
 	if err != nil {
@@ -605,7 +612,7 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
 		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault, es.HasWebhooks,
 	).Scan(&es.ID)
 }
@@ -676,14 +683,9 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	e.ensureStore()
 
 	for _, s := range svcs {
-		s.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(s.Config, "authorization").Exists()
-
-		cfg, err := s.Configuration()
-		if err != nil {
-			return errors.Wrap(err, "parsing configuration")
+		if err := e.recalculateFields(s, s.Config); err != nil {
+			return err
 		}
-		hasWebhooks := configurationHasWebhooks(cfg)
-		s.HasWebhooks = &hasWebhooks
 	}
 
 	tx, err := e.Transact(ctx)
@@ -868,8 +870,9 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 	e.ensureStore()
 
 	var (
-		normalized []byte
-		keyID      string
+		normalized  []byte
+		keyID       string
+		hasWebhooks bool
 	)
 	if update.Config != nil {
 		// Query to get the kind (which is immutable) so we can validate the new config.
@@ -885,6 +888,11 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		if err != nil {
 			return errors.Wrapf(err, "error unredacting config")
 		}
+		cfg, err := newSvc.Configuration()
+		if err != nil {
+			return errors.Wrap(err, "parsing config")
+		}
+		hasWebhooks = configurationHasWebhooks(cfg)
 		update.Config = &newSvc.Config
 
 		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
@@ -946,7 +954,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.Config != nil {
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
-		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s`, update.Config, keyID, unrestricted)
+		q := sqlf.Sprintf(`config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s`, update.Config, keyID, unrestricted, hasWebhooks)
 		if err := execUpdate(ctx, tx.DB(), q); err != nil {
 			return err
 		}
@@ -1392,6 +1400,22 @@ WHERE EXISTS(
 		return false, err
 	}
 	return v && exists, nil
+}
+
+// recalculateFields updates the value of the external service fields that are
+// calculated depending on the external service configuration, namely
+// `Unrestricted` and `HasWebhooks`.
+func (e *ExternalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
+	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(es.Config, "authorization").Exists()
+
+	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)
+	if err != nil {
+		return errors.Wrap(err, "parsing configuration")
+	}
+	hasWebhooks := configurationHasWebhooks(cfg)
+	es.HasWebhooks = &hasWebhooks
+
+	return nil
 }
 
 func configurationHasWebhooks(config interface{}) bool {
