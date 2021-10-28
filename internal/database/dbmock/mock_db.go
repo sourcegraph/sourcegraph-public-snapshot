@@ -24,6 +24,9 @@ type MockDB struct {
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *DBNamespacesFunc
+	// OrgInvitationsFunc is an instance of a mock function object
+	// controlling the behavior of the method OrgInvitations.
+	OrgInvitationsFunc *DBOrgInvitationsFunc
 	// OrgMembersFunc is an instance of a mock function object controlling
 	// the behavior of the method OrgMembers.
 	OrgMembersFunc *DBOrgMembersFunc
@@ -84,6 +87,11 @@ func NewMockDB() *MockDB {
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: func() database.NamespaceStore {
+				return nil
+			},
+		},
+		OrgInvitationsFunc: &DBOrgInvitationsFunc{
+			defaultHook: func() database.OrgInvitationStore {
 				return nil
 			},
 		},
@@ -172,6 +180,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: i.Namespaces,
+		},
+		OrgInvitationsFunc: &DBOrgInvitationsFunc{
+			defaultHook: i.OrgInvitations,
 		},
 		OrgMembersFunc: &DBOrgMembersFunc{
 			defaultHook: i.OrgMembers,
@@ -531,6 +542,106 @@ func (c DBNamespacesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBNamespacesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBOrgInvitationsFunc describes the behavior when the OrgInvitations
+// method of the parent MockDB instance is invoked.
+type DBOrgInvitationsFunc struct {
+	defaultHook func() database.OrgInvitationStore
+	hooks       []func() database.OrgInvitationStore
+	history     []DBOrgInvitationsFuncCall
+	mutex       sync.Mutex
+}
+
+// OrgInvitations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) OrgInvitations() database.OrgInvitationStore {
+	r0 := m.OrgInvitationsFunc.nextHook()()
+	m.OrgInvitationsFunc.appendCall(DBOrgInvitationsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the OrgInvitations
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBOrgInvitationsFunc) SetDefaultHook(hook func() database.OrgInvitationStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OrgInvitations method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBOrgInvitationsFunc) PushHook(hook func() database.OrgInvitationStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBOrgInvitationsFunc) SetDefaultReturn(r0 database.OrgInvitationStore) {
+	f.SetDefaultHook(func() database.OrgInvitationStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBOrgInvitationsFunc) PushReturn(r0 database.OrgInvitationStore) {
+	f.PushHook(func() database.OrgInvitationStore {
+		return r0
+	})
+}
+
+func (f *DBOrgInvitationsFunc) nextHook() func() database.OrgInvitationStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBOrgInvitationsFunc) appendCall(r0 DBOrgInvitationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBOrgInvitationsFuncCall objects describing
+// the invocations of this function.
+func (f *DBOrgInvitationsFunc) History() []DBOrgInvitationsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBOrgInvitationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBOrgInvitationsFuncCall is an object that describes an invocation of
+// method OrgInvitations on an instance of MockDB.
+type DBOrgInvitationsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.OrgInvitationStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBOrgInvitationsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBOrgInvitationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
