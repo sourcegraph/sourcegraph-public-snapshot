@@ -34,4 +34,4 @@ Best practices: $BEST_PRACTICES\n
 SEO: $SEO\n\n
 "
 
-echo -e $SUMMARY >>$OUTPUT_FILE
+echo -e "$SUMMARY" >>"$OUTPUT_FILE"
