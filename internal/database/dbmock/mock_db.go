@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
+	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
 // MockDB is a mock implementation of the DB interface (from the package
@@ -44,6 +45,9 @@ type MockDB struct {
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
+	// UserCredentialsFunc is an instance of a mock function object
+	// controlling the behavior of the method UserCredentials.
+	UserCredentialsFunc *DBUserCredentialsFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -103,6 +107,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		UserCredentialsFunc: &DBUserCredentialsFunc{
+			defaultHook: func(encryption.Key) database.UserCredentialsStore {
+				return nil
+			},
+		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: func() database.UserStore {
 				return nil
@@ -144,6 +153,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
+		},
+		UserCredentialsFunc: &DBUserCredentialsFunc{
+			defaultHook: i.UserCredentials,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -1193,6 +1205,109 @@ func (c DBSettingsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBUserCredentialsFunc describes the behavior when the UserCredentials
+// method of the parent MockDB instance is invoked.
+type DBUserCredentialsFunc struct {
+	defaultHook func(encryption.Key) database.UserCredentialsStore
+	hooks       []func(encryption.Key) database.UserCredentialsStore
+	history     []DBUserCredentialsFuncCall
+	mutex       sync.Mutex
+}
+
+// UserCredentials delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) UserCredentials(v0 encryption.Key) database.UserCredentialsStore {
+	r0 := m.UserCredentialsFunc.nextHook()(v0)
+	m.UserCredentialsFunc.appendCall(DBUserCredentialsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UserCredentials
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBUserCredentialsFunc) SetDefaultHook(hook func(encryption.Key) database.UserCredentialsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserCredentials method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBUserCredentialsFunc) PushHook(hook func(encryption.Key) database.UserCredentialsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBUserCredentialsFunc) SetDefaultReturn(r0 database.UserCredentialsStore) {
+	f.SetDefaultHook(func(encryption.Key) database.UserCredentialsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBUserCredentialsFunc) PushReturn(r0 database.UserCredentialsStore) {
+	f.PushHook(func(encryption.Key) database.UserCredentialsStore {
+		return r0
+	})
+}
+
+func (f *DBUserCredentialsFunc) nextHook() func(encryption.Key) database.UserCredentialsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUserCredentialsFunc) appendCall(r0 DBUserCredentialsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUserCredentialsFuncCall objects
+// describing the invocations of this function.
+func (f *DBUserCredentialsFunc) History() []DBUserCredentialsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUserCredentialsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUserCredentialsFuncCall is an object that describes an invocation of
+// method UserCredentials on an instance of MockDB.
+type DBUserCredentialsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 encryption.Key
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.UserCredentialsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUserCredentialsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUserCredentialsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
