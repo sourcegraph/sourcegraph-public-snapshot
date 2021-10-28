@@ -45,7 +45,6 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
 
 	var cg *cachedGroups
-
 	if opts.GroupsCacheTTL > 0 {
 		cg = &cachedGroups{
 			cache: rcache.NewWithTTL(
