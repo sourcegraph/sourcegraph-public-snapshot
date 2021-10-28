@@ -16,15 +16,17 @@ export interface DotcomGettingStartedPageProps {
 }
 
 export const DotcomGettingStartedPage: React.FunctionComponent<DotcomGettingStartedPageProps> = () => (
-    <Page>
-        <PageTitle title="Batch Changes" />
-        <PageHeader
-            path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
-            description="Run custom code over hundreds of repositories and manage the resulting changesets."
-            className="mb-3"
-        />
-        <GettingStarted footer={<DotcomGettingStartedPageFooter />} />
-    </Page>
+    <div className="w-100">
+        <Page>
+            <PageTitle title="Batch Changes" />
+            <PageHeader
+                path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
+                description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                className="mb-3"
+            />
+            <GettingStarted footer={<DotcomGettingStartedPageFooter />} />
+        </Page>
+    </div>
 )
 
 const DotcomGettingStartedPageFooter: React.FunctionComponent<{}> = () => (
