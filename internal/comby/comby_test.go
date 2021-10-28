@@ -13,7 +13,7 @@ import (
 
 func TestMatchesUnmarshalling(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -67,7 +67,7 @@ func main() {
 
 func TestMatchesInZip(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -129,7 +129,7 @@ func main() {
 
 func Test_stdin(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -159,7 +159,7 @@ func Test_stdin(t *testing.T) {
 
 func TestReplacements(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
