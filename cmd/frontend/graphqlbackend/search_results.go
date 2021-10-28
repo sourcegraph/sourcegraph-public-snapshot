@@ -44,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -628,6 +629,47 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// It which specializes search logic in doResults. In time, all
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
+		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+			globalSearch := args.Mode == search.ZoektGlobalSearch
+			skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
+			searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
+
+			if !skipUnindexed {
+				typ := search.TextRequest
+				// TODO(rvantonder): we don't always have to run
+				// this converter. It depends on whether we run
+				// a zoekt search at all.
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+				zoektArgs := &search.ZoektParameters{
+					Query:          zoektQuery,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				searcherArgs := &search.SearcherParameters{
+					SearcherURLs:    args.SearcherURLs,
+					PatternInfo:     args.PatternInfo,
+					UseFullDeadline: args.UseFullDeadline,
+				}
+
+				jobs = append(jobs, &unindexed.TextSearch{
+					ZoektArgs:         zoektArgs,
+					SearcherArgs:      searcherArgs,
+					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
+					NotSearcherOnly:   !searcherOnly,
+					UseIndex:          args.PatternInfo.Index,
+					ContainsRefGlobs:  query.ContainsRefGlobs(q),
+					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				})
+			}
+
+		}
+
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
 			jobs = append(jobs, &unindexed.StructuralSearch{
 				RepoFetcher: unindexed.NewRepoFetcher(r.stream, &args),
@@ -1626,36 +1668,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		}
 	}
 
-	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if !skipUnindexed {
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-
-				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(args.PatternInfo.FileMatchLimit))
-				defer cleanup()
-
-				// This code path implies we've already decided to run global-search (3rd arg is always false).
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, false, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
-				if err != nil {
-					agg.Error(err)
-					return
-				}
-
-				searcherArgs := &search.SearcherParameters{
-					SearcherURLs:    args.SearcherURLs,
-					PatternInfo:     args.PatternInfo,
-					UseFullDeadline: args.UseFullDeadline,
-				}
-
-				notSearcherOnly := !searcherOnly
-
-				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
-			})
-		}
-	}
-
 	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
 		addCommitSearch := func(diff bool) {
 			j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
@@ -1706,6 +1718,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		case "Commit":
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		case "Text":
+			return waitGroup(true)
 		case "Structural":
 			return waitGroup(true)
 		default:
