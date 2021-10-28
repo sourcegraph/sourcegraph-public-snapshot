@@ -3,7 +3,6 @@ import { camelCase } from 'lodash'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
-import { InsightsPermissionGrantsInput } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
