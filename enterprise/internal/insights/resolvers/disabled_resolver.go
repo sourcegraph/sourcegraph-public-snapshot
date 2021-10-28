@@ -59,3 +59,7 @@ func (r *disabledResolver) CreateLineChartSearchInsight(ctx context.Context, arg
 func (r *disabledResolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
 	return nil, errors.New(r.reason)
 }
+
+func (r *disabledResolver) InsightViews(ctx context.Context, args *graphqlbackend.InsightViewQueryArgs) (graphqlbackend.InsightViewConnectionResolver, error) {
+	return nil, errors.New(r.reason)
+}
