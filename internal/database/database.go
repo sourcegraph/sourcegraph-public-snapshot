@@ -22,6 +22,7 @@ type DB interface {
 	Settings() SettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
+	UserExternalAccounts() UserExternalAccountsStore
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 }
@@ -35,6 +36,8 @@ func NewDB(inner dbutil.DB) DB {
 type db struct {
 	dbutil.DB
 }
+
+var _ DB = (*db)(nil)
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
@@ -78,6 +81,10 @@ func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
 
 func (d *db) UserEmails() UserEmailsStore {
 	return UserEmails(d.DB)
+}
+
+func (d *db) UserExternalAccounts() UserExternalAccountsStore {
+	return ExternalAccounts(d.DB)
 }
 
 func (d *db) UserPublicRepos() UserPublicRepoStore {
