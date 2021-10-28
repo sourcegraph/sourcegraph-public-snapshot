@@ -67,7 +67,7 @@ func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	if appRequestErr != nil && userRequestErr != nil {
+	if userRequestErr != nil {
 		// Unable to make either request successfully
 		return http.StatusInternalServerError, multierror.Append(
 			errors.Wrap(appRequestErr, "failed to list app repositories"),
