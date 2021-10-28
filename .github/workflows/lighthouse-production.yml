@@ -23,8 +23,8 @@ jobs:
     - name: Run Lighthouse
       run: |
         echo -e "*Weekly audit against Sourcegraph.com*\n" > lighthouse_results.txt
-        ./dev/ci/lighthouse-production.sh ":house: *Homepage*" "https://sourcegraph.com/search" ./lighthouse_results.txt
-        ./dev/ci/lighthouse-production.sh ":mag_right: *Search results*" "https://sourcegraph.com/search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js" ./lighthouse_results.txt
-        ./dev/ci/lighthouse-production.sh ":repository: *Repository page*" "https://sourcegraph.com/github.com/sourcegraph/lighthouse-ci-test-repository" ./lighthouse_results.txt
-        ./dev/ci/lighthouse-production.sh ":code: *File blob*" "https://sourcegraph.com/github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js" ./lighthouse_results.txt
+        ./dev/ci/generate-lighthouse-slack-report.sh ":house: *Homepage*" "https://sourcegraph.com/search" ./lighthouse_results.txt
+        ./dev/ci/generate-lighthouse-slack-report.sh ":mag_right: *Search results*" "https://sourcegraph.com/search?q=repo:sourcegraph/lighthouse-ci-test-repository+file:index.js" ./lighthouse_results.txt
+        ./dev/ci/generate-lighthouse-slack-report.sh ":repository: *Repository page*" "https://sourcegraph.com/github.com/sourcegraph/lighthouse-ci-test-repository" ./lighthouse_results.txt
+        ./dev/ci/generate-lighthouse-slack-report.sh ":code: *File blob*" "https://sourcegraph.com/github.com/sourcegraph/lighthouse-ci-test-repository/-/blob/index.js" ./lighthouse_results.txt
         curl -X POST -H 'Content-type: application/json' --data "{'text':'$(cat ./lighthouse_results.txt)'}" ${{ secrets.LIGHTHOUSE_SLACK_WEBHOOK }}
