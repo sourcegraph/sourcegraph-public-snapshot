@@ -11,6 +11,7 @@ import (
 type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
+	NamespaceStore() NamespaceStore
 	Orgs() OrgStore
 	Repos() RepoStore
 	Users() UserStore
@@ -28,6 +29,10 @@ type db struct {
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
+}
+
+func (d *db) NamespaceStore() NamespaceStore {
+	return Namespaces(d.DB)
 }
 
 func (d *db) Orgs() OrgStore {
