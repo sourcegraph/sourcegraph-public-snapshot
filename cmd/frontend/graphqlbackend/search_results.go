@@ -60,7 +60,7 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Stats.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
@@ -76,7 +76,7 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	var resolvers []*RepositoryResolver
 	c.Stats.Status.Filter(mask, func(id api.RepoID) {
 		if r, ok := c.Stats.Repos[id]; ok {
-			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
+			resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -144,7 +144,7 @@ func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver := NewRepositoryResolver(database.NewDB(db), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
@@ -1482,9 +1482,27 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	args.RepoOptions = r.toRepoOptions(args.Query, resolveRepositoriesOpts{})
 
+	// globalSearch controls whether we run a global zoekt search.
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	// skipUnindexed is a value that controls whether to run unindexed
+	// search in a specific scenario of queries that contain no
+	// repo-affecting filters (global mode). When on sourcegraph.com, the
+	// determineRepos call below returns a subset of indexed repos to
+	// search. This control flow implies len(searcherRepos) is always 0, so
+	// we skip running searcher in subsequent goroutine search jobs.
+	skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
+	// searcherOnly is a value that controls whether to run unindexed search
+	// in one of two scenarios. The first scenario depends on if index:no is
+	// set (value true). The second scenario happens if queries contain no
+	// repo-affecting filters (global mode). When NOT on sourcegraph.com the
+	// determineRepos _may_ return a subset of nonindexed repos to search,
+	// so we run searcher, but conditional only on whether global zoekt
+	// search will run (value true).
+	searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
+
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
-	if args.Mode == search.ZoektGlobalSearch {
+	if globalSearch {
 		argsIndexed := *args
 
 		userID := int32(0)
@@ -1522,7 +1540,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(argsIndexed.PatternInfo.FileMatchLimit))
 				defer cleanup()
 
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
+				// This code path implies global-search (3rd arg is true).
+				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, &argsIndexed, true, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
 				if err != nil {
 					agg.Error(err)
 					return
@@ -1542,17 +1561,9 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoSymbolSearch(ctx, &argsIndexed, limit)
+				// This code path implies not-only-searcher is run (3rd arg is true) and global-search is run (4rd arg is true)
+				_ = agg.DoSymbolSearch(ctx, &argsIndexed, true, true, limit)
 			})
-		}
-
-		// On sourcegraph.com and for unscoped queries, determineRepos returns the subset
-		// of indexed default searchrepos. No need to call searcher, because
-		// len(searcherRepos) will always be 0.
-		if envvar.SourcegraphDotComMode() {
-			args.Mode = search.SkipUnindexed
-		} else {
-			args.Mode = search.SearcherOnly
 		}
 	}
 
@@ -1602,18 +1613,21 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 	}
 
 	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-		if args.Mode != search.SkipUnindexed {
+		if !skipUnindexed {
 			wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 			wg.Add(1)
 			goroutine.Go(func() {
 				defer wg.Done()
-				_ = agg.DoSymbolSearch(ctx, args, limit)
+
+				notSearcherOnly := !searcherOnly
+
+				_ = agg.DoSymbolSearch(ctx, args, notSearcherOnly, false, limit)
 			})
 		}
 	}
 
 	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if args.Mode != search.SkipUnindexed {
+		if !skipUnindexed {
 			wg := waitGroup(true)
 			wg.Add(1)
 			goroutine.Go(func() {
@@ -1622,7 +1636,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(args.PatternInfo.FileMatchLimit))
 				defer cleanup()
 
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
+				// This code path implies we've already decided to run global-search (3rd arg is always false).
+				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, false, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
 				if err != nil {
 					agg.Error(err)
 					return
@@ -1634,16 +1649,16 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 					UseFullDeadline: args.UseFullDeadline,
 				}
 
-				notSearcherOnly := args.Mode != search.SearcherOnly
+				notSearcherOnly := !searcherOnly
 
 				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
 			})
 		}
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
 		addCommitSearch := func(diff bool) {
-			j, err := commit.NewSearchJob(args.Query, args.Repos, diff, int(args.PatternInfo.FileMatchLimit))
+			j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
 			if err != nil {
 				agg.Error(err)
 				return
@@ -1704,7 +1719,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		wg.Add(1)
 		goroutine.Go(func() {
 			defer wg.Done()
-			_ = agg.DoSearch(ctx, job, args.Mode)
+			_ = agg.DoSearch(ctx, job, args.Repos, args.Mode)
 		})
 	}
 

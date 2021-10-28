@@ -336,7 +336,7 @@ export const ActionItemsToggle: React.FunctionComponent<ActionItemsToggleProps> 
                         {!haveExtensionsLoaded ? (
                             <LoadingSpinner className="icon-inline" />
                         ) : isOpen ? (
-                            <ChevronDoubleUpIcon className="icon-inline" />
+                            <ChevronDoubleUpIcon data-testid="action-items-toggle-open" className="icon-inline" />
                         ) : (
                             <PuzzleOutlineIcon className="icon-inline" />
                         )}

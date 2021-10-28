@@ -39,7 +39,7 @@ var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, lim
 // it can be used for both search suggestions and search results
 //
 // May return partial results and an error
-func Search(ctx context.Context, args *search.TextParameters, limit int, stream streaming.Sender) (err error) {
+func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int, stream streaming.Sender) (err error) {
 	if MockSearchSymbols != nil {
 		results, stats, err := MockSearchSymbols(ctx, args, limit)
 		stream.Send(streaming.SearchEvent{
@@ -58,14 +58,14 @@ func Search(ctx context.Context, args *search.TextParameters, limit int, stream 
 	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
 	defer cancel()
 
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, globalSearch, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
 	if err != nil {
 		return err
 	}
 
 	run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
-	if args.Mode != search.SearcherOnly {
+	if notSearcherOnly {
 		run.Acquire()
 		goroutine.Go(func() {
 			defer run.Release()

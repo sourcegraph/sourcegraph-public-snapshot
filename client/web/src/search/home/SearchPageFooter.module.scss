@@ -63,6 +63,9 @@
 
 .dev-tool-time-image {
     margin-right: 0.625rem;
+    // Note: This is to reduce cumulative layout shift
+    // It should be as close as possible to the source image width
+    min-width: 4.75rem;
 }
 
 .dev-tool-time-text {

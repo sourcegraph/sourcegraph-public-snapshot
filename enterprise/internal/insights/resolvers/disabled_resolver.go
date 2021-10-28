@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 )
 
@@ -51,7 +52,15 @@ func (r *disabledResolver) InsightSeriesQueryStatus(ctx context.Context) ([]grap
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (graphqlbackend.CreateInsightResultResolver, error) {
+func (r *disabledResolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) InsightViews(ctx context.Context, args *graphqlbackend.InsightViewQueryArgs) (graphqlbackend.InsightViewConnectionResolver, error) {
 	return nil, errors.New(r.reason)
 }
 

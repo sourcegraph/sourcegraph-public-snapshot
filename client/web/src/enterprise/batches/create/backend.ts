@@ -44,7 +44,7 @@ const fragment = gql`
         id
         originalInput
         workspaceResolution {
-            workspaces {
+            workspaces(first: 10000) {
                 nodes {
                     ...BatchSpecWorkspaceFields
                 }
@@ -54,7 +54,7 @@ const fragment = gql`
         }
         allowUnsupported
         allowIgnored
-        importingChangesets {
+        importingChangesets(first: 10000) {
             totalCount
             nodes {
                 __typename
