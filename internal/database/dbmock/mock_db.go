@@ -18,6 +18,9 @@ type MockDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
+	// EventLogsFunc is an instance of a mock function object controlling
+	// the behavior of the method EventLogs.
+	EventLogsFunc *DBEventLogsFunc
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
@@ -77,6 +80,11 @@ func NewMockDB() *MockDB {
 	return &MockDB{
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() database.AccessTokenStore {
+				return nil
+			},
+		},
+		EventLogsFunc: &DBEventLogsFunc{
+			defaultHook: func() database.EventLogStore {
 				return nil
 			},
 		},
@@ -174,6 +182,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 	return &MockDB{
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
+		},
+		EventLogsFunc: &DBEventLogsFunc{
+			defaultHook: i.EventLogs,
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
@@ -325,6 +336,105 @@ func (c DBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBEventLogsFunc describes the behavior when the EventLogs method of the
+// parent MockDB instance is invoked.
+type DBEventLogsFunc struct {
+	defaultHook func() database.EventLogStore
+	hooks       []func() database.EventLogStore
+	history     []DBEventLogsFuncCall
+	mutex       sync.Mutex
+}
+
+// EventLogs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) EventLogs() database.EventLogStore {
+	r0 := m.EventLogsFunc.nextHook()()
+	m.EventLogsFunc.appendCall(DBEventLogsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EventLogs method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBEventLogsFunc) SetDefaultHook(hook func() database.EventLogStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EventLogs method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBEventLogsFunc) PushHook(hook func() database.EventLogStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBEventLogsFunc) SetDefaultReturn(r0 database.EventLogStore) {
+	f.SetDefaultHook(func() database.EventLogStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBEventLogsFunc) PushReturn(r0 database.EventLogStore) {
+	f.PushHook(func() database.EventLogStore {
+		return r0
+	})
+}
+
+func (f *DBEventLogsFunc) nextHook() func() database.EventLogStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBEventLogsFunc) appendCall(r0 DBEventLogsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBEventLogsFuncCall objects describing the
+// invocations of this function.
+func (f *DBEventLogsFunc) History() []DBEventLogsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBEventLogsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBEventLogsFuncCall is an object that describes an invocation of method
+// EventLogs on an instance of MockDB.
+type DBEventLogsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.EventLogStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBEventLogsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBEventLogsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
