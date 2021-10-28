@@ -48,6 +48,9 @@ type MockDB struct {
 	// UserCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserCredentials.
 	UserCredentialsFunc *DBUserCredentialsFunc
+	// UserEmailsFunc is an instance of a mock function object controlling
+	// the behavior of the method UserEmails.
+	UserEmailsFunc *DBUserEmailsFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -112,6 +115,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		UserEmailsFunc: &DBUserEmailsFunc{
+			defaultHook: func() database.UserEmailsStore {
+				return nil
+			},
+		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: func() database.UserStore {
 				return nil
@@ -156,6 +164,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: i.UserCredentials,
+		},
+		UserEmailsFunc: &DBUserEmailsFunc{
+			defaultHook: i.UserEmails,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -1308,6 +1319,105 @@ func (c DBUserCredentialsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBUserCredentialsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBUserEmailsFunc describes the behavior when the UserEmails method of the
+// parent MockDB instance is invoked.
+type DBUserEmailsFunc struct {
+	defaultHook func() database.UserEmailsStore
+	hooks       []func() database.UserEmailsStore
+	history     []DBUserEmailsFuncCall
+	mutex       sync.Mutex
+}
+
+// UserEmails delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) UserEmails() database.UserEmailsStore {
+	r0 := m.UserEmailsFunc.nextHook()()
+	m.UserEmailsFunc.appendCall(DBUserEmailsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UserEmails method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBUserEmailsFunc) SetDefaultHook(hook func() database.UserEmailsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserEmails method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBUserEmailsFunc) PushHook(hook func() database.UserEmailsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBUserEmailsFunc) SetDefaultReturn(r0 database.UserEmailsStore) {
+	f.SetDefaultHook(func() database.UserEmailsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBUserEmailsFunc) PushReturn(r0 database.UserEmailsStore) {
+	f.PushHook(func() database.UserEmailsStore {
+		return r0
+	})
+}
+
+func (f *DBUserEmailsFunc) nextHook() func() database.UserEmailsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUserEmailsFunc) appendCall(r0 DBUserEmailsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUserEmailsFuncCall objects describing the
+// invocations of this function.
+func (f *DBUserEmailsFunc) History() []DBUserEmailsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUserEmailsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUserEmailsFuncCall is an object that describes an invocation of method
+// UserEmails on an instance of MockDB.
+type DBUserEmailsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.UserEmailsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUserEmailsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUserEmailsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
