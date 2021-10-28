@@ -24,6 +24,9 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
+	// FeatureFlagsFunc is an instance of a mock function object controlling
+	// the behavior of the method FeatureFlags.
+	FeatureFlagsFunc *DBFeatureFlagsFunc
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *DBNamespacesFunc
@@ -94,6 +97,11 @@ func NewMockDB() *MockDB {
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
 				return nil, nil
+			},
+		},
+		FeatureFlagsFunc: &DBFeatureFlagsFunc{
+			defaultHook: func() database.FeatureFlagStore {
+				return nil
 			},
 		},
 		NamespacesFunc: &DBNamespacesFunc{
@@ -196,6 +204,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		FeatureFlagsFunc: &DBFeatureFlagsFunc{
+			defaultHook: i.FeatureFlags,
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: i.Namespaces,
@@ -565,6 +576,105 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBFeatureFlagsFunc describes the behavior when the FeatureFlags method of
+// the parent MockDB instance is invoked.
+type DBFeatureFlagsFunc struct {
+	defaultHook func() database.FeatureFlagStore
+	hooks       []func() database.FeatureFlagStore
+	history     []DBFeatureFlagsFuncCall
+	mutex       sync.Mutex
+}
+
+// FeatureFlags delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) FeatureFlags() database.FeatureFlagStore {
+	r0 := m.FeatureFlagsFunc.nextHook()()
+	m.FeatureFlagsFunc.appendCall(DBFeatureFlagsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the FeatureFlags method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBFeatureFlagsFunc) SetDefaultHook(hook func() database.FeatureFlagStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FeatureFlags method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBFeatureFlagsFunc) PushHook(hook func() database.FeatureFlagStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBFeatureFlagsFunc) SetDefaultReturn(r0 database.FeatureFlagStore) {
+	f.SetDefaultHook(func() database.FeatureFlagStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBFeatureFlagsFunc) PushReturn(r0 database.FeatureFlagStore) {
+	f.PushHook(func() database.FeatureFlagStore {
+		return r0
+	})
+}
+
+func (f *DBFeatureFlagsFunc) nextHook() func() database.FeatureFlagStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBFeatureFlagsFunc) appendCall(r0 DBFeatureFlagsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBFeatureFlagsFuncCall objects describing
+// the invocations of this function.
+func (f *DBFeatureFlagsFunc) History() []DBFeatureFlagsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBFeatureFlagsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBFeatureFlagsFuncCall is an object that describes an invocation of
+// method FeatureFlags on an instance of MockDB.
+type DBFeatureFlagsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.FeatureFlagStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBFeatureFlagsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBFeatureFlagsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBNamespacesFunc describes the behavior when the Namespaces method of the

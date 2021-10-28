@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -106,7 +107,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
-	flagStore := FeatureFlags(dbtest.NewDB(t))
+	flagStore := &featureFlagStore{Store: basestore.NewWithDB(dbtest.NewDB(t), sql.TxOptions{})}
 	ctx := actor.WithInternalActor(context.Background())
 
 	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
@@ -190,7 +191,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
+	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	users := Users(db)
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -269,7 +270,7 @@ func testListUserOverrides(t *testing.T) {
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
 	db := dbtest.NewDB(t)
-	flagStore := FeatureFlags(db)
+	flagStore := &featureFlagStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 	users := Users(db)
 	orgs := Orgs(db)
 	orgMembers := OrgMembers(db)
