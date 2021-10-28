@@ -2,6 +2,7 @@ import React from 'react'
 
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Page } from '@sourcegraph/web/src/components/Page'
 import { PageHeader } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
@@ -32,7 +33,7 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
             settingsCascade={settingsCascade}
         />
     ) : (
-        <>
+        <Page>
             <PageTitle title="Create batch change" />
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Create batch change' }]}
@@ -48,5 +49,5 @@ export const CreateBatchChangePage: React.FunctionComponent<CreateBatchChangePag
                 className="mb-3"
             />
             <OldBatchChangePageContent />
-        </>
+        </Page>
     )
