@@ -36,18 +36,19 @@ type AccessToken struct {
 var ErrAccessTokenNotFound = errors.New("access token not found")
 
 type AccessTokenStore interface {
-	With(basestore.ShareableStore) AccessTokenStore
-	Transact(context.Context) (AccessTokenStore, error)
+	Count(context.Context, AccessTokensListOptions) (int, error)
 	Create(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
 	CreateInternal(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32) (id int64, token string, err error)
-	Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
+	DeleteByID(context.Context, int64) error
+	DeleteByToken(ctx context.Context, tokenHexEncoded string) error
 	GetByID(context.Context, int64) (*AccessToken, error)
 	GetByToken(ctx context.Context, tokenHexEncoded string) (*AccessToken, error)
-	List(context.Context, AccessTokensListOptions) ([]*AccessToken, error)
-	Count(context.Context, AccessTokensListOptions) (int, error)
-	DeleteByID(context.Context, int64) error
 	HardDeleteByID(context.Context, int64) error
-	DeleteByToken(ctx context.Context, tokenHexEncoded string) error
+	List(context.Context, AccessTokensListOptions) ([]*AccessToken, error)
+	Lookup(ctx context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error)
+	Transact(context.Context) (AccessTokenStore, error)
+	With(basestore.ShareableStore) AccessTokenStore
+	basestore.ShareableStore
 }
 
 // accessTokenStore implements autocert.Cache
