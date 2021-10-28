@@ -250,7 +250,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<{
 }
 
 const GettingStartedFooter: React.FunctionComponent<{}> = () => (
-    <div className="row pb-4">
+    <div className="row">
         <div className="col-12 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
             <div className="card">
                 <div className="card-body text-center">
