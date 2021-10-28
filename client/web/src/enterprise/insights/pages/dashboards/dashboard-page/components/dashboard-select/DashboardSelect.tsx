@@ -3,6 +3,9 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import React from 'react'
 
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { authenticatedUser } from '@sourcegraph/web/src/auth'
+
 import {
     InsightDashboard,
     InsightDashboardOwner,
@@ -32,6 +35,21 @@ export interface DashboardSelectProps {
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
     const { value, dashboards, onSelect, className } = props
+    const user = useObservable(authenticatedUser)
+    if (!user) {
+        return null
+    }
+
+    const organizations = user.organizations.nodes.reduce<Record<string, InsightDashboardOwner>>(
+        (map, organization) => ({
+            ...map,
+            [organization.id]: {
+                id: organization.id,
+                name: organization.displayName ?? organization.name,
+            },
+        }),
+        {}
+    )
 
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
@@ -41,7 +59,24 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         }
     }
 
-    const organizationGroups = getDashboardOrganizationsGroups(dashboards)
+    const organizationGroups = getDashboardOrganizationsGroups(
+        dashboards.map((dashboard: InsightDashboard) => {
+            const owner =
+                ('owner' in dashboard && dashboard.owner) ||
+                ('grants' in dashboard &&
+                    dashboard.grants?.organizations &&
+                    organizations[dashboard.grants?.organizations[0]])
+
+            if (!owner) {
+                return dashboard
+            }
+
+            return {
+                ...dashboard,
+                owner,
+            }
+        })
+    )
 
     return (
         <div className={className}>
@@ -125,28 +160,19 @@ const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): Dashbo
     const groupsDictionary = dashboards
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
-            const orgId = (dashboard.grants?.organizations && dashboard.grants?.organizations[0]) || ''
-            const owner: InsightDashboardOwner = dashboard.owner || {
-                id: orgId,
-                name: orgId,
+            if (!dashboard.owner) {
+                throw new Error('`owner` is missing from the dashboard')
             }
 
-            // This shouldn't happen. If we have made it this far, we should have a valid owner.
-            if (owner.id === '') {
-                return store
-            }
-
-            console.log('decoded name', atob(owner.id))
-
-            if (!store[owner.id]) {
-                store[owner.id] = {
-                    id: owner.id,
-                    name: owner.name,
+            if (!store[dashboard.owner.id]) {
+                store[dashboard.owner.id] = {
+                    id: dashboard.owner.id,
+                    name: dashboard.owner.name,
                     dashboards: [],
                 }
             }
 
-            store[owner.id].dashboards.push(dashboard)
+            store[dashboard.owner.id].dashboards.push(dashboard)
 
             return store
         }, {})
