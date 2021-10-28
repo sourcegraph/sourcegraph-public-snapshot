@@ -1,74 +1,76 @@
-import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
-import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
-import { Observable } from 'rxjs'
-
-import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
-import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
-import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+/* eslint-disable import/order */
 import * as GQL from '@sourcegraph/shared/src/graphql/schema'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
+import {
+    CaseSensitivityProps,
+    HomePanelsProps,
+    OnboardingTourProps,
+    ParsedSearchQueryProps,
+    PatternTypeProps,
+    SearchContextProps,
+    SearchStreamingProps,
+    getGlobalSearchContextFilter,
+    parseSearchURL,
+    parseSearchURLQuery,
+} from './search'
+import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
+import { KEYBOARD_SHORTCUT_SHOW_HELP, KeyboardShortcutsProps } from './keyboardShortcuts/keyboardShortcuts'
+import { LayoutRouteComponentProps, LayoutRouteProps } from './routes'
+import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
+import { UserExternalServicesOrRepositoriesUpdateProps, isMacPlatform } from './util'
+
+import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { BatchChangesProps } from './batches'
-import { CodeMonitoringProps } from './code-monitoring'
-import { CodeIntelligenceProps } from './codeintel'
-import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
-import { useBreadcrumbs } from './components/Breadcrumbs'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { useScrollToLocationHash } from './components/useScrollToLocationHash'
-import { GlobalContributions } from './contributions'
-import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
-import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
-import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
-import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
-import { FeatureFlagProps } from './featureFlags/featureFlags'
-import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
 import { CodeInsightsProps } from './insights/types'
-import { KeyboardShortcutsProps, KEYBOARD_SHORTCUT_SHOW_HELP } from './keyboardShortcuts/keyboardShortcuts'
-import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
-import { SurveyToast } from './marketing/SurveyToast'
+import { CodeIntelligenceProps } from './codeintel'
+import { CodeMonitoringProps } from './code-monitoring'
+import { ErrorBoundary } from './components/ErrorBoundary'
+import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
+import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
+import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { FeatureFlagProps } from './featureFlags/featureFlags'
+import { FetchFileParameters } from '@sourcegraph/shared/src/components/CodeExcerpt'
+import { GlobalAlerts } from './global/GlobalAlerts'
+import { GlobalContributions } from './contributions'
+import { GlobalDebug } from './global/GlobalDebug'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { useExtensionAlertAnimation } from './nav/UserNavItem'
-import { OrgAreaRoute } from './org/area/OrgArea'
+import { KeyboardShortcutsHelp } from './keyboardShortcuts/KeyboardShortcutsHelp'
+import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
+import { Observable } from 'rxjs'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
-import { fetchHighlightedFileLineRanges } from './repo/backend'
+import { OrgAreaRoute } from './org/area/OrgArea'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { RepoContainerRoute } from './repo/RepoContainer'
 import { RepoHeaderActionButton } from './repo/RepoHeader'
 import { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
-import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
-import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
+import { ResizablePanel } from '@sourcegraph/branded/src/components/panel/Panel'
 import { Settings } from './schema/settings.schema'
-import {
-    parseSearchURLQuery,
-    PatternTypeProps,
-    CaseSensitivityProps,
-    OnboardingTourProps,
-    HomePanelsProps,
-    SearchStreamingProps,
-    ParsedSearchQueryProps,
-    parseSearchURL,
-    SearchContextProps,
-    getGlobalSearchContextFilter,
-} from './search'
-import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
-import { useTheme } from './theme'
-import { UserAreaRoute } from './user/area/UserArea'
+import { SurveyToast } from './marketing/SurveyToast'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
+import { UserAreaRoute } from './user/area/UserArea'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { isMacPlatform, UserExternalServicesOrRepositoriesUpdateProps } from './util'
+import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
+import { fetchHighlightedFileLineRanges } from './repo/backend'
 import { parseBrowserRepoURL } from './util/url'
+import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import styles from './Layout.module.scss'
+import { useBreadcrumbs } from './components/Breadcrumbs'
+import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { useScrollToLocationHash } from './components/useScrollToLocationHash'
+import { useTemporarySetting } from './settings/temporary/useTemporarySetting'
+import { useTheme } from './theme'
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -246,7 +248,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
     }
 
     return (
-        <div className="layout">
+        <div className={styles.layout}>
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
@@ -297,7 +299,7 @@ export const Layout: React.FunctionComponent<LayoutProps> = props => {
                                         key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                         component={undefined}
                                         render={routeComponentProps => (
-                                            <div className="layout__app-router-container">
+                                            <div className={styles.appRouterContainer}>
                                                 {render({ ...context, ...routeComponentProps })}
                                             </div>
                                         )}
