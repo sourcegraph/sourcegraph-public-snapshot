@@ -188,7 +188,7 @@ extend type Query {
     insightsDashboards(first: Int, after: String): InsightsDashboardConnection!
 
     """
-    Return insight views visible to the authenticated user.
+    Return all insight views visible to the authenticated user.
     """
     insightViews(first: Int, after: String, id: ID): InsightViewConnection!
 }

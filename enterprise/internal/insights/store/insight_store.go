@@ -102,7 +102,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(args.UniqueID) > 0 {
-		log15.Info("adding unique")
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
