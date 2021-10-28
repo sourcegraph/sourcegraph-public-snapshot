@@ -250,21 +250,23 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
 	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && envvar.SourcegraphDotComMode() {
-		user, err := database.Users(db).GetByID(ctx, a.UID)
-		if err != nil {
-			return nil, err
-		}
-		searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
+	if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
+		return searchContexts, nil
+	}
 
-		organizations, err := database.Orgs(db).GetOrgsWithRepositoriesByUserID(ctx, a.UID)
-		if err != nil {
-			return nil, err
-		}
+	user, err := database.Users(db).GetByID(ctx, a.UID)
+	if err != nil {
+		return nil, err
+	}
+	searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
 
-		for _, org := range organizations {
-			searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
-		}
+	organizations, err := database.Orgs(db).GetOrgsWithRepositoriesByUserID(ctx, a.UID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, org := range organizations {
+		searchContexts = append(searchContexts, GetOrganizationSearchContext(org.ID, org.Name, *org.DisplayName))
 	}
 	return searchContexts, nil
 }
