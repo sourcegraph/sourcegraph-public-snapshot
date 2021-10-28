@@ -15,5 +15,7 @@
 - [How to setup HTTPS connection with Ingress controller on your Kubernetes instance](setup-https.md)
 - [How to rebuild corrupt Postgres indexes after upgrading to 3.30 or 3.30.1](rebuild-corrupt-postgres-indexes.md)
 - [How to determine cause for Precise-code-intel-worker in CrashLoopBackOff status](precise-code-intel-worker-crashloopbackoff.md)
+- [How to troubleshoot a failure to update repositories when new repositories are added](update_repo_failure.md)
 - [How to run postgres queries in your Sourcegraph instance](run-psql.md)
 - [How to remove a repository from Sourcegraph](remove-repo.md)
+

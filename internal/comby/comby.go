@@ -62,6 +62,8 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-zip", string(i))
 	case DirPath:
 		rawArgs = append(rawArgs, "-directory", string(i))
+	case FileContent:
+		rawArgs = append(rawArgs, "-stdin")
 	default:
 		log15.Error("unrecognized input type", "type", i)
 		panic("unreachable")
@@ -127,6 +129,10 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	cmd := exec.Command(combyPath, rawArgs...)
 	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
+	if content, ok := args.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewReader(content)
+	}
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
