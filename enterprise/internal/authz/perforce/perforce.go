@@ -173,14 +173,6 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		err = errors.Wrap(scanProtects(rc, fullRepoPermsScanner(perms, p.depots)), "fullRepoPermsScanner")
 	}
 
-	// Treat all Contains paths as prefixes.
-	for i, include := range perms.IncludeContains {
-		perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresMatchSyntax[perforceWildcardMatchAll])
-	}
-	for i, exclude := range perms.ExcludeContains {
-		perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresMatchSyntax[perforceWildcardMatchAll])
-	}
-
 	// As per interface definition for this method, implementation should return
 	// partial but valid results even when something went wrong.
 	return perms, errors.Wrap(err, "FetchUserPerms")

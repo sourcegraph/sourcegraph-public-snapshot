@@ -80,6 +80,11 @@ const (
 	perforceWildcardMatchDirectory = "*"
 )
 
+func hasPerforceWildcard(match string) bool {
+	return strings.Contains(match, perforceWildcardMatchAll) ||
+		strings.Contains(match, perforceWildcardMatchDirectory)
+}
+
 // PostgreSQL's SIMILAR TO equivalents for Perforce file match syntaxes.
 //
 // See: https://www.postgresql.org/docs/12/functions-matching.html#FUNCTIONS-SIMILARTO-REGEXP
@@ -108,12 +113,15 @@ var globMatchSyntax = map[string]string{
 
 type globMatch struct {
 	glob.Glob
-	raw string
+	pattern  string
+	original string
 }
 
 // convertToGlobMatch converts supported patterns to Glob, and ensures the rest of the
 // match does not contain unexpected Glob patterns.
 func convertToGlobMatch(match string) (globMatch, error) {
+	original := match
+
 	// Escape all glob syntax first, to ensure nothing unexpected shows up
 	match = glob.QuoteMeta(match)
 
@@ -129,15 +137,61 @@ func convertToGlobMatch(match string) (globMatch, error) {
 
 	g, err := glob.Compile(match, '/')
 	return globMatch{
-		Glob: g,
-		raw:  match,
+		Glob:     g,
+		pattern:  match,
+		original: original,
 	}, errors.Wrap(err, "invalid pattern")
+}
+
+func matchAgainstMatch(match globMatch, against globMatch) bool {
+	if match.Match(against.original) {
+		return true
+	}
+
+	// If the subpath includes a wildcard:
+	// - depot: "//app/main/"
+	// - match: "//app/.../file"
+	// Then we want to check if it could match this match
+	if !hasPerforceWildcard(match.original) {
+		return false
+	}
+	parts := strings.Split(match.original, perforceWildcardMatchAll)
+	if len(parts) > 0 {
+		// Check full prefix
+		prefixMatch, err := convertToGlobMatch(parts[0] + perforceWildcardMatchAll)
+		if err != nil {
+			return false
+		}
+		if prefixMatch.Match(against.original) {
+			return true
+		}
+	}
+	// Check each prefix part for perforceWildcardMatchDirectory.
+	// We already tried the full match, so start at len(parts)-1, and don't traverse all
+	// the way down to root unless there's a wildcard there.
+	parts = strings.Split(match.original, "/")
+	for i := len(parts) - 1; i > 2 || strings.Contains(parts[i], perforceWildcardMatchDirectory); i-- {
+		prefixMatch, err := convertToGlobMatch(strings.Join(parts[:i], "/") + "/")
+		if err != nil {
+			return false
+		}
+		if prefixMatch.Match(against.original) {
+			return true
+		}
+	}
+
+	return false
+}
+
+type scanner struct {
+	processLine func(p4ProtectLine) error
+	finalize    func() error
 }
 
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(rc io.Reader, processLine func(p4ProtectLine) error) error {
+func scanProtects(rc io.Reader, s *scanner) error {
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -181,119 +235,230 @@ func scanProtects(rc io.Reader, processLine func(p4ProtectLine) error) error {
 		}
 
 		// Do stuff to line
-		if err := processLine(parsedLine); err != nil {
+		if err := s.processLine(parsedLine); err != nil {
 			return err
 		}
+	}
+	if s.finalize != nil {
+		return s.finalize()
 	}
 	return nil
 }
 
 // scanRepoIncludesExcludes converts `p4 protects` to Postgres SIMILAR TO-compatible
 // entries for including and excluding depots as "repositories".
-func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) func(p4ProtectLine) error {
-	return func(line p4ProtectLine) error {
-		// We drop trailing '...' so that we can check for prefixes (see below).
-		line.match = strings.TrimRight(line.match, ".")
+func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *scanner {
+	return &scanner{
+		processLine: func(line p4ProtectLine) error {
+			// We drop trailing '...' so that we can check for prefixes (see below).
+			line.match = strings.TrimRight(line.match, ".")
 
-		// NOTE: Manipulations made to `depotContains` will affect the behaviour of
-		// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
-		depotContains := convertToPostgresMatch(line.match)
+			// NOTE: Manipulations made to `depotContains` will affect the behaviour of
+			// `(*RepoStore).ListRepoNames` - make sure to test new changes there as well.
+			depotContains := convertToPostgresMatch(line.match)
 
-		if !line.isExclusion {
-			perms.IncludeContains = append(perms.IncludeContains, extsvc.RepoID(depotContains))
-			return nil
-		}
-
-		if strings.Contains(line.match, perforceWildcardMatchAll) ||
-			strings.Contains(line.match, perforceWildcardMatchDirectory) {
-			// Always include wildcard matches, because we don't know what they might
-			// be matching on.
-			perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
-			return nil
-		}
-
-		// Otherwise, only include an exclude if a corresponding include exists.
-		for i, prefix := range perms.IncludeContains {
-			if !strings.HasPrefix(depotContains, string(prefix)) {
-				continue
+			if !line.isExclusion {
+				perms.IncludeContains = append(perms.IncludeContains, extsvc.RepoID(depotContains))
+				return nil
 			}
 
-			// Perforce ACLs can have conflict rules and the later one wins. So if there is
-			// an exact match for an include prefix, we take it out.
-			if depotContains == string(prefix) {
-				perms.IncludeContains = append(perms.IncludeContains[:i], perms.IncludeContains[i+1:]...)
+			if hasPerforceWildcard(line.match) {
+				// Always include wildcard matches, because we don't know what they might
+				// be matching on.
+				perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
+				return nil
+			}
+
+			// Otherwise, only include an exclude if a corresponding include exists.
+			for i, prefix := range perms.IncludeContains {
+				if !strings.HasPrefix(depotContains, string(prefix)) {
+					continue
+				}
+
+				// Perforce ACLs can have conflict rules and the later one wins. So if there is
+				// an exact match for an include prefix, we take it out.
+				if depotContains == string(prefix) {
+					perms.IncludeContains = append(perms.IncludeContains[:i], perms.IncludeContains[i+1:]...)
+					break
+				}
+
+				perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
 				break
 			}
 
-			perms.ExcludeContains = append(perms.ExcludeContains, extsvc.RepoID(depotContains))
-			break
-		}
-
-		return nil
+			return nil
+		},
+		finalize: func() error {
+			// Treat all Contains paths as prefixes.
+			for i, include := range perms.IncludeContains {
+				perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresMatchSyntax[perforceWildcardMatchAll])
+			}
+			for i, exclude := range perms.ExcludeContains {
+				perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresMatchSyntax[perforceWildcardMatchAll])
+			}
+			return nil
+		},
 	}
 }
 
 // fullRepoPermsScanner converts `p4 protects` to a 1:1 implementation of Sourcegraph
 // authorization, including sub-repo perms.
-func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) func(p4ProtectLine) error {
+func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *scanner {
+	configuredDepotMatches := make([]globMatch, len(configuredDepots))
+	for i, depot := range configuredDepots {
+		m, err := convertToGlobMatch(string(depot) + "**")
+		if err != nil {
+			log15.Error("unexpected failure to convert depot to pattern",
+				"depot", depot,
+				"error", err)
+			continue
+		}
+		m.original = string(depot) // preserve original name
+		configuredDepotMatches[i] = m
+	}
 	relevantDepots := func(m globMatch) (depots []extsvc.RepoID) {
-		for _, depot := range configuredDepots {
-			if m.Match(string(depot)) {
-				depots = append(depots, depot)
+		for i, depot := range configuredDepotMatches {
+			if depot.Match(m.original) || matchAgainstMatch(m, depot) {
+				depots = append(depots, configuredDepots[i])
 			}
 		}
 		return
 	}
 
-	seenRepos := make(map[extsvc.RepoID]struct{})
-	appendRepos := func(ids ...extsvc.RepoID) {
-		for _, id := range ids {
-			if _, seen := seenRepos[id]; !seen {
-				perms.Exacts = append(perms.Exacts, id)
-				seenRepos[id] = struct{}{}
-			}
+	getSubRepoPerms := func(repo extsvc.RepoID) *authz.SubRepoPermissions {
+		if _, ok := perms.SubRepoPermissions[repo]; !ok {
+			perms.SubRepoPermissions[repo] = &authz.SubRepoPermissions{}
 		}
+		return perms.SubRepoPermissions[repo]
 	}
 
-	return func(line p4ProtectLine) error {
-		match, err := convertToGlobMatch(line.match)
-		if err != nil {
-			return err
-		}
+	patternsToGlob := make(map[string]globMatch)
 
-		if !line.isExclusion {
-			// Access is granted to *some* part of the depot, so user has access to the
-			// root repo.
+	return &scanner{
+		processLine: func(line p4ProtectLine) error {
+			match, err := convertToGlobMatch(line.match)
+			if err != nil {
+				return err
+			}
+			patternsToGlob[match.pattern] = match
+
+			// Depots that this match pertains to
 			depots := relevantDepots(match)
-			appendRepos(depots...)
 
-			// Grant access to specified paths
+			// Handle inclusions
+			if !line.isExclusion {
+				// Grant access to specified paths
+				for _, depot := range depots {
+					srp := getSubRepoPerms(depot)
+					srp.PathIncludes = append(srp.PathIncludes, match.pattern)
+
+					var i int
+					for _, exclude := range srp.PathExcludes {
+						// Perforce ACLs can have conflict rules and the later one wins, so
+						// if we get a match here we drop the existing rule.
+						originalExclude, exists := patternsToGlob[exclude]
+						if !exists {
+							i++
+							continue
+						}
+						if originalExclude.Match(match.original) {
+							srp.PathExcludes = append(srp.PathExcludes[:i], srp.PathExcludes[i+1:]...)
+						} else {
+							i++
+						}
+					}
+				}
+
+				return nil
+			}
+
 			for _, depot := range depots {
-				perms := perms.SubRepoPermissions[depot]
-				perms.PathIncludes = append(perms.PathIncludes, match.raw)
+				srp := getSubRepoPerms(depot)
+				if len(srp.PathIncludes) > 0 {
+					srp.PathExcludes = append(srp.PathExcludes, match.pattern)
+				}
+
+				var i int
+				for _, include := range srp.PathIncludes {
+					// Perforce ACLs can have conflict rules and the later one wins, so
+					// if we get a match here we drop the existing rule.
+					includeGlob, exists := patternsToGlob[include]
+					if !exists {
+						i++
+						continue
+					}
+					if match.Match(includeGlob.original) {
+						srp.PathIncludes = append(srp.PathIncludes[:i], srp.PathIncludes[i+1:]...)
+					} else {
+						i++
+					}
+				}
 			}
 
 			return nil
-		}
+		},
+		finalize: func() error {
+			// iterate over configuredDepots to be deterministic
+			for _, depot := range configuredDepots {
+				srp, exists := perms.SubRepoPermissions[depot]
+				if !exists {
+					continue
+				} else if len(srp.PathIncludes) == 0 {
+					// Depots with no inclusions can just be dropped
+					delete(perms.SubRepoPermissions, depot)
+					continue
+				}
 
-		// TODO exclusio ncases
-
-		return nil
+				// Add to repos users can access
+				perms.Exacts = append(perms.Exacts, depot)
+			}
+			return nil
+		},
 	}
 }
 
 // allUsersScanner converts `p4 protects` to a map of users within the protection rules.
-func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) func(p4ProtectLine) error {
-	return func(line p4ProtectLine) error {
-		if line.isExclusion {
+func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) *scanner {
+	return &scanner{
+		processLine: func(line p4ProtectLine) error {
+			if line.isExclusion {
+				switch line.entityType {
+				case "user":
+					if line.name == "*" {
+						for u := range users {
+							delete(users, u)
+						}
+					} else {
+						delete(users, line.name)
+					}
+				case "group":
+					members, err := p.getGroupMembers(ctx, line.name)
+					if err != nil {
+						return errors.Wrapf(err, "list members of group %q", line.name)
+					}
+					for _, member := range members {
+						delete(users, member)
+					}
+
+				default:
+					log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
+				}
+
+				return nil
+			}
+
 			switch line.entityType {
 			case "user":
 				if line.name == "*" {
-					for u := range users {
-						delete(users, u)
+					all, err := p.getAllUsers(ctx)
+					if err != nil {
+						return errors.Wrap(err, "list all users")
+					}
+					for _, user := range all {
+						users[user] = struct{}{}
 					}
 				} else {
-					delete(users, line.name)
+					users[line.name] = struct{}{}
 				}
 			case "group":
 				members, err := p.getGroupMembers(ctx, line.name)
@@ -301,7 +466,7 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 					return errors.Wrapf(err, "list members of group %q", line.name)
 				}
 				for _, member := range members {
-					delete(users, member)
+					users[member] = struct{}{}
 				}
 
 			default:
@@ -309,34 +474,6 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 			}
 
 			return nil
-		}
-
-		switch line.entityType {
-		case "user":
-			if line.name == "*" {
-				all, err := p.getAllUsers(ctx)
-				if err != nil {
-					return errors.Wrap(err, "list all users")
-				}
-				for _, user := range all {
-					users[user] = struct{}{}
-				}
-			} else {
-				users[line.name] = struct{}{}
-			}
-		case "group":
-			members, err := p.getGroupMembers(ctx, line.name)
-			if err != nil {
-				return errors.Wrapf(err, "list members of group %q", line.name)
-			}
-			for _, member := range members {
-				users[member] = struct{}{}
-			}
-
-		default:
-			log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
-		}
-
-		return nil
+		},
 	}
 }

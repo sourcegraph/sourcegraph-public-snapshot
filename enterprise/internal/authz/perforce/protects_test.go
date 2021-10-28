@@ -10,6 +10,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 func TestConvertToPostgresMatch(t *testing.T) {
@@ -93,6 +96,11 @@ func TestConvertToGlobMatch(t *testing.T) {
 		match:       "//depot/main/rel...",
 		want:        "//depot/main/rel**",
 		shouldMatch: []string{"//depot/main/rel/", "//depot/main/releases/", "//depot/main/release-note.txt", "//depot/main/rel1/product1"},
+	}, {
+		name:        "//app/*",
+		match:       "//app/*",
+		want:        "//app/*{/,}",
+		shouldMatch: []string{"//app/main", "//app/main/"},
 	}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -100,20 +108,20 @@ func TestConvertToGlobMatch(t *testing.T) {
 			if err != nil {
 				t.Fatal(fmt.Sprintf("unexpected error: %+v", err))
 			}
-			if diff := cmp.Diff(tt.want, got.raw); diff != "" {
+			if diff := cmp.Diff(tt.want, got.pattern); diff != "" {
 				t.Fatal(diff)
 			}
 			if len(tt.shouldMatch) > 0 {
 				for _, m := range tt.shouldMatch {
 					if !got.Match(m) {
-						t.Errorf("%q should have matched %q", got.raw, m)
+						t.Errorf("%q should have matched %q", got.pattern, m)
 					}
 				}
 			}
 			if len(tt.shouldNotMatch) > 0 {
 				for _, m := range tt.shouldNotMatch {
 					if got.Match(m) {
-						t.Errorf("%q should not have matched %q", got.raw, m)
+						t.Errorf("%q should not have matched %q", got.pattern, m)
 					}
 				}
 			}
@@ -121,9 +129,105 @@ func TestConvertToGlobMatch(t *testing.T) {
 	}
 }
 
+// mustGlobPattern gets the glob pattern for a given p4 match for use in testing
+func mustGlobPattern(t *testing.T, match string) string {
+	m, err := convertToGlobMatch(match)
+	if err != nil {
+		t.Error(err)
+	}
+	return m.pattern
+}
+
+func TestScanFullRepoPermissions(t *testing.T) {
+	f, err := os.Open("testdata/sample-protects-u.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	rc := io.NopCloser(bytes.NewReader(data))
+
+	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+		return rc, nil, nil
+	})
+
+	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p.depots = []extsvc.RepoID{
+		"//app/main/",
+		"//app/training/",
+		"//app/test/",
+		"//app/rickroll/",
+		"//not-app/not-main/", // no rules exist
+	}
+	perms := &authz.ExternalUserPermissions{
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+	}
+	if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
+		t.Fatal(err)
+	}
+
+	// See sample-protects-u.txt for notes
+	want := &authz.ExternalUserPermissions{
+		Exacts: []extsvc.RepoID{
+			"//app/main/",
+			"//app/training/",
+			"//app/test/",
+		},
+		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+			"//app/main/": {
+				PathIncludes: []string{
+					mustGlobPattern(t, "//app/main/core/..."),
+					mustGlobPattern(t, "//app/main/*/stuff/..."),
+					mustGlobPattern(t, "//app/main/frontend/.../stuff/*"),
+					mustGlobPattern(t, "//*/main/config.yaml"),
+					mustGlobPattern(t, "//app/main/subdir/**"),
+					mustGlobPattern(t, "//app/.../README.md"),
+					mustGlobPattern(t, "//app/*/dir.yaml"),
+				},
+				PathExcludes: []string{
+					mustGlobPattern(t, "//app/main/subdir/remove/"),
+					mustGlobPattern(t, "//app/main/subdir/*/also-remove/..."),
+					mustGlobPattern(t, "//.../.secrets.env"),
+				},
+			},
+			"//app/test/": {
+				PathIncludes: []string{
+					mustGlobPattern(t, "//app/test/..."),
+					mustGlobPattern(t, "//app/.../README.md"),
+					mustGlobPattern(t, "//app/*/dir.yaml"),
+				},
+				PathExcludes: []string{
+					mustGlobPattern(t, "//.../.secrets.env"),
+				},
+			},
+			"//app/training/": {
+				PathIncludes: []string{
+					mustGlobPattern(t, "//app/training/..."),
+					mustGlobPattern(t, "//app/.../README.md"),
+					mustGlobPattern(t, "//app/*/dir.yaml"),
+				},
+				PathExcludes: []string{
+					mustGlobPattern(t, "//app/training/secrets/..."),
+					mustGlobPattern(t, "//app/training/.env"),
+					mustGlobPattern(t, "//.../.secrets.env"),
+				},
+			},
+		},
+	}
+	if diff := cmp.Diff(want, perms); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestScanAllUsers(t *testing.T) {
 	ctx := context.Background()
-	f, err := os.Open("testdata/sample-protects.txt")
+	f, err := os.Open("testdata/sample-protects-a.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
