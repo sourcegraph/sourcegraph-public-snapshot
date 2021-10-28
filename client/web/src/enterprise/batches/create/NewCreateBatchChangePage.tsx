@@ -285,7 +285,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
                         onClick={submitBatchSpec}
                         disabled={isLoading === true}
                     >
-                        Run specification
+                        Run batch spec
                     </button>
                     <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
                         or download for src-cli
