@@ -1,12 +1,14 @@
+import classNames from 'classnames'
 import * as H from 'history'
+import React from 'react'
+
+import { Link } from '@sourcegraph/shared/src/components/Link'
+import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
+import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { ExtensionDevelopmentToolsPopover } from '@sourcegraph/shared/src/extensions/devtools'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Link } from '@sourcegraph/shared/src/components/Link'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import React from 'react'
-import classNames from 'classnames'
+
 import styles from './GlobalDebug.module.scss'
 
 interface Props extends ExtensionsControllerProps, PlatformContextProps {
