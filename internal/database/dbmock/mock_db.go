@@ -23,6 +23,9 @@ type MockDB struct {
 	// NamespacesFunc is an instance of a mock function object controlling
 	// the behavior of the method Namespaces.
 	NamespacesFunc *DBNamespacesFunc
+	// OrgMembersFunc is an instance of a mock function object controlling
+	// the behavior of the method OrgMembers.
+	OrgMembersFunc *DBOrgMembersFunc
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *DBOrgsFunc
@@ -56,6 +59,11 @@ func NewMockDB() *MockDB {
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: func() database.NamespaceStore {
+				return nil
+			},
+		},
+		OrgMembersFunc: &DBOrgMembersFunc{
+			defaultHook: func() database.OrgMemberStore {
 				return nil
 			},
 		},
@@ -99,6 +107,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: i.Namespaces,
+		},
+		OrgMembersFunc: &DBOrgMembersFunc{
+			defaultHook: i.OrgMembers,
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
@@ -431,6 +442,105 @@ func (c DBNamespacesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBNamespacesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBOrgMembersFunc describes the behavior when the OrgMembers method of the
+// parent MockDB instance is invoked.
+type DBOrgMembersFunc struct {
+	defaultHook func() database.OrgMemberStore
+	hooks       []func() database.OrgMemberStore
+	history     []DBOrgMembersFuncCall
+	mutex       sync.Mutex
+}
+
+// OrgMembers delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) OrgMembers() database.OrgMemberStore {
+	r0 := m.OrgMembersFunc.nextHook()()
+	m.OrgMembersFunc.appendCall(DBOrgMembersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the OrgMembers method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBOrgMembersFunc) SetDefaultHook(hook func() database.OrgMemberStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OrgMembers method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBOrgMembersFunc) PushHook(hook func() database.OrgMemberStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBOrgMembersFunc) SetDefaultReturn(r0 database.OrgMemberStore) {
+	f.SetDefaultHook(func() database.OrgMemberStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBOrgMembersFunc) PushReturn(r0 database.OrgMemberStore) {
+	f.PushHook(func() database.OrgMemberStore {
+		return r0
+	})
+}
+
+func (f *DBOrgMembersFunc) nextHook() func() database.OrgMemberStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBOrgMembersFunc) appendCall(r0 DBOrgMembersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBOrgMembersFuncCall objects describing the
+// invocations of this function.
+func (f *DBOrgMembersFunc) History() []DBOrgMembersFuncCall {
+	f.mutex.Lock()
+	history := make([]DBOrgMembersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBOrgMembersFuncCall is an object that describes an invocation of method
+// OrgMembers on an instance of MockDB.
+type DBOrgMembersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.OrgMemberStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBOrgMembersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBOrgMembersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
