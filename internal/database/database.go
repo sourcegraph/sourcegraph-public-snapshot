@@ -16,6 +16,7 @@ type DB interface {
 	Orgs() OrgStore
 	Repos() RepoStore
 	SavedSearches() SavedSearchStore
+	Settings() SettingsStore
 	Users() UserStore
 }
 
@@ -51,6 +52,10 @@ func (d *db) Repos() RepoStore {
 
 func (d *db) SavedSearches() SavedSearchStore {
 	return SavedSearches(d.DB)
+}
+
+func (d *db) Settings() SettingsStore {
+	return Settings(d.DB)
 }
 
 func (d *db) Users() UserStore {

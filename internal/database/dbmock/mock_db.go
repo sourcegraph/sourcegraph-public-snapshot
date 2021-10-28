@@ -41,6 +41,9 @@ type MockDB struct {
 	// SavedSearchesFunc is an instance of a mock function object
 	// controlling the behavior of the method SavedSearches.
 	SavedSearchesFunc *DBSavedSearchesFunc
+	// SettingsFunc is an instance of a mock function object controlling the
+	// behavior of the method Settings.
+	SettingsFunc *DBSettingsFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -95,6 +98,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		SettingsFunc: &DBSettingsFunc{
+			defaultHook: func() database.SettingsStore {
+				return nil
+			},
+		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: func() database.UserStore {
 				return nil
@@ -133,6 +141,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		SavedSearchesFunc: &DBSavedSearchesFunc{
 			defaultHook: i.SavedSearches,
+		},
+		SettingsFunc: &DBSettingsFunc{
+			defaultHook: i.Settings,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -1083,6 +1094,105 @@ func (c DBSavedSearchesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSavedSearchesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBSettingsFunc describes the behavior when the Settings method of the
+// parent MockDB instance is invoked.
+type DBSettingsFunc struct {
+	defaultHook func() database.SettingsStore
+	hooks       []func() database.SettingsStore
+	history     []DBSettingsFuncCall
+	mutex       sync.Mutex
+}
+
+// Settings delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Settings() database.SettingsStore {
+	r0 := m.SettingsFunc.nextHook()()
+	m.SettingsFunc.appendCall(DBSettingsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Settings method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBSettingsFunc) SetDefaultHook(hook func() database.SettingsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Settings method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBSettingsFunc) PushHook(hook func() database.SettingsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBSettingsFunc) SetDefaultReturn(r0 database.SettingsStore) {
+	f.SetDefaultHook(func() database.SettingsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBSettingsFunc) PushReturn(r0 database.SettingsStore) {
+	f.PushHook(func() database.SettingsStore {
+		return r0
+	})
+}
+
+func (f *DBSettingsFunc) nextHook() func() database.SettingsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBSettingsFunc) appendCall(r0 DBSettingsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBSettingsFuncCall objects describing the
+// invocations of this function.
+func (f *DBSettingsFunc) History() []DBSettingsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBSettingsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBSettingsFuncCall is an object that describes an invocation of method
+// Settings on an instance of MockDB.
+type DBSettingsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SettingsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBSettingsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBSettingsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

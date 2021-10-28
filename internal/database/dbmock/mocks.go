@@ -9,3 +9,4 @@ package dbmock
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i OrgMemberStore -o mock_org_members.go
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i OrgStore -o mock_orgs.go
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i UserStore -o mock_users.go
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i SettingsStore -o mock_settings.go
