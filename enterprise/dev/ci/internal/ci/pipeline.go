@@ -152,8 +152,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
-		// Publish images
-		ops.Append(publishFinalDockerImage(c, patchImage, false))
+		// Publish images after everything is done
+		ops.Append(wait,
+			publishFinalDockerImage(c, patchImage, false))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -174,6 +175,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = operations.NewSet([]operations.Operation{
 			buildExecutor(c.Version, c.MessageFlags.SkipHashCompare),
 			publishExecutor(c.Version, c.MessageFlags.SkipHashCompare),
+			buildExecutorDockerMirror(c.Version),
+			publishExecutorDockerMirror(c.Version),
 		})
 
 	default:
@@ -194,11 +197,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(ReleaseBranch)
 		if c.RunType.Is(MainDryRun, MainBranch) {
 			ops.Append(buildExecutor(c.Version, skipHashCompare))
-		}
-
-		// Slow tests
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			ops.Append(backendIntegrationTests(c.candidateImageTag()))
+			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+				ops.Append(buildExecutorDockerMirror(c.Version))
+			}
 		}
 
 		// Core tests
@@ -206,12 +207,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 		}))
 
-		// Trigger e2e late so that it can leverage candidate images
-		ops.Append(triggerE2EandQA(e2eAndQAOptions{
-			candidateImage: c.candidateImageTag(),
-			buildOptions:   buildOptions,
-			async:          c.RunType.Is(MainBranch),
-		}))
+		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
+		const minimumUpgradeableVersion = "3.32.0"
+
+		// Various integration tests
+		ops.Append(
+			backendIntegrationTests(c.candidateImageTag()),
+			codeIntelQA(c.candidateImageTag()),
+			serverE2E(c.candidateImageTag()),
+			serverQA(c.candidateImageTag()),
+			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+
+		// All operations before this point are required
+		ops.Append(wait)
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -220,13 +228,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Executor VM image
 		if c.RunType.Is(MainBranch) {
 			ops.Append(publishExecutor(c.Version, skipHashCompare))
+			if c.ChangedFiles.AffectsExecutorDockerRegistryMirror() {
+				ops.Append(publishExecutorDockerMirror(c.Version))
+			}
 		}
 
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
 			ops.Append(
-				// wait for all steps to pass
-				wait,
+				wait, // wait for all steps to pass
 				triggerUpdaterPipeline)
 		}
 	}

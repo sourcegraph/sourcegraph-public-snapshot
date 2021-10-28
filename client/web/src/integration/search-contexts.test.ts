@@ -488,4 +488,61 @@ describe('Search contexts', () => {
             searchContextsCount
         )
     })
+
+    test('Switching contexts with empty query', async () => {
+        testContext.overrideGraphQL({
+            ...testContextForSearchContexts,
+            IsSearchContextAvailable: () => ({
+                isSearchContextAvailable: true,
+            }),
+            AutoDefinedSearchContexts: () => ({
+                autoDefinedSearchContexts: [],
+            }),
+            ListSearchContexts: () => {
+                const nodes = range(0, 2).map(index => ({
+                    __typename: 'SearchContext',
+                    id: `id-${index}`,
+                    spec: `ctx-${index}`,
+                    name: `ctx-${index}`,
+                    namespace: null,
+                    public: true,
+                    autoDefined: false,
+                    viewerCanManage: false,
+                    description: '',
+                    repositories: [],
+                    updatedAt: subDays(new Date(), 1).toISOString(),
+                })) as ISearchContext[]
+
+                return {
+                    searchContexts: {
+                        nodes,
+                        totalCount: nodes.length,
+                        pageInfo: {
+                            hasNextPage: false,
+                            endCursor: null,
+                        },
+                    },
+                }
+            },
+        })
+
+        // Go to search results page with a single context filter in the query and wait for context selector to load
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=context:ctx-0&patternType=literal')
+        await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })
+
+        // Open dropdown menu
+        await driver.page.click('.test-search-context-dropdown')
+        await driver.page.waitForSelector('[data-testid="search-context-menu-item-name"]', { visible: true })
+
+        await Promise.all([
+            // A search will be submitted on context click, wait for the navigation
+            driver.page.waitForNavigation({ waitUntil: 'networkidle0' }),
+            // Click second context item in the dropdown
+            driver.page.click('[data-testid="search-context-menu-item-name"][title="ctx-1"]'),
+        ])
+
+        await driver.page.waitForSelector('.test-search-context-dropdown', { visible: true })
+        // The context should have been switched
+        expect(await getSelectedSearchContextSpec()).toStrictEqual('context:ctx-1')
+    })
 })

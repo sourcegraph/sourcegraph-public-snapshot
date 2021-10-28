@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
+import AccountIcon from 'mdi-react/AccountIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import React from 'react'
 
 import { Link } from '@sourcegraph/shared/src/components/Link'
@@ -51,7 +51,7 @@ export const ExternalServiceCard: React.FunctionComponent<ExternalServiceCardPro
                         <small>
                             {' '}
                             by
-                            <UserIcon className="icon-inline" />
+                            <AccountIcon className="icon-inline" />
                             <Link to={namespace.url}>{namespace.namespaceName}</Link>
                         </small>
                     )}

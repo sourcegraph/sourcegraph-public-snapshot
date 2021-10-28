@@ -619,6 +619,8 @@ type ExternalIdentity struct {
 type FusionClient struct {
 	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
 	Enabled bool `json:"enabled,omitempty"`
+	// IncludeBinaries description: Whether to include binary files
+	IncludeBinaries bool `json:"includeBinaries,omitempty"`
 	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
 	LookAhead int `json:"lookAhead"`
 	// MaxChanges description: How many changes to fetch during initial clone. The default of -1 will fetch all known changes
@@ -1542,7 +1544,7 @@ type SiteConfiguration struct {
 	CampaignsEnabled *bool `json:"campaigns.enabled,omitempty"`
 	// CampaignsRestrictToAdmins description: DEPRECATED: Use batchChanges.restrictToAdmins instead. This setting is non-functional.
 	CampaignsRestrictToAdmins *bool `json:"campaigns.restrictToAdmins,omitempty"`
-	// CloneProgressLog description: Whether clone progress should be logged to a file
+	// CloneProgressLog description: Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.
 	CloneProgressLog bool `json:"cloneProgress.log,omitempty"`
 	// CodeIntelAutoIndexingEnabled description: Enables/disables the code intel auto indexing feature. This feature is currently supported only on certain managed Sourcegraph instances.
 	CodeIntelAutoIndexingEnabled *bool `json:"codeIntelAutoIndexing.enabled,omitempty"`

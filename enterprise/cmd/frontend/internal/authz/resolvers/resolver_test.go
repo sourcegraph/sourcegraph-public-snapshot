@@ -216,7 +216,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 }
 
 func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -263,7 +263,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 }
 
 func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -346,7 +346,7 @@ func (c *fakeRepoupdaterClient) SchedulePermsSync(ctx context.Context, args prot
 }
 
 func TestResolver_AuthorizedUserRepositories(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -528,7 +528,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 }
 
 func TestResolver_UsersWithPendingPermissions(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -593,7 +593,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 }
 
 func TestResolver_AuthorizedUsers(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -683,7 +683,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 }
 
 func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -765,7 +765,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 }
 
 func TestResolver_UserPermissionsInfo(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {

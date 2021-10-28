@@ -454,6 +454,10 @@ type Mutation {
         insertID: String
     ): EmptyResponse
     """
+    Logs a batch of events.
+    """
+    logEvents(events: [Event!]): EmptyResponse
+    """
     Sends a test notification for the saved search. Be careful: this will send a notifcation (email and other
     types of notifications, if configured) to all subscribers of the saved search, which could be bothersome.
 
@@ -726,6 +730,67 @@ type Mutation {
         """
         settingsToEdit: String!
     ): EmptyResponse!
+}
+
+"""
+A description of a user event.
+"""
+input Event {
+    """
+    The name of the event.
+    """
+    event: String!
+    """
+    The randomly generated unique user ID stored in a browser cookie.
+    """
+    userCookieID: String!
+    """
+    The first sourcegraph URL visited by the user, stored in a browser cookie.
+    """
+    firstSourceURL: String
+    """
+    The URL when the event was logged.
+    """
+    url: String!
+    """
+    The source of the event.
+    """
+    source: EventSource!
+    """
+    An optional cohort ID to identify the user as part of a specific A/B test.
+    The cohort ID is expected to be a date in the form YYYY-MM-DD
+    """
+    cohortID: String
+    """
+    An optional referrer parameter for the user's current session.
+    Only captured and stored on Sourcegraph Cloud.
+    """
+    referrer: String
+    """
+    The additional argument information.
+    """
+    argument: String
+    """
+    Public argument information. PRIVACY: Do NOT include any potentially private information in this field.
+    These properties get sent to our analytics tools for Cloud, so must not include private information,
+    such as search queries or repository names.
+    """
+    publicArgument: String
+    """
+    Device ID used for Amplitude analytics. Used on Sourcegraph Cloud only.
+    """
+    deviceID: String
+    """
+    Event ID used to deduplicate events that occur simultaneously in Amplitude analytics.
+    See https://developers.amplitude.com/docs/http-api-v2#optional-keys. Used on Sourcegraph Cloud only.
+    """
+    eventID: Int
+    """
+    Insert ID used to deduplicate events that re-occur in the event of retries or
+    backfills in Amplitude analytics. See https://developers.amplitude.com/docs/http-api-v2#optional-keys.
+    Used on Sourcegraph Cloud only.
+    """
+    insertID: String
 }
 
 """

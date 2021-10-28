@@ -30,7 +30,7 @@ var services struct {
 	dbStore         *store.Store
 	locker          *locker.Locker
 	lsifStore       *lsifstore.Store
-	repoStore       *database.RepoStore
+	repoStore       database.RepoStore
 	uploadStore     uploadstore.Store
 	gitserverClient *gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer

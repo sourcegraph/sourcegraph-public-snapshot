@@ -22,7 +22,7 @@ import (
 func TestMiddleware(t *testing.T) {
 	defer licensing.TestingSkipFeatureChecks()()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
@@ -184,7 +184,7 @@ func TestMiddleware(t *testing.T) {
 func TestMiddleware_stripPrefix(t *testing.T) {
 	defer licensing.TestingSkipFeatureChecks()()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())

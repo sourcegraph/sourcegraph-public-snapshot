@@ -36,8 +36,8 @@ const helpTexts: Record<ExternalServiceKind, JSX.Element> = {
             <a href={HELP_TEXT_LINK_URL} rel="noreferrer noopener" target="_blank">
                 Create a new access token
             </a>{' '}
-            with <code>repo</code>, <code>read:org</code>, <code>user:email</code>, and <code>read:discussion</code>{' '}
-            scopes.
+            with the <code>repo</code>, <code>read:org</code>, <code>user:email</code>, <code>read:discussion</code>,
+            and <code>workflow</code> scopes.
         </>
     ),
     [ExternalServiceKind.GITLAB]: (

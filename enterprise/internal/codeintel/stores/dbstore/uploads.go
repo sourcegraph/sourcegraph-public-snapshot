@@ -327,7 +327,7 @@ func (s *Store) GetUploads(ctx context.Context, opts GetUploadsOptions) (_ []Upl
 		conds = append(conds, makeSearchCondition(opts.Term))
 	}
 	if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("u.state = %s", opts.State))
+		conds = append(conds, makeStateCondition(opts.State))
 	} else {
 		conds = append(conds, sqlf.Sprintf("u.state != 'deleted'"))
 	}
@@ -450,6 +450,24 @@ func makeSearchCondition(term string) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
+}
+
+// makeStateCondition returns a disjunction of clauses comparing the upload against the target state.
+func makeStateCondition(state string) *sqlf.Query {
+	states := make([]string, 0, 2)
+	if state == "errored" || state == "failed" {
+		// Treat errored and failed states as equivalent
+		states = append(states, "errored", "failed")
+	} else {
+		states = append(states, state)
+	}
+
+	queries := make([]*sqlf.Query, 0, len(states))
+	for _, state := range states {
+		queries = append(queries, sqlf.Sprintf("u.state = %s", state))
+	}
+
+	return sqlf.Sprintf("(%s)", sqlf.Join(queries, " OR "))
 }
 
 // InsertUpload inserts a new upload and returns its identifier.

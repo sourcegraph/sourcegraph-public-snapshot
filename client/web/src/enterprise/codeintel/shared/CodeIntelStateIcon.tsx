@@ -1,6 +1,6 @@
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import FileUploadIcon from 'mdi-react/FileUploadIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { FunctionComponent } from 'react'
@@ -26,7 +26,7 @@ export const CodeIntelStateIcon: FunctionComponent<CodeIntelStateIconProps> = ({
     ) : state === LSIFUploadState.COMPLETED || state === LSIFIndexState.COMPLETED ? (
         <CheckCircleIcon className={classNames('text-success', className)} />
     ) : state === LSIFUploadState.ERRORED || state === LSIFIndexState.ERRORED ? (
-        <ErrorIcon className={classNames('text-danger', className)} />
+        <AlertCircleIcon className={classNames('text-danger', className)} />
     ) : (
         <></>
     )

@@ -119,41 +119,23 @@ WHERE
 GROUP BY repository_id, commit
 `
 
-// RefreshCommitResolvability will update each upload and index record belonging to the
-// given repository identifier and commit. If the delete flag is true, then the state of
-// each matching record will be soft-deleted. Regardless, the commit_last_checked_at value
-// will be bumped to the current (given) time. This method returns the count of upload and
-// index records modified, respectively.
-func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int, commit string, delete bool, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
-	ctx, traceLog, endObservation := s.operations.refreshCommitResolvability.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+// UpdateSourcedCommits updates the commit_last_checked_at field of each upload and index records belonging
+// to the given repository identifier and commit. This method returns the count of upload and index records
+// modified, respectively.
+func (s *Store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, indexesUpdated int, err error) {
+	ctx, traceLog, endObservation := s.operations.updateSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("repositoryID", repositoryID),
 		log.String("commit", commit),
-		log.Bool("delete", delete),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	uploadsAssignmentExpressions := []*sqlf.Query{sqlf.Sprintf("commit_last_checked_at = %s", now)}
-	indexesAssignmentExpressions := []*sqlf.Query{sqlf.Sprintf("commit_last_checked_at = %s", now)}
-	if delete {
-		uploadsAssignmentExpressions = append(uploadsAssignmentExpressions, sqlf.Sprintf("state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END"))
-		indexesAssignmentExpressions = append(indexesAssignmentExpressions, sqlf.Sprintf("state = 'deleted'"))
-	}
-
-	rows, err := s.Query(ctx, sqlf.Sprintf(
-		refreshCommitResolvabilityQuery,
-		repositoryID, commit, sqlf.Join(uploadsAssignmentExpressions, ", "),
-		repositoryID, commit, sqlf.Join(indexesAssignmentExpressions, ", "),
-	))
+	uploadsUpdated, indexesUpdated, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
+		updateSourcedCommitsQuery,
+		repositoryID, commit, // candidate_uploads
+		repositoryID, commit, // candidate_indexes
+		now, now, // update_uploads, update_indexes
+	)))
 	if err != nil {
-		return 0, 0, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	if !rows.Next() {
-		return 0, 0, nil
-	}
-
-	if err := rows.Scan(&uploadsUpdated, &indexesUpdated); err != nil {
 		return 0, 0, err
 	}
 	traceLog(
@@ -164,9 +146,29 @@ func (s *Store) RefreshCommitResolvability(ctx context.Context, repositoryID int
 	return uploadsUpdated, indexesUpdated, nil
 }
 
-const refreshCommitResolvabilityQuery = `
--- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:RefreshCommitResolvability
+const updateSourcedCommitsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:UpdateSourcedCommits
 WITH
+` + sourcedCommitsCandidateUploadsCTE + `,
+` + sourcedCommitsCandidateIndexesCTE + `,
+update_uploads AS (
+	UPDATE lsif_uploads u
+	SET commit_last_checked_at = %s
+	WHERE id IN (SELECT id FROM candidate_uploads)
+	RETURNING 1
+),
+update_indexes AS (
+	UPDATE lsif_indexes u
+	SET commit_last_checked_at = %s
+	WHERE id IN (SELECT id FROM candidate_indexes)
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
+	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
+`
+
+const sourcedCommitsCandidateUploadsCTE = `
 candidate_uploads AS (
 	SELECT u.id
 	FROM lsif_uploads u
@@ -175,13 +177,10 @@ candidate_uploads AS (
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_uploads table.
 	ORDER BY u.id FOR UPDATE
-),
-update_uploads AS (
-	UPDATE lsif_uploads u
-	SET %s
-	WHERE id IN (SELECT id FROM candidate_uploads)
-	RETURNING 1
-),
+)
+`
+
+const sourcedCommitsCandidateIndexesCTE = `
 candidate_indexes AS (
 	SELECT u.id
 	FROM lsif_indexes u
@@ -190,14 +189,67 @@ candidate_indexes AS (
 	-- Lock these rows in a deterministic order so that we don't
 	-- deadlock with other processes updating the lsif_indexes table.
 	ORDER BY u.id FOR UPDATE
+)
+`
+
+// DeleteSourcedCommits deletes each upload and index records belonging to the given repository identifier and
+// commit. Uploads are soft deleted and indexes are hard-deleted. This method returns the count of upload and
+// index records modified, respectively.
+func (s *Store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsDeleted int, indexesDeleted int, err error) {
+	ctx, traceLog, endObservation := s.operations.deleteSourcedCommits.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("repositoryID", repositoryID),
+		log.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	uploadsDeleted, indexesDeleted, err = scanPairOfCounts(s.Query(ctx, sqlf.Sprintf(
+		deleteSourcedCommitsQuery,
+		repositoryID, commit, // candidate_uploads
+		repositoryID, commit, // candidate_indexes
+	)))
+	if err != nil {
+		return 0, 0, err
+	}
+	traceLog(
+		log.Int("uploadsDeleted", uploadsDeleted),
+		log.Int("indexesDeleted", indexesDeleted),
+	)
+
+	return uploadsDeleted, indexesDeleted, nil
+}
+
+const deleteSourcedCommitsQuery = `
+-- source: enterprise/internal/codeintel/stores/dbstore/janitor.go:DeleteSourcedCommits
+WITH
+` + sourcedCommitsCandidateUploadsCTE + `,
+` + sourcedCommitsCandidateIndexesCTE + `,
+delete_uploads AS (
+	UPDATE lsif_uploads u
+	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
+	WHERE id IN (SELECT id FROM candidate_uploads)
+	RETURNING 1
 ),
-update_indexes AS (
-	UPDATE lsif_indexes u
-	SET %s
+delete_indexes AS (
+	DELETE FROM lsif_indexes u
 	WHERE id IN (SELECT id FROM candidate_indexes)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM update_uploads) AS num_uploads,
-	(SELECT COUNT(*) FROM update_indexes) AS num_indexes
+	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads,
+	(SELECT COUNT(*) FROM delete_indexes) AS num_indexes
 `
+
+func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
+	if queryErr != nil {
+		return 0, 0, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		if err := rows.Scan(&value1, &value2); err != nil {
+			return 0, 0, err
+		}
+	}
+
+	return value1, value2, nil
+}

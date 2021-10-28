@@ -72,20 +72,29 @@ func LogBackendEvent(db dbutil.DB, userID int32, deviceID, eventName string, arg
 
 // LogEvent logs an event.
 func LogEvent(ctx context.Context, db dbutil.DB, args Event) error {
+	return LogEvents(ctx, db, []Event{args})
+}
+
+// LogEvents logs a batch of events.
+func LogEvents(ctx context.Context, db dbutil.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
 	}
+
 	if envvar.SourcegraphDotComMode() {
-		err := publishSourcegraphDotComEvent(args)
-		if err != nil {
+		if err := publishSourcegraphDotComEvents(events); err != nil {
 			return err
 		}
-		err = publishAmplitudeEvent(args)
-		if err != nil {
+		if err := publishAmplitudeEvents(events); err != nil {
 			return err
 		}
 	}
-	return logLocalEvent(ctx, db, args.EventName, args.URL, args.UserID, args.UserCookieID, args.Source, args.Argument, args.PublicArgument, args.FeatureFlags, args.CohortID)
+
+	if err := logLocalEvents(ctx, db, events); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type bigQueryEvent struct {
@@ -104,51 +113,71 @@ type bigQueryEvent struct {
 	InsertID        *string `json:"insert_id,omitempty"`
 }
 
-// publishSourcegraphDotComEvent publishes Sourcegraph.com events to BigQuery.
-func publishSourcegraphDotComEvent(args Event) error {
+// publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
+func publishSourcegraphDotComEvents(events []Event) error {
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
-
 	if pubSubDotComEventsTopicID == "" {
 		return nil
 	}
-	firstSourceURL := ""
-	if args.FirstSourceURL != nil {
-		firstSourceURL = *args.FirstSourceURL
-	}
-	referrer := ""
-	if args.Referrer != nil {
-		referrer = *args.Referrer
-	}
-	featureFlagJSON, err := json.Marshal(args.FeatureFlags)
+
+	pubsubEvents, err := serializePublishSourcegraphDotComEvents(events)
 	if err != nil {
 		return err
 	}
 
-	pubsubEvent, err := json.Marshal(bigQueryEvent{
-		EventName:       args.EventName,
-		UserID:          int(args.UserID),
-		AnonymousUserID: args.UserCookieID,
-		FirstSourceURL:  firstSourceURL,
-		Referrer:        referrer,
-		Source:          args.Source,
-		Timestamp:       time.Now().UTC().Format(time.RFC3339),
-		Version:         version.Version(),
-		FeatureFlags:    string(featureFlagJSON),
-		CohortID:        args.CohortID,
-		PublicArgument:  string(args.PublicArgument),
-		DeviceID:        args.DeviceID,
-		InsertID:        args.InsertID,
-	})
-	if err != nil {
-		return err
+	for _, event := range pubsubEvents {
+		if err := pubsub.Publish(pubSubDotComEventsTopicID, event); err != nil {
+			return err
+		}
 	}
 
-	return pubsub.Publish(pubSubDotComEventsTopicID, string(pubsubEvent))
+	return nil
 }
 
-func publishAmplitudeEvent(args Event) error {
+func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
+	pubsubEvents := make([]string, 0, len(events))
+	for _, event := range events {
+		firstSourceURL := ""
+		if event.FirstSourceURL != nil {
+			firstSourceURL = *event.FirstSourceURL
+		}
+		referrer := ""
+		if event.Referrer != nil {
+			referrer = *event.Referrer
+		}
+		featureFlagJSON, err := json.Marshal(event.FeatureFlags)
+		if err != nil {
+			return nil, err
+		}
+
+		pubsubEvent, err := json.Marshal(bigQueryEvent{
+			EventName:       event.EventName,
+			UserID:          int(event.UserID),
+			AnonymousUserID: event.UserCookieID,
+			FirstSourceURL:  firstSourceURL,
+			Referrer:        referrer,
+			Source:          event.Source,
+			Timestamp:       time.Now().UTC().Format(time.RFC3339),
+			Version:         version.Version(),
+			FeatureFlags:    string(featureFlagJSON),
+			CohortID:        event.CohortID,
+			PublicArgument:  string(event.PublicArgument),
+			DeviceID:        event.DeviceID,
+			InsertID:        event.InsertID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		pubsubEvents = append(pubsubEvents, string(pubsubEvent))
+	}
+
+	return pubsubEvents, nil
+}
+
+func publishAmplitudeEvents(events []Event) error {
 	if !envvar.SourcegraphDotComMode() {
 		return nil
 	}
@@ -156,84 +185,108 @@ func publishAmplitudeEvent(args Event) error {
 		return nil
 	}
 
-	if _, ok := amplitude.DenyList[args.EventName]; ok {
-		return nil
-	}
-
-	// For anonymous users, do not assign a user ID.
-	// Amplitude does not want User IDs for anonymous users
-	// so it can perform merging for users who sign up based on device ID.
-	var userID string
-	if args.UserID != 0 {
-		// Minimum length for an Amplitude user ID is 5 characters.
-		userID = fmt.Sprintf("%06d", args.UserID)
-	}
-
-	if args.DeviceID == nil {
-		return errors.New("amplitude: Missing device ID")
-	}
-	if args.EventID == nil {
-		return errors.New("amplitude: Missing event ID")
-	}
-	if args.InsertID == nil {
-		return errors.New("amplitude: Missing insert ID")
-	}
-
-	userProperties, err := json.Marshal(amplitude.UserProperties{
-		AnonymousUserID: args.UserCookieID,
-		FeatureFlags:    args.FeatureFlags,
-	})
+	amplitudeEvents, err := createAmplitudeEvents(events)
 	if err != nil {
 		return err
 	}
 
 	amplitudeEvent, err := json.Marshal(amplitude.EventPayload{
 		APIKey: amplitudeAPIToken,
-		Events: []amplitude.AmplitudeEvent{{
-			UserID:          userID,
-			DeviceID:        *args.DeviceID,
-			InsertID:        *args.InsertID,
-			EventID:         *args.EventID,
-			EventType:       args.EventName,
-			EventProperties: args.PublicArgument,
-			UserProperties:  userProperties,
-			Time:            time.Now().Unix(),
-		}},
+		Events: amplitudeEvents,
 	})
 	if err != nil {
 		return err
 	}
 
 	return amplitude.Publish(amplitudeEvent)
-
 }
 
-// logLocalEvent logs users events.
-func logLocalEvent(ctx context.Context, db dbutil.DB, name, url string, userID int32, userCookieID, source string, argument, publicArgument json.RawMessage, featureFlags featureflag.FlagSet, cohortID *string) error {
-	if name == "SearchResultsQueried" {
-		err := logSiteSearchOccurred()
-		if err != nil {
-			return err
+func createAmplitudeEvents(events []Event) ([]amplitude.AmplitudeEvent, error) {
+	amplitudeEvents := make([]amplitude.AmplitudeEvent, 0, len(events))
+	for _, event := range events {
+		if _, ok := amplitude.DenyList[event.EventName]; ok {
+			continue
 		}
-	}
-	if name == "findReferences" {
-		err := logSiteFindRefsOccurred()
-		if err != nil {
-			return err
+
+		// For anonymous users, do not assign a user ID.
+		// Amplitude does not want User IDs for anonymous users
+		// so it can perform merging for users who sign up based on device ID.
+		var userID string
+		if event.UserID != 0 {
+			// Minimum length for an Amplitude user ID is 5 characters.
+			userID = fmt.Sprintf("%06d", event.UserID)
 		}
+
+		if event.DeviceID == nil {
+			return nil, errors.New("amplitude: Missing device ID")
+		}
+		if event.EventID == nil {
+			return nil, errors.New("amplitude: Missing event ID")
+		}
+		if event.InsertID == nil {
+			return nil, errors.New("amplitude: Missing insert ID")
+		}
+
+		userProperties, err := json.Marshal(amplitude.UserProperties{
+			AnonymousUserID: event.UserCookieID,
+			FeatureFlags:    event.FeatureFlags,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		amplitudeEvents = append(amplitudeEvents, amplitude.AmplitudeEvent{
+			UserID:          userID,
+			DeviceID:        *event.DeviceID,
+			InsertID:        *event.InsertID,
+			EventID:         *event.EventID,
+			EventType:       event.EventName,
+			EventProperties: event.PublicArgument,
+			UserProperties:  userProperties,
+			Time:            time.Now().Unix(),
+		})
 	}
 
-	info := &database.Event{
-		Name:            name,
-		URL:             url,
-		UserID:          uint32(userID),
-		AnonymousUserID: userCookieID,
-		Source:          source,
-		Argument:        argument,
-		Timestamp:       timeNow().UTC(),
-		FeatureFlags:    featureFlags,
-		CohortID:        cohortID,
-		PublicArgument:  publicArgument,
+	return amplitudeEvents, nil
+}
+
+// logLocalEvents logs a batch of user events.
+func logLocalEvents(ctx context.Context, db dbutil.DB, events []Event) error {
+	databaseEvents, err := serializeLocalEvents(events)
+	if err != nil {
+		return err
 	}
-	return database.EventLogs(db).Insert(ctx, info)
+
+	return database.EventLogs(db).BulkInsert(ctx, databaseEvents)
+}
+
+func serializeLocalEvents(events []Event) ([]*database.Event, error) {
+	databaseEvents := make([]*database.Event, 0, len(events))
+	for _, event := range events {
+		if event.EventName == "SearchResultsQueried" {
+			if err := logSiteSearchOccurred(); err != nil {
+				return nil, err
+			}
+		}
+		if event.EventName == "findReferences" {
+			if err := logSiteFindRefsOccurred(); err != nil {
+				return nil, err
+			}
+		}
+
+		databaseEvents = append(databaseEvents, &database.Event{
+			Name:            event.EventName,
+			URL:             event.URL,
+			UserID:          uint32(event.UserID),
+			AnonymousUserID: event.UserCookieID,
+			Source:          event.Source,
+			Argument:        event.Argument,
+			Timestamp:       timeNow().UTC(),
+			FeatureFlags:    event.FeatureFlags,
+			CohortID:        event.CohortID,
+			PublicArgument:  event.PublicArgument,
+		})
+	}
+
+	return databaseEvents, nil
 }

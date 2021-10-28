@@ -22,7 +22,7 @@ func TestOverrideAuthMiddleware(t *testing.T) {
 	cleanup := session.ResetMockSessionStore(t)
 	defer cleanup()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	handler := OverrideAuthMiddleware(db, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := actor.FromContext(r.Context())
