@@ -113,9 +113,9 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 )}
             />
             <Route
-                path={`${match.url}/executions/:executionID`}
-                render={({ match, ...props }: RouteComponentProps<{ executionID: string }>) => (
-                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} executionID={match.params.executionID} />
+                path={`${match.url}/executions/:batchSpecID`}
+                render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
+                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} batchSpecID={match.params.batchSpecID} />
                 )}
             />
             <Route

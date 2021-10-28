@@ -9,6 +9,9 @@ import {
     BatchSpecExecutionByIDResult,
     BatchSpecExecutionByIDVariables,
     BatchSpecExecutionFields,
+    BatchSpecWorkspaceByIDResult,
+    BatchSpecWorkspaceByIDVariables,
+    BatchSpecWorkspaceFields,
     BatchSpecWorkspaceStepFileDiffsResult,
     BatchSpecWorkspaceStepFileDiffsVariables,
     CancelBatchSpecExecutionResult,
@@ -16,6 +19,98 @@ import {
     Scalars,
     WorkspaceStepFileDiffConnectionFields,
 } from '../../../graphql-operations'
+
+const batchSpecWorkspaceFieldsFragment = gql`
+    fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
+        id
+        steps {
+            ...BatchSpecWorkspaceStepFields
+        }
+        searchResultPaths
+        queuedAt
+        startedAt
+        finishedAt
+        failureMessage
+        state
+        changesetSpecs {
+            id
+            type
+            __typename
+            ... on VisibleChangesetSpec {
+                description {
+                    ... on GitBranchChangesetDescription {
+                        title
+                    }
+                    ... on ExistingChangesetReference {
+                        externalID
+                    }
+                }
+            }
+        }
+        diffStat {
+            added
+            changed
+            deleted
+        }
+        placeInQueue
+        repository {
+            name
+            url
+        }
+        branch {
+            name
+        }
+        path
+        onlyFetchWorkspace
+        ignored
+        unsupported
+        cachedResultFound
+        stages {
+            setup {
+                ...BatchSpecWorkspaceExecutionLogEntryFields
+            }
+            srcExec {
+                ...BatchSpecWorkspaceExecutionLogEntryFields
+            }
+            teardown {
+                ...BatchSpecWorkspaceExecutionLogEntryFields
+            }
+        }
+    }
+
+    fragment BatchSpecWorkspaceStepFields on BatchSpecWorkspaceStep {
+        run
+        diffStat {
+            added
+            changed
+            deleted
+        }
+        container
+        cachedResultFound
+        skipped
+        outputLines
+        startedAt
+        finishedAt
+        exitCode
+        environment {
+            name
+            value
+        }
+        outputVariables {
+            name
+            value
+        }
+    }
+
+    fragment BatchSpecWorkspaceExecutionLogEntryFields on ExecutionLogEntry {
+        key
+        command
+        startTime
+        exitCode
+        out
+        durationMilliseconds
+    }
+`
 
 const batchSpecExecutionFieldsFragment = gql`
     fragment BatchSpecExecutionFields on BatchSpec {
@@ -45,103 +140,32 @@ const batchSpecExecutionFieldsFragment = gql`
                     hasNextPage
                 }
                 nodes {
-                    id
-                    steps {
-                        run
-                        diffStat {
-                            added
-                            changed
-                            deleted
-                        }
-                        diff {
-                            baseRepository {
-                                name
-                            }
-                        }
-                        container
-                        cachedResultFound
-                        skipped
-                        outputLines
-                        startedAt
-                        finishedAt
-                        exitCode
-                        environment {
-                            name
-                            value
-                        }
-                        outputVariables {
-                            name
-                            value
-                        }
-                    }
-                    searchResultPaths
-                    queuedAt
-                    startedAt
-                    finishedAt
-                    failureMessage
-                    state
-                    changesetSpecs {
-                        id
-                        type
-                        __typename
-                        ... on VisibleChangesetSpec {
-                            description {
-                                ... on GitBranchChangesetDescription {
-                                    title
-                                }
-                                ... on ExistingChangesetReference {
-                                    externalID
-                                }
-                            }
-                        }
-                    }
-                    diffStat {
-                        added
-                        changed
-                        deleted
-                    }
-                    placeInQueue
-                    repository {
-                        name
-                        url
-                    }
-                    branch {
-                        name
-                    }
-                    path
-                    onlyFetchWorkspace
-                    ignored
-                    unsupported
-                    cachedResultFound
-                    stages {
-                        setup {
-                            key
-                            command
-                            startTime
-                            exitCode
-                            out
-                            durationMilliseconds
-                        }
-                        srcExec {
-                            key
-                            command
-                            startTime
-                            exitCode
-                            out
-                            durationMilliseconds
-                        }
-                        teardown {
-                            key
-                            command
-                            startTime
-                            exitCode
-                            out
-                            durationMilliseconds
-                        }
-                    }
+                    ...BatchSpecWorkspaceListFields
                 }
             }
         }
+    }
+
+    fragment BatchSpecWorkspaceListFields on BatchSpecWorkspace {
+        id
+        state
+        diffStat {
+            added
+            changed
+            deleted
+        }
+        placeInQueue
+        repository {
+            name
+            url
+        }
+        branch {
+            name
+        }
+        path
+        ignored
+        unsupported
+        cachedResultFound
     }
 `
 
@@ -165,6 +189,31 @@ export const fetchBatchSpecExecution = (id: Scalars['ID']): Observable<BatchSpec
             }
             if (node.__typename !== 'BatchSpec') {
                 throw new Error(`Node is a ${node.__typename}, not a BatchSpec`)
+            }
+            return node
+        })
+    )
+
+export const fetchBatchSpecWorkspace = (id: Scalars['ID']): Observable<BatchSpecWorkspaceFields | null> =>
+    requestGraphQL<BatchSpecWorkspaceByIDResult, BatchSpecWorkspaceByIDVariables>(
+        gql`
+            query BatchSpecWorkspaceByID($id: ID!) {
+                node(id: $id) {
+                    __typename
+                    ...BatchSpecWorkspaceFields
+                }
+            }
+            ${batchSpecWorkspaceFieldsFragment}
+        `,
+        { id }
+    ).pipe(
+        map(dataOrThrowErrors),
+        map(({ node }) => {
+            if (!node) {
+                return null
+            }
+            if (node.__typename !== 'BatchSpecWorkspace') {
+                throw new Error(`Node is a ${node.__typename}, not a BatchSpecWorkspace`)
             }
             return node
         })
