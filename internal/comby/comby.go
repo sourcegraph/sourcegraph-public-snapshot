@@ -21,7 +21,7 @@ import (
 
 const combyPath = "comby"
 
-func exists() bool {
+func Exists() bool {
 	_, err := exec.LookPath(combyPath)
 	return err == nil
 }
@@ -115,7 +115,7 @@ func kill(pid int) {
 }
 
 func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
-	if !exists() {
+	if !Exists() {
 		log15.Error("comby is not installed (it could not be found on the PATH)")
 		return errors.New("comby is not installed")
 	}
