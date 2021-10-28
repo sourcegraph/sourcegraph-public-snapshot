@@ -40,13 +40,6 @@ func New(filepath string) *Store {
 	return &Store{filepath: filepath, m: map[string]json.RawMessage{}}
 }
 
-// List prints out all key value pairs in a store.
-func List(store *Store) {
-	for key, value := range store.m {
-		fmt.Printf("%s: %x\n", key, value)
-	}
-}
-
 // LoadFile deserialize from a file into a Store, returning an error if
 // deserialization fails.
 func LoadFile(filepath string) (*Store, error) {
@@ -121,4 +114,13 @@ func (s *Store) RemoveAndSave(key string) error {
 		return err
 	}
 	return s.SaveFile()
+}
+
+// List returns out all key value pairs in a store as map[string]string.
+func (s *Store) List() map[string]string {
+	list := make(map[string]string)
+	for key, value := range s.m {
+		list[key] = string(value)
+	}
+	return list
 }

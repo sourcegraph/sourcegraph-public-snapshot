@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 )
 
 var (
@@ -65,7 +65,9 @@ func listSecretExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	secrets.List(secretsStore)
+	for key, value := range(secretsStore.List()) {
+		fmt.Printf("%s: %s\n", key, value)
+	}
 
 	return nil
 }
