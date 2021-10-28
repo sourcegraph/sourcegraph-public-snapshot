@@ -15,6 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
+// SubRepoPermsVersion is defines the version we are using to encode our include
+// and exclude patterns.
+const SubRepoPermsVersion = 1
+
 // SubRepoPermsStore is the unified interface for managing sub repository
 // permissions explicitly in the database. It is concurrency-safe and maintains
 // data consistency over sub_repo_permissions table.
@@ -54,12 +58,12 @@ func (s *SubRepoPermsStore) Done(err error) error {
 // Upsert will upsert sub repo permissions data.
 func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, updated_at)
-VALUES (%s, %s, %s, %s, now())
-ON CONFLICT (user_id, repo_id) DO UPDATE
-SET (user_id, repo_id, path_includes, path_excludes, updated_at) =
-(EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, now())
-`, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes))
+INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
+VALUES (%s, %s, %s, %s, %s, now())
+ON CONFLICT (user_id, repo_id, version) DO UPDATE
+SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
+(EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, EXCLUDED.version, now())
+`, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion)
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
@@ -70,7 +74,8 @@ SELECT path_includes, path_excludes
 FROM sub_repo_permissions
 WHERE user_id = %s
 AND repo_id = %s
-`, userID, repoID)
+AND version = %s
+`, userID, repoID, SubRepoPermsVersion)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -101,7 +106,8 @@ func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 SELECT repo_id, path_includes, path_excludes
 FROM sub_repo_permissions
 WHERE user_id = %s
-`, userID)
+AND version = %s
+`, userID, SubRepoPermsVersion)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {

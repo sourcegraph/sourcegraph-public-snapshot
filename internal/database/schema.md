@@ -1905,9 +1905,10 @@ Foreign-key constraints:
  path_excludes | text[]                   |           |          | 
  updated_at    | timestamp with time zone |           | not null | now()
 Indexes:
-    "sub_repo_permissions_repo_id_user_id_uindex" UNIQUE, btree (repo_id, user_id)
+    "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
     "sub_repo_perms_repo_id" btree (repo_id)
     "sub_repo_perms_user_id" btree (user_id)
+    "sub_repo_perms_version" btree (version)
 Foreign-key constraints:
     "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
