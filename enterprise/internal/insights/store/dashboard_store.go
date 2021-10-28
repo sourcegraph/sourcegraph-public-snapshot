@@ -362,7 +362,7 @@ SELECT * FROM dashboard_grants where dashboard_id = %s
 const getDashboardGrantsByPermissionsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
 SELECT COUNT(*) FROM dashboard
-WHERE id = %s AND id in (%s);'
+WHERE id = %s AND id in (%s);
 `
 
 const addDashboardGrantsSql = `
