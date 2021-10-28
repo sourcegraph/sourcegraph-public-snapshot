@@ -7,14 +7,16 @@ import React, { PointerEventHandler, ReactElement } from 'react'
 
 import { Label } from '../../../annotation/Label'
 
+import styles from './PieArc.module.scss'
+
 // Pie arc visual settings
 const CONNECTION_LINE_LENGTH = 15
 const CONNECTION_LINE_MARGIN = 2
 const LABEL_PADDING = 4
 
 // We have no other way but to add our own classes to label in this way
-const TITLE_PROPS = { className: 'pie-chart__label-title' }
-const SUBTITLE_PROPS = { className: 'pie-chart__label-sub-title' }
+const TITLE_PROPS = { className: styles.labelTitle }
+const SUBTITLE_PROPS = { className: styles.labelSubTitle }
 
 interface PieArcProps<Datum> {
     /** Title for current pie arc */
@@ -65,24 +67,17 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
     const labelX = normalX * CONNECTION_LINE_LENGTH
     const labelY = normalY * CONNECTION_LINE_LENGTH
 
-    const classes = classNames('pie-chart__arc', {
-        'pie-chart__arc--with-link': link,
-    })
+    const classes = classNames(styles.arc, !!link && styles.arcWithLink)
 
     return (
         <Group aria-hidden={true} className={classes} onPointerMove={onPointerMove} onPointerOut={onPointerOut}>
-            <path
-                data-testid="pie-chart-arc-element"
-                className="pie-chart__arc-path"
-                d={pathValue}
-                fill={getColor(arc)}
-            />
+            <path data-testid="pie-chart-arc-element" className={styles.arcPath} d={pathValue} fill={getColor(arc)} />
 
             <Annotation x={surfaceX} y={surfaceY} dx={labelX} dy={labelY}>
-                <Connector className="pie-chart__label-line" type="line" />
+                <Connector className={styles.labelLine} type="line" />
 
                 <Label
-                    className="pie-chart__label"
+                    className={styles.label}
                     backgroundPadding={LABEL_PADDING}
                     showBackground={true}
                     showAnchorLine={false}
@@ -96,7 +91,7 @@ export function PieArc<Datum>(props: PieArcProps<Datum>): ReactElement {
                 />
             </Annotation>
 
-            <circle className="pie-chart__label-circle" r={2} cx={surfaceX + labelX} cy={surfaceY + labelY} />
+            <circle className={styles.labelCircle} r={2} cx={surfaceX + labelX} cy={surfaceY + labelY} />
         </Group>
     )
 }
