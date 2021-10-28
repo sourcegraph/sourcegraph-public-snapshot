@@ -112,6 +112,27 @@ mutation InviteUserToOrganization($organization: ID!, $username: String!) {
 	return resp.Data.InviteUserToOrganizationResult, nil
 }
 
+// InviteUserToOrganization invites a user to the given organization.
+func (c *Client) AddUserToOrganization(orgID, username string) error {
+	const query = `
+	mutation AddUserToOrganization($organization: ID!, $username: String!) {
+		addUserToOrganization(organization: $organization, username: $username) {
+			alwaysNil
+		}
+	}`
+
+	variables := map[string]interface{}{
+		"organization": orgID,
+		"username":     username,
+	}
+
+	err := c.GraphQL("", query, variables, nil)
+	if err != nil {
+		return errors.Wrap(err, "request GraphQL")
+	}
+	return nil
+}
+
 // CreateOrganization creates a new organization with given name and display name.
 // It returns GraphQL node ID of newly created organization.
 func (c *Client) CreateOrganization(name, displayName string) (string, error) {

@@ -2,9 +2,11 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -46,10 +48,14 @@ type StepInfo struct {
 
 // ParseLogLines looks at all given log lines and determines the derived *StepInfo
 // for each step it could find logs for.
-func ParseLogLines(lines []*batcheslib.LogEvent) map[int]*StepInfo {
+func ParseLogLines(entry workerutil.ExecutionLogEntry, lines []*batcheslib.LogEvent) map[int]*StepInfo {
 	infoByStep := make(map[int]*StepInfo)
 
+	highestStep := 0
 	setSafe := func(step int, cb func(*StepInfo)) {
+		if step > highestStep {
+			highestStep = step
+		}
 		if info, ok := infoByStep[step]; !ok {
 			info := &StepInfo{}
 			infoByStep[step] = info
@@ -108,6 +114,26 @@ func ParseLogLines(lines []*batcheslib.LogEvent) map[int]*StepInfo {
 					})
 				}
 			}
+		}
+	}
+
+	if entry.ExitCode == nil {
+		return infoByStep
+	}
+
+	// If entry has an exit code, let's see if there are steps that didn't
+	// properly finish and mark them as exited too.
+	for i := 1; i <= highestStep; i++ {
+		si, ok := infoByStep[i]
+		if !ok {
+			panic(fmt.Sprintf("no info for step %d (highest step: %d)", i, highestStep))
+		}
+
+		if !si.StartedAt.IsZero() && si.FinishedAt.IsZero() && si.ExitCode == nil {
+			si.ExitCode = entry.ExitCode
+			si.FinishedAt = entry.StartTime.Add(time.Duration(*entry.DurationMs) * time.Millisecond)
+
+			break
 		}
 	}
 

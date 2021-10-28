@@ -1,13 +1,13 @@
 import { action } from '@storybook/addon-actions'
-import { StoryFn } from '@storybook/addons'
+import { Story } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
-import React, { ReactElement } from 'react'
+import React from 'react'
 
 import { SEMANTIC_COLORS } from './constants'
 import { preventDefault } from './utils'
 
-export const AlertsStory: StoryFn<ReactElement> = () => (
+export const AlertsStory: Story = () => (
     <>
         <h1>Alerts</h1>
         <p>

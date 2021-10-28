@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
@@ -46,7 +47,7 @@ func (r *batchSpecWorkspaceResolver) computeRepo(ctx context.Context) (*graphqlb
 	r.repoOnce.Do(func() {
 		var repo *types.Repo
 		repo, r.repoErr = r.store.Repos().Get(ctx, r.workspace.RepoID)
-		r.repo = graphqlbackend.NewRepositoryResolver(r.store.DB(), repo)
+		r.repo = graphqlbackend.NewRepositoryResolver(database.NewDB(r.store.DB()), repo)
 	})
 	return r.repo, r.repoErr
 }
@@ -75,13 +76,15 @@ func (r *batchSpecWorkspaceResolver) SearchResultPaths() []string {
 	return r.workspace.FileMatches
 }
 
-func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+func (r *batchSpecWorkspaceResolver) computeStepResolvers(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	var stepInfo = make(map[int]*btypes.StepInfo)
+	var entryExitCode *int
 	if r.execution != nil {
 		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
 		if ok {
 			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
-			stepInfo = btypes.ParseLogLines(logLines)
+			stepInfo = btypes.ParseLogLines(entry, logLines)
+			entryExitCode = entry.ExitCode
 		}
 	}
 
@@ -96,40 +99,33 @@ func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbacken
 		if !ok {
 			// Step hasn't run yet.
 			si = &btypes.StepInfo{}
+			// But also will never run
+			if entryExitCode != nil {
+				si.Skipped = true
+			}
 		}
+
 		resolvers = append(resolvers, &batchSpecWorkspaceStepResolver{index: idx, step: step, stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit})
 	}
 
 	return resolvers, nil
 }
 
+func (r *batchSpecWorkspaceResolver) Steps(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
+	return r.computeStepResolvers(ctx)
+}
+
 func (r *batchSpecWorkspaceResolver) Step(ctx context.Context, args graphqlbackend.BatchSpecWorkspaceStepArgs) (graphqlbackend.BatchSpecWorkspaceStepResolver, error) {
 	// Check if step exists.
-	if len(r.workspace.Steps) <= int(args.Index) {
+	if int(args.Index) > len(r.workspace.Steps) {
 		return nil, nil
 	}
 
-	// TODO: Deduplicate this logic.
-	var stepInfo = make(map[int]*btypes.StepInfo)
-	if r.execution != nil {
-		entry, ok := findExecutionLogEntry(r.execution, "step.src.0")
-		if ok {
-			logLines := btypes.ParseJSONLogsFromOutput(entry.Out)
-			stepInfo = btypes.ParseLogLines(logLines)
-		}
-	}
-
-	repo, err := r.computeRepo(ctx)
+	resolvers, err := r.computeStepResolvers(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	si, ok := stepInfo[int(args.Index)]
-	if !ok {
-		// Step hasn't run yet.
-		si = &btypes.StepInfo{}
-	}
-	return &batchSpecWorkspaceStepResolver{index: int(args.Index), step: r.workspace.Steps[args.Index-1], stepInfo: si, store: r.store, repo: repo, baseRev: r.workspace.Commit}, nil
+	return resolvers[args.Index-1], nil
 }
 
 func (r *batchSpecWorkspaceResolver) BatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
@@ -244,6 +240,38 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 		resolvers = append(resolvers, NewChangesetSpecResolverWithRepo(r.store, repos[spec.RepoID], spec))
 	}
 	return &resolvers, nil
+}
+
+func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	// TODO: Cache this computation.
+	resolvers, err := r.ChangesetSpecs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolvers == nil {
+		return nil, nil
+	}
+	var totalDiff graphqlbackend.DiffStat
+	for _, r := range *resolvers {
+		// If changeset is not visible to user, skip it.
+		v, ok := r.ToVisibleChangesetSpec()
+		if !ok {
+			continue
+		}
+		desc, err := v.Description(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// We only need to count "branch" changeset specs.
+		d, ok := desc.ToGitBranchChangesetDescription()
+		if !ok {
+			continue
+		}
+		if diff := d.DiffStat(); diff != nil {
+			totalDiff.AddDiffStat(diff)
+		}
+	}
+	return &totalDiff, nil
 }
 
 func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {

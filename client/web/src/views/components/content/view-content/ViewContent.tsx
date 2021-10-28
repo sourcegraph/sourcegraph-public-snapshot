@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { isObject } from 'lodash'
 import React, { useEffect, useRef } from 'react'
 import { View, MarkupContent } from 'sourcegraph'
@@ -9,6 +10,7 @@ import { renderMarkdown } from '@sourcegraph/shared/src/util/markdown'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { ChartViewContent } from './chart-view-content/ChartViewContent'
+import styles from './ViewContent.module.scss'
 
 const isMarkupContent = (input: unknown): input is MarkupContent =>
     isObject(input) && hasProperty('value')(input) && typeof input.value === 'string'
@@ -79,13 +81,13 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
     }, [viewID, containerClassName, props.telemetryService])
 
     return (
-        <div className="view-content" ref={viewContentReference}>
+        <div className={styles.viewContent} ref={viewContentReference}>
             {viewContent.map((content, index) =>
                 isMarkupContent(content) ? (
                     <React.Fragment key={index}>
                         {content.kind === MarkupKind.Markdown || !content.kind ? (
                             <Markdown
-                                className="view-content__markdown mb-1"
+                                className={classNames('mb-1', styles.markdown)}
                                 dangerousInnerHTML={renderMarkdown(content.value)}
                             />
                         ) : (
@@ -94,12 +96,12 @@ export const ViewContent: React.FunctionComponent<ViewContentProps> = ({
                     </React.Fragment>
                 ) : 'chart' in content ? (
                     <React.Fragment key={index}>
-                        {alert && <div className="view-content-alert-overlay">{alert}</div>}
+                        {alert && <div className={styles.viewContentAlertOverlay}>{alert}</div>}
                         <ChartViewContent
                             content={content}
                             viewID={viewID}
                             telemetryService={props.telemetryService}
-                            className="view-content__chart"
+                            className={styles.chart}
                         />
                     </React.Fragment>
                 ) : null
