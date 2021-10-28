@@ -38,6 +38,9 @@ type MockDB struct {
 	// ReposFunc is an instance of a mock function object controlling the
 	// behavior of the method Repos.
 	ReposFunc *DBReposFunc
+	// SavedSearchesFunc is an instance of a mock function object
+	// controlling the behavior of the method SavedSearches.
+	SavedSearchesFunc *DBSavedSearchesFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -87,6 +90,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		SavedSearchesFunc: &DBSavedSearchesFunc{
+			defaultHook: func() database.SavedSearchStore {
+				return nil
+			},
+		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: func() database.UserStore {
 				return nil
@@ -122,6 +130,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		ReposFunc: &DBReposFunc{
 			defaultHook: i.Repos,
+		},
+		SavedSearchesFunc: &DBSavedSearchesFunc{
+			defaultHook: i.SavedSearches,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -973,6 +984,105 @@ func (c DBReposFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBSavedSearchesFunc describes the behavior when the SavedSearches method
+// of the parent MockDB instance is invoked.
+type DBSavedSearchesFunc struct {
+	defaultHook func() database.SavedSearchStore
+	hooks       []func() database.SavedSearchStore
+	history     []DBSavedSearchesFuncCall
+	mutex       sync.Mutex
+}
+
+// SavedSearches delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) SavedSearches() database.SavedSearchStore {
+	r0 := m.SavedSearchesFunc.nextHook()()
+	m.SavedSearchesFunc.appendCall(DBSavedSearchesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SavedSearches method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBSavedSearchesFunc) SetDefaultHook(hook func() database.SavedSearchStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SavedSearches method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBSavedSearchesFunc) PushHook(hook func() database.SavedSearchStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBSavedSearchesFunc) SetDefaultReturn(r0 database.SavedSearchStore) {
+	f.SetDefaultHook(func() database.SavedSearchStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBSavedSearchesFunc) PushReturn(r0 database.SavedSearchStore) {
+	f.PushHook(func() database.SavedSearchStore {
+		return r0
+	})
+}
+
+func (f *DBSavedSearchesFunc) nextHook() func() database.SavedSearchStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBSavedSearchesFunc) appendCall(r0 DBSavedSearchesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBSavedSearchesFuncCall objects describing
+// the invocations of this function.
+func (f *DBSavedSearchesFunc) History() []DBSavedSearchesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBSavedSearchesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBSavedSearchesFuncCall is an object that describes an invocation of
+// method SavedSearches on an instance of MockDB.
+type DBSavedSearchesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SavedSearchStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBSavedSearchesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBSavedSearchesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
