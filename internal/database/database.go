@@ -19,6 +19,7 @@ type DB interface {
 	SavedSearches() SavedSearchStore
 	Settings() SettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
+	UserEmails() UserEmailsStore
 	Users() UserStore
 }
 
@@ -62,6 +63,10 @@ func (d *db) Settings() SettingsStore {
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
 	return UserCredentials(d.DB, key)
+}
+
+func (d *db) UserEmails() UserEmailsStore {
+	return UserEmails(d.DB)
 }
 
 func (d *db) Users() UserStore {
