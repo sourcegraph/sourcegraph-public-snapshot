@@ -49,15 +49,18 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 					ExternalServiceType: extsvc.TypeBitbucketServer,
 					ExternalServiceID:   "https://bitbucketserver.com/",
 					RequiresSSH:         true,
+					HasWebhooks:         true,
 				},
 				{
 					ExternalServiceType: extsvc.TypeGitHub,
 					ExternalServiceID:   "https://github.com/",
 					RequiresSSH:         true,
+					HasWebhooks:         true,
 				},
 				{
 					ExternalServiceType: extsvc.TypeGitLab,
 					ExternalServiceID:   "https://gitlab.com/",
+					HasWebhooks:         true,
 				},
 			}
 			if diff := cmp.Diff(have, want); diff != "" {

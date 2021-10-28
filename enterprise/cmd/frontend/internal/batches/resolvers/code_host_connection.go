@@ -15,6 +15,7 @@ import (
 type batchChangesCodeHostConnectionResolver struct {
 	userID                *int32
 	onlyWithoutCredential bool
+	onlyWithoutWebhooks   bool
 	opts                  store.ListCodeHostsOpts
 	limitOffset           database.LimitOffset
 	store                 *store.Store
