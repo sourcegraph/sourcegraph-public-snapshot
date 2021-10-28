@@ -10,7 +10,10 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
+	AccessTokens() AccessTokenStore
+	Orgs() OrgStore
 	Repos() RepoStore
+	Users() UserStore
 }
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
@@ -23,6 +26,18 @@ type db struct {
 	dbutil.DB
 }
 
+func (d *db) AccessTokens() AccessTokenStore {
+	return AccessTokens(d.DB)
+}
+
+func (d *db) Orgs() OrgStore {
+	return Orgs(d.DB)
+}
+
 func (d *db) Repos() RepoStore {
 	return Repos(d.DB)
+}
+
+func (d *db) Users() UserStore {
+	return Users(d.DB)
 }
