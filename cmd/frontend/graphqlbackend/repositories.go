@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,8 +15,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type repositoryArgs struct {
@@ -193,6 +196,40 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 	})
+	// If we're looking at user repos, try adding ones that were added to external_service.config, but are not synced yet
+	if r.opt.UserID != 0 {
+		configRepos := []string{}
+		extsvcStore := database.ExternalServices(r.db)
+		services, err := extsvcStore.List(ctx, database.ExternalServicesListOptions{NamespaceUserID: r.opt.UserID})
+		if err != nil {
+			r.err = err
+		}
+		for _, svc := range services {
+			parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+			if err != nil {
+				r.err = err
+			}
+			switch c := parsed.(type) {
+			case *schema.GitHubConnection:
+				if len(c.Repos) > 0 {
+					configRepos = append(configRepos, c.Repos...)
+				}
+			}
+		}
+		for _, configRepo := range configRepos {
+			lr := strings.ToLower(configRepo)
+			found := false
+			// Only add config repos that are not yet synced
+			for _, repo := range r.repos {
+				if strings.Contains(strings.ToLower(repo.URI), lr) {
+					found = true
+				}
+			}
+			if !found {
+				r.repos = append(r.repos, &types.Repo{Name: api.RepoName(configRepo), ID: DONT_RESOLVE_REPO_UID, ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}})
+			}
+		}
+	}
 
 	return r.repos, r.err
 }
@@ -308,3 +345,5 @@ func toDBRepoListColumn(ob string) database.RepoListColumn {
 		return ""
 	}
 }
+
+var DONT_RESOLVE_REPO_UID = api.RepoID(-1234)
