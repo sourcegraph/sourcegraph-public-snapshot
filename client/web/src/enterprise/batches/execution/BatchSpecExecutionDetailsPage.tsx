@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { parseISO } from 'date-fns/esm'
 import { isArray, isEqual } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -23,6 +24,7 @@ import { FileDiffConnection } from '@sourcegraph/web/src/components/diff/FileDif
 import { FileDiffNode } from '@sourcegraph/web/src/components/diff/FileDiffNode'
 import { ExecutionLogEntry } from '@sourcegraph/web/src/components/ExecutionLogEntry'
 import { FilteredConnectionQueryArguments } from '@sourcegraph/web/src/components/FilteredConnection'
+import { LogOutput } from '@sourcegraph/web/src/components/LogOutput'
 import { Timeline, TimelineStage } from '@sourcegraph/web/src/components/Timeline'
 import { Container, PageHeader, Tab, TabList, TabPanel, TabPanels, Tabs } from '@sourcegraph/wildcard'
 
@@ -38,6 +40,7 @@ import {
     fetchBatchSpecExecution as _fetchBatchSpecExecution,
     queryBatchSpecWorkspaceStepFileDiffs,
 } from './backend'
+import styles from './BatchSpecExecutionDetailsPage.module.scss'
 
 export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     executionID: Scalars['ID']
@@ -45,15 +48,12 @@ export interface BatchSpecExecutionDetailsPageProps extends ThemeProps {
     /** For testing only. */
     fetchBatchSpecExecution?: typeof _fetchBatchSpecExecution
     /** For testing only. */
-    now?: () => Date
-    /** For testing only. */
     expandStage?: string
 }
 
 export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExecutionDetailsPageProps> = ({
     executionID,
     isLightTheme,
-    now,
     fetchBatchSpecExecution = _fetchBatchSpecExecution,
 }) => {
     const [batchSpecExecution, setBatchSpecExecution] = useState<BatchSpecExecutionFields | null | undefined>()
@@ -118,7 +118,7 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                     {
                         text: (
                             <>
-                                Execution <span className="badge badge-secondary">{batchSpecExecution.state}</span>
+                                Batch Spec <BatchSpecStateBadge state={batchSpecExecution.state} />
                             </>
                         ),
                     },
@@ -133,7 +133,12 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
                                 onClick={cancelExecution}
                                 disabled={isCanceling === true}
                             >
-                                Cancel
+                                {isCanceling !== true && <>Cancel</>}
+                                {isCanceling === true && (
+                                    <>
+                                        <LoadingSpinner className="icon-inline" /> Canceling
+                                    </>
+                                )}
                             </button>
                             {isErrorLike(isCanceling) && <ErrorAlert error={isCanceling} />}
                         </>
@@ -148,24 +153,44 @@ export const BatchSpecExecutionDetailsPage: React.FunctionComponent<BatchSpecExe
             <Container className="mb-3">
                 <BatchSpec originalInput={batchSpecExecution.originalInput} />
             </Container>
-            <div className="text-right">
-                {batchSpecExecution.startedAt && (
-                    <Duration start={batchSpecExecution.startedAt} end={batchSpecExecution.finishedAt ?? undefined} />
-                )}
+            <div className="d-flex justify-content-between mb-2">
+                <h2 className="mb-0">Workspaces</h2>
+                <div>
+                    {batchSpecExecution.startedAt && (
+                        <Duration
+                            start={batchSpecExecution.startedAt}
+                            end={batchSpecExecution.finishedAt ?? undefined}
+                        />
+                    )}
+                </div>
             </div>
             <div className="row mb-3">
                 <div className="col-4">
-                    <h2>Workspaces</h2>
-                    <Container>
+                    <div className="card">
                         <ul className="list-group">
                             {batchSpecExecution.workspaceResolution!.workspaces.nodes.map(workspaceNode => (
                                 <li className="list-group-item" key={workspaceNode.id}>
-                                    <WorkspaceStateIcon node={workspaceNode} />{' '}
-                                    <Link to={`?workspace=${workspaceNode.id}`}>{workspaceNode.repository.name}</Link>
+                                    <div
+                                        className={classNames(
+                                            styles.workspaceRepo,
+                                            'd-flex justify-content-between mb-1'
+                                        )}
+                                    >
+                                        <div>
+                                            <WorkspaceStateIcon node={workspaceNode} />{' '}
+                                            <Link to={`?workspace=${workspaceNode.id}`}>
+                                                {workspaceNode.repository.name}
+                                            </Link>
+                                        </div>
+                                        {workspaceNode.diffStat && (
+                                            <DiffStat {...workspaceNode.diffStat} expandedCounts={true} />
+                                        )}
+                                    </div>
+                                    <span className="badge badge-secondary">{workspaceNode.branch.name}</span>
                                 </li>
                             ))}
                         </ul>
-                    </Container>
+                    </div>
                 </div>
                 <div className="col-8">
                     <Container>
@@ -226,14 +251,13 @@ const WorkspaceNode: React.FunctionComponent<
         {node.steps.map((step, index) => (
             <Collapsible
                 key={index}
-                className="card"
+                className="card mb-2"
                 titleClassName="w-100"
                 title={
                     <div className="card-body">
                         <div className="d-flex justify-content-between">
                             <div>
-                                <StepStateIcon step={step} />
-                                <strong>Step {index + 1}</strong>{' '}
+                                <StepStateIcon step={step} /> <strong>Step {index + 1}</strong>{' '}
                                 <span className="text-monospace">{step.run.slice(0, 25)}...</span>
                                 <StepTimer step={step} />
                             </div>
@@ -242,53 +266,76 @@ const WorkspaceNode: React.FunctionComponent<
                     </div>
                 }
             >
-                <Tabs size="medium">
-                    <TabList>
-                        <Tab key="logs">Logs</Tab>
-                        <Tab key="output-variables">Output variables</Tab>
-                        <Tab key="diff">Diff</Tab>
-                        <Tab key="files-env">Files / Env</Tab>
-                        <Tab key="command-container">Commands / container</Tab>
-                        <Tab key="timeline">Timeline</Tab>
-                    </TabList>
-                    <TabPanels>
-                        <TabPanel key="logs">
-                            <pre className="card p-2">{step.outputLines?.join('\n')}</pre>
-                        </TabPanel>
-                        <TabPanel key="output-variables">
-                            <ul>
-                                {step.outputVariables?.map(variable => (
-                                    <li key={variable.name}>
-                                        {variable.name}: {variable.value}
-                                    </li>
-                                ))}
-                            </ul>
-                        </TabPanel>
-                        <TabPanel key="diff">
-                            <WorkspaceStepFileDiffConnection
-                                isLightTheme={isLightTheme}
-                                step={index + 1}
-                                workspace={node}
-                            />
-                        </TabPanel>
-                        <TabPanel key="files-env">
-                            <ul>
-                                {step.environment.map(variable => (
-                                    <li key={variable.name}>
-                                        {variable.name}: {variable.value}
-                                    </li>
-                                ))}
-                            </ul>
-                        </TabPanel>
-                        <TabPanel key="command-container">
-                            <p className="text-monospace">{step.run}</p>
-                            <p className="text-monospace mb-0">{step.container}</p>
-                        </TabPanel>
-                        <TabPanel key="timeline">
-                            <ExecutionTimeline node={node} />
-                        </TabPanel>
-                    </TabPanels>
-                </Tabs>
+                <div className="p-2">
+                    <Tabs size="medium">
+                        <TabList>
+                            <Tab key="logs">Logs</Tab>
+                            <Tab key="output-variables">Output variables</Tab>
+                            <Tab key="diff">Diff</Tab>
+                            <Tab key="files-env">Files / Env</Tab>
+                            <Tab key="command-container">Commands / container</Tab>
+                            <Tab key="timeline">Timeline</Tab>
+                        </TabList>
+                        <TabPanels>
+                            <TabPanel key="logs">
+                                <div className="p-2">
+                                    {step.outputLines && <LogOutput text={step.outputLines.join('\n')} />}
+                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                    {step.startedAt && !step.outputLines && <LogOutput text="_No logs.._" />}
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="output-variables">
+                                <div className="p-2">
+                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                    <ul>
+                                        {step.outputVariables?.map(variable => (
+                                            <li key={variable.name}>
+                                                {variable.name}: {variable.value}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="diff">
+                                <div className="p-2">
+                                    {!step.startedAt && <p className="text-muted">Step not started yet</p>}
+                                    {step.startedAt && (
+                                        <WorkspaceStepFileDiffConnection
+                                            isLightTheme={isLightTheme}
+                                            step={index + 1}
+                                            workspace={node}
+                                        />
+                                    )}
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="files-env">
+                                <div className="p-2">
+                                    {step.environment.length === 0 && (
+                                        <p className="text-muted">No environment variables specified</p>
+                                    )}
+                                    <ul>
+                                        {step.environment.map(variable => (
+                                            <li key={variable.name}>
+                                                {variable.name}: {variable.value}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="command-container">
+                                <div className="p-2">
+                                    <p className="text-monospace">{step.run}</p>
+                                    <p className="text-monospace mb-0">{step.container}</p>
+                                </div>
+                            </TabPanel>
+                            <TabPanel key="timeline">
+                                <div className="p-2">
+                                    <ExecutionTimeline node={node} />
+                                </div>
+                            </TabPanel>
+                        </TabPanels>
+                    </Tabs>
+                </div>
             </Collapsible>
         ))}
     </>
@@ -509,4 +556,19 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
             cursorPaging={true}
         />
     )
+}
+
+const BatchSpecStateBadge: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }) => {
+    switch (state) {
+        case BatchSpecState.PENDING:
+        case BatchSpecState.QUEUED:
+        case BatchSpecState.PROCESSING:
+        case BatchSpecState.CANCELED:
+        case BatchSpecState.CANCELING:
+            return <span className="badge badge-secondary">{state}</span>
+        case BatchSpecState.FAILED:
+            return <span className="badge badge-danger">{state}</span>
+        case BatchSpecState.COMPLETED:
+            return <span className="badge badge-success">{state}</span>
+    }
 }

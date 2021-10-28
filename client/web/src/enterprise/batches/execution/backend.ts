@@ -95,6 +95,11 @@ const batchSpecExecutionFieldsFragment = gql`
                             }
                         }
                     }
+                    diffStat {
+                        added
+                        changed
+                        deleted
+                    }
                     placeInQueue
                     repository {
                         name

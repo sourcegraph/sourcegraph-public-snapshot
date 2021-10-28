@@ -781,6 +781,7 @@ type BatchSpecWorkspaceResolver interface {
 	Unsupported() bool
 
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
 }
 
