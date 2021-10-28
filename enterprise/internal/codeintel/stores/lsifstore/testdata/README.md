@@ -6,7 +6,7 @@ To regenerate `lsif-go@foo.sql` you will need to:
    2. `"apidocs.search.indexing": "enabled",` under `experimentalFeatures`.
    3. `sourcegraph/lsif-go` as a repository.
 3. Start the `sg start enterprise-codeintel` server
-4. Run `lsif-go` manually in a checkout of the `lsif-go` repository at the revision mentioned in the `lsif-go@rev.sql` filename.
+4. Run `lsif-go` (master revision) manually in a checkout of the `lsif-go` repository at the revision mentioned in the `lsif-go@rev.sql` filename.
 5. Use `src lsif upload` against your local server to upload the LSIF bundle.
 6. Run the following to generate the SQL file:
 
