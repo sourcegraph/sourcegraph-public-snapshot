@@ -82,19 +82,21 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <Switch>
-        <Route
-            render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
-            path={match.url}
-            exact={true}
-        />
-        <Route
-            path={`${match.url}/create`}
-            render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
-            exact={true}
-        />
-        <Route component={NotFoundPage} key="hardcoded-key" />
-    </Switch>
+    <div className="w-100">
+        <Switch>
+            <Route
+                render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
+                path={match.url}
+                exact={true}
+            />
+            <Route
+                path={`${match.url}/create`}
+                render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
+                exact={true}
+            />
+            <Route component={NotFoundPage} key="hardcoded-key" />
+        </Switch>
+    </div>
 ))
 
 export interface NamespaceBatchChangesAreaProps extends Props {
