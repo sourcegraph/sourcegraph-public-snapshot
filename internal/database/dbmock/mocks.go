@@ -15,3 +15,4 @@ package dbmock
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i UserPublicRepoStore -o mock_user_public_repos.go
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i SearchContextsStore -o mock_search_contexts.go
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i PhabricatorStore -o mock_phabricator.go
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i UserExternalAccountsStore -o mock_user_external_accounts.go

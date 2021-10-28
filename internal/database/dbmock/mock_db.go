@@ -57,6 +57,9 @@ type MockDB struct {
 	// UserEmailsFunc is an instance of a mock function object controlling
 	// the behavior of the method UserEmails.
 	UserEmailsFunc *DBUserEmailsFunc
+	// UserExternalAccountsFunc is an instance of a mock function object
+	// controlling the behavior of the method UserExternalAccounts.
+	UserExternalAccountsFunc *DBUserExternalAccountsFunc
 	// UserPublicReposFunc is an instance of a mock function object
 	// controlling the behavior of the method UserPublicRepos.
 	UserPublicReposFunc *DBUserPublicReposFunc
@@ -139,6 +142,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
+			defaultHook: func() database.UserExternalAccountsStore {
+				return nil
+			},
+		},
 		UserPublicReposFunc: &DBUserPublicReposFunc{
 			defaultHook: func() database.UserPublicRepoStore {
 				return nil
@@ -197,6 +205,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		UserEmailsFunc: &DBUserEmailsFunc{
 			defaultHook: i.UserEmails,
+		},
+		UserExternalAccountsFunc: &DBUserExternalAccountsFunc{
+			defaultHook: i.UserExternalAccounts,
 		},
 		UserPublicReposFunc: &DBUserPublicReposFunc{
 			defaultHook: i.UserPublicRepos,
@@ -1650,6 +1661,106 @@ func (c DBUserEmailsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBUserEmailsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBUserExternalAccountsFunc describes the behavior when the
+// UserExternalAccounts method of the parent MockDB instance is invoked.
+type DBUserExternalAccountsFunc struct {
+	defaultHook func() database.UserExternalAccountsStore
+	hooks       []func() database.UserExternalAccountsStore
+	history     []DBUserExternalAccountsFuncCall
+	mutex       sync.Mutex
+}
+
+// UserExternalAccounts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) UserExternalAccounts() database.UserExternalAccountsStore {
+	r0 := m.UserExternalAccountsFunc.nextHook()()
+	m.UserExternalAccountsFunc.appendCall(DBUserExternalAccountsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UserExternalAccounts
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBUserExternalAccountsFunc) SetDefaultHook(hook func() database.UserExternalAccountsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserExternalAccounts method of the parent MockDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBUserExternalAccountsFunc) PushHook(hook func() database.UserExternalAccountsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBUserExternalAccountsFunc) SetDefaultReturn(r0 database.UserExternalAccountsStore) {
+	f.SetDefaultHook(func() database.UserExternalAccountsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBUserExternalAccountsFunc) PushReturn(r0 database.UserExternalAccountsStore) {
+	f.PushHook(func() database.UserExternalAccountsStore {
+		return r0
+	})
+}
+
+func (f *DBUserExternalAccountsFunc) nextHook() func() database.UserExternalAccountsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUserExternalAccountsFunc) appendCall(r0 DBUserExternalAccountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUserExternalAccountsFuncCall objects
+// describing the invocations of this function.
+func (f *DBUserExternalAccountsFunc) History() []DBUserExternalAccountsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUserExternalAccountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUserExternalAccountsFuncCall is an object that describes an invocation
+// of method UserExternalAccounts on an instance of MockDB.
+type DBUserExternalAccountsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.UserExternalAccountsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUserExternalAccountsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUserExternalAccountsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
