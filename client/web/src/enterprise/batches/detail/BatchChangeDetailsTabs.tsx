@@ -20,7 +20,7 @@ import {
     BatchChangeTabPanels,
     BatchChangeTabs,
 } from '../BatchChangeTabs'
-import { BatchSpec, BatchSpecDownloadLink, BatchSpecMeta } from '../BatchSpec'
+import { BatchSpec, BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
 
 import {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
@@ -157,7 +157,7 @@ export const BatchChangeDetailsTabs: React.FunctionComponent<BatchChangeDetailsT
                         lastApplier={batchChange.lastApplier}
                         lastAppliedAt={batchChange.lastAppliedAt}
                     />
-                    <BatchSpecDownloadLink
+                    <BatchSpecDownloadButton
                         name={batchChange.name}
                         originalInput={batchChange.currentSpec.originalInput}
                     />
