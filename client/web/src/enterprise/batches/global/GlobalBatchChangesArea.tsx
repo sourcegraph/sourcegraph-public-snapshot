@@ -116,10 +116,6 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 )}
             />
             <Route
-                path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage headingElement="h2" {...outerProps} {...props} />}
-            />
-            <Route
                 path={`${match.url}/executions/:executionID`}
                 render={({ match, ...props }: RouteComponentProps<{ executionID: string }>) => (
                     <BatchSpecExecutionDetailsPage {...outerProps} {...props} executionID={match.params.executionID} />
