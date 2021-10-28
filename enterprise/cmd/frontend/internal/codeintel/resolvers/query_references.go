@@ -61,7 +61,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// the database.
 
 	if cursor.OrderedMonikers == nil {
-		if cursor.OrderedMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "export"); err != nil {
+		if cursor.OrderedMonikers, err = r.orderedMonikers(ctx, adjustedUploads, "import", "export"); err != nil {
 			return nil, "", err
 		}
 	}

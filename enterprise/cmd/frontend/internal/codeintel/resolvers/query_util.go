@@ -81,13 +81,13 @@ func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers [
 // monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
 const monikerLimit = 10
 
-// orderedMonikers returns the set of monikers attached to the ranges specified by the given upload list.
-// If kind is a non-empty string, monikers with a distinct kind are ignored.
+// orderedMonikers returns the set of monikers of the given kind(s) attached to the ranges specified by
+// the given upload list.
 //
-// The return slice is ordered by visible upload, then by specificity, i.e., monikers attached to enclosed
-// ranges before before monikers attached to enclosing ranges. Monikers are de-duplicated, such that the
-// second (third, ...) occurrences are removed.
-func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []adjustedUpload, kind string) ([]precise.QualifiedMonikerData, error) {
+// The return slice is ordered by visible upload, then by specificity, i.e., monikers attached to
+// enclosed ranges before before monikers attached to enclosing ranges. Monikers are de-duplicated, such
+// that the second (third, ...) occurrences are removed.
+func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []adjustedUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
 	monikerSet := newQualifiedMonikerSet()
 
 	for i := range adjustedUploads {
@@ -104,7 +104,7 @@ func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []a
 
 		for _, monikers := range rangeMonikers {
 			for _, moniker := range monikers {
-				if moniker.PackageInformationID == "" || (kind != "" && moniker.Kind != kind) {
+				if moniker.PackageInformationID == "" || !sliceContains(kinds, moniker.Kind) {
 					continue
 				}
 
@@ -241,4 +241,13 @@ func monikersToString(vs []precise.QualifiedMonikerData) string {
 	}
 
 	return strings.Join(strs, ", ")
+}
+
+func sliceContains(slice []string, str string) bool {
+	for _, el := range slice {
+		if el == str {
+			return true
+		}
+	}
+	return false
 }
