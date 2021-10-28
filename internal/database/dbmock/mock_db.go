@@ -20,9 +20,9 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
-	// NamespaceStoreFunc is an instance of a mock function object
-	// controlling the behavior of the method NamespaceStore.
-	NamespaceStoreFunc *DBNamespaceStoreFunc
+	// NamespacesFunc is an instance of a mock function object controlling
+	// the behavior of the method Namespaces.
+	NamespacesFunc *DBNamespacesFunc
 	// OrgsFunc is an instance of a mock function object controlling the
 	// behavior of the method Orgs.
 	OrgsFunc *DBOrgsFunc
@@ -54,7 +54,7 @@ func NewMockDB() *MockDB {
 				return nil, nil
 			},
 		},
-		NamespaceStoreFunc: &DBNamespaceStoreFunc{
+		NamespacesFunc: &DBNamespacesFunc{
 			defaultHook: func() database.NamespaceStore {
 				return nil
 			},
@@ -97,8 +97,8 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
 		},
-		NamespaceStoreFunc: &DBNamespaceStoreFunc{
-			defaultHook: i.NamespaceStore,
+		NamespacesFunc: &DBNamespacesFunc{
+			defaultHook: i.Namespaces,
 		},
 		OrgsFunc: &DBOrgsFunc{
 			defaultHook: i.Orgs,
@@ -335,35 +335,34 @@ func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// DBNamespaceStoreFunc describes the behavior when the NamespaceStore
-// method of the parent MockDB instance is invoked.
-type DBNamespaceStoreFunc struct {
+// DBNamespacesFunc describes the behavior when the Namespaces method of the
+// parent MockDB instance is invoked.
+type DBNamespacesFunc struct {
 	defaultHook func() database.NamespaceStore
 	hooks       []func() database.NamespaceStore
-	history     []DBNamespaceStoreFuncCall
+	history     []DBNamespacesFuncCall
 	mutex       sync.Mutex
 }
 
-// NamespaceStore delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDB) NamespaceStore() database.NamespaceStore {
-	r0 := m.NamespaceStoreFunc.nextHook()()
-	m.NamespaceStoreFunc.appendCall(DBNamespaceStoreFuncCall{r0})
+// Namespaces delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) Namespaces() database.NamespaceStore {
+	r0 := m.NamespacesFunc.nextHook()()
+	m.NamespacesFunc.appendCall(DBNamespacesFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the NamespaceStore
-// method of the parent MockDB instance is invoked and the hook queue is
-// empty.
-func (f *DBNamespaceStoreFunc) SetDefaultHook(hook func() database.NamespaceStore) {
+// SetDefaultHook sets function that is called when the Namespaces method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBNamespacesFunc) SetDefaultHook(hook func() database.NamespaceStore) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// NamespaceStore method of the parent MockDB instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBNamespaceStoreFunc) PushHook(hook func() database.NamespaceStore) {
+// Namespaces method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBNamespacesFunc) PushHook(hook func() database.NamespaceStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -371,7 +370,7 @@ func (f *DBNamespaceStoreFunc) PushHook(hook func() database.NamespaceStore) {
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *DBNamespaceStoreFunc) SetDefaultReturn(r0 database.NamespaceStore) {
+func (f *DBNamespacesFunc) SetDefaultReturn(r0 database.NamespaceStore) {
 	f.SetDefaultHook(func() database.NamespaceStore {
 		return r0
 	})
@@ -379,13 +378,13 @@ func (f *DBNamespaceStoreFunc) SetDefaultReturn(r0 database.NamespaceStore) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *DBNamespaceStoreFunc) PushReturn(r0 database.NamespaceStore) {
+func (f *DBNamespacesFunc) PushReturn(r0 database.NamespaceStore) {
 	f.PushHook(func() database.NamespaceStore {
 		return r0
 	})
 }
 
-func (f *DBNamespaceStoreFunc) nextHook() func() database.NamespaceStore {
+func (f *DBNamespacesFunc) nextHook() func() database.NamespaceStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -398,26 +397,26 @@ func (f *DBNamespaceStoreFunc) nextHook() func() database.NamespaceStore {
 	return hook
 }
 
-func (f *DBNamespaceStoreFunc) appendCall(r0 DBNamespaceStoreFuncCall) {
+func (f *DBNamespacesFunc) appendCall(r0 DBNamespacesFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of DBNamespaceStoreFuncCall objects describing
-// the invocations of this function.
-func (f *DBNamespaceStoreFunc) History() []DBNamespaceStoreFuncCall {
+// History returns a sequence of DBNamespacesFuncCall objects describing the
+// invocations of this function.
+func (f *DBNamespacesFunc) History() []DBNamespacesFuncCall {
 	f.mutex.Lock()
-	history := make([]DBNamespaceStoreFuncCall, len(f.history))
+	history := make([]DBNamespacesFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// DBNamespaceStoreFuncCall is an object that describes an invocation of
-// method NamespaceStore on an instance of MockDB.
-type DBNamespaceStoreFuncCall struct {
+// DBNamespacesFuncCall is an object that describes an invocation of method
+// Namespaces on an instance of MockDB.
+type DBNamespacesFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 database.NamespaceStore
@@ -425,13 +424,13 @@ type DBNamespaceStoreFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c DBNamespaceStoreFuncCall) Args() []interface{} {
+func (c DBNamespacesFuncCall) Args() []interface{} {
 	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c DBNamespaceStoreFuncCall) Results() []interface{} {
+func (c DBNamespacesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
