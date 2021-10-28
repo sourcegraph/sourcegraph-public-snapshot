@@ -7,12 +7,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hexops/autogold"
 	storetest "github.com/sourcegraph/sourcegraph/internal/store/testutil"
 )
 
 func TestMatchesUnmarshalling(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -66,7 +67,7 @@ func main() {
 
 func TestMatchesInZip(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 
@@ -126,9 +127,39 @@ func main() {
 	}
 }
 
+func Test_stdin(t *testing.T) {
+	// If we are not on CI skip the test if comby is not installed.
+	if os.Getenv("CI") == "" && !Exists() {
+		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+	}
+
+	test := func(args Args) string {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		b := new(bytes.Buffer)
+		w := bufio.NewWriter(b)
+		err := PipeTo(ctx, args, w)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return b.String()
+	}
+
+	autogold.Want("stdin", `{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
+`).
+		Equal(t, test(Args{
+			Input:           FileContent("yes\n"),
+			MatchTemplate:   "yes",
+			RewriteTemplate: "no",
+			ResultKind:      Diff,
+			FilePatterns:    []string{".go"},
+			Matcher:         ".go",
+		}))
+}
+
 func TestReplacements(t *testing.T) {
 	// If we are not on CI skip the test if comby is not installed.
-	if os.Getenv("CI") == "" && !exists() {
+	if os.Getenv("CI") == "" && !Exists() {
 		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
 	}
 

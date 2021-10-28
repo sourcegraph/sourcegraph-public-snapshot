@@ -205,23 +205,33 @@ func fallbackUnindexed(repos []*search.RepositoryRevisions, limit int, onMissing
 	}
 }
 
-func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, globalSearch bool, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+func OnlyUnindexed(repos []*search.RepositoryRevisions, zoekt zoekt.Streamer, useIndex query.YesNoOnly, containsRefGlobs bool, onMissing OnMissingRepoRevs) (IndexedSearchRequest, bool, error) {
 	// If Zoekt is disabled just fallback to Unindexed.
-	if args.Zoekt == nil {
-		if args.PatternInfo.Index == query.Only {
-			return nil, errors.Errorf("invalid index:%q (indexed search is not enabled)", args.PatternInfo.Index)
+	if zoekt == nil {
+		if useIndex == query.Only {
+			return nil, false, errors.Errorf("invalid index:%q (indexed search is not enabled)", useIndex)
 		}
-		return fallbackIndexUnavailable(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+		return fallbackIndexUnavailable(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
 	}
 	// Fallback to Unindexed if the query contains valid ref-globs.
-	if query.ContainsRefGlobs(args.Query) {
-		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	if containsRefGlobs {
+		return fallbackUnindexed(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
 	}
 	// Fallback to Unindexed if index:no
-	if args.PatternInfo.Index == query.No {
-		return fallbackUnindexed(args.Repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), nil
+	if useIndex == query.No {
+		return fallbackUnindexed(repos, maxUnindexedRepoRevSearchesPerQuery, onMissing), true, nil
 	}
+	return nil, false, nil
+}
 
+func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, globalSearch bool, typ search.IndexedRequestType, onMissing OnMissingRepoRevs) (IndexedSearchRequest, error) {
+	request, ok, err := OnlyUnindexed(args.Repos, args.Zoekt, args.PatternInfo.Index, query.ContainsRefGlobs(args.Query), onMissing)
+	if err != nil {
+		return nil, err
+	}
+	if ok {
+		return request, nil
+	}
 	q, err := search.QueryToZoektQuery(args.PatternInfo, typ)
 	if err != nil {
 		return nil, err
@@ -239,7 +249,7 @@ func NewIndexedSearchRequest(ctx context.Context, args *search.TextParameters, g
 		// all shards anyway.
 		return newIndexedUniverseSearchRequest(ctx, zoektArgs, args.RepoOptions, args.UserPrivateRepos)
 	}
-	return newIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
+	return NewIndexedSubsetSearchRequest(ctx, args.Repos, args.PatternInfo.Index, zoektArgs, onMissing)
 }
 
 // IndexedUniverseSearchRequest represents a request to run a search over the universe of indexed repositories.
@@ -369,11 +379,11 @@ func MissingRepoRevStatus(stream streaming.Sender) OnMissingRepoRevs {
 	}
 }
 
-// newIndexedSubsetSearchRequest creates a search request for indexed search on
+// NewIndexedSubsetSearchRequest creates a search request for indexed search on
 // a subset of repos. Strongly avoid calling this constructor directly, and use
 // NewIndexedSearchRequest instead, which will validate your inputs and figure
 // out the kind of indexed search to run.
-func newIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
+func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.RepositoryRevisions, index query.YesNoOnly, zoektArgs *search.ZoektParameters, onMissing OnMissingRepoRevs) (_ *IndexedSubsetSearchRequest, err error) {
 	tr, ctx := trace.New(ctx, "newIndexedSubsetSearchRequest", string(zoektArgs.Typ))
 	// Only include indexes with symbol information if a symbol request.
 	var filter func(repo *zoekt.MinimalRepoListEntry) bool

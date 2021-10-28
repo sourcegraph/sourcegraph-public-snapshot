@@ -160,7 +160,7 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				}
 
 				// build status finalized
-				printBuildResults(build, *ciStatusWaitFlag)
+				failed := printBuildResults(build, *ciStatusWaitFlag)
 
 				if !branchFromFlag {
 					// If we're not on a specific branch, warn if build commit is not your commit
@@ -175,6 +175,12 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 							commit, *build.Commit))
 					}
 				}
+
+				if failed {
+					out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
+						"Some jobs have failed - try using 'sg ci logs' to see what went wrong, or go to the build page: %s", *build.WebURL))
+				}
+
 				return nil
 			},
 		}, {
@@ -321,22 +327,25 @@ func printBuildOverview(build *buildkite.Build) {
 		*build.Commit, *build.Message, build.Author.Name, build.Author.Email)
 }
 
-func printBuildResults(build *buildkite.Build, notify bool) {
+func printBuildResults(build *buildkite.Build, notify bool) (failed bool) {
 	out.Writef("Started:\t%s", build.StartedAt)
 	if build.FinishedAt != nil {
 		out.Writef("Finished:\t%s (elapsed: %s)", build.FinishedAt, build.FinishedAt.Sub(build.StartedAt.Time))
 	}
 
-	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run
+	// Valid states: running, scheduled, passed, failed, blocked, canceled, canceling, skipped, not_run, waiting
 	// https://buildkite.com/docs/apis/rest-api/builds
-	var failed bool
 	var style output.Style
 	var emoji string
 	switch *build.State {
 	case "passed":
 		style = output.StyleSuccess
 		emoji = output.EmojiSuccess
-	case "running", "scheduled":
+	case "waiting", "blocked", "scheduled":
+		style = output.StyleSuggestion
+	case "skipped", "not_run":
+		style = output.StyleReset
+	case "running":
 		style = output.StylePending
 		emoji = output.EmojiInfo
 	case "failed":
@@ -346,10 +355,10 @@ func printBuildResults(build *buildkite.Build, notify bool) {
 	default:
 		style = output.StyleWarning
 	}
-	out.WriteLine(output.Linef(emoji, style, "Status: %s", *build.State))
+	block := out.Block(output.Linef("", style, "Status:\t\t%s %s", emoji, *build.State))
 
 	// Inspect jobs individually.
-	description := []string{"Failed jobs:"}
+	failedSummary := []string{"Failed jobs:"}
 	for _, job := range build.Jobs {
 		var elapsed time.Duration
 		if job.State == nil || job.Name == nil {
@@ -359,27 +368,44 @@ func printBuildResults(build *buildkite.Build, notify bool) {
 		case "passed":
 			style = output.StyleSuccess
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
-		case "running", "scheduled":
+		case "waiting", "blocked", "scheduled":
+			style = output.StyleSuggestion
+		case "skipped", "not_run":
+			style = output.StyleReset
+		case "running":
 			elapsed = time.Since(job.StartedAt.Time)
 			style = output.StylePending
 		case "failed":
-			failed = true
 			elapsed = job.FinishedAt.Sub(job.StartedAt.Time)
-			description = append(description, fmt.Sprintf("- %s", *job.Name))
+			if job.SoftFailed {
+				*job.State = "soft failed"
+				style = output.StyleReset
+				break
+			}
+			failedSummary = append(failedSummary, fmt.Sprintf("- %s", *job.Name))
+			failed = true
 			fallthrough
 		default:
 			style = output.StyleWarning
 		}
-		out.WriteLine(output.Linef("", style, "  - %s (%s)", *job.Name, elapsed))
+		if elapsed > 0 {
+			block.WriteLine(output.Linef("", style, "- [%s] %s (%s)", *job.State, *job.Name, elapsed))
+		} else {
+			block.WriteLine(output.Linef("", style, "- [%s] %s", *job.State, *job.Name))
+		}
 	}
+
+	block.Close()
 
 	if notify {
 		if failed {
-			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), strings.Join(description, "\n"), "")
+			beeep.Alert(fmt.Sprintf("❌ Build failed (%s)", *build.Branch), strings.Join(failedSummary, "\n"), "")
 		} else {
 			beeep.Notify(fmt.Sprintf("✅ Build passed (%s)", *build.Branch), fmt.Sprintf("%d jobs passed in %s", len(build.Jobs), build.FinishedAt.Sub(build.StartedAt.Time)), "")
 		}
 	}
+
+	return failed
 }
 
 func statusTicker(ctx context.Context, f func() (bool, error)) error {

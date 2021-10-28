@@ -13,7 +13,7 @@ jobs:
              recipients: |
                   team/extensibility=@joelkw @muratsu
                   team/frontend-platform=@umpox @valerybugakov @5h1ru @pdubroy @taylorsperry
-                  team/cloud=@tsenart
+                  team/cloud=@RafLeszczynski
                   team/search=@lguychard
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
@@ -21,3 +21,4 @@ jobs:
                   team/delivery=@davejrt @ggilmore @dan-mckean @caugustus-sourcegraph @stephanx
                   team/security=@dan-mckean
                   team/dev-experience=@taylorsperry @pdubroy
+                  team/repo-management=@jplahn @dan-mckean

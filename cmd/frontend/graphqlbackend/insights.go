@@ -87,6 +87,7 @@ type InsightDirtyQueryResolver interface {
 type InsightsDashboardsArgs struct {
 	First *int32
 	After *string
+	ID    *graphql.ID
 }
 
 type InsightsDashboardConnectionResolver interface {

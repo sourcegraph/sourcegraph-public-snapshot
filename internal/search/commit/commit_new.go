@@ -23,15 +23,23 @@ import (
 )
 
 type CommitSearch struct {
-	Query gitprotocol.Node
-	Repos []*search.RepositoryRevisions
-	Diff  bool
-	Limit int
+	Query         gitprotocol.Node
+	Diff          bool
+	HasTimeFilter bool
+	Limit         int
 }
 
-func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender) error {
+func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
+	resultType := "commit"
+	if j.Diff {
+		resultType = "diff"
+	}
+	if err := CheckSearchLimits(j.HasTimeFilter, len(repos), resultType); err != nil {
+		return err
+	}
+
 	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range j.Repos {
+	for _, repoRev := range repos {
 		repoRev := repoRev // we close over repoRev in onMatches
 
 		// Skip the repo if no revisions were resolved for it
@@ -105,20 +113,23 @@ func (j *CommitSearch) ExpandUsernames(ctx context.Context, db dbutil.DB) (err e
 	return err
 }
 
-func NewSearchJob(q query.Q, repos []*search.RepositoryRevisions, diff bool, limit int) (*CommitSearch, error) {
-	resultType := "commit"
-	if diff {
-		resultType = "diff"
+func HasTimeFilter(q query.Q) bool {
+	hasTimeFilter := false
+	if _, afterPresent := q.Fields()["after"]; afterPresent {
+		hasTimeFilter = true
 	}
-	if err := CheckSearchLimits(q, len(repos), resultType); err != nil {
-		return nil, err
+	if _, beforePresent := q.Fields()["before"]; beforePresent {
+		hasTimeFilter = true
 	}
+	return hasTimeFilter
+}
 
+func NewSearchJob(q query.Q, diff bool, limit int) (*CommitSearch, error) {
 	return &CommitSearch{
-		Query: queryToGitQuery(q, diff),
-		Repos: repos,
-		Diff:  diff,
-		Limit: limit,
+		Query:         queryToGitQuery(q, diff),
+		Diff:          diff,
+		Limit:         limit,
+		HasTimeFilter: HasTimeFilter(q),
 	}, nil
 }
 
@@ -320,15 +331,7 @@ func searchRangeToHighlights(s string, r result.Range) []result.HighlightedRange
 
 // CheckSearchLimits will return an error if commit/diff limits are exceeded for the
 // given query and number of repos that will be searched.
-func CheckSearchLimits(q query.Q, repoCount int, resultType string) error {
-	hasTimeFilter := false
-	if _, afterPresent := q.Fields()["after"]; afterPresent {
-		hasTimeFilter = true
-	}
-	if _, beforePresent := q.Fields()["before"]; beforePresent {
-		hasTimeFilter = true
-	}
-
+func CheckSearchLimits(hasTimeFilter bool, repoCount int, resultType string) error {
 	limits := search.SearchLimits(conf.Get())
 	if max := limits.CommitDiffMaxRepos; !hasTimeFilter && repoCount > max {
 		return &RepoLimitError{ResultType: resultType, Max: max}

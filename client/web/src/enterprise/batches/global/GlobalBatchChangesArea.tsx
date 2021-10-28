@@ -12,7 +12,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
-import { Page } from '../../../components/Page'
 import { lazyComponent } from '../../../util/lazyComponent'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
@@ -83,21 +82,19 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <Page>
-        <Switch>
-            <Route
-                render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
-                path={match.url}
-                exact={true}
-            />
-            <Route
-                path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
-                exact={true}
-            />
-            <Route component={NotFoundPage} key="hardcoded-key" />
-        </Switch>
-    </Page>
+    <Switch>
+        <Route
+            render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
+            path={match.url}
+            exact={true}
+        />
+        <Route
+            path={`${match.url}/create`}
+            render={props => <CreateBatchChangePage headingElement="h1" {...outerProps} {...props} />}
+            exact={true}
+        />
+        <Route component={NotFoundPage} key="hardcoded-key" />
+    </Switch>
 ))
 
 export interface NamespaceBatchChangesAreaProps extends Props {
@@ -114,10 +111,6 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 render={({ match, ...props }: RouteComponentProps<{ specID: string }>) => (
                     <BatchChangePreviewPage {...outerProps} {...props} batchSpecID={match.params.specID} />
                 )}
-            />
-            <Route
-                path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage headingElement="h2" {...outerProps} {...props} />}
             />
             <Route
                 path={`${match.url}/executions/:executionID`}

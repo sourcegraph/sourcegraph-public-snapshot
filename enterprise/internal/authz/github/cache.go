@@ -2,13 +2,10 @@ package github
 
 import (
 	"encoding/json"
-	"fmt"
-	"time"
 
 	"github.com/gregjones/httpcache"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 const cacheVersion = "v1"
@@ -47,15 +44,6 @@ func (g *cachedGroup) key() string {
 
 type cachedGroups struct {
 	cache httpcache.Cache
-}
-
-func newGroupPermsCache(urn string, codeHost *extsvc.CodeHost, ttl time.Duration) *cachedGroups {
-	if ttl < 0 {
-		return nil
-	}
-	return &cachedGroups{
-		cache: rcache.NewWithTTL(fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(ttl.Seconds())),
-	}
 }
 
 // setGroup stores the given group in the cache.

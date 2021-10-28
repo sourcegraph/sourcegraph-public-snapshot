@@ -6,6 +6,7 @@ import { filter, map, tap, withLatestFrom } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { Page } from '@sourcegraph/web/src/components/Page'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -122,7 +123,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
     )
 
     return (
-        <>
+        <Page>
             <PageHeader
                 path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
@@ -155,7 +156,7 @@ export const BatchChangeListPage: React.FunctionComponent<BatchChangeListPagePro
                     />
                 </Container>
             )}
-        </>
+        </Page>
     )
 }
 
