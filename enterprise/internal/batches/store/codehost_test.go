@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clock) {
@@ -22,13 +24,29 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 
-	gh, _ := ct.CreateGitHubSSHTestRepos(t, ctx, s.DB(), 1)
+	gh, ghExtSvc := ct.CreateGitHubSSHTestRepos(t, ctx, s.DB(), 1)
 	bbs, _ := ct.CreateBbsSSHTestRepos(t, ctx, s.DB(), 1)
 	sshRepos := []*types.Repo{gh[0], bbs[0]}
 
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
 	bitbucketRepo := ct.TestRepo(t, es, extsvc.KindBitbucketServer)
 	awsRepo := ct.TestRepo(t, es, extsvc.KindAWSCodeCommit)
+
+	// Enable webhooks on GitHub only.
+	rawConfig, err := ghExtSvc.Configuration()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := rawConfig.(*schema.GitHubConnection)
+	cfg.Webhooks = []*schema.GitHubWebhook{
+		{Org: "org", Secret: "secret"},
+	}
+	marshalledConfig, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ghExtSvc.Config = string(marshalledConfig)
+	es.Upsert(ctx, ghExtSvc)
 
 	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, bitbucketRepo, awsRepo); err != nil {
 		t.Fatal(err)
@@ -49,7 +67,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 					ExternalServiceType: extsvc.TypeBitbucketServer,
 					ExternalServiceID:   "https://bitbucketserver.com/",
 					RequiresSSH:         true,
-					HasWebhooks:         true,
+					HasWebhooks:         false,
 				},
 				{
 					ExternalServiceType: extsvc.TypeGitHub,
@@ -60,7 +78,7 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 				{
 					ExternalServiceType: extsvc.TypeGitLab,
 					ExternalServiceID:   "https://gitlab.com/",
-					HasWebhooks:         true,
+					HasWebhooks:         false,
 				},
 			}
 			if diff := cmp.Diff(have, want); diff != "" {
@@ -81,7 +99,28 @@ func testStoreCodeHost(t *testing.T, ctx context.Context, s *Store, clock ct.Clo
 			if diff := cmp.Diff(have, want); diff != "" {
 				t.Fatalf("Invalid code hosts returned. %s", diff)
 			}
-
+		})
+		t.Run("OnlyWithoutWebhooks", func(t *testing.T) {
+			have, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{OnlyWithoutWebhooks: true})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := []*btypes.CodeHost{
+				{
+					ExternalServiceType: extsvc.TypeBitbucketServer,
+					ExternalServiceID:   "https://bitbucketserver.com/",
+					RequiresSSH:         true,
+					HasWebhooks:         false,
+				},
+				{
+					ExternalServiceType: extsvc.TypeGitLab,
+					ExternalServiceID:   "https://gitlab.com/",
+					HasWebhooks:         false,
+				},
+			}
+			if diff := cmp.Diff(have, want); diff != "" {
+				t.Fatalf("Invalid code hosts returned. %s", diff)
+			}
 		})
 	})
 
