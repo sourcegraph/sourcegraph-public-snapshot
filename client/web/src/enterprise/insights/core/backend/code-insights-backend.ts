@@ -34,7 +34,7 @@ export interface CodeInsightsBackend {
      */
     getDashboards: () => Observable<InsightDashboard[]>
 
-    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | null>
+    getDashboardById: (dashboardId?: string) => Observable<InsightDashboard | undefined>
 
     findDashboardByName: (name: string) => Observable<InsightDashboard | null>
 

@@ -20,7 +20,6 @@ import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsi
 import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
-import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps extends TelemetryProps {
@@ -37,10 +36,13 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getInsightSubjects } = useContext(CodeInsightsBackendContext)
+    const { getDashboards, getInsightSubjects, getDashboardById } = useContext(CodeInsightsBackendContext)
 
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const currentDashboard = useObservable(
+        useMemo(() => getDashboardById(dashboardID), [getDashboardById, dashboardID])
+    )
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -92,8 +94,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     if (dashboards === undefined) {
         return <LoadingSpinner />
     }
-
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
 
     return (
         <div>

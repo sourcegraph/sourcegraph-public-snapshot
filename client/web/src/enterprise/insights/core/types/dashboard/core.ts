@@ -50,4 +50,10 @@ export interface ExtendedInsightDashboard extends InsightDashboardConfiguration 
      * or organization setting subject.
      */
     owner?: InsightDashboardOwner
+
+    grants?: {
+        users?: string[]
+        organizations?: string[]
+        global?: boolean
+    }
 }

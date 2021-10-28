@@ -14,7 +14,7 @@ import {
     UpdateInsightsDashboardInput,
 } from '@sourcegraph/web/src/graphql-operations'
 
-import { InsightDashboard } from '../types'
+import { Insight, InsightDashboard, InsightsDashboardType } from '../types'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { CodeInsightsBackend } from './code-insights-backend'
@@ -31,7 +31,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
-    public getInsights = errorMockMethod('getInsights')
+    public getInsights = (ids?: string[]): Observable<Insight[]> => {
+        console.warn('TODO: Implement getInsights for GraphQL API')
+        return of([])
+    }
     public getInsightById = errorMockMethod('getInsightById')
     public findInsightByName = errorMockMethod('findInsightByName')
     public getReachableInsights = errorMockMethod('getReachableInsights')
@@ -62,6 +65,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                                         id
                                     }
                                 }
+                                grants {
+                                    users
+                                    organizations
+                                    global
+                                }
                             }
                         }
                     }
@@ -69,15 +77,35 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) =>
-                data.insightsDashboards.nodes.map(dashboard => ({
-                    id: dashboard.id,
-                    title: dashboard.title,
-                    insightIds: dashboard.views?.nodes.map(view => view.id),
-                }))
+                data.insightsDashboards.nodes.map(
+                    (dashboard): InsightDashboard => ({
+                        id: dashboard.id,
+                        title: dashboard.title,
+                        insightIds: dashboard.views?.nodes.map(view => view.id),
+                        grants: dashboard.grants,
+                        type: this.parseType(dashboard.grants),
+                    })
+                )
             )
         )
-    public getDashboardById = errorMockMethod('getDashboardById')
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
+        this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId)))
+
     public findDashboardByName = errorMockMethod('findDashboardByName')
+
+    private parseType(grants?: {
+        global?: boolean
+        users?: string[]
+        organizations?: string[]
+    }): InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global {
+        if (grants?.global) {
+            return InsightsDashboardType.Global
+        }
+        if (grants?.organizations?.length) {
+            return InsightsDashboardType.Organization
+        }
+        return InsightsDashboardType.Personal
+    }
 
     private parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
         const grants: InsightsPermissionGrantsInput = {}

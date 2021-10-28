@@ -5,6 +5,7 @@ import React from 'react'
 
 import {
     InsightDashboard,
+    InsightDashboardOwner,
     InsightsDashboardType,
     isGlobalDashboard,
     isOrganizationDashboard,
@@ -124,19 +125,28 @@ const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): Dashbo
     const groupsDictionary = dashboards
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
-            if (!dashboard.owner) {
-                throw new Error('TODO: support GraphQL API')
+            const orgId = (dashboard.grants?.organizations && dashboard.grants?.organizations[0]) || ''
+            const owner: InsightDashboardOwner = dashboard.owner || {
+                id: orgId,
+                name: orgId,
             }
 
-            if (!store[dashboard.owner.id]) {
-                store[dashboard.owner.id] = {
-                    id: dashboard.owner.id,
-                    name: dashboard.owner.name,
+            // This shouldn't happen. If we have made it this far, we should have a valid owner.
+            if (owner.id === '') {
+                return store
+            }
+
+            console.log('decoded name', atob(owner.id))
+
+            if (!store[owner.id]) {
+                store[owner.id] = {
+                    id: owner.id,
+                    name: owner.name,
                     dashboards: [],
                 }
             }
 
-            store[dashboard.owner.id].dashboards.push(dashboard)
+            store[owner.id].dashboards.push(dashboard)
 
             return store
         }, {})

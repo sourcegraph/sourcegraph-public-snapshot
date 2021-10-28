@@ -23,17 +23,13 @@ export const getDashboardTitle = (dashboard: RealInsightDashboard): string => {
 export const getDashboardOwnerName = (dashboard: RealInsightDashboard): string => {
     const { type } = dashboard
 
-    if (type === InsightsDashboardType.Personal) {
+    if (type === InsightsDashboardType.Personal || dashboard.grants?.users?.length) {
         return 'Private'
     }
 
-    if (type === InsightsDashboardType.Global) {
+    if (type === InsightsDashboardType.Global || dashboard.grants?.global) {
         return 'Global'
     }
 
-    if (!dashboard.owner) {
-        throw new Error('TODO: support GraphQL API')
-    }
-
-    return dashboard.owner.name
+    return dashboard.owner?.name || dashboard.grants?.organizations?.[0] || 'Unknown'
 }
