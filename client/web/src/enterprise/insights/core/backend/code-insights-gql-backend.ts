@@ -93,6 +93,16 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public findDashboardByName = errorMockMethod('findDashboardByName')
 
+    /**
+     * Helper function to parse the dashboard type from the grants object.
+     * TODO: Remove this function when settings api is deprecated
+     *
+     * @param grants {object} - A grants object from an insight dashboard
+     * @param grants.global {boolean}
+     * @param grants.users {string[]}
+     * @param grants.organizations {string[]}
+     * @returns - The type of the dashboard
+     */
     private parseType(grants?: {
         global?: boolean
         users?: string[]
@@ -107,6 +117,14 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         return InsightsDashboardType.Personal
     }
 
+    /**
+     * Helper function to parse a grants object from a given type and visibility.
+     * TODO: Remove this function when settings api is deprecated
+     *
+     * @param type {string} - The type of the dashboard
+     * @param visibility {string} - Usually the user or organization id
+     * @returns - A properly formatted grants object
+     */
     private parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
         const grants: InsightsPermissionGrantsInput = {}
         if (type === 'personal') {

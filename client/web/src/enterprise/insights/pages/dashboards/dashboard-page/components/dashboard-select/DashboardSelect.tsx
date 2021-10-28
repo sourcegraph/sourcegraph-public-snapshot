@@ -40,6 +40,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         return null
     }
 
+    // We need a map of the organization names when using the new GraphQL API
     const organizations = user.organizations.nodes.reduce<Record<string, InsightDashboardOwner>>(
         (map, organization) => ({
             ...map,
@@ -161,6 +162,7 @@ const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): Dashbo
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
             if (!dashboard.owner) {
+                // TODO: remove this check after settings api is deprecated
                 throw new Error('`owner` is missing from the dashboard')
             }
 
