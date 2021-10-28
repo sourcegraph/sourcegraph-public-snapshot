@@ -201,7 +201,7 @@ func CreateGitHubSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, c
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rs, nil
+	return rs, ext
 }
 
 func CreateBbsSSHTestRepos(t *testing.T, ctx context.Context, db dbutil.DB, count int) ([]*types.Repo, *types.ExternalService) {
