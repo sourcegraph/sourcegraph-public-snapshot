@@ -20,6 +20,7 @@ type DB interface {
 	Settings() SettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
+	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
 }
 
@@ -67,6 +68,10 @@ func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
 
 func (d *db) UserEmails() UserEmailsStore {
 	return UserEmails(d.DB)
+}
+
+func (d *db) UserPublicRepos() UserPublicRepoStore {
+	return UserPublicRepos(d.DB)
 }
 
 func (d *db) Users() UserStore {

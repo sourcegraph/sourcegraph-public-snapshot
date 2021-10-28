@@ -51,6 +51,9 @@ type MockDB struct {
 	// UserEmailsFunc is an instance of a mock function object controlling
 	// the behavior of the method UserEmails.
 	UserEmailsFunc *DBUserEmailsFunc
+	// UserPublicReposFunc is an instance of a mock function object
+	// controlling the behavior of the method UserPublicRepos.
+	UserPublicReposFunc *DBUserPublicReposFunc
 	// UsersFunc is an instance of a mock function object controlling the
 	// behavior of the method Users.
 	UsersFunc *DBUsersFunc
@@ -120,6 +123,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		UserPublicReposFunc: &DBUserPublicReposFunc{
+			defaultHook: func() database.UserPublicRepoStore {
+				return nil
+			},
+		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: func() database.UserStore {
 				return nil
@@ -167,6 +175,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		UserEmailsFunc: &DBUserEmailsFunc{
 			defaultHook: i.UserEmails,
+		},
+		UserPublicReposFunc: &DBUserPublicReposFunc{
+			defaultHook: i.UserPublicRepos,
 		},
 		UsersFunc: &DBUsersFunc{
 			defaultHook: i.Users,
@@ -1418,6 +1429,106 @@ func (c DBUserEmailsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBUserEmailsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBUserPublicReposFunc describes the behavior when the UserPublicRepos
+// method of the parent MockDB instance is invoked.
+type DBUserPublicReposFunc struct {
+	defaultHook func() database.UserPublicRepoStore
+	hooks       []func() database.UserPublicRepoStore
+	history     []DBUserPublicReposFuncCall
+	mutex       sync.Mutex
+}
+
+// UserPublicRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) UserPublicRepos() database.UserPublicRepoStore {
+	r0 := m.UserPublicReposFunc.nextHook()()
+	m.UserPublicReposFunc.appendCall(DBUserPublicReposFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UserPublicRepos
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBUserPublicReposFunc) SetDefaultHook(hook func() database.UserPublicRepoStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserPublicRepos method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBUserPublicReposFunc) PushHook(hook func() database.UserPublicRepoStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBUserPublicReposFunc) SetDefaultReturn(r0 database.UserPublicRepoStore) {
+	f.SetDefaultHook(func() database.UserPublicRepoStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBUserPublicReposFunc) PushReturn(r0 database.UserPublicRepoStore) {
+	f.PushHook(func() database.UserPublicRepoStore {
+		return r0
+	})
+}
+
+func (f *DBUserPublicReposFunc) nextHook() func() database.UserPublicRepoStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUserPublicReposFunc) appendCall(r0 DBUserPublicReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUserPublicReposFuncCall objects
+// describing the invocations of this function.
+func (f *DBUserPublicReposFunc) History() []DBUserPublicReposFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUserPublicReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUserPublicReposFuncCall is an object that describes an invocation of
+// method UserPublicRepos on an instance of MockDB.
+type DBUserPublicReposFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.UserPublicRepoStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUserPublicReposFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUserPublicReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
