@@ -67,6 +67,25 @@ SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
+// UpsertWithSpec will upsert sub repo permissions data using the provided
+// external repo spec to map to out internal repo id. If there is no mapping,
+// nothing is written.
+func (s *SubRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+	q := sqlf.Sprintf(`
+INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
+SELECT %s, id, %s, %s, %s, now()
+FROM repo
+    WHERE external_service_id = %s
+    AND external_service_type = %s
+    AND external_id = %s
+ON CONFLICT (user_id, repo_id, version) DO UPDATE
+SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
+(EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, EXCLUDED.version, now())
+`, userID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
+
+	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
+}
+
 // Get will fetch sub repo rules for the given repo and user combination.
 func (s *SubRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
