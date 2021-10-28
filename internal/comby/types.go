@@ -1,14 +1,16 @@
 package comby
 
 type Input interface {
-	Value()
+	input()
 }
 
 type ZipPath string
 type DirPath string
+type FileContent []byte
 
-func (ZipPath) Value() {}
-func (DirPath) Value() {}
+func (ZipPath) input()     {}
+func (DirPath) input()     {}
+func (FileContent) input() {}
 
 type resultKind int
 
