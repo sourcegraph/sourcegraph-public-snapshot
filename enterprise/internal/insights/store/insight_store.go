@@ -388,9 +388,6 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		return types.InsightView{}, errors.Wrap(err, "failed to update insight view")
 	}
 	view.ID = id
-	if row.Err() != nil {
-		return types.InsightView{}, row.Err()
-	}
 	return view, nil
 }
 
