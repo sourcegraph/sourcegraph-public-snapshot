@@ -18,3 +18,4 @@ package dbmock
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i UserExternalAccountsStore -o mock_user_external_accounts.go
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i OrgInvitationStore -o mock_org_invitations.go
 //go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i EventLogStore -o mock_event_logs.go
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i TemporarySettingsStore -o mock_temporary_settings.go
