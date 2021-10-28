@@ -94,7 +94,7 @@ func (o *orgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID i
 // or only those with repositories attached
 func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRepositories bool) ([]*types.Org, error) {
 	queryString :=
-		`SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at
+		`SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at
 		FROM org_members
 		LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
 		WHERE user_id=$1
@@ -102,7 +102,7 @@ func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRe
 	if onlyOrgsWithRepositories {
 		queryString += `
 			AND EXISTS(
-				SELECT 1
+				SELECT
 				FROM external_service_repos
 				WHERE external_service_repos.org_id = orgs.id
 				LIMIT 1
