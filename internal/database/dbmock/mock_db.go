@@ -42,6 +42,9 @@ type MockDB struct {
 	// SavedSearchesFunc is an instance of a mock function object
 	// controlling the behavior of the method SavedSearches.
 	SavedSearchesFunc *DBSavedSearchesFunc
+	// SearchContextsFunc is an instance of a mock function object
+	// controlling the behavior of the method SearchContexts.
+	SearchContextsFunc *DBSearchContextsFunc
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
@@ -108,6 +111,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		SearchContextsFunc: &DBSearchContextsFunc{
+			defaultHook: func() database.SearchContextsStore {
+				return nil
+			},
+		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: func() database.SettingsStore {
 				return nil
@@ -166,6 +174,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		SavedSearchesFunc: &DBSavedSearchesFunc{
 			defaultHook: i.SavedSearches,
+		},
+		SearchContextsFunc: &DBSearchContextsFunc{
+			defaultHook: i.SearchContexts,
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
@@ -1128,6 +1139,106 @@ func (c DBSavedSearchesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSavedSearchesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBSearchContextsFunc describes the behavior when the SearchContexts
+// method of the parent MockDB instance is invoked.
+type DBSearchContextsFunc struct {
+	defaultHook func() database.SearchContextsStore
+	hooks       []func() database.SearchContextsStore
+	history     []DBSearchContextsFuncCall
+	mutex       sync.Mutex
+}
+
+// SearchContexts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) SearchContexts() database.SearchContextsStore {
+	r0 := m.SearchContextsFunc.nextHook()()
+	m.SearchContextsFunc.appendCall(DBSearchContextsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SearchContexts
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBSearchContextsFunc) SetDefaultHook(hook func() database.SearchContextsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SearchContexts method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBSearchContextsFunc) PushHook(hook func() database.SearchContextsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBSearchContextsFunc) SetDefaultReturn(r0 database.SearchContextsStore) {
+	f.SetDefaultHook(func() database.SearchContextsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBSearchContextsFunc) PushReturn(r0 database.SearchContextsStore) {
+	f.PushHook(func() database.SearchContextsStore {
+		return r0
+	})
+}
+
+func (f *DBSearchContextsFunc) nextHook() func() database.SearchContextsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBSearchContextsFunc) appendCall(r0 DBSearchContextsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBSearchContextsFuncCall objects describing
+// the invocations of this function.
+func (f *DBSearchContextsFunc) History() []DBSearchContextsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBSearchContextsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBSearchContextsFuncCall is an object that describes an invocation of
+// method SearchContexts on an instance of MockDB.
+type DBSearchContextsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SearchContextsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBSearchContextsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBSearchContextsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
