@@ -220,8 +220,12 @@ func (n NullInt) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+// NullBool represents a bool that may be null. NullBool implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString. When the scanned value is null, B is set to false.
 type NullBool struct{ B *bool }
 
+// Scan implements the Scanner interface.
 func (n *NullBool) Scan(value interface{}) error {
 	switch v := value.(type) {
 	case bool:
@@ -240,6 +244,7 @@ func (n *NullBool) Scan(value interface{}) error {
 	return nil
 }
 
+// Value implements the driver Valuer interface.
 func (n NullBool) Value() (driver.Value, error) {
 	if n.B == nil {
 		return nil, nil
