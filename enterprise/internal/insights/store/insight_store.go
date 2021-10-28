@@ -84,17 +84,12 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 		preds = append(preds, sqlf.Sprintf("iv.id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
 	}
 
-	if args.After != "" {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
-	}
-	var limitClause *sqlf.Query
-	if args.Limit > 0 {
-		limitClause = sqlf.Sprintf("LIMIT %s", args.Limit)
-	} else {
-		limitClause = sqlf.Sprintf("")
+	cursor := insightViewPageCursor{
+		after: args.After,
+		limit: args.Limit,
 	}
 
-	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"), limitClause)
+	q := sqlf.Sprintf(getInsightByViewSql, insightViewQuery(cursor), sqlf.Join(preds, "\n AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -117,20 +112,15 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 
-	if args.After != "" {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
-	}
-
-	var limitClause *sqlf.Query
-	if args.Limit > 0 {
-		limitClause = sqlf.Sprintf("LIMIT %s", args.Limit)
-	} else {
-		limitClause = sqlf.Sprintf("")
+	cursor := insightViewPageCursor{
+		after: args.After,
+		limit: args.Limit,
 	}
 
 	q := sqlf.Sprintf(getInsightsVisibleToUserSql,
+		insightViewQuery(cursor),
 		visibleDashboardsQuery(args.UserID, args.OrgID),
-		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"), limitClause)
+		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -380,6 +370,31 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 	}
 	return results, nil
 }
+
+type insightViewPageCursor struct {
+	after string
+	limit int
+}
+
+func insightViewQuery(cursor insightViewPageCursor) *sqlf.Query {
+	var cond *sqlf.Query
+	if cursor.after != "" {
+		cond = sqlf.Sprintf("unique_id > %s", cursor.after)
+	} else {
+		cond = sqlf.Sprintf("TRUE")
+	}
+	var limit *sqlf.Query
+	if cursor.limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %s", cursor.limit)
+	} else {
+		limit = sqlf.Sprintf("")
+	}
+	return sqlf.Sprintf(insightViewQuerySql, cond, limit)
+}
+
+const insightViewQuerySql = `
+SELECT * FROM insight_view WHERE %s ORDER BY unique_id %s
+`
 
 // AttachSeriesToView will associate a given insight data series with a given insight view.
 func (s *InsightStore) AttachSeriesToView(ctx context.Context,
@@ -645,12 +660,11 @@ SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
-FROM insight_view iv
+FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
-%S
 `
 
 const getInsightDataSeriesSql = `
@@ -667,7 +681,7 @@ SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
-FROM insight_view iv
+FROM (%s) iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE (iv.id IN (SELECT insight_view_id
@@ -676,6 +690,5 @@ WHERE (iv.id IN (SELECT insight_view_id
 				 WHERE deleted_at IS NULL AND db.id IN (%s))
    OR iv.id IN (%s))
 AND %s
-ORDER BY iv.unique_id
-%s;
+ORDER BY iv.unique_id;
 `
