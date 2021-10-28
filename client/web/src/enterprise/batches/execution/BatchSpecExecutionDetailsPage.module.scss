@@ -1,3 +1,13 @@
 .workspace-repo {
     word-wrap: break-word;
 }
+
+.batch-spec {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.workspaces-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
