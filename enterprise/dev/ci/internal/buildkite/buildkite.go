@@ -9,6 +9,7 @@ package buildkite
 import (
 	"encoding/json"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -79,10 +80,12 @@ type Step struct {
 	Agents                 map[string]string      `json:"agents,omitempty"`
 }
 
+var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 // GenerateKey will automatically generate a key based on the
 // step label, and return it.
 func (s *Step) GenerateKey() string {
-	s.Key = strings.ReplaceAll(s.Label, " ", "_")
+	s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
 	return s.Key
 }
 
@@ -132,6 +135,7 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	p.Steps = append(p.Steps, step)
 }
 
+// AddEnsureStep adds a step that has a dependency on all other steps prior to this step.
 func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
 	p.AddStep(label, opts...)
 	lastStep := p.Steps[len(p.Steps)-1].(*Step)
@@ -152,6 +156,9 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 	}
 	for _, opt := range opts {
 		opt(step)
+	}
+	if step.Key == "" {
+		step.GenerateKey()
 	}
 	p.Steps = append(p.Steps, step)
 }

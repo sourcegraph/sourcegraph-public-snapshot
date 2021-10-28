@@ -354,6 +354,7 @@ func wait(pipeline *bk.Pipeline) {
 func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
+			bk.Key("trigger:async"),
 			bk.Trigger("sourcegraph-async"),
 			bk.Async(true),
 			bk.Build(buildOptions),
@@ -564,7 +565,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
 		}
 
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
 	}
 }
 

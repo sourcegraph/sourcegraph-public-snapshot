@@ -249,9 +249,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env: env,
 	}
 	ops.Apply(pipeline)
+
+	// Validate generated pipeline has unique keys
 	if err := ensureUniqueKeys(pipeline); err != nil {
 		return nil, err
 	}
+
 	return pipeline, nil
 }
 
@@ -259,12 +262,15 @@ func ensureUniqueKeys(pipeline *bk.Pipeline) error {
 	occurences := map[string]int{}
 	for _, step := range pipeline.Steps {
 		if s, ok := step.(*buildkite.Step); ok {
+			if s.Key == "" {
+				return fmt.Errorf("empty key on step with label %q", s.Label)
+			}
 			occurences[s.Key] += 1
 		}
 	}
 	for k, count := range occurences {
 		if count > 1 {
-			return fmt.Errorf("non unique key on step %s", k)
+			return fmt.Errorf("non unique key on step with key %q", k)
 		}
 	}
 	return nil
