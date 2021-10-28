@@ -6,8 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -50,10 +48,11 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 // InsightQueryArgs contains query predicates for fetching viewable insight series. Any provided values will be
 // included as query arguments.
 type InsightQueryArgs struct {
-	UniqueIDs []string
-	UniqueID  string
-	UserID    []int
-	OrgID     []int
+	UniqueIDs   []string
+	UniqueID    string
+	UserID      []int
+	OrgID       []int
+	DashboardID int
 
 	After string
 	Limit int
@@ -77,16 +76,25 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
 	}
+	if args.DashboardID > 0 {
+		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 	if !args.WithoutAuthorization {
 		preds = append(preds, sqlf.Sprintf("iv.id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	if args.After != "" {
+		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
+	}
+	var limitClause *sqlf.Query
+	if args.Limit > 0 {
+		limitClause = sqlf.Sprintf("LIMIT %s", args.Limit)
+	} else {
+		limitClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
+	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"), limitClause)
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -103,6 +111,9 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 	if len(args.UniqueID) > 0 {
 		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
+	}
+	if args.DashboardID > 0 {
+		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 
@@ -614,6 +625,7 @@ FROM insight_view iv
          JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE %s
 ORDER BY iv.unique_id, i.series_id
+%S
 `
 
 const getInsightDataSeriesSql = `

@@ -115,8 +115,8 @@ func (i *insightsDashboardResolver) ID() graphql.ID {
 	return i.id.marshal()
 }
 
-func (i *insightsDashboardResolver) Views() graphqlbackend.InsightViewConnectionResolver {
-	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, dashboard: i.dashboard, baseInsightResolver: i.baseInsightResolver}
+func (i *insightsDashboardResolver) Views(ctx context.Context, args graphqlbackend.DashboardInsightViewConnectionArgs) graphqlbackend.InsightViewConnectionResolver {
+	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, dashboard: i.dashboard, baseInsightResolver: i.baseInsightResolver, args: args}
 }
 
 func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
@@ -156,13 +156,20 @@ func (i *insightsPermissionGrantsResolver) Global() bool {
 type DashboardInsightViewConnectionResolver struct {
 	baseInsightResolver
 
+	args graphqlbackend.DashboardInsightViewConnectionArgs
+
 	ids       []string
 	dashboard *types.Dashboard
+
+	once  sync.Once
+	views []types.Insight
+	next  string
+	err   error
 }
 
 func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
-	views, err := d.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: d.ids, WithoutAuthorization: true})
+	views, _, err := d.computeConnectedViews(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +180,45 @@ func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]g
 }
 
 func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+
 	return graphqlutil.HasNextPage(false), nil
+}
+
+func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
+	d.once.Do(func() {
+		// 🚨 SECURITY: This disabled authorization because we want to resolve all direct connections to the dashboard, regardless
+		// of insight view permissions.
+		// In this case, we are making the **VERY IMPORTANT** assumption that we have already pre-validated the
+		// dashboard is visible to the user context.
+		args := store.InsightQueryArgs{DashboardID: d.dashboard.ID, WithoutAuthorization: true}
+		if d.args.After != nil {
+			var afterID string
+			err := relay.UnmarshalSpec(graphql.ID(*d.args.After), &afterID)
+			if err != nil {
+				d.err = errors.Wrap(err, "unmarshalID")
+				return
+			}
+			args.After = afterID
+		}
+		if d.args.First != nil {
+			args.Limit = int(*d.args.First)
+		}
+		var err error
+
+		viewSeries, err := d.insightStore.Get(ctx, args)
+		if err != nil {
+			d.err = err
+			return
+		}
+
+		d.views = d.insightStore.GroupByView(ctx, viewSeries)
+		// this doesn't actually work right, because this is paging across SERIES when we need to page across VIEWS
+
+		if len(d.views) > 0 {
+			d.next = d.views[len(d.views)-1].UniqueID
+		}
+	})
+	return d.views, d.next, d.err
 }
 
 func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
