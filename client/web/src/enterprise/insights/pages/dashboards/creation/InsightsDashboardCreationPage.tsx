@@ -37,17 +37,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
         try {
-            const grants: InsightsPermissionGrantsInput = {}
-            if (values.type === 'personal') {
-                grants.users = [values.visibility]
-            }
-            if (values.type === 'organization') {
-                grants.organizations = [values.visibility]
-            }
-            if (values.type === 'global') {
-                grants.global = true
-            }
-            await createDashboard({ ...values, grants }).toPromise()
+            await createDashboard(values).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 

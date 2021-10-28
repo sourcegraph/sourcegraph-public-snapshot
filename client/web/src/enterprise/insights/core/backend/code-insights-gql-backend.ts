@@ -9,6 +9,7 @@ import {
     CreateInsightsDashboardInput,
     DeleteDashboardResult,
     InsightsDashboardsResult,
+    InsightsPermissionGrantsInput,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
 } from '@sourcegraph/web/src/graphql-operations'
@@ -78,14 +79,29 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public getDashboardById = errorMockMethod('getDashboardById')
     public findDashboardByName = errorMockMethod('findDashboardByName')
 
+    private parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
+        const grants: InsightsPermissionGrantsInput = {}
+        if (type === 'personal') {
+            grants.users = [visibility]
+        }
+        if (type === 'organization') {
+            grants.organizations = [visibility]
+        }
+        if (type === 'global') {
+            grants.global = true
+        }
+
+        return grants
+    }
+
     public createDashboard = (input: DashboardCreateInput): Observable<void> => {
-        if (!input.grants) {
+        if (!input.type) {
             throw new Error('`grants` are required to create a new dashboard')
         }
 
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
-            grants: input.grants,
+            grants: this.parseGrants(input.type, input.visibility),
         }
 
         return from(
@@ -128,13 +144,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             throw new Error('`id` is required to update a dashboard')
         }
 
-        if (!nextDashboardInput.grants) {
+        if (!nextDashboardInput.type) {
             throw new Error('`grants` are required to update a dashboard')
         }
 
         const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
-            grants: nextDashboardInput.grants,
+            grants: this.parseGrants(nextDashboardInput.type, nextDashboardInput.visibility),
         }
 
         return from(

@@ -2,7 +2,6 @@ import { Duration } from 'date-fns'
 import { LineChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { InsightsPermissionGrantsInput } from '@sourcegraph/shared/src/graphql-operations'
 
 import { ExtensionInsight, Insight, InsightDashboard, SettingsBasedInsightDashboard } from '../types'
 import { SearchBasedInsightSeries } from '../types/insight/search-insight'
@@ -11,7 +10,7 @@ export interface DashboardCreateInput {
     name: string
     visibility: string
     insightIds?: string[]
-    grants?: InsightsPermissionGrantsInput
+    type?: string
 }
 
 export interface DashboardUpdateInput {

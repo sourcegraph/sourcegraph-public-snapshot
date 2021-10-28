@@ -86,7 +86,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
             return
         }
 
-        const { name, visibility } = dashboardValues
+        const { name, visibility, type } = dashboardValues
 
         try {
             await updateDashboard({
@@ -94,6 +94,7 @@ export const EditDashboardPage: React.FunctionComponent<EditDashboardPageProps> 
                 nextDashboardInput: {
                     name,
                     visibility,
+                    type,
                 },
             }).toPromise()
 
