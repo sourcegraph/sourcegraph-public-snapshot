@@ -13,6 +13,7 @@ type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
 	Namespaces() NamespaceStore
+	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
 	Phabricator() PhabricatorStore
@@ -45,6 +46,10 @@ func (d *db) AccessTokens() AccessTokenStore {
 
 func (d *db) Namespaces() NamespaceStore {
 	return Namespaces(d.DB)
+}
+
+func (d *db) OrgInvitations() OrgInvitationStore {
+	return OrgInvitations(d.DB)
 }
 
 func (d *db) OrgMembers() OrgMemberStore {
