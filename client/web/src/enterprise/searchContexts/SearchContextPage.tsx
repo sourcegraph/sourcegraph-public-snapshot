@@ -1,12 +1,14 @@
 import classNames from 'classnames'
+import { debounce } from 'lodash'
 import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import React from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { Link } from '@sourcegraph/shared/src/components/Link'
 import { Markdown } from '@sourcegraph/shared/src/components/Markdown'
+import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { ISearchContextRepositoryRevisions } from '@sourcegraph/shared/src/graphql/schema'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
@@ -26,16 +28,40 @@ export interface SearchContextPageProps
     extends Pick<RouteComponentProps<{ spec: Scalars['ID'] }>, 'match'>,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {}
 
+const initialRepositoriesToShow = 15
+const incrementalRepositoriesToShow = 10
+
 const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearchContextRepositoryRevisions[] }> = ({
     repositories,
-}) => (
-    <>
-        <div className="d-flex">
-            <div className="w-50">Repositories</div>
-            <div className="w-50">Revisions</div>
-        </div>
-        <hr className="mt-2 mb-0" />
-        {repositories.map(repositoryRevisions => (
+}) => {
+    const [filterQuery, setFilterQuery] = useState('')
+    const debouncedSetFilterQuery = useMemo(() => debounce(value => setFilterQuery(value), 250), [setFilterQuery])
+    const filteredRepositories = useMemo(
+        () =>
+            repositories.filter(repositoryRevisions => {
+                const lowerCaseFilterQuery = filterQuery.toLowerCase()
+                return (
+                    !lowerCaseFilterQuery ||
+                    repositoryRevisions.repository.name.toLowerCase().includes(lowerCaseFilterQuery) ||
+                    repositoryRevisions.revisions.some(revision =>
+                        revision.toLowerCase().includes(lowerCaseFilterQuery)
+                    )
+                )
+            }),
+        [repositories, filterQuery]
+    )
+
+    const [repositoriesToShow, setRepositoriesToShow] = useState(initialRepositoriesToShow)
+    const onBottomHit = useCallback(
+        () =>
+            setRepositoriesToShow(repositoriesToShow =>
+                Math.min(filteredRepositories.length, repositoriesToShow + incrementalRepositoriesToShow)
+            ),
+        [filteredRepositories]
+    )
+
+    const renderRepositoryRevisions = useCallback(
+        (repositoryRevisions: ISearchContextRepositoryRevisions) => (
             <div
                 key={repositoryRevisions.repository.name}
                 className={classNames(styles.searchContextPageRepoRevsRow, 'd-flex')}
@@ -54,9 +80,49 @@ const SearchContextRepositories: React.FunctionComponent<{ repositories: ISearch
                     ))}
                 </div>
             </div>
-        ))}
-    </>
-)
+        ),
+        []
+    )
+
+    return (
+        <>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+                <h3>
+                    <span>
+                        {filteredRepositories.length}{' '}
+                        {pluralize('repository', filteredRepositories.length, 'repositories')}
+                    </span>
+                </h3>
+                {repositories.length > 0 && (
+                    <input
+                        type="text"
+                        className="form-control form-control-md w-50"
+                        placeholder="Search repositories and revisions"
+                        onChange={event => debouncedSetFilterQuery(event.target.value)}
+                    />
+                )}
+            </div>
+            {repositories.length > 0 && (
+                <>
+                    <div className="d-flex">
+                        <div className="w-50">Repositories</div>
+                        <div className="w-50">Revisions</div>
+                    </div>
+                    <hr className="mt-2 mb-0" />
+                    <VirtualList<ISearchContextRepositoryRevisions>
+                        className="mt-2"
+                        itemsToShow={repositoriesToShow}
+                        onShowMoreItems={onBottomHit}
+                        items={filteredRepositories}
+                        itemProps={undefined}
+                        itemKey={repositoryRevisions => repositoryRevisions.repository.name}
+                        renderItem={renderRepositoryRevisions}
+                    />
+                </>
+            )}
+        </>
+    )
+}
 
 export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> = props => {
     const LOADING = 'loading' as const
@@ -143,16 +209,6 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
                                     </div>
                                 )}
                                 {!searchContextOrError.autoDefined && (
-                                    <h3>
-                                        {searchContextOrError.repositories.length}{' '}
-                                        {pluralize(
-                                            'repository',
-                                            searchContextOrError.repositories.length,
-                                            'repositories'
-                                        )}
-                                    </h3>
-                                )}
-                                {!searchContextOrError.autoDefined && searchContextOrError.repositories.length > 0 && (
                                     <SearchContextRepositories repositories={searchContextOrError.repositories} />
                                 )}
                             </Container>

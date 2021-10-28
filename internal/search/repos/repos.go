@@ -149,6 +149,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		} else if searchContext.NamespaceUserID != 0 {
 			options.UserID = searchContext.NamespaceUserID
 			options.IncludeUserPublicRepos = true
+		} else if searchContext.NamespaceOrgID != 0 {
+			options.OrgID = searchContext.NamespaceOrgID
 		}
 
 		if op.Ranked {

@@ -16,11 +16,11 @@ import (
 
 func TestCheckSearchLimits(t *testing.T) {
 	cases := []struct {
-		name        string
-		resultType  string
-		numRepoRevs int
-		fields      []query.Node
-		wantError   error
+		name          string
+		resultType    string
+		numRepoRevs   int
+		hasTimeFilter bool
+		wantError     error
 	}{
 		{
 			name:        "diff_search_warns_on_repos_greater_than_search_limit",
@@ -35,11 +35,11 @@ func TestCheckSearchLimits(t *testing.T) {
 			wantError:   &RepoLimitError{ResultType: "commit", Max: 50},
 		},
 		{
-			name:        "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
-			fields:      []query.Node{query.Parameter{Field: "after"}},
-			resultType:  "commit",
-			numRepoRevs: 20000,
-			wantError:   &TimeLimitError{ResultType: "commit", Max: 10000},
+			name:          "commit_search_warns_on_repos_greater_than_search_limit_with_time_filter",
+			hasTimeFilter: true,
+			resultType:    "commit",
+			numRepoRevs:   20000,
+			wantError:     &TimeLimitError{ResultType: "commit", Max: 10000},
 		},
 		{
 			name:        "no_warning_when_commit_search_within_search_limit",
@@ -48,18 +48,18 @@ func TestCheckSearchLimits(t *testing.T) {
 			wantError:   nil,
 		},
 		{
-			name:        "no_search_limit_on_queries_including_after_filter",
-			fields:      []query.Node{query.Parameter{Field: "after"}},
-			resultType:  "commit",
-			numRepoRevs: 200,
-			wantError:   nil,
+			name:          "no_search_limit_on_queries_including_after_filter",
+			hasTimeFilter: true,
+			resultType:    "commit",
+			numRepoRevs:   200,
+			wantError:     nil,
 		},
 		{
-			name:        "no_search_limit_on_queries_including_before_filter",
-			fields:      []query.Node{query.Parameter{Field: "before"}},
-			resultType:  "commit",
-			numRepoRevs: 200,
-			wantError:   nil,
+			name:          "no_search_limit_on_queries_including_before_filter",
+			hasTimeFilter: true,
+			resultType:    "commit",
+			numRepoRevs:   200,
+			wantError:     nil,
 		},
 	}
 
@@ -72,7 +72,7 @@ func TestCheckSearchLimits(t *testing.T) {
 		}
 
 		haveErr := CheckSearchLimits(
-			test.fields,
+			test.hasTimeFilter,
 			len(repoRevs),
 			test.resultType,
 		)

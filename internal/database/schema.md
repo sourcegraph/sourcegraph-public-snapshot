@@ -656,6 +656,7 @@ Check constraints:
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
+    "external_service_repos_org_id_idx" btree (org_id) WHERE org_id IS NOT NULL
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
@@ -1905,9 +1906,10 @@ Foreign-key constraints:
  path_excludes | text[]                   |           |          | 
  updated_at    | timestamp with time zone |           | not null | now()
 Indexes:
-    "sub_repo_permissions_repo_id_user_id_uindex" UNIQUE, btree (repo_id, user_id)
+    "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
     "sub_repo_perms_repo_id" btree (repo_id)
     "sub_repo_perms_user_id" btree (user_id)
+    "sub_repo_perms_version" btree (version)
 Foreign-key constraints:
     "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

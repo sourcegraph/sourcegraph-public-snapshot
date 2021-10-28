@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -42,10 +43,20 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
+
+	var cg *cachedGroups
+	if opts.GroupsCacheTTL >= 0 {
+		cg = &cachedGroups{
+			cache: rcache.NewWithTTL(
+				fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(opts.GroupsCacheTTL.Seconds()),
+			),
+		}
+	}
+
 	return &Provider{
 		urn:         urn,
 		codeHost:    codeHost,
-		groupsCache: newGroupPermsCache(urn, codeHost, opts.GroupsCacheTTL),
+		groupsCache: cg,
 		client:      &ClientAdapter{V3Client: opts.GitHubClient},
 	}
 }

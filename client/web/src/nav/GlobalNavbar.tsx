@@ -217,8 +217,8 @@ export const GlobalNavbar: React.FunctionComponent<Props> = ({
                 <NavGroup>
                     <NavDropdown
                         toggleItem={{ path: '/search', icon: MagnifyIcon, content: 'Code Search' }}
+                        mobileHomeItem={{ content: 'Search home' }}
                         items={[
-                            { path: '/search', content: 'Search home' },
                             {
                                 path: '/contexts',
                                 content: (

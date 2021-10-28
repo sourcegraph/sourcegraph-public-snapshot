@@ -43,6 +43,11 @@ export function getSubmittedSearchesCount(): number {
     return parseInt(localStorage.getItem(SUBMITTED_SEARCHES_COUNT_KEY) || '0', 10)
 }
 
+export function canSubmitSearch(query: string, selectedSearchContextSpec?: string): boolean {
+    // A standalone context: filter is also a valid search query
+    return query !== '' || !!selectedSearchContextSpec
+}
+
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
  * flow.
