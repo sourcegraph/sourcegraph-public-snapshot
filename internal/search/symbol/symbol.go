@@ -151,9 +151,9 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	// All symbols are from the same repo, so we can just partition them by path
 	// to build file matches
 	symbolsByPath := make(map[string][]*result.Symbol)
-	for _, symbol := range symbols {
+	for i, symbol := range symbols {
 		cur := symbolsByPath[symbol.Path]
-		symbolsByPath[symbol.Path] = append(cur, &symbol)
+		symbolsByPath[symbol.Path] = append(cur, &symbols[i])
 	}
 
 	// Create file matches from partitioned symbols
