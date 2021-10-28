@@ -222,7 +222,6 @@ func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx conte
 		}
 
 		d.views = d.insightStore.GroupByView(ctx, viewSeries)
-		// this doesn't actually work right, because this is paging across SERIES when we need to page across VIEWS
 
 		if len(d.views) > 0 {
 			d.next = d.views[len(d.views)-1].UniqueID
