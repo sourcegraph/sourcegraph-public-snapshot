@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
 
 // DB is an interface that embeds dbutil.DB, adding methods to
@@ -17,6 +18,7 @@ type DB interface {
 	Repos() RepoStore
 	SavedSearches() SavedSearchStore
 	Settings() SettingsStore
+	UserCredentials(encryption.Key) UserCredentialsStore
 	Users() UserStore
 }
 
@@ -56,6 +58,10 @@ func (d *db) SavedSearches() SavedSearchStore {
 
 func (d *db) Settings() SettingsStore {
 	return Settings(d.DB)
+}
+
+func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
+	return UserCredentials(d.DB, key)
 }
 
 func (d *db) Users() UserStore {
