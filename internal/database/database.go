@@ -13,6 +13,7 @@ type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
 	EventLogs() EventLogStore
+	FeatureFlags() FeatureFlagStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
@@ -48,6 +49,10 @@ func (d *db) AccessTokens() AccessTokenStore {
 
 func (d *db) EventLogs() EventLogStore {
 	return EventLogs(d.DB)
+}
+
+func (d *db) FeatureFlags() FeatureFlagStore {
+	return FeatureFlags(d.DB)
 }
 
 func (d *db) Namespaces() NamespaceStore {
