@@ -77,7 +77,7 @@ func runCommand(ctx context.Context, command command, logger *Logger) (err error
 	defer handle.Close()
 
 	pipeReaderWaitGroup := readProcessPipes(handle, stdout, stderr)
-	exitCode, err := monitorCommand(cmd, pipeReaderWaitGroup)
+	exitCode, err := monitorCommand(ctx, cmd, pipeReaderWaitGroup)
 	handle.Finalize(exitCode)
 	if err != nil {
 		return err
@@ -171,17 +171,20 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgr
 	return eg
 }
 
-// monitorCommand starts the given command and waits for the given wait group to complete.
+// monitorCommand starts the given command and waits for the given errgroup to complete.
 // This function returns a non-nil error only if there was a system issue - commands that
 // run but fail due to a non-zero exit code will return a nil error and the exit code.
-func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, error) {
+func monitorCommand(ctx context.Context, cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, error) {
 	if err := cmd.Start(); err != nil {
-		return -1, errors.Wrap(err, "starting command")
+		return 0, errors.Wrap(err, "starting command")
 	}
 
-	// Wait for pipes to be closed.
-	if err := <-watchWaitGroup(pipeReaderWaitGroup); err != nil {
-		return -1, errors.Wrap(err, "reading process pipes")
+	select {
+	case <-ctx.Done():
+	case err := <-watchErrGroup(pipeReaderWaitGroup):
+		if err != nil {
+			return 0, errors.Wrap(err, "reading process pipes")
+		}
 	}
 
 	if err := cmd.Wait(); err != nil {
@@ -189,14 +192,16 @@ func monitorCommand(cmd *exec.Cmd, pipeReaderWaitGroup *errgroup.Group) (int, er
 		if errors.As(err, &e) {
 			return e.ExitCode(), nil
 		}
+
 		log15.Error("Non exit-error returned from command", "err", err)
-		return -1, errors.Wrap(err, "waiting for command")
+		return 0, errors.Wrap(err, "waiting for command")
 	}
 
+	// All good, command ran successfully.
 	return 0, nil
 }
 
-func watchWaitGroup(eg *errgroup.Group) <-chan error {
+func watchErrGroup(eg *errgroup.Group) <-chan error {
 	ch := make(chan error)
 	go func() {
 		ch <- eg.Wait()
