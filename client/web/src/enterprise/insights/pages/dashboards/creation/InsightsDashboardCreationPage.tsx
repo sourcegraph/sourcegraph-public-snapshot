@@ -3,6 +3,7 @@ import { camelCase } from 'lodash'
 import React, { useContext, useMemo } from 'react'
 import { useHistory } from 'react-router-dom'
 
+import { InsightsPermissionGrantsInput } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { asError } from '@sourcegraph/shared/src/util/errors'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
@@ -36,7 +37,17 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<InsightsDash
 
     const handleSubmit = async (values: DashboardCreationFields): Promise<void | SubmissionErrors> => {
         try {
-            await createDashboard(values).toPromise()
+            const grants: InsightsPermissionGrantsInput = {}
+            if (values.type === 'personal') {
+                grants.users = [values.visibility]
+            }
+            if (values.type === 'organization') {
+                grants.organizations = [values.visibility]
+            }
+            if (values.type === 'global') {
+                grants.global = true
+            }
+            await createDashboard({ ...values, grants }).toPromise()
 
             telemetryService.log('CodeInsightsDashboardCreationPageSubmitClick')
 
