@@ -223,6 +223,7 @@ type GetDataSeriesArgs struct {
 	IncludeDeleted      bool
 	BackfillIncomplete  bool
 	SeriesID            string
+	GlobalOnly          bool
 }
 
 func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
@@ -245,6 +246,9 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	}
 	if len(args.SeriesID) > 0 {
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
+	}
+	if args.GlobalOnly {
+		preds = append(preds, sqlf.Sprintf("repositories is null"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -271,6 +275,8 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.LastSnapshotAt,
 			&temp.NextSnapshotAfter,
 			&temp.Enabled,
+			&temp.SampleIntervalUnit,
+			&temp.SampleIntervalValue,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
@@ -339,6 +345,8 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.Title,
 		view.Description,
 		view.UniqueID,
+		view.Filters.IncludeRepoRegex,
+		view.Filters.ExcludeRepoRegex,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
@@ -352,6 +360,26 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 	err = tx.AddViewGrants(ctx, view, grants)
 	if err != nil {
 		return types.InsightView{}, errors.Wrap(err, "failed to attach view grants")
+	}
+	return view, nil
+}
+
+func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (_ types.InsightView, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return types.InsightView{}, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	row := tx.QueryRow(ctx, sqlf.Sprintf(updateInsightViewSql,
+		view.Title,
+		view.Description,
+		view.Filters.IncludeRepoRegex,
+		view.Filters.ExcludeRepoRegex,
+		view.UniqueID,
+	))
+	if row.Err() != nil {
+		return types.InsightView{}, row.Err()
 	}
 	return view, nil
 }
@@ -425,6 +453,9 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.NextRecordingAfter,
 		series.LastSnapshotAt,
 		series.NextSnapshotAfter,
+		pq.Array(series.Repositories),
+		series.SampleIntervalUnit,
+		series.SampleIntervalValue,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -532,15 +563,21 @@ VALUES (%s, %s, %s, %s);
 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
-INSERT INTO insight_view (title, description, unique_id)
-VALUES (%s, %s, %s)
+INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
+VALUES (%s, %s, %s, %s, %s)
 returning id;`
+
+const updateInsightViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateView
+UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s
+WHERE unique_id = %s;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                            next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
+							sample_interval_unit, sample_interval_value)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
@@ -559,6 +596,8 @@ ORDER BY iv.unique_id, i.series_id
 
 const getInsightDataSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDataSeries
-select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after, last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled from insight_series
+select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
+last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
+sample_interval_unit, sample_interval_value from insight_series
 WHERE %s
 `

@@ -19,7 +19,7 @@ export function useDashboardSelectHandler(): SelectHandler {
             return
         }
 
-        if (isSettingsBasedInsightsDashboard(dashboard)) {
+        if (isSettingsBasedInsightsDashboard(dashboard) && dashboard.settingsKey) {
             history.push(`/insights/dashboards/${dashboard.settingsKey}`)
 
             return

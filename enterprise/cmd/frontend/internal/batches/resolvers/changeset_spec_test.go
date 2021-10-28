@@ -27,7 +27,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	userID := ct.CreateTestUser(t, db, false).ID
 
@@ -55,7 +55,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
 	mockBackendCommits(t, testRev)
 
-	batchSpec, err := btypes.NewBatchSpecFromRaw(`name: awesome-test`)
+	batchSpec, err := btypes.NewBatchSpecFromRaw(`name: awesome-test`, true)
 	if err != nil {
 		t.Fatal(err)
 	}

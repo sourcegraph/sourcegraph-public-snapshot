@@ -107,28 +107,21 @@ exports[`GlobalNavbar default 1`] = `
               tabindex="-1"
             >
               <a
-                class="dropdown-item"
+                class="dropdown-item showOnTouchScreen"
                 to="/search"
               >
-                <span
-                  class=""
-                >
-                  Search home
-                </span>
+                Search home
               </a>
               <a
                 class="dropdown-item"
+                role="menuitem"
                 to="/contexts"
               >
+                Contexts 
                 <span
-                  class="pl-2"
+                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                 >
-                  Contexts 
-                  <span
-                    class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                  >
-                    new
-                  </span>
+                  new
                 </span>
               </a>
             </div>
@@ -388,28 +381,21 @@ exports[`GlobalNavbar low-profile 1`] = `
               tabindex="-1"
             >
               <a
-                class="dropdown-item"
+                class="dropdown-item showOnTouchScreen"
                 to="/search"
               >
-                <span
-                  class=""
-                >
-                  Search home
-                </span>
+                Search home
               </a>
               <a
                 class="dropdown-item"
+                role="menuitem"
                 to="/contexts"
               >
+                Contexts 
                 <span
-                  class="pl-2"
+                  class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
                 >
-                  Contexts 
-                  <span
-                    class="badge badgeCapitalized d-inline-flex align-items-center badge-info ml-1"
-                  >
-                    new
-                  </span>
+                  new
                 </span>
               </a>
             </div>

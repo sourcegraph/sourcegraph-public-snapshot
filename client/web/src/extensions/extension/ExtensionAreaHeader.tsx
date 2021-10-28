@@ -113,7 +113,7 @@ export const ExtensionAreaHeader: React.FunctionComponent<ExtensionAreaHeaderPro
                                         </div>
                                     )}
                                     {showCta && (
-                                        <div className={classNames('alert alert-info mb-0 px-2 py-1', styles.alert)}>
+                                        <div className={classNames('alert alert-info mb-0 py-1', styles.alert)}>
                                             An account is required to create and configure extensions.{' '}
                                             <Link to="/sign-up" className="alert-link">
                                                 Register now!

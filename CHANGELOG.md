@@ -16,14 +16,16 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added documentation for merging site-config files. Available since 3.32 [#21220](https://github.com/sourcegraph/sourcegraph/issues/21220)
+- Added site config variable `cloneProgressLog` to optionally enable logging of clone progress to temporary files for debugging. Disabled by default. [#26568](https://github.com/sourcegraph/sourcegraph/pull/26568)
 
 ### Changed
 
 - Removed liveness probes from Kubernetes Prometheus deployment [#2970](https://github.com/sourcegraph/deploy-sourcegraph/pull/2970)
+- Batch Changes now requests the `workflow` scope on GitHub personal access tokens to allow batch changes to write to the `.github` directory in repositories. If you have already configured a GitHub PAT for use with Batch Changes, we suggest adding the scope to the others already granted. [#26606](https://github.com/sourcegraph/sourcegraph/issues/26606)
 
 ### Fixed
 
--
+- An issue that causes the server to panic when performing a structural search via the GQL API for a query that also matches missing repos (affected versions 3.33.0 and 3.32.0). [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
 
 ### Removed
 

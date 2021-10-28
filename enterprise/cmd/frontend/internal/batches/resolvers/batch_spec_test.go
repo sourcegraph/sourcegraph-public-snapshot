@@ -34,7 +34,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(cstore)
@@ -51,7 +51,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	adminID := ct.CreateTestUser(t, db, true).ID
 	orgID := ct.InsertTestOrg(t, db, orgname)
 
-	spec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	spec, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -166,7 +166,7 @@ func TestBatchSpecResolver(t *testing.T) {
 
 	// Now create an updated changeset spec and check that we get a superseding
 	// batch spec.
-	sup, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec)
+	sup, err := btypes.NewBatchSpecFromRaw(ct.TestRawBatchSpec, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,7 +260,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	now := timeutil.Now().Truncate(time.Second)
 	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
@@ -304,10 +304,8 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", admin.Username, apiID)
 	codeHosts := apitest.BatchChangesCodeHostsConnection{
-		TotalCount: 1,
-		Nodes: []apitest.BatchChangesCodeHost{
-			{ExternalServiceKind: "GITHUB", ExternalServiceURL: "https://github.com/"},
-		},
+		TotalCount: 0,
+		Nodes:      []apitest.BatchChangesCodeHost{},
 	}
 	want := apitest.BatchSpec{
 		Typename: "BatchSpec",
@@ -396,8 +394,11 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	want.ApplyURL = nil
 
 	// 1/3 jobs is failed, 2/3 completed
+	message1 := "failure message"
+	jobs[1].FailureMessage = &message1
 	setJobFailed(t, ctx, bstore, jobs[1])
 	want.State = "FAILED"
+	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 1/3 jobs is failed, 2/3 still processing
@@ -413,6 +414,7 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 	setJobCanceling(t, ctx, bstore, jobs[2])
 
 	want.State = "CANCELING"
+	want.FailureMessage = ""
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 
 	// 3/3 canceling and failed
@@ -425,6 +427,12 @@ func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
 
 	want.State = "CANCELED"
 	want.FinishedAt = graphqlbackend.DateTime{Time: jobs[0].FinishedAt}
+	want.FailureMessage = `Failures:
+
+* canceled
+* canceled
+* canceled
+`
 	queryAndAssertBatchSpec(t, adminCtx, s, apiID, want)
 }
 
@@ -450,6 +458,7 @@ func setJobProcessing(t *testing.T, ctx context.Context, s *store.Store, job *bt
 	}
 	job.FinishedAt = time.Time{}
 	job.Cancel = false
+	job.FailureMessage = nil
 	ct.UpdateJobState(t, ctx, s, job)
 }
 
@@ -463,6 +472,7 @@ func setJobCompleted(t *testing.T, ctx context.Context, s *store.Store, job *bty
 		job.FinishedAt = time.Now()
 	}
 	job.Cancel = false
+	job.FailureMessage = nil
 	ct.UpdateJobState(t, ctx, s, job)
 }
 
@@ -476,6 +486,10 @@ func setJobFailed(t *testing.T, ctx context.Context, s *store.Store, job *btypes
 		job.FinishedAt = time.Now()
 	}
 	job.Cancel = false
+	if job.FailureMessage == nil {
+		failed := "job failed"
+		job.FailureMessage = &failed
+	}
 	ct.UpdateJobState(t, ctx, s, job)
 }
 
@@ -487,6 +501,7 @@ func setJobCanceling(t *testing.T, ctx context.Context, s *store.Store, job *bty
 	}
 	job.FinishedAt = time.Time{}
 	job.Cancel = true
+	job.FailureMessage = nil
 	ct.UpdateJobState(t, ctx, s, job)
 }
 
@@ -500,6 +515,8 @@ func setJobCanceled(t *testing.T, ctx context.Context, s *store.Store, job *btyp
 		job.FinishedAt = time.Now()
 	}
 	job.Cancel = true
+	canceled := "canceled"
+	job.FailureMessage = &canceled
 	ct.UpdateJobState(t, ctx, s, job)
 }
 
@@ -599,6 +616,7 @@ query($batchSpec: ID!) {
       }
       startedAt
       finishedAt
+      failureMessage
     }
   }
 }

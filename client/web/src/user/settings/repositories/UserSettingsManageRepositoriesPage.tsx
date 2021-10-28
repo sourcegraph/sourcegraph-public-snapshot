@@ -763,7 +763,7 @@ export const UserSettingsManageRepositoriesPage: React.FunctionComponent<Props> 
         <div className="user-settings-repos">
             <PageTitle title="Manage Repositories" />
             <h2 className="d-flex mb-2">
-                Manage Repositories <Badge status="beta" className="ml-2" />
+                Manage Repositories <Badge status="beta" className="ml-2" useLink={true} />
             </h2>
             <p className="text-muted">
                 Choose repositories to sync with Sourcegraph.

@@ -28,7 +28,7 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	orgStore *database.OrgStore
+	orgStore database.OrgStore
 	args     *graphqlbackend.InsightsDashboardsArgs
 
 	baseInsightResolver
@@ -162,6 +162,9 @@ type DashboardInsightViewConnectionResolver struct {
 
 func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
 	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
+	if len(d.ids) == 0 {
+		return resolvers, nil
+	}
 	views, err := d.insightStore.GetMapped(ctx, store.InsightQueryArgs{UniqueIDs: d.ids, WithoutAuthorization: true})
 	if err != nil {
 		return nil, err

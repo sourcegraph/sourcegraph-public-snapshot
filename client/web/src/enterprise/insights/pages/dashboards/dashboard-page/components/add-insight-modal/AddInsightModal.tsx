@@ -3,6 +3,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import CloseIcon from 'mdi-react/CloseIcon'
 import React, { useContext, useMemo } from 'react'
+import { of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { asError } from '@sourcegraph/shared/src/util/errors'
@@ -27,8 +28,12 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const { dashboard, onClose } = props
     const { getReachableInsights, updateDashboard } = useContext(CodeInsightsBackendContext)
 
+    if (!dashboard.owner) {
+        throw new Error('TODO: Update this to visibility default')
+    }
+
     const insights = useObservable(
-        useMemo(() => getReachableInsights(dashboard.owner.id), [dashboard.owner.id, getReachableInsights])
+        useMemo(() => getReachableInsights(dashboard.owner!.id) || of([]), [dashboard.owner, getReachableInsights])
     )
 
     const initialValues = useMemo<AddInsightFormValues>(
@@ -42,6 +47,10 @@ export const AddInsightModal: React.FunctionComponent<AddInsightModalProps> = pr
     const handleSubmit = async (values: AddInsightFormValues): Promise<void | SubmissionErrors> => {
         try {
             const { insightIds } = values
+
+            if (!dashboard.owner) {
+                throw new Error('TODO: Update this to visibility default')
+            }
 
             await updateDashboard({
                 previousDashboard: dashboard,

@@ -38,10 +38,13 @@ func rawArgs(args Args) (rawArgs []string) {
 	}
 	rawArgs = append(rawArgs, "-json-lines")
 
-	if args.MatchOnly {
+	switch args.ResultKind {
+	case MatchOnly:
 		rawArgs = append(rawArgs, "-match-only")
-	} else {
+	case Diff:
 		rawArgs = append(rawArgs, "-json-only-diff")
+	case Replacement:
+		// Output contains replacement data in rewritten_source of JSON.
 	}
 
 	if args.NumWorkers == 0 {
@@ -59,6 +62,8 @@ func rawArgs(args Args) (rawArgs []string) {
 		rawArgs = append(rawArgs, "-zip", string(i))
 	case DirPath:
 		rawArgs = append(rawArgs, "-directory", string(i))
+	case FileContent:
+		rawArgs = append(rawArgs, "-stdin")
 	default:
 		log15.Error("unrecognized input type", "type", i)
 		panic("unreachable")
@@ -125,6 +130,10 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	// Ensure forked child processes are killed
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 
+	if content, ok := args.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewReader(content)
+	}
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log15.Error("could not connect to comby command stdout", "error", err.Error())
@@ -161,15 +170,29 @@ func PipeTo(ctx context.Context, args Args, w io.Writer) (err error) {
 	return nil
 }
 
-// Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
-	defer span.Finish()
+type unmarshaller func([]byte) Result
 
+func toFileMatch(b []byte) Result {
+	var m *FileMatch
+	if err := json.Unmarshal(b, &m); err != nil {
+		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		return nil
+	}
+	return m
+}
+
+func toFileReplacement(b []byte) Result {
+	var r *FileReplacement
+	if err := json.Unmarshal(b, &r); err != nil {
+		log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
+		return nil
+	}
+	return r
+}
+
+func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
 	b := new(bytes.Buffer)
 	w := bufio.NewWriter(b)
-
-	args.MatchOnly = true
 
 	err = PipeTo(ctx, args, w)
 	if err != nil {
@@ -186,17 +209,46 @@ func Matches(ctx context.Context, args Args) (matches []FileMatch, err error) {
 			log15.Warn("comby error: skipping scanner error line", "err", err.Error())
 			continue
 		}
-		var m *FileMatch
-		if err := json.Unmarshal(b, &m); err != nil {
-			// warn on decode errors and skip
-			log15.Warn("comby error: skipping unmarshaling error", "err", err.Error())
-			continue
+		if r := unmarshal(b); r != nil {
+			results = append(results, r)
 		}
-		matches = append(matches, *m)
 	}
 
-	if len(matches) > 0 {
-		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(matches)))
+	if len(results) > 0 {
+		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
+	}
+	return results, nil
+}
+
+// Matches returns all matches in all files for which comby finds matches.
+func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches")
+	defer span.Finish()
+
+	args.ResultKind = MatchOnly
+	results, err := Run(ctx, args, toFileMatch)
+	if err != nil {
+		return nil, err
+	}
+	var matches []*FileMatch
+	for _, r := range results {
+		matches = append(matches, r.(*FileMatch))
+	}
+	return matches, nil
+}
+
+// Replacements returns all matches in all files for which comby finds matches.
+func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements")
+	defer span.Finish()
+
+	results, err := Run(ctx, args, toFileReplacement)
+	if err != nil {
+		return nil, err
+	}
+	var matches []*FileReplacement
+	for _, r := range results {
+		matches = append(matches, r.(*FileReplacement))
 	}
 	return matches, nil
 }

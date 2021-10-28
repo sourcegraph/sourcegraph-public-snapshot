@@ -30,32 +30,47 @@ func (e *OrgNotFoundError) NotFound() bool {
 
 var errOrgNameAlreadyExists = errors.New("organization name is already taken (by a user or another organization)")
 
-type OrgStore struct {
+type OrgStore interface {
+	Count(context.Context, OrgsListOptions) (int, error)
+	Create(ctx context.Context, name string, displayName *string) (*types.Org, error)
+	Delete(ctx context.Context, id int32) (err error)
+	Done(error) error
+	GetByID(ctx context.Context, orgID int32) (*types.Org, error)
+	GetByName(context.Context, string) (*types.Org, error)
+	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
+	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
+	Transact(context.Context) (OrgStore, error)
+	Update(ctx context.Context, id int32, displayName *string) (*types.Org, error)
+	With(basestore.ShareableStore) OrgStore
+	basestore.ShareableStore
+}
+
+type orgStore struct {
 	*basestore.Store
 }
 
 // Orgs instantiates and returns a new OrgStore with prepared statements.
-func Orgs(db dbutil.DB) *OrgStore {
-	return &OrgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Orgs(db dbutil.DB) OrgStore {
+	return &orgStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
-// NewOrgStoreWithDB instantiates and returns a new OrgStore using the other store handle.
-func OrgsWith(other basestore.ShareableStore) *OrgStore {
-	return &OrgStore{Store: basestore.NewWithHandle(other.Handle())}
+// OrgsWith instantiates and returns a new OrgStore using the other store handle.
+func OrgsWith(other basestore.ShareableStore) OrgStore {
+	return &orgStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (o *OrgStore) With(other basestore.ShareableStore) *OrgStore {
-	return &OrgStore{Store: o.Store.With(other)}
+func (o *orgStore) With(other basestore.ShareableStore) OrgStore {
+	return &orgStore{Store: o.Store.With(other)}
 }
 
-func (o *OrgStore) Transact(ctx context.Context) (*OrgStore, error) {
+func (o *orgStore) Transact(ctx context.Context) (OrgStore, error) {
 	txBase, err := o.Store.Transact(ctx)
-	return &OrgStore{Store: txBase}, err
+	return &orgStore{Store: txBase}, err
 }
 
 // GetByUserID returns a list of all organizations for the user. An empty slice is
 // returned if the user is not authenticated or is not a member of any org.
-func (o *OrgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
 	if Mocks.Orgs.GetByUserID != nil {
 		return Mocks.Orgs.GetByUserID(ctx, userID)
 	}
@@ -82,7 +97,7 @@ func (o *OrgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org,
 	return orgs, nil
 }
 
-func (o *OrgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
+func (o *orgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error) {
 	if Mocks.Orgs.GetByID != nil {
 		return Mocks.Orgs.GetByID(ctx, orgID)
 	}
@@ -96,7 +111,7 @@ func (o *OrgStore) GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 	return orgs[0], nil
 }
 
-func (o *OrgStore) GetByName(ctx context.Context, name string) (*types.Org, error) {
+func (o *orgStore) GetByName(ctx context.Context, name string) (*types.Org, error) {
 	if Mocks.Orgs.GetByName != nil {
 		return Mocks.Orgs.GetByName(ctx, name)
 	}
@@ -110,7 +125,7 @@ func (o *OrgStore) GetByName(ctx context.Context, name string) (*types.Org, erro
 	return orgs[0], nil
 }
 
-func (o *OrgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
+func (o *orgStore) Count(ctx context.Context, opt OrgsListOptions) (int, error) {
 	if Mocks.Orgs.Count != nil {
 		return Mocks.Orgs.Count(ctx, opt)
 	}
@@ -132,7 +147,7 @@ type OrgsListOptions struct {
 	*LimitOffset
 }
 
-func (o *OrgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error) {
+func (o *orgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org, error) {
 	if Mocks.Orgs.List != nil {
 		return Mocks.Orgs.List(ctx, opt)
 	}
@@ -144,7 +159,7 @@ func (o *OrgStore) List(ctx context.Context, opt *OrgsListOptions) ([]*types.Org
 	return o.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 }
 
-func (*OrgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
+func (*orgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if opt.Query != "" {
 		query := "%" + opt.Query + "%"
@@ -153,7 +168,7 @@ func (*OrgStore) listSQL(opt OrgsListOptions) *sqlf.Query {
 	return sqlf.Sprintf("(%s)", sqlf.Join(conds, ") AND ("))
 }
 
-func (o *OrgStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
+func (o *orgStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.Org, error) {
 	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT id, name, display_name, created_at, updated_at FROM orgs "+query, args...)
 	if err != nil {
 		return nil, err
@@ -176,7 +191,7 @@ func (o *OrgStore) getBySQL(ctx context.Context, query string, args ...interface
 	return orgs, nil
 }
 
-func (o *OrgStore) Create(ctx context.Context, name string, displayName *string) (newOrg *types.Org, err error) {
+func (o *orgStore) Create(ctx context.Context, name string, displayName *string) (newOrg *types.Org, err error) {
 	tx, err := o.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -219,7 +234,7 @@ func (o *OrgStore) Create(ctx context.Context, name string, displayName *string)
 	return newOrg, nil
 }
 
-func (o *OrgStore) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
+func (o *orgStore) Update(ctx context.Context, id int32, displayName *string) (*types.Org, error) {
 	org, err := o.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -243,7 +258,7 @@ func (o *OrgStore) Update(ctx context.Context, id int32, displayName *string) (*
 	return org, nil
 }
 
-func (o *OrgStore) Delete(ctx context.Context, id int32) (err error) {
+func (o *orgStore) Delete(ctx context.Context, id int32) (err error) {
 	// Wrap in transaction because we delete from multiple tables.
 	tx, err := o.Transact(ctx)
 	if err != nil {

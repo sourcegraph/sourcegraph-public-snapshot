@@ -16,7 +16,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
+var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -34,6 +34,29 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.cancel",
 
 	"exec.place_in_queue",
+
+	"batch_spec_workspace_execution_jobs.created_at",
+	"batch_spec_workspace_execution_jobs.updated_at",
+}
+
+var BatchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
+	"batch_spec_workspace_execution_jobs.id",
+
+	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
+	"batch_spec_workspace_execution_jobs.access_token_id",
+
+	"batch_spec_workspace_execution_jobs.state",
+	"batch_spec_workspace_execution_jobs.failure_message",
+	"batch_spec_workspace_execution_jobs.started_at",
+	"batch_spec_workspace_execution_jobs.finished_at",
+	"batch_spec_workspace_execution_jobs.process_after",
+	"batch_spec_workspace_execution_jobs.num_resets",
+	"batch_spec_workspace_execution_jobs.num_failures",
+	"batch_spec_workspace_execution_jobs.execution_logs",
+	"batch_spec_workspace_execution_jobs.worker_hostname",
+	"batch_spec_workspace_execution_jobs.cancel",
+
+	"NULL AS place_in_queue",
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
@@ -140,7 +163,7 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 
 	return sqlf.Sprintf(
 		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -148,11 +171,13 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 // ListBatchSpecWorkspaceExecutionJobsOpts captures the query options needed for
 // listing batch spec workspace execution jobs.
 type ListBatchSpecWorkspaceExecutionJobsOpts struct {
-	Cancel                *bool
-	State                 btypes.BatchSpecWorkspaceExecutionJobState
-	WorkerHostname        string
-	BatchSpecWorkspaceIDs []int64
-	IDs                   []int64
+	Cancel                 *bool
+	State                  btypes.BatchSpecWorkspaceExecutionJobState
+	WorkerHostname         string
+	BatchSpecWorkspaceIDs  []int64
+	IDs                    []int64
+	OnlyWithFailureMessage bool
+	BatchSpecID            int64
 }
 
 // ListBatchSpecWorkspaceExecutionJobs lists batch changes with the given filters.
@@ -176,19 +201,20 @@ func (s *Store) ListBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts Li
 }
 
 var listBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListBatchSpecWorkspaceExecutionJobs
 SELECT
 	%s
 FROM
 	batch_spec_workspace_execution_jobs
 LEFT JOIN (` + executionPlaceInQueueFragment + `) as exec ON batch_spec_workspace_execution_jobs.id = exec.id
+%s       -- joins
 WHERE
-	%s
+	%s   -- preds
 ORDER BY batch_spec_workspace_execution_jobs.id ASC
 `
 
 func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
 	var preds []*sqlf.Query
+	var joins []*sqlf.Query
 
 	if opts.State != "" {
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
@@ -210,13 +236,24 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
 
+	if opts.OnlyWithFailureMessage {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state IN ('errored', 'failed')"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.failure_message IS NOT NULL"))
+	}
+
+	if opts.BatchSpecID != 0 {
+		joins = append(joins, sqlf.Sprintf("JOIN batch_spec_workspaces ON batch_spec_workspace_execution_jobs.batch_spec_workspace_id = batch_spec_workspaces.id"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
+	}
+
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	return sqlf.Sprintf(
 		listBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
+		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -319,7 +356,7 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		s.now(),
 		s.now(),
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 	)
 }
 

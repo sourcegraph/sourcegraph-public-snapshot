@@ -50,6 +50,11 @@
       "default": 1.0,
       "additionalProperties": false
     },
+    "cloneProgress.log": {
+      "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
+      "type": "boolean",
+      "default": false
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",

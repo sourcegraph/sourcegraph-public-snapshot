@@ -151,6 +151,11 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *sync.
 		defer wg.Done()
 
 		scanner := bufio.NewScanner(r)
+		// Allocate an initial buffer of 4k.
+		buf := make([]byte, 4*1024)
+		// And set the maximum size used to buffer a token to 100M.
+		// TODO: Tweak this value as needed.
+		scanner.Buffer(buf, 100*1024*1024)
 		for scanner.Scan() {
 			fmt.Fprintf(logWriter, "%s: %s\n", prefix, scanner.Text())
 		}

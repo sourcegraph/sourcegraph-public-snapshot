@@ -1,7 +1,7 @@
 import classNames from 'classnames'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArrowLeftBoldIcon from 'mdi-react/ArrowLeftBoldIcon'
 import ArrowRightBoldIcon from 'mdi-react/ArrowRightBoldIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useMemo } from 'react'
 import { RouteComponentProps } from 'react-router'
@@ -204,7 +204,7 @@ interface MigrationInvalidBannerProps {
 const MigrationInvalidBanner: React.FunctionComponent<MigrationInvalidBannerProps> = ({ migrations }) => (
     <div className="alert alert-danger">
         <p>
-            <ErrorIcon className="icon-inline mr-2" />
+            <AlertCircleIcon className="icon-inline mr-2" />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}

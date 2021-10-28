@@ -9,6 +9,7 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { BreadcrumbsProps, BreadcrumbSetters } from './components/Breadcrumbs'
 import type { LayoutProps } from './Layout'
 import type { ExtensionAlertProps } from './repo/RepoContainer'
+import { PageRoutes } from './routes.constants'
 import { ThemePreferenceProps } from './theme'
 import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { lazyComponent } from './util/lazyComponent'
@@ -69,38 +70,38 @@ function passThroughToServer(): React.ReactNode {
  */
 export const routes: readonly LayoutRouteProps<any>[] = [
     {
-        path: '/',
+        path: PageRoutes.Index,
         render: () => <Redirect to="/search" />,
         exact: true,
     },
     {
-        path: '/search',
+        path: PageRoutes.Search,
         render: props => (props.parsedSearchQuery ? <StreamingSearchResults {...props} /> : <SearchPage {...props} />),
         exact: true,
     },
     {
-        path: '/search/console',
+        path: PageRoutes.SearchConsole,
         render: props =>
             props.showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to="/search" />,
         exact: true,
     },
     {
-        path: '/search/notebook',
+        path: PageRoutes.SearchNotebook,
         render: props => (props.showSearchNotebook ? <SearchNotebookPage {...props} /> : <Redirect to="/search" />),
         exact: true,
     },
     {
-        path: '/sign-in',
+        path: PageRoutes.SignIn,
         render: props => <SignInPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: '/sign-up',
+        path: PageRoutes.SignUp,
         render: props => <SignUpPage {...props} context={window.context} />,
         exact: true,
     },
     {
-        path: '/welcome',
+        path: PageRoutes.Welcome,
         render: props =>
             /**
              * Welcome flow is allowed when:
@@ -130,24 +131,24 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         exact: true,
     },
     {
-        path: '/settings',
+        path: PageRoutes.Settings,
         render: lazyComponent(() => import('./user/settings/RedirectToUserSettings'), 'RedirectToUserSettings'),
     },
     {
-        path: '/user',
+        path: PageRoutes.User,
         render: lazyComponent(() => import('./user/settings/RedirectToUserPage'), 'RedirectToUserPage'),
     },
     {
-        path: '/organizations',
+        path: PageRoutes.Organizations,
         render: lazyComponent(() => import('./org/OrgsArea'), 'OrgsArea'),
     },
     {
-        path: '/site-admin/init',
+        path: PageRoutes.SiteAdminInit,
         exact: true,
         render: props => <SiteInitPage {...props} context={window.context} />,
     },
     {
-        path: '/site-admin',
+        path: PageRoutes.SiteAdmin,
         render: props => (
             <SiteAdminArea
                 {...props}
@@ -158,38 +159,38 @@ export const routes: readonly LayoutRouteProps<any>[] = [
         ),
     },
     {
-        path: '/password-reset',
+        path: PageRoutes.PasswordReset,
         render: lazyComponent(() => import('./auth/ResetPasswordPage'), 'ResetPasswordPage'),
         exact: true,
     },
     {
-        path: '/api/console',
+        path: PageRoutes.ApiConsole,
         render: lazyComponent(() => import('./api/ApiConsole'), 'ApiConsole'),
         exact: true,
     },
     {
-        path: '/users/:username',
+        path: PageRoutes.UserArea,
         render: lazyComponent(() => import('./user/area/UserArea'), 'UserArea'),
     },
     {
-        path: '/survey/:score?',
+        path: PageRoutes.Survey,
         render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
     },
     {
-        path: '/extensions',
+        path: PageRoutes.Extensions,
         render: props => <ExtensionsArea {...props} routes={props.extensionsAreaRoutes} />,
     },
     {
-        path: '/help',
+        path: PageRoutes.Help,
         render: passThroughToServer,
     },
     {
-        path: '/-/debug/*',
+        path: PageRoutes.Debug,
         render: passThroughToServer,
     },
     ...communitySearchContextsRoutes,
     {
-        path: '/:repoRevAndRest+',
+        path: PageRoutes.RepoContainer,
         render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
     },
 ]

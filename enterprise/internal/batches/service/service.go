@@ -153,7 +153,7 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, true)
 	if err != nil {
 		return nil, err
 	}
@@ -241,7 +241,7 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	}})
 	defer endObservation(1, observation.Args{})
 
-	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
 	if err != nil {
 		return nil, err
 	}
@@ -503,7 +503,7 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 	defer endObservation(1, observation.Args{})
 
 	// Before we hit the database, validate the new spec.
-	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec)
+	newSpec, err := btypes.NewBatchSpecFromRaw(opts.RawSpec, false)
 	if err != nil {
 		return nil, err
 	}

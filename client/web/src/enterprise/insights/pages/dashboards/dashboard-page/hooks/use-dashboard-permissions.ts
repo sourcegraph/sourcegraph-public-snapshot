@@ -100,6 +100,9 @@ export function getTooltipMessage(
                     return "This is an automatically created dashboard that lists all your private insights. You can't edit this dashboard."
                 case InsightsDashboardType.Organization:
                 case InsightsDashboardType.Global:
+                    if (!dashboard.owner) {
+                        throw new Error('TODO: support GraphQL API')
+                    }
                     return `This is an automatically created dashboard that lists all ${dashboard.owner.name} insights. You can't edit this dashboard.`
             }
         case DashboardReasonDenied.AllVirtualDashboard:
