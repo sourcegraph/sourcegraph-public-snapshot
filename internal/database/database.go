@@ -12,6 +12,7 @@ import (
 type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
+	EventLogs() EventLogStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
 	OrgMembers() OrgMemberStore
@@ -42,6 +43,10 @@ var _ DB = (*db)(nil)
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
+}
+
+func (d *db) EventLogs() EventLogStore {
+	return EventLogs(d.DB)
 }
 
 func (d *db) Namespaces() NamespaceStore {
