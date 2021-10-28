@@ -342,7 +342,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 
 func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
 	for i := range inputSeries {
-		if inputSeries == nil || inputSeries[i].SeriesId == nil {
+		if inputSeries[i].SeriesId == nil {
 			continue
 		}
 		if existingSeries.SeriesID == *inputSeries[i].SeriesId {
