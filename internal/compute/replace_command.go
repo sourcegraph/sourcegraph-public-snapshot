@@ -41,7 +41,7 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 	default:
 		return nil, errors.Errorf("unsupported replacement operation for match pattern %T", match)
 	}
-	return &Text{Value: string(newContent), Kind: "replace-in-place"}, nil
+	return &Text{Value: newContent, Kind: "replace-in-place"}, nil
 }
 
 func (c *Replace) Run(ctx context.Context, fm *result.FileMatch) (Result, error) {
