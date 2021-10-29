@@ -38,7 +38,7 @@ type RepositoryResolver struct {
 	// because it may cause a race during hydration.
 	result.RepoMatch
 
-	db dbutil.DB
+	db database.DB
 
 	// innerRepo may only contain ID and Name information.
 	// To access any other repo information, use repo() instead.
@@ -49,7 +49,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(db dbutil.DB, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -318,7 +318,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
-		repo, r.err = database.Repos(r.db).Get(ctx, r.IDInt32())
+		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
 		if r.err == nil {
 			r.innerRepo = repo
 		}
@@ -420,7 +420,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(r.db, repo)
+		r := NewRepositoryResolver(database.NewDB(r.db), repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 

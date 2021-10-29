@@ -252,7 +252,7 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	store := ExternalAccountsWith(tx)
-	accounts, err := store.listBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL) ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
+	accounts, err := store.ListBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL) ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
 	}
@@ -331,7 +331,7 @@ func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 	defer func() { err = tx.Done(err) }()
 
 	store := ExternalAccountsWith(tx)
-	accounts, err := store.listBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id != '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
+	accounts, err := store.ListBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id != '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
 	}

@@ -1200,7 +1200,7 @@ type SearchContext struct {
 
 	// NamespaceUserName is the name of the user if NamespaceUserID is present.
 	NamespaceUserName string
-	// NamespaceUserName is the name of the org if NamespaceOrgID is present.
+	// NamespaceOrgName is the name of the org if NamespaceOrgID is present.
 	NamespaceOrgName string
 }
 

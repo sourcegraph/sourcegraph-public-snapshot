@@ -59,7 +59,7 @@ func TestTextSearchRank(t *testing.T) {
 		subStringMatches bool
 		want             autogold.Value
 	}{
-		{"", true, autogold.Want("empty string", [2]interface{}{"", []interface{}{}})},
+		{"", true, autogold.Want("empty string", [2]interface{}{"0", []interface{}{}})},
 		{"mux Router", true, autogold.Want("basic", [2]interface{}{
 			"ts_rank_cd(column, $1, 2) + ts_rank_cd(column, $2, 2)",
 			[]interface{}{
@@ -72,8 +72,8 @@ func TestTextSearchRank(t *testing.T) {
 			[]interface{}{
 				"public:*",
 				"struct:*",
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-				"mux:* <-> .:* <-> Router:*",
+				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*",
+				"mux <-> . <-> Router:*",
 			},
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]interface{}{
@@ -102,17 +102,9 @@ func TestTextSearchQuery(t *testing.T) {
 		subStringMatches bool
 		want             autogold.Value
 	}{
-		{"", true, autogold.Want("empty string", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
-			[]interface{}{
-				"",
-				"",
-				"",
-				"",
-			},
-		})},
+		{"", true, autogold.Want("empty string", [2]interface{}{"false", []interface{}{}})},
 		{"mux Router", true, autogold.Want("basic", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4)",
 			[]interface{}{
 				"mux:* <-> Router:*",
 				"mux:* <2> Router:*",
@@ -120,46 +112,92 @@ func TestTextSearchQuery(t *testing.T) {
 				"mux:* <5> Router:*",
 			},
 		})},
-		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
-			[]interface{}{
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-				"github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:*",
-			},
-		})},
+		{"github.com/gorilla/mux", true, autogold.Want("whole query terms are matched in exact sequence using <->", [2]interface{}{"(column @@ $1)", []interface{}{"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*"}})},
 		{"github.com gorilla mux", true, autogold.Want("separate query terms are matched even if there is distance between using <N>", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5)",
 			[]interface{}{
-				"github:* <-> .:* <-> com:* <-> gorilla:* <-> mux:*",
-				"github:* <-> .:* <-> com:* <2> gorilla:* <2> mux:*",
-				"github:* <-> .:* <-> com:* <4> gorilla:* <4> mux:*",
-				"github:* <-> .:* <-> com:* <5> gorilla:* <5> mux:*",
+				"github <-> . <-> com:*",
+				"gorilla:* <-> mux:*",
+				"gorilla:* <2> mux:*",
+				"gorilla:* <4> mux:*",
+				"gorilla:* <5> mux:*",
 			},
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", true, autogold.Want("complex", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5 OR column @@ $6)",
 			[]interface{}{
-				"public:* <-> struct:* <-> github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:* <-> mux:* <-> .:* <-> Router:*",
-				"public:* <2> struct:* <2> github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:* <2> mux:* <-> .:* <-> Router:*",
-				"public:* <4> struct:* <4> github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:* <4> mux:* <-> .:* <-> Router:*",
-				"public:* <5> struct:* <5> github:* <-> .:* <-> com:* <-> /:* <-> gorilla:* <-> /:* <-> mux:* <5> mux:* <-> .:* <-> Router:*",
+				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux:*",
+				"mux <-> . <-> Router:*",
+				"public:* <-> struct:*",
+				"public:* <2> struct:*",
+				"public:* <4> struct:*",
+				"public:* <5> struct:*",
 			},
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", false, autogold.Want("complex no substring matching", [2]interface{}{
-			"column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4",
+			"(column @@ $1 OR column @@ $2 OR column @@ $3 OR column @@ $4 OR column @@ $5 OR column @@ $6)",
 			[]interface{}{
-				"public <-> struct <-> github <-> . <-> com <-> / <-> gorilla <-> / <-> mux <-> mux <-> . <-> Router",
-				"public <2> struct <2> github <-> . <-> com <-> / <-> gorilla <-> / <-> mux <2> mux <-> . <-> Router",
-				"public <4> struct <4> github <-> . <-> com <-> / <-> gorilla <-> / <-> mux <4> mux <-> . <-> Router",
-				"public <5> struct <5> github <-> . <-> com <-> / <-> gorilla <-> / <-> mux <5> mux <-> . <-> Router",
+				"github <-> . <-> com <-> / <-> gorilla <-> / <-> mux",
+				"mux <-> . <-> Router",
+				"public <-> struct",
+				"public <2> struct",
+				"public <4> struct",
+				"public <5> struct",
 			},
 		})},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.want.Name(), func(t *testing.T) {
 			q := TextSearchQuery("column", tc.input, tc.subStringMatches)
+			query := q.Query(sqlf.PostgresBindVar)
+			got := [2]interface{}{query, q.Args()}
+			tc.want.Equal(t, got)
+		})
+	}
+}
+
+func TestRepoSearchQuery(t *testing.T) {
+	testCases := []struct {
+		possibleRepos []string
+		want          autogold.Value
+	}{
+		{nil, autogold.Want("empty repos list", [2]interface{}{"false", []interface{}{}})},
+		{
+			[]string{"golang/go"},
+			autogold.Want("unqualified repo, single", [2]interface{}{
+				"(column @@ $1)",
+				[]interface{}{"golang <-> / <-> go"},
+			}),
+		}, {
+			[]string{"github.com/golang/go"},
+			autogold.Want("qualified repo, single", [2]interface{}{
+				"(column @@ $1)",
+				[]interface{}{"github <-> . <-> com <-> / <-> golang <-> / <-> go"},
+			}),
+		}, {
+			[]string{"golang/go", "net/http"},
+			autogold.Want("unqualified repo and not a repo, should use OR", [2]interface{}{
+				"(column @@ $1 OR column @@ $2)",
+				[]interface{}{"golang <-> / <-> go", "net <-> / <-> http"},
+			}),
+		}, {
+			[]string{"golang/go", "sourcegraph/sourcegraph"},
+			autogold.Want("unqualified repo, multiple, should use OR", [2]interface{}{
+				"(column @@ $1 OR column @@ $2)",
+				[]interface{}{"golang <-> / <-> go", "sourcegraph <-> / <-> sourcegraph"},
+			}),
+		}, {
+			[]string{"github.com/golang/go", "sourcegraph/sourcegraph"},
+			autogold.Want("qualified and unqualified, should use OR", [2]interface{}{
+				"(column @@ $1 OR column @@ $2)", []interface{}{
+					"github <-> . <-> com <-> / <-> golang <-> / <-> go",
+					"sourcegraph <-> / <-> sourcegraph"},
+			}),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.want.Name(), func(t *testing.T) {
+			q := RepoSearchQuery("column", tc.possibleRepos)
 			query := q.Query(sqlf.PostgresBindVar)
 			got := [2]interface{}{query, q.Args()}
 			tc.want.Equal(t, got)
@@ -179,6 +217,9 @@ func TestQuery(t *testing.T) {
 		})},
 		{"github.com/gorilla/mux", autogold.Want("repository name", Query{
 			MetaTerms: "github.com/gorilla/mux", MainTerms: "github.com/gorilla/mux",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 		{"github.com gorilla mux", autogold.Want("repository name as separate terms", Query{
@@ -186,18 +227,34 @@ func TestQuery(t *testing.T) {
 			SubStringMatches: true,
 		})},
 		{"public struct github.com/gorilla/mux mux.Router", autogold.Want("complex query", Query{
-			MetaTerms:        "public struct github.com/gorilla/mux mux.Router",
-			MainTerms:        "public struct github.com/gorilla/mux mux.Router",
+			MetaTerms: "public struct github.com/gorilla/mux mux.Router",
+			MainTerms: "public struct github.com/gorilla/mux mux.Router",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 		{"public struct github.com/gorilla/mux: mux.Router", autogold.Want("metadata separated", Query{
-			MetaTerms:        "public struct github.com/gorilla/mux",
-			MainTerms:        "mux.Router",
+			MetaTerms: "public struct github.com/gorilla/mux",
+			MainTerms: "mux.Router",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
+			SubStringMatches: true,
+		})},
+		{"package gorilla/mux: net/http", autogold.Want("metadata separated, no repos on right side", Query{
+			MetaTerms: "package gorilla/mux", MainTerms: "net/http",
+			PossibleRepos: []string{
+				"gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 		{"public struct github.com/gorilla/mux: mux::Router", autogold.Want("metadata separated, colon later", Query{
-			MetaTerms:        "public struct github.com/gorilla/mux",
-			MainTerms:        "mux::Router",
+			MetaTerms: "public struct github.com/gorilla/mux",
+			MainTerms: "mux::Router",
+			PossibleRepos: []string{
+				"github.com/gorilla/mux",
+			},
 			SubStringMatches: true,
 		})},
 	}

@@ -88,7 +88,7 @@ add('Completed', () => (
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
                 expandStage="srcPreview"
             />
@@ -101,7 +101,7 @@ add('Failed', () => (
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
                 expandStage="srcPreview"
             />

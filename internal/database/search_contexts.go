@@ -19,21 +19,37 @@ import (
 
 var ErrSearchContextNotFound = errors.New("search context not found")
 
-func SearchContexts(db dbutil.DB) *SearchContextsStore {
+func SearchContexts(db dbutil.DB) SearchContextsStore {
 	store := basestore.NewWithDB(db, sql.TxOptions{})
-	return &SearchContextsStore{store}
+	return &searchContextsStore{store}
 }
 
-type SearchContextsStore struct {
+type SearchContextsStore interface {
+	basestore.ShareableStore
+	CountSearchContexts(context.Context, ListSearchContextsOptions) (int32, error)
+	CreateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
+	DeleteSearchContext(context.Context, int64) error
+	Done(error) error
+	Exec(context.Context, *sqlf.Query) error
+	GetAllRevisionsForRepos(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
+	GetSearchContext(context.Context, GetSearchContextOptions) (*types.SearchContext, error)
+	GetSearchContextRepositoryRevisions(context.Context, int64) ([]*types.SearchContextRepositoryRevisions, error)
+	ListSearchContexts(context.Context, ListSearchContextsPageOptions, ListSearchContextsOptions) ([]*types.SearchContext, error)
+	SetSearchContextRepositoryRevisions(context.Context, int64, []*types.SearchContextRepositoryRevisions) error
+	Transact(context.Context) (SearchContextsStore, error)
+	UpdateSearchContextWithRepositoryRevisions(context.Context, *types.SearchContext, []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error)
+}
+
+type searchContextsStore struct {
 	*basestore.Store
 }
 
-func (s *SearchContextsStore) Transact(ctx context.Context) (*SearchContextsStore, error) {
+func (s *searchContextsStore) Transact(ctx context.Context) (SearchContextsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &SearchContextsStore{Store: txBase}, nil
+	return &searchContextsStore{Store: txBase}, nil
 }
 
 const searchContextsPermissionsConditionFmtStr = `(
@@ -195,7 +211,7 @@ func getSearchContextsQueryConditions(opts ListSearchContextsOptions) ([]*sqlf.Q
 	return conds, nil
 }
 
-func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
+func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf.Query, orderBy *sqlf.Query, limit int32, offset int32) ([]*types.SearchContext, error) {
 	permissionsCond, err := searchContextsPermissionsCondition(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err
@@ -208,7 +224,7 @@ func (s *SearchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 	return scanSearchContexts(rows)
 }
 
-func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
+func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
 	if Mocks.SearchContexts.ListSearchContexts != nil {
 		return Mocks.SearchContexts.ListSearchContexts(ctx, pageOpts, opts)
 	}
@@ -221,7 +237,7 @@ func (s *SearchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 	return s.listSearchContexts(ctx, sqlf.Join(conds, "\n AND "), orderBy, pageOpts.First, pageOpts.After)
 }
 
-func (s *SearchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
+func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
 	if Mocks.SearchContexts.CountSearchContexts != nil {
 		return Mocks.SearchContexts.CountSearchContexts(ctx, opts)
 	}
@@ -248,7 +264,7 @@ type GetSearchContextOptions struct {
 	NamespaceOrgID  int32
 }
 
-func (s *SearchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
+func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
 	if Mocks.SearchContexts.GetSearchContext != nil {
 		return Mocks.SearchContexts.GetSearchContext(ctx, opts)
 	}
@@ -292,7 +308,7 @@ DELETE FROM search_contexts WHERE id = %d
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to delete the search context.
-func (s *SearchContextsStore) DeleteSearchContext(ctx context.Context, searchContextID int64) error {
+func (s *searchContextsStore) DeleteSearchContext(ctx context.Context, searchContextID int64) error {
 	return s.Exec(ctx, sqlf.Sprintf(deleteSearchContextFmtStr, searchContextID))
 }
 
@@ -303,14 +319,14 @@ VALUES (%s, %s, %s, %s, %s)
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to create the search context.
-func (s *SearchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (createdSearchContext *types.SearchContext, err error) {
+func (s *searchContextsStore) CreateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (createdSearchContext *types.SearchContext, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	createdSearchContext, err = tx.createSearchContext(ctx, searchContext)
+	createdSearchContext, err = createSearchContext(ctx, tx, searchContext)
 	if err != nil {
 		return nil, err
 	}
@@ -333,14 +349,14 @@ WHERE id = %d
 `
 
 // 🚨 SECURITY: The caller must ensure that the actor is a site admin or has permission to update the search context.
-func (s *SearchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (_ *types.SearchContext, err error) {
+func (s *searchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx context.Context, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (_ *types.SearchContext, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	updatedSearchContext, err := tx.updateSearchContext(ctx, searchContext)
+	updatedSearchContext, err := updateSearchContext(ctx, tx, searchContext)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +368,7 @@ func (s *SearchContextsStore) UpdateSearchContextWithRepositoryRevisions(ctx con
 	return updatedSearchContext, nil
 }
 
-func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
+func (s *searchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64, repositoryRevisions []*types.SearchContextRepositoryRevisions) (err error) {
 	if len(repositoryRevisions) == 0 {
 		return nil
 	}
@@ -384,15 +400,16 @@ func (s *SearchContextsStore) SetSearchContextRepositoryRevisions(ctx context.Co
 	))
 }
 
-func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchContext *types.SearchContext) (*types.SearchContext, error) {
-	err := s.Exec(ctx, sqlf.Sprintf(
+func createSearchContext(ctx context.Context, s SearchContextsStore, searchContext *types.SearchContext) (*types.SearchContext, error) {
+	q := sqlf.Sprintf(
 		insertSearchContextFmtStr,
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
 		nullInt32Column(searchContext.NamespaceUserID),
 		nullInt32Column(searchContext.NamespaceOrgID),
-	))
+	)
+	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -403,14 +420,15 @@ func (s *SearchContextsStore) createSearchContext(ctx context.Context, searchCon
 	})
 }
 
-func (s *SearchContextsStore) updateSearchContext(ctx context.Context, searchContext *types.SearchContext) (*types.SearchContext, error) {
-	err := s.Exec(ctx, sqlf.Sprintf(
+func updateSearchContext(ctx context.Context, s SearchContextsStore, searchContext *types.SearchContext) (*types.SearchContext, error) {
+	q := sqlf.Sprintf(
 		updateSearchContextFmtStr,
 		searchContext.Name,
 		searchContext.Description,
 		searchContext.Public,
 		searchContext.ID,
-	))
+	)
+	_, err := s.Handle().DB().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +482,7 @@ JOIN
 WHERE sc.search_context_id = %d
 `
 
-func (s *SearchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
+func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
 	if Mocks.SearchContexts.GetSearchContextRepositoryRevisions != nil {
 		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	}
@@ -529,7 +547,7 @@ ORDER BY
 
 // GetAllRevisionsForRepos returns the list of revisions that are used in search
 // contexts for each given repo ID.
-func (s *SearchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
+func (s *searchContextsStore) GetAllRevisionsForRepos(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
 	if a := actor.FromContext(ctx); !a.IsInternal() {
 		return nil, errors.New("GetAllRevisionsForRepos can only be accessed by an internal actor")
 	}

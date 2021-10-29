@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.12:111381_2021-10-11_a9d84a0@sha256:574a1679d102ff1ddc420bce5703f68911ad64d979c35c792a297dfaaf9fb50e
+FROM sourcegraph/alpine-3.12:114329_2021-10-28_bc663f1@sha256:f5ed5ba991b86c8307d8b2cf485585e3246194092b2fd29829bed1b218c23f64
 
 # hadolint ignore=DL3018
 RUN apk --no-cache add pcre sqlite-libs

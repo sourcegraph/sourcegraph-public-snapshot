@@ -13,6 +13,7 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { useTimeoutManager } from '@sourcegraph/shared/src/util/useTimeoutManager'
 
 import { AuthenticatedUser } from '../auth'
+import { KEYBOARD_SHORTCUT_SHOW_HELP } from '../keyboardShortcuts/keyboardShortcuts'
 import { SearchContextProps } from '../search'
 import { ThemePreference, ThemePreferenceProps } from '../theme'
 import { UserAvatar } from '../user/UserAvatar'
@@ -65,6 +66,22 @@ export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
     }, [isAnimating, animationManager])
 
     return { isExtensionAlertAnimating: isAnimating, startExtensionAlertAnimation }
+}
+
+/**
+ * Triggers Keyboard Shortcut help when the button is clicked in the Menu Nav item
+ */
+
+const showKeyboardShortcutsHelp = (): void => {
+    const keybinding = KEYBOARD_SHORTCUT_SHOW_HELP.keybindings[0]
+    const shiftKey = !!keybinding.held?.includes('Shift')
+    const altKey = !!keybinding.held?.includes('Alt')
+    const metaKey = !!keybinding.held?.includes('Meta')
+    const ctrlKey = !!keybinding.held?.includes('Control')
+
+    for (const key of keybinding.ordered) {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, metaKey, ctrlKey, altKey }))
+    }
 }
 
 /**
@@ -151,9 +168,6 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <Link to={props.authenticatedUser.settingsURL!} className="dropdown-item">
                     Settings
                 </Link>
-                <Link to="/extensions" className="dropdown-item">
-                    Extensions
-                </Link>
                 {props.showRepositorySection && (
                     <Link
                         to={`/users/${props.authenticatedUser.username}/settings/repositories`}
@@ -217,6 +231,10 @@ export const UserNavItem: React.FunctionComponent<UserNavItemProps> = props => {
                 <Link to="/help" className="dropdown-item" target="_blank" rel="noopener">
                     Help <OpenInNewIcon className="icon-inline" />
                 </Link>
+                <button onClick={showKeyboardShortcutsHelp} type="button" className="dropdown-item">
+                    Keyboard shortcuts
+                </button>
+
                 {props.authenticatedUser.session?.canSignOut && (
                     <a href="/-/sign-out" className="dropdown-item">
                         Sign out
