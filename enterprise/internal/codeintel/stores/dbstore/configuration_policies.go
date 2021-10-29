@@ -425,7 +425,8 @@ deleted AS (
 SELECT protected FROM candidate
 `
 
-// SelectPoliciesForRepositoryMembershipUpdate selects all the policies that will be updated limited by the batchSize.
+// SelectPoliciesForRepositoryMembershipUpdate returns a slice of configuration policies that should be considered
+// for repository membership updates. Configuration policies are returned in the order of least recently updated.
 func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []ConfigurationPolicy, err error) {
 	ctx, traceLog, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
