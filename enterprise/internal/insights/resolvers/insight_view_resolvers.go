@@ -363,6 +363,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
 			// I may be missing something, but I'm not sure I understand why we need a SeriesID field. It's an encoded version of the query
 			// string, but we also have the query string itself. Plus, now that timescopes can differ, the query string isn't enough.
+			// And the API-created series don't even have the same sort of id as the ones from the settings.
 			// Can we not just match on those relevent fields instead of creating an separate id?
 			SeriesID:            ksuid.New().String(), // ignoring sharing data series for now, we will just always generate unique series
 			Query:               series.Query,
