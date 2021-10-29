@@ -476,10 +476,12 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		}
 	}
 
-	log15.Debug("PermsSyncer.syncUserPerms.subRepoSynced",
-		"userID", user.ID,
-		"count", len(subRepoPerms),
-	)
+	if len(subRepoPerms) > 0 {
+		log15.Debug("PermsSyncer.syncUserPerms.subRepoSynced",
+			"userID", user.ID,
+			"count", len(subRepoPerms),
+		)
+	}
 
 	return nil
 }
