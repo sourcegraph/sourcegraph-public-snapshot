@@ -16,40 +16,43 @@ export const RepositoryPreview: FunctionComponent<RepositoryPreviewProps> = ({ p
         pattern
     )
 
-    if (!pattern) {
-        return <small>Enter a pattern to preview matching repositories.</small>
-    }
-
-    if (previewError) {
-        return <ErrorAlert prefix="Error fetching matching repository objects" error={previewError} />
-    }
-
-    if (previewLoading) {
-        return <LoadingSpinner className={styles.loading} />
-    }
-
     return (
         <div>
-            {preview.preview.length === 0 ? (
-                <>
-                    <small>Pattern does not match any repositories.</small>
-                    <div>
-                        <div className={styles.empty}>
-                            <p className="text-monospace">N/A</p>
-                        </div>
-                    </div>
-                </>
+            <small>
+                {preview.preview.length === 0 ? (
+                    <>Configuration policy does not match any known repositories.</>
+                ) : (
+                    <>Configuration policy will be applied to the following repositories. </>
+                )}
+            </small>
+
+            {previewError && <ErrorAlert prefix="Error fetching matching repositories" error={previewError} />}
+
+            {previewLoading ? (
+                <LoadingSpinner className={styles.loading} />
             ) : (
-                <>
-                    <small>Configuration policy will be applied to the following repositories.</small>
-                    <div>
-                        <div className={classNames('bg-dark text-light p-2', styles.container)}>
-                            {preview.preview.map(tag => (
-                                <p key={tag.name}>{tag.name}</p>
-                            ))}
+                <div>
+                    {preview.preview.length === 0 ? (
+                        <div className="mt-2 pt-2">
+                            <div className={styles.empty}>
+                                <p className="text-monospace">N/A</p>
+                            </div>
                         </div>
-                    </div>
-                </>
+                    ) : (
+                        <>
+                            <div className="mt-2 pt-2">
+                                <div className={classNames('bg-dark text-light p-2', styles.container)}>
+                                    {preview.preview.map(tag => (
+                                        <p key={`${tag.name}`} className="text-monospace p-0 m-0">
+                                            <span className="search-filter-keyword">repo:</span>
+                                            <span>{tag.name}</span>
+                                        </p>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
             )}
         </div>
     )

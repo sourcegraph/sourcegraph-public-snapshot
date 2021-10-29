@@ -9,7 +9,7 @@ import { Button } from '@sourcegraph/wildcard'
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
 import styles from './BranchTargetSettings.module.scss'
-import { GitObjectPreview } from './GitObjectPreview'
+import { GitObjectPreviewWrapper } from './GitObjectPreview'
 import { RepositoryPreview } from './RepositoryPreview'
 
 const DEBOUNCED_WAIT = 250
@@ -91,7 +91,7 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     <small className="form-text text-muted">Required.</small>
                 </div>
             )}
-            {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}
+            {repoId && <GitObjectPreviewWrapper repoId={repoId} type={policy.type} pattern={pattern} />}
         </>
     )
 }
