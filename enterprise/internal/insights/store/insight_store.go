@@ -7,6 +7,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
@@ -335,6 +336,16 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 
 func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string, viewId int) error {
 	return s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
+
+	// TODO
+	// When we remove a series from a view, we should:
+	// 1. Detect if this series is now orphaned. (Does it exist in any rows in the insight_view_series table?)
+	// 2. If it is orphaned, fill in the timestamp for deleted_at to NOW.
+
+	// Separately, we can add a background process to clean up series that have been deleted for X amount of time.
+	// This is also where we could add logic for "big" and "small" series and decide if we want to keep some around
+	// for longer than others. Another bucket would be FE series which we can probably delete very quickly because
+	// they'll never get re-used.
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
@@ -534,6 +545,19 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 		arg = sqlf.Sprintf("%s", s.Now())
 	}
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
+}
+
+// TODO: Probably shouldn't pass GraphQL args straight to the store. Also implement this
+func (s *InsightStore) FindMatchingSeries(ctx context.Context, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
+	// AKA the "Query," "SampleUntervalUnit," and "SampleIntervalValue" are all the same. Also make sure repositories is empty.
+	// DO consider "deleted" series as well.
+	return nil, nil
+}
+
+// TODO: Probably shouldn't pass GraphQL args straight to the store. Also implement this
+func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	// We can update the frontend series because we aren't storing the timeseries data and it's really just a regular update.
+	return nil
 }
 
 const setSeriesStatusSql = `
