@@ -414,8 +414,8 @@ const deleteConfigurationPolicyByIDQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:DeleteConfigurationPolicyByID
 WITH
 candidate AS (
-	SELECT id, protected FROM
-	lsif_configuration_policies
+	SELECT id, protected
+	FROM lsif_configuration_policies
 	WHERE id = %s
 	ORDER BY id FOR UPDATE
 ),
