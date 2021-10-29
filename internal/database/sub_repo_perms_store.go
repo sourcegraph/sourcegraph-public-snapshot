@@ -24,17 +24,15 @@ const SubRepoPermsVersion = 1
 // data consistency over sub_repo_permissions table.
 type SubRepoPermsStore struct {
 	*basestore.Store
-
-	clock func() time.Time
 }
 
 // SubRepoPerms returns a new SubRepoPermsStore with the given parameters.
 func SubRepoPerms(db dbutil.DB, clock func() time.Time) *SubRepoPermsStore {
-	return &SubRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{}), clock: clock}
+	return &SubRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 func (s *SubRepoPermsStore) With(other basestore.ShareableStore) *SubRepoPermsStore {
-	return &SubRepoPermsStore{Store: s.Store.With(other), clock: s.clock}
+	return &SubRepoPermsStore{Store: s.Store.With(other)}
 }
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
@@ -44,7 +42,7 @@ func (s *SubRepoPermsStore) Transact(ctx context.Context) (*SubRepoPermsStore, e
 	}
 
 	txBase, err := s.Store.Transact(ctx)
-	return &SubRepoPermsStore{Store: txBase, clock: s.clock}, err
+	return &SubRepoPermsStore{Store: txBase}, err
 }
 
 func (s *SubRepoPermsStore) Done(err error) error {

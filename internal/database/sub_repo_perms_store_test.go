@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -21,7 +22,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
-	s := SubRepoPerms(db, clock)
+	s := SubRepoPerms(db, time.Now)
 	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
@@ -53,7 +54,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
-	s := SubRepoPerms(db, clock)
+	s := SubRepoPerms(db, time.Now)
 	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
@@ -95,7 +96,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
-	s := SubRepoPerms(db, clock)
+	s := SubRepoPerms(db, time.Now)
 	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
@@ -142,7 +143,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
-	s := SubRepoPerms(db, clock)
+	s := SubRepoPerms(db, time.Now)
 	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
