@@ -13,18 +13,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestUser(t *testing.T) {
+	db := database.NewDB(nil)
 	t.Run("by username", func(t *testing.T) {
 		checkUserByUsername := func(t *testing.T) {
 			t.Helper()
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					user(username: "alice") {
@@ -78,7 +78,7 @@ func TestUser(t *testing.T) {
 				t.Helper()
 				RunTests(t, []*Test{
 					{
-						Schema: mustParseGraphQLSchema(t),
+						Schema: mustParseGraphQLSchema(t, db),
 						Query: `
 				{
 					user(email: "alice@example.com") {
@@ -119,7 +119,7 @@ func TestUser(t *testing.T) {
 		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				{
 					user(email: "alice@example.com") {
@@ -143,10 +143,11 @@ func TestUser(t *testing.T) {
 func TestNode_User(t *testing.T) {
 	resetMocks()
 	database.Mocks.Users.MockGetByID_Return(t, &types.User{ID: 1, Username: "alice"}, nil)
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					node(id: "VXNlcjox") {
@@ -170,7 +171,7 @@ func TestNode_User(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("not site admin nor the same user", func(t *testing.T) {
 		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
@@ -273,7 +274,7 @@ func TestUpdateUser(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 			mutation {
 				updateUser(
@@ -314,7 +315,7 @@ func TestUpdateUser(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 			mutation {
 				updateUser(
@@ -381,6 +382,7 @@ func TestUser_Organizations(t *testing.T) {
 			},
 		}, nil
 	}
+	db := database.NewDB(nil)
 
 	expectOrgFailure := func(t *testing.T, actorUID int32) {
 		t.Helper()
@@ -388,7 +390,7 @@ func TestUser_Organizations(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 					{
 						user(username: "alice") {
@@ -415,7 +417,7 @@ func TestUser_Organizations(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 					{
 						user(username: "alice") {

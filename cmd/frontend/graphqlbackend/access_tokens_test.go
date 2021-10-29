@@ -16,14 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // 🚨 SECURITY: This tests that users can't create tokens for users they aren't allowed to do so for.
 func TestMutation_CreateAccessToken(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	mockAccessTokensCreate := func(t *testing.T, wantCreatorUserID int32, wantScopes []string) {
 		database.Mocks.AccessTokens.Create = func(subjectUserID int32, scopes []string, note string, creatorUserID int32) (int64, string, error) {
@@ -54,7 +53,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -119,7 +118,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all", "site-admin:sudo"], note: "n") {
@@ -152,7 +151,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -188,7 +187,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					createAccessToken(user: "` + uid1GQLID + `", scopes: ["user:all"], note: "n") {
@@ -275,7 +274,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 // 🚨 SECURITY: This tests that users can't delete tokens they shouldn't be allowed to delete.
 func TestMutation_DeleteAccessToken(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	mockAccessTokens := func(t *testing.T) {
 		database.Mocks.AccessTokens.DeleteByID = func(id int64) error {
@@ -303,7 +302,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					deleteAccessToken(byID: "` + string(token1GQLID) + `") {
@@ -334,7 +333,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: differentSiteAdminUID}),
-				Schema:  mustParseGraphQLSchema(t),
+				Schema:  mustParseGraphQLSchema(t, db),
 				Query: `
 				mutation {
 					deleteAccessToken(byID: "` + string(token1GQLID) + `") {

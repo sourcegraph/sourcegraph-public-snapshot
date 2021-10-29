@@ -22,12 +22,13 @@ func TestTemporarySettingsNotSignedIn(t *testing.T) {
 	}
 
 	wantErr := errors.New("not authenticated")
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			// No actor set on context.
 			Context: context.Background(),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				query {
 					temporarySettings {
@@ -61,11 +62,12 @@ func TestTemporarySettings(t *testing.T) {
 		calledGetTemporarySettingsUserID = userID
 		return &ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}}"}, nil
 	}
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				query {
 					temporarySettings {
@@ -101,12 +103,13 @@ func TestOverwriteTemporarySettingsNotSignedIn(t *testing.T) {
 	}
 
 	wantErr := errors.New("not authenticated")
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			// No actor set on context.
 			Context: context.Background(),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation ModifyTemporarySettings {
 					overwriteTemporarySettings(
@@ -142,11 +145,12 @@ func TestOverwriteTemporarySettings(t *testing.T) {
 		calledOverwriteTemporarySettings = true
 		return nil
 	}
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation OverwriteTemporarySettings {
 					overwriteTemporarySettings(
@@ -178,11 +182,12 @@ func TestEditTemporarySettings(t *testing.T) {
 		calledEditTemporarySettings = true
 		return nil
 	}
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), actor.FromUser(1)),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation EditTemporarySettings {
 					editTemporarySettings(

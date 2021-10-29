@@ -25,7 +25,7 @@ import (
 )
 
 func TestAddExternalService(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -333,7 +333,7 @@ func TestAddExternalService(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				addExternalService(input: {
@@ -363,7 +363,7 @@ func TestAddExternalService(t *testing.T) {
 }
 
 func TestUpdateExternalService(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -592,7 +592,7 @@ func TestUpdateExternalService(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				updateExternalService(input: {
@@ -620,7 +620,7 @@ func TestUpdateExternalService(t *testing.T) {
 }
 
 func TestDeleteExternalService(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -795,7 +795,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				deleteExternalService(externalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=") {
@@ -816,7 +816,7 @@ func TestDeleteExternalService(t *testing.T) {
 }
 
 func TestExternalServices(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("read users external services", func(t *testing.T) {
@@ -976,7 +976,7 @@ func TestExternalServices(t *testing.T) {
 	RunTests(t, []*Test{
 		// Read all external services
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices() {
@@ -996,7 +996,7 @@ func TestExternalServices(t *testing.T) {
 		},
 		// Not allowed to read someone else's external service
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(namespace: "VXNlcjoy") {
@@ -1017,7 +1017,7 @@ func TestExternalServices(t *testing.T) {
 		},
 		// LastSyncError included
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(namespace: "VXNlcjow") {
@@ -1041,7 +1041,7 @@ func TestExternalServices(t *testing.T) {
 		},
 		// Pagination
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(first: 1) {
@@ -1065,7 +1065,7 @@ func TestExternalServices(t *testing.T) {
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(after: "RXh0ZXJuYWxTZXJ2aWNlOjE=") {
