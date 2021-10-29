@@ -59,7 +59,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -107,7 +107,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 	}
 
 	return &searchResolver{
-		db: database.NewDB(db),
+		db: db,
 		SearchInputs: &run.SearchInputs{
 			Plan:          plan,
 			Query:         plan.ToParseTree(),
@@ -127,7 +127,7 @@ func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(ctx, r.db, args)
+	return NewSearchImplementer(ctx, database.NewDB(r.db), args)
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
