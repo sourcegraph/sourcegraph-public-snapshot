@@ -12,6 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// PolicyRepositoryMatchLimit is the maximum number of repositories we'll allow a single configuration
+// policy to match. If there are more than this number of repositories, ones with a GitHub higher star
+// count will be applied over those with a lower star count (to maintain relevance in Cloud).
+//
+// See #26852 for improvement ideas.
+const PolicyRepositoryMatchLimit = 10000
+
 // RepoIDsByGlobPattern returns a slice of IDs from the repo table that matches the pattern string.
 func (s *Store) RepoIDsByGlobPattern(ctx context.Context, pattern string) (_ []int, err error) {
 	ctx, endObservation := s.operations.repoIDsByGlobPattern.With(ctx, &err, observation.Args{LogFields: []log.Field{
@@ -24,7 +31,7 @@ func (s *Store) RepoIDsByGlobPattern(ctx context.Context, pattern string) (_ []i
 		return nil, err
 	}
 
-	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternQuery, makeWildcardPattern(pattern), authzConds)))
+	return basestore.ScanInts(s.Store.Query(ctx, sqlf.Sprintf(repoIDsByGlobPatternQuery, makeWildcardPattern(pattern), authzConds, PolicyRepositoryMatchLimit)))
 }
 
 const repoIDsByGlobPatternQuery = `
@@ -36,6 +43,8 @@ WHERE
 	deleted_at IS NULL AND
 	blocked IS NULL AND
 	(%s)
+ORDER BY stars DESC, id
+LIMIT %s
 `
 
 // UpdateReposMatchingPatterns updates the values of the repository pattern lookup table for the
@@ -64,7 +73,7 @@ func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 		conds = append(conds, sqlf.Sprintf("FALSE"))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), policyID, policyID, policyID))
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), PolicyRepositoryMatchLimit, policyID, policyID, policyID))
 }
 
 const updateReposMatchingPatternsQuery = `
@@ -77,6 +86,8 @@ matching_repositories AS (
 		(%s) AND
 		deleted_at IS NULL AND
 		blocked IS NULL
+	ORDER BY stars DESC, id
+	LIMIT %s
 ),
 inserted AS (
 	-- Insert records that match the policy but don't yet exist
