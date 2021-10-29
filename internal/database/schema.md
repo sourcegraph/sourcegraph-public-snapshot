@@ -708,9 +708,11 @@ Foreign-key constraints:
  cloud_default     | boolean                  |           | not null | false
  encryption_key_id | text                     |           | not null | ''::text
  namespace_org_id  | integer                  |           |          | 
+ has_webhooks      | boolean                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
+    "external_services_has_webhooks_idx" btree (has_webhooks)
     "external_services_namespace_org_id_idx" btree (namespace_org_id)
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:

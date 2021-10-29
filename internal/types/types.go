@@ -476,8 +476,9 @@ type ExternalService struct {
 	NextSyncAt      time.Time
 	NamespaceUserID int32
 	NamespaceOrgID  int32
-	Unrestricted    bool // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault    bool // Whether this external service is our default public service on Cloud
+	Unrestricted    bool  // Whether access to repositories belong to this external service is unrestricted.
+	CloudDefault    bool  // Whether this external service is our default public service on Cloud
+	HasWebhooks     *bool // Whether this external service has webhooks configured; calculated from Config
 }
 
 // ExternalServiceSyncJob represents an sync job for an external service

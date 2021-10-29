@@ -13,7 +13,8 @@ import (
 )
 
 type ListCodeHostsOpts struct {
-	RepoIDs []api.RepoID
+	RepoIDs             []api.RepoID
+	OnlyWithoutWebhooks bool
 }
 
 func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs []*btypes.CodeHost, err error) {
@@ -37,25 +38,79 @@ func (s *Store) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (cs [
 
 var listCodeHostsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/codehost.go:ListCodeHosts
+WITH
+	-- esr_with_ssh includes all external_service_repos records where the
+	-- external service is cloned over SSH.
+    esr_with_ssh AS (
+        SELECT
+            *
+        FROM
+            external_service_repos
+        WHERE
+            -- Either start with ssh://
+            clone_url ILIKE %s OR
+            -- OR have no schema specified at all
+            clone_url !~* '[[:alpha:]]+://'
+    ),
+	-- esr_with_webhooks includes all external_service_repos records where the
+	-- external service has one or more webhooks configured.
+    esr_with_webhooks AS (
+        SELECT
+            *
+        FROM
+            external_service_repos
+        WHERE
+            external_service_id IN (
+                SELECT
+                    id
+                FROM
+                    external_services
+                WHERE
+                    -- has_webhooks can be NULL if the OOB migration hasn't yet
+                    -- calculated the field value. We'll fail open here: the
+                    -- worst case is that we report that a repo has webhooks
+                    -- when it doesn't, which is less disruptive than the
+                    -- alternative.
+                    has_webhooks IS NULL OR
+                    has_webhooks = TRUE
+            )
+    ),
+	aggregated_repos AS (
+		SELECT
+			repo.external_service_type,
+			repo.external_service_id,
+			COUNT(esr_with_ssh.external_service_id) AS ssh_required_count,
+			COUNT(esr_with_webhooks.external_service_id) AS has_webhooks_count
+		FROM
+			repo
+		LEFT JOIN
+			esr_with_ssh
+		ON
+			repo.id = esr_with_ssh.repo_id
+		LEFT JOIN
+			esr_with_webhooks
+		ON
+			repo.id = esr_with_webhooks.repo_id
+		WHERE
+			%s
+		GROUP BY
+			repo.external_service_type, repo.external_service_id
+		ORDER BY
+			repo.external_service_type ASC, repo.external_service_id ASC
+	)
 SELECT
-	repo.external_service_type, repo.external_service_id, COUNT(esr.external_service_id) > 0 AS ssh_required
-FROM repo
-LEFT JOIN external_service_repos esr
-	ON
-		esr.repo_id = repo.id AND
-		(
-			-- Either start with ssh://
-			esr.clone_url ILIKE %s OR
-			-- OR have no scheme specified at all
-			esr.clone_url !~* '[[:alpha:]]+://'
-		)
-WHERE %s
-GROUP BY repo.external_service_type, repo.external_service_id
-ORDER BY repo.external_service_type ASC, repo.external_service_id ASC
+	external_service_type,
+	external_service_id,
+	ssh_required_count > 0 AS ssh_required,
+	has_webhooks_count > 0 AS has_webhooks
+FROM
+	aggregated_repos
+WHERE
+	%s
 `
 
 func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
-	preds := []*sqlf.Query{
+	repoPreds := []*sqlf.Query{
 		// Only for those which have any enabled repositories.
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
@@ -65,13 +120,25 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 	for extSvcType := range btypes.SupportedExternalServices {
 		supportedTypes = append(supportedTypes, sqlf.Sprintf("%s", extSvcType))
 	}
-	preds = append(preds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
+	repoPreds = append(repoPreds, sqlf.Sprintf("repo.external_service_type IN (%s)", sqlf.Join(supportedTypes, ", ")))
 
 	if len(opts.RepoIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
+		repoPreds = append(repoPreds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 
-	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Sprintf("%s", "ssh://%"), sqlf.Join(preds, "AND"))
+	var aggregatePreds []*sqlf.Query
+	if opts.OnlyWithoutWebhooks {
+		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("has_webhooks_count = 0"))
+	} else {
+		aggregatePreds = append(aggregatePreds, sqlf.Sprintf("TRUE"))
+	}
+
+	return sqlf.Sprintf(
+		listCodeHostsQueryFmtstr,
+		sqlf.Sprintf("%s", "ssh://%"),
+		sqlf.Join(repoPreds, "AND"),
+		sqlf.Join(aggregatePreds, "AND"),
+	)
 }
 
 func scanCodeHost(c *btypes.CodeHost, sc dbutil.Scanner) error {
@@ -79,6 +146,7 @@ func scanCodeHost(c *btypes.CodeHost, sc dbutil.Scanner) error {
 		&c.ExternalServiceType,
 		&c.ExternalServiceID,
 		&c.RequiresSSH,
+		&c.HasWebhooks,
 	)
 }
 
