@@ -183,7 +183,7 @@ func TestUpdateUser(t *testing.T) {
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		result, err := (&schemaResolver{db: db}).UpdateUser(context.Background(), &updateUserArgs{User: "VXNlcjox"})
+		result, err := (&schemaResolver{db: database.NewDB(db)}).UpdateUser(context.Background(), &updateUserArgs{User: "VXNlcjox"})
 		wantErr := "must be authenticated as the authorized user or as an admin (must be site admin)"
 		gotErr := fmt.Sprintf("%v", err)
 		if wantErr != gotErr {
@@ -205,7 +205,7 @@ func TestUpdateUser(t *testing.T) {
 			database.Mocks.Users = database.MockUsers{}
 		})
 
-		result, err := (&schemaResolver{db: db}).UpdateUser(context.Background(), &updateUserArgs{
+		result, err := (&schemaResolver{db: database.NewDB(db)}).UpdateUser(context.Background(), &updateUserArgs{
 			User:     "VXNlcjox",
 			Username: strptr("about"),
 		})
@@ -237,7 +237,7 @@ func TestUpdateUser(t *testing.T) {
 		})
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).UpdateUser(ctx, &updateUserArgs{
+		result, err := (&schemaResolver{db: database.NewDB(db)}).UpdateUser(ctx, &updateUserArgs{
 			User:     "VXNlcjox",
 			Username: strptr("alice"),
 		})

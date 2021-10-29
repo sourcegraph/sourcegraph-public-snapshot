@@ -248,7 +248,7 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 		resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
 		for i, rev := range resolved.RepoRevs {
 			resolvers = append(resolvers, repositorySuggestionResolver{
-				repo: NewRepositoryResolver(database.NewDB(r.db), rev.Repo.ToRepo()),
+				repo: NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
 				// Encode the returned order in score.
 				score: math.MaxInt32 - i,
 			})
@@ -403,7 +403,7 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 				symbol: symbolResolver{
 					db: r.db,
 					commit: toGitCommitResolver(
-						NewRepositoryResolver(database.NewDB(r.db), fileMatch.Repo.ToRepo()),
+						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
 						r.db,
 						fileMatch.CommitID,
 						nil,
@@ -460,7 +460,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
 							FileMatch:    *fm,
-							RepoResolver: NewRepositoryResolver(database.NewDB(r.db), fm.Repo.ToRepo()),
+							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
 							gitTreeEntry: fmResolver.File(),

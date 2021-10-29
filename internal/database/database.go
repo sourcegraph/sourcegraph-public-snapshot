@@ -1,6 +1,10 @@
 package database
 
 import (
+	"context"
+	"database/sql"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 )
@@ -11,6 +15,7 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
+	dbutil.TxBeginner
 	AccessTokens() AccessTokenStore
 	EventLogs() EventLogStore
 	FeatureFlags() FeatureFlagStore
@@ -42,6 +47,14 @@ type db struct {
 }
 
 var _ DB = (*db)(nil)
+
+func (d *db) BeginTx(ctx context.Context, o *sql.TxOptions) (*sql.Tx, error) {
+	tb, ok := d.DB.(dbutil.TxBeginner)
+	if !ok {
+		return nil, basestore.ErrNotTransactable
+	}
+	return tb.BeginTx(ctx, o)
+}
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)

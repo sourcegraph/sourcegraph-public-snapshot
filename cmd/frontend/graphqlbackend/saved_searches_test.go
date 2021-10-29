@@ -16,7 +16,7 @@ import (
 
 func TestSavedSearches(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 	defer resetMocks()
 
 	key := int32(1)
@@ -48,7 +48,7 @@ func TestSavedSearches(t *testing.T) {
 
 func TestSavedSearchByIDOwner(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 	defer resetMocks()
 
 	userID := int32(1)
@@ -100,7 +100,7 @@ func TestSavedSearchByIDOwner(t *testing.T) {
 func TestSavedSearchByIDNonOwner(t *testing.T) {
 	// Non owners, including site admins cannot view a user's saved searches
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 	defer resetMocks()
 
 	userID := int32(1)
@@ -138,7 +138,7 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 func TestCreateSavedSearch(t *testing.T) {
 	ctx := context.Background()
 	defer resetMocks()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 
 	key := int32(1)
 	createSavedSearchCalled := false
@@ -183,7 +183,7 @@ func TestCreateSavedSearch(t *testing.T) {
 	}
 
 	// Ensure create saved search errors when patternType is not provided in the query.
-	_, err = (&schemaResolver{db: db}).CreateSavedSearch(ctx, &struct {
+	_, err = (&schemaResolver{db: database.NewDB(db)}).CreateSavedSearch(ctx, &struct {
 		Description string
 		Query       string
 		NotifyOwner bool
@@ -199,7 +199,7 @@ func TestCreateSavedSearch(t *testing.T) {
 func TestUpdateSavedSearch(t *testing.T) {
 	ctx := context.Background()
 	defer resetMocks()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 
 	key := int32(1)
 	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -260,7 +260,7 @@ func TestUpdateSavedSearch(t *testing.T) {
 
 func TestDeleteSavedSearch(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 	defer resetMocks()
 
 	key := int32(1)
