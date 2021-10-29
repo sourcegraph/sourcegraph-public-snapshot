@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -23,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
@@ -113,7 +115,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		ID:              1,
 		Kind:            extsvc.KindGitLab,
 		DisplayName:     "GITLAB1",
-		Config:          `{"token": "limited"}`,
+		Config:          `{"token": "limited", "authorization": {}}`,
 		NamespaceUserID: 1,
 	}
 
@@ -160,9 +162,13 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
 		return []api.RepoID{2, 3, 4}, nil
 	}
+	eauthz.MockProviderFromExternalService = func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
+		return p, nil
+	}
 	defer func() {
 		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
+		eauthz.MockProviderFromExternalService = nil
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)

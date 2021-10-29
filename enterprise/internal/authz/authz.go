@@ -167,12 +167,18 @@ func ProvidersFromConfig(
 	return allowAccessByDefault, providers, seriousProblems, warnings
 }
 
+var MockProviderFromExternalService func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error)
+
 // ProviderFromExternalService returns the parsed authz.Provider derived from
 // the site config and the given external service.
 //
 // It returns `(nil, nil)` if no authz.Provider can be derived and no error had
 // occurred.
 func ProviderFromExternalService(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
+	if MockProviderFromExternalService != nil {
+		return MockProviderFromExternalService(siteConfig, svc)
+	}
+
 	cfg, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 	if err != nil {
 		return nil, errors.Wrap(err, "parse config")
