@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -78,70 +77,56 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	// set repo test data
-	mockInsertedRepos := []struct {
-		ID   int
-		name string
+	insertRepo(t, db, 50, "r1")
+	insertRepo(t, db, 51, "r2")
+	insertRepo(t, db, 52, "r3")
+	insertRepo(t, db, 53, "r4")
+	insertRepo(t, db, 54, "r5")
+
+	updates := []struct {
+		policyID int
+		pattern  []string
 	}{
-		{50, "r0"},
-		{51, "r1"},
-		{52, "r2"},
-		{53, "r3"},
-		{54, "r4"},
-	}
+		// multiple matches
+		{100, []string{"r*"}},
 
-	// insert repo test data
-	for _, mock := range mockInsertedRepos {
-		insertRepo(t, db, mock.ID, mock.name)
-	}
+		// exact identifier
+		{101, []string{"r1"}},
 
-	// set pattern data
-	testDataList := []struct {
-		pattern     []string
-		policyID    int
-		description string
-	}{
-		{pattern: []string{"r*"}, policyID: 100, description: "multiple matches"},
-		{pattern: []string{"r1"}, policyID: 101, description: "exact ids"},
-		{pattern: []string{"r3"}, policyID: 102, description: "exact ids"},
-		{pattern: []string{"r2"}, policyID: 102, description: "something being overwritten"},
-		{pattern: []string{"r2", "r1"}, policyID: 103, description: "matching one or the other"},
-		{pattern: []string{"r4"}, policyID: 104, description: "deletes it when empty"},
-		{pattern: []string{}, policyID: 104, description: "deletes it when empty"},
-	}
+		// multiple exact identifiers
+		{102, []string{"r2", "r3"}},
 
-	// execute update repos matching patterns with pattern data above.
-	for _, data := range testDataList {
-		if err := store.UpdateReposMatchingPatterns(ctx, data.pattern, data.policyID); err != nil {
-			t.Fatalf("unexpected error fetching repositories for update: %s for %s", err, data.description)
+		// Overwrite patterns
+		{103, []string{"r4"}},
+		{103, []string{"r5"}},
+
+		// deleted matches
+		{104, []string{"r5"}},
+		{104, []string{}},
+	}
+	for _, update := range updates {
+		if err := store.UpdateReposMatchingPatterns(ctx, update.pattern, update.policyID); err != nil {
+			t.Fatalf("unexpected error updating repositories matching patterns: %s", err)
 		}
 	}
 
-	// get everything from the lookup table
-	policies := queryRepositoryPatternLookup(t, db)
-
-	// if all goes well with the insertion above this is what we should see
-	expectedPolicies := map[int][]int{
-		100: {50, 51, 52, 53, 54}, // "multiple matches"
-		101: {51},                 // "exact ids"
-		102: {52},                 // "something being overwritten"
-		103: {51, 52},             // "matching one or the other"
-		// deletes it when empty
-	}
-
-	// actual test
-	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
-	}
-}
-
-func queryRepositoryPatternLookup(t *testing.T, db dbutil.DB) map[int][]int {
-	policies, err := scanPolicyRepositories(db.QueryContext(context.Background(), "SELECT policy_id, repo_id FROM lsif_configuration_policies_repository_pattern_lookup"))
+	policies, err := scanPolicyRepositories(db.QueryContext(context.Background(), `
+		SELECT policy_id, repo_id
+		FROM lsif_configuration_policies_repository_pattern_lookup
+	`))
 	if err != nil {
 		t.Fatalf("unexpected error while scanning policies: %s", err)
 	}
 
-	return policies
+	expectedPolicies := map[int][]int{
+		100: {50, 51, 52, 53, 54},
+		101: {50},
+		102: {51, 52},
+		103: {54},
+	}
+	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
+		t.Errorf("unexpected job (-want +got):\n%s", diff)
+	}
 }
 
 // scanPolicyRepositories returns a map of policyIDs that have a slice of their correspondent repoIDs (repoIDs associated with that policyIDs).
