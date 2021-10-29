@@ -60,9 +60,15 @@ func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 VALUES (%s, %s, %s, %s, %s, now())
-ON CONFLICT (user_id, repo_id, version) DO UPDATE
-SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
-(EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, EXCLUDED.version, now())
+ON CONFLICT (user_id, repo_id, version)
+DO UPDATE
+SET
+  user_id = EXCLUDED.user_ID,
+  repo_id = EXCLUDED.repo_id,
+  path_includes = EXCLUDED.path_includes,
+  path_excludes = EXCLUDED.path_excludes,
+  version = EXCLUDED.version,
+  updated_at = now()
 `, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion)
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
 }
@@ -82,12 +88,18 @@ FROM repo
 WHERE external_service_id = %s
   AND external_service_type = %s
   AND external_id = %s
-ON CONFLICT (user_id, repo_id, version) DO UPDATE
-SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
-(EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, EXCLUDED.version, now())
+ON CONFLICT (user_id, repo_id, version)
+DO UPDATE
+SET
+  user_id = EXCLUDED.user_ID,
+  repo_id = EXCLUDED.repo_id,
+  path_includes = EXCLUDED.path_includes,
+  path_excludes = EXCLUDED.path_excludes,
+  version = EXCLUDED.version,
+  updated_at = now()
 `, userID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
 
-	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
+	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions with spec")
 }
 
 // Get will fetch sub repo rules for the given repo and user combination.
@@ -129,7 +141,7 @@ func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 SELECT repo_id, path_includes, path_excludes
 FROM sub_repo_permissions
 WHERE user_id = %s
-AND version = %s
+  AND version = %s
 `, userID, SubRepoPermsVersion)
 
 	rows, err := s.Query(ctx, q)
