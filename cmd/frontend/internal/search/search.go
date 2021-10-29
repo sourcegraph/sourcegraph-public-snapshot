@@ -46,7 +46,7 @@ func StreamHandler(db dbutil.DB) http.Handler {
 
 type streamHandler struct {
 	db                  dbutil.DB
-	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -282,7 +282,7 @@ LOOP:
 func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
 	eventsC := make(chan streaming.SearchEvent)
 
-	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
+	search, err := h.newSearchResolver(ctx, database.NewDB(h.db), &graphqlbackend.SearchArgs{
 		Query:       a.Query,
 		Version:     a.Version,
 		PatternType: strPtr(a.PatternType),
@@ -322,8 +322,8 @@ type searchResolver interface {
 	Inputs() run.SearchInputs
 }
 
-func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
-	return graphqlbackend.NewSearchImplementer(ctx, database.NewDB(db), args)
+func defaultNewSearchResolver(ctx context.Context, db database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 
 type args struct {
