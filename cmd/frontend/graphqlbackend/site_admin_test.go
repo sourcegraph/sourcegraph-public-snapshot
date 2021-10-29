@@ -12,13 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestDeleteUser(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		resetMocks()
@@ -121,7 +120,7 @@ func TestDeleteUser(t *testing.T) {
 			name: "soft delete a user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2") {
@@ -143,7 +142,7 @@ func TestDeleteUser(t *testing.T) {
 			name: "hard delete a user",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					deleteUser(user: "VXNlcjo2", hard: true) {

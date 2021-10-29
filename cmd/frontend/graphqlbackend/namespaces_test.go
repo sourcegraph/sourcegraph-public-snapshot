@@ -14,6 +14,7 @@ import (
 
 func TestNamespace(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
+		db := database.NewDB(nil)
 		resetMocks()
 		const wantUserID = 3
 		database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
@@ -24,7 +25,7 @@ func TestNamespace(t *testing.T) {
 		}
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					namespace(id: "VXNlcjoz") {
@@ -46,6 +47,7 @@ func TestNamespace(t *testing.T) {
 	})
 
 	t.Run("organization", func(t *testing.T) {
+		db := database.NewDB(nil)
 		resetMocks()
 		const wantOrgID = 3
 		database.Mocks.Orgs.GetByID = func(_ context.Context, id int32) (*types.Org, error) {
@@ -56,7 +58,7 @@ func TestNamespace(t *testing.T) {
 		}
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					namespace(id: "T3JnOjM=") {
@@ -78,6 +80,7 @@ func TestNamespace(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
+		db := database.NewDB(nil)
 		resetMocks()
 
 		invalidID := "aW52YWxpZDoz"
@@ -85,7 +88,7 @@ func TestNamespace(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: fmt.Sprintf(`
 				{
 					namespace(id: %q) {
@@ -112,6 +115,7 @@ func TestNamespace(t *testing.T) {
 
 func TestNamespaceByName(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
+		db := database.NewDB(nil)
 		resetMocks()
 		const (
 			wantName   = "alice"
@@ -131,7 +135,7 @@ func TestNamespaceByName(t *testing.T) {
 		}
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					namespaceByName(name: "alice") {
@@ -153,6 +157,7 @@ func TestNamespaceByName(t *testing.T) {
 	})
 
 	t.Run("organization", func(t *testing.T) {
+		db := database.NewDB(nil)
 		resetMocks()
 		const (
 			wantName  = "acme"
@@ -172,7 +177,7 @@ func TestNamespaceByName(t *testing.T) {
 		}
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					namespaceByName(name: "acme") {
@@ -194,13 +199,14 @@ func TestNamespaceByName(t *testing.T) {
 	})
 
 	t.Run("invalid", func(t *testing.T) {
+		db := database.NewDB(nil)
 		resetMocks()
 		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
 			return nil, database.ErrNamespaceNotFound
 		}
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					namespaceByName(name: "doesntexist") {
