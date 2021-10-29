@@ -242,6 +242,45 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 	return &resolvers, nil
 }
 
+func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
+		return nil, nil
+	}
+
+	// TODO: Cache this computation.
+	resolvers, err := r.ChangesetSpecs(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if resolvers == nil || len(*resolvers) == 0 {
+		return nil, nil
+	}
+	var totalDiff graphqlbackend.DiffStat
+	for _, r := range *resolvers {
+		// If changeset is not visible to user, skip it.
+		v, ok := r.ToVisibleChangesetSpec()
+		if !ok {
+			continue
+		}
+		desc, err := v.Description(ctx)
+		if err != nil {
+			return nil, err
+		}
+		// We only need to count "branch" changeset specs.
+		d, ok := desc.ToGitBranchChangesetDescription()
+		if !ok {
+			continue
+		}
+		if diff := d.DiffStat(); diff != nil {
+			totalDiff.AddDiffStat(diff)
+		}
+	}
+	return &totalDiff, nil
+}
+
 func (r *batchSpecWorkspaceResolver) PlaceInQueue() *int32 {
 	if r.execution == nil {
 		return nil

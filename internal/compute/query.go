@@ -94,7 +94,7 @@ func extractPattern(basic query.Basic) (*query.Pattern, error) {
 	return pattern, nil
 }
 
-func toRegexpPattern(value string) (*Regexp, error) {
+func toRegexpPattern(value string) (MatchPattern, error) {
 	rp, err := regexp.Compile(value)
 	if err != nil {
 		return nil, errors.Wrap(err, "compute endpoint")
@@ -104,8 +104,10 @@ func toRegexpPattern(value string) (*Regexp, error) {
 
 var ComputePredicateRegistry = query.PredicateRegistry{
 	query.FieldContent: {
-		"replace": func() query.Predicate { return query.EmptyPredicate{} },
-		"output":  func() query.Predicate { return query.EmptyPredicate{} },
+		"replace":            func() query.Predicate { return query.EmptyPredicate{} },
+		"replace.regexp":     func() query.Predicate { return query.EmptyPredicate{} },
+		"replace.structural": func() query.Predicate { return query.EmptyPredicate{} },
+		"output":             func() query.Predicate { return query.EmptyPredicate{} },
 	},
 }
 
@@ -120,16 +122,26 @@ func parseReplace(pattern *query.Pattern) (Command, bool, error) {
 	if !ok {
 		return nil, false, nil
 	}
-	_, args := query.ParseAsPredicate(value)
+	name, args := query.ParseAsPredicate(value)
 	parts := arrowSyntax.Split(args, 2)
 	if len(parts) != 2 {
 		return nil, false, errors.New("invalid replace statement, no left and right hand sides of `->`")
 	}
-	rp, err := toRegexpPattern(parts[0])
-	if err != nil {
-		return nil, false, errors.Wrap(err, "replace command")
+
+	var matchPattern MatchPattern
+	switch name {
+	case "replace", "replace.regexp":
+		var err error
+		matchPattern, err = toRegexpPattern(parts[0])
+		if err != nil {
+			return nil, false, errors.Wrap(err, "replace command")
+		}
+	case "replace.structural":
+		// structural search doesn't do any match pattern validation
+		matchPattern = &Comby{Value: parts[0]}
 	}
-	return &Replace{MatchPattern: rp, ReplacePattern: parts[1]}, true, nil
+
+	return &Replace{MatchPattern: matchPattern, ReplacePattern: parts[1]}, true, nil
 }
 
 func parseOutput(pattern *query.Pattern) (Command, bool, error) {

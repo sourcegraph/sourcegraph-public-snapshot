@@ -1,14 +1,16 @@
 package comby
 
 type Input interface {
-	Value()
+	input()
 }
 
 type ZipPath string
 type DirPath string
+type FileContent []byte
 
-func (ZipPath) Value() {}
-func (DirPath) Value() {}
+func (ZipPath) input()     {}
+func (DirPath) input()     {}
+func (FileContent) input() {}
 
 type resultKind int
 
@@ -94,5 +96,5 @@ type FileDiff struct {
 // FileReplacement represents a file content been modified by a rewrite operation.
 type FileReplacement struct {
 	URI     string `json:"uri"`
-	Content string `json:"content"`
+	Content string `json:"rewritten_source"`
 }

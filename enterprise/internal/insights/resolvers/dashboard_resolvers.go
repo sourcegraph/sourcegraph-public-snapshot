@@ -61,6 +61,16 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 			return
 		}
 
+		if d.args.ID != nil {
+			id, err := unmarshalDashboardID(*d.args.ID)
+			if err != nil {
+				d.err = errors.Wrap(err, "unmarshalDashboardID")
+			}
+			if !id.isVirtualized() {
+				args.ID = int(id.Arg)
+			}
+		}
+
 		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)
 		if err != nil {
 			d.err = err

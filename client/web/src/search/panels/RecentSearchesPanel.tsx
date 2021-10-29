@@ -155,7 +155,7 @@ export const RecentSearchesPanel: React.FunctionComponent<Props> = ({
                     {processedResults?.map((recentSearch, index) => (
                         <tr key={index} className={styles.resultsTableRow}>
                             <td>
-                                <small>
+                                <small className={styles.recentQuery}>
                                     <Link to={recentSearch.url} onClick={logSearchClicked}>
                                         <SyntaxHighlightedSearchQuery query={recentSearch.searchText} />
                                     </Link>
