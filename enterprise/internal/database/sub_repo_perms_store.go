@@ -39,7 +39,7 @@ func (s *SubRepoPermsStore) With(other basestore.ShareableStore) *SubRepoPermsSt
 
 // Transact begins a new transaction and make a new SubRepoPermsStore over it.
 func (s *SubRepoPermsStore) Transact(ctx context.Context) (*SubRepoPermsStore, error) {
-	if Mocks.Perms.Transact != nil {
+	if Mocks.SubRepoPerms.Transact != nil {
 		return Mocks.SubRepoPerms.Transact(ctx)
 	}
 
@@ -48,7 +48,7 @@ func (s *SubRepoPermsStore) Transact(ctx context.Context) (*SubRepoPermsStore, e
 }
 
 func (s *SubRepoPermsStore) Done(err error) error {
-	if Mocks.Perms.Transact != nil {
+	if Mocks.SubRepoPerms.Transact != nil {
 		return err
 	}
 
@@ -60,11 +60,46 @@ func (s *SubRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api
 	q := sqlf.Sprintf(`
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 VALUES (%s, %s, %s, %s, %s, now())
-ON CONFLICT (user_id, repo_id, version) DO UPDATE
-SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
-(EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, EXCLUDED.version, now())
+ON CONFLICT (user_id, repo_id, version)
+DO UPDATE
+SET
+  user_id = EXCLUDED.user_ID,
+  repo_id = EXCLUDED.repo_id,
+  path_includes = EXCLUDED.path_includes,
+  path_excludes = EXCLUDED.path_excludes,
+  version = EXCLUDED.version,
+  updated_at = now()
 `, userID, repoID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion)
 	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
+}
+
+// UpsertWithSpec will upsert sub repo permissions data using the provided
+// external repo spec to map to out internal repo id. If there is no mapping,
+// nothing is written.
+func (s *SubRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+	if Mocks.SubRepoPerms.UpsertWithSpec != nil {
+		return Mocks.SubRepoPerms.UpsertWithSpec(ctx, userID, spec, perms)
+	}
+
+	q := sqlf.Sprintf(`
+INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
+SELECT %s, id, %s, %s, %s, now()
+FROM repo
+WHERE external_service_id = %s
+  AND external_service_type = %s
+  AND external_id = %s
+ON CONFLICT (user_id, repo_id, version)
+DO UPDATE
+SET
+  user_id = EXCLUDED.user_ID,
+  repo_id = EXCLUDED.repo_id,
+  path_includes = EXCLUDED.path_includes,
+  path_excludes = EXCLUDED.path_excludes,
+  version = EXCLUDED.version,
+  updated_at = now()
+`, userID, pq.Array(perms.PathIncludes), pq.Array(perms.PathExcludes), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
+
+	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions with spec")
 }
 
 // Get will fetch sub repo rules for the given repo and user combination.
@@ -73,8 +108,8 @@ func (s *SubRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.Re
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
 WHERE user_id = %s
-AND repo_id = %s
-AND version = %s
+  AND repo_id = %s
+  AND version = %s
 `, userID, repoID, SubRepoPermsVersion)
 
 	rows, err := s.Query(ctx, q)
@@ -106,7 +141,7 @@ func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[ap
 SELECT repo_id, path_includes, path_excludes
 FROM sub_repo_permissions
 WHERE user_id = %s
-AND version = %s
+  AND version = %s
 `, userID, SubRepoPermsVersion)
 
 	rows, err := s.Query(ctx, q)
@@ -132,5 +167,6 @@ AND version = %s
 }
 
 type MockSubRepoPerms struct {
-	Transact func(ctx context.Context) (*SubRepoPermsStore, error)
+	Transact       func(ctx context.Context) (*SubRepoPermsStore, error)
+	UpsertWithSpec func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
 }

@@ -98,7 +98,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				}
 
 				mu.Lock()
-				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+				defer mu.Unlock()
 
 				// Note the endpoint's updated MaxPendingPriority, and recompute
 				// it across all endpoints to determine what search results are stable.
@@ -110,6 +110,13 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 					}
 				}
 
+				sr.Files = dedupper.Dedup(endpoint, sr.Files)
+
+				// Don't add empty results to the heap.
+				if len(sr.Files) == 0 && sr.Stats.Zero() {
+					return
+				}
+
 				// Pop and send search results where it is guaranteed that no higher-priority result
 				// is possible, because there are no pending shards with a greater priority.
 				resultQueue.add(sr)
@@ -119,8 +126,6 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				for (maxQueueDepth >= 0 && len(resultQueue) > maxQueueDepth) || resultQueue.isTopAbove(maxPending) {
 					streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
 				}
-
-				mu.Unlock()
 			}))
 			mu.Lock()
 			// Clear pending priority because the endpoint is done sending results--
