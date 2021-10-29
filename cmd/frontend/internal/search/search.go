@@ -23,7 +23,6 @@ import (
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -35,7 +34,7 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db dbutil.DB) http.Handler {
+func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		newSearchResolver:   defaultNewSearchResolver,
@@ -45,7 +44,7 @@ func StreamHandler(db dbutil.DB) http.Handler {
 }
 
 type streamHandler struct {
-	db                  dbutil.DB
+	db                  database.DB
 	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
