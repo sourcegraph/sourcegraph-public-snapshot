@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import React from 'react'
 
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { authenticatedUser } from '@sourcegraph/web/src/auth'
+import { AuthenticatedUser, authenticatedUser } from '@sourcegraph/web/src/auth'
 
 import {
     InsightDashboard,
@@ -40,18 +40,6 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         return null
     }
 
-    // We need a map of the organization names when using the new GraphQL API
-    const organizations = user.organizations.nodes.reduce<Record<string, InsightDashboardOwner>>(
-        (map, organization) => ({
-            ...map,
-            [organization.id]: {
-                id: organization.id,
-                name: organization.displayName ?? organization.name,
-            },
-        }),
-        {}
-    )
-
     const handleChange = (value: string): void => {
         const dashboard = dashboards.find(dashboard => dashboard.id === value)
 
@@ -60,24 +48,7 @@ export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = pr
         }
     }
 
-    const organizationGroups = getDashboardOrganizationsGroups(
-        dashboards.map((dashboard: InsightDashboard) => {
-            const owner =
-                ('owner' in dashboard && dashboard.owner) ||
-                ('grants' in dashboard &&
-                    dashboard.grants?.organizations &&
-                    organizations[dashboard.grants?.organizations[0]])
-
-            if (!owner) {
-                return dashboard
-            }
-
-            return {
-                ...dashboard,
-                owner,
-            }
-        })
-    )
+    const organizationGroups = getDashboardOrganizationsGroups(dashboards, user.organizations.nodes)
 
     return (
         <div className={className}>
@@ -157,8 +128,41 @@ interface DashboardOrganizationGroup {
 /**
  * Returns organization dashboards grouped by dashboard owner id
  */
-const getDashboardOrganizationsGroups = (dashboards: InsightDashboard[]): DashboardOrganizationGroup[] => {
+const getDashboardOrganizationsGroups = (
+    dashboards: InsightDashboard[],
+    organizations: AuthenticatedUser['organizations']['nodes']
+): DashboardOrganizationGroup[] => {
+    // We need a map of the organization names when using the new GraphQL API
+    const organizationsMap = organizations.reduce<Record<string, InsightDashboardOwner>>(
+        (map, organization) => ({
+            ...map,
+            [organization.id]: {
+                id: organization.id,
+                name: organization.displayName ?? organization.name,
+            },
+        }),
+        {}
+    )
+
     const groupsDictionary = dashboards
+        .map((dashboard: InsightDashboard) => {
+            const owner =
+                ('owner' in dashboard && dashboard.owner) ||
+                ('grants' in dashboard &&
+                    dashboard.grants?.organizations &&
+                    organizationsMap[dashboard.grants?.organizations[0]])
+            // Grabbing the first organization to minimize changes with existing api
+            // TODO: handle multiple organizations when settings API is deprecated
+
+            if (!owner) {
+                return dashboard
+            }
+
+            return {
+                ...dashboard,
+                owner,
+            }
+        })
         .filter(isOrganizationDashboard)
         .reduce<Record<string, DashboardOrganizationGroup>>((store, dashboard) => {
             if (!dashboard.owner) {
