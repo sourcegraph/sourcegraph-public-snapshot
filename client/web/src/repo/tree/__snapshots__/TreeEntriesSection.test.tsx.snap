@@ -28,10 +28,10 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
         class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
       >
         <div
-          class="d-flex align-items-center fileDecoration"
+          class="file-decoration d-flex align-items-center"
         >
           <small
-            class="text-monospace font-weight-normal test-file-decoration-text after"
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
             data-placement="bottom"
           >
             src decoration
@@ -66,10 +66,10 @@ exports[`TreeEntriesSection should render a grid of tree entries at the root 1`]
         class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
       >
         <div
-          class="d-flex align-items-center fileDecoration"
+          class="file-decoration d-flex align-items-center"
         >
           <small
-            class="text-monospace font-weight-normal test-file-decoration-text after"
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
             data-placement="bottom"
           >
             testdata decoration
@@ -157,10 +157,10 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
         class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
       >
         <div
-          class="d-flex align-items-center fileDecoration"
+          class="file-decoration d-flex align-items-center"
         >
           <small
-            class="text-monospace font-weight-normal test-file-decoration-text after"
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
             data-placement="bottom"
           >
             testutils decoration
@@ -195,10 +195,10 @@ exports[`TreeEntriesSection should render a grid of tree entries in a subdirecto
         class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
       >
         <div
-          class="d-flex align-items-center fileDecoration"
+          class="file-decoration d-flex align-items-center"
         >
           <small
-            class="text-monospace font-weight-normal test-file-decoration-text after"
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
             data-placement="bottom"
           >
             typings decoration
@@ -286,10 +286,10 @@ exports[`TreeEntriesSection should render only direct children 1`] = `
         class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
       >
         <div
-          class="d-flex align-items-center fileDecoration"
+          class="file-decoration d-flex align-items-center"
         >
           <small
-            class="text-monospace font-weight-normal test-file-decoration-text after"
+            class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
             data-placement="bottom"
           >
             ref decoration
