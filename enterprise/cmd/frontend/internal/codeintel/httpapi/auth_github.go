@@ -52,9 +52,9 @@ func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubC
 func checkGitHubAppInstallationPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (author bool, wrongTokenType bool, _ error) {
 	installationRepositories, err := client.ListInstallationRepositories(ctx)
 	if err != nil {
-		// A 403 error with this text indicates that the token authenticated the request is a user
-		// token and not an app installation token. We'll send back a special flag to the caller to
-		// inform them that they should fall back to hitting the repository endpoint as the user.
+		// A 403 error with this text indicates that the supplied token is a user token and not 
+		// an app installation token. We'll send back a special flag to the caller to inform them 
+		// that they should fall back to hitting the repository endpoint as the user.
 		if githubErr, ok := err.(*github.APIError); ok && githubErr.Code == 403 && strings.Contains(githubErr.Message, "installation access token") {
 			return false, true, nil
 		}
