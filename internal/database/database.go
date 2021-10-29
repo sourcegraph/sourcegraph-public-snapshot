@@ -105,7 +105,7 @@ func (d *db) Settings() SettingsStore {
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
-	return TemporarySettings(d.DB)
+	return &temporarySettingsStore{Store: basestore.NewWithDB(d.DB, sql.TxOptions{})}
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
