@@ -1,4 +1,5 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
+import classNames from 'classnames'
 import * as H from 'history'
 import * as React from 'react'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
@@ -22,11 +23,11 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { getFileDecorations } from '../backend/features'
+import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
 import { fetchTreeEntries } from '../repo/backend'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
-import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'
 import { Directory } from './Directory'
 import { File } from './File'
 import { TreeNode } from './Tree'
@@ -266,8 +267,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
     public render(): JSX.Element | null {
         const entryInfo = this.props.entryInfo
         const isActive = this.node === this.props.activeNode
-        const isSelected = this.node === this.props.selectedNode
-
+        const className = classNames(
+            'tree__row',
+            this.props.isExpanded && 'tree__row--expanded',
+            isActive && 'tree__row--active',
+            this.node === this.props.selectedNode && 'tree__row--selected'
+        )
         const { treeOrError } = this.state
 
         // If this layer has a single child directory, we have to parse treeOrError.entries
@@ -291,25 +296,26 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     We should support onFocus here but we currently do not let users focus directly on the actual items in this list.
                     Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
                 */}
-                <TreeLayerTable onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
+                <table className="tree-layer" onMouseOver={entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         {entryInfo.isDirectory ? (
                             <>
                                 <Directory
                                     {...this.props}
+                                    className={className}
                                     maxEntries={maxEntries}
                                     loading={treeOrError === LOADING}
                                     handleTreeClick={this.handleTreeClick}
                                     noopRowClick={this.noopRowClick}
                                     linkRowClick={this.linkRowClick}
                                     isActive={isActive}
-                                    isSelected={isSelected}
                                 />
                                 {this.props.isExpanded && treeOrError !== LOADING && (
                                     <tr>
-                                        <TreeLayerCell>
+                                        <td className="tree__cell">
                                             {isErrorLike(treeOrError) ? (
-                                                <TreeRowAlert
+                                                <ErrorAlert
+                                                    className="tree__row-alert"
                                                     // needed because of dynamic styling
                                                     style={treePadding(this.props.depth, true)}
                                                     error={treeOrError}
@@ -329,7 +335,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                                     />
                                                 )
                                             )}
-                                        </TreeLayerCell>
+                                        </td>
                                     </tr>
                                 )}
                             </>
@@ -337,15 +343,15 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             <File
                                 {...this.props}
                                 maxEntries={maxEntries}
+                                className={className}
                                 handleTreeClick={this.handleTreeClick}
                                 noopRowClick={this.noopRowClick}
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
-                                isSelected={isSelected}
                             />
                         )}
                     </tbody>
-                </TreeLayerTable>
+                </table>
             </div>
         )
     }

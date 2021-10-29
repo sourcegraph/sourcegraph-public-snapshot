@@ -1,25 +1,17 @@
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import * as React from 'react'
+import { Link } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 
-import {
-    TreeLayerRowContentsText,
-    TreeLayerCell,
-    TreeRowAlert,
-    TreeLayerRowContents,
-    TreeRowIconLink,
-    TreeRowLabelLink,
-    TreeRow,
-} from './components'
 import { FileDecorator } from './FileDecorator'
 import { TreeLayerProps } from './TreeLayer'
 import { treePadding } from './util'
 
 interface TreeChildProps extends TreeLayerProps {
-    className?: string
+    className: string
     maxEntries: number
     loading: boolean
     handleTreeClick: () => void
@@ -29,7 +21,6 @@ interface TreeChildProps extends TreeLayerProps {
     fileDecorations?: FileDecoration[]
 
     isActive: boolean
-    isSelected: boolean
 }
 
 /**
@@ -38,20 +29,20 @@ interface TreeChildProps extends TreeLayerProps {
  * @param props
  */
 export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeChildProps): JSX.Element => (
-    <TreeRow
-        key={props.entryInfo.path}
-        className={props.className}
-        onClick={props.handleTreeClick}
-        isActive={props.isActive}
-        isSelected={props.isSelected}
-    >
-        <TreeLayerCell className="test-sidebar-file-decorable">
-            <TreeLayerRowContents data-tree-is-directory="true" data-tree-path={props.entryInfo.path} isNew={true}>
-                <TreeLayerRowContentsText className="flex-1 justify-between">
+    <tr key={props.entryInfo.path} className={props.className} onClick={props.handleTreeClick}>
+        <td className="tree__cell test-sidebar-file-decorable">
+            <div
+                className="tree__row-contents tree__row-contents-new"
+                data-tree-is-directory="true"
+                data-tree-path={props.entryInfo.path}
+            >
+                <div className="tree__row-contents-text flex-1 justify-between">
                     <div className="d-flex">
-                        <TreeRowIconLink
+                        <a
+                            // needed because of dynamic styling
+                            // eslint-disable-next-line react/forbid-dom-props
                             style={treePadding(props.depth, true, true)}
-                            className="test-tree-noop-link"
+                            className="tree__row-icon test-tree-noop-link"
                             href={props.entryInfo.url}
                             onClick={props.noopRowClick}
                             tabIndex={-1}
@@ -61,17 +52,17 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                             ) : (
                                 <ChevronRightIcon className="icon-inline" />
                             )}
-                        </TreeRowIconLink>
-                        <TreeRowLabelLink
+                        </a>
+                        <Link
                             to={props.entryInfo.url}
                             onClick={props.linkRowClick}
-                            className="test-file-decorable-name"
+                            className="tree__row-label test-file-decorable-name"
                             draggable={false}
                             title={props.entryInfo.path}
                             tabIndex={-1}
                         >
                             {props.entryInfo.name}
-                        </TreeRowLabelLink>
+                        </Link>
                     </div>
                     <FileDecorator
                         // If component is not specified, or it is 'sidebar', render it.
@@ -80,20 +71,23 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                         isLightTheme={props.isLightTheme}
                         isActive={props.isActive}
                     />
-                </TreeLayerRowContentsText>
+                </div>
                 {props.loading && (
-                    <div>
+                    <div className="tree__row-loader">
                         <LoadingSpinner className="icon-inline tree-page__entries-loader" />
                     </div>
                 )}
-            </TreeLayerRowContents>
+            </div>
             {props.index === props.maxEntries - 1 && (
-                <TreeRowAlert
-                    className="alert-warning"
+                <div
+                    className="tree__row-alert alert alert-warning"
+                    // needed because of dynamic styling
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={treePadding(props.depth, true, true)}
-                    error="Too many entries. Use search to find a specific file."
-                />
+                >
+                    Too many entries. Use search to find a specific file.
+                </div>
             )}
-        </TreeLayerCell>
-    </TreeRow>
+        </td>
+    </tr>
 )
