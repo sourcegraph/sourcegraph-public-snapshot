@@ -179,6 +179,12 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	return perms, errors.Wrap(err, "scanRepoIncludesExcludes.Err")
 }
 
+// FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
+// token.
+func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return nil, errors.New("not implemented")
+}
+
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
 func (p *Provider) getAllUserEmails(ctx context.Context) (map[string]string, error) {
 	if p.cachedAllUserEmails != nil {
