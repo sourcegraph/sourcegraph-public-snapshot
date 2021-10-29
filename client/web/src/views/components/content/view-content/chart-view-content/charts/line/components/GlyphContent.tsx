@@ -7,6 +7,7 @@ import { LineChartSeries } from 'sourcegraph'
 import { MaybeLink } from '../../MaybeLink'
 import { Point } from '../types'
 
+import styles from './GlyphContent.module.scss'
 import { getLineStroke } from './LineChartContent'
 import { dateLabelFormatter } from './TickComponent'
 
@@ -96,14 +97,12 @@ export function GlyphContent<Datum extends object>(props: GlyphContentProps<Datu
             onClick={onClick}
             onFocus={() => linkURL && setFocusedDatum(currentDatum)}
             onBlur={() => linkURL && setFocusedDatum(null)}
-            className="line-chart__glyph-link"
+            className={styles.glyphLink}
             role={linkURL ? 'link' : 'graphics-dataunit'}
             aria-label={ariaLabel}
         >
             <Glyph
-                className={classNames('line-chart__glyph', {
-                    'line-chart__glyph--active': hovered,
-                })}
+                className={classNames(styles.glyph, hovered && styles.glyphActive)}
                 cx={xCoordinate}
                 cy={yCoordinate}
                 stroke={getLineStroke(line)}

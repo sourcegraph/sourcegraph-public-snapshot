@@ -2009,6 +2009,12 @@ type BatchSpecWorkspace implements Node {
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The diff stat over all created changeset specs. Null, if not yet finished or
+    failed.
+    """
+    diffStat: DiffStat
 }
 
 """

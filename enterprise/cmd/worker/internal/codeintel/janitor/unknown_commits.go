@@ -124,12 +124,12 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 		return errors.Wrap(err, "git.ResolveRevision")
 	}
 
-	uploadsUpdated, indexesUpdated, err := tx.RefreshCommitResolvability(ctx, repositoryID, commit, shouldDelete, j.clock.Now())
-	if err != nil {
-		return errors.Wrap(err, "dbstore.RefreshCommitResolvability")
-	}
-
 	if shouldDelete {
+		uploadsUpdated, indexesUpdated, err := tx.DeleteSourcedCommits(ctx, repositoryID, commit, j.clock.Now())
+		if err != nil {
+			return errors.Wrap(err, "dbstore.DeleteSourcedCommits")
+		}
+
 		if uploadsUpdated > 0 {
 			log15.Debug("Deleted upload records with unresolvable commits", "count", uploadsUpdated)
 			j.metrics.numUploadRecordsRemoved.Add(float64(uploadsUpdated))
@@ -138,6 +138,12 @@ func (j *unknownCommitJanitor) handleCommit(ctx context.Context, tx DBStore, rep
 			log15.Debug("Deleted index records with unresolvable commits", "count", indexesUpdated)
 			j.metrics.numIndexRecordsRemoved.Add(float64(indexesUpdated))
 		}
+
+		return nil
+	}
+
+	if _, _, err := tx.UpdateSourcedCommits(ctx, repositoryID, commit, j.clock.Now()); err != nil {
+		return errors.Wrap(err, "dbstore.UpdateSourcedCommits")
 	}
 
 	return nil

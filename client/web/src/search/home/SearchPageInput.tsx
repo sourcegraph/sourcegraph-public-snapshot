@@ -20,7 +20,7 @@ import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps } from '../../theme'
-import { submitSearch, SubmitSearchParameters } from '../helpers'
+import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
@@ -89,7 +89,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                 : userQueryState.query
 
-            if (query !== '') {
+            if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({
                     source: 'home',
                     query,

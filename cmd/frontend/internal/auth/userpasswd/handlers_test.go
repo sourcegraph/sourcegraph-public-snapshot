@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestCheckEmailAbuse(t *testing.T) {
@@ -57,7 +57,7 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			db := dbtesting.GetDB(t)
+			db := dbtest.NewDB(t)
 			database.Mocks.UserEmails.GetLatestVerificationSentEmail = func(context.Context, string) (*database.UserEmail, error) {
 				return test.mockEmail, test.mockErr
 			}

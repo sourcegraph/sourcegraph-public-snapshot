@@ -72,6 +72,7 @@ type Step struct {
 	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
 	Concurrency            int                    `json:"concurrency,omitempty"`
+	Parallelism            int                    `json:"parallelism,omitempty"`
 	Skip                   string                 `json:"skip,omitempty"`
 	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
 	Retry                  *RetryOptions          `json:"retry,omitempty"`
@@ -182,6 +183,14 @@ func ConcurrencyGroup(group string) StepOpt {
 func Concurrency(limit int) StepOpt {
 	return func(step *Step) {
 		step.Concurrency = limit
+	}
+}
+
+// Parallelism tells Buildkite to run this job multiple time in parallel,
+// which is very useful to QA a flake fix.
+func Parallelism(count int) StepOpt {
+	return func(step *Step) {
+		step.Parallelism = count
 	}
 }
 

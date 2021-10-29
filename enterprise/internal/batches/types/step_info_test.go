@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -141,6 +142,7 @@ func TestParseLogLines(t *testing.T) {
 
 	tcs := []struct {
 		name  string
+		entry workerutil.ExecutionLogEntry
 		lines []*batcheslib.LogEvent
 		want  map[int]*StepInfo
 	}{
@@ -255,6 +257,38 @@ func TestParseLogLines(t *testing.T) {
 					StartedAt:   time1,
 					Environment: map[string]string{},
 					OutputLines: []string{"stdout: log1", "stdout: log2", "stderr: log3", "stdout: log4"},
+				},
+			},
+		},
+		{
+			name:  "Started but timeout",
+			entry: workerutil.ExecutionLogEntry{StartTime: time1, ExitCode: intPtr(-1), DurationMs: intPtr(500)},
+			lines: []*batcheslib.LogEvent{
+				{
+					Timestamp: time1,
+					Status:    batcheslib.LogEventStatusStarted,
+					Metadata:  &batcheslib.TaskPreparingStepMetadata{Step: 1},
+				},
+				{
+					Timestamp: time1,
+					Status:    batcheslib.LogEventStatusSuccess,
+					Metadata:  &batcheslib.TaskPreparingStepMetadata{Step: 1},
+				},
+				{
+					Timestamp: time2,
+					Status:    batcheslib.LogEventStatusStarted,
+					Metadata: &batcheslib.TaskStepMetadata{
+						Step: 1,
+						Env:  map[string]string{"env": "var"},
+					},
+				},
+			},
+			want: map[int]*StepInfo{
+				1: {
+					StartedAt:   time1,
+					FinishedAt:  time1.Add(500 * time.Millisecond),
+					ExitCode:    intPtr(-1),
+					Environment: map[string]string{"env": "var"},
 				},
 			},
 		},
@@ -442,10 +476,12 @@ func TestParseLogLines(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			have := ParseLogLines(tc.lines)
+			have := ParseLogLines(tc.entry, tc.lines)
 			if diff := cmp.Diff(have, tc.want); diff != "" {
 				t.Errorf("invalid steps returned %s", diff)
 			}
 		})
 	}
 }
+
+func intPtr(i int) *int { return &i }

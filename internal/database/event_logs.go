@@ -27,27 +27,63 @@ const (
 	integrationSource = "CODEHOSTINTEGRATION"
 )
 
-type EventLogStore struct {
+type EventLogStore interface {
+	AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error)
+	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
+	BulkInsert(ctx context.Context, events []*Event) error
+	CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error)
+	CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error)
+	CodeIntelligencePreciseWAUs(ctx context.Context) (int, error)
+	CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error)
+	CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error)
+	CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error)
+	CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error)
+	CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error)
+	CodeIntelligenceWAUs(ctx context.Context) (int, error)
+	CountByUserID(ctx context.Context, userID int32) (int, error)
+	CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error)
+	CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error)
+	CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error)
+	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error)
+	CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error)
+	CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error)
+	CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error)
+	CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error)
+	Done(error) error
+	Insert(ctx context.Context, e *Event) error
+	LatestPing(ctx context.Context) (*types.Event, error)
+	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error)
+	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
+	MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error)
+	MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error)
+	SiteUsage(ctx context.Context) (types.SiteUsageSummary, error)
+	Transact(ctx context.Context) (EventLogStore, error)
+	UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error)
+	With(other basestore.ShareableStore) EventLogStore
+	basestore.ShareableStore
+}
+
+type eventLogStore struct {
 	*basestore.Store
 }
 
 // EventLogs instantiates and returns a new EventLogStore with prepared statements.
-func EventLogs(db dbutil.DB) *EventLogStore {
-	return &EventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func EventLogs(db dbutil.DB) EventLogStore {
+	return &eventLogStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewEventLogStoreWithDB instantiates and returns a new EventLogStore using the other store handle.
-func EventLogsWith(other basestore.ShareableStore) *EventLogStore {
-	return &EventLogStore{Store: basestore.NewWithHandle(other.Handle())}
+func EventLogsWith(other basestore.ShareableStore) EventLogStore {
+	return &eventLogStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (l *EventLogStore) With(other basestore.ShareableStore) *EventLogStore {
-	return &EventLogStore{Store: l.Store.With(other)}
+func (l *eventLogStore) With(other basestore.ShareableStore) EventLogStore {
+	return &eventLogStore{Store: l.Store.With(other)}
 }
 
-func (l *EventLogStore) Transact(ctx context.Context) (*EventLogStore, error) {
+func (l *eventLogStore) Transact(ctx context.Context) (EventLogStore, error) {
 	txBase, err := l.Store.Transact(ctx)
-	return &EventLogStore{Store: txBase}, err
+	return &eventLogStore{Store: txBase}, err
 }
 
 // SanitizeEventURL makes the given URL is using HTTP/HTTPS scheme and within
@@ -86,11 +122,11 @@ type Event struct {
 	CohortID        *string // date in YYYY-MM-DD format
 }
 
-func (l *EventLogStore) Insert(ctx context.Context, e *Event) error {
+func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
-func (l *EventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
+func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	coalesce := func(v json.RawMessage) json.RawMessage {
 		if v != nil {
 			return v
@@ -146,7 +182,7 @@ func (l *EventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	)
 }
 
-func (l *EventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
+func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*types.Event, error) {
 	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
@@ -179,7 +215,7 @@ type EventLogsListOptions struct {
 }
 
 // ListAll gets all event logs in descending order of timestamp.
-func (l *EventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
+func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
@@ -191,7 +227,7 @@ func (l *EventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 }
 
 // LatestPing returns the most recently recorded ping event.
-func (l *EventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
+func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
 	if Mocks.EventLogs.LatestPing != nil {
 		return Mocks.EventLogs.LatestPing(ctx)
 	}
@@ -207,22 +243,22 @@ func (l *EventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
 }
 
 // CountByUserID gets a count of events logged by a given user.
-func (l *EventLogStore) CountByUserID(ctx context.Context, userID int32) (int, error) {
+func (l *eventLogStore) CountByUserID(ctx context.Context, userID int32) (int, error) {
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
 // CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
-func (l *EventLogStore) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
+func (l *eventLogStore) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
 }
 
 // CountByUserIDAndEventNamePrefix gets a count of events logged by a given user and with a given event name prefix.
-func (l *EventLogStore) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
+func (l *eventLogStore) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
 }
 
 // CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
-func (l *EventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
+func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
@@ -231,7 +267,7 @@ func (l *EventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID i
 }
 
 // countBySQL gets a count of event logs.
-func (l *EventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
+func (l *eventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 	var count int
@@ -240,17 +276,17 @@ func (l *EventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query)
 }
 
 // MaxTimestampByUserID gets the max timestamp among event logs for a given user.
-func (l *EventLogStore) MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error) {
+func (l *eventLogStore) MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error) {
 	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
 // MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
-func (l *EventLogStore) MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
+func (l *eventLogStore) MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
 	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND source = %s", userID, source))
 }
 
 // maxTimestampBySQL gets the max timestamp among event logs.
-func (l *EventLogStore) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf.Query) (*time.Time, error) {
+func (l *eventLogStore) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf.Query) (*time.Time, error) {
 	q := sqlf.Sprintf("SELECT MAX(timestamp) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 
@@ -372,7 +408,7 @@ type PercentileValue struct {
 // CountUniqueUsersPerPeriod provides a count of unique active users in a given time span, broken up into periods of
 // a given type. The value of `now` should be the current time in UTC. Returns an array of length `periods`, with one
 // entry for each period in the time span.
-func (l *EventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
+func (l *eventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodType PeriodType, now time.Time, periods int, opt *CountUniqueUsersOptions) ([]UsageValue, error) {
 	startDate, ok := calcStartDate(now, periodType, periods)
 	if !ok {
 		return nil, errors.Errorf("periodType must be \"daily\", \"weekly\", or \"monthly\". Got %s", periodType)
@@ -414,11 +450,11 @@ func (l *EventLogStore) CountUniqueUsersPerPeriod(ctx context.Context, periodTyp
 	return l.countUniqueUsersPerPeriodBySQL(ctx, intervalByPeriodType[periodType], periodByPeriodType[periodType], startDate, endDate, conds)
 }
 
-func (l *EventLogStore) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
+func (l *eventLogStore) countUniqueUsersPerPeriodBySQL(ctx context.Context, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	return l.countPerPeriodBySQL(ctx, sqlf.Sprintf("DISTINCT "+userIDQueryFragment), interval, period, startDate, endDate, conds)
 }
 
-func (l *EventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
+func (l *eventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, interval, period *sqlf.Query, startDate, endDate time.Time, conds []*sqlf.Query) ([]UsageValue, error) {
 	allPeriods := sqlf.Sprintf("SELECT generate_series((%s)::timestamp, (%s)::timestamp, (%s)::interval) AS period", startDate, endDate, interval)
 	countByPeriod := sqlf.Sprintf(`SELECT (%s) AS period, COUNT(%s) AS count
 		FROM event_logs
@@ -452,22 +488,22 @@ func (l *EventLogStore) countPerPeriodBySQL(ctx context.Context, countExpr, inte
 }
 
 // CountUniqueUsersAll provides a count of unique active users in a given time span.
-func (l *EventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
+func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) (int, error) {
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, nil)
 }
 
 // CountUniqueUsersByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
-func (l *EventLogStore) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
+func (l *eventLogStore) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name LIKE %s ", namePrefix+"%"))
 }
 
 // CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
-func (l *EventLogStore) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
+func (l *eventLogStore) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name = %s", name))
 }
 
 // CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
-func (l *EventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
+func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
 	items := []*sqlf.Query{}
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
@@ -475,7 +511,7 @@ func (l *EventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startD
 	return l.countUniqueUsersBySQL(ctx, startDate, endDate, sqlf.Sprintf("AND name IN (%s)", sqlf.Join(items, ",")))
 }
 
-func (l *EventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
+func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, querySuffix *sqlf.Query) (int, error) {
 	if querySuffix == nil {
 		querySuffix = sqlf.Sprintf("")
 	}
@@ -488,7 +524,7 @@ func (l *EventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, en
 	return count, err
 }
 
-func (l *EventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
+func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
 	rows, err := l.Handle().DB().QueryContext(ctx, `SELECT user_id
 		FROM event_logs
 		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
@@ -514,7 +550,7 @@ func (l *EventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDa
 
 // UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
 // '%codeintel%' events in the event_logs table.
-func (l *EventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
+func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
 	rows, err := l.Handle().DB().QueryContext(ctx, usersUsageCountsQuery)
 	if err != nil {
 		return nil, err
@@ -557,11 +593,11 @@ GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
 
-func (l *EventLogStore) SiteUsage(ctx context.Context) (types.SiteUsageSummary, error) {
+func (l *eventLogStore) SiteUsage(ctx context.Context) (types.SiteUsageSummary, error) {
 	return l.siteUsage(ctx, time.Now().UTC())
 }
 
-func (l *EventLogStore) siteUsage(ctx context.Context, now time.Time) (summary types.SiteUsageSummary, err error) {
+func (l *eventLogStore) siteUsage(ctx context.Context, now time.Time) (summary types.SiteUsageSummary, err error) {
 	query := sqlf.Sprintf(siteUsageQuery, now, now, now, now)
 
 	err = l.QueryRow(ctx, query).Scan(
@@ -684,7 +720,7 @@ GROUP BY current_month, current_week, current_day
 `
 
 // CodeIntelligencePreciseWAUs returns the WAU (current week) with precise-based code intelligence events.
-func (l *EventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
@@ -695,7 +731,7 @@ func (l *EventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, e
 }
 
 // CodeIntelligenceSearchBasedWAUs returns the WAU (current week) with searched-base code intelligence events.
-func (l *EventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.searchHover",
 		"codeintel.searchDefinitions",
@@ -706,7 +742,7 @@ func (l *EventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (in
 }
 
 // CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
-func (l *EventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
@@ -720,7 +756,7 @@ func (l *EventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
 }
 
 // CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
-func (l *EventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifDefinitions.xrepo",
 		"codeintel.lsifReferences.xrepo",
@@ -732,7 +768,7 @@ func (l *EventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context)
 }
 
 // CodeIntelligencePreciseCrossRepositoryWAUs returns the WAU (current week) with precise-based cross-repository code intelligence events.
-func (l *EventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.lsifDefinitions.xrepo",
 		"codeintel.lsifReferences.xrepo",
@@ -742,7 +778,7 @@ func (l *EventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.C
 }
 
 // CodeIntelligenceSearchBasedCrossRepositoryWAUs returns the WAU (current week) with searched-base cross-repository code intelligence events.
-func (l *EventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error) {
 	eventNames := []string{
 		"codeintel.searchDefinitions.xrepo",
 		"codeintel.searchReferences.xrepo",
@@ -751,7 +787,7 @@ func (l *EventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx conte
 	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
 }
 
-func (l *EventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, eventNames []string, now time.Time) (wau int, _ error) {
+func (l *eventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, eventNames []string, now time.Time) (wau int, _ error) {
 	var names []*sqlf.Query
 	for _, name := range eventNames {
 		names = append(names, sqlf.Sprintf("%s", name))
@@ -784,7 +820,7 @@ type CodeIntelligenceRepositoryCounts struct {
 
 // CodeIntelligenceRepositoryCounts returns the counts of repositories with code intelligence
 // properties (number of repositories with intel, with automatic/manual index configuration, etc).
-func (l *EventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error) {
+func (l *eventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error) {
 	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsQuery))
 	if err != nil {
 		return CodeIntelligenceRepositoryCounts{}, err
@@ -837,7 +873,7 @@ type CodeIntelligenceRepositoryCountsForLanguage struct {
 // CodeIntelligenceRepositoryCountsByLanguage returns the counts of repositories with code intelligence
 // properties (number of repositories with intel, with automatic/manual index configuration, etc), grouped
 // by language.
-func (l *EventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error) {
+func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error) {
 	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsByLanguageQuery))
 	if err != nil {
 		return nil, err
@@ -921,11 +957,11 @@ GROUP BY REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegraph/', ''), ':\w+$', '
 
 // CodeIntelligenceSettingsPageViewCount returns the number of view of pages related code intelligence
 // administration (upload, index records, index configuration, etc) in the past week.
-func (l *EventLogStore) CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error) {
+func (l *eventLogStore) CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error) {
 	return l.codeIntelligenceSettingsPageViewCount(ctx, time.Now().UTC())
 }
 
-func (l *EventLogStore) codeIntelligenceSettingsPageViewCount(ctx context.Context, now time.Time) (int, error) {
+func (l *eventLogStore) codeIntelligenceSettingsPageViewCount(ctx context.Context, now time.Time) (int, error) {
 	pageNames := []string{
 		"CodeIntelUploadsPage",
 		"CodeIntelUploadPage",
@@ -949,11 +985,11 @@ var codeIntelligenceSettingsPageViewCountQuery = `
 SELECT COUNT(*) FROM event_logs WHERE name IN (%s) AND timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp")
 
 // AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each every unique event type related to code intel.
-func (l *EventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
+func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
 	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
 }
 
-func (l *EventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
+func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
 	var eventNames = []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
@@ -1026,7 +1062,7 @@ FROM events GROUP BY name, current_week, language_id;
 `
 
 // AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
-func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
+func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
 	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
 	if err != nil {
 		return nil, err
@@ -1039,7 +1075,7 @@ func (l *EventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Tim
 	return append(latencyEvents, usageEvents...), nil
 }
 
-func (l *EventLogStore) aggregatedSearchEvents(ctx context.Context, queryString string, now time.Time) (events []types.SearchAggregatedEvent, err error) {
+func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString string, now time.Time) (events []types.SearchAggregatedEvent, err error) {
 	query := sqlf.Sprintf(queryString, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)

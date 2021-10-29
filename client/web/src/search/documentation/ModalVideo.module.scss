@@ -16,6 +16,9 @@
 
 .thumbnail-image {
     width: 11rem;
+    // Note: This is to reduce cumulative layout shift
+    // It should be as close as possible to the source image aspect ratio
+    aspect-ratio: 176/115;
 }
 
 .play-icon-wrapper {

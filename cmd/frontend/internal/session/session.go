@@ -289,10 +289,10 @@ func InvalidateSessionsByID(ctx context.Context, db dbutil.DB, id int32) error {
 
 // CookieMiddleware is an http.Handler middleware that authenticates
 // future HTTP request via cookie.
-func CookieMiddleware(next http.Handler) http.Handler {
+func CookieMiddleware(db dbutil.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie")
-		next.ServeHTTP(w, r.WithContext(authenticateByCookie(r, w)))
+		next.ServeHTTP(w, r.WithContext(authenticateByCookie(db, r, w)))
 	})
 }
 
@@ -315,7 +315,7 @@ func CookieMiddleware(next http.Handler) http.Handler {
 // If the request is a simple CORS request, or if neither of these is true, then the cookie is not
 // used to authenticate the request. The request is still allowed to proceed (but will be
 // unauthenticated unless some other authentication is provided, such as an access token).
-func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, isTrustedOrigin func(*http.Request) bool) http.Handler {
+func CookieMiddlewareWithCSRFSafety(db dbutil.DB, next http.Handler, corsAllowHeader string, isTrustedOrigin func(*http.Request) bool) http.Handler {
 	corsAllowHeader = textproto.CanonicalMIMEHeaderKey(corsAllowHeader)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Vary", "Cookie, Authorization, "+corsAllowHeader)
@@ -329,14 +329,14 @@ func CookieMiddlewareWithCSRFSafety(next http.Handler, corsAllowHeader string, i
 			isTrusted = contentType == "application/json" || contentType == "application/json; charset=utf-8"
 		}
 		if isTrusted {
-			r = r.WithContext(authenticateByCookie(r, w))
+			r = r.WithContext(authenticateByCookie(db, r, w))
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Context {
+func authenticateByCookie(db dbutil.DB, r *http.Request, w http.ResponseWriter) context.Context {
 	// If the request is already authenticated from a cookie (and not a token), then do not clobber the request's existing
 	// authenticated actor with the actor (if any) derived from the session cookie.
 	if a := actor.FromContext(r.Context()); a.IsAuthenticated() && a.FromSessionCookie {
@@ -368,7 +368,7 @@ func authenticateByCookie(r *http.Request, w http.ResponseWriter) context.Contex
 		}
 
 		// Check that user still exists.
-		usr, err := database.GlobalUsers.GetByID(r.Context(), info.Actor.UID)
+		usr, err := database.Users(db).GetByID(r.Context(), info.Actor.UID)
 		if err != nil {
 			if errcode.IsNotFound(err) {
 				_ = deleteSession(w, r) // clear the bad value

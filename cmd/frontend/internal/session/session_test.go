@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -23,6 +24,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 
 	userCreatedAt := time.Now()
 
+	db := new(dbtesting.MockDB)
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
 	}
@@ -70,7 +72,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 	if session == nil {
 		t.Fatal("session was nil")
 	}
-	authedActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder()))
+	authedActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actr, authedActor) {
 		t.Fatalf("session was not created: %+v != %+v", authedActor, actr)
 	}
@@ -96,7 +98,7 @@ func TestSetActorDeleteSession(t *testing.T) {
 	for _, cookie := range authCookies {
 		authedReq3.AddCookie(cookie)
 	}
-	actor3 := actor.FromContext(authenticateByCookie(authedReq3, httptest.NewRecorder()))
+	actor3 := actor.FromContext(authenticateByCookie(db, authedReq3, httptest.NewRecorder()))
 	if !reflect.DeepEqual(actor3, &actor.Actor{}) {
 		t.Fatalf("underlying session was not deleted: %+v != %+v", actor3, &actor.Actor{})
 	}
@@ -166,11 +168,12 @@ func TestSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
+	db := new(dbtesting.MockDB)
+	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("didn't find actor %v != %v", gotActor, actr)
 	}
 	time.Sleep(1100 * time.Millisecond)
-	if gotActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
+	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); !reflect.DeepEqual(gotActor, &actor.Actor{}) {
 		t.Errorf("session didn't expire, found actor %+v", gotActor)
 	}
 }
@@ -179,6 +182,7 @@ func TestManualSessionExpiry(t *testing.T) {
 	cleanup := ResetMockSessionStore(t)
 	defer cleanup()
 
+	db := new(dbtesting.MockDB)
 	user := &types.User{ID: 123, InvalidatedSessionsAt: time.Now()}
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		user.ID = id
@@ -209,7 +213,7 @@ func TestManualSessionExpiry(t *testing.T) {
 		t.Fatal("expected exactly 1 authed cookie")
 	}
 
-	if gotActor := actor.FromContext(authenticateByCookie(authedReq, httptest.NewRecorder())); reflect.DeepEqual(gotActor, actr) {
+	if gotActor := actor.FromContext(authenticateByCookie(db, authedReq, httptest.NewRecorder())); reflect.DeepEqual(gotActor, actr) {
 		t.Errorf("Actor should have been deleted, got %v", gotActor)
 	}
 }
@@ -221,6 +225,7 @@ func TestCookieMiddleware(t *testing.T) {
 	actors := []*actor.Actor{{UID: 123, FromSessionCookie: true}, {UID: 456}, {UID: 789}}
 	userCreatedAt := time.Now()
 
+	db := new(dbtesting.MockDB)
 	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
 		if id == actors[0].UID {
 			return &types.User{ID: id, CreatedAt: userCreatedAt}, nil
@@ -272,7 +277,7 @@ func TestCookieMiddleware(t *testing.T) {
 	}
 	for _, testcase := range testcases {
 		rr := httptest.NewRecorder()
-		CookieMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		CookieMiddleware(db, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			gotActor := actor.FromContext(r.Context())
 			if !reflect.DeepEqual(testcase.expActor, gotActor) {
 				t.Errorf("on authenticated request, got actor %+v, expected %+v", gotActor, testcase.expActor)
@@ -315,7 +320,7 @@ func TestRecoverFromInvalidCookieValue(t *testing.T) {
 	})
 	w := httptest.NewRecorder()
 
-	CookieMiddleware(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
+	CookieMiddleware(new(dbtesting.MockDB), http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})).ServeHTTP(w, req)
 
 	// Want the request to succeed and clear the bad cookie.
 	resp := w.Result()
@@ -348,6 +353,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 		return user, nil
 	}
 	defer func() { database.Mocks = database.MockStores{} }()
+	db := new(dbtesting.MockDB)
 
 	// Start a new session for the user with ID 1. Their creation time
 	// will be recorded into the session store.
@@ -371,7 +377,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(req, w))
+	actr = actor.FromContext(authenticateByCookie(db, req, w))
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
 	}
@@ -391,7 +397,7 @@ func TestMismatchedUserCreationFails(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(req, w))
+	actr = actor.FromContext(authenticateByCookie(db, req, w))
 	if !reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not deleted")
 	}
@@ -408,6 +414,7 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 		return &types.User{ID: 1, CreatedAt: time.Now()}, nil
 	}
 	defer func() { database.Mocks = database.MockStores{} }()
+	db := new(dbtesting.MockDB)
 
 	// Start a new session for the user with ID 1. Their creation time will not be
 	// be recorded into the session store.
@@ -432,7 +439,7 @@ func TestOldUserSessionSucceeds(t *testing.T) {
 	for _, cookie := range authCookies {
 		req.AddCookie(cookie)
 	}
-	actr = actor.FromContext(authenticateByCookie(req, w))
+	actr = actor.FromContext(authenticateByCookie(db, req, w))
 	if reflect.DeepEqual(actr, &actor.Actor{}) {
 		t.Fatal("session was not created")
 	}
