@@ -17,6 +17,7 @@ func TestSavedSearchesIsEmpty(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	isEmpty, err := SavedSearches(db).IsEmpty(ctx)
@@ -61,6 +62,7 @@ func TestSavedSearchesCreate(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
@@ -103,6 +105,7 @@ func TestSavedSearchesUpdate(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
@@ -148,6 +151,7 @@ func TestSavedSearchesDelete(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
@@ -188,6 +192,7 @@ func TestSavedSearchesGetByUserID(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
@@ -234,6 +239,7 @@ func TestSavedSearchesGetByID(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
@@ -281,6 +287,7 @@ func TestListSavedSearchesByUserID(t *testing.T) {
 		t.Skip()
 	}
 
+	t.Parallel()
 	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	_, err := Users(db).Create(ctx, NewUser{DisplayName: "test", Email: "test@test.com", Username: "test", Password: "test", EmailVerificationCode: "c2"})
