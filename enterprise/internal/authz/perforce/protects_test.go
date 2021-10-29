@@ -129,13 +129,85 @@ func TestConvertToGlobMatch(t *testing.T) {
 	}
 }
 
-// mustGlobPattern gets the glob pattern for a given p4 match for use in testing
-func mustGlobPattern(t *testing.T, match string) string {
+func mustGlob(t *testing.T, match string) globMatch {
 	m, err := convertToGlobMatch(match)
 	if err != nil {
 		t.Error(err)
 	}
-	return m.pattern
+	return m
+}
+
+// mustGlobPattern gets the glob pattern for a given p4 match for use in testing
+func mustGlobPattern(t *testing.T, match string) string {
+	return mustGlob(t, match).pattern
+}
+
+func TestMatchesAgainstDepot(t *testing.T) {
+	type args struct {
+		match globMatch
+		depot string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{{
+		name: "simple match",
+		args: args{
+			match: mustGlob(t, "//app/main/..."),
+			depot: "//app/main/",
+		},
+		want: true,
+	}, {
+		name: "no wildcard in match",
+		args: args{
+			match: mustGlob(t, "//app/"),
+			depot: "//app/main/",
+		},
+		want: false,
+	}, {
+		name: "match parent path",
+		args: args{
+			match: mustGlob(t, "//app/..."),
+			depot: "//app/main/",
+		},
+		want: true,
+	}, {
+		name: "match sub path with all wildcard",
+		args: args{
+			match: mustGlob(t, "//app/.../file"),
+			depot: "//app/main/",
+		},
+		want: true,
+	}, {
+		name: "match sub path with dir wildcard",
+		args: args{
+			match: mustGlob(t, "//app/*/file"),
+			depot: "//app/main/",
+		},
+		want: true,
+	}, {
+		name: "match sub path with dir and all wildcards",
+		args: args{
+			match: mustGlob(t, "//app/*/file/.../path"),
+			depot: "//app/main/",
+		},
+		want: true,
+	}, {
+		name: "match sub path with dir wildcard that's deeply nested",
+		args: args{
+			match: mustGlob(t, "//app/*/file/*/another-file/path/"),
+			depot: "//app/main/",
+		},
+		want: true,
+	}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := matchesAgainstDepot(tt.args.match, tt.args.depot); got != tt.want {
+				t.Errorf("matchesAgainstDepot() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
 
 func TestScanFullRepoPermissions(t *testing.T) {

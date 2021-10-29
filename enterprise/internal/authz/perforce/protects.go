@@ -151,7 +151,7 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 
 	// If the subpath includes a wildcard:
 	// - depot: "//app/main/"
-	// - match: "//app/.../file"
+	// - match: "//app/.../file" or "//*/main/..."
 	// Then we want to check if it could match this match
 	if !hasPerforceWildcard(match.original) {
 		return false
@@ -172,6 +172,7 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 	// the way down to root unless there's a wildcard there.
 	parts = strings.Split(match.original, "/")
 	for i := len(parts) - 1; i > 2 || strings.Contains(parts[i], perforceWildcardMatchDirectory); i-- {
+		// Depots should always be suffixed with '/'
 		prefixMatch, err := convertToGlobMatch(strings.Join(parts[:i], "/") + "/")
 		if err != nil {
 			return false
