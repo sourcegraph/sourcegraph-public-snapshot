@@ -10,7 +10,7 @@ URL=$2
 # File to output results to
 OUTPUT_FILE=$3
 
-yarn lhci collect --url="$URL" --no-lighthouserc --settings.preset="desktop" --numberOfRuns=1
+yarn lhci collect --url="$URL" --no-lighthouserc --settings.preset="desktop" --numberOfRuns=10
 
 # LHCI doesn't an provide a way to easily expose the temporary storage URL, we have to extract it ourselves
 REPORT_URL=$(yarn lhci upload --target=temporary-public-storage | grep -o "https:\/\/storage.googleapis.*.html\+")
