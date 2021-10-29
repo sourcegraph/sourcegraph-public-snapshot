@@ -446,10 +446,9 @@ type schemaResolver struct {
 }
 
 // newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
-func newSchemaResolver(db dbutil.DB) *schemaResolver {
-
+func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
-		db:                database.NewDB(db),
+		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
 
