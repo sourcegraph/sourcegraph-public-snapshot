@@ -682,14 +682,14 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
-	// Recycles batch
+	// Recycles policies by age
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
 	} else if diff := cmp.Diff([]int{1, 2, 3}, ids(policies)); diff != "" {
 		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
-	// Recycles batch
+	// Recycles policies by age
 	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
 		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
 	} else if diff := cmp.Diff([]int{4, 1, 2}, ids(policies)); diff != "" {
