@@ -78,7 +78,7 @@ func newMetrics(observationContext *observation.Context) *metrics {
 	)
 	numPoliciesUpdated := counter(
 		"src_codeintel_background_policies_updated_total",
-		"The number of configuration policies updated.",
+		"The number of configuration policies whose repository membership list was updated.",
 	)
 	numErrors := counter(
 		"src_codeintel_background_errors_total",
