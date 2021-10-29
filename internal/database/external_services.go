@@ -161,12 +161,20 @@ type ExternalServicesListOptions struct {
 	// When true, will only return services that have the cloud_default flag set to
 	// true.
 	OnlyCloudDefault bool
+	// When true, deleted external services are included.
+	IncludeDeleted bool
 
 	*LimitOffset
+
+	// When true, only external services without has_webhooks set will be
+	// returned. For use by ExternalServiceWebhookMigrator only.
+	noCachedWebhooks bool
+	// When true, records will be locked.
+	forUpdate bool
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if len(o.IDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(o.IDs))
 		for _, id := range o.IDs {
@@ -193,6 +201,12 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
+	}
+	if !o.IncludeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
+	if o.noCachedWebhooks {
+		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))
 	}
 	return conds
 }
@@ -591,8 +605,8 @@ func (e *ExternalServiceStore) Create(ctx context.Context, confGet func() *conf.
 
 	return e.Store.Handle().DB().QueryRowContext(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id",
-		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault,
+		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_default) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault, es.HasWebhooks,
 	).Scan(&es.ID)
 }
 
@@ -663,6 +677,13 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 
 	for _, s := range svcs {
 		s.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(s.Config, "authorization").Exists()
+
+		cfg, err := s.Configuration()
+		if err != nil {
+			return errors.Wrap(err, "parsing configuration")
+		}
+		hasWebhooks := configurationHasWebhooks(cfg)
+		s.HasWebhooks = &hasWebhooks
 	}
 
 	tx, err := e.Transact(ctx)
@@ -724,6 +745,7 @@ func (e *ExternalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&svcs[i].CloudDefault,
 			&encryptionKeyID,
 			&dbutil.NullInt32{N: &svcs[i].NamespaceOrgID},
+			&dbutil.NullBool{B: svcs[i].HasWebhooks},
 		)
 		if err != nil {
 			return err
@@ -762,6 +784,7 @@ func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			nullInt32Column(s.NamespaceUserID),
 			s.Unrestricted,
 			s.CloudDefault,
+			s.HasWebhooks,
 		))
 	}
 
@@ -772,7 +795,7 @@ func (e *ExternalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -790,7 +813,8 @@ INSERT INTO external_services (
   next_sync_at,
   namespace_user_id,
   unrestricted,
-  cloud_default
+  cloud_default,
+  has_webhooks
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -806,7 +830,8 @@ SET
   next_sync_at       = excluded.next_sync_at,
   namespace_user_id  = excluded.namespace_user_id,
   unrestricted       = excluded.unrestricted,
-  cloud_default      = excluded.cloud_default
+  cloud_default      = excluded.cloud_default,
+  has_webhooks       = excluded.has_webhooks
 RETURNING
 	id,
 	kind,
@@ -821,7 +846,8 @@ RETURNING
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
-	namespace_org_id
+	namespace_org_id,
+	has_webhooks
 `
 
 // ExternalServiceUpdate contains optional fields to update.
@@ -1202,14 +1228,23 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		opt.OrderByDirection = "DESC"
 	}
 
+	var forUpdate *sqlf.Query
+	if opt.forUpdate {
+		forUpdate = sqlf.Sprintf("FOR UPDATE SKIP LOCKED")
+	} else {
+		forUpdate = sqlf.Sprintf("")
+	}
+
 	q := sqlf.Sprintf(`
-		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default
+		SELECT id, kind, display_name, config, encryption_key_id, created_at, updated_at, deleted_at, last_sync_at, next_sync_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks
 		FROM external_services
 		WHERE (%s)
 		ORDER BY id `+opt.OrderByDirection+`
+		%s
 		%s`,
 		sqlf.Join(opt.sqlConditions(), ") AND ("),
 		opt.LimitOffset.SQL(),
+		forUpdate,
 	)
 
 	rows, err := e.Query(ctx, q)
@@ -1230,8 +1265,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 			namespaceUserID sql.NullInt32
 			namespaceOrgID  sql.NullInt32
 			keyID           string
+			hasWebhooks     sql.NullBool
 		)
-		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyID, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &namespaceOrgID, &h.Unrestricted, &h.CloudDefault); err != nil {
+		if err := rows.Scan(&h.ID, &h.Kind, &h.DisplayName, &h.Config, &keyID, &h.CreatedAt, &h.UpdatedAt, &deletedAt, &lastSyncAt, &nextSyncAt, &namespaceUserID, &namespaceOrgID, &h.Unrestricted, &h.CloudDefault, &hasWebhooks); err != nil {
 			return nil, err
 		}
 
@@ -1249,6 +1285,9 @@ func (e *ExternalServiceStore) list(ctx context.Context, opt ExternalServicesLis
 		}
 		if namespaceOrgID.Valid {
 			h.NamespaceOrgID = namespaceOrgID.Int32
+		}
+		if hasWebhooks.Valid {
+			h.HasWebhooks = &hasWebhooks.Bool
 		}
 
 		keyIDs[h.ID] = keyID
@@ -1353,6 +1392,19 @@ WHERE EXISTS(
 		return false, err
 	}
 	return v && exists, nil
+}
+
+func configurationHasWebhooks(config interface{}) bool {
+	switch v := config.(type) {
+	case *schema.GitHubConnection:
+		return len(v.Webhooks) > 0
+	case *schema.GitLabConnection:
+		return len(v.Webhooks) > 0
+	case *schema.BitbucketServerConnection:
+		return v.WebhookSecret() != ""
+	}
+
+	return false
 }
 
 // MockExternalServices mocks the external services store.

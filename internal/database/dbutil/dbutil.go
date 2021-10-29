@@ -220,6 +220,33 @@ func (n NullInt) Value() (driver.Value, error) {
 	return *n.N, nil
 }
 
+type NullBool struct{ B *bool }
+
+func (n *NullBool) Scan(value interface{}) error {
+	switch v := value.(type) {
+	case bool:
+		*n.B = v
+	case int:
+		*n.B = v != 0
+	case int32:
+		*n.B = v != 0
+	case int64:
+		*n.B = v != 0
+	case nil:
+		break
+	default:
+		return errors.Errorf("value is not bool: %T", value)
+	}
+	return nil
+}
+
+func (n NullBool) Value() (driver.Value, error) {
+	if n.B == nil {
+		return nil, nil
+	}
+	return *n.B, nil
+}
+
 // JSONInt64Set represents an int64 set as a JSONB object where the keys are
 // the ids and the values are null. It implements the sql.Scanner interface so
 // it can be used as a scan destination, similar to

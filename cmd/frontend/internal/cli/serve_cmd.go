@@ -191,6 +191,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("failed to run user external account encryption job: %v", err)
 	}
 
+	// Run a background job to calculate the has_webhooks field on external
+	// service records.
+	webhookMigrator := database.NewExternalServiceWebhookMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run external service webhook job: %v", err)
+	}
+
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
 
