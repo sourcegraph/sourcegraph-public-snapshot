@@ -22,45 +22,33 @@ func TestRepoIDsByGlobPattern(t *testing.T) {
 	store := testStore(db)
 	ctx := context.Background()
 
-	// set repo test data
-	mockInsertedRepos := []struct {
-		ID   int
-		name string
+	insertRepo(t, db, 50, "Darth Vader")
+	insertRepo(t, db, 51, "Darth Venamis")
+	insertRepo(t, db, 52, "Darth Maul")
+	insertRepo(t, db, 53, "Anakin Skywalker")
+	insertRepo(t, db, 54, "Luke Skywalker")
+	insertRepo(t, db, 55, "7th Sky Corps")
+
+	testCases := []struct {
+		pattern               string
+		expectedRepositoryIDs []int
 	}{
-		{50, "Darth/Maul"},
-		{51, "DarthVader"},
-		{52, "Jedi Anakin"},
-		{53, "Jediyoda"},
-		{54, "Robot C3PO"},
+		{pattern: "Darth*", expectedRepositoryIDs: []int{50, 51, 52}},  // Prefix
+		{pattern: "Darth V*", expectedRepositoryIDs: []int{50, 51}},    // Prefix
+		{pattern: "* Skywalker", expectedRepositoryIDs: []int{53, 54}}, // Suffix
+		{pattern: "*er", expectedRepositoryIDs: []int{50, 53, 54}},     // Suffix
+		{pattern: "*Sky*", expectedRepositoryIDs: []int{53, 54, 55}},   // Infix
+		{pattern: "Rey Skywalker", expectedRepositoryIDs: nil},         // No match, never happened
 	}
 
-	// insert repo test data
-	for _, mock := range mockInsertedRepos {
-		insertRepo(t, db, mock.ID, mock.name)
-	}
-
-	// set test data and expected
-	testData := []struct {
-		pattern  string
-		expected []int
-	}{
-		{pattern: "Darth*", expected: []int{50, 51}},
-		{pattern: "Darth/*", expected: []int{50}},
-		{pattern: "Jedi*", expected: []int{52, 53}},
-		{pattern: "*C3PO*", expected: []int{54}},
-		{pattern: "*Human*", expected: nil},
-	}
-
-	for _, data := range testData {
-		// find pattern
-		repoIds, err := store.RepoIDsByGlobPattern(ctx, data.pattern)
+	for _, testCase := range testCases {
+		repositoryIDs, err := store.RepoIDsByGlobPattern(ctx, testCase.pattern)
 		if err != nil {
-			t.Fatalf("unexpected error fetching repository IDs by glob pattern: %s", err)
+			t.Fatalf("unexpected error fetching repository ids by glob pattern: %s", err)
 		}
 
-		// Actual test what you get with what is expected
-		if diff := cmp.Diff(data.expected, repoIds); diff != "" {
-			t.Errorf("unexpected job (-want +got):\n%s", diff)
+		if diff := cmp.Diff(testCase.expectedRepositoryIDs, repositoryIDs); diff != "" {
+			t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
 		}
 	}
 
@@ -76,8 +64,8 @@ func TestRepoIDsByGlobPattern(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(repoIDs) != 0 {
-			t.Fatalf("repoIDs: want 0 but got %v", repoIDs)
+		if len(repoIDs) > 0 {
+			t.Fatalf("Want no repositories but got %d repositories", len(repoIDs))
 		}
 	})
 }
