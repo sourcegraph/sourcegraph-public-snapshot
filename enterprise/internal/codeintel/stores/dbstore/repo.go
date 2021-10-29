@@ -64,30 +64,56 @@ func (s *Store) UpdateReposMatchingPatterns(ctx context.Context, patterns []stri
 		conds = append(conds, sqlf.Sprintf("FALSE"))
 	}
 
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), policyID, policyID))
+	return s.Store.Exec(ctx, sqlf.Sprintf(updateReposMatchingPatternsQuery, sqlf.Join(conds, "OR"), policyID, policyID, policyID))
 }
 
 const updateReposMatchingPatternsQuery = `
 -- source: enterprise/internal/codeintel/stores/dbstore/repo.go:UpdateReposMatchingPatterns
 WITH
-	repos AS (
-		SELECT id
-		FROM repo
-		WHERE
-			(%s) AND
-			deleted_at IS NULL AND
-			blocked IS NULL
-	),
-	deleted AS (
-		DELETE FROM lsif_configuration_policies_repository_pattern_lookup
-		WHERE
-			policy_id = %s AND
-			-- Do not delete rows that we're inserting
-			repo_id NOT IN (SELECT id FROM repos)
+matching_repositories AS (
+	SELECT id AS repo_id
+	FROM repo
+	WHERE
+		(%s) AND
+		deleted_at IS NULL AND
+		blocked IS NULL
+),
+inserted AS (
+	-- Insert records that match the policy but don't yet exist
+	INSERT INTO lsif_configuration_policies_repository_pattern_lookup(policy_id, repo_id)
+	SELECT %s, r.repo_id
+	FROM (
+		SELECT r.repo_id
+		FROM matching_repositories r
+		WHERE r.repo_id NOT IN (
+				SELECT repo_id
+				FROM lsif_configuration_policies_repository_pattern_lookup
+				WHERE policy_id = %s
+			)
+	) r
+	ORDER BY r.repo_id
+	RETURNING 1
+),
+locked_outdated_matching_repository_records AS (
+	SELECT policy_id, repo_id
+	FROM lsif_configuration_policies_repository_pattern_lookup
+	WHERE
+		policy_id = %s AND
+		repo_id NOT IN (SELECT repo_id FROM matching_repositories)
+	ORDER BY policy_id, repo_id FOR UPDATE
+),
+deleted AS (
+	-- Delete records that no longer match the policy
+	DELETE FROM lsif_configuration_policies_repository_pattern_lookup
+	WHERE (policy_id, repo_id) IN (
+		SELECT policy_id, repo_id
+		FROM locked_outdated_matching_repository_records
 	)
-INSERT INTO lsif_configuration_policies_repository_pattern_lookup(policy_id, repo_id)
-SELECT %s, repos.id
-FROM repos
+	RETURNING 1
+)
+SELECT
+	(SELECT COUNT(*) FROM inserted) AS num_inserted,
+	(SELECT COUNT(*) FROM deleted) AS num_deleted
 `
 
 func makeWildcardPattern(pattern string) string {

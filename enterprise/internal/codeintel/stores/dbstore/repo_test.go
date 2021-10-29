@@ -3,6 +3,7 @@ package dbstore
 import (
 	"context"
 	"database/sql"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -90,19 +91,23 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 		// multiple matches
 		{100, []string{"r*"}},
 
-		// exact identifier
+		// exact identifiers
 		{101, []string{"r1"}},
 
 		// multiple exact identifiers
 		{102, []string{"r2", "r3"}},
 
-		// Overwrite patterns
+		// updated patterns (disjoint)
 		{103, []string{"r4"}},
 		{103, []string{"r5"}},
 
+		// updated patterns (intersecting)
+		{104, []string{"r1", "r2", "r3"}},
+		{104, []string{"r2", "r3", "r4"}},
+
 		// deleted matches
-		{104, []string{"r5"}},
-		{104, []string{}},
+		{105, []string{"r5"}},
+		{105, []string{}},
 	}
 	for _, update := range updates {
 		if err := store.UpdateReposMatchingPatterns(ctx, update.pattern, update.policyID); err != nil {
@@ -118,14 +123,19 @@ func TestUpdateReposMatchingPatterns(t *testing.T) {
 		t.Fatalf("unexpected error while scanning policies: %s", err)
 	}
 
+	for _, repositoryIDs := range policies {
+		sort.Ints(repositoryIDs)
+	}
+
 	expectedPolicies := map[int][]int{
-		100: {50, 51, 52, 53, 54},
-		101: {50},
-		102: {51, 52},
-		103: {54},
+		100: {50, 51, 52, 53, 54}, // multiple matches
+		101: {50},                 // exact identifiers
+		102: {51, 52},             // multiple exact identifiers
+		103: {54},                 // updated patterns (disjoint)
+		104: {51, 52, 53},         // updated patterns (intersecting)
 	}
 	if diff := cmp.Diff(expectedPolicies, policies); diff != "" {
-		t.Errorf("unexpected job (-want +got):\n%s", diff)
+		t.Errorf("unexpected repository identifiers for policies (-want +got):\n%s", diff)
 	}
 }
 
