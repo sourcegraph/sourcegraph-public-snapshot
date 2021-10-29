@@ -248,6 +248,50 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 			}
 		})
 	}
+
+	// Specific behaviour is tested in TestScanFullRepoPermissions
+	t.Run("SubRepoPermissions", func(t *testing.T) {
+		execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+			return io.NopCloser(strings.NewReader(`
+read user alice * //Sourcegraph/Engineering/...
+read user alice * -//Sourcegraph/Security/...
+`)), nil, nil
+		})
+		p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+		p.depots = append(p.depots, "//Sourcegraph/")
+
+		got, err := p.FetchUserPerms(ctx,
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: extsvc.TypePerforce,
+					ServiceID:   "ssl:111.222.333.444:1666",
+				},
+				AccountData: extsvc.AccountData{
+					Data: (*json.RawMessage)(&accountData),
+				},
+			},
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(&authz.ExternalUserPermissions{
+			Exacts: []extsvc.RepoID{"//Sourcegraph/"},
+			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+				"//Sourcegraph/": {
+					PathIncludes: []string{
+						mustGlobPattern(t, "//Sourcegraph/Engineering/..."),
+					},
+					PathExcludes: []string{
+						mustGlobPattern(t, "//Sourcegraph/Security/..."),
+					},
+				},
+			},
+		}, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestProvider_FetchRepoPerms(t *testing.T) {

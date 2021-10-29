@@ -169,6 +169,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 	if len(p.depots) == 0 {
 		err = errors.Wrap(scanProtects(rc, repoIncludesExcludesScanner(perms)), "repoIncludesExcludesScanner")
 	} else {
+		// SubRepoPermissions-enabled code path
 		perms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(p.depots))
 		err = errors.Wrap(scanProtects(rc, fullRepoPermsScanner(perms, p.depots)), "fullRepoPermsScanner")
 	}

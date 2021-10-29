@@ -143,8 +143,9 @@ func convertToGlobMatch(match string) (globMatch, error) {
 	}, errors.Wrap(err, "invalid pattern")
 }
 
-func matchAgainstMatch(match globMatch, against globMatch) bool {
-	if match.Match(against.original) {
+// matchesAgainstDepot checks if the given match affects the given depot.
+func matchesAgainstDepot(match globMatch, depot string) bool {
+	if match.Match(depot) {
 		return true
 	}
 
@@ -162,7 +163,7 @@ func matchAgainstMatch(match globMatch, against globMatch) bool {
 		if err != nil {
 			return false
 		}
-		if prefixMatch.Match(against.original) {
+		if prefixMatch.Match(depot) {
 			return true
 		}
 	}
@@ -175,7 +176,7 @@ func matchAgainstMatch(match globMatch, against globMatch) bool {
 		if err != nil {
 			return false
 		}
-		if prefixMatch.Match(against.original) {
+		if prefixMatch.Match(depot) {
 			return true
 		}
 	}
@@ -183,15 +184,18 @@ func matchAgainstMatch(match globMatch, against globMatch) bool {
 	return false
 }
 
-type scanner struct {
+// protectsScanner provides callbacks for scanning the output of `p4 protects`.
+type protectsScanner struct {
+	// Called on the parsed contents of each `p4 protects` line.
 	processLine func(p4ProtectLine) error
-	finalize    func() error
+	// Called upon completion of processing of all lines.
+	finalize func() error
 }
 
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(rc io.Reader, s *scanner) error {
+func scanProtects(rc io.Reader, s *protectsScanner) error {
 	scanner := bufio.NewScanner(rc)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -247,8 +251,8 @@ func scanProtects(rc io.Reader, s *scanner) error {
 
 // scanRepoIncludesExcludes converts `p4 protects` to Postgres SIMILAR TO-compatible
 // entries for including and excluding depots as "repositories".
-func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *scanner {
-	return &scanner{
+func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protectsScanner {
+	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
 			// We drop trailing '...' so that we can check for prefixes (see below).
 			line.match = strings.TrimRight(line.match, ".")
@@ -302,10 +306,12 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *scanner 
 }
 
 // fullRepoPermsScanner converts `p4 protects` to a 1:1 implementation of Sourcegraph
-// authorization, including sub-repo perms.
-func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *scanner {
+// authorization, including sub-repo perms and exact depot-as-repo matches.
+func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
+	// Get glob equivalents of all depots
 	configuredDepotMatches := make([]globMatch, len(configuredDepots))
 	for i, depot := range configuredDepots {
+		// treat depots as wildcards
 		m, err := convertToGlobMatch(string(depot) + "**")
 		if err != nil {
 			log15.Error("unexpected failure to convert depot to pattern",
@@ -313,18 +319,22 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 				"error", err)
 			continue
 		}
-		m.original = string(depot) // preserve original name
+		// preserve original name by overriding the wildcard version of the original text
+		m.original = string(depot)
 		configuredDepotMatches[i] = m
 	}
+
+	// relevantDepots determines the set of configured depots relevant to the given globMatch
 	relevantDepots := func(m globMatch) (depots []extsvc.RepoID) {
 		for i, depot := range configuredDepotMatches {
-			if depot.Match(m.original) || matchAgainstMatch(m, depot) {
+			if depot.Match(m.original) || matchesAgainstDepot(m, depot.original) {
 				depots = append(depots, configuredDepots[i])
 			}
 		}
 		return
 	}
 
+	// Helper function for retrieving an existing SubRepoPermissions of instantiating one
 	getSubRepoPerms := func(repo extsvc.RepoID) *authz.SubRepoPermissions {
 		if _, ok := perms.SubRepoPermissions[repo]; !ok {
 			perms.SubRepoPermissions[repo] = &authz.SubRepoPermissions{}
@@ -332,9 +342,10 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 		return perms.SubRepoPermissions[repo]
 	}
 
+	// Store seen patterns for reference and matching against conflict rules
 	patternsToGlob := make(map[string]globMatch)
 
-	return &scanner{
+	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
 			match, err := convertToGlobMatch(line.match)
 			if err != nil {
@@ -374,6 +385,12 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 
 			for _, depot := range depots {
 				srp := getSubRepoPerms(depot)
+
+				// Special case: exclude entire depot
+				if strings.TrimPrefix(match.original, string(depot)) == perforceWildcardMatchAll {
+					srp.PathIncludes = nil
+				}
+
 				if len(srp.PathIncludes) > 0 {
 					srp.PathExcludes = append(srp.PathExcludes, match.pattern)
 				}
@@ -418,8 +435,8 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 }
 
 // allUsersScanner converts `p4 protects` to a map of users within the protection rules.
-func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) *scanner {
-	return &scanner{
+func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) *protectsScanner {
+	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
 			if line.isExclusion {
 				switch line.entityType {

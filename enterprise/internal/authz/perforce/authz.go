@@ -2,6 +2,7 @@ package perforce
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -47,7 +48,12 @@ func newAuthzProvider(
 	if a.SubRepoPermissions {
 		depotIDs = make([]extsvc.RepoID, len(depotIDs))
 		for i, depot := range depots {
-			depotIDs[i] = extsvc.RepoID(depot)
+			// Force depots as directories
+			if strings.HasSuffix(depot, "/") {
+				depotIDs[i] = extsvc.RepoID(depot)
+			} else {
+				depotIDs[i] = extsvc.RepoID(depot + "/")
+			}
 		}
 	}
 
