@@ -629,11 +629,11 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// It which specializes search logic in doResults. In time, all
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
-		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-			globalSearch := args.Mode == search.ZoektGlobalSearch
-			skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
-			searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
+		globalSearch := args.Mode == search.ZoektGlobalSearch
+		skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
+		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
+		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 			if !skipUnindexed {
 				typ := search.TextRequest
 				// TODO(rvantonder): we don't always have to run
@@ -694,7 +694,7 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 				ZoektArgs:    zoektArgs,
 				SearcherArgs: searcherArgs,
 
-				Mode:              args.Mode,
+				NotSearcherOnly:   !searcherOnly,
 				UseIndex:          args.PatternInfo.Index,
 				ContainsRefGlobs:  query.ContainsRefGlobs(q),
 				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),

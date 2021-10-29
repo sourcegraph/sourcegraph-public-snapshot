@@ -151,7 +151,7 @@ type StructuralSearch struct {
 	ZoektArgs    *search.ZoektParameters
 	SearcherArgs *search.SearcherParameters
 
-	Mode              search.GlobalSearchMode
+	NotSearcherOnly   bool
 	UseIndex          query.YesNoOnly
 	ContainsRefGlobs  bool
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
@@ -169,7 +169,7 @@ func (s *StructuralSearch) Run(ctx context.Context, stream streaming.Sender, rep
 		}
 	}
 
-	partitionedRepos, err := PartitionRepos(request, s.Mode != search.SearcherOnly)
+	partitionedRepos, err := PartitionRepos(request, s.NotSearcherOnly)
 	if err != nil {
 		return err
 	}
