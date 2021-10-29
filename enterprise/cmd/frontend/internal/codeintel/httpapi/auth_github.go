@@ -82,12 +82,11 @@ func checkGitHubUserRepositoryPermissions(ctx context.Context, nameWithOwner str
 
 	repository, err := client.GetRepository(ctx, owner, name)
 	if err != nil {
-		if _, ok := err.(*github.RepoNotFoundError); !ok {
-			return false, errors.Wrap(err, "githubClient.GetRepository")
+		if _, ok := err.(*github.RepoNotFoundError); ok {
+			return false, nil
 		}
 
-		// Repository not found
-		return false, nil
+		return false, errors.Wrap(err, "githubClient.GetRepository")
 	}
 
 	if repository != nil {
