@@ -27,17 +27,17 @@ The suggested values for the `effective_io_concurrency` and `random_page_cost` s
 
 The following settings are dependent on the number of CPUs and the amount of memory given to the database container, as well as the expected number maximum connections.
 
-| Setting                            | Default value | Suggested value | Suggested maximum |
-| ---------------------------------- | ------------- | --------------- | ----------------- |
-| `effective_cache_size`             | `4GB`         | `mem * 3 / 4`   | |
-| `maintenance_work_mem`             | `64MB`        | `mem / 16`      | `2gb`
-| `max_connections`                  | `100`         | `100` to start  | |
-| `max_parallel_maintenance_workers` | `2`           | `# of CPUs`     | |
-| `max_parallel_workers_per_gather`  | `2`           | `# of CPUs / 2` | `4`
-| `max_parallel_workers`             | `8`           | `# of CPUs`     | |
-| `max_worker_processes`             | `8`           | `# of CPUs`     | |
-| `shared_buffers`                   | `32MB`        | `mem / 4`       | |
-| `work_mem`                         | `4MB`         | `mem / (4 * max_connections * max_parallel_workers_per_gather)` | |
+| Setting                            | Default value | Suggested value                                                 | Suggested maximum |
+| ---------------------------------- | ------------- | --------------------------------------------------------------- | ----------------- |
+| `effective_cache_size`             | `4GB`         | `mem * 3 / 4`                                                   |                   |
+| `maintenance_work_mem`             | `64MB`        | `mem / 16`                                                      | `2gb`             |
+| `max_connections`                  | `100`         | `100` to start                                                  |                   |
+| `max_parallel_maintenance_workers` | `2`           | `# of CPUs`                                                     |                   |
+| `max_parallel_workers_per_gather`  | `2`           | `# of CPUs / 2`                                                 | `4`               |
+| `max_parallel_workers`             | `8`           | `# of CPUs`                                                     |                   |
+| `max_worker_processes`             | `8`           | `# of CPUs`                                                     |                   |
+| `shared_buffers`                   | `32MB`        | `mem / 4`                                                       |                   |
+| `work_mem`                         | `4MB`         | `mem / (4 * max_connections * max_parallel_workers_per_gather)` |                   |
 
 The setting `effective_cache_size` acts as a hint to Postgres on how to adjust its own I/O cache and does not require the configured amount of memory to be used. This value should reflect the amount of memory available to Postgres. This should be the amount of memory given to the container minus some slack for memory used by the kernel, I/O devices, and other daemons running in the same container.
 
@@ -47,6 +47,7 @@ The setting `max_connections` determines the number of active connections that c
 - gitserver
 - repo-updater
 - precise-code-intel-worker
+- worker
 
 Each of these containers open a pool of connections not exceeding the pool capacity indicated by the `SRC_PGSQL_MAX_OPEN` environment variable. The maximum number of connections for your instance can be determined by summing the connection pool capacity of every container in this list. By default, `SRC_PGSQL_MAX_OPEN` is `30`.
 
