@@ -4,8 +4,8 @@ import { Link } from '@sourcegraph/shared/src/components/Link'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 
 import { AuthenticatedUser } from '../../../auth'
-import { defaultExternalServices } from '../../../components/externalServices/externalServices'
 import { ViewerBatchChangesCodeHostsFields } from '../../../graphql-operations'
+import { CodeHost } from '../CodeHost'
 
 export interface MissingCredentialsAlertProps {
     viewerBatchChangesCodeHosts: ViewerBatchChangesCodeHostsFields
@@ -29,7 +29,7 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
             </p>
             <ul>
                 {viewerBatchChangesCodeHosts.nodes.map(node => (
-                    <MissingCodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
+                    <CodeHost {...node} key={node.externalServiceKind + node.externalServiceURL} />
                 ))}
             </ul>
             <p className="mb-0">
@@ -40,18 +40,5 @@ export const MissingCredentialsAlert: React.FunctionComponent<MissingCredentials
                 to apply this spec.
             </p>
         </div>
-    )
-}
-
-const MissingCodeHost: React.FunctionComponent<ViewerBatchChangesCodeHostsFields['nodes'][0]> = ({
-    externalServiceKind,
-    externalServiceURL,
-}) => {
-    const Icon = defaultExternalServices[externalServiceKind].icon
-    return (
-        <li>
-            <Icon className="icon-inline mr-2" />
-            {externalServiceURL}
-        </li>
     )
 }
