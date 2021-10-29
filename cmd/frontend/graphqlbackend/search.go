@@ -127,7 +127,7 @@ func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs)
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewSearchImplementer(ctx, database.NewDB(r.db), args)
+	return NewSearchImplementer(ctx, r.db, args)
 }
 
 // detectSearchType returns the search type to perfrom ("regexp", or
@@ -245,7 +245,7 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 		return mockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
+	cascade, err := (&schemaResolver{db: database.NewDB(db)}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}

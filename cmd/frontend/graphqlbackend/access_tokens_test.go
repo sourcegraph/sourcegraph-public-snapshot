@@ -79,7 +79,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		resetMocks()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
+		result, err := (&schemaResolver{db: database.NewDB(db)}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID /* no scopes */, Note: "n"})
 		if err == nil {
 			t.Error("err == nil")
 		}
@@ -95,7 +95,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		}
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{
+		result, err := (&schemaResolver{db: database.NewDB(db)}).CreateAccessToken(ctx, &createAccessTokenInput{
 			User:   uid1GQLID,
 			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
 			Note:   "n",
@@ -219,7 +219,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := (&schemaResolver{db: database.NewDB(db)}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -239,7 +239,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
+		result, err := (&schemaResolver{db: database.NewDB(db)}).CreateAccessToken(ctx, &createAccessTokenInput{User: uid1GQLID, Note: "n"})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -261,7 +261,7 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 		defer envvar.MockSourcegraphDotComMode(false)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := (&schemaResolver{db: db}).CreateAccessToken(ctx, &createAccessTokenInput{
+		_, err := (&schemaResolver{db: database.NewDB(db)}).CreateAccessToken(ctx, &createAccessTokenInput{
 			User:   uid1GQLID,
 			Scopes: []string{authz.ScopeUserAll, authz.ScopeSiteAdminSudo},
 		})
@@ -364,7 +364,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := (&schemaResolver{db: db}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := (&schemaResolver{db: database.NewDB(db)}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -385,7 +385,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		defer func() { database.Mocks.Users.GetByID = nil }()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := (&schemaResolver{db: db}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := (&schemaResolver{db: database.NewDB(db)}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}

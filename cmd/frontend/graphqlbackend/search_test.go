@@ -100,7 +100,7 @@ func TestSearch(t *testing.T) {
 
 			db := new(dbtesting.MockDB)
 			database.Mocks.Repos.List = tc.reposListMock
-			sr := &schemaResolver{db: db}
+			sr := &schemaResolver{db: database.NewDB(db)}
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)

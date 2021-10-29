@@ -44,7 +44,7 @@ func TestStatusMessages(t *testing.T) {
 
 	resetMocks()
 	t.Run("unauthenticated", func(t *testing.T) {
-		result, err := (&schemaResolver{db: db}).StatusMessages(context.Background())
+		result, err := (&schemaResolver{db: database.NewDB(db)}).StatusMessages(context.Background())
 		if want := backend.ErrNotAuthenticated; err != want {
 			t.Errorf("got err %v, want %v", err, want)
 		}

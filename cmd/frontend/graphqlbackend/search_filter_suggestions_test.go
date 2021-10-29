@@ -54,7 +54,7 @@ func TestSearchFilterSuggestions(t *testing.T) {
 	for _, tt := range tests {
 		mockDecodedViewerFinalSettings.SearchGlobbing = &tt.globbing
 
-		r, err := (&schemaResolver{db: db}).SearchFilterSuggestions(context.Background())
+		r, err := (&schemaResolver{db: database.NewDB(db)}).SearchFilterSuggestions(context.Background())
 		if err != nil {
 			t.Fatal("SearchFilterSuggestions:", err)
 		}

@@ -344,7 +344,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db)
+	resolver := newSchemaResolver(database.NewDB(db))
 	schemas := []string{mainSchema}
 
 	if batchChanges != nil {
@@ -440,7 +440,7 @@ type schemaResolver struct {
 	DotcomRootResolver
 	SearchContextsResolver
 
-	db                dbutil.DB
+	db                database.DB
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 }
@@ -449,7 +449,7 @@ type schemaResolver struct {
 func newSchemaResolver(db dbutil.DB) *schemaResolver {
 
 	r := &schemaResolver{
-		db:                db,
+		db:                database.NewDB(db),
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
 
