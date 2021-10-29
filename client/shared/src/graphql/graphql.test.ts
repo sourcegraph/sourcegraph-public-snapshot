@@ -1,7 +1,7 @@
 import { GRAPHQL_URI } from './constants'
-import { buildRequestURL, gql } from './graphql'
+import { buildGraphQLUrl, gql } from './graphql'
 
-describe('buildRequestURL', () => {
+describe('buildGraphQLUrl', () => {
     const EXAMPLE_QUERY_REQUEST = gql`
         query MyQuery {
             repository {
@@ -17,14 +17,22 @@ describe('buildRequestURL', () => {
             }
         }
     `
-    const testCases: [string, string, string | undefined, string][] = [
+
+    const testCases: [string, string | undefined, string | undefined, string][] = [
+        ['when "baseUrl" & "request" are empty', undefined, undefined, GRAPHQL_URI],
+        ['when "request" is empty', undefined, 'https://example.com', `https://example.com${GRAPHQL_URI}`],
         [
-            'when "baseUrl" is empty & "mutation" type request',
+            'when "baseUrl" is empty & "request" is mutation type',
             EXAMPLE_MUTATION_REQUEST,
             undefined,
             `${GRAPHQL_URI}?MyMutation`,
         ],
-        ['when "baseUrl" is empty & "query" type request', EXAMPLE_QUERY_REQUEST, undefined, `${GRAPHQL_URI}?MyQuery`],
+        [
+            'when "baseUrl" is empty & "request" is query type',
+            EXAMPLE_QUERY_REQUEST,
+            undefined,
+            `${GRAPHQL_URI}?MyQuery`,
+        ],
         [
             'when "baseUrl" is a domain',
             EXAMPLE_QUERY_REQUEST,
@@ -45,7 +53,7 @@ describe('buildRequestURL', () => {
         ],
     ]
 
-    test.each(testCases)('correctly constructs %s', (title, query, baseURL, expectedResult) => {
-        expect(buildRequestURL(query, baseURL)).toEqual(expectedResult)
+    test.each(testCases)('correctly constructs %s', (title, request, baseUrl, expectedResult) => {
+        expect(buildGraphQLUrl({ request, baseUrl })).toEqual(expectedResult)
     })
 })

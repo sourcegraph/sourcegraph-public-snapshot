@@ -50,11 +50,15 @@ export interface GraphQLRequestOptions extends Omit<RequestInit, 'method' | 'bod
     baseUrl?: string
 }
 
+interface BuildGraphQLUrlOptions {
+    request?: string
+    baseUrl?: string
+}
 /**
- * Constructs request URL
+ * Constructs GraphQL Request URL
  */
-export const buildRequestURL = (request: string, baseUrl?: string): string => {
-    const nameMatch = request.match(/^\s*(?:query|mutation)\s+(\w+)/)
+export const buildGraphQLUrl = ({ request, baseUrl }: BuildGraphQLUrlOptions): string => {
+    const nameMatch = request ? request.match(/^\s*(?:query|mutation)\s+(\w+)/) : ''
     const apiURL = `${GRAPHQL_URI}${nameMatch ? '?' + nameMatch[1] : ''}`
     return baseUrl ? new URL(trimEnd(baseUrl, '/') + apiURL).href : apiURL
 }
@@ -73,7 +77,7 @@ export function requestGraphQLCommon<T, V = object>({
     request: string
     variables?: V
 }): Observable<GraphQLResult<T>> {
-    return fromFetch<GraphQLResult<T>>(buildRequestURL(request, baseUrl), {
+    return fromFetch<GraphQLResult<T>>(buildGraphQLUrl({ request, baseUrl }), {
         ...options,
         method: 'POST',
         body: JSON.stringify({ query: request, variables }),
