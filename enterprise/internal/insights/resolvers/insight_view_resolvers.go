@@ -274,6 +274,9 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			//   match those up by id to detect this. Then we just treat it the same as the case for the BE series.
 			//   So maybe we want a helper function to determine an update to a FE -> FE series, vs. the other 3 cases.
 
+			// Another thought is that we can just delete/attach every time, to simplify the code. It doesn't feel
+			// like a huge performance consideration.
+
 			// One thing I think we'll lose out on here is consistent ordering. This can probably be tackled
 			// as a separate issue (as long as we do it before we release,) but I think we may need another
 			// db field for "position" or something. Otherwise I imagine that updating a dataseries might
