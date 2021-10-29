@@ -16,6 +16,9 @@ steps:
       - dev/ci/yarn-build.sh client/web
       - yarn lhci autorun
     label: ':lighthouse: Lighthouse'
+    retry:
+      automatic:
+        limit: 1
     env:
       NODE_ENV: production
       WEBPACK_SERVE_INDEX: 'true'
