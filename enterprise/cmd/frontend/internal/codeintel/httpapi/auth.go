@@ -27,19 +27,21 @@ func isSiteAdmin(ctx context.Context, db dbutil.DB) bool {
 }
 
 func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {
-	validatorByCodeHost := map[string]func(context.Context, http.ResponseWriter, *http.Request, string) (int, error){
-		"github.com": enforceAuthGithub,
+	validatorByCodeHost := map[string]func(context.Context, *http.Request, string) (int, error){
+		"github.com": enforceAuthViaGitHub,
 	}
 
 	for codeHost, validator := range validatorByCodeHost {
-		if strings.HasPrefix(repoName, codeHost) {
-			if status, err := validator(ctx, w, r, repoName); err != nil {
-				http.Error(w, err.Error(), status)
-				return false
-			}
-
-			return true
+		if !strings.HasPrefix(repoName, codeHost) {
+			continue
 		}
+
+		if status, err := validator(ctx, r, repoName); err != nil {
+			http.Error(w, err.Error(), status)
+			return false
+		}
+
+		return true
 	}
 
 	http.Error(w, "verification not supported for code host - see https://github.com/sourcegraph/sourcegraph/issues/4967", http.StatusUnprocessableEntity)
