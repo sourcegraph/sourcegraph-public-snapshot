@@ -2,7 +2,6 @@ package inference
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -40,30 +39,6 @@ func TestGoPatterns(t *testing.T) {
 		} else if testCase.expected {
 			t.Error(fmt.Sprintf("expected match: %s", testCase.path))
 		}
-	}
-}
-
-func TestCanIndexGoRepo(t *testing.T) {
-	testCases := []struct {
-		paths    []string
-		expected bool
-	}{
-		{paths: []string{"go.mod"}, expected: true},
-		{paths: []string{"a/go.mod"}, expected: true},
-		{paths: []string{"package.json"}, expected: false},
-		{paths: []string{"vendor/foo/bar/go.mod"}, expected: false},
-		{paths: []string{"foo/bar-go.mod"}, expected: false},
-		{paths: []string{"main.go"}, expected: true},
-	}
-
-	for _, testCase := range testCases {
-		name := strings.Join(testCase.paths, ", ")
-
-		t.Run(name, func(t *testing.T) {
-			if value := CanIndexGoRepo(NewMockGitClient(), testCase.paths); value != testCase.expected {
-				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
-			}
-		})
 	}
 }
 
