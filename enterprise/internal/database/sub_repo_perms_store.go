@@ -79,9 +79,9 @@ func (s *SubRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, sp
 INSERT INTO sub_repo_permissions (user_id, repo_id, path_includes, path_excludes, version, updated_at)
 SELECT %s, id, %s, %s, %s, now()
 FROM repo
-    WHERE external_service_id = %s
-    AND external_service_type = %s
-    AND external_id = %s
+WHERE external_service_id = %s
+  AND external_service_type = %s
+  AND external_id = %s
 ON CONFLICT (user_id, repo_id, version) DO UPDATE
 SET (user_id, repo_id, path_includes, path_excludes, version, updated_at) =
 (EXCLUDED.user_id, EXCLUDED.repo_id, EXCLUDED.path_includes, EXCLUDED.path_excludes, EXCLUDED.version, now())
@@ -96,8 +96,8 @@ func (s *SubRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.Re
 SELECT path_includes, path_excludes
 FROM sub_repo_permissions
 WHERE user_id = %s
-AND repo_id = %s
-AND version = %s
+  AND repo_id = %s
+  AND version = %s
 `, userID, repoID, SubRepoPermsVersion)
 
 	rows, err := s.Query(ctx, q)
