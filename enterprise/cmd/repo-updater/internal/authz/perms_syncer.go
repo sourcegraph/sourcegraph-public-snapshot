@@ -188,10 +188,6 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 		return []types.RepoName{}, nil
 	}
 
-	// TODO: Deduplicate repoSpecs
-	//  We should be able to sort the slice and then use this trick:
-	//  https://github.com/golang/go/wiki/SliceTricks#in-place-deduplicate-comparable
-
 	remaining := repoSpecs
 	nextCut := 10000
 	if len(remaining) < nextCut {
