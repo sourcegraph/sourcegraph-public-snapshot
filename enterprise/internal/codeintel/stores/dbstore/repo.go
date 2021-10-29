@@ -86,10 +86,10 @@ inserted AS (
 		SELECT r.repo_id
 		FROM matching_repositories r
 		WHERE r.repo_id NOT IN (
-				SELECT repo_id
-				FROM lsif_configuration_policies_repository_pattern_lookup
-				WHERE policy_id = %s
-			)
+			SELECT repo_id
+			FROM lsif_configuration_policies_repository_pattern_lookup
+			WHERE policy_id = %s
+		)
 	) r
 	ORDER BY r.repo_id
 	RETURNING 1
