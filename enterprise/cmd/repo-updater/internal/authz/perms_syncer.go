@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -298,7 +299,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	for _, acct := range accts {
 		provider := byServiceID[acct.ServiceID]
 		if provider == nil {
-			// We have no authz provider configured for this external account or service
+			// We have no authz provider configured for this external account
 			continue
 		}
 
@@ -433,13 +434,14 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 		return nil, errors.Wrap(err, "list user external services")
 	}
 
-	byURN := s.providersByURNs()
-
 	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
 	for _, svc := range svcs {
-		provider := byURN[svc.URN()]
+		provider, err := eauthz.ProviderFromExternalService(conf.Get().SiteConfiguration, svc)
+		if err != nil {
+			return nil, errors.Wrapf(err, "new provider from external service %d", svc.ID)
+		}
 		if provider == nil {
-			// We have no authz provider configured for this external service or service
+			// We have no authz provider configured for this external service
 			continue
 		}
 
