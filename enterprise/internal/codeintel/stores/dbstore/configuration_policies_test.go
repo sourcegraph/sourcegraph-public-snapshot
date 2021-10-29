@@ -36,13 +36,13 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, 42,   'policy 1', 'GIT_TREE',   'ab/',      null,           true,  2, false, false, 3, true),
-			(2, 42,   'policy 2', 'GIT_TREE',   'nm/',      null,           false, 3, true,  false, 4, false),
-			(3, 43,   'policy 3', 'GIT_TREE',   'xy/',      null,           true,  4, false, true,  5, false),
-			(4, NULL, 'policy 4', 'GIT_COMMIT', 'deadbeef', null,           false, 5, true,  false, 6, true),
-			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      null,           false, 6, false, true,  6, false),
-			(6, 44,   'policy 6', 'GIT_TAG',    '',         '{*/policy 1}', false, 6, false, true,  6, false),
-			(7, NULL, 'policy 7', 'GIT_TAG',    '3.0',      '{*/policy 3}', false, 7, false, true,  7, false)
+			(1, 42,   'policy 1', 'GIT_TREE',   'ab/',      null,             true,  2, false, false, 3, true),
+			(2, 42,   'policy 2', 'GIT_TREE',   'nm/',      null,             false, 3, true,  false, 4, false),
+			(3, 43,   'policy 3', 'GIT_TREE',   'xy/',      null,             true,  4, false, true,  5, false),
+			(4, NULL, 'policy 4', 'GIT_COMMIT', 'deadbeef', null,             false, 5, true,  false, 6, true),
+			(5, NULL, 'policy 5', 'GIT_TAG',    '3.0',      null,             false, 6, false, true,  6, false),
+			(6, NULL, 'policy 6', 'GIT_TAG',    '',         '{github.com/*}', false, 6, false, true,  6, false),
+			(7, NULL, 'policy 7', 'GIT_TAG',    '3.0',      '{gitlab.com/*}', false, 7, false, true,  7, false)
 	`)
 	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -86,14 +86,13 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				IndexCommitMaxAge:         &d2,
 				IndexIntermediateCommits:  false,
 			},
-			// Should not contain ID 7 because it contains a repository pattern.
 		}
 		if diff := cmp.Diff(expected, policies); diff != "" {
 			t.Errorf("unexpected configuration policies (-want +got):\n%s", diff)
 		}
 	})
 
-	t.Run("repository", func(t *testing.T) {
+	t.Run("repository by id", func(t *testing.T) {
 		repositoryID := 42
 
 		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
@@ -143,8 +142,15 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 	})
 
-	t.Run("no repository pattern", func(t *testing.T) {
+	t.Run("repository by pattern", func(t *testing.T) {
 		repositoryID := 44
+		repositoryPattern := []string{"github.com/*"}
+
+		insertRepo(t, db, repositoryID, "github.com/test")
+
+		if err := store.UpdateReposMatchingPatterns(ctx, repositoryPattern, 6); err != nil {
+			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
+		}
 
 		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
@@ -154,12 +160,11 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 
 		d6 := time.Hour * 6
-		repositoryPattern := []string{"*/policy 1"}
 
 		expected := []ConfigurationPolicy{
 			{
 				ID:                        6,
-				RepositoryID:              &repositoryID,
+				RepositoryID:              nil,
 				Name:                      "policy 6",
 				Type:                      GitObjectTypeTag,
 				Pattern:                   "",
@@ -217,6 +222,7 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 		INSERT INTO lsif_configuration_policies (
 			id,
 			repository_id,
+			repository_patterns,
 			name,
 			type,
 			pattern,
@@ -226,7 +232,7 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 			indexing_enabled,
 			index_commit_max_age_hours,
 			index_intermediate_commits
-		) VALUES (1, 42, 'policy 1', 'GIT_TREE', 'ab/', true, 2, false, false, 3, true)
+		) VALUES (1, 42, '{github.com/*}', 'policy 1', 'GIT_TREE', 'ab/', true, 2, false, false, 3, true)
 	`)
 	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -242,11 +248,14 @@ func TestGetConfigurationPolicyByID(t *testing.T) {
 
 	d1 := time.Hour * 2
 	d2 := time.Hour * 3
+
 	repositoryID := 42
+	repositoryPatterns := []string{"github.com/*"}
 
 	expectedPolicy := ConfigurationPolicy{
 		ID:                        1,
 		RepositoryID:              &repositoryID,
+		RepositoryPatterns:        &repositoryPatterns,
 		Name:                      "policy 1",
 		Type:                      GitObjectTypeTree,
 		Pattern:                   "ab/",
@@ -642,37 +651,48 @@ func TestSelectPoliciesForRepositoryMembershipUpdate(t *testing.T) {
 			index_commit_max_age_hours,
 			index_intermediate_commits
 		) VALUES
-			(1, NULL,   'policy 1', 'GIT_TREE',   'ab/',      null,           true,  2, false, false, 3, true),
-			(2, NULL,   'policy 2', 'GIT_TREE',   'nm/',      null,           false, 3, true,  false, 4, false),
-			(3, NULL, 'policy 3', 'GIT_TREE',   'xy/',      null,           true,  4, false, true,  5, false)
+			(1, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true,  1, true,  true,  1, true),
+			(2, NULL, 'policy 2', 'GIT_TREE', 'cd/', null, false, 2, true,  true,  2, true),
+			(3, NULL, 'policy 3', 'GIT_TREE', 'ef/', null, true,  3, false, false, 3, false),
+			(4, NULL, 'policy 4', 'GIT_TREE', 'gh/', null, false, 4, false, false, 4, false)
 	`)
 	if _, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
-	// fill table with test data from query above
-	policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{})
-	if err != nil {
-		t.Fatalf("unexpected error fetching configuration policies: %s", err)
-	}
-
-	// test insert doesn't add any last_resolved_at
-	for _, policy := range policies {
-		if policy.LastResolvedAt != nil {
-			t.Fatalf("expected policy to have no last resolved")
+	ids := func(policies []ConfigurationPolicy) (ids []int) {
+		for _, policy := range policies {
+			ids = append(ids, policy.ID)
 		}
+
+		return ids
 	}
 
-	// call selectPoliciesForRepositoryMembershipUpdate to update last_resolved_at
-	selectedPolicies, err := store.SelectPoliciesForRepositoryMembershipUpdate(ctx, len(policies))
-	if err != nil {
-		t.Fatalf("unexpected error select policies for repository membership update: %s", err)
+	// Can return nulls
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{1, 2}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 
-	// test update adds last_resolved_at
-	for _, selected := range selectedPolicies {
-		if selected.LastResolvedAt == nil {
-			t.Fatalf("expected policy to have last resolved")
-		}
+	// Returns new batch
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 2); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{3, 4}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
+	}
+
+	// Recycles batch
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{1, 2, 3}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
+	}
+
+	// Recycles batch
+	if policies, err := store.SelectPoliciesForRepositoryMembershipUpdate(context.Background(), 3); err != nil {
+		t.Fatalf("unexpected error fetching configuration policies for repository membership update: %s", err)
+	} else if diff := cmp.Diff([]int{4, 1, 2}, ids(policies)); diff != "" {
+		t.Fatalf("unexpected configuration policy list (-want +got):\n%s", diff)
 	}
 }

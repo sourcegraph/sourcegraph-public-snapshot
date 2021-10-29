@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 type GitObjectType string
@@ -37,7 +38,6 @@ type ConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
-	LastResolvedAt            *time.Time
 }
 
 // scanConfigurationPolicies scans a slice of configuration policies from the return value of `*Store.query`.
@@ -49,11 +49,9 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 
 	var configurationPolicies []ConfigurationPolicy
 	for rows.Next() {
+		var repositoryPatterns []string
 		var configurationPolicy ConfigurationPolicy
 		var retentionDurationHours, indexCommitMaxAgeHours *int
-		var lastResolvedAt *time.Time
-
-		var repositoryPatterns []string
 
 		if err := rows.Scan(
 			&configurationPolicy.ID,
@@ -69,7 +67,6 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 			&configurationPolicy.IndexingEnabled,
 			&indexCommitMaxAgeHours,
 			&configurationPolicy.IndexIntermediateCommits,
-			&lastResolvedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -77,7 +74,6 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 		if len(repositoryPatterns) != 0 {
 			configurationPolicy.RepositoryPatterns = &repositoryPatterns
 		}
-
 		if retentionDurationHours != nil {
 			duration := time.Duration(*retentionDurationHours) * time.Hour
 			configurationPolicy.RetentionDuration = &duration
@@ -85,9 +81,6 @@ func scanConfigurationPolicies(rows *sql.Rows, queryErr error) (_ []Configuratio
 		if indexCommitMaxAgeHours != nil {
 			duration := time.Duration(*indexCommitMaxAgeHours) * time.Hour
 			configurationPolicy.IndexCommitMaxAge = &duration
-		}
-		if lastResolvedAt != nil {
-			configurationPolicy.LastResolvedAt = lastResolvedAt
 		}
 
 		configurationPolicies = append(configurationPolicies, configurationPolicy)
@@ -146,8 +139,7 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if err != nil {
 		return nil, err
 	}
-	// Global policies are visible to anyone
-	// Repository-specific policies must check repository permissions
+	// Global policies are visible to anyone; repository-specific policies must check authz
 	conds = append(conds, sqlf.Sprintf("(p.repository_id IS NULL OR (%s))", authzConds))
 
 	configurationPolicies, err := scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(getConfigurationPoliciesQuery, sqlf.Join(conds, "AND"))))
@@ -174,8 +166,7 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits,
-	last_resolved_at
+	p.index_intermediate_commits
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 WHERE %s
@@ -212,8 +203,7 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits,
-	last_resolved_at
+	p.index_intermediate_commits
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 -- Global policies are visible to anyone
@@ -244,11 +234,6 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		repositoryPatterns = pq.Array(*configurationPolicy.RepositoryPatterns)
 	}
 
-	// Set last_resolved_at to null at creation as this is handled by a janitor background job
-	if configurationPolicy.LastResolvedAt != nil {
-		configurationPolicy.LastResolvedAt = nil
-	}
-
 	hydratedConfigurationPolicy, _, err := scanFirstConfigurationPolicy(s.Query(ctx, sqlf.Sprintf(
 		createConfigurationPolicyQuery,
 		configurationPolicy.RepositoryID,
@@ -262,7 +247,6 @@ func (s *Store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		configurationPolicy.IndexingEnabled,
 		indexingCommitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
-		configurationPolicy.LastResolvedAt,
 	)))
 	if err != nil {
 		return ConfigurationPolicy{}, err
@@ -284,9 +268,8 @@ INSERT INTO lsif_configuration_policies (
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	last_resolved_at
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	index_intermediate_commits
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
@@ -300,8 +283,7 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	last_resolved_at
+	index_intermediate_commits
 `
 
 var errUnknownConfigurationPolicy = errors.New("unknown configuration policy")
@@ -385,8 +367,7 @@ SELECT
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	last_resolved_at
+	index_intermediate_commits
 FROM lsif_configuration_policies
 WHERE id = %s
 FOR UPDATE
@@ -449,7 +430,7 @@ func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context,
 	ctx, traceLog, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.WithAndLogger(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize)))
+	configurationPolicies, err = scanConfigurationPolicies(s.Store.Query(ctx, sqlf.Sprintf(selectPoliciesForRepositoryMembershipUpdate, batchSize, timeutil.Now())))
 	if err != nil {
 		return nil, err
 	}
@@ -461,19 +442,19 @@ func (s *Store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context,
 const selectPoliciesForRepositoryMembershipUpdate = `
 -- source: enterprise/internal/codeintel/stores/dbstore/configuration_policies.go:SelectPoliciesForRepositoryMembershipUpdate
 WITH
-	candidate_policies AS (
-		SELECT p.id
-		FROM lsif_configuration_policies p
-		ORDER BY p.last_resolved_at NULLS FIRST
-		LIMIT %d
-	),
-	locked_policies AS (
-		SELECT c.id
-		FROM candidate_policies c
-		ORDER BY c.id FOR UPDATE
-	)
+candidate_policies AS (
+	SELECT p.id
+	FROM lsif_configuration_policies p
+	ORDER BY p.last_resolved_at NULLS FIRST
+	LIMIT %d
+),
+locked_policies AS (
+	SELECT c.id
+	FROM candidate_policies c
+	ORDER BY c.id FOR UPDATE
+)
 UPDATE lsif_configuration_policies
-SET last_resolved_At = NOW()
+SET last_resolved_at = %s
 WHERE id IN (SELECT id FROM locked_policies)
 RETURNING
 	id,
@@ -488,6 +469,5 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits,
-	last_resolved_at
+	index_intermediate_commits
 `
