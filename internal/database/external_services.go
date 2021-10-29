@@ -180,7 +180,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.NoNamespace {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
-	} else if o.ExcludeNamespaceUser{
+	} else if o.ExcludeNamespaceUser {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
 	} else if o.NamespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
