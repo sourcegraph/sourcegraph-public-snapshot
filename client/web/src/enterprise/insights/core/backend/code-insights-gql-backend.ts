@@ -121,7 +121,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
      * Helper function to parse a grants object from a given type and visibility.
      * TODO: Remove this function when settings api is deprecated
      *
-     * @param type {string} - The type of the dashboard
+     * @param type {('personal'|'organization'|'global')} - The type of the dashboard
      * @param visibility {string} - Usually the user or organization id
      * @returns - A properly formatted grants object
      */
