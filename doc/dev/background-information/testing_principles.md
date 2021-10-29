@@ -33,7 +33,7 @@ Typical reasons why a test may be flaky:
 1. Open a PR to disable the flaky test.
 1. Open an issue to re-enable the flaky test (use the [Flaky Test template](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=&template=flaky_test.md&title=Flake%3A+%24TEST_NAME+disabled)), and assign it to the most likely owner, and add it to the current release milestone.
 
-If the build or test infrastructure itself is flaky, then [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/distribution) and notify the [distribution team](https://about.sourcegraph.com/handbook/engineering/distribution#contact).
+If the build or test infrastructure itself is flaky, then [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/distribution) and notify the [distribution team](https://handbook.sourcegraph.com/engineering/distribution#contact).
 
 Why are flaky tests undesirable? Because these tests stop being an informative signal that the engineering team can rely on, and if we keep them around then we eventually train ourselves to ignore them and become blind to their results. This can hide real problems under the cover of flakiness.
 

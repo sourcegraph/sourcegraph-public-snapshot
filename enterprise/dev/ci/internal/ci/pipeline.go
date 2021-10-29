@@ -139,7 +139,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case ImagePatch:
 		// only build candidate image for the specified image in the branch name
-		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
+		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
 		patchImage := c.Branch[20:]
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
