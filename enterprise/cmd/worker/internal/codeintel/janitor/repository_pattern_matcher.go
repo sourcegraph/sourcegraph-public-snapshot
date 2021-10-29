@@ -19,11 +19,10 @@ type repositoryPatternMatcher struct {
 var _ goroutine.Handler = &repositoryPatternMatcher{}
 var _ goroutine.ErrorHandler = &repositoryPatternMatcher{}
 
-// NewRepositoryPatternMatcher returns a background routine that periodically updates the lookup table
-// lsif_configuration_policies_repository_pattern_lookup from the patterns set in the repository_pattern column from repos tables.
-//
-// The lookup table updates periodically with new patterns set in the repository_pattern column. Should that column be empty we delete
-// all the rows with that id in the lookup table.
+// NewRepositoryPatternMatcher returns a background routine that periodically updates the set of
+// repositories over which a particular configuration policy applies. This set is stored in the
+// table lsif_configuration_policies_repository_pattern_lookup, and uses the set of patterns in
+// the repository_pattern field of the policy.
 func NewRepositoryPatternMatcher(dbStore DBStore, lsifStore LSIFStore, interval time.Duration, batchSize int, metrics *metrics) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(context.Background(), interval, &repositoryPatternMatcher{
 		dbStore:   dbStore,
@@ -34,7 +33,6 @@ func NewRepositoryPatternMatcher(dbStore DBStore, lsifStore LSIFStore, interval 
 }
 
 func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
-	// Get all policies (nulls first)
 	policies, err := r.dbStore.SelectPoliciesForRepositoryMembershipUpdate(ctx, r.batchSize)
 	if err != nil {
 		return err
@@ -46,9 +44,13 @@ func (r *repositoryPatternMatcher) Handle(ctx context.Context) error {
 			patterns = *policy.RepositoryPatterns
 		}
 
+		// Always call this even if patterns are not supplied. Otherwise we run into the
+		// situation where we have deleted all of the patterns associated with a policy
+		// but it still has entries in the lookup table.
 		if err := r.dbStore.UpdateReposMatchingPatterns(ctx, patterns, policy.ID); err != nil {
 			return err
 		}
+
 		r.metrics.numPoliciesUpdated.Inc()
 	}
 
