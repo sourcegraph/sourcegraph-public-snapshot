@@ -92,6 +92,84 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 	})
 
+	t.Run("global with patterns", func(t *testing.T) {
+		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
+			IncludePoliciesWithPatterns: true,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error fetching configuration policies: %s", err)
+		}
+
+		d1 := time.Hour * 5
+		d2 := time.Hour * 6
+		d6 := time.Hour * 6
+		d7 := time.Hour * 7
+		repositoryPatterns1 := []string{"github.com/*"}
+		repositoryPatterns2 := []string{"gitlab.com/*"}
+
+		expected := []ConfigurationPolicy{
+			{
+				ID:                        4,
+				RepositoryID:              nil,
+				Name:                      "policy 4",
+				Type:                      GitObjectTypeCommit,
+				Pattern:                   "deadbeef",
+				RepositoryPatterns:        nil,
+				RetentionEnabled:          false,
+				RetentionDuration:         &d1,
+				RetainIntermediateCommits: true,
+				IndexingEnabled:           false,
+				IndexCommitMaxAge:         &d2,
+				IndexIntermediateCommits:  true,
+			},
+			{
+				ID:                        5,
+				RepositoryID:              nil,
+				Name:                      "policy 5",
+				Type:                      GitObjectTypeTag,
+				Pattern:                   "3.0",
+				RepositoryPatterns:        nil,
+				RetentionEnabled:          false,
+				RetentionDuration:         &d2,
+				RetainIntermediateCommits: false,
+				IndexingEnabled:           true,
+				IndexCommitMaxAge:         &d2,
+				IndexIntermediateCommits:  false,
+			},
+			{
+				ID:                        6,
+				RepositoryID:              nil,
+				Name:                      "policy 6",
+				Type:                      GitObjectTypeTag,
+				Pattern:                   "",
+				RepositoryPatterns:        &repositoryPatterns1,
+				RetentionEnabled:          false,
+				RetentionDuration:         &d6,
+				RetainIntermediateCommits: false,
+				IndexingEnabled:           true,
+				IndexCommitMaxAge:         &d6,
+				IndexIntermediateCommits:  false,
+			},
+			{
+				ID:                        7,
+				RepositoryID:              nil,
+				Name:                      "policy 7",
+				Type:                      GitObjectTypeTag,
+				Pattern:                   "3.0",
+				RepositoryPatterns:        &repositoryPatterns2,
+				RetentionEnabled:          false,
+				RetentionDuration:         &d7,
+				RetainIntermediateCommits: false,
+				IndexingEnabled:           true,
+				IndexCommitMaxAge:         &d7,
+				IndexIntermediateCommits:  false,
+			},
+		}
+		if diff := cmp.Diff(expected, policies); diff != "" {
+			t.Errorf("unexpected configuration policies (-want +got):\n%s", diff)
+		}
+	})
+
 	t.Run("repository by id", func(t *testing.T) {
 		repositoryID := 42
 
@@ -144,11 +222,11 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 	t.Run("repository by pattern", func(t *testing.T) {
 		repositoryID := 44
-		repositoryPattern := []string{"github.com/*"}
+		repositoryPatterns := []string{"github.com/*"}
 
 		insertRepo(t, db, repositoryID, "github.com/test")
 
-		if err := store.UpdateReposMatchingPatterns(ctx, repositoryPattern, 6); err != nil {
+		if err := store.UpdateReposMatchingPatterns(ctx, repositoryPatterns, 6); err != nil {
 			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
 		}
 
@@ -168,7 +246,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Name:                      "policy 6",
 				Type:                      GitObjectTypeTag,
 				Pattern:                   "",
-				RepositoryPatterns:        &repositoryPattern,
+				RepositoryPatterns:        &repositoryPatterns,
 				RetentionEnabled:          false,
 				RetentionDuration:         &d6,
 				RetainIntermediateCommits: false,

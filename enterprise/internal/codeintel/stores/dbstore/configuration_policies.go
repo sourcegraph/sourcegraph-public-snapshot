@@ -100,9 +100,24 @@ func scanFirstConfigurationPolicy(rows *sql.Rows, err error) (ConfigurationPolic
 }
 
 type GetConfigurationPoliciesOptions struct {
-	RepositoryID     int
+	// RepositoryID indicates that only configuration policies that apply to the
+	// specified repository (directly or via pattern) should be returned. This value
+	// has no effect when equal to zero.
+	RepositoryID int
+
+	// IncludePoliciesWithPatterns indicates that configuration policies with defined
+	// repository patterns should be returned. When false, only policies that apply to
+	// all repositories are returned. This value has no effect when RepositoryID is also
+	// supplied.
+	IncludePoliciesWithPatterns bool
+
+	// ForIndexing indicates that only configuration policies with data retention enabled
+	// should be returned.
 	ForDataRetention bool
-	ForIndexing      bool
+
+	// ForIndexing indicates that only configuration policies with indexing enabled should
+	// be returned.
+	ForIndexing bool
 }
 
 // GetConfigurationPolicies retrieves the set of configuration policies matching the the given options.
@@ -114,9 +129,13 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	}})
 	defer endObservation(1, observation.Args{})
 
-	conds := make([]*sqlf.Query, 0, 3)
+	conds := make([]*sqlf.Query, 0, 4)
 	if opts.RepositoryID == 0 {
-		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL AND p.repository_patterns IS NULL"))
+		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL"))
+
+		if !opts.IncludePoliciesWithPatterns {
+			conds = append(conds, sqlf.Sprintf("p.repository_patterns IS NULL"))
+		}
 	} else {
 		conds = append(conds, sqlf.Sprintf(`(
 			p.repository_id = %s OR (
