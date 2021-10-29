@@ -399,7 +399,7 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			db: db,
+			db: database.NewDB(db),
 			SearchInputs: &run.SearchInputs{
 				Plan:         plan,
 				Query:        plan.ToParseTree(),

@@ -1045,7 +1045,7 @@ func (r *searchResolver) resultsToResolver(results *SearchResults) *SearchResult
 	return &SearchResultsResolver{
 		SearchResults: results,
 		limit:         r.MaxResults(),
-		db:            database.NewDB(r.db),
+		db:            r.db,
 		UserSettings:  r.UserSettings,
 	}
 }

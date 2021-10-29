@@ -567,7 +567,7 @@ func TestSearchResultsHydration(t *testing.T) {
 		t.Fatal(err)
 	}
 	resolver := &searchResolver{
-		db: db,
+		db: database.NewDB(db),
 		SearchInputs: &run.SearchInputs{
 			Plan:         p,
 			Query:        p.ToParseTree(),
@@ -919,7 +919,7 @@ func TestEvaluateAnd(t *testing.T) {
 				t.Fatal(err)
 			}
 			resolver := &searchResolver{
-				db: db,
+				db: database.NewDB(db),
 				SearchInputs: &run.SearchInputs{
 					Plan:         p,
 					Query:        p.ToParseTree(),
@@ -983,7 +983,7 @@ func TestSearchContext(t *testing.T) {
 				reposMu:  &sync.Mutex{},
 				resolved: &searchrepos.Resolved{},
 				zoekt:    mockZoekt,
-				db:       db,
+				db:       database.NewDB(db),
 			}
 
 			numGetByNameCalls := 0

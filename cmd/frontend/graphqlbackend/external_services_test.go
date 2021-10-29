@@ -28,6 +28,7 @@ func TestAddExternalService(t *testing.T) {
 	db := new(dbtesting.MockDB)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
+		db := db
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 			return &types.User{ID: 1}, nil
 		}
