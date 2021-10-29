@@ -169,7 +169,6 @@ function writeManifest(environment: BuildEnvironment, browser: Browser, writeDir
     }
 
     if (browser === 'firefox') {
-        manifest.permissions!.push('<all_urls>')
         delete manifest.storage
     }
 

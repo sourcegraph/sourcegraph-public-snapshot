@@ -18,7 +18,6 @@ import {
     distinctUntilChanged,
 } from 'rxjs/operators'
 import addDomainPermissionToggle from 'webext-domain-permission-toggle'
-import { patternToRegex } from 'webext-patterns'
 
 import { createExtensionHostWorker } from '@sourcegraph/shared/src/api/extension/worker'
 import { GraphQLResult, requestGraphQLCommon } from '@sourcegraph/shared/src/graphql/graphql'
@@ -34,6 +33,7 @@ import { initSentry } from '../../shared/sentry'
 import { observeSourcegraphURL } from '../../shared/util/context'
 import { BrowserActionIconState, setBrowserActionIconState } from '../browser-action-icon'
 import { assertEnvironment } from '../environmentAssertion'
+import { checkUrlPermissions } from '../util'
 import { fromBrowserEvent } from '../web-extension-api/fromBrowserEvent'
 import { observeStorageKey, storage } from '../web-extension-api/storage'
 import { BackgroundPageApi, BackgroundPageApiHandlers } from '../web-extension-api/types'
@@ -196,21 +196,21 @@ async function main(): Promise<void> {
         })
     }
 
-    browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+    browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (changeInfo.status === 'loading') {
             // A new URL is loading in the tab, so clear the cached private cloud error flag.
             tabPrivateCloudErrorCache.setTabHasPrivateCloudError(tabId, false)
             return
         }
 
-        if (
-            changeInfo.status === 'complete' &&
-            customServerOrigins.some(
-                origin => origin === '<all_urls>' || (!!tab.url && urlMatchesPattern(tab.url, origin))
-            )
-        ) {
-            // Inject content script whenever a new tab was opened with a URL for which we have permission
-            await browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+        if (tab.url && changeInfo.status === 'complete') {
+            checkUrlPermissions(tab.url)
+                .then(hasPermissions => {
+                    if (hasPermissions) {
+                        return browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+                    }
+                })
+                .catch(console.warn)
         }
     })
 
@@ -457,17 +457,4 @@ function observeBrowserActionState(): Observable<BrowserActionIconState> {
         }),
         distinctUntilChanged()
     )
-}
-
-function urlMatchesPattern(url: string, originPermissionPattern: string): boolean {
-    // Workaround for bug in `webext-patterns`. Remove workaround when fixed upstream.
-    // https://github.com/fregante/webext-patterns/issues/2
-    if (originPermissionPattern.includes('://*.')) {
-        const bareDomainPattern = originPermissionPattern.replace('://*.', '://')
-        if (patternToRegex(bareDomainPattern).test(url)) {
-            return true
-        }
-    }
-
-    return patternToRegex(originPermissionPattern).test(url)
 }
