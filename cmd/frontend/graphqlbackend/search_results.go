@@ -164,7 +164,7 @@ func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultReso
 			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
 		case *result.CommitMatch:
 			resolvers = append(resolvers, &CommitSearchResultResolver{
-				db:          db,
+				db:          database.NewDB(db),
 				CommitMatch: *v,
 			})
 		}
