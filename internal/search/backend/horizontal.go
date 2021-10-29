@@ -97,6 +97,12 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 					return
 				}
 
+				// Send stats only results straight away, bypassing any re-ordering for ranking.
+				if len(sr.Files) == 0 && sr.Progress.MaxPendingPriority == 0 && !sr.Stats.Zero() {
+					streamer.Send(sr)
+					return
+				}
+
 				mu.Lock()
 				defer mu.Unlock()
 
