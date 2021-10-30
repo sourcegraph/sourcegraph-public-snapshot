@@ -1,7 +1,3 @@
 package dbmock
 
-//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i DB -o mock_db.go
-
-//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i RepoStore -o mock_repos.go
-//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i OrgStore -o mock_orgs.go
-//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -i UserStore -o mock_users.go
+//go:generate ../../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/database -d ./ -i DB -i AccessTokenStore -i EventLogStore -i FeatureFlagStore -i NamespaceStore -i OrgInvitationStore -i OrgMemberStore -i OrgStore -i PhabricatorStore -i RepoStore -i SavedSearchStore -i SearchContextsStore -i SettingsStore -i TemporarySettingsStore -i UserCredentialsStore -i UserEmailsStore -i UserExternalAccountsStore -i UserPublicRepoStore -i UserStore

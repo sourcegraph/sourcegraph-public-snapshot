@@ -23,5 +23,5 @@ type SyncStore interface {
 	Clock() func() time.Time
 	DB() dbutil.DB
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
-	UserCredentials() *database.UserCredentialsStore
+	UserCredentials() database.UserCredentialsStore
 }

@@ -1,4 +1,4 @@
-import { storiesOf } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { noop } from 'lodash'
 import React from 'react'
 import { EMPTY, of } from 'rxjs'
@@ -13,21 +13,26 @@ import { BrandedStory } from '../BrandedStory'
 import { Panel } from './Panel'
 import { panels, panelProps, panelActions, panelMenus } from './Panel.fixtures'
 
-const { add } = storiesOf('branded/Panel', module)
-    .addDecorator(story => (
-        <BrandedStory styles={webStyles} initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
-            {() => <div className="p-4">{story()}</div>}
-        </BrandedStory>
-    ))
-    .addParameters({
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={webStyles} initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
+        {() => <div className="p-4">{story()}</div>}
+    </BrandedStory>
+)
+const config: Meta = {
+    title: 'branded/Panel',
+    decorators: [decorator],
+    parameters: {
         chromatic: {
             viewports: [320, 576, 978, 1440],
         },
-    })
+    },
+}
 
-add('Simple', () => <Panel {...panelProps} />)
+export default config
 
-add('With actions', () => (
+export const Simple: Story = () => <Panel {...panelProps} />
+
+export const WithActions: Story = () => (
     <Panel
         {...panelProps}
         extensionsController={{
@@ -43,4 +48,6 @@ add('With actions', () => (
             ),
         }}
     />
-))
+)
+
+WithActions.storyName = 'With actions'

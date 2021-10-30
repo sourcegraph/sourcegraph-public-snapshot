@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func createSearchContexts(ctx context.Context, store *SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
+func createSearchContexts(ctx context.Context, store SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
 	emptyRepositoryRevisions := []*types.SearchContextRepositoryRevisions{}
 	createdSearchContexts := make([]*types.SearchContext, len(searchContexts))
 	for idx, searchContext := range searchContexts {

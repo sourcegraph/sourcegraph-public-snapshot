@@ -21,6 +21,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 	database.Mocks.UserEmails.SetVerified = func(context.Context, int32, string, bool) error {
 		return nil
 	}
+	db := database.NewDB(nil)
 
 	tests := []struct {
 		name                                string
@@ -31,7 +32,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			name: "set an email to be verified",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: true) {
@@ -54,7 +55,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			name: "set an email to be unverified",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: false) {
@@ -107,6 +108,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 	timeNow = func() time.Time {
 		return knownTime
 	}
+	db := database.NewDB(nil)
 
 	tests := []struct {
 		name            string
@@ -118,7 +120,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			name: "resend a verification email",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {
@@ -145,7 +147,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			name: "email already verified",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {
@@ -173,7 +175,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			name: "invalid email",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					resendVerificationEmail(user: "VXNlcjox", email: "alan@example.com") {
@@ -202,7 +204,7 @@ func TestResendUserEmailVerification(t *testing.T) {
 			name: "resend a verification email, too soon",
 			gqlTests: []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t),
+					Schema: mustParseGraphQLSchema(t, db),
 					Query: `
 				mutation {
 					resendVerificationEmail(user: "VXNlcjox", email: "alice@example.com") {

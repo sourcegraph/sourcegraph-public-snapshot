@@ -5,7 +5,7 @@ import { load as loadYAML } from 'js-yaml'
 import CloseIcon from 'mdi-react/CloseIcon'
 import WarningIcon from 'mdi-react/WarningIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { useHistory } from 'react-router'
+import { useHistory, useLocation } from 'react-router'
 import { asyncScheduler, concat, Observable, of, OperatorFunction, SchedulerLike, Subject } from 'rxjs'
 import {
     catchError,
@@ -35,13 +35,15 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { asError, isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { pluralize } from '@sourcegraph/shared/src/util/strings'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { Container, LoadingSpinner } from '@sourcegraph/wildcard'
+import { ErrorAlert } from '@sourcegraph/web/src/components/alerts'
+import { Container, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import batchSpecSchemaJSON from '../../../../../../schema/batch_spec.schema.json'
-import { ErrorAlert } from '../../../components/alerts'
+import { BatchChangesIcon } from '../../../batches/icons'
 import { BatchSpecWithWorkspacesFields } from '../../../graphql-operations'
 import { BatchSpec } from '../../../schema/batch_spec.schema'
 import { Settings } from '../../../schema/settings.schema'
+import { BatchSpecDownloadLink } from '../BatchSpec'
 
 import {
     createBatchSpecFromRaw as _createBatchSpecFromRaw,
@@ -50,23 +52,91 @@ import {
     replaceBatchSpecInput,
 } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
-import styles from './NewCreateBatchChangeContent.module.scss'
+import styles from './NewCreateBatchChangePage.module.scss'
 import { excludeRepo } from './yaml-util'
+
+const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+    switch (namespace.__typename) {
+        case 'User':
+            return namespace.displayName ?? namespace.username
+        case 'Org':
+            return namespace.displayName ?? namespace.name
+    }
+}
+
+/** TODO: This duplicates the URL field from the org/user resolvers on the backend, but we
+ * don't have access to that from the settings cascade presently. Can we get it included
+ * in the cascade instead somehow? */
+const getNamespaceBatchChangesURL = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
+    switch (namespace.__typename) {
+        case 'User':
+            return '/users/' + namespace.username + '/batch-changes'
+        case 'Org':
+            return '/organizations/' + namespace.name + '/batch-changes'
+    }
+}
 
 interface CreateBatchChangePageProps extends ThemeProps, SettingsCascadeProps<Settings> {
     /* For testing only. */
     createBatchSpecFromRaw?: typeof _createBatchSpecFromRaw
 }
 
-export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchChangePageProps> = ({
+export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChangePageProps> = ({
     isLightTheme,
     settingsCascade,
     createBatchSpecFromRaw = _createBatchSpecFromRaw,
 }) => {
     const history = useHistory()
+    const location = useLocation()
+
+    // Gather all the available namespaces from user settings
+    const rawNamespaces: SettingsSubject[] = useMemo(() => namespacesFromSettings(settingsCascade), [settingsCascade])
+
+    const userNamespace = useMemo(
+        () => rawNamespaces.find((namespace): namespace is SettingsUserSubject => namespace.__typename === 'User'),
+        [rawNamespaces]
+    )
+
+    if (!userNamespace) {
+        throw new Error('No user namespace found')
+    }
+
+    const organizationNamespaces = useMemo(
+        () => rawNamespaces.filter((namespace): namespace is SettingsOrgSubject => namespace.__typename === 'Org'),
+        [rawNamespaces]
+    )
+
+    const namespaces: (SettingsUserSubject | SettingsOrgSubject)[] = useMemo(
+        () => [userNamespace, ...organizationNamespaces],
+        [userNamespace, organizationNamespaces]
+    )
+
+    // Check if there's a namespace parameter in the URL
+    const defaultNamespace = new URLSearchParams(location.search).get('namespace')
+
+    // The default namespace selected from the dropdown should match whatever was in the
+    // URL parameter, or else default to the user's namespace
+    const defaultSelectedNamespace = useMemo(() => {
+        if (defaultNamespace) {
+            const lowerCaseDefaultNamespace = defaultNamespace.toLowerCase()
+            return (
+                namespaces.find(
+                    namespace =>
+                        namespace.displayName?.toLowerCase() === lowerCaseDefaultNamespace ||
+                        (namespace.__typename === 'User' &&
+                            namespace.username.toLowerCase() === lowerCaseDefaultNamespace) ||
+                        (namespace.__typename === 'Org' && namespace.name.toLowerCase() === lowerCaseDefaultNamespace)
+                ) || userNamespace
+            )
+        }
+        return userNamespace
+    }, [namespaces, defaultNamespace, userNamespace])
+
+    const [selectedNamespace, setSelectedNamespace] = useState<SettingsUserSubject | SettingsOrgSubject>(
+        defaultSelectedNamespace
+    )
 
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
-    const [selectedNamespace, setSelectedNamespace] = useState<string>('')
     const [previewID, setPreviewID] = useState<Scalars['ID']>()
     const [code, setCode] = useState<string>('name: ')
 
@@ -145,7 +215,7 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
                         if (preview !== undefined && !isErrorLike(preview)) {
                             specCreator = replaceBatchSpecInput(preview.id, code)
                         } else {
-                            specCreator = createBatchSpecFromRaw(code, selectedNamespace)
+                            specCreator = createBatchSpecFromRaw(code, selectedNamespace.id)
                         }
                         return specCreator.pipe(
                             switchMap(spec =>
@@ -186,118 +256,95 @@ export const NewCreateBatchChangeContent: React.FunctionComponent<CreateBatchCha
     )
 
     return (
-        <>
-            <h3>1. Select a namespace</h3>
-            <NamespaceSelector
-                settingsCascade={settingsCascade}
-                selectedNamespace={selectedNamespace}
-                onSelect={setSelectedNamespace}
-            />
-            <h3>2. Write a batch spec</h3>
-            <p>
-                The batch spec describes what a batch change should do. Choose an example template and edit it here. See
-                the{' '}
-                <a
-                    href="https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    syntax reference
-                </a>{' '}
-                for more options.
-            </p>
-            <div className="row">
-                <div className="col-8">
-                    <EditSpecSection isLightTheme={isLightTheme} code={code} setCode={setCode} />
+        <div className="d-flex flex-column p-4 w-100">
+            <div className="d-flex flex-0 justify-content-between">
+                <div className="flex-1">
+                    <PageHeader
+                        path={[
+                            { icon: BatchChangesIcon },
+                            {
+                                to: getNamespaceBatchChangesURL(selectedNamespace),
+                                text: getNamespaceDisplayName(selectedNamespace),
+                            },
+                            { text: 'Create batch change' },
+                        ]}
+                        className="flex-1 pb-2"
+                        description="Run custom code over hundreds of repositories and manage the resulting changesets."
+                    />
+
+                    <NamespaceSelector
+                        namespaces={namespaces}
+                        selectedNamespace={selectedNamespace.id}
+                        onSelect={setSelectedNamespace}
+                    />
                 </div>
-                <div className="col-4">
-                    <Container>
-                        {codeUpdateError && <ErrorAlert error={codeUpdateError} />}
-                        {invalid && specValidator.errors && (
-                            <ErrorAlert
-                                error={`The entered spec is invalid ${specValidator.errors
-                                    .map(error => error.message)
-                                    .join('\n')}`}
-                            />
-                        )}
-                        <PreviewWorkspaces
-                            excludeRepo={excludeRepoFromSpec}
-                            preview={preview}
-                            previewStale={previewStale}
-                        />
-                    </Container>
+                <div className="d-flex flex-column flex-0 align-items-center justify-content-center">
+                    <button
+                        type="button"
+                        className="btn btn-primary mb-2"
+                        onClick={submitBatchSpec}
+                        disabled={isLoading === true}
+                    >
+                        Run batch spec
+                    </button>
+                    <BatchSpecDownloadLink name="new-batch-spec" originalInput={code}>
+                        or download for src-cli
+                    </BatchSpecDownloadLink>
                 </div>
             </div>
-            <h3 className="mt-4">
-                3. Execute the batch spec <span className="badge badge-info text-uppercase ml-1">Experimental</span>
-            </h3>
-            <p>Execute the batch spec to get a preview of your batch change before publishing the results.</p>
-            <p>
-                Use{' '}
-                <a
-                    href="https://docs.sourcegraph.com/@batch-executor-mvp-docs/batch_changes/explanations/executors"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                >
-                    Sourcegraph executors
-                </a>{' '}
-                to run the spec and preview your batch change.
-            </p>
-            <button
-                type="button"
-                className="btn btn-primary mb-3"
-                onClick={submitBatchSpec}
-                disabled={isLoading === true}
-            >
-                Run batch spec
-            </button>
-            {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}
-        </>
+            <div className="d-flex flex-1">
+                <div className={styles.editorContainer}>
+                    {/* TODO: Calculate height from remaining window height */}
+                    <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={code} onChange={setCode} height={800} />
+                </div>
+                <Container className={styles.workspacesPreviewContainer}>
+                    {codeUpdateError && <ErrorAlert error={codeUpdateError} />}
+                    {invalid && specValidator.errors && (
+                        <ErrorAlert
+                            error={`The entered spec is invalid ${specValidator.errors
+                                .map(error => error.message)
+                                .join('\n')}`}
+                        />
+                    )}
+                    <PreviewWorkspaces
+                        excludeRepo={excludeRepoFromSpec}
+                        preview={preview}
+                        previewStale={previewStale}
+                    />
+                </Container>
+            </div>
+        </div>
     )
 }
 
 const NAMESPACE_SELECTOR_ID = 'batch-spec-execution-namespace-selector'
 
-interface NamespaceSelectorProps extends SettingsCascadeProps<Settings> {
+interface NamespaceSelectorProps {
+    namespaces: (SettingsUserSubject | SettingsOrgSubject)[]
     selectedNamespace: string
-    onSelect: (namespace: string) => void
+    onSelect: (namespace: SettingsUserSubject | SettingsOrgSubject) => void
 }
 
 const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
-    onSelect,
+    namespaces,
     selectedNamespace,
-    settingsCascade,
+    onSelect,
 }) => {
-    const namespaces: SettingsSubject[] = useMemo(() => namespacesFromSettings(settingsCascade), [settingsCascade])
-
-    const userNamespace = useMemo(
-        () => namespaces.find((namespace): namespace is SettingsUserSubject => namespace.__typename === 'User'),
-        [namespaces]
-    )
-
-    if (!userNamespace) {
-        throw new Error('No user namespace found')
-    }
-
-    const organizationNamespaces = useMemo(
-        () => namespaces.filter((namespace): namespace is SettingsOrgSubject => namespace.__typename === 'Org'),
-        [namespaces]
-    )
-
-    // Set the initially-selected namespace to the user's namespace
-    useEffect(() => onSelect(userNamespace.id), [onSelect, userNamespace])
-
     const onSelectNamespace = useCallback<React.ChangeEventHandler<HTMLSelectElement>>(
         event => {
-            onSelect(event.target.value)
+            const selectedNamespace = namespaces.find(
+                (namespace): namespace is SettingsUserSubject | SettingsOrgSubject =>
+                    namespace.id === event.target.value
+            )
+            onSelect(selectedNamespace || namespaces[0])
         },
-        [onSelect]
+        [onSelect, namespaces]
     )
 
     return (
-        <div className="form-group d-flex flex-column justify-content-start">
+        <div className="form-group d-flex align-items-center">
             <label className="text-nowrap mr-2 mb-0" htmlFor={NAMESPACE_SELECTOR_ID}>
-                <strong>Select namespace:</strong>
+                <strong>Change namespace:</strong>
             </label>
             <select
                 className={classNames(styles.namespaceSelector, 'form-control')}
@@ -305,11 +352,9 @@ const NamespaceSelector: React.FunctionComponent<NamespaceSelectorProps> = ({
                 value={selectedNamespace}
                 onChange={onSelectNamespace}
             >
-                {/* Put the user namespace first. */}
-                <option value={userNamespace.id}>{userNamespace.displayName ?? userNamespace.username}</option>
-                {organizationNamespaces.map(namespace => (
+                {namespaces.map(namespace => (
                     <option key={namespace.id} value={namespace.id}>
-                        {namespace.displayName ?? namespace.name}
+                        {getNamespaceDisplayName(namespace)}
                     </option>
                 ))}
             </select>
@@ -326,15 +371,6 @@ function namespacesFromSettings(settingsCascade: SettingsCascadeOrError<Settings
         []
     )
 }
-
-interface EditSpecSectionProps extends ThemeProps {
-    code: string
-    setCode: (spec: string) => void
-}
-
-const EditSpecSection: React.FunctionComponent<EditSpecSectionProps> = ({ isLightTheme, code, setCode }) => (
-    <MonacoBatchSpecEditor isLightTheme={isLightTheme} value={code} onChange={setCode} />
-)
 
 interface PreviewWorkspacesProps {
     excludeRepo: (repo: string, branch: string) => void
