@@ -98,6 +98,26 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// results. We'll continue to request additional locations until we fill an entire page or there are no
 	// more local results remaining, just as we did above.
 	if cursor.Phase == "remote" {
+		if cursor.RemoteCursor.UploadBatchIDs == nil {
+			cursor.RemoteCursor.UploadBatchIDs = []int{}
+			definitionUploads, err := r.definitionUploads(ctx, cursor.OrderedMonikers)
+			if err != nil {
+				return nil, "", err
+			}
+			for i := range definitionUploads {
+				found := false
+				for j := range adjustedUploads {
+					if definitionUploads[i].ID == adjustedUploads[j].Upload.ID {
+						found = true
+						break
+					}
+				}
+				if !found {
+					cursor.RemoteCursor.UploadBatchIDs = append(cursor.RemoteCursor.UploadBatchIDs, definitionUploads[i].ID)
+				}
+			}
+		}
+
 		for len(locations) < limit {
 			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
@@ -297,7 +317,7 @@ func (r *queryResolver) pageRemoteReferences(
 	if cursor.LocationOffset >= totalCount {
 		// Require a new batch on next page
 		cursor.LocationOffset = 0
-		cursor.UploadBatchIDs = nil
+		cursor.UploadBatchIDs = []int{}
 	}
 
 	// Perform an in-place filter to remove specific duplicate locations. Ranges that enclose the
