@@ -4,6 +4,8 @@ import { FileDecoration } from 'sourcegraph'
 
 import { fileDecorationColorForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 
+import styles from './FileDecorator.module.scss'
+
 interface FileDecoratorProps {
     /** Array of file decorations to render */
     fileDecorations?: FileDecoration[]
@@ -46,7 +48,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                 (fileDecoration, index) =>
                     (fileDecoration.meter || fileDecoration.after) && (
                         <div
-                            className="file-decoration d-flex align-items-center"
+                            className={classNames('d-flex align-items-center', styles.fileDecoration)}
                             key={fileDecoration.uri + String(index)}
                         >
                             {fileDecoration.after && (
@@ -62,8 +64,9 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                                     data-tooltip={fileDecoration.after.hoverMessage}
                                     data-placement="bottom"
                                     className={classNames(
-                                        'file-decoration__after text-monospace font-weight-normal test-file-decoration-text',
-                                        isActive && 'file-decoration__after--active'
+                                        'text-monospace font-weight-normal test-file-decoration-text',
+                                        styles.after,
+                                        isActive && styles.afterActive
                                     )}
                                 >
                                     {fileDecoration.after.contentText}
@@ -71,7 +74,7 @@ export const FileDecorator: React.FunctionComponent<FileDecoratorProps> = ({
                             )}
                             {fileDecoration.meter && (
                                 <meter
-                                    className={classNames('file-decoration__meter test-file-decoration-meter', {
+                                    className={classNames('test-file-decoration-meter', styles.meter, {
                                         'ml-2': !!fileDecoration.after,
                                     })}
                                     min={fileDecoration.meter.min}
