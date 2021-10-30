@@ -44,12 +44,18 @@ The setting `effective_cache_size` acts as a hint to Postgres on how to adjust i
 The setting `max_connections` determines the number of active connections that can exist before new connections will start to be declined. This number is dependent on the replica factor of the containers that require a database connection. These containers include:
 
 - frontend
-- gitserver
+- gitserver 
 - repo-updater
 - precise-code-intel-worker
 - worker
 
-Each of these containers open a pool of connections not exceeding the pool capacity indicated by the `SRC_PGSQL_MAX_OPEN` environment variable. The maximum number of connections for your instance can be determined by summing the connection pool capacity of every container in this list. By default, `SRC_PGSQL_MAX_OPEN` is `30`.
+Each of these containers open a pool of connections not exceeding the pool capacity indicated by the `SRC_PGSQL_MAX_OPEN` environment variable. The maximum number of connections for your instance can be determined by summing the connection pool capacity of every container in this list. By default, `SRC_PGSQL_MAX_OPEN` is `30`. _Note that these services do not all connect to the same database, and the frontend generates the majority of database connections_
+
+If your database is experiencing too many attemtpted connections from the above services you may see the following error:
+```log
+UTC [333] FATAL:  sorry, too many clients already
+```
+This can be resolved by raising the `max_connections` value in your `postgresql.conf` or `pgsql.ConfigMap.yaml`. It may be necessary to raise your `work_mem` as well as more concurrent connections requires more memory to process. See the table above for an idea about this scaling relationship, and coninue reading for more information about `work_mem`.
 
 The setting `max_parallel_workers_per_gather` controls how many _additional_ workers to launch for operations such as parallel sequential scan. We see diminishing returns around four workers per query. Also notice that increasing this value will *multiplicatively* increase the amount of memory required for each worker to operate safely; doubling this
 value will effectively half the maximum number of connections. Most workloads should be perfectly fine with only two workers per query.
