@@ -215,10 +215,14 @@ func (r *queryResolver) pageLocalReferences(
 	traceLog observation.TraceLogger,
 ) ([]lsifstore.Location, bool, error) {
 	var allLocations []lsifstore.Location
-	for _, adjustedUpload := range adjustedUploads[cursor.UploadOffset:] {
+	for i := range adjustedUploads {
 		if len(allLocations) >= limit {
 			// We've filled the page
 			break
+		}
+		if i < cursor.UploadOffset {
+			// Skip indexes we've searched completely
+			continue
 		}
 
 		fn := r.lsifStore.References
@@ -227,10 +231,10 @@ func (r *queryResolver) pageLocalReferences(
 		}
 		locations, totalCount, err := fn(
 			ctx,
-			adjustedUpload.Upload.ID,
-			adjustedUpload.AdjustedPathInBundle,
-			adjustedUpload.AdjustedPosition.Line,
-			adjustedUpload.AdjustedPosition.Character,
+			adjustedUploads[i].Upload.ID,
+			adjustedUploads[i].AdjustedPathInBundle,
+			adjustedUploads[i].AdjustedPosition.Line,
+			adjustedUploads[i].AdjustedPosition.Character,
 			limit-len(allLocations),
 			cursor.LocationOffset,
 		)
