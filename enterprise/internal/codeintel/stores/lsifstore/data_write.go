@@ -24,7 +24,7 @@ const CurrentDefinitionsSchemaVersion = 2
 const CurrentReferencesSchemaVersion = 2
 
 // CurrentImplementationsSchemaVersion is the schema version used for new lsif_data_implementations rows.
-const CurrentImplementationsSchemaVersion = 1
+const CurrentImplementationsSchemaVersion = 2
 
 // WriteMeta is called (transactionally) from the precise-code-intel-worker.
 func (s *Store) WriteMeta(ctx context.Context, bundleID int, meta precise.MetaData) (err error) {
