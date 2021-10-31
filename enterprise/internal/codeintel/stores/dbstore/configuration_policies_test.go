@@ -49,7 +49,10 @@ func TestGetConfigurationPolicies(t *testing.T) {
 	}
 
 	t.Run("global", func(t *testing.T) {
-		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{})
+		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
+			RepositoryID:     0,
+			ConsiderPatterns: false,
+		})
 		if err != nil {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)
 		}
@@ -94,7 +97,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 
 	t.Run("global with patterns", func(t *testing.T) {
 		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
-			IncludePoliciesWithPatterns: true,
+			RepositoryID:     0,
+			ConsiderPatterns: true,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)
@@ -170,11 +174,12 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 	})
 
-	t.Run("repository by id", func(t *testing.T) {
+	t.Run("repository-specific", func(t *testing.T) {
 		repositoryID := 42
 
 		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
-			RepositoryID: repositoryID,
+			RepositoryID:     repositoryID,
+			ConsiderPatterns: false,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)
@@ -220,7 +225,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 	})
 
-	t.Run("repository by pattern", func(t *testing.T) {
+	t.Run("repository-specific via patterns", func(t *testing.T) {
 		repositoryID := 44
 		repositoryPatterns := []string{"github.com/*"}
 
@@ -231,7 +236,8 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		}
 
 		policies, err := store.GetConfigurationPolicies(ctx, GetConfigurationPoliciesOptions{
-			RepositoryID: repositoryID,
+			RepositoryID:     repositoryID,
+			ConsiderPatterns: true,
 		})
 		if err != nil {
 			t.Fatalf("unexpected error fetching configuration policies: %s", err)

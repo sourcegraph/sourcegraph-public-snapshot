@@ -105,11 +105,19 @@ type GetConfigurationPoliciesOptions struct {
 	// has no effect when equal to zero.
 	RepositoryID int
 
-	// IncludePoliciesWithPatterns indicates that configuration policies with defined
-	// repository patterns should be returned. When false, only policies that apply to
-	// all repositories are returned. This value has no effect when RepositoryID is also
-	// supplied.
-	IncludePoliciesWithPatterns bool
+	// ConsiderPatterns indicates that repository patterns should be considered in the
+	// set of configuration policies to return.
+	//
+	// If RepositoryID is not set, then global configuration policies are returned. By
+	// default, only configuration policies applied to ALL repositories are returned. If
+	// ConsiderPatterns is set to true, then configuration policies with repository patterns
+	// are also returned.
+	//
+	// If RepositoryID is set, then configuration policies that apply to the target repository
+	// are returned. By default, only configuration policies explicitly tied to the target
+	// repository are returned. If ConsiderPatterns is set to true, then configuration policies
+	// that are applied to the target repository via patterns are also returned.
+	ConsiderPatterns bool
 
 	// ForIndexing indicates that only configuration policies with data retention enabled
 	// should be returned.
@@ -133,19 +141,25 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 	if opts.RepositoryID == 0 {
 		conds = append(conds, sqlf.Sprintf("p.repository_id IS NULL"))
 
-		if !opts.IncludePoliciesWithPatterns {
+		if !opts.ConsiderPatterns {
 			conds = append(conds, sqlf.Sprintf("p.repository_patterns IS NULL"))
 		}
 	} else {
-		conds = append(conds, sqlf.Sprintf(`(
-			p.repository_id = %s OR (
+		repositoryMatchConds := make([]*sqlf.Query, 0, 2)
+		repositoryMatchConds = append(repositoryMatchConds, sqlf.Sprintf(`p.repository_id = %s`, opts.RepositoryID))
+
+		if opts.ConsiderPatterns {
+			repositoryMatchConds = append(repositoryMatchConds, sqlf.Sprintf(`(
+				p.repository_id IS NULL AND
 				p.id IN (
 					SELECT policy_id
 					FROM lsif_configuration_policies_repository_pattern_lookup
 					WHERE repo_id = %s
 				)
-			)
-		)`, opts.RepositoryID, opts.RepositoryID))
+			)`, opts.RepositoryID))
+		}
+
+		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(repositoryMatchConds, "OR")))
 	}
 	if opts.ForDataRetention {
 		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))

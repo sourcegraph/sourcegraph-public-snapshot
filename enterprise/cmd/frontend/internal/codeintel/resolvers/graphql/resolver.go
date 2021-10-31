@@ -274,7 +274,7 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 		}
 		opts.RepositoryID = int(id64)
 	} else {
-		opts.IncludePoliciesWithPatterns = true
+		opts.ConsiderPatterns = true
 	}
 
 	policies, err := r.resolver.GetConfigurationPolicies(ctx, opts)
