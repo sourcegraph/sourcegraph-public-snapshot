@@ -61,7 +61,7 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Stats.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
@@ -77,7 +77,7 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	var resolvers []*RepositoryResolver
 	c.Stats.Status.Filter(mask, func(id api.RepoID) {
 		if r, ok := c.Stats.Repos[id]; ok {
-			resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
+			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -104,7 +104,7 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
-	db dbutil.DB
+	db database.DB
 	*SearchResults
 
 	// limit is the maximum number of SearchResults to send back to the user.
@@ -135,7 +135,7 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 	return matchesToResolvers(sr.db, limited)
 }
 
-func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
+func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
 		Name types.RepoName
 		Rev  string

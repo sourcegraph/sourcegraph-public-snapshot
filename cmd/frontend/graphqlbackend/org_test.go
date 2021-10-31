@@ -12,6 +12,7 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
 		return &types.Org{ID: 1, Name: "acme"}, nil
@@ -19,7 +20,7 @@ func TestOrganization(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					organization(name: "acme") {
@@ -39,6 +40,7 @@ func TestOrganization(t *testing.T) {
 }
 
 func TestOrganizationRepositories(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
 		return &types.Org{ID: 1, Name: "acme"}, nil
@@ -71,7 +73,7 @@ func TestOrganizationRepositories(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					organization(name: "acme") {
@@ -102,12 +104,13 @@ func TestOrganizationRepositories(t *testing.T) {
 }
 
 func TestNode_Org(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Orgs.MockGetByID_Return(t, &types.Org{ID: 1, Name: "acme"}, nil)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					node(id: "T3JnOjE=") {

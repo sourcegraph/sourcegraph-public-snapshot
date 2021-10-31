@@ -3,7 +3,6 @@ package inference
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -40,29 +39,6 @@ func TestTypeScriptPatterns(t *testing.T) {
 		} else if testCase.expected {
 			t.Error(fmt.Sprintf("expected match: %s", testCase.path))
 		}
-	}
-}
-
-func TestCanIndexTypeScriptRepo(t *testing.T) {
-	testCases := []struct {
-		paths    []string
-		expected bool
-	}{
-		{paths: []string{"tsconfig.json"}, expected: true},
-		{paths: []string{"a/tsconfig.json"}, expected: true},
-		{paths: []string{"package.json"}, expected: false},
-		{paths: []string{"node_modules/foo/bar/tsconfig.json"}, expected: false},
-		{paths: []string{"foo/bar-tsconfig.json"}, expected: false},
-	}
-
-	for _, testCase := range testCases {
-		name := strings.Join(testCase.paths, ", ")
-
-		t.Run(name, func(t *testing.T) {
-			if value := CanIndexTypeScriptRepo(NewMockGitClient(), testCase.paths); value != testCase.expected {
-				t.Errorf("unexpected result from CanIndex. want=%v have=%v", testCase.expected, value)
-			}
-		})
 	}
 }
 

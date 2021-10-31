@@ -82,11 +82,12 @@ func TestSetExternalServiceRepos(t *testing.T) {
 		database.Mocks = database.MockStores{}
 		repoupdater.DefaultClient.HTTPClient = oldClient
 	}()
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				setExternalServiceRepos(
