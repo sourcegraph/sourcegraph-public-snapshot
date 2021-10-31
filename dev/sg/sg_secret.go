@@ -2,34 +2,35 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
-	"fmt"
+	"strings"
 
+	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var (
-	secretFlagSet = flag.NewFlagSet("sg secret", flag.ExitOnError)
+	secretFlagSet      = flag.NewFlagSet("sg secret", flag.ExitOnError)
 	secretResetFlagSet = flag.NewFlagSet("sg secret reset", flag.ExitOnError)
-	secretListFlagSet = flag.NewFlagSet("sg secret list", flag.ExitOnError)
-	secretCommand = &ffcli.Command{
-		Name:        "secret",
-		ShortUsage:  "sg secret <subcommand>...",
-		ShortHelp:   "Manipulate secrets stored in memory and in file",
-		FlagSet:     secretFlagSet,
+	secretListFlagSet  = flag.NewFlagSet("sg secret list", flag.ExitOnError)
+	secretCommand      = &ffcli.Command{
+		Name:       "secret",
+		ShortUsage: "sg secret <subcommand>...",
+		ShortHelp:  "Manipulate secrets stored in memory and in file",
+		FlagSet:    secretFlagSet,
 		Subcommands: []*ffcli.Command{
 			{
 				Name:       "reset",
 				ShortUsage: "sg secret reset <key>...",
-				ShortHelp:  "Remove key value pair from secrets file",
+				ShortHelp:  "Remove a specific secret from secrets file",
 				FlagSet:    secretResetFlagSet,
 				Exec:       resetSecretExec,
 			},
 			{
 				Name:       "list",
 				ShortUsage: "sg secret list",
-				ShortHelp:  "List all key value pairs from secrets file",
+				ShortHelp:  "List all stored secrets",
 				FlagSet:    secretListFlagSet,
 				Exec:       listSecretExec,
 			},
@@ -51,10 +52,13 @@ func resetSecretExec(ctx context.Context, args []string) error {
 		return err
 	}
 
-	for _, arg := range(args) {
-		if err := secretsStore.RemoveAndSave(arg); err != nil {
+	for _, arg := range args {
+		if err := secretsStore.Remove(arg); err != nil {
 			return err
 		}
+	}
+	if err := secretsStore.SaveFile(); err != nil {
+		return err
 	}
 
 	return nil
@@ -64,10 +68,8 @@ func listSecretExec(ctx context.Context, args []string) error {
 	if err := loadSecrets(); err != nil {
 		return err
 	}
-
-	for key, value := range(secretsStore.List()) {
-		fmt.Printf("%s: %s\n", key, value)
-	}
-
+	out.WriteLine(output.Linef("", output.StyleBold, "Secrets:"))
+	keys := secretsStore.Keys()
+	out.WriteLine(output.Linef("", output.StyleWarning, strings.Join(keys, ", ")))
 	return nil
 }

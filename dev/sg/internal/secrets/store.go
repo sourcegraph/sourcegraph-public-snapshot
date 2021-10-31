@@ -108,19 +108,11 @@ func (s *Store) Remove(key string) error {
 	return fmt.Errorf("%w: %s not found", ErrSecretNotFound, key)
 }
 
-// RemoveAndSave saves automatically after calling Remove.
-func (s *Store) RemoveAndSave(key string) error {
-	if err := s.Remove(key); err != nil {
-		return err
+// Keys returns out all keys
+func (s *Store) Keys() []string {
+	keys := make([]string, 0, len(s.m))
+	for key := range s.m {
+		keys = append(keys, key)
 	}
-	return s.SaveFile()
-}
-
-// List returns out all key value pairs in a store as map[string]string.
-func (s *Store) List() map[string]string {
-	list := make(map[string]string)
-	for key, value := range s.m {
-		list[key] = string(value)
-	}
-	return list
+	return keys
 }
