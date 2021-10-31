@@ -160,7 +160,7 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 
 	metricReorderQueueSize.WithLabelValues().Observe(float64(resultQueueMaxLength))
 	if len(resultQueue) > 0 {
-		log15.Warn("HorizontalSearcher.Streamsearch: results not sent in core loop", len(resultQueue))
+		log15.Warn("HorizontalSearcher.Streamsearch: results not sent in core loop", "resultQueue", len(resultQueue))
 		for len(resultQueue) > 0 {
 			streamer.Send(heap.Pop(&resultQueue).(*zoekt.SearchResult))
 		}
