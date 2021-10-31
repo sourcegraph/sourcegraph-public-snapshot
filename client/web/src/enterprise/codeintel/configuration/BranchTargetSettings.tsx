@@ -215,6 +215,7 @@ const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> = ({
                     disabled={disabled}
                     required={true}
                 />
+                <small className="form-text text-muted">Required.</small>
             </div>
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
