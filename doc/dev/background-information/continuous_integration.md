@@ -19,7 +19,7 @@ sg ci preview
 
 The source code of the pipeline generator is in [`/enterprise/dev/ci`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
 
-To test the rendering of the entire pipeline, you can run `env BUILDKITE_BRANCH=TESTBRANCH go run ./enterprise/dev/ci/gen-pipeline.go` and inspect the YAML output. To change the behaviour set the relevant `BUILDKITE_` environment variables.
+To test the rendering of the entire pipeline, you can run `cd ./enterprise/dev/ci/ && env BUILDKITE_BRANCH=TESTBRANCH go run gen-pipeline.go` and inspect the YAML output. To change the behaviour set the relevant `BUILDKITE_` environment variables.
 
 > WARNING: Sourcegraph's pipeline generator and its generated output are under the [Sourcegraph Enterprise license](https://github.com/sourcegraph/sourcegraph/blob/main/LICENSE.enterprise).
 
@@ -115,7 +115,7 @@ An example use of `Skip`:
 To set up Buildkite to use the rendered pipeline, add the following step in the [pipeline settings](https://buildkite.com/sourcegraph/sourcegraph/settings):
 
 ```shell
-go run ./enterprise/dev/ci/gen-pipeline.go | buildkite-agent pipeline upload
+cd ./enterprise/dev/ci/ && go run . | buildkite-agent pipeline upload
 ```
 
 #### Managing secrets
