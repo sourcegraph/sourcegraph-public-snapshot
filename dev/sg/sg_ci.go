@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/stdout"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -87,15 +89,20 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				if err != nil {
 					return err
 				}
-				cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-preview")
-				cmd.Env = append(os.Environ(),
-					fmt.Sprintf("BUILDKITE_BRANCH=%s", branch),
-					fmt.Sprintf("BUILDKITE_MESSAGE=%s", message))
-				out, err := run.InRoot(cmd)
+				cmd := exec.Command("go", "run", ".", "-preview")
+				repoRoot, err := root.RepositoryRoot()
 				if err != nil {
 					return err
 				}
-				stdout.Out.Write(out)
+				cmd.Dir = filepath.Join(repoRoot, "enterprise/dev/ci/")
+				cmd.Env = append(os.Environ(),
+					fmt.Sprintf("BUILDKITE_BRANCH=%s", branch),
+					fmt.Sprintf("BUILDKITE_MESSAGE=%s", message))
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					return errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
+				}
+				stdout.Out.Write(string(out))
 				return nil
 			},
 		}, {
