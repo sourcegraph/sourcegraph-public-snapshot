@@ -24,6 +24,7 @@ var Recognizers = map[string]IndexJobRecognizer{
 	"go":   recognizer{GoPatterns, InferGoIndexJobs},
 	"tsc":  recognizer{TypeScriptPatterns, InferTypeScriptIndexJobs},
 	"java": recognizer{JavaPatterns, InferJavaIndexJobs},
+	"rust": recognizer{RustPatterns, InferRustIndexJobs},
 }
 
 type recognizer struct {
