@@ -902,7 +902,7 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			// Legacy configurations might not be valid JSON; in that case, they
 			// also can't have webhooks, so we'll just log the issue and move
 			// on.
-			log15.Warn("cannot parse external service configuration as JSON", "err", err)
+			log15.Warn("cannot parse external service configuration as JSON", "err", err, "id", id)
 			hasWebhooks = false
 		}
 		update.Config = &newSvc.Config
@@ -1427,7 +1427,7 @@ func (e *ExternalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	} else {
 		// Legacy configurations might not be valid JSON; in that case, they
 		// also can't have webhooks, so we'll just log the issue and move on.
-		log15.Warn("cannot parse external service configuration as JSON", "err", err)
+		log15.Warn("cannot parse external service configuration as JSON", "err", err, "id", es.ID)
 	}
 	es.HasWebhooks = &hasWebhooks
 
