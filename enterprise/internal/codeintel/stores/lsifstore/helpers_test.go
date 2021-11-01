@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const testBundleID = 39162
+const testBundleID = 1
 
 func populateTestStore(t testing.TB) *Store {
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
