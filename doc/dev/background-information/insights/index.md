@@ -1,7 +1,7 @@
 # Developing code insights
 
 - What is it?
-  - [Code Insights team page](https://handbook.sourcegraph.com/engineering/code-graph/code-insights#code-insights-team)
+  - [Code Insights team page](https://handbook.sourcegraph.com/engineering/code-graph/code-insights)
   - [Code Insights docs](../../../code_insights/index.md)
 - Frontend
   - [Architecture overview](frontend.md)

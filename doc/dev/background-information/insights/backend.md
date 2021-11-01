@@ -18,7 +18,7 @@
 
 ## Beta state of the backend
 
-The current code insights backend is a beta version contributed by [Coury](https://handbook.sourcegraph.com/company/team#coury-clark-hehim) (based on previous work by [Stephen](https://handbook.sourcegraph.com/company/team#stephen-gutekanst)) - it:
+The current code insights backend is a beta version contributed by [Coury](https://handbook.sourcegraph.com/company/team#coury-clark) (based on previous work by [Stephen](https://handbook.sourcegraph.com/company/team#stephen-gutekanst)) - it:
 
 * Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
 * Is backed by a [TimescaleDB](https://www.timescale.com) instance. See the [database section](#database) below for more information.
