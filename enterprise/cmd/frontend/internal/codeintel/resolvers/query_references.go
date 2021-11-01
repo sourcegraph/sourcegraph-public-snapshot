@@ -515,7 +515,7 @@ func (r *queryResolver) uploadIDsWithReferences(
 	}()
 
 	ignoreIDsMap := map[int]struct{}{}
-	for id := range ignoreIDs {
+	for _, id := range ignoreIDs {
 		ignoreIDsMap[id] = struct{}{}
 	}
 
