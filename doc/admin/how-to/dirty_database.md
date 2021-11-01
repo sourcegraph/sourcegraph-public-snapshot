@@ -10,7 +10,7 @@ ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for furt
 
 ## Prerequisites
 
-* This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred
+* This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred, and that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
 * **NOTE: If you encountered this error during an upgrade, ensure you followed the [proper step upgrade process documented here.](https://docs.sourcegraph.com/admin/updates) If you skipped a minor version during an upgrade, you will need to revert back to the last minor version your instance was on before following the steps in this document.**
 
 ## Steps to resolve
