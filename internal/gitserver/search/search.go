@@ -122,7 +122,7 @@ func (cs *CommitSearcher) Search(ctx context.Context, onMatch func(*protocol.Com
 	return g.Wait()
 }
 
-func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) error {
+func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, resultChans chan chan *protocol.CommitMatch) (err error) {
 	revArgs := revsToGitArgs(cs.Revisions)
 	cmd := exec.CommandContext(ctx, "git", append(logArgs, revArgs...)...)
 	cmd.Dir = cs.RepoDir
@@ -136,6 +136,13 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+
+	defer func() {
+		// Always call cmd.Wait to avoid leaving zombie processes around.
+		if e := cmd.Wait(); e != nil {
+			err = multierror.Append(err, tryInterpretErrorWithStderr(err, stderrBuf.String()))
+		}
+	}()
 
 	batch := make([]*RawCommit, 0, batchSize)
 	sendBatch := func() {
@@ -164,14 +171,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 		sendBatch()
 	}
 
-	if scanner.Err() != nil {
-		return scanner.Err()
-	}
-
-	if err := cmd.Wait(); err != nil {
-		return tryInterpretErrorWithStderr(err, stderrBuf.String())
-	}
-	return nil
+	return scanner.Err()
 }
 
 func tryInterpretErrorWithStderr(err error, stderr string) error {
@@ -179,7 +179,7 @@ func tryInterpretErrorWithStderr(err error, stderr string) error {
 		// Ignore no commits error error
 		return nil
 	}
-	log15.Warn("git search command exited with non-zero status and stderr content: %q", stderr)
+	log15.Warn("git search command exited with non-zero status code", "stderr", stderr)
 	return err
 }
 
