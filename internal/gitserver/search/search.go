@@ -158,7 +158,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	scanner := NewCommitScanner(stdoutReader)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return nil
 		}
 		cv := scanner.NextRawCommit()
 		batch = append(batch, cv)
