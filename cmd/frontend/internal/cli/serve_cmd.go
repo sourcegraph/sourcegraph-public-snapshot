@@ -191,6 +191,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		log.Fatalf("failed to run user external account encryption job: %v", err)
 	}
 
+	// Run a background job to calculate the has_webhooks field on external
+	// service records.
+	webhookMigrator := database.NewExternalServiceWebhookMigratorWithDB(db)
+	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+		log.Fatalf("failed to run external service webhook job: %v", err)
+	}
+
 	// Run enterprise setup hook
 	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
 
@@ -260,7 +267,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver, enterprise.SearchContextsResolver)
+	schema, err := graphqlbackend.NewSchema(database.NewDB(db), enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver, enterprise.SearchContextsResolver)
 	if err != nil {
 		return err
 	}

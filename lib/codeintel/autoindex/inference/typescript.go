@@ -21,16 +21,6 @@ func TypeScriptPatterns() []*regexp.Regexp {
 	}
 }
 
-func CanIndexTypeScriptRepo(gitclient GitClient, paths []string) bool {
-	for _, path := range paths {
-		if canIndexTypeScriptPath(path) {
-			return true
-		}
-	}
-
-	return false
-}
-
 const lsifTscImage = "sourcegraph/lsif-node:autoindex"
 const nMuslCommand = "N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 

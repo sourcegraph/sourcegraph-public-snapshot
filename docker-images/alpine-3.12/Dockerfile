@@ -23,4 +23,4 @@ RUN addgroup -g 101 -S sourcegraph && adduser -u 100 -S -G sourcegraph -h /home/
 # See https://github.com/sourcegraph/deploy-sourcegraph-docker/issues/1
 # Install other packages that are desirable in ALL Sourcegraph Docker images.
 # hadolint ignore=DL3018
-RUN apk add --no-cache bind-tools ca-certificates curl mailcap tini
+RUN apk add --no-cache bind-tools ca-certificates curl mailcap tini wget

@@ -329,7 +329,8 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{
-			RepoIDs: repoIDs,
+			RepoIDs:             repoIDs,
+			OnlyWithoutWebhooks: args.OnlyWithoutWebhooks,
 		},
 		limitOffset: database.LimitOffset{
 			Limit:  int(args.First),

@@ -136,7 +136,7 @@ func (s *Store) ExternalServices() *database.ExternalServiceStore {
 }
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
-func (s *Store) UserCredentials() *database.UserCredentialsStore {
+func (s *Store) UserCredentials() database.UserCredentialsStore {
 	return database.UserCredentialsWith(s, s.key)
 }
 

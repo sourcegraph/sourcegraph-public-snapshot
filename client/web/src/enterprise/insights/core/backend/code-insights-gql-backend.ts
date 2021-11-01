@@ -12,6 +12,7 @@ import {
     CreateInsightsDashboardInput,
     DeleteDashboardResult,
     InsightsDashboardsResult,
+    InsightsPermissionGrantsInput,
     UpdateDashboardResult,
     UpdateInsightsDashboardInput,
     CreateInsightResult,
@@ -22,8 +23,9 @@ import {
 } from '@sourcegraph/web/src/graphql-operations'
 
 import {
-    InsightDashboard,
     Insight,
+    InsightDashboard,
+    InsightsDashboardType,
     InsightType,
     InsightTypePrefix,
     isSearchBasedInsight,
@@ -84,7 +86,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
-    public getInsights = errorMockMethod('getInsights')
+    public getInsights = (ids?: string[]): Observable<Insight[]> => {
+        console.warn('TODO: Implement getInsights for GraphQL API')
+        return of([])
+    }
 
     public getInsightById = (id: string): Observable<Insight | null> =>
         fromObservableQuery(
@@ -211,6 +216,11 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                                         id
                                     }
                                 }
+                                grants {
+                                    users
+                                    organizations
+                                    global
+                                }
                             }
                         }
                     }
@@ -218,26 +228,77 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) =>
-                data.insightsDashboards.nodes.map(dashboard => ({
-                    id: dashboard.id,
-                    title: dashboard.title,
-                    insightIds: dashboard.views?.nodes.map(view => view.id),
-                }))
+                data.insightsDashboards.nodes.map(
+                    (dashboard): InsightDashboard => ({
+                        id: dashboard.id,
+                        title: dashboard.title,
+                        insightIds: dashboard.views?.nodes.map(view => view.id),
+                        grants: dashboard.grants,
+                        type: this.parseType(dashboard.grants),
+                    })
+                )
             )
         )
-    // TODO [VK]: Omit for now usage of dashboard info in the creation UI.
-    // We have to implement and merge that after the dashboard page migration will be ready.
-    public getDashboardById = (): Observable<null> => of(null)
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
+        this.getDashboards().pipe(map(dashboards => dashboards.find(({ id }) => id === dashboardId)))
+
     public findDashboardByName = errorMockMethod('findDashboardByName')
 
+    /**
+     * Helper function to parse the dashboard type from the grants object.
+     * TODO: Remove this function when settings api is deprecated
+     *
+     * @param grants {object} - A grants object from an insight dashboard
+     * @param grants.global {boolean}
+     * @param grants.users {string[]}
+     * @param grants.organizations {string[]}
+     * @returns - The type of the dashboard
+     */
+    private parseType(grants?: {
+        global?: boolean
+        users?: string[]
+        organizations?: string[]
+    }): InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global {
+        if (grants?.global) {
+            return InsightsDashboardType.Global
+        }
+        if (grants?.organizations?.length) {
+            return InsightsDashboardType.Organization
+        }
+        return InsightsDashboardType.Personal
+    }
+
+    /**
+     * Helper function to parse a grants object from a given type and visibility.
+     * TODO: Remove this function when settings api is deprecated
+     *
+     * @param type {('personal'|'organization'|'global')} - The type of the dashboard
+     * @param visibility {string} - Usually the user or organization id
+     * @returns - A properly formatted grants object
+     */
+    private parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
+        const grants: InsightsPermissionGrantsInput = {}
+        if (type === 'personal') {
+            grants.users = [visibility]
+        }
+        if (type === 'organization') {
+            grants.organizations = [visibility]
+        }
+        if (type === 'global') {
+            grants.global = true
+        }
+
+        return grants
+    }
+
     public createDashboard = (input: DashboardCreateInput): Observable<void> => {
-        if (!input.grants) {
+        if (!input.type) {
             throw new Error('`grants` are required to create a new dashboard')
         }
 
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
-            grants: input.grants,
+            grants: this.parseGrants(input.type, input.visibility),
         }
 
         return from(
@@ -280,13 +341,13 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             throw new Error('`id` is required to update a dashboard')
         }
 
-        if (!nextDashboardInput.grants) {
+        if (!nextDashboardInput.type) {
             throw new Error('`grants` are required to update a dashboard')
         }
 
         const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
-            grants: nextDashboardInput.grants,
+            grants: this.parseGrants(nextDashboardInput.type, nextDashboardInput.visibility),
         }
 
         return from(

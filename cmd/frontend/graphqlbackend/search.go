@@ -59,7 +59,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -192,7 +192,7 @@ func getBoolPtr(b *bool, def bool) bool {
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	*run.SearchInputs
-	db                  dbutil.DB
+	db                  database.DB
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// stream if non-nil will send all search events we receive down it.
@@ -245,7 +245,7 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 		return mockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
+	cascade, err := (&schemaResolver{db: database.NewDB(db)}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -365,7 +365,7 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 		fmr := &FileMatchResolver{
 			FileMatch:    *fm,
 			db:           r.db,
-			RepoResolver: NewRepositoryResolver(database.NewDB(r.db), fm.Repo.ToRepo()),
+			RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 		}
 		suggestions = append(suggestions, gitTreeSuggestionResolver{
 			gitTreeEntry: fmr.File(),
