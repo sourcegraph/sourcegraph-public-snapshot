@@ -223,7 +223,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 //
 // It returns a list of internal database repository IDs and is a noop when
 // `envvar.SourcegraphDotComMode()` is true.
-func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]authz.SubRepoPermissions, err error) {
+func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (repoIDs []uint32, subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions, err error) {
 	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
 	//  repositories, therefore it is no point wasting effort and code host API rate
 	//  limit quota on trying.
@@ -296,7 +296,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	}
 
 	var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
-	subRepoPerms = make(map[api.ExternalRepoSpec]authz.SubRepoPermissions)
+	subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
 
 	for _, acct := range accts {
 		provider := byServiceID[acct.ServiceID]
@@ -614,7 +614,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	// Set sub-repository permissions
 	srp := edb.SubRepoPerms(s.reposStore.Handle().DB(), time.Now)
 	for spec, perm := range subRepoPerms {
-		if err := srp.UpsertWithSpec(ctx, user.ID, spec, perm); err != nil {
+		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
 			return errors.Wrapf(err, "upserting sub repo perms %v for user %d", spec, user.ID)
 		}
 	}
