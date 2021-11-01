@@ -93,7 +93,7 @@ OR  (                             -- Restricted repositories require checking pe
 		AND (
 				(user_id IS NULL AND org_id IS NULL)  -- The repository was added at the instance level
 			OR  user_id = %s                          -- The authenticated user added this repository
-			OR  EXISTS (                              -- The authenticated user is a member of an organization added this repository
+			OR  EXISTS (                              -- The authenticated user is a member of an organization that added this repository
 				SELECT
 				FROM org_members
 				WHERE
