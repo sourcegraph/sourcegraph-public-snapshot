@@ -2945,7 +2945,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100200` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2966,7 +2966,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100201` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -2987,7 +2987,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100210` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -3008,7 +3008,7 @@ This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100211` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Search team](https://about.sourcegraph.com/handbook/engineering/search).*</sub>
+<sub>*Managed by the [Sourcegraph Search team](https://handbook.sourcegraph.com/engineering/search).*</sub>
 
 <details>
 <summary>Technical details</summary>
