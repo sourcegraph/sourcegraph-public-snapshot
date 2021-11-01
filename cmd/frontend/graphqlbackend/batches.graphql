@@ -2706,6 +2706,10 @@ type BatchSpec implements Node {
         Only returns the code hosts for which the viewer doesn't have credentials.
         """
         onlyWithoutCredential: Boolean = false
+        """
+        Only returns code hosts that don't have webhooks configured.
+        """
+        onlyWithoutWebhooks: Boolean = false
     ): BatchChangesCodeHostConnection!
 
     """
@@ -2911,6 +2915,11 @@ type BatchChangesCodeHost {
     an SSH key to be configured.
     """
     requiresSSH: Boolean!
+
+    """
+    If true, the code host has webhooks configured.
+    """
+    hasWebhooks: Boolean!
 }
 
 """

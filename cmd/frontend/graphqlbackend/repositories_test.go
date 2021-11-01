@@ -42,9 +42,10 @@ func TestRepositories(t *testing.T) {
 		}, nil
 	}
 
+	db := database.NewDB(nil)
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repositories {
@@ -87,7 +88,7 @@ func TestRepositories(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repositories {
@@ -112,7 +113,7 @@ func TestRepositories(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			// cloned and notCloned are true by default
 			// this test ensures the behavior is the same
 			// when setting them explicitly
@@ -140,7 +141,7 @@ func TestRepositories(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repositories(first: 2) {
@@ -162,7 +163,7 @@ func TestRepositories(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repositories(cloned: false) {
@@ -184,7 +185,7 @@ func TestRepositories(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repositories(notCloned: false) {
@@ -205,7 +206,7 @@ func TestRepositories(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repositories(notCloned: false, cloned: false) {
@@ -239,6 +240,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	}
 
 	t.Run("Initial page without a cursor present", func(t *testing.T) {
+		db := database.NewDB(nil)
 		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos[0:2], nil
 		}
@@ -246,7 +248,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					repositories(first: 1) {
@@ -276,6 +278,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Second page in ascending order", func(t *testing.T) {
+		db := database.NewDB(nil)
 		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos[1:], nil
 		}
@@ -283,7 +286,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					repositories(first: 1, after: "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoibmV4dCJ9") {
@@ -313,6 +316,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Second page in descending order", func(t *testing.T) {
+		db := database.NewDB(nil)
 		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos[1:], nil
 		}
@@ -320,7 +324,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					repositories(first: 1, after: "UmVwb3NpdG9yeUN1cnNvcjp7IkNvbHVtbiI6Im5hbWUiLCJWYWx1ZSI6InJlcG8yIiwiRGlyZWN0aW9uIjoicHJldiJ9", descending: true) {
@@ -350,6 +354,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
+		db := database.NewDB(nil)
 		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return repos, nil
 		}
@@ -357,7 +362,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					repositories(first: 3) {
@@ -391,6 +396,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With no repositories present", func(t *testing.T) {
+		db := database.NewDB(nil)
 		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return nil, nil
 		}
@@ -398,7 +404,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					repositories(first: 1) {
@@ -426,6 +432,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With an invalid cursor provided", func(t *testing.T) {
+		db := database.NewDB(nil)
 		database.Mocks.Repos.List = func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 			return nil, nil
 		}
@@ -433,7 +440,7 @@ func TestRepositories_CursorPagination(t *testing.T) {
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t),
+				Schema: mustParseGraphQLSchema(t, db),
 				Query: `
 				{
 					repositories(first: 1, after: "invalid-cursor-value") {

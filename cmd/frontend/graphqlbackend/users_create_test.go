@@ -22,10 +22,11 @@ func TestCreateUser(t *testing.T) {
 		calledGrantPendingPermissions = true
 		return nil
 	}
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation {
 					createUser(username: "alice") {

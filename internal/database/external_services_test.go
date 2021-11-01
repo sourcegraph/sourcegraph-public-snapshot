@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
@@ -37,6 +39,8 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		afterID              int64
 		wantQuery            string
 		onlyCloudDefault     bool
+		includeDeleted       bool
+		noCachedWebhooks     bool
 		wantArgs             []interface{}
 	}{
 		{
@@ -90,6 +94,16 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			onlyCloudDefault: true,
 			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
 		},
+		{
+			name:           "has IncludeDeleted",
+			includeDeleted: true,
+			wantQuery:      "TRUE",
+		},
+		{
+			name:             "has noCachedWebhooks",
+			noCachedWebhooks: true,
+			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -101,6 +115,8 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				Kinds:                test.kinds,
 				AfterID:              test.afterID,
 				OnlyCloudDefault:     test.onlyCloudDefault,
+				IncludeDeleted:       test.includeDeleted,
+				noCachedWebhooks:     test.noCachedWebhooks,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -315,7 +331,19 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		name             string
 		externalService  *types.ExternalService
 		wantUnrestricted bool
+		wantHasWebhooks  bool
 	}{
+		{
+			name: "with webhooks",
+			externalService: &types.ExternalService{
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #1",
+				Config:          `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`,
+				NamespaceUserID: user.ID,
+			},
+			wantUnrestricted: false,
+			wantHasWebhooks:  true,
+		},
 		{
 			name: "without authorization",
 			externalService: &types.ExternalService{
@@ -325,6 +353,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "with authorization",
@@ -335,6 +364,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "with authorization in comments",
@@ -362,6 +392,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "Cloud: auto-add authorization to code host connections for GitLab",
@@ -372,6 +403,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				NamespaceUserID: user.ID,
 			},
 			wantUnrestricted: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "Cloud: support org namespace on code host connections for GitHub",
@@ -382,6 +414,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "Cloud: support org namespace on code host connections for GitLab",
@@ -392,6 +425,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				NamespaceOrgID: org.ID,
 			},
 			wantUnrestricted: false,
+			wantHasWebhooks:  false,
 		},
 	}
 	for _, test := range tests {
@@ -413,6 +447,12 @@ func TestExternalServicesStore_Create(t *testing.T) {
 
 			if test.wantUnrestricted != got.Unrestricted {
 				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			}
+
+			if got.HasWebhooks == nil {
+				t.Fatal("has_webhooks must not be null")
+			} else if *got.HasWebhooks != test.wantHasWebhooks {
+				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
 			}
 
 			err = ExternalServices(db).Delete(ctx, test.externalService.ID)
@@ -476,15 +516,17 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		update           *ExternalServiceUpdate
 		wantUnrestricted bool
 		wantCloudDefault bool
+		wantHasWebhooks  bool
 	}{
 		{
 			name: "update with authorization",
 			update: &ExternalServiceUpdate{
 				DisplayName: strptr("GITHUB (updated) #1"),
-				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
+			wantHasWebhooks:  true,
 		},
 		{
 			name: "update without authorization",
@@ -494,6 +536,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "update with authorization in comments",
@@ -509,6 +552,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: false,
+			wantHasWebhooks:  false,
 		},
 		{
 			name: "set cloud_default true",
@@ -520,11 +564,13 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
 	"token": "def",
-	"authorization": {}
+	"authorization": {},
+	"webhooks": [{"org": "org", "secret": "secret"}]
 }`),
 			},
 			wantUnrestricted: false,
 			wantCloudDefault: true,
+			wantHasWebhooks:  true,
 		},
 	}
 	for _, test := range tests {
@@ -554,6 +600,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if test.wantCloudDefault != got.CloudDefault {
 				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
+			}
+
+			if got.HasWebhooks == nil {
+				t.Fatal("has_webhooks is unexpectedly null")
+			} else if test.wantHasWebhooks != *got.HasWebhooks {
+				t.Fatalf("Want has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
 			}
 		})
 	}
@@ -1455,6 +1507,40 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		}
 	})
 
+	t.Run("one external service", func(t *testing.T) {
+		tx, err := ExternalServices(db).Transact(ctx)
+		if err != nil {
+			t.Fatalf("Transact error: %s", err)
+		}
+		defer func() {
+			err = tx.Done(err)
+			if err != nil {
+				t.Fatalf("Done error: %s", err)
+			}
+		}()
+
+		svc := svcs[1]
+		if svc.Kind != extsvc.KindGitLab {
+			t.Fatalf("expected external service at [1] to be GitLab; got %s", svc.Kind)
+		}
+
+		if err := tx.Upsert(ctx, svc); err != nil {
+			t.Fatalf("upsert error: %v", err)
+		}
+		if *svc.HasWebhooks != false {
+			t.Fatalf("unexpected HasWebhooks: %v", svc.HasWebhooks)
+		}
+
+		// Add webhooks to the config and upsert.
+		svc.Config = `{"webhooks":[{"secret": "secret"}],` + svc.Config[1:]
+		if err := tx.Upsert(ctx, svc); err != nil {
+			t.Fatalf("upsert error: %v", err)
+		}
+		if *svc.HasWebhooks != true {
+			t.Fatalf("unexpected HasWebhooks: %v", svc.HasWebhooks)
+		}
+	})
+
 	t.Run("many external services", func(t *testing.T) {
 		tx, err := ExternalServices(db).Transact(ctx)
 		if err != nil {
@@ -1495,12 +1581,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
+		// We'll update the external services, but being careful to keep the
+		// config valid as we go.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
 			r.DisplayName += suffix
-			r.Kind += suffix
-			r.Config += suffix
+			r.Config = `{"wanted":true,` + r.Config[1:]
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -1589,12 +1676,13 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			t.Fatalf("List:\n%s", diff)
 		}
 
+		// We'll update the external services, but being careful to keep the
+		// config valid as we go.
 		now := clock.Now()
 		suffix := "-updated"
 		for _, r := range want {
 			r.DisplayName += suffix
-			r.Kind += suffix
-			r.Config += suffix
+			r.Config = `{"wanted":true,` + r.Config[1:]
 			r.UpdatedAt = now
 			r.CreatedAt = now
 		}
@@ -1795,4 +1883,61 @@ VALUES ($1,$2)
 		t.Fatal(err)
 	}
 	assertDue(1*time.Minute, false)
+}
+
+func TestConfigurationHasWebhooks(t *testing.T) {
+	t.Run("supported kinds with webhooks", func(t *testing.T) {
+		for _, cfg := range []interface{}{
+			&schema.GitHubConnection{
+				Webhooks: []*schema.GitHubWebhook{
+					{Org: "org", Secret: "super secret"},
+				},
+			},
+			&schema.GitLabConnection{
+				Webhooks: []*schema.GitLabWebhook{
+					{Secret: "super secret"},
+				},
+			},
+			&schema.BitbucketServerConnection{
+				Plugin: &schema.BitbucketServerPlugin{
+					Webhooks: &schema.BitbucketServerPluginWebhooks{
+						Secret: "super secret",
+					},
+				},
+			},
+		} {
+			t.Run(fmt.Sprintf("%T", cfg), func(t *testing.T) {
+				assert.True(t, configurationHasWebhooks(cfg))
+			})
+		}
+	})
+
+	t.Run("supported kinds without webhooks", func(t *testing.T) {
+		for _, cfg := range []interface{}{
+			&schema.GitHubConnection{},
+			&schema.GitLabConnection{},
+			&schema.BitbucketServerConnection{},
+		} {
+			t.Run(fmt.Sprintf("%T", cfg), func(t *testing.T) {
+				assert.False(t, configurationHasWebhooks(cfg))
+			})
+		}
+	})
+
+	t.Run("unsupported kinds", func(t *testing.T) {
+		for _, cfg := range []interface{}{
+			&schema.AWSCodeCommitConnection{},
+			&schema.BitbucketCloudConnection{},
+			&schema.GitoliteConnection{},
+			&schema.PerforceConnection{},
+			&schema.PhabricatorConnection{},
+			&schema.JVMPackagesConnection{},
+			&schema.OtherExternalServiceConnection{},
+			nil,
+		} {
+			t.Run(fmt.Sprintf("%T", cfg), func(t *testing.T) {
+				assert.False(t, configurationHasWebhooks(cfg))
+			})
+		}
+	})
 }

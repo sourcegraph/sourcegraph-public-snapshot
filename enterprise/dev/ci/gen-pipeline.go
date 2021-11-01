@@ -48,8 +48,8 @@ func main() {
 }
 
 func previewPipeline(w io.Writer, c ci.Config, bk *buildkite.Pipeline) {
-	fmt.Fprintf(w, "Detected run type: %s\n", c.RunType.String())
-	fmt.Fprintf(w, "Detected Changed files (%d):\n", len(c.ChangedFiles))
+	fmt.Fprintf(w, "Detected run type:\n\t%s\n", c.RunType.String())
+	fmt.Fprintf(w, "Detected changed files (%d):\n", len(c.ChangedFiles))
 	for _, f := range c.ChangedFiles {
 		fmt.Fprintf(w, "\t%s\n", f)
 	}
@@ -67,11 +67,14 @@ func previewPipeline(w io.Writer, c ci.Config, bk *buildkite.Pipeline) {
 		fmt.Fprintf(w, "\tAffects %s: %t\n", affects, doesAffects)
 	}
 
-	fmt.Fprintf(w, "Computed Build Steps:\n")
+	fmt.Fprintf(w, "Computed build steps (%d):\n", len(bk.Steps))
 	for _, raw := range bk.Steps {
 		if step, ok := raw.(*buildkite.Step); ok {
 			fmt.Fprintf(w, "\t%s\n", step.Label)
-			if len(step.DependsOn) > 0 {
+			switch {
+			case len(step.DependsOn) > 5:
+				fmt.Fprintf(w, "\t→ depends on %s, ... (%d more steps)\n", strings.Join(step.DependsOn[0:5], ", "), len(step.DependsOn)-5)
+			case len(step.DependsOn) > 0:
 				fmt.Fprintf(w, "\t→ depends on %s\n", strings.Join(step.DependsOn, " "))
 			}
 		}
