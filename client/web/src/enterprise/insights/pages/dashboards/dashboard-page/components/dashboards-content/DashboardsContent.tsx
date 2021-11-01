@@ -6,6 +6,7 @@ import { useHistory } from 'react-router-dom'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { authenticatedUser } from '@sourcegraph/web/src/auth'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
@@ -51,6 +52,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleDashboardSelect = useDashboardSelectHandler()
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
+
+    const user = useObservable(authenticatedUser)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -105,6 +108,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     dashboards={dashboards}
                     onSelect={handleDashboardSelect}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
+                    user={user}
                 />
 
                 <DashboardMenu

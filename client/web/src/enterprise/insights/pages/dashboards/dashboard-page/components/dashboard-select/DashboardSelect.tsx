@@ -3,8 +3,7 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import React from 'react'
 
-import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
-import { AuthenticatedUser, authenticatedUser } from '@sourcegraph/web/src/auth'
+import { AuthenticatedUser } from '@sourcegraph/web/src/auth'
 
 import {
     InsightDashboard,
@@ -28,14 +27,15 @@ export interface DashboardSelectProps {
 
     onSelect: (dashboard: InsightDashboard) => void
     className?: string
+    user?: AuthenticatedUser | null
 }
 
 /**
  * Renders dashboard select component for the code insights dashboard page selection UI.
  */
 export const DashboardSelect: React.FunctionComponent<DashboardSelectProps> = props => {
-    const { value, dashboards, onSelect, className } = props
-    const user = useObservable(authenticatedUser)
+    const { value, dashboards, onSelect, className, user } = props
+
     if (!user) {
         return null
     }
