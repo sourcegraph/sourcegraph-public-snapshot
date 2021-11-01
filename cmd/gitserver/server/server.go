@@ -971,7 +971,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if honey.Enabled() || traceLogs {
 		actor := r.Header.Get("X-Sourcegraph-Actor")
 		ev := honey.Event("gitserver-search")
-		ev.SampleRate = 1
+		ev.SampleRate = 16
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
