@@ -7,8 +7,7 @@ The error will look something like this:
 ```
 ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395797. Fix and force version.
 ```
-
-Migration interruption usually results from a migration query that has run too long and is interupted by a timeout, or an SQL error. Resolving this error requires discovering which migration file failed to run, and manually attempting to run that migration. 
+Resolving this error requires discovering which migration file failed to run, and manually attempting to run that migration. 
 
 ## Prerequisites
 
@@ -17,8 +16,21 @@ Migration interruption usually results from a migration query that has run too l
 
 The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
 
-## Steps to resolve
+## TL;DR Steps to resolve
 
+_These steps pertain to the frontedn database and are meant as a quick read for admins familiar with sql and database administration, for more explanation and details see the [detailed steps to resolution](#detailed-steps-to-resolve) below._
+
+1. **Check schema version. If it's dirty, then note the version number by using this command:**
+
+`SELECT * FROM schema_migrations;`
+
+2. **Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)**
+
+3. **Run the code there explicitly**
+4. **Manually clear the dirty flag on the `schema_migrations` table**
+5. **Start up again and the remaining migrations should succeed, otherwise repeat**
+
+## Detailed Steps to resolve
 
 ### 1. Identify incomplete migration
 
