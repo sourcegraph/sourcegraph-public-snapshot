@@ -2384,12 +2384,16 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		s := Perms(db, time.Now)
+		ctx := context.Background()
 		t.Cleanup(func() {
 			cleanupUsersTable(t, s)
 			cleanupPermsTables(t, s)
-		})
 
-		ctx := context.Background()
+			q := `TRUNCATE TABLE external_services, orgs CASCADE`
+			if err := s.execute(ctx, sqlf.Sprintf(q)); err != nil {
+				t.Fatal(err)
+			}
+		})
 
 		// Create test users to include:
 		//  1. A user with newer code host connection sync
