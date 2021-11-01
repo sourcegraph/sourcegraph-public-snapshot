@@ -48,6 +48,8 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
         return null
     }
 
+    const SITE_ADMIN_CONFIG_DOC_URL = 'https://docs.sourcegraph.com/batch_changes/how-tos/site_admin_configuration'
+
     return (
         <DismissibleAlert className="alert-warning" partialStorageKey={id}>
             <div>
@@ -65,14 +67,13 @@ export const WebhookAlert: React.FunctionComponent<Props> = ({
                     to use webhooks.{' '}
                     {isSiteAdmin ? (
                         <>
-                            Learn how to{' '}
-                            <Link to="https://docs.sourcegraph.com/batch_changes/how-tos/site_admin_configuration">
-                                configure webhooks
-                            </Link>{' '}
-                            or disable this warning.
+                            Learn how to <Link to={SITE_ADMIN_CONFIG_DOC_URL}>configure webhooks</Link> or disable this
+                            warning.
                         </>
                     ) : (
-                        'Ask your site admin to configure webhooks.'
+                        <>
+                            Ask your site admin <Link to={SITE_ADMIN_CONFIG_DOC_URL}>to configure webhooks</Link>.
+                        </>
                     )}
                 </p>
                 {open && (

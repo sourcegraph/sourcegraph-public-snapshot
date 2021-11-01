@@ -27,6 +27,8 @@ We **highly recommend** enabling webhooks on code hosts where batch change chang
 * [Bitbucket Server](../../admin/external_service/bitbucket_server.md#webhooks)
 * [GitLab](../../admin/external_service/gitlab.md#webhooks)
 
+If you are unable to enable webhooks, you can disable the warning Sourcegraph displays when viewing batch changes by setting the `batchChanges.disableWebhooksWarning` [site configuration setting](../../admin/config/site_config.md) to `true`.
+
 ### A note on Batch Changes effect on CI systems
 
 Batch Changes makes it possible to create changesets in tens, hundreds, or thousands of repositories. Opening and updating these changesets may trigger many checks or continuous integration jobs, and in turn may stress the resources allotted to these systems. Batch Changes supports [partial publishing for changesets](../how-tos/publishing_changesets.md#publishing-a-subset-of-changesets) to help mitigate these issues. You may also consider publishing your changesets at times of low activity.  
