@@ -2,7 +2,7 @@
   "version": "0.1.0",
   "configurations": [
     {
-      "name": "Attach to Process",
+      "name": "Attach to Process (from list)",
       "type": "go",
       "request": "attach",
       "mode": "local",
