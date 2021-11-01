@@ -480,6 +480,7 @@ const (
 	ObservableOwnerCoreApplication ObservableOwner = "core application"
 	ObservableOwnerCodeInsights    ObservableOwner = "code-insights"
 	ObservableOwnerDevOps          ObservableOwner = "devops"
+	ObservableOwnerCloudSaas       ObservableOwner = "Cloud Saas Team"
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page
