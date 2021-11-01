@@ -1,7 +1,6 @@
 package inference
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,36 +9,14 @@ import (
 )
 
 func TestGoPatterns(t *testing.T) {
-	testCases := []struct {
-		path     string
-		expected bool
-	}{
+	testLangPatterns(t, GoPatterns(), []PathTestCase{
 		{"go.mod", true},
 		{"subdir/go.mod", true},
 		{"vendor/foo/go.mod", true},
 		{"go.mod/subdir", false},
 		{"foo.go", true},
 		{"subdir/foo.go", false},
-	}
-
-	for _, testCase := range testCases {
-		match := false
-		for _, pattern := range GoPatterns() {
-			if pattern.MatchString(testCase.path) {
-				match = true
-				break
-			}
-		}
-
-		if match {
-			if !testCase.expected {
-				t.Error(fmt.Sprintf("did not expect match: %s", testCase.path))
-			}
-
-		} else if testCase.expected {
-			t.Error(fmt.Sprintf("expected match: %s", testCase.path))
-		}
-	}
+	})
 }
 
 func TestInferGoIndexJobsGoModRoot(t *testing.T) {

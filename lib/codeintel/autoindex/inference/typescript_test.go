@@ -1,7 +1,6 @@
 package inference
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 
@@ -11,35 +10,13 @@ import (
 )
 
 func TestTypeScriptPatterns(t *testing.T) {
-	testCases := []struct {
-		path     string
-		expected bool
-	}{
+	testLangPatterns(t, TypeScriptPatterns(), []PathTestCase{
 		{"tsconfig.json", true},
 		{"tsconfig.json/subdir", false},
 		{".nvmrc", true},
 		{"subdir/package.json", true},
 		{"subdir/yarn.lock", true},
-	}
-
-	for _, testCase := range testCases {
-		match := false
-		for _, pattern := range TypeScriptPatterns() {
-			if pattern.MatchString(testCase.path) {
-				match = true
-				break
-			}
-		}
-
-		if match {
-			if !testCase.expected {
-				t.Error(fmt.Sprintf("did not expect match: %s", testCase.path))
-			}
-
-		} else if testCase.expected {
-			t.Error(fmt.Sprintf("expected match: %s", testCase.path))
-		}
-	}
+	})
 }
 
 func TestInferTypeScriptIndexJobsTsConfigRoot(t *testing.T) {
