@@ -299,6 +299,7 @@ Sourcegraph by default requires a storage class for all persisent volumes claims
 ```bash
 kubectl patch pv <your-pv-name> -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
 ```
+- Apply the Kubernetes manifest to create the storage class with `kubectl apply -f base/sourcegraph.StorageClass.yaml`
 
 See [the official documentation](https://kubernetes.io/docs/tasks/administer-cluster/change-pv-reclaim-policy/#changing-the-reclaim-policy-of-a-persistentvolume) for more information about patching persistent volumes.
 
