@@ -728,6 +728,43 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// Add one more external service with invalid JSON, which was once
+		// possible and may still exist in databases in the wild.  We don't want
+		// the migrator to error in that case!
+		//
+		// We'll have to do this the old fashioned way, since Create now
+		// actually checks the validity of the configuration.
+		row := store.QueryRow(
+			ctx,
+			sqlf.Sprintf(`
+				INSERT INTO
+					external_services
+					(
+						kind,
+						display_name,
+						config,
+						has_webhooks
+					)
+					VALUES (%s, %s, %s, %s)
+				RETURNING
+					id
+				`,
+				extsvc.KindOther,
+				"other",
+				"invalid JSON",
+				false,
+			),
+		)
+		var id int64
+		if err := row.Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		svc, err := store.GetByID(ctx, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		svcs = append(svcs, svc)
+
 		return svcs
 	}
 
