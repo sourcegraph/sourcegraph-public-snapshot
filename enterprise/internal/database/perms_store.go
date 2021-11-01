@@ -1418,8 +1418,9 @@ AND NOT EXISTS (
 	return ids, nil
 }
 
-// UserIDsWithOutdatedPerms returns a list of user IDs who have newer code host
-// connection sync after last permissions sync. todo
+// UserIDsWithOutdatedPerms returns a list of user IDs who have had repository
+// syncing from either user or organization code host connection (that the user
+// is a member of) after last permissions sync.
 func (s *PermsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOutdatedPerms
