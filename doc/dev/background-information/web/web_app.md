@@ -1,6 +1,6 @@
 # Developing the Sourcegraph web app
 
-Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](https://about.sourcegraph.com/handbook/engineering/languages/typescript).
+Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](../languages/typescript.md).
 
 ## Local development
 
