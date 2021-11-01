@@ -36,6 +36,7 @@ type UploadHandler struct {
 
 func NewUploadHandler(db dbutil.DB, dbStore DBStore, uploadStore uploadstore.Store, internal bool) http.Handler {
 	handler := &UploadHandler{
+		db:          db,
 		dbStore:     dbStore,
 		uploadStore: uploadStore,
 		internal:    internal,
