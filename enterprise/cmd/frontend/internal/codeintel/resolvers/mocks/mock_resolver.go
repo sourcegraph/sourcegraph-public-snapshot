@@ -66,6 +66,9 @@ type MockResolver struct {
 	// PreviewGitObjectFilterFunc is an instance of a mock function object
 	// controlling the behavior of the method PreviewGitObjectFilter.
 	PreviewGitObjectFilterFunc *ResolverPreviewGitObjectFilterFunc
+	// PreviewRepositoryFilterFunc is an instance of a mock function object
+	// controlling the behavior of the method PreviewRepositoryFilter.
+	PreviewRepositoryFilterFunc *ResolverPreviewRepositoryFilterFunc
 	// QueryResolverFunc is an instance of a mock function object
 	// controlling the behavior of the method QueryResolver.
 	QueryResolverFunc *ResolverQueryResolverFunc
@@ -165,6 +168,11 @@ func NewMockResolver() *MockResolver {
 				return nil, nil
 			},
 		},
+		PreviewRepositoryFilterFunc: &ResolverPreviewRepositoryFilterFunc{
+			defaultHook: func(context.Context, string) ([]int, error) {
+				return nil, nil
+			},
+		},
 		QueryResolverFunc: &ResolverQueryResolverFunc{
 			defaultHook: func(context.Context, *graphqlbackend.GitBlobLSIFDataArgs) (resolvers.QueryResolver, error) {
 				return nil, nil
@@ -241,6 +249,9 @@ func NewMockResolverFrom(i resolvers.Resolver) *MockResolver {
 		},
 		PreviewGitObjectFilterFunc: &ResolverPreviewGitObjectFilterFunc{
 			defaultHook: i.PreviewGitObjectFilter,
+		},
+		PreviewRepositoryFilterFunc: &ResolverPreviewRepositoryFilterFunc{
+			defaultHook: i.PreviewRepositoryFilter,
 		},
 		QueryResolverFunc: &ResolverQueryResolverFunc{
 			defaultHook: i.QueryResolver,
@@ -1933,6 +1944,118 @@ func (c ResolverPreviewGitObjectFilterFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ResolverPreviewGitObjectFilterFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ResolverPreviewRepositoryFilterFunc describes the behavior when the
+// PreviewRepositoryFilter method of the parent MockResolver instance is
+// invoked.
+type ResolverPreviewRepositoryFilterFunc struct {
+	defaultHook func(context.Context, string) ([]int, error)
+	hooks       []func(context.Context, string) ([]int, error)
+	history     []ResolverPreviewRepositoryFilterFuncCall
+	mutex       sync.Mutex
+}
+
+// PreviewRepositoryFilter delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockResolver) PreviewRepositoryFilter(v0 context.Context, v1 string) ([]int, error) {
+	r0, r1 := m.PreviewRepositoryFilterFunc.nextHook()(v0, v1)
+	m.PreviewRepositoryFilterFunc.appendCall(ResolverPreviewRepositoryFilterFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// PreviewRepositoryFilter method of the parent MockResolver instance is
+// invoked and the hook queue is empty.
+func (f *ResolverPreviewRepositoryFilterFunc) SetDefaultHook(hook func(context.Context, string) ([]int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// PreviewRepositoryFilter method of the parent MockResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ResolverPreviewRepositoryFilterFunc) PushHook(hook func(context.Context, string) ([]int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *ResolverPreviewRepositoryFilterFunc) SetDefaultReturn(r0 []int, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) ([]int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *ResolverPreviewRepositoryFilterFunc) PushReturn(r0 []int, r1 error) {
+	f.PushHook(func(context.Context, string) ([]int, error) {
+		return r0, r1
+	})
+}
+
+func (f *ResolverPreviewRepositoryFilterFunc) nextHook() func(context.Context, string) ([]int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ResolverPreviewRepositoryFilterFunc) appendCall(r0 ResolverPreviewRepositoryFilterFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ResolverPreviewRepositoryFilterFuncCall
+// objects describing the invocations of this function.
+func (f *ResolverPreviewRepositoryFilterFunc) History() []ResolverPreviewRepositoryFilterFuncCall {
+	f.mutex.Lock()
+	history := make([]ResolverPreviewRepositoryFilterFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ResolverPreviewRepositoryFilterFuncCall is an object that describes an
+// invocation of method PreviewRepositoryFilter on an instance of
+// MockResolver.
+type ResolverPreviewRepositoryFilterFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ResolverPreviewRepositoryFilterFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ResolverPreviewRepositoryFilterFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
