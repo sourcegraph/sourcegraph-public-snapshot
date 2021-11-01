@@ -160,7 +160,7 @@ The primary risk of a forged request making its way to a non-API endpoint in Sou
 3. Any other potentially-sensitive information we embed in `window` described in the two exclusions above.
 4. Authentication cookie access, which is used to authenticate API endpoint requests (more on this below.)
 
-Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.)
+Because these non-API endpoints _never_ allow API-like access (there are no traditional REST-like APIs here, there are no create/delete/modify actions these endpoints can perform), there is _no risk_ in a CSRF attack aside from the `window.context` content and the potential for using the session cookie (which is mitigated through other means, see below.) - however this is NOT true for the three exclusions listed above (`Exclusion: window.context`, `Exclusion: pre-fetched content`, and `Exclusion: username/password manipulation (sign in, password reset, etc.)`.) It is therefor paramount that we defend against CSRF on the routes described by these exclusions. See "How we protect against CSRF in non-API endpoints" below.
 
 With all of this in mind, it is worth calling out that:
 
