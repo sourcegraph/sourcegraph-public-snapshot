@@ -5,7 +5,7 @@ const config = {
      */
     {
       path: '../../ui/assets/scripts/*.bundle.js.br',
-      maxSize: '500kb',
+      maxSize: '400kb',
       compression: 'none',
     },
     /**
