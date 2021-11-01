@@ -3,10 +3,11 @@
 package jscontext
 
 import (
-	"bytes"
+	"context"
+	"net"
 	"net/http"
-	"os"
 	"strings"
+	"time"
 
 	"github.com/gorilla/csrf"
 
@@ -216,9 +217,12 @@ func isBot(userAgent string) bool {
 }
 
 func likelyDockerOnMac() bool {
-	data, err := os.ReadFile("/proc/cmdline")
-	if err != nil {
-		return false // permission errors, or maybe not a Linux OS, etc. Assume we're not docker for mac.
+	r := net.DefaultResolver
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+	addrs, err := r.LookupHost(ctx, "host.docker.internal")
+	if err != nil || len(addrs) == 0 {
+		return false //  Assume we're not docker for mac.
 	}
-	return bytes.Contains(data, []byte("mac")) || bytes.Contains(data, []byte("osx"))
+	return true
 }

@@ -1,7 +1,7 @@
 # Set up local Sourcegraph monitoring development
 
 This guide documents how to spin up and develop Sourcegraph's monitoring stack locally.
-Sourcegraph employees should also refer to the [handbook's monitoring section](https://about.sourcegraph.com/handbook/engineering/observability/monitoring) for Sourcegraph-specific documentation.
+Sourcegraph employees should also refer to the [handbook's monitoring section](https://handbook.sourcegraph.com/engineering/observability/monitoring) for Sourcegraph-specific documentation.
 The [developing observability page](../background-information/observability/index.md) contains relevant documentation as well, including background about the components listed here.
 
 > NOTE: For how to *use* Sourcegraph's observability and an overview of our observability features, refer to the [observability for site administrators documentation](../../admin/observability/index.md).
@@ -26,7 +26,7 @@ You can follow the instructions below for spinning up individual monitoring comp
 #### Grafana
 
 Running just Grafana is a convenient way to validate dashboards.
-When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://about.sourcegraph.com/handbook/engineering/deployments/instances)), to show more real data than is available on your dev server.
+When doing so, you may wish to connect Grafana to a remote Prometheus instance that you have administrator access to (such as [Sourcegraph's instances](https://handbook.sourcegraph.com/engineering/deployments/instances)), to show more real data than is available on your dev server.
 For Kubernetes deployments, you can do this by getting `kubectl` connected to a Sourcegraph cluster and then port-forwarding Prometheus via:
 
 ```sh

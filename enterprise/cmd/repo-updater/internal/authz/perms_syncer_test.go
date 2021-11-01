@@ -4,12 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 
+	eauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -22,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestPermsSyncer_ScheduleUsers(t *testing.T) {
@@ -67,8 +70,9 @@ type mockProvider struct {
 	serviceType string
 	serviceID   string
 
-	fetchUserPerms func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
-	fetchRepoPerms func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
+	fetchUserPerms        func(context.Context, *extsvc.Account) (*authz.ExternalUserPermissions, error)
+	fetchUserPermsByToken func(ctx context.Context, token string) (*authz.ExternalUserPermissions, error)
+	fetchRepoPerms        func(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error)
 }
 
 func (*mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (*extsvc.Account, error) {
@@ -84,22 +88,15 @@ func (p *mockProvider) FetchUserPerms(ctx context.Context, acct *extsvc.Account,
 	return p.fetchUserPerms(ctx, acct)
 }
 
+func (p *mockProvider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+	return p.fetchUserPermsByToken(ctx, token)
+}
+
 func (p *mockProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return p.fetchRepoPerms(ctx, repo, opts)
 }
 
-// NOTE: With the latest set of changes, we will be relying on the external_service_repos
-//  table to satisfy repo permissions. That means we don't need to make the external
-//  service calls we currently do, because the data is already present.
-//
-//  We are choosing to _leave_ the current code and tests alone, since the new data
-//  is additive. All existing tests should pass, and this new test captures the new
-//  behavior. We will revisit the issue shortly and excise the old code.
-//
-//  In the test below, the external service has one repo that's visible due to a limited
-//  sign-in connection scope, but additional repositories in the external_service_repos
-//  table. At the end we expect a union of both sets of data.
-func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
+func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	p := &mockProvider{
 		id:          1,
 		serviceType: extsvc.TypeGitLab,
@@ -118,7 +115,7 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 		ID:              1,
 		Kind:            extsvc.KindGitLab,
 		DisplayName:     "GITLAB1",
-		Config:          `{"token": "limited"}`,
+		Config:          `{"token": "limited", "authorization": {}}`,
 		NamespaceUserID: 1,
 	}
 
@@ -132,17 +129,26 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 		return []*extsvc.Account{&extAccount}, nil
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
-		wantIDs := []uint32{1, 2, 3, 4}
+		wantIDs := []uint32{1, 2, 3, 4, 5}
 		if diff := cmp.Diff(wantIDs, p.IDs.ToArray()); diff != "" {
 			return errors.Errorf("IDs mismatch (-want +got):\n%s", diff)
 		}
 		return nil
 	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
+	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []types.RepoName{{ID: 1}}, nil
+
+		names := make([]types.RepoName, 0, len(args.ExternalRepos))
+		for _, r := range args.ExternalRepos {
+			id, _ := strconv.Atoi(r.ID)
+			names = append(names, types.RepoName{ID: api.RepoID(id)})
+		}
+		return names, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -156,9 +162,13 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
 		return []api.RepoID{2, 3, 4}, nil
 	}
+	eauthz.MockProviderFromExternalService = func(siteConfig schema.SiteConfiguration, svc *types.ExternalService) (authz.Provider, error) {
+		return p, nil
+	}
 	defer func() {
 		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
+		eauthz.MockProviderFromExternalService = nil
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)
@@ -169,6 +179,11 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 			Exacts: []extsvc.RepoID{"1"},
 		}, nil
 	}
+	p.fetchUserPermsByToken = func(ctx context.Context, s string) (*authz.ExternalUserPermissions, error) {
+		return &authz.ExternalUserPermissions{
+			Exacts: []extsvc.RepoID{"5"},
+		}, nil
+	}
 
 	err := s.syncUserPerms(context.Background(), 1, true, authz.FetchPermsOptions{})
 	if err != nil {
@@ -176,7 +191,7 @@ func TestPermsSyncer_syncUserPerms_unionExternalServiceRepos(t *testing.T) {
 	}
 }
 
-func TestPermsSyncer_syncUserPerms(t *testing.T) {
+func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	p := &mockProvider{
 		id:          1,
 		serviceType: extsvc.TypeGitLab,
@@ -212,6 +227,9 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 		}
 		return nil
 	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
+	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -220,6 +238,17 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
+	}
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+		return []*types.ExternalService{
+			{
+				ID:              1,
+				Kind:            extsvc.KindGitHub,
+				DisplayName:     "GITHUB #1",
+				Config:          `{"token": "mytoken"}`,
+				NamespaceUserID: opt.NamespaceUserID,
+			},
+		}, nil
 	}
 	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
 		return []api.RepoID{}, nil
@@ -254,6 +283,11 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 					Exacts: []extsvc.RepoID{"1"},
 				}, test.fetchErr
 			}
+			p.fetchUserPermsByToken = func(ctx context.Context, token string) (*authz.ExternalUserPermissions, error) {
+				return &authz.ExternalUserPermissions{
+					Exacts: []extsvc.RepoID{"2"},
+				}, nil
+			}
 
 			err := s.syncUserPerms(context.Background(), 1, test.noPerms, authz.FetchPermsOptions{})
 			if err != nil {
@@ -287,6 +321,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
+	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -294,6 +331,9 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return nil, nil
+	}
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return nil, nil
 	}
 	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
@@ -402,6 +442,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
 	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return true, nil
+	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
@@ -413,6 +456,9 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		return []types.RepoName{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+		return nil, nil
+	}
+	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return nil, nil
 	}
 	database.Mocks.Repos.ListExternalServiceRepoIDsByUserID = func(ctx context.Context, userID int32) ([]api.RepoID, error) {
@@ -465,6 +511,9 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	}
 	edb.Mocks.Perms.SetUserPermissions = func(_ context.Context, p *authz.UserPermissions) error {
 		return nil
+	}
+	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
+		return false, nil
 	}
 	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
 		if !args.OnlyPrivate {

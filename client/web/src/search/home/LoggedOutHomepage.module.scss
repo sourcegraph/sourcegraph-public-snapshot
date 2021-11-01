@@ -9,7 +9,7 @@
     width: 100%;
 
     @media (--xl-breakpoint-up) {
-        max-width: $max-homepage-container-width;
+        max-width: var(--max-homepage-container-width);
     }
 
     :global(.theme-light) & {
@@ -78,6 +78,7 @@
     display: flex;
     justify-content: center;
     margin-bottom: 3rem;
+
     @media (--sm-breakpoint-down) {
         align-items: stretch;
         flex-direction: column;
@@ -92,9 +93,11 @@
 
 .search-examples-wrapper {
     margin-right: 1.5rem;
+
     @media (--sm-breakpoint-down) {
         margin-right: 0;
     }
+
     flex: 1;
 }
 
