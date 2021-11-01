@@ -3,6 +3,7 @@ import { EventEmitterProvider } from '@visx/xychart'
 import React, { ReactElement } from 'react'
 
 import { getLineStroke, LineChartContent, LineChartContentProps } from './components/LineChartContent'
+import styles from './LineChart.module.scss'
 
 export interface LineChartProps<Datum extends object> extends LineChartContentProps<Datum> {}
 
@@ -30,23 +31,23 @@ export function LineChart<Datum extends object>(props: LineChartProps<Datum>): R
                 aria-label="Line chart"
                 /* eslint-disable-next-line react/forbid-dom-props */
                 style={{ width, height }}
-                className="line-chart"
+                className={styles.lineChart}
             >
                 {/*
                     In case if we have a legend to render we have to have responsive container for chart
                     just to calculate right sizes for chart content = rootContainerSizes - legendSizes
                 */}
-                <ParentSize className="line-chart__content-parent-size">
+                <ParentSize className={styles.contentParentSize}>
                     {({ width, height }) => <LineChartContent {...otherProps} width={width} height={height} />}
                 </ParentSize>
 
-                <ul aria-hidden={true} className="line-chart__legend">
+                <ul aria-hidden={true} className={styles.legend}>
                     {props.series.map(line => (
-                        <li key={line.dataKey.toString()} className="line-chart__legend-item">
+                        <li key={line.dataKey.toString()} className={styles.legendItem}>
                             <div
                                 /* eslint-disable-next-line react/forbid-dom-props */
                                 style={{ backgroundColor: getLineStroke(line) }}
-                                className="line-chart__legend-mark"
+                                className={styles.legendMark}
                             />
                             {line.name}
                         </li>

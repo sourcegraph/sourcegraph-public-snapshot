@@ -22,9 +22,10 @@ export const getFileName = (name: string): string => `${kebabCase(name)}.batch.y
 
 export interface BatchSpecProps {
     originalInput: BatchChangeFields['currentSpec']['originalInput']
+    className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInput }) => {
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInput, className }) => {
     // JSON is valid YAML, so the input might be JSON. In that case, we'll highlight and indent it
     // as JSON. This is especially nice when the input is a "minified" (no extraneous whitespace)
     // JSON document that's difficult to read unless indented.
@@ -34,21 +35,35 @@ export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({ originalInp
         originalInput,
     ])
 
-    return <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} />
+    return <CodeSnippet code={input} language={inputIsJSON ? 'json' : 'yaml'} className={className} />
 }
 
-export const BatchSpecDownloadLink: React.FunctionComponent<
+interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFields, 'name'> {
+    className?: string
+}
+
+export const BatchSpecDownloadLink: React.FunctionComponent<BatchSpecDownloadLinkProps> = React.memo(
+    function BatchSpecDownloadLink({ children, className, name, originalInput }) {
+        return (
+            <a
+                download={getFileName(name)}
+                href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
+                className={className}
+                data-tooltip={`Download ${getFileName(name)}`}
+            >
+                {children}
+            </a>
+        )
+    }
+)
+
+export const BatchSpecDownloadButton: React.FunctionComponent<
     BatchSpecProps & Pick<BatchChangeFields, 'name'>
-> = React.memo(function BatchSpecDownloadLink({ name, originalInput }) {
+> = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <a
-            download={getFileName(name)}
-            href={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
-            className="text-right btn btn-outline-secondary text-nowrap"
-            data-tooltip={`Download ${getFileName(name)}`}
-        >
+        <BatchSpecDownloadLink className="text-right btn btn-outline-secondary text-nowrap" {...props}>
             <FileDownloadIcon className="icon-inline" /> Download YAML
-        </a>
+        </BatchSpecDownloadLink>
     )
 })
 

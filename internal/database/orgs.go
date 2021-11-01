@@ -38,6 +38,7 @@ type OrgStore interface {
 	GetByID(ctx context.Context, orgID int32) (*types.Org, error)
 	GetByName(context.Context, string) (*types.Org, error)
 	GetByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
+	GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error)
 	List(context.Context, *OrgsListOptions) ([]*types.Org, error)
 	Transact(context.Context) (OrgStore, error)
 	Update(ctx context.Context, id int32, displayName *string) (*types.Org, error)
@@ -74,7 +75,40 @@ func (o *orgStore) GetByUserID(ctx context.Context, userID int32) ([]*types.Org,
 	if Mocks.Orgs.GetByUserID != nil {
 		return Mocks.Orgs.GetByUserID(ctx, userID)
 	}
-	rows, err := o.Handle().DB().QueryContext(ctx, "SELECT orgs.id, orgs.name, orgs.display_name,  orgs.created_at, orgs.updated_at FROM org_members LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id WHERE user_id=$1 AND orgs.deleted_at IS NULL", userID)
+	return o.getByUserID(ctx, userID, false)
+}
+
+// GetOrgsWithRepositoriesByUserID returns a list of all organizations for the user that have a repository attached.
+// An empty slice is returned if the user is not authenticated or is not a member of any org.
+func (o *orgStore) GetOrgsWithRepositoriesByUserID(ctx context.Context, userID int32) ([]*types.Org, error) {
+	if Mocks.Orgs.GetOrgsWithRepositoriesByUserID != nil {
+		return Mocks.Orgs.GetOrgsWithRepositoriesByUserID(ctx, userID)
+	}
+	return o.getByUserID(ctx, userID, true)
+}
+
+// getByUserID returns a list of all organizations for the user. An empty slice is
+// returned if the user is not authenticated or is not a member of any org.
+//
+// onlyOrgsWithRepositories parameter determines, if the function returns all organizations
+// or only those with repositories attached
+func (o *orgStore) getByUserID(ctx context.Context, userID int32, onlyOrgsWithRepositories bool) ([]*types.Org, error) {
+	queryString :=
+		`SELECT orgs.id, orgs.name, orgs.display_name, orgs.created_at, orgs.updated_at
+		FROM org_members
+		LEFT OUTER JOIN orgs ON org_members.org_id = orgs.id
+		WHERE user_id=$1
+			AND orgs.deleted_at IS NULL`
+	if onlyOrgsWithRepositories {
+		queryString += `
+			AND EXISTS(
+				SELECT
+				FROM external_service_repos
+				WHERE external_service_repos.org_id = orgs.id
+				LIMIT 1
+			)`
+	}
+	rows, err := o.Handle().DB().QueryContext(ctx, queryString, userID)
 	if err != nil {
 		return []*types.Org{}, err
 	}

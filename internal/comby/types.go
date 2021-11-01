@@ -1,14 +1,27 @@
 package comby
 
 type Input interface {
-	Value()
+	input()
 }
 
 type ZipPath string
 type DirPath string
+type FileContent []byte
 
-func (ZipPath) Value() {}
-func (DirPath) Value() {}
+func (ZipPath) input()     {}
+func (DirPath) input()     {}
+func (FileContent) input() {}
+
+type resultKind int
+
+const (
+	// MatchOnly means comby returns matches satisfying a pattern (no replacement)
+	MatchOnly resultKind = iota
+	// Replacement means comby returns the result of performing an in-place operation on file contents
+	Replacement
+	// Diff means comby returns a diff after performing an in-place operation on file contents
+	Diff
+)
 
 type Args struct {
 	// An Input to process (either a path to a directory or zip file)
@@ -26,8 +39,7 @@ type Args struct {
 	// Matcher is a file extension (e.g., '.go') which denotes which language parser to use
 	Matcher string
 
-	// If MatchOnly is set to true, then comby will only find matches and not perform replacement
-	MatchOnly bool
+	ResultKind resultKind
 
 	// FilePatterns is a list of file patterns (suffixes) to filter and process
 	FilePatterns []string
@@ -84,5 +96,5 @@ type FileDiff struct {
 // FileReplacement represents a file content been modified by a rewrite operation.
 type FileReplacement struct {
 	URI     string `json:"uri"`
-	Content string `json:"content"`
+	Content string `json:"rewritten_source"`
 }

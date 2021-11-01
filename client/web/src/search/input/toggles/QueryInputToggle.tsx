@@ -6,6 +6,8 @@ import { Key } from 'ts-key-enum'
 
 import { PatternTypeProps, CaseSensitivityProps } from '../..'
 
+import styles from './Toggles.module.scss'
+
 export interface ToggleProps extends PatternTypeProps, CaseSensitivityProps {
     /** Title of the toggle.  */
     title: string
@@ -67,10 +69,11 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
             ref={toggleCheckbox}
             onClick={onCheckboxToggled}
             className={classNames(
-                'btn btn-icon toggle-container__toggle',
+                'btn btn-icon',
+                styles.toggle,
                 props.className,
-                { disabled: !!disabledRule },
-                { 'toggle-container__toggle--active': isActive },
+                !!disabledRule && styles.disabled,
+                isActive && styles.toggleActive,
                 props.activeClassName
             )}
             role="checkbox"

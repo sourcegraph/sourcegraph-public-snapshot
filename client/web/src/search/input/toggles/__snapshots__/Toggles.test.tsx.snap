@@ -48,7 +48,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Case sensitivity toggle"
-      className="btn btn-icon toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+      className="btn btn-icon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
       data-tooltip="Query already contains one or more case subexpressions"
       onClick={[Function]}
       role="checkbox"
@@ -63,7 +63,7 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Case sensitivity toggle"
-    className="btn btn-icon toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+    className="btn btn-icon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
     data-tooltip="Query already contains one or more case subexpressions"
     onClick={[Function]}
     role="checkbox"
@@ -124,7 +124,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Case sensitivity toggle"
-      className="btn btn-icon toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+      className="btn btn-icon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
       data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
       onClick={[Function]}
       role="checkbox"
@@ -139,7 +139,7 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Case sensitivity toggle"
-    className="btn btn-icon toggle-container__toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
+    className="btn btn-icon toggle test-case-sensitivity-toggle disabled test-case-sensitivity-toggle--active"
     data-tooltip="Query contains one or more patterntype subexpressions, cannot apply global case-sensitivity"
     onClick={[Function]}
     role="checkbox"
@@ -192,7 +192,7 @@ Array [
       aria-checked={false}
       aria-disabled={true}
       aria-label="Regular expression toggle"
-      className="btn btn-icon toggle-container__toggle test-regexp-toggle disabled test-regexp-toggle--active"
+      className="btn btn-icon toggle test-regexp-toggle disabled test-regexp-toggle--active"
       data-tooltip="Query already contains one or more patterntype subexpressions"
       onClick={[Function]}
       role="checkbox"
@@ -207,7 +207,7 @@ Array [
     aria-checked={false}
     aria-disabled={true}
     aria-label="Regular expression toggle"
-    className="btn btn-icon toggle-container__toggle test-regexp-toggle disabled test-regexp-toggle--active"
+    className="btn btn-icon toggle test-regexp-toggle disabled test-regexp-toggle--active"
     data-tooltip="Query already contains one or more patterntype subexpressions"
     onClick={[Function]}
     role="checkbox"

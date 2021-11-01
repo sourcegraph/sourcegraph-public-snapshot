@@ -101,7 +101,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -126,7 +128,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -198,7 +202,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               key="0"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -242,7 +248,9 @@ exports[`RecentSearchesPanel Show More button is shown if more pages are availab
               key="1"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -413,7 +421,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -438,7 +448,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -463,7 +475,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -488,7 +502,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -556,7 +572,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               key="0"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -600,7 +618,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               key="1"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -650,7 +670,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               key="2"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -694,7 +716,9 @@ exports[`RecentSearchesPanel Show More button loads more items 1`] = `
               key="3"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -848,7 +872,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -873,7 +899,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -941,7 +969,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               key="0"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -985,7 +1015,9 @@ exports[`RecentSearchesPanel consecutive identical searches are correctly merged
               key="1"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -1139,7 +1171,9 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -1164,7 +1198,9 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               className="resultsTableRow"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"
@@ -1232,7 +1268,9 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               key="0"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=test&patternType=literal"
@@ -1276,7 +1314,9 @@ exports[`RecentSearchesPanel searches with no argument are skipped 1`] = `
               key="1"
             >
               <td>
-                <small>
+                <small
+                  className="recentQuery"
+                >
                   <AnchorLink
                     onClick={[Function]}
                     to="/search?q=r:sourcegraph&patternType=literal"

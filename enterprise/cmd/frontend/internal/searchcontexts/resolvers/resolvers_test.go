@@ -19,42 +19,92 @@ import (
 )
 
 func TestAutoDefinedSearchContexts(t *testing.T) {
-	key := int32(1)
-	username := "alice"
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
-	db := new(dbtesting.MockDB)
+	t.Run("Auto defined search contexts for user without organizations connected to repositories", func(t *testing.T) {
+		key := int32(1)
+		username := "alice"
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
+		db := new(dbtesting.MockDB)
 
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return &types.User{Username: username}, nil
-	}
-	defer func() { database.Mocks.Users.GetByID = nil }()
+		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{Username: username}, nil
+		}
+		database.Mocks.Orgs.GetOrgsWithRepositoriesByUserID = func(context.Context, int32) ([]*types.Org, error) {
+			return []*types.Org{}, nil
+		}
+		defer func() {
+			database.Mocks = database.MockStores{}
+		}()
 
-	searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := []graphqlbackend.SearchContextResolver{
-		&searchContextResolver{sc: searchcontexts.GetGlobalSearchContext(), db: db},
-		&searchContextResolver{sc: searchcontexts.GetUserSearchContext(username, key), db: db},
-	}
-	if !reflect.DeepEqual(searchContexts, want) {
-		t.Fatalf("got %+v, want %+v", searchContexts, want)
-	}
-
-	for _, resolver := range searchContexts {
-		repositories, err := resolver.Repositories(ctx)
+		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(repositories) != 0 {
-			t.Fatal("auto-defined search contexts should not return repositories")
+		want := []graphqlbackend.SearchContextResolver{
+			&searchContextResolver{sc: searchcontexts.GetGlobalSearchContext(), db: db},
+			&searchContextResolver{sc: searchcontexts.GetUserSearchContext(key, username), db: db},
 		}
-	}
+		if !reflect.DeepEqual(searchContexts, want) {
+			t.Fatalf("got %+v, want %+v", searchContexts, want)
+		}
+
+		for _, resolver := range searchContexts {
+			repositories, err := resolver.Repositories(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(repositories) != 0 {
+				t.Fatal("auto-defined search contexts should not return repositories")
+			}
+		}
+	})
+
+	t.Run("Auto defined search contexts for user where 1 organization has repository connected", func(t *testing.T) {
+		key := int32(1)
+		username := "alice"
+		orgID := int32(42)
+		orgName := "acme"
+		orgDisplayName := "ACME Company"
+		ctx := context.Background()
+		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
+		db := new(dbtesting.MockDB)
+
+		orig := envvar.SourcegraphDotComMode()
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(orig) // reset
+
+		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{Username: username}, nil
+		}
+		database.Mocks.Orgs.GetOrgsWithRepositoriesByUserID = func(context.Context, int32) ([]*types.Org, error) {
+			return []*types.Org{{
+				ID:          orgID,
+				Name:        orgName,
+				DisplayName: &orgDisplayName,
+			}}, nil
+		}
+
+		defer func() {
+			database.Mocks = database.MockStores{}
+		}()
+
+		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []graphqlbackend.SearchContextResolver{
+			&searchContextResolver{sc: searchcontexts.GetGlobalSearchContext(), db: db},
+			&searchContextResolver{sc: searchcontexts.GetUserSearchContext(key, username), db: db},
+			&searchContextResolver{sc: searchcontexts.GetOrganizationSearchContext(orgID, orgName, orgDisplayName), db: db},
+		}
+		if !reflect.DeepEqual(searchContexts, want) {
+			t.Fatalf("got %+v, want %+v", searchContexts, want)
+		}
+	})
 }
 
 func TestSearchContexts(t *testing.T) {

@@ -7,6 +7,8 @@ import { isDefined } from '@sourcegraph/shared/src/util/types'
 import { DEFAULT_LINE_STROKE } from '../constants'
 import { LineChartSeriesWithData, Point } from '../types'
 
+import styles from './TooltipContent.module.scss'
+
 export interface TooltipContentProps<Datum extends object> extends RenderTooltipParams<Point> {
     /** Dataset of series (lines) on the chart. */
     series: LineChartSeriesWithData<Datum>[]
@@ -40,20 +42,19 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
         .filter(isDefined)
 
     return (
-        <div className={classNames('line-chart__tooltip-content', className)}>
-            <h3 className="line-chart__tooltip-date">{dateString}</h3>
+        <div className={classNames(styles.tooltipContent, className)}>
+            <h3>{dateString}</h3>
 
             {/** values */}
-            <ul className="line-chart__tooltip-list">
+            <ul className={styles.tooltipList}>
                 {lines.map(line => {
                     const value = line.point.y
                     const datumKey = tooltipData?.nearestDatum?.key
 
                     /* eslint-disable react/forbid-dom-props */
                     return (
-                        <li key={line.dataKey as string} className="line-chart__tooltip-item">
+                        <li key={line.dataKey as string}>
                             <em
-                                className="line-chart__tooltip-item-name"
                                 style={{
                                     color: line?.stroke ?? DEFAULT_LINE_STROKE,
                                     textDecoration: datumKey === line.dataKey ? 'underline' : undefined,
@@ -61,9 +62,7 @@ export function TooltipContent<Datum extends object>(props: TooltipContentProps<
                             >
                                 {line?.name ?? 'unknown series'}
                             </em>{' '}
-                            <span className="line-chart__tooltip-item-value">
-                                {value === null || Number.isNaN(value) ? '–' : value}
-                            </span>
+                            <span> {value === null || Number.isNaN(value) ? '–' : value} </span>
                         </li>
                     )
                 })}

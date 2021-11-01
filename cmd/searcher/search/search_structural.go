@@ -259,7 +259,7 @@ func structuralSearch(ctx context.Context, zipPath string, paths filePatterns, e
 		Input:         comby.ZipPath(zipPath),
 		Matcher:       matcher,
 		MatchTemplate: pattern,
-		MatchOnly:     true,
+		ResultKind:    comby.MatchOnly,
 		FilePatterns:  filePatterns,
 		Rule:          rule,
 		NumWorkers:    numWorkers,

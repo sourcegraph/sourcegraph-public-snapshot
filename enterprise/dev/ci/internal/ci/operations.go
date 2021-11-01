@@ -354,6 +354,7 @@ func wait(pipeline *bk.Pipeline) {
 func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
+			bk.Key("trigger:async"),
 			bk.Trigger("sourcegraph-async"),
 			bk.Async(true),
 			bk.Build(buildOptions),
@@ -564,7 +565,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
 		}
 
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
 	}
 }
 
@@ -686,5 +687,17 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+	}
+}
+
+func uploadBuildLogs() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			// Allow the upload to fail without failing the build.
+			bk.SoftFail(1),
+			bk.AllowDependencyFailure(),
+			bk.Cmd("./enterprise/dev/upload-build-logs.sh"),
+		}
+		pipeline.AddEnsureStep(":file_cabinet: Uploading build logs", stepOpts...)
 	}
 }

@@ -125,7 +125,7 @@ func NewMockSyncStore() *MockSyncStore {
 			},
 		},
 		UserCredentialsFunc: &SyncStoreUserCredentialsFunc{
-			defaultHook: func() *database.UserCredentialsStore {
+			defaultHook: func() database.UserCredentialsStore {
 				return nil
 			},
 		},
@@ -1457,15 +1457,15 @@ func (c SyncStoreUpsertChangesetEventsFuncCall) Results() []interface{} {
 // SyncStoreUserCredentialsFunc describes the behavior when the
 // UserCredentials method of the parent MockSyncStore instance is invoked.
 type SyncStoreUserCredentialsFunc struct {
-	defaultHook func() *database.UserCredentialsStore
-	hooks       []func() *database.UserCredentialsStore
+	defaultHook func() database.UserCredentialsStore
+	hooks       []func() database.UserCredentialsStore
 	history     []SyncStoreUserCredentialsFuncCall
 	mutex       sync.Mutex
 }
 
 // UserCredentials delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockSyncStore) UserCredentials() *database.UserCredentialsStore {
+func (m *MockSyncStore) UserCredentials() database.UserCredentialsStore {
 	r0 := m.UserCredentialsFunc.nextHook()()
 	m.UserCredentialsFunc.appendCall(SyncStoreUserCredentialsFuncCall{r0})
 	return r0
@@ -1474,7 +1474,7 @@ func (m *MockSyncStore) UserCredentials() *database.UserCredentialsStore {
 // SetDefaultHook sets function that is called when the UserCredentials
 // method of the parent MockSyncStore instance is invoked and the hook queue
 // is empty.
-func (f *SyncStoreUserCredentialsFunc) SetDefaultHook(hook func() *database.UserCredentialsStore) {
+func (f *SyncStoreUserCredentialsFunc) SetDefaultHook(hook func() database.UserCredentialsStore) {
 	f.defaultHook = hook
 }
 
@@ -1482,7 +1482,7 @@ func (f *SyncStoreUserCredentialsFunc) SetDefaultHook(hook func() *database.User
 // UserCredentials method of the parent MockSyncStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *SyncStoreUserCredentialsFunc) PushHook(hook func() *database.UserCredentialsStore) {
+func (f *SyncStoreUserCredentialsFunc) PushHook(hook func() database.UserCredentialsStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1490,21 +1490,21 @@ func (f *SyncStoreUserCredentialsFunc) PushHook(hook func() *database.UserCreden
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *SyncStoreUserCredentialsFunc) SetDefaultReturn(r0 *database.UserCredentialsStore) {
-	f.SetDefaultHook(func() *database.UserCredentialsStore {
+func (f *SyncStoreUserCredentialsFunc) SetDefaultReturn(r0 database.UserCredentialsStore) {
+	f.SetDefaultHook(func() database.UserCredentialsStore {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *SyncStoreUserCredentialsFunc) PushReturn(r0 *database.UserCredentialsStore) {
-	f.PushHook(func() *database.UserCredentialsStore {
+func (f *SyncStoreUserCredentialsFunc) PushReturn(r0 database.UserCredentialsStore) {
+	f.PushHook(func() database.UserCredentialsStore {
 		return r0
 	})
 }
 
-func (f *SyncStoreUserCredentialsFunc) nextHook() func() *database.UserCredentialsStore {
+func (f *SyncStoreUserCredentialsFunc) nextHook() func() database.UserCredentialsStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1539,7 +1539,7 @@ func (f *SyncStoreUserCredentialsFunc) History() []SyncStoreUserCredentialsFuncC
 type SyncStoreUserCredentialsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *database.UserCredentialsStore
+	Result0 database.UserCredentialsStore
 }
 
 // Args returns an interface slice containing the arguments of this

@@ -20,6 +20,7 @@ import { useScalesConfiguration, useXScale, useYScale } from '../helpers/use-sca
 import { onDatumZoneClick, Point } from '../types'
 
 import { ActiveDatum, GlyphContent } from './GlyphContent'
+import styles from './LineChartContent.module.scss'
 import { NonActiveBackground } from './NonActiveBackground'
 import { dateTickFormatter, numberFormatter, Tick, getTickXProps, getTickYProps } from './TickComponent'
 import { TooltipContent } from './TooltipContent'
@@ -111,7 +112,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     // callbacks
     const renderTooltip = useCallback(
         (renderProps: RenderTooltipParams<Point>) => (
-            <TooltipContent {...renderProps} series={seriesWithData} className="line-chart__tooltip-content" />
+            <TooltipContent {...renderProps} series={seriesWithData} className={styles.tooltipContent} />
         ),
         [seriesWithData]
     )
@@ -212,7 +213,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
     }
 
     const hoveredDatumLink = hoveredDatum?.line?.linkURLs?.[hoveredDatum?.index]
-    const rootClasses = classNames('line-chart__content', { 'line-chart__content--with-cursor': !!hoveredDatumLink })
+    const rootClasses = classNames(styles.content, { [styles.contentWithCursor]: !!hoveredDatumLink })
 
     return (
         <div className={classNames(rootClasses, 'percy-inactive-element')} data-testid="line-chart__content">
@@ -247,7 +248,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                         scale={yScale}
                                         numTicks={numberOfTicksY}
                                         width={innerWidth}
-                                        className="line-chart__grid-line"
+                                        className={styles.gridLine}
                                     />
                                 </Group>
 
@@ -257,9 +258,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     tickFormat={numberFormatter}
                                     tickLabelProps={getTickYProps}
                                     tickComponent={Tick}
-                                    axisClassName="line-chart__axis"
-                                    axisLineClassName="line-chart__axis-line line-chart__axis-line--vertical"
-                                    tickClassName="line-chart__axis-tick line-chart__axis-tick--vertical"
+                                    axisLineClassName={classNames(styles.axisLine, styles.axisLineVertical)}
+                                    tickClassName={classNames(styles.axisTick, styles.axisTickVertical)}
                                 />
                             </Group>
 
@@ -273,9 +273,8 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                                     tickLabelProps={getTickXProps}
                                     tickComponent={Tick}
                                     tickLength={8}
-                                    axisClassName="line-chart__axis"
-                                    axisLineClassName="line-chart__axis-line"
-                                    tickClassName="line-chart__axis-tick"
+                                    axisLineClassName={styles.axisLine}
+                                    tickClassName={styles.axisTick}
                                 />
                             </Group>
                         </Group>
@@ -351,7 +350,7 @@ export function LineChartContent<Datum extends object>(props: LineChartContentPr
                         </Group>
 
                         <Tooltip
-                            className="line-chart__tooltip"
+                            className={styles.tooltip}
                             showHorizontalCrosshair={false}
                             showVerticalCrosshair={true}
                             snapTooltipToDatumX={false}

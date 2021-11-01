@@ -48,7 +48,7 @@ type SourcerStore interface {
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	Repos() database.RepoStore
 	ExternalServices() *database.ExternalServiceStore
-	UserCredentials() *database.UserCredentialsStore
+	UserCredentials() database.UserCredentialsStore
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
