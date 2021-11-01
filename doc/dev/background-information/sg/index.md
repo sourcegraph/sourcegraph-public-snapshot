@@ -28,36 +28,37 @@
 `sg` is the CLI tool that Sourcegraph developers can use to develop Sourcegraph.
 Learn more about the tool's overall vision in [`sg` Vision](./vision.md).
 
-## QUICKEST Quickstart
-
-Copy & paste & run:
-
-```sh
-curl --proto '=https' --tlsv1.2 -sSf 'https://raw.githubusercontent.com/sourcegraph/sourcegraph/sg/install-binary-script/dev/sg/bootstrap.sh' | sh
-```
-
 ## Quickstart
 
-1. Install the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies).
-2. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), run:
+1. Run the following to download and install `sg`:
 
    ```sh
-   ./dev/sg/install.sh
+   curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
    ```
 
-3. Start the default Sourcegraph environment:
+3. In your clone of [`sourcegraph/sourcegraph`](https://github.com/sourcegraph/sourcegraph), start the default Sourcegraph environment:
 
    ```sh
    sg start
    ```
 
-   Once the `web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
+   Once the `enterprise-web` process has finished compilation, open [`https://sourcegraph.test:3443`](https://sourcegraph.test:3443/) in your browser.
 
 ## Installation
 
 **`sg` requires the [Sourcegraph development dependencies](https://docs.sourcegraph.com/dev/getting-started/quickstart_1_install_dependencies) to be installed.**
 
-### Using install script (recommended)
+### Using pre-built binaries (recommended)
+
+Run the following command in a terminal:
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSLf https://install.sg.dev | sh
+```
+
+That will download the latest release of `sg` from [here](https://github.com/sourcegraph/sg/releases), put it in a temporary location and run `sg install` to install it to a permanent location in your `$PATH`.
+
+### Using install script
 
 Run the following in the root of `sourcegraph/sourcegraph`:
 
