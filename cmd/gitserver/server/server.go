@@ -932,12 +932,16 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
+	var searchErr error
 	tr, ctx := trace.New(r.Context(), "search", "")
 	tr.LogFields(
 		otlog.String("query", args.Query.String()),
 		otlog.Int("limit", args.Limit),
 	)
-	defer tr.Finish()
+	defer func() {
+		tr.SetError(searchErr)
+		tr.Finish()
+	}()
 
 	searchRunning.Inc()
 	defer searchRunning.Dec()
@@ -945,14 +949,42 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	searchStart := time.Now()
 	defer func() { searchDuration.Observe(time.Since(searchStart).Seconds()) }()
 
+	defer func() {
+		if honey.Enabled() || traceLogs {
+			actor := r.Header.Get("X-Sourcegraph-Actor")
+			ev := honey.Event("gitserver-search")
+			ev.SampleRate = 1
+			ev.AddField("repo", args.Repo)
+			ev.AddField("revisions", args.Revisions)
+			ev.AddField("include_diff", args.IncludeDiff)
+			ev.AddField("actor", actor)
+			ev.AddField("query", args.Query.String())
+			ev.AddField("limit", args.Limit)
+			ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
+			if searchErr != nil {
+				ev.AddField("error", searchErr.Error())
+			}
+			if traceID := trace.ID(ctx); traceID != "" {
+				ev.AddField("traceID", traceID)
+				ev.AddField("trace", trace.URL(traceID))
+			}
+			if honey.Enabled() {
+				_ = ev.Send()
+			}
+			if traceLogs {
+				log15.Debug("TRACE gitserver search", mapToLog15Ctx(ev.Fields())...)
+			}
+		}
+	}()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
 	}
 
-	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	eventWriter, searchErr := streamhttp.NewWriter(w)
+	if searchErr != nil {
+		http.Error(w, searchErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -960,37 +992,41 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			searchErr = &gitdomain.RepoNotExistError{
 				Repo: args.Repo,
-			}))
+			}
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, searchErr))
 			return
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			searchErr = &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
-			}))
+			}
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, searchErr))
 			return
 		}
 
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			err = &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
-			}))
+			}
+			eventWriter.Event("done", protocol.NewSearchEventDone(false, err))
 			return
 		}
 
-		eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+		err = &gitdomain.RepoNotExistError{
 			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
-		}))
+		}
+		eventWriter.Event("done", protocol.NewSearchEventDone(false, err))
 		return
 	}
 
@@ -1081,8 +1117,8 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 	})
 
-	err = g.Wait()
-	doneEvent := protocol.NewSearchEventDone(limitHit, err)
+	searchErr = g.Wait()
+	doneEvent := protocol.NewSearchEventDone(limitHit, searchErr)
 	if err := eventWriter.Event("done", doneEvent); err != nil {
 		log15.Warn("failed to send done event", "error", err)
 	}
