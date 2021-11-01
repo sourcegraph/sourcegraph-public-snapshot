@@ -960,7 +960,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	})
 
 	// Run the search
-	limitHit, err := s.search(ctx, matchesBuf, &args)
+	limitHit, err := s.search(ctx, &args, matchesBuf)
 	eventWriter.Event("done", protocol.NewSearchEventDone(false, err))
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(err)
@@ -995,7 +995,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) search(ctx context.Context, matchesBuf *streamhttp.JSONArrayBuf, args *protocol.SearchRequest) (limitHit bool, err error) {
+func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
 
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
