@@ -18,6 +18,7 @@ type operations struct {
 	deleteIndexByID                        *observation.Operation
 	deleteIndexesWithoutRepository         *observation.Operation
 	deleteOverlappingDumps                 *observation.Operation
+	deleteSourcedCommits                   *observation.Operation
 	deleteUploadByID                       *observation.Operation
 	deleteUploadsStuckUploading            *observation.Operation
 	deleteUploadsWithoutRepository         *observation.Operation
@@ -57,7 +58,6 @@ type operations struct {
 	queueSize                              *observation.Operation
 	referenceIDsAndFilters                 *observation.Operation
 	referencesForUpload                    *observation.Operation
-	refreshCommitResolvability             *observation.Operation
 	repoName                               *observation.Operation
 	requeue                                *observation.Operation
 	requeueIndex                           *observation.Operation
@@ -72,6 +72,7 @@ type operations struct {
 	updateNumReferences                    *observation.Operation
 	updatePackageReferences                *observation.Operation
 	updatePackages                         *observation.Operation
+	updateSourcedCommits                   *observation.Operation
 	updateUploadRetention                  *observation.Operation
 
 	persistNearestUploads      *observation.Operation
@@ -109,6 +110,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		deleteIndexByID:                        op("DeleteIndexByID"),
 		deleteIndexesWithoutRepository:         op("DeleteIndexesWithoutRepository"),
 		deleteOverlappingDumps:                 op("DeleteOverlappingDumps"),
+		deleteSourcedCommits:                   op("DeleteSourcedCommits"),
 		deleteUploadByID:                       op("DeleteUploadByID"),
 		deleteUploadsStuckUploading:            op("DeleteUploadsStuckUploading"),
 		deleteUploadsWithoutRepository:         op("DeleteUploadsWithoutRepository"),
@@ -148,7 +150,6 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		queueSize:                              op("QueueSize"),
 		referenceIDsAndFilters:                 op("ReferenceIDsAndFilters"),
 		referencesForUpload:                    op("ReferencesForUpload"),
-		refreshCommitResolvability:             op("RefreshCommitResolvability"),
 		repoName:                               op("RepoName"),
 		requeue:                                op("Requeue"),
 		requeueIndex:                           op("RequeueIndex"),
@@ -163,6 +164,7 @@ func newOperations(observationContext *observation.Context, metrics *metrics.Ope
 		updateNumReferences:                    op("UpdateNumReferences"),
 		updatePackageReferences:                op("UpdatePackageReferences"),
 		updatePackages:                         op("UpdatePackages"),
+		updateSourcedCommits:                   op("UpdateSourcedCommits"),
 		updateUploadRetention:                  op("UpdateUploadRetention"),
 
 		persistNearestUploads:      subOp("persistNearestUploads"),

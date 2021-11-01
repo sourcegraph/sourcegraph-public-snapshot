@@ -41,7 +41,7 @@ func TestResolver_InsightConnection(t *testing.T) {
 		now := time.Now().UTC().Truncate(time.Microsecond)
 		clock := func() time.Time { return now }
 
-		postgres := dbtest.NewDB(t, "")
+		postgres := dbtest.NewDB(t)
 		resolver := newWithClock(timescale, postgres, clock)
 
 		insightMetadataStore := store.NewMockInsightMetadataStore()
@@ -125,7 +125,7 @@ func TestResolver_InsightsRepoPermissions(t *testing.T) {
 	}
 	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
 	defer cleanup()
-	postgres := dbtest.NewDB(t, "")
+	postgres := dbtest.NewDB(t)
 
 	now := time.Now().UTC().Truncate(time.Microsecond)
 	clock := func() time.Time { return now }

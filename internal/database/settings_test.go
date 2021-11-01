@@ -13,7 +13,7 @@ func TestSettings_ListAll(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})
@@ -59,7 +59,7 @@ func TestSettings_ListAll(t *testing.T) {
 
 func TestCreateIfUpToDate(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	u, err := Users(db).Create(ctx, NewUser{Username: "test"})
 	if err != nil {
@@ -94,7 +94,7 @@ func TestCreateIfUpToDate(t *testing.T) {
 }
 
 func TestGetLatestSchemaSettings(t *testing.T) {
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	user1, err := Users(db).Create(ctx, NewUser{Username: "u1"})

@@ -12,6 +12,8 @@ import { BarChartContent } from 'sourcegraph'
 
 import { MaybeLink } from '../MaybeLink'
 
+import styles from './BarChart.module.scss'
+
 const DEFAULT_PADDING = { top: 20, right: 20, bottom: 25, left: 40 }
 
 // Tooltip timeout used below as semaphore to prevent tooltip flashing
@@ -98,7 +100,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
     }
 
     return (
-        <div className="bar-chart">
+        <div className={styles.barChart}>
             <svg aria-label="Bar chart" width={width} height={height}>
                 <Group left={DEFAULT_PADDING.left} top={DEFAULT_PADDING.top}>
                     <Group aria-label="Chart axes">
@@ -108,9 +110,8 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                 top={innerHeight}
                                 scale={xScale}
                                 tickFormat={formatXLabel}
-                                axisClassName="bar-chart__axis"
-                                axisLineClassName="bar-chart__axis-line"
-                                tickClassName="bar-chart__axis-tick"
+                                axisLineClassName={styles.axisLine}
+                                tickClassName={styles.axisTick}
                             />
                         </Group>
 
@@ -118,9 +119,8 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                         <Group role="graphics-axis" aria-orientation="vertical" aria-label="Y axis">
                             <AxisLeft
                                 scale={yScale}
-                                axisClassName="bar-chart__axis"
-                                axisLineClassName="bar-chart__axis-line bar-chart__axis-line--vertical"
-                                tickClassName="bar-chart__axis-tick bar-chart__axis-tick--vertical"
+                                axisLineClassName={classNames(styles.axisLine, styles.axisLineVertical)}
+                                tickClassName={classNames(styles.axisTick, styles.axisTickVertical)}
                             />
 
                             <GridRows
@@ -128,7 +128,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                 scale={yScale}
                                 width={innerWidth}
                                 height={innerHeight}
-                                className="bar-chart__grid"
+                                className={styles.grid}
                             />
                         </Group>
                     </Group>
@@ -138,7 +138,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                         {data.map((datum, index) => {
                             const barHeight = innerHeight - (yScale(yAccessor(datum)) ?? 0)
                             const link = linkURLs?.[index]
-                            const classes = classNames('bar-chart__bar', { 'bar-chart__bar--with-link': link })
+                            const classes = classNames(styles.bar, { [styles.barWithLink]: link })
                             const yValue = yAccessor(datum)
                             const xValue = formatXLabel(index)
                             const ariaLabel = `Bar ${index + 1} of ${
@@ -154,7 +154,7 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
                                     onClick={onDatumLinkClick}
                                     role={linkURLs?.[index] ? 'link' : 'graphics-dataunit'}
                                     aria-label={ariaLabel}
-                                    className="bar-chart__bar-link"
+                                    className={styles.barLink}
                                 >
                                     <Bar
                                         className={classes}
@@ -186,12 +186,12 @@ export function BarChart<Datum extends object>(props: BarChartProps<Datum>): Rea
             </svg>
 
             {tooltipOpen && tooltipData && (
-                <TooltipWithBounds className="bar-chart__tooltip" top={tooltipTop} left={tooltipLeft}>
-                    <div className="bar-chart__tooltip-content">
-                        <strong className="bar-chart__tooltip-name">{tooltipData.xLabel}</strong>
+                <TooltipWithBounds className={styles.tooltip} top={tooltipTop} left={tooltipLeft}>
+                    <div>
+                        <strong>{tooltipData.xLabel}</strong>
                     </div>
 
-                    <div className="bar-chart__tooltip-value">{tooltipData.value}</div>
+                    <div>{tooltipData.value}</div>
                 </TooltipWithBounds>
             )}
         </div>

@@ -1,6 +1,6 @@
 import * as sentry from '@sentry/browser'
 import * as H from 'history'
-import ErrorIcon from 'mdi-react/ErrorIcon'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
 import React from 'react'
 
@@ -98,7 +98,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 
             return (
                 <HeroPage
-                    icon={ErrorIcon}
+                    icon={AlertCircleIcon}
                     title="Error"
                     className={this.props.className}
                     subtitle={

@@ -56,6 +56,7 @@ add('All states', () => {
                                     },
                                     labels: [
                                         {
+                                            __typename: 'ChangesetLabel',
                                             color: '93ba13',
                                             description: 'Very awesome description',
                                             text: 'Some label',
@@ -127,7 +128,14 @@ add('Unpublished', () => {
                             changed: 20,
                             deleted: 8,
                         },
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -188,7 +196,14 @@ add('Importing', () => {
                         externalID: '12345',
                         externalURL: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -242,7 +257,14 @@ add('Importing failed', () => {
                         externalID: '99999',
                         externalURL: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',
@@ -286,7 +308,14 @@ add('Sync failed', () => {
                         externalID: '99999',
                         externalURL: null,
                         diffStat: null,
-                        labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                        labels: [
+                            {
+                                __typename: 'ChangesetLabel',
+                                color: '93ba13',
+                                description: 'Very awesome description',
+                                text: 'Some label',
+                            },
+                        ],
                         repository: {
                             id: 'repoid',
                             name: 'github.com/sourcegraph/sourcegraph',

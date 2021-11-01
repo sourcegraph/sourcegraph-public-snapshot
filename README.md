@@ -1,6 +1,6 @@
 # <a href="https://sourcegraph.com"><picture><source srcset="./ui/assets/img/sourcegraph-head-logo.svg" media="(prefers-color-scheme: dark)"/><img alt="Sourcegraph" src="./ui/assets/img/sourcegraph-logo-light.svg" height="48px" /></picture></a>
 
-[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=master)](https://buildkite.com/sourcegraph/sourcegraph)
+[![build](https://badge.buildkite.com/00bbe6fa9986c78b8e8591cffeb0b0f2e8c4bb610d7e339ff6.svg?branch=main)](https://buildkite.com/sourcegraph/sourcegraph)
 
 [Sourcegraph](https://about.sourcegraph.com/) is a fast and featureful code search and navigation engine.
 
@@ -63,9 +63,8 @@ The `doc` directory has additional documentation for developing and understandin
 - [Project FAQ](./doc/admin/faq.md)
 - [Architecture](./doc/dev/background-information/architecture/index.md): high-level architecture
 - [Database setup](./doc/dev/background-information/postgresql.md): database best practices
-- [General style guide](https://about.sourcegraph.com/handbook/communication/style_guide)
-- [Go style guide](https://about.sourcegraph.com/handbook/engineering/languages/go)
-- [Documentation style guide](https://about.sourcegraph.com/handbook/engineering/product_documentation)
+- [Go style guide](./doc/dev/background-information/languages/go)
+- [Documentation style guide](https://handbook.sourcegraph.com/engineering/product_documentation)
 - [GraphQL API](./doc/api/graphql/index.md): useful tips when modifying the GraphQL API
 - [Contributing](./CONTRIBUTING.md)
 

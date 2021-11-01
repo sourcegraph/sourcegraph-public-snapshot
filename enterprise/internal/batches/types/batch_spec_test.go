@@ -14,124 +14,134 @@ func TestComputeBatchSpecState(t *testing.T) {
 		want  BatchSpecState
 	}{
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 999, Queued: 9999, Processing: 99},
+			stats: BatchSpecStats{ResolutionDone: false},
 			spec:  uploadedSpec,
 			want:  BatchSpecStateCompleted,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5},
+			stats: BatchSpecStats{ResolutionDone: false},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStatePending,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5},
+			spec:  createdFromRawSpec,
+			want:  BatchSpecStatePending,
+		},
+		{
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateQueued,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 2, Processing: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 2, Processing: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 1, Processing: 1, Completed: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 1, Completed: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 1, Processing: 0, Completed: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 0, Completed: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 0, Processing: 0, Completed: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 0, Processing: 0, Completed: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCompleted,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 1, Processing: 1, Failed: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 1, Failed: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 1, Processing: 0, Failed: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 1, Processing: 0, Failed: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 0, Processing: 0, Failed: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 0, Processing: 0, Failed: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateFailed,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Queued: 0, Completed: 1, Failed: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Queued: 0, Completed: 1, Failed: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateFailed,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceling: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceling,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceling: 2, Completed: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 2, Completed: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceling,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceling: 2, Failed: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 2, Failed: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceling,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceling: 1, Queued: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 1, Queued: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceling: 1, Processing: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceling: 1, Processing: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 3},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 3},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceled,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Failed: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Failed: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceled,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Completed: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Completed: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceled,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateCanceling,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 1, Queued: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 1, Queued: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Processing: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Processing: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 1, Processing: 1},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Canceling: 1, Processing: 1},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
 		},
 		{
-			stats: BatchSpecStats{Workspaces: 5, Executions: 3, Canceled: 1, Queued: 2},
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 5, Executions: 3, Canceled: 1, Queued: 2},
 			spec:  createdFromRawSpec,
 			want:  BatchSpecStateProcessing,
+		},
+		{
+			stats: BatchSpecStats{ResolutionDone: true, Workspaces: 0, Executions: 0},
+			spec:  createdFromRawSpec,
+			want:  BatchSpecStateCompleted,
 		},
 	}
 

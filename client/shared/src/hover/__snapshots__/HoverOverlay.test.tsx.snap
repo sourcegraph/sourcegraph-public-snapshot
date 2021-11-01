@@ -111,49 +111,53 @@ exports[`HoverOverlay actions and hover present 1`] = `
   <div
     className="actions"
   >
-    <ActionItem
-      action={
-        Object {
-          "command": "c",
-          "id": "a",
+    <div
+      className="actionsInner"
+    >
+      <ActionItem
+        action={
+          Object {
+            "command": "c",
+            "id": "a",
+          }
         }
-      }
-      active={true}
-      className="action test-tooltip-untitled"
-      disabledDuringExecution={true}
-      extensionsController={
-        Object {
-          "executeCommand": [Function],
+        active={true}
+        className="action test-tooltip-untitled"
+        disabledDuringExecution={true}
+        extensionsController={
+          Object {
+            "executeCommand": [Function],
+          }
         }
-      }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
+        location={
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          }
         }
-      }
-      platformContext={
-        Object {
-          "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+        platformContext={
+          Object {
+            "forceUpdateTooltip": [Function],
+            "settings": Observable {
+              "_isScalar": false,
+              "_subscribe": [Function],
+            },
+          }
         }
-      }
-      showInlineError={true}
-      showLoadingSpinnerDuringExecution={true}
-      telemetryService={
-        Object {
-          "log": [Function],
-          "logViewEvent": [Function],
+        showInlineError={true}
+        showLoadingSpinnerDuringExecution={true}
+        telemetryService={
+          Object {
+            "log": [Function],
+            "logViewEvent": [Function],
+          }
         }
-      }
-      variant="actionItem"
-    />
+        variant="actionItem"
+      />
+    </div>
   </div>
 </div>
 `;
@@ -253,50 +257,54 @@ exports[`HoverOverlay actions present 1`] = `
   <div
     className="actions"
   >
-    <ActionItem
-      action={
-        Object {
-          "command": "c",
-          "id": "a",
-          "title": "Some title",
+    <div
+      className="actionsInner"
+    >
+      <ActionItem
+        action={
+          Object {
+            "command": "c",
+            "id": "a",
+            "title": "Some title",
+          }
         }
-      }
-      active={true}
-      className="action test-tooltip-some-title"
-      disabledDuringExecution={true}
-      extensionsController={
-        Object {
-          "executeCommand": [Function],
+        active={true}
+        className="action test-tooltip-some-title"
+        disabledDuringExecution={true}
+        extensionsController={
+          Object {
+            "executeCommand": [Function],
+          }
         }
-      }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
+        location={
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          }
         }
-      }
-      platformContext={
-        Object {
-          "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+        platformContext={
+          Object {
+            "forceUpdateTooltip": [Function],
+            "settings": Observable {
+              "_isScalar": false,
+              "_subscribe": [Function],
+            },
+          }
         }
-      }
-      showInlineError={true}
-      showLoadingSpinnerDuringExecution={true}
-      telemetryService={
-        Object {
-          "log": [Function],
-          "logViewEvent": [Function],
+        showInlineError={true}
+        showLoadingSpinnerDuringExecution={true}
+        telemetryService={
+          Object {
+            "log": [Function],
+            "logViewEvent": [Function],
+          }
         }
-      }
-      variant="actionItem"
-    />
+        variant="actionItem"
+      />
+    </div>
   </div>
 </div>
 `;
@@ -329,49 +337,53 @@ exports[`HoverOverlay actions present, hover loading 1`] = `
   <div
     className="actions"
   >
-    <ActionItem
-      action={
-        Object {
-          "command": "c",
-          "id": "a",
+    <div
+      className="actionsInner"
+    >
+      <ActionItem
+        action={
+          Object {
+            "command": "c",
+            "id": "a",
+          }
         }
-      }
-      active={true}
-      className="action test-tooltip-untitled"
-      disabledDuringExecution={true}
-      extensionsController={
-        Object {
-          "executeCommand": [Function],
+        active={true}
+        className="action test-tooltip-untitled"
+        disabledDuringExecution={true}
+        extensionsController={
+          Object {
+            "executeCommand": [Function],
+          }
         }
-      }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
+        location={
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          }
         }
-      }
-      platformContext={
-        Object {
-          "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+        platformContext={
+          Object {
+            "forceUpdateTooltip": [Function],
+            "settings": Observable {
+              "_isScalar": false,
+              "_subscribe": [Function],
+            },
+          }
         }
-      }
-      showInlineError={true}
-      showLoadingSpinnerDuringExecution={true}
-      telemetryService={
-        Object {
-          "log": [Function],
-          "logViewEvent": [Function],
+        showInlineError={true}
+        showLoadingSpinnerDuringExecution={true}
+        telemetryService={
+          Object {
+            "log": [Function],
+            "logViewEvent": [Function],
+          }
         }
-      }
-      variant="actionItem"
-    />
+        variant="actionItem"
+      />
+    </div>
   </div>
 </div>
 `;
@@ -438,49 +450,53 @@ exports[`HoverOverlay actions, hover and alert present 1`] = `
   <div
     className="actions"
   >
-    <ActionItem
-      action={
-        Object {
-          "command": "c",
-          "id": "a",
+    <div
+      className="actionsInner"
+    >
+      <ActionItem
+        action={
+          Object {
+            "command": "c",
+            "id": "a",
+          }
         }
-      }
-      active={true}
-      className="action test-tooltip-untitled"
-      disabledDuringExecution={true}
-      extensionsController={
-        Object {
-          "executeCommand": [Function],
+        active={true}
+        className="action test-tooltip-untitled"
+        disabledDuringExecution={true}
+        extensionsController={
+          Object {
+            "executeCommand": [Function],
+          }
         }
-      }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
+        location={
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          }
         }
-      }
-      platformContext={
-        Object {
-          "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+        platformContext={
+          Object {
+            "forceUpdateTooltip": [Function],
+            "settings": Observable {
+              "_isScalar": false,
+              "_subscribe": [Function],
+            },
+          }
         }
-      }
-      showInlineError={true}
-      showLoadingSpinnerDuringExecution={true}
-      telemetryService={
-        Object {
-          "log": [Function],
-          "logViewEvent": [Function],
+        showInlineError={true}
+        showLoadingSpinnerDuringExecution={true}
+        telemetryService={
+          Object {
+            "log": [Function],
+            "logViewEvent": [Function],
+          }
         }
-      }
-      variant="actionItem"
-    />
+        variant="actionItem"
+      />
+    </div>
   </div>
 </div>
 `;
@@ -539,49 +555,53 @@ exports[`HoverOverlay hover error, actions present 1`] = `
   <div
     className="actions"
   >
-    <ActionItem
-      action={
-        Object {
-          "command": "c",
-          "id": "a",
+    <div
+      className="actionsInner"
+    >
+      <ActionItem
+        action={
+          Object {
+            "command": "c",
+            "id": "a",
+          }
         }
-      }
-      active={true}
-      className="action test-tooltip-untitled"
-      disabledDuringExecution={true}
-      extensionsController={
-        Object {
-          "executeCommand": [Function],
+        active={true}
+        className="action test-tooltip-untitled"
+        disabledDuringExecution={true}
+        extensionsController={
+          Object {
+            "executeCommand": [Function],
+          }
         }
-      }
-      location={
-        Object {
-          "hash": "",
-          "key": undefined,
-          "pathname": "/",
-          "search": "",
-          "state": undefined,
+        location={
+          Object {
+            "hash": "",
+            "key": undefined,
+            "pathname": "/",
+            "search": "",
+            "state": undefined,
+          }
         }
-      }
-      platformContext={
-        Object {
-          "forceUpdateTooltip": [Function],
-          "settings": Observable {
-            "_isScalar": false,
-            "_subscribe": [Function],
-          },
+        platformContext={
+          Object {
+            "forceUpdateTooltip": [Function],
+            "settings": Observable {
+              "_isScalar": false,
+              "_subscribe": [Function],
+            },
+          }
         }
-      }
-      showInlineError={true}
-      showLoadingSpinnerDuringExecution={true}
-      telemetryService={
-        Object {
-          "log": [Function],
-          "logViewEvent": [Function],
+        showInlineError={true}
+        showLoadingSpinnerDuringExecution={true}
+        telemetryService={
+          Object {
+            "log": [Function],
+            "logViewEvent": [Function],
+          }
         }
-      }
-      variant="actionItem"
-    />
+        variant="actionItem"
+      />
+    </div>
   </div>
 </div>
 `;

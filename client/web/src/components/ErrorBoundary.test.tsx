@@ -8,7 +8,7 @@ import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 
 import { ErrorBoundary } from './ErrorBoundary'
 
-jest.mock('mdi-react/ErrorIcon', () => 'ErrorIcon')
+jest.mock('mdi-react/AlertCircleIcon', () => 'AlertCircleIcon')
 jest.mock('mdi-react/ReloadIcon', () => 'ReloadIcon')
 
 const ThrowError: React.FunctionComponent = () => {

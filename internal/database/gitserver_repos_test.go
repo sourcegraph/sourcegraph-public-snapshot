@@ -18,7 +18,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -103,7 +103,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	_, err := GitserverRepos(db).GetByID(ctx, 1)
@@ -153,7 +153,7 @@ func TestSetCloneStatus(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	const shardID = "test"
 
@@ -253,7 +253,7 @@ func TestSetLastError(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	const shardID = "test"
 
@@ -347,7 +347,7 @@ func TestGitserverRepoUpsertNullShard(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	repo1 := &types.Repo{
@@ -382,7 +382,7 @@ func TestGitserverRepoUpsert(t *testing.T) {
 		t.Skip()
 	}
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 
 	repo1 := &types.Repo{

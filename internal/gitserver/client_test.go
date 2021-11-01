@@ -60,9 +60,9 @@ func TestClient_ListCloned(t *testing.T) {
 
 func TestClient_RequestRepoMigrate(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
-	addrs := []string{"http://172.16.8.1:8080", "http://172.16.8.2:800"}
+	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
-	expected := gitserver.RendezvousAddrForRepo(repo, addrs)
+	expected := "http://" + gitserver.RendezvousAddrForRepo(repo, addrs)
 
 	cli := &gitserver.Client{
 		Addrs: func() []string {
@@ -87,7 +87,7 @@ func TestClient_RequestRepoMigrate(t *testing.T) {
 
 	_, err := cli.RequestRepoMigrate(context.Background(), repo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("expected URL %q, but got err %q", expected, err)
 	}
 }
 

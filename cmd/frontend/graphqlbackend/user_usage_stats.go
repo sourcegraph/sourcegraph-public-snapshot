@@ -77,7 +77,7 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 	return nil, usagestatsdeprecated.LogActivity(actor.IsAuthenticated(), actor.UID, args.UserCookieID, args.Event)
 }
 
-func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
+type Event struct {
 	Event          string
 	UserCookieID   string
 	FirstSourceURL *string
@@ -91,58 +91,90 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *struct {
 	DeviceID       *string
 	InsertID       *string
 	EventID        *int32
-}) (*EmptyResponse, error) {
-	if !conf.EventLoggingEnabled() {
+}
+
+type EventBatch struct {
+	Events *[]Event
+}
+
+func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyResponse, error) {
+	if args == nil {
 		return nil, nil
 	}
 
-	var argumentPayload json.RawMessage
-	if args.Argument != nil {
-		if err := json.Unmarshal([]byte(*args.Argument), &argumentPayload); err != nil {
+	return r.LogEvents(ctx, &EventBatch{Events: &[]Event{*args}})
+}
+
+func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*EmptyResponse, error) {
+	if !conf.EventLoggingEnabled() || args.Events == nil {
+		return nil, nil
+	}
+
+	decode := func(v *string) (payload json.RawMessage, _ error) {
+		if v != nil {
+			if err := json.Unmarshal([]byte(*v), &payload); err != nil {
+				return nil, err
+			}
+		}
+
+		return payload, nil
+	}
+
+	events := make([]usagestats.Event, 0, len(*args.Events))
+	for _, args := range *args.Events {
+		if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
+			argumentPayload, err := decode(args.Argument)
+			if err != nil {
+				return nil, err
+			}
+
+			if err := exportPrometheusSearchLatencies(args.Event, argumentPayload); err != nil {
+				log15.Error("export prometheus search latencies", "error", err)
+			}
+
+			// Future(slimsag): implement actual event logging for these events
+			continue
+		}
+
+		argumentPayload, err := decode(args.Argument)
+		if err != nil {
 			return nil, err
 		}
-	}
 
-	if strings.HasPrefix(args.Event, "search.latencies.frontend.") {
-		if err := exportPrometheusSearchLatencies(args.Event, argumentPayload); err != nil {
-			log15.Error("export prometheus search latencies", "error", err)
-		}
-		return nil, nil // Future(slimsag): implement actual event logging for these events
-	}
-
-	var publicArgumentPayload json.RawMessage
-	if args.PublicArgument != nil {
-		if err := json.Unmarshal([]byte(*args.PublicArgument), &publicArgumentPayload); err != nil {
+		publicArgumentPayload, err := decode(args.PublicArgument)
+		if err != nil {
 			return nil, err
 		}
-	}
 
-	var userPropertiesPayload json.RawMessage
-	if args.UserProperties != nil {
-		if err := json.Unmarshal([]byte(*args.UserProperties), &userPropertiesPayload); err != nil {
+		userPropertiesPayload, err := decode(args.UserProperties)
+		if err != nil {
 			return nil, err
 		}
+
+		events = append(events, usagestats.Event{
+			EventName:      args.Event,
+			URL:            args.URL,
+			UserID:         actor.FromContext(ctx).UID,
+			UserCookieID:   args.UserCookieID,
+			FirstSourceURL: args.FirstSourceURL,
+			Source:         args.Source,
+			Argument:       argumentPayload,
+			FeatureFlags:   featureflag.FromContext(ctx),
+			CohortID:       args.CohortID,
+			Referrer:       args.Referrer,
+			PublicArgument: publicArgumentPayload,
+			UserProperties: userPropertiesPayload,
+			DeviceID:       args.DeviceID,
+			EventID:        args.EventID,
+			InsertID:       args.InsertID,
+		})
 	}
 
-	actor := actor.FromContext(ctx)
-	ffs := featureflag.FromContext(ctx)
-	return nil, usagestats.LogEvent(ctx, r.db, usagestats.Event{
-		EventName:      args.Event,
-		URL:            args.URL,
-		UserID:         actor.UID,
-		UserCookieID:   args.UserCookieID,
-		FirstSourceURL: args.FirstSourceURL,
-		Source:         args.Source,
-		Argument:       argumentPayload,
-		FeatureFlags:   ffs,
-		CohortID:       args.CohortID,
-		Referrer:       args.Referrer,
-		PublicArgument: publicArgumentPayload,
-		UserProperties: userPropertiesPayload,
-		DeviceID:       args.DeviceID,
-		EventID:        args.EventID,
-		InsertID:       args.InsertID,
-	})
+	if err := usagestats.LogEvents(ctx, r.db, events); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
 }
 
 var (

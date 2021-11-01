@@ -1,8 +1,8 @@
 import * as H from 'history'
+import AccountIcon from 'mdi-react/AccountIcon'
 import AddIcon from 'mdi-react/AddIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
 import SettingsIcon from 'mdi-react/SettingsIcon'
-import UserIcon from 'mdi-react/UserIcon'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { RouteComponentProps } from 'react-router'
 import { Link } from 'react-router-dom'
@@ -73,11 +73,11 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
                         <SettingsIcon className="icon-inline" /> Settings
                     </Link>{' '}
                     <Link
-                        to={`${orgURL(node.name)}/members`}
+                        to={`${orgURL(node.name)}/settings/members`}
                         className="btn btn-sm btn-secondary"
                         data-tooltip="Organization members"
                     >
-                        <UserIcon className="icon-inline" />{' '}
+                        <AccountIcon className="icon-inline" />{' '}
                         {node.members && (
                             <>
                                 {node.members.totalCount} {pluralize('member', node.members.totalCount)}

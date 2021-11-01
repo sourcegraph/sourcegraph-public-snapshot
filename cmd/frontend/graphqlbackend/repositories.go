@@ -208,7 +208,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
+		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(r.db), repo))
 	}
 	return resolvers, nil
 }

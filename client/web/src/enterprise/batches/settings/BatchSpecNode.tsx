@@ -1,11 +1,11 @@
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import { upperFirst } from 'lodash'
+import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import CancelIcon from 'mdi-react/CancelIcon'
 import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import ErrorIcon from 'mdi-react/ErrorIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
 import React, { useCallback, useState } from 'react'
 
@@ -91,7 +91,7 @@ const StateIcon: React.FunctionComponent<{ state: BatchSpecState }> = ({ state }
 
         case BatchSpecState.FAILED:
         default:
-            return <ErrorIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
+            return <AlertCircleIcon className={classNames(styles.nodeStateIcon, 'icon-inline text-danger mb-1')} />
     }
 }
 

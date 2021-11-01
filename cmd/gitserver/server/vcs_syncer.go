@@ -145,6 +145,8 @@ type FusionConfig struct {
 	// MaxChanges limits how many changes to fetch during the initial clone. A
 	// default of -1 means fetch all changes
 	MaxChanges int
+	// IncludeBinaries sets whether to include binary files
+	IncludeBinaries bool
 }
 
 // PerforceDepotSyncer is a syncer for Perforce depots.
@@ -303,6 +305,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		)
 	} else {
 		// Example: git p4 clone --bare --max-changes 1000 //Sourcegraph/@all /tmp/clone-584194180/.git
@@ -346,6 +349,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"--retries", strconv.Itoa(s.FusionConfig.Retries),
 			"--refresh", strconv.Itoa(s.FusionConfig.Refresh),
 			"--maxChanges", strconv.Itoa(s.FusionConfig.MaxChanges),
+			"--includeBinaries", strconv.FormatBool(s.FusionConfig.IncludeBinaries),
 		)
 	} else {
 		cmd = exec.CommandContext(ctx, "git", args...)

@@ -10,7 +10,6 @@ import { useField } from '../../../../../components/form/hooks/useField'
 import { FORM_ERROR, FormAPI, SubmissionErrors, useForm } from '../../../../../components/form/hooks/useForm'
 import { AsyncValidator } from '../../../../../components/form/hooks/utils/use-async-validation'
 import { createRequiredValidator } from '../../../../../components/form/validators'
-import { getUserSubject } from '../../../../../components/visibility-picker/VisibilityPicker'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
 import {
     isGlobalSubject,
@@ -31,6 +30,7 @@ const DASHBOARD_INITIAL_VALUES: DashboardCreationFields = {
 export interface DashboardCreationFields {
     name: string
     visibility: string
+    type?: string
 }
 
 export interface InsightsDashboardCreationContentProps {
@@ -52,12 +52,35 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
     const { initialValues, subjects, onSubmit, children } = props
 
     const { findDashboardByName } = useContext(CodeInsightsBackendContext)
-    // Calculate initial value for the visibility settings
+
+    // We always have user subject in our settings cascade
     const userSubjectID = subjects.find(isUserSubject)?.id ?? ''
+    const organizationSubjects = subjects.filter(isOrganizationSubject)
+
+    // We always have global subject in our settings cascade
+    const globalSubject = subjects.find(isGlobalSubject)
+    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
 
     const { ref, handleSubmit, formAPI } = useForm<DashboardCreationFields>({
         initialValues: initialValues ?? { ...DASHBOARD_INITIAL_VALUES, visibility: userSubjectID },
-        onSubmit,
+        // Override onSubmit to pass type value
+        // to correctly set the grants property for graphql api
+        onSubmit: async () => {
+            let type = 'organization'
+            if (visibility.input.value === userSubjectID) {
+                type = 'personal'
+            }
+
+            if (visibility.input.value === globalSubject?.id) {
+                type = 'global'
+            }
+
+            await onSubmit({
+                name: name.input.value,
+                visibility: visibility.input.value,
+                type,
+            })
+        },
     })
 
     const asyncNameValidator = useCallback<AsyncValidator<string>>(
@@ -91,14 +114,6 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
         formApi: formAPI,
     })
 
-    // We always have user subject in our settings cascade
-    const userSubject = getUserSubject(subjects)
-    const organizationSubjects = subjects.filter(isOrganizationSubject)
-
-    // We always have global subject in our settings cascade
-    const globalSubject = subjects.find(isGlobalSubject)
-    const canGlobalSubjectBeEdited = globalSubject?.allowSiteSettingsEdits && globalSubject?.viewerCanAdminister
-
     return (
         // eslint-disable-next-line react/forbid-elements
         <form noValidate={true} ref={ref} onSubmit={handleSubmit}>
@@ -116,10 +131,10 @@ export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsD
             <FormGroup name="visibility" title="Visibility" contentClassName="d-flex flex-column" className="mb-0 mt-4">
                 <FormRadioInput
                     name="visibility"
-                    value={userSubject.id}
+                    value={userSubjectID}
                     title="Private"
                     description="visible only to you"
-                    checked={visibility.input.value === userSubject.id}
+                    checked={visibility.input.value === userSubjectID}
                     className="mr-3"
                     onChange={visibility.input.onChange}
                 />

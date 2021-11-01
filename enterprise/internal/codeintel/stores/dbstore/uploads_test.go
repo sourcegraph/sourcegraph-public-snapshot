@@ -356,6 +356,7 @@ func TestGetUploads(t *testing.T) {
 		{term: "tsc", expectedIDs: []int{2, 5, 7, 8, 10}},    // searches indexer
 		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},     // searches text status
 		{term: "bAr", expectedIDs: []int{4, 6}},              // search repo names
+		{state: "failed", expectedIDs: []int{2}},             // treats errored/failed states equivalently
 		{visibleAtTip: true, expectedIDs: []int{2, 5, 7, 8}},
 		{dependencyOf: 10, expectedIDs: []int{7, 8}},
 		{dependentOf: 7, expectedIDs: []int{10}},

@@ -22,7 +22,7 @@ func TestParseConfig(t *testing.T) {
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	type args struct {
 		cfg *conf.Unified

@@ -264,6 +264,7 @@ func TestGetIndexes(t *testing.T) {
 		{term: "333", expectedIDs: []int{1, 2, 3, 5}},    // searches commits and failure message
 		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}}, // searches text status
 		{term: "bAr", expectedIDs: []int{4, 6}},          // search repo names
+		{state: "failed", expectedIDs: []int{2}},         // treats errored/failed states equivalently
 	}
 
 	for _, testCase := range testCases {

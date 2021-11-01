@@ -9,8 +9,7 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { SearchPatternType } from '../../graphql-operations'
 import { createSuggestionFetcher } from '../backend/search'
 import { createPlatformContext } from '../platform/context'
-import { SourcegraphUrlService } from '../platform/sourcegraphUrlService'
-import { getAssetsURL, CLOUD_SOURCEGRAPH_URL } from '../util/context'
+import { observeSourcegraphURL, getAssetsURL, DEFAULT_SOURCEGRAPH_URL } from '../util/context'
 
 const isURL = /^https?:\/\//
 const IS_EXTENSION = true // This feature is only supported in browser extension
@@ -23,8 +22,7 @@ export class SearchCommand {
     private prev: { query: string; suggestions: browser.omnibox.SuggestResult[] } = { query: '', suggestions: [] }
 
     public getSuggestions = async (query: string): Promise<browser.omnibox.SuggestResult[]> => {
-        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
-
+        const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
         return new Promise(resolve => {
             if (this.prev.query === query) {
                 resolve(this.prev.suggestions)
@@ -55,7 +53,7 @@ export class SearchCommand {
         query: string,
         disposition?: 'newForegroundTab' | 'newBackgroundTab' | 'currentTab'
     ): Promise<void> => {
-        const sourcegraphURL = await SourcegraphUrlService.observeSelfHostedOrCloud().pipe(take(1)).toPromise()
+        const sourcegraphURL = await observeSourcegraphURL(IS_EXTENSION).pipe(take(1)).toPromise()
 
         const [patternType, caseSensitive] = await this.getDefaultSearchSettings(sourcegraphURL)
 
@@ -108,7 +106,7 @@ export class SearchCommand {
 
                 const platformContext = createPlatformContext(
                     { urlToFile: undefined },
-                    { sourcegraphURL, assetsURL: getAssetsURL(CLOUD_SOURCEGRAPH_URL) },
+                    { sourcegraphURL, assetsURL: getAssetsURL(DEFAULT_SOURCEGRAPH_URL) },
                     IS_EXTENSION
                 )
 

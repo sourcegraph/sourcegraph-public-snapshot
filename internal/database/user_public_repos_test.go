@@ -11,7 +11,7 @@ import (
 
 func TestUserPublicRepos_Set(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	u := Users(db)
 	r := Repos(db)
@@ -61,7 +61,7 @@ func TestUserPublicRepos_Set(t *testing.T) {
 
 func TestUserPublicRepos_SetUserRepos(t *testing.T) {
 	t.Parallel()
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 	ctx := context.Background()
 	u := Users(db)
 	r := Repos(db)

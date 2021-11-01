@@ -2,11 +2,12 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/cockroachdb/errors"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -168,8 +169,15 @@ func toComputeTextResolver(fm *result.FileMatch, result *compute.Text, repositor
 	}
 }
 
-func toComputeResultResolver(r interface{}) *computeResultResolver {
-	return &computeResultResolver{result: r}
+func toComputeResultResolver(fm *result.FileMatch, result compute.Result, repoResolver *RepositoryResolver) *computeResultResolver {
+	switch r := result.(type) {
+	case *compute.MatchContext:
+		return &computeResultResolver{result: toComputeMatchContextResolver(fm, r, repoResolver)}
+	case *compute.Text:
+		return &computeResultResolver{result: toComputeTextResolver(fm, r, repoResolver)}
+	default:
+		panic(fmt.Sprintf("unsupported compute result %T", r))
+	}
 }
 
 func toResultResolverList(ctx context.Context, cmd compute.Command, matches []result.Match, db dbutil.DB) ([]*computeResultResolver, error) {
@@ -182,33 +190,24 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, repoName.ToRepo())
+		resolver := NewRepositoryResolver(database.NewDB(db), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
 	}
 
-	computeResult := make([]*computeResultResolver, 0, len(matches))
+	results := make([]*computeResultResolver, 0, len(matches))
 	for _, m := range matches {
 		if fm, ok := m.(*result.FileMatch); ok {
-			repoResolver := getRepoResolver(fm.Repo, "")
-			switch c := cmd.(type) {
-			case *compute.MatchOnly:
-				matchContext := compute.FromFileMatch(fm, c.MatchPattern.(*compute.Regexp).Value)
-				computeResult = append(computeResult, toComputeResultResolver(toComputeMatchContextResolver(fm, matchContext, repoResolver)))
-			case *compute.Replace:
-				result, err := compute.ReplaceInPlaceFromFileMatch(ctx, fm, c)
-				if err != nil {
-					return nil, err
-				}
-				computeResult = append(computeResult, toComputeResultResolver(toComputeTextResolver(fm, result, repoResolver)))
-			default:
-				return nil, errors.Errorf("unsupported compute command %T", c)
+			result, err := cmd.Run(ctx, fm)
+			if err != nil {
+				return nil, err
 			}
-
+			repoResolver := getRepoResolver(fm.Repo, "")
+			results = append(results, toComputeResultResolver(fm, result, repoResolver))
 		}
 	}
-	return computeResult, nil
+	return results, nil
 }
 
 // NewComputeImplementer is a function that abstracts away the need to have a
@@ -226,7 +225,7 @@ func NewComputeImplementer(ctx context.Context, db dbutil.DB, args *ComputeArgs)
 	log15.Info("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := NewSearchImplementer(ctx, db, &SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, err := NewSearchImplementer(ctx, database.NewDB(db), &SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}

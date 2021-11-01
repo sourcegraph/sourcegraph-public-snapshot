@@ -1,13 +1,11 @@
 package perforce
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -348,49 +346,6 @@ Users:
 	want := []extsvc.AccountID{"alice@example.com"}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
-	}
-}
-
-func TestScanAllUsers(t *testing.T) {
-	ctx := context.Background()
-	f, err := os.Open("testdata/sample-protects.txt")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data, err := io.ReadAll(f)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	rc := io.NopCloser(bytes.NewReader(data))
-
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		return rc, nil, nil
-	})
-
-	p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
-	p.cachedGroupMembers = map[string][]string{
-		"dev": {"user1", "user2"},
-	}
-	p.cachedAllUserEmails = map[string]string{
-		"user1": "user1@example.com",
-		"user2": "user2@example.com",
-	}
-
-	users, err := p.scanAllUsers(ctx, rc)
-	if err != nil {
-		t.Fatal(err)
-	}
-	want := map[string]struct{}{
-		"user1": {},
-		"user2": {},
-	}
-	if diff := cmp.Diff(want, users); diff != "" {
-		t.Fatal(diff)
 	}
 }
 

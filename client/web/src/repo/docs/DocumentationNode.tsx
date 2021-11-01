@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import * as H from 'history'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
 import React, { RefObject, useEffect, useMemo, useRef } from 'react'
@@ -155,8 +155,8 @@ export const DocumentationNode: React.FunctionComponent<Props> = React.memo(
                                             styles.pill
                                         )}
                                     >
-                                        <BookOpenVariantIcon className="icon-inline text-muted mr-1" /> Generated API
-                                        docs
+                                        <BookOpenBlankVariantIcon className="icon-inline text-muted mr-1" /> Generated
+                                        API docs
                                         <span className={classNames('mx-2', styles.pillDivider)} />
                                         <a
                                             // eslint-disable-next-line react/jsx-no-target-blank

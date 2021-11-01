@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import { upperFirst } from 'lodash'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
@@ -211,7 +211,7 @@ export const RepositoryDocumentationPage: React.FunctionComponent<Props> = React
                             <FeedbackPrompt routes={routes} />
                         </div>
                         <h1>
-                            <BookOpenVariantIcon className="icon-inline mr-1" />
+                            <BookOpenBlankVariantIcon className="icon-inline mr-1" />
                             API docs
                             <Badge status="experimental" className="text-uppercase ml-2" useLink={true} />
                         </h1>

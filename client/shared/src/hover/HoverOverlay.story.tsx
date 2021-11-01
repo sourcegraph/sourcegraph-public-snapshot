@@ -1,5 +1,5 @@
 import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
-import { Meta, Story } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 import React from 'react'
 
 import browserExtensionStyles from '@sourcegraph/browser/src/app.scss'
@@ -10,9 +10,24 @@ import { registerHighlightContributions } from '../highlight/contributions'
 import { HoverOverlay, HoverOverlayClassProps } from './HoverOverlay'
 import { commonProps, FIXTURE_ACTIONS, FIXTURE_CONTENT, FIXTURE_SEMANTIC_BADGE } from './HoverOverlay.fixtures'
 
+const decorator: DecoratorFn = story => (
+    <>
+        <style>{bitbucketStyles}</style>
+        <style>{browserExtensionStyles}</style>
+        {story()}
+    </>
+)
+
+const config: Meta = {
+    title: 'shared/HoverOverlay',
+    decorators: [decorator],
+}
+
+export default config
+
 registerHighlightContributions()
 
-const bitbucketClassProps: HoverOverlayClassProps = {
+const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     className: 'aui-dialog',
     actionItemClassName: 'aui-button hover-action-item--bitbucket-server',
     closeButtonClassName: 'aui-button btn-icon--bitbucket-server close',
@@ -27,25 +42,18 @@ const bitbucketClassProps: HoverOverlayClassProps = {
     },
 }
 
-const config: Meta = {
-    title: 'shared/HoverOverlay',
-}
-export default config
-
-export const BitbucketStyles: Story = () => (
-    <>
-        <style>{bitbucketStyles}</style>
-        <style>{browserExtensionStyles}</style>
-        <HoverOverlay
-            {...commonProps()}
-            {...bitbucketClassProps}
-            hoverOrError={{
-                contents: [FIXTURE_CONTENT],
-                aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
-            }}
-            actionsOrError={FIXTURE_ACTIONS}
-        />
-    </>
+export const BitbucketStyles: Story = props => (
+    <HoverOverlay
+        {...commonProps()}
+        {...BITBUCKET_CLASS_PROPS}
+        {...props}
+        hoverOrError={{
+            contents: [FIXTURE_CONTENT],
+            aggregatedBadges: [FIXTURE_SEMANTIC_BADGE],
+        }}
+        actionsOrError={FIXTURE_ACTIONS}
+    />
 )
-
 BitbucketStyles.storyName = 'Bitbucket styles'
+
+export const Branded: Story = () => <BitbucketStyles isBranded={true} />

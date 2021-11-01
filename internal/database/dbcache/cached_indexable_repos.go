@@ -34,7 +34,7 @@ func (c *cachedRepos) Repos() ([]types.RepoName, bool) {
 	return append([]types.RepoName{}, c.repos...), time.Since(c.fetched) > indexableReposMaxAge
 }
 
-func NewIndexableReposLister(store *database.RepoStore) *IndexableReposLister {
+func NewIndexableReposLister(store database.RepoStore) *IndexableReposLister {
 	return &IndexableReposLister{
 		store: store,
 	}
@@ -43,7 +43,7 @@ func NewIndexableReposLister(store *database.RepoStore) *IndexableReposLister {
 // IndexableReposLister holds the list of indexable repos which are cached for
 // indexableReposMaxAge.
 type IndexableReposLister struct {
-	store *database.RepoStore
+	store database.RepoStore
 
 	cacheAllRepos    atomic.Value
 	cachePublicRepos atomic.Value

@@ -1,9 +1,10 @@
 import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
-import { useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 
 import { GraphQLResult, useQuery } from '@sourcegraph/shared/src/graphql/graphql'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '@sourcegraph/web/src/components/FilteredConnection/utils'
 import { useSearchParameters } from '@sourcegraph/wildcard'
+import { useInterval } from '@sourcegraph/wildcard/src/hooks/useInterval'
 
 import { Connection, ConnectionQueryArguments } from '../ConnectionType'
 
@@ -13,6 +14,7 @@ export interface UseConnectionResult<TData> {
     connection?: Connection<TData>
     error?: ApolloError
     fetchMore: () => void
+    refetchAll: () => void
     loading: boolean
     hasNextPage: boolean
     startPolling: (pollInterval: number) => void
@@ -24,6 +26,8 @@ interface UseConnectionConfig {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Set to enable polling of all the nodes currently loaded in the connection */
+    pollInterval?: number
 }
 
 interface UseConnectionParameters<TResult, TVariables, TData> {
@@ -94,7 +98,7 @@ export const useConnection = <TResult, TVariables, TData>({
      * Initial query of the hook.
      * Subsequent requests (such as further pagination) will be handled through `fetchMore`
      */
-    const { data, error, loading, fetchMore, startPolling, stopPolling } = useQuery<TResult, TVariables>(query, {
+    const { data, error, loading, fetchMore, refetch } = useQuery<TResult, TVariables>(query, {
         variables: {
             ...variables,
             ...initialControls,
@@ -152,13 +156,28 @@ export const useConnection = <TResult, TVariables, TData>({
         })
     }
 
+    const refetchAll = useCallback(async (): Promise<void> => {
+        const first = connection?.nodes.length || firstReference.current.actual
+
+        await refetch({
+            ...variables,
+            first,
+        })
+    }, [connection?.nodes.length, refetch, variables])
+
+    // We use `refetchAll` to poll for all of the nodes currently loaded in the
+    // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
+    // would only poll for the first page of results.
+    const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
+
     return {
         connection,
         loading,
         error,
         fetchMore: fetchMoreData,
+        refetchAll,
         hasNextPage: connection ? hasNextPage(connection) : false,
-        startPolling,
-        stopPolling,
+        startPolling: startExecution,
+        stopPolling: stopExecution,
     }
 }

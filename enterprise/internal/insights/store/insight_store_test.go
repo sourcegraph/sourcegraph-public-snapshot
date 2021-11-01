@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
 
 	"github.com/inconshreveable/log15"
 
@@ -436,6 +437,54 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 			t.Errorf("unexpected count for global only insights")
 		}
 		autogold.Equal(t, got, autogold.ExportedOnly())
+	})
+}
+
+func TestUpdateView(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Now().Truncate(time.Microsecond).Round(0)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	t.Run("test update view", func(t *testing.T) {
+		view := types.InsightView{
+			Title:       "my view",
+			Description: "my view description",
+			UniqueID:    "1234567",
+		}
+		got, err := store.CreateView(ctx, view, []InsightViewGrant{GlobalGrant()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterCreateView", types.InsightView{
+			ID: 1, Title: "my view", Description: "my view description",
+			UniqueID: "1234567",
+		}).Equal(t, got)
+
+		include, exclude := "include repos", "exclude repos"
+		got, err = store.UpdateView(ctx, types.InsightView{
+			Title:    "new title",
+			UniqueID: "1234567",
+			Filters: types.InsightViewFilters{
+				IncludeRepoRegex: &include,
+				ExcludeRepoRegex: &exclude,
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterUpdateView", types.InsightView{
+			Title: "new title", UniqueID: "1234567",
+			Filters: types.InsightViewFilters{
+				IncludeRepoRegex: valast.Addr("include repos").(*string),
+				ExcludeRepoRegex: valast.Addr("exclude repos").(*string),
+			},
+		}).Equal(t, got)
 	})
 }
 

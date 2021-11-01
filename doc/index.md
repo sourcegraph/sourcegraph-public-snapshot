@@ -84,6 +84,7 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 - [Integrations](integration/index.md) with GitHub, GitLab, Bitbucket, etc.
 - [Extensions](extensions/index.md)
 - [Chrome and Firefox browser extensions](integration/browser_extension.md)
+- [Site Administrator Quickstart](admin/how-to/site-admin-quickstart.md)
 
 ### Reference
 
@@ -105,10 +106,10 @@ For next steps, visit the [Docker installation documentation](admin/install/dock
 ## Other links
 
 - [Contributing to Sourcegraph](dev/index.md)
-- [Sourcegraph handbook](https://about.sourcegraph.com/handbook)
+- [Sourcegraph handbook](https://handbook.sourcegraph.com/)
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
-- [Product Roadmap](https://about.sourcegraph.com/handbook/direction)
+- [Product Roadmap](https://handbook.sourcegraph.com/product#roadmap)
 
 ## Get help
 

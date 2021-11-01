@@ -16,6 +16,7 @@ import (
 )
 
 func TestGitTree(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return nil, nil
@@ -59,7 +60,7 @@ func TestGitTree(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

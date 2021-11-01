@@ -101,7 +101,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                     github.com
                                 </h3>
                                 <p className="m-0">
-                                    <CheckIcon className="icon-inline" /> No action required. Your extension works here
+                                    <CheckIcon className="icon-inline" /> No action required.Your extension works here
                                     by default.
                                 </p>
                             </div>
@@ -153,44 +153,20 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
 
             <section className="border-bottom py-5">
                 <div className="container">
-                    <h2 className="mb-4">Make it work for private code</h2>
                     <div className="row">
                         <div className="col-md-6 d-flex flex-column">
-                            <div className="bg-2 rounded p-3 mb-3 d-flex flex-column justify-content-center">
-                                <h3 className="mb-3 after-install-page-content__code-host-titles">
-                                    Private code synced with Sourcegraph cloud
-                                </h3>
-                                <p className="m-0">
-                                    <CheckIcon className="icon-inline" /> No action required. You can view code
-                                    intelligence on private repositories synced to Sourcegraph cloud by default.
-                                </p>
-                            </div>
+                            <h2 className="mb-4">Make it work for private code</h2>
+                            <p>By default, the browser extension works only for public code.</p>
                             <div className="d-flex align-items-center">
-                                <div className="bg-3 rounded-circle p-2 d-flex">
+                                <div className="bg-3 rounded-circle p-2">
                                     <LockIcon className="icon-inline" />
                                 </div>
-                                <div className="m-0 ml-3">
-                                    <p className="m-0 mb-2">
-                                        If you have privacy concerns about your private code, take a look at our{' '}
-                                        <a
-                                            href="https://docs.sourcegraph.com/integration/browser_extension#privacy"
-                                            target="_blank"
-                                            rel="noopener"
-                                        >
-                                            user documentation
-                                        </a>{' '}
-                                        for a detailed breakdown of what data is passed through Sourcegraph cloud.
-                                    </p>
-                                    <p className="m-0">
-                                        You can also blocklist URLs from passing through Sourcegraph cloud in the
-                                        advanced settings.
-                                    </p>
-                                </div>
+                                <p className="m-0 ml-3">
+                                    To use the browser extension with your private repositories, you need to set up a{' '}
+                                    <strong>private Sourcegraph instance</strong> and connect the extension to it.
+                                </p>
                             </div>
-                        </div>
-                        <div className="col-md-6">
-                            <div className="bg-2 rounded p-3 mt-4 mt-md-0 d-flex flex-column justify-content-around">
-                                <h3 className="mb-3">Private code in self-hosted Sourcegraph instance</h3>
+                            <div className="bg-2 rounded p-3 mt-4 d-flex flex-column justify-content-around">
                                 <p>Follow these instructions:</p>
                                 <ol className="m-0 d-flex flex-column justify-content-around">
                                     <li>
@@ -212,14 +188,15 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                                         .
                                     </li>
                                     <li>
-                                        Enter the <strong>URL</strong> of your Sourcegraph instance in the second input
-                                        field, labeled as <q>Sourcegraph self-hosted</q>.
+                                        Enter the <strong>URL</strong> (including the protocol) of your Sourcegraph
+                                        instance (such as <q>https://sourcegraph.example.com</q>).
                                     </li>
-                                    <li>
-                                        Make sure the status shows <q>Looks good!</q>.
-                                    </li>
+                                    <li>Make sure a green checkmark appears in the input field.</li>
                                 </ol>
                             </div>
+                        </div>
+                        <div className="col-md-6 mt-4 mt-md-0">
+                            <Video {...props} name="PrivateInstance" width={1764} height={1390} />
                         </div>
                     </div>
                 </div>
@@ -229,7 +206,7 @@ export const AfterInstallPageContent: React.FunctionComponent<ThemeProps> = prop
                 <div className="container">
                     <h2 className="mb-4">Additional resources</h2>
                     <div className="d-flex w-100 align-items-center">
-                        <div className="bg-3 rounded-circle p-2  d-flex">
+                        <div className="bg-3 rounded-circle p-2">
                             <BookOpenPageVariantIcon className="icon-inline" />
                         </div>
                         <p className="m-0 ml-3">

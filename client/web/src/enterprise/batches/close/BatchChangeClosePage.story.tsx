@@ -83,6 +83,7 @@ const batchChangeDefaults: BatchChangeFields = {
 
 const queryChangesets: typeof _queryChangesets = () =>
     of({
+        __typename: 'ChangesetConnection',
         pageInfo: {
             endCursor: null,
             hasNextPage: false,
@@ -135,7 +136,14 @@ const queryChangesets: typeof _queryChangesets = () =>
                 externalURL: {
                     url: 'http://test.test/123',
                 },
-                labels: [{ color: '93ba13', description: 'Very awesome description', text: 'Some label' }],
+                labels: [
+                    {
+                        __typename: 'ChangesetLabel',
+                        color: '93ba13',
+                        description: 'Very awesome description',
+                        text: 'Some label',
+                    },
+                ],
                 repository: {
                     id: 'repoid',
                     name: 'github.com/sourcegraph/awesome',
@@ -247,6 +255,7 @@ add('No open changesets', () => {
     const queryEmptyChangesets = useCallback(
         () =>
             of({
+                __typename: 'ChangesetConnection' as const,
                 pageInfo: {
                     endCursor: null,
                     hasNextPage: false,

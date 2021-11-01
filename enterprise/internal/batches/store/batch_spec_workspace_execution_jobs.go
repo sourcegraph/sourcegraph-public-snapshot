@@ -16,7 +16,7 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
-var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
+var BatchSpecWorkspaceExecutionJobColumns = SQLColumns{
 	"batch_spec_workspace_execution_jobs.id",
 
 	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
@@ -34,6 +34,29 @@ var BatchSpecWorkspaceExecutionJobColums = SQLColumns{
 	"batch_spec_workspace_execution_jobs.cancel",
 
 	"exec.place_in_queue",
+
+	"batch_spec_workspace_execution_jobs.created_at",
+	"batch_spec_workspace_execution_jobs.updated_at",
+}
+
+var BatchSpecWorkspaceExecutionJobColumnsWithNullQueue = SQLColumns{
+	"batch_spec_workspace_execution_jobs.id",
+
+	"batch_spec_workspace_execution_jobs.batch_spec_workspace_id",
+	"batch_spec_workspace_execution_jobs.access_token_id",
+
+	"batch_spec_workspace_execution_jobs.state",
+	"batch_spec_workspace_execution_jobs.failure_message",
+	"batch_spec_workspace_execution_jobs.started_at",
+	"batch_spec_workspace_execution_jobs.finished_at",
+	"batch_spec_workspace_execution_jobs.process_after",
+	"batch_spec_workspace_execution_jobs.num_resets",
+	"batch_spec_workspace_execution_jobs.num_failures",
+	"batch_spec_workspace_execution_jobs.execution_logs",
+	"batch_spec_workspace_execution_jobs.worker_hostname",
+	"batch_spec_workspace_execution_jobs.cancel",
+
+	"NULL AS place_in_queue",
 
 	"batch_spec_workspace_execution_jobs.created_at",
 	"batch_spec_workspace_execution_jobs.updated_at",
@@ -140,7 +163,7 @@ func getBatchSpecWorkspaceExecutionJobQuery(opts *GetBatchSpecWorkspaceExecution
 
 	return sqlf.Sprintf(
 		getBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
@@ -229,7 +252,7 @@ func listBatchSpecWorkspaceExecutionJobsQuery(opts ListBatchSpecWorkspaceExecuti
 
 	return sqlf.Sprintf(
 		listBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 		sqlf.Join(joins, "\n"),
 		sqlf.Join(preds, "\n AND "),
 	)
@@ -333,7 +356,7 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		s.now(),
 		s.now(),
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColums.ToSqlf(), ", "),
+		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
 	)
 }
 

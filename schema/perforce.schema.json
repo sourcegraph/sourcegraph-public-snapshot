@@ -126,6 +126,11 @@
           "description": "How many changes to fetch during initial clone. The default of -1 will fetch all known changes",
           "type": "integer",
           "default": -1
+        },
+        "includeBinaries": {
+          "description": "Whether to include binary files",
+          "type": "boolean",
+          "default": false
         }
       }
     }

@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import DoNotDisturbIcon from 'mdi-react/DoNotDisturbIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import MinusCircleIcon from 'mdi-react/MinusCircleIcon'
 import React, { useMemo } from 'react'
 import { Route, RouteComponentProps, Switch } from 'react-router'
 import { of } from 'rxjs'
@@ -74,7 +74,7 @@ export const RepoSettingsArea: React.FunctionComponent<Props> = ({
     if (!repoOrError.viewerCanAdminister) {
         return (
             <HeroPage
-                icon={DoNotDisturbIcon}
+                icon={MinusCircleIcon}
                 title="Forbidden"
                 subtitle="You are not authorized to view or change this repository's settings."
             />

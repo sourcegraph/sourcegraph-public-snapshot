@@ -13,6 +13,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -79,8 +80,18 @@ func testGitLabWebhook(db *sql.DB, userID int32) func(*testing.T) {
 				h := NewGitLabWebhook(store)
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
-				es.Config = "invalid JSON"
-				if err := store.ExternalServices().Upsert(ctx, es); err != nil {
+				// It's harder than it used to be to get invalid JSON into the
+				// database configuration, so let's just manipulate the database
+				// directly, since it won't make it through the
+				// ExternalServiceStore.
+				if err := store.Exec(
+					ctx,
+					sqlf.Sprintf(
+						"UPDATE external_services SET config = %s WHERE id = %s",
+						"invalid JSON",
+						es.ID,
+					),
+				); err != nil {
 					t.Fatal(err)
 				}
 
@@ -900,7 +911,7 @@ func createGitLabExternalService(t *testing.T, ctx context.Context, esStore *dat
 
 // createGitLabRepo creates a mock GitLab repo attached to the given external
 // service.
-func createGitLabRepo(t *testing.T, ctx context.Context, rstore *database.RepoStore, es *types.ExternalService) *types.Repo {
+func createGitLabRepo(t *testing.T, ctx context.Context, rstore database.RepoStore, es *types.ExternalService) *types.Repo {
 	repo := (&types.Repo{
 		Name: "gitlab.com/sourcegraph/test",
 		URI:  "gitlab.com/sourcegraph/test",

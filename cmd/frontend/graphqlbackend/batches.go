@@ -171,6 +171,7 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	First                 int32
 	After                 *string
 	OnlyWithoutCredential bool
+	OnlyWithoutWebhooks   bool
 }
 
 type BulkOperationBaseArgs struct {
@@ -221,6 +222,10 @@ type ListImportingChangesetsArgs struct {
 	First  int32
 	After  *string
 	Search *string
+}
+
+type BatchSpecWorkspaceStepArgs struct {
+	Index int32
 }
 
 type BatchChangesResolver interface {
@@ -502,6 +507,7 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
 	RequiresSSH() bool
+	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
 }
 
@@ -755,6 +761,7 @@ type BatchSpecWorkspaceResolver interface {
 	ID() graphql.ID
 
 	State() string
+	QueuedAt() *DateTime
 	StartedAt() *DateTime
 	FinishedAt() *DateTime
 	FailureMessage() *string
@@ -767,6 +774,7 @@ type BatchSpecWorkspaceResolver interface {
 
 	Branch(ctx context.Context) (*GitRefResolver, error)
 	Path() string
+	Step(ctx context.Context, args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
 	Steps(ctx context.Context) ([]BatchSpecWorkspaceStepResolver, error)
 	SearchResultPaths() []string
 	OnlyFetchWorkspace() bool
@@ -775,6 +783,7 @@ type BatchSpecWorkspaceResolver interface {
 	Unsupported() bool
 
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
 }
 

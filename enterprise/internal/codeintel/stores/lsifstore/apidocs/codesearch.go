@@ -102,7 +102,7 @@ func TextSearchVector(s string) string {
 
 // TextSearchRank returns an SQL expression of the form:
 //
-// 	ts_rank_cd(...) + ts_rank_cd(...)...
+// 	(ts_rank_cd(...) + ts_rank_cd(...)...)
 //
 // Which determines the effective rank of the query string relative to the given tsvector column name.
 //
@@ -110,9 +110,14 @@ func TextSearchVector(s string) string {
 // match "http". This applies only at a lexeme level. The value should match the value provided to
 // TextSearchQuery when composing the tsquery for ranking to match properly.
 func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query {
+	terms := strings.Fields(query)
+	if len(terms) == 0 {
+		return sqlf.Sprintf("0") // lowest rank
+	}
+
 	var rankFunctions []*sqlf.Query
-	for _, term := range strings.Fields(query) {
-		seq := lexemeSequence(term, subStringMatches)
+	for _, term := range terms {
+		seq := lexemeSequence(Lexemes(term), subStringMatches, true, " <-> ")
 		rankFunctions = append(rankFunctions, sqlf.Sprintf("ts_rank_cd("+columnName+", %s, 2)", seq))
 	}
 	return sqlf.Join(rankFunctions, "+")
@@ -124,24 +129,26 @@ func TextSearchRank(columnName, query string, subStringMatches bool) *sqlf.Query
 //
 // If subStringMatches is true, the tsquery `:*` operator ("match prefix") is applied.
 //
+// If substringMatchLastLexemeOnly is true, only the last lexeme has the tsquery `:*` operator
+// applied.
+//
 // Note: This composing a tsquery _value_ and so using fmt.Sprintf instead of sqlf.Sprintf is
 // correct here.
-func lexemeSequence(s string, subStringMatches bool) string {
-	lexemes := Lexemes(s)
+func lexemeSequence(lexemes []string, subStringMatches, substringMatchLastLexemeOnly bool, distance string) string {
 	sequence := make([]string, 0, len(lexemes))
-	for _, lexeme := range lexemes {
-		if subStringMatches {
+	for i, lexeme := range lexemes {
+		if subStringMatches && (!substringMatchLastLexemeOnly || i == len(lexemes)-1) {
 			sequence = append(sequence, fmt.Sprintf("%s:*", lexeme))
 		} else {
 			sequence = append(sequence, lexeme)
 		}
 	}
-	return strings.Join(sequence, " <-> ")
+	return strings.Join(sequence, distance)
 }
 
 // TextSearchQuery returns an SQL expression of e.g. the form:
 //
-// 	column_name @@ ... OR column_name @@ ... OR column_name @@ ...
+// 	(column_name @@ ... OR column_name @@ ... OR column_name @@ ...)
 //
 // Which can be used in a WHERE clause to match the given query string against the provided tsvector column
 // name.
@@ -150,32 +157,109 @@ func lexemeSequence(s string, subStringMatches bool) string {
 // match "http". This applies only at a lexeme level. The value should match the value provided to
 // TextSearchQuery when composing the tsquery for ranking to match properly.
 func TextSearchQuery(columnName, query string, subStringMatches bool) *sqlf.Query {
-	// For every term in the query string, produce the lexeme sequence that would match it. e.g.
-	// "gorilla/mux Router" -> [`gorilla:* <-> /:* <-> mux:*`, `Router:*`]
 	terms := strings.Fields(query)
-	termLexemeSequences := make([]string, 0, len(terms))
+	if len(terms) == 0 {
+		return sqlf.Sprintf("false")
+	}
+	expressions := make([]*sqlf.Query, 0, len(terms))
+
+	contiguousDisjointed := make([][]string, 0, len(terms)/2)
+	currentDisjointed := []string{}
 	for _, term := range terms {
-		termLexemeSequences = append(termLexemeSequences, lexemeSequence(term, subStringMatches))
+		lexemes := Lexemes(term)
+
+		// Firstly, for query terms like ["golang/go", "http.StatusNotFound"] we've got a pretty specific
+		// thing we're looking for. Our terms are not disjointed, they're specific. We know this because
+		// the number of lexemes in each term is >1 (["golang", "/", "go"], ["http", ".", "StatusNotFound"])
+		//
+		// In this case, we would like to emit an expression to match any of these terms' lexemes in
+		// sequence ("golang/go" with no lexemes between, "http.StatusNotFound" with no lexemes
+		// between)
+		if len(lexemes) > 1 {
+			sequence := lexemeSequence(lexemes, subStringMatches, true, " <-> ")
+			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", sequence))
+
+			if len(currentDisjointed) > 0 {
+				contiguousDisjointed = append(contiguousDisjointed, currentDisjointed)
+				currentDisjointed = currentDisjointed[:0]
+			}
+			continue
+		}
+
+		// Secondly, there may be query terms like ["http", "StatusNotFound"] where the user has
+		// space-separated something (e.g. "http.StatusNotFound"), perhaps with desire for a more
+		// fuzzy match. A query "json Decode" for example should match the search key "json.Decoder.Decode"
+		// ideally.
+		//
+		// Note that the tsquery `foo <-> bar` matches foo _exactly_ followed by bar, and `foo <1> bar`
+		// matches _exactly_ foo followed by one lexeme and then bar. There is no way in Postgres today
+		// to specify a range of lexemes between, or a wildcard (unknown number of lexemes between). https://stackoverflow.com/a/59146601
+		//
+		// So, to support this fuzzier interpretation we can emit multiple expressions with multiple
+		// distance operators between the lexemes.:
+		//
+		// 	json <-> Decode ("json", "Decode")
+		// 	json <2> Decode ("json", any lexeme, "Decode")
+		// 	json <4> Decode ("json", any lexeme, any lexeme, "Decode")
+		// 	json <5> Decode ("json", any lexeme, any lexeme, any lexeme, "Decode")
+		//
+		// The choice of distances is as follows:
+		//
+		// "<->" (no distance) enables exact search terms like "http.StatusNotFound" to match lexemes ['http', '.', 'StatusNotFound']
+		// "<2>" enables search terms like "http StatusNotFound" (missing period) to match lexemes ['http', '.', 'StatusNotFound']
+		// "<4>" enables search terms like "Player Run" (missing "::") to match lexemes ['Player', ':', ':', 'Run]
+		// "<5>" enables search terms like "json Decode" (missing "Decoder" and periods) to match lexemes ['json', '.', 'Decoder', '.', 'Decode']
+		//
+		// Note that more distance != better, the greater the distance the worse relevance of
+		// results.
+		//
+		// Another problem when this happens is that these query terms are _too_ simple, and often
+		// match too many records. For example the search query "http StatusNotFound" could match
+		// every Go package with "http" in the name, "Router Error" could match every "Error" type,
+		// etc. So the first thing we do is collect such disjointed simple terms, and later emit the
+		// varying-distance expressions between the contiguous sets.
+		currentDisjointed = append(currentDisjointed, lexemes...)
+	}
+	if len(currentDisjointed) > 0 {
+		contiguousDisjointed = append(contiguousDisjointed, currentDisjointed)
 	}
 
-	// Build expressions that would match all the query terms in sequence, with some distance of
-	// lexemes between them. Note that the tsquery `foo <-> bar` matches foo _exactly_ followed by
-	// bar, and `foo <1> bar` matches _exactly_ foo followed by one lexeme and then bar. There is
-	// no way in Postgres today to specify a range of lexemes between, or a wildcard (unknown number
-	// of lexemes between). https://stackoverflow.com/a/59146601
-	//
-	// "<->" (no distance) enables exact search terms like "http.StatusNotFound" to match lexemes ['http', '.', 'StatusNotFound']
-	// "<2>" enables search terms like "http StatusNotFound" (missing period) to match lexemes ['http', '.', 'StatusNotFound']
-	// "<4>" enables search terms like "json Decode" (missing "Decoder") to match lexemes ['json', 'Decoder', 'Decode']
-	// "<5>" enables search terms like "Player Run" (missing "::") to match lexemes ['Player', ':', ':', 'Run]
-	//
-	// Note that more distance != better, the greater the distance the worse relevance of results.
 	distances := []string{" <-> ", " <2> ", " <4> ", " <5> "}
-	expressions := make([]*sqlf.Query, 0, len(distances))
-	for _, distance := range distances {
-		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", strings.Join(termLexemeSequences, distance)))
+	for _, disjointedTermLexemes := range contiguousDisjointed {
+		// If only one lexeme, it won't have multiple distances.
+		if len(disjointedTermLexemes) == 1 {
+			tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, false, "")
+			expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
+		} else {
+			for _, distance := range distances {
+				tsquery := lexemeSequence(disjointedTermLexemes, subStringMatches, false, distance)
+				expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", tsquery))
+			}
+		}
 	}
-	return sqlf.Join(expressions, "OR")
+	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
+}
+
+// RepoSearchQuery returns an SQL expression of e.g. the form:
+//
+// 	(column_name @@ ... OR column_name @@ ... OR column_name @@ ...)
+//
+// Which can be used in a WHERE clause to match any of the given query repositories against the
+// provided tsvector column name.
+//
+// Repo search queries in practice have much stricter matching than TextSearchQuery, because the
+// risks of matching a repository (and filtering results to just that repo, or few repos) are in
+// practice worse. With text search queries, you want them to be a bit fuzzy. With repo search
+// queries, you really only want to match repos if you're pretty sure that's what the user meant.
+func RepoSearchQuery(columnName string, possibleRepoNames []string) *sqlf.Query {
+	if len(possibleRepoNames) == 0 {
+		return sqlf.Sprintf("false") // match no repo names
+	}
+	expressions := make([]*sqlf.Query, 0, len(possibleRepoNames))
+	for _, repoName := range possibleRepoNames {
+		expressions = append(expressions, sqlf.Sprintf(columnName+" @@ %s", lexemeSequence(Lexemes(repoName), false, false, " <-> ")))
+	}
+	return sqlf.Sprintf("(%s)", sqlf.Join(expressions, "OR"))
 }
 
 // Query describes an API docs search query.
@@ -186,6 +270,15 @@ type Query struct {
 
 	// MainTerms are the terms that should be matched against the search key and label.
 	MainTerms string
+
+	// PossibleRepos are extracted query terms that are possibly repositories. These are any query
+	// terms separated with a slash. If metadata terms were separated, this will only contain
+	// possible repos from the metadata terms. i.e.:
+	//
+	// 	golang/go: net/http
+	//
+	// Will have PossibleRepos = ["golang/go"], not ["golang/go", "net/http"].
+	PossibleRepos []string
 
 	// Whether or not lexemes should match substrings, e.g. if "gith.com/sourcegraph/source" should
 	// be matched as "*gith*.*com*/*sourcegraph*/*source*" (* being a wildcard)
@@ -217,6 +310,13 @@ func ParseQuery(query string) Query {
 	if i := strings.Index(query, ":"); i != -1 {
 		q.MetaTerms = strings.TrimSpace(query[:i])
 		q.MainTerms = strings.TrimSpace(query[i+len(":"):])
+	}
+
+	// Identify possible repos in the query terms.
+	for _, term := range strings.Fields(q.MetaTerms) {
+		if strings.Contains(term, "/") {
+			q.PossibleRepos = append(q.PossibleRepos, term)
+		}
 	}
 	return q
 }

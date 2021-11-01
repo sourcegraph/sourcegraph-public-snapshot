@@ -14,7 +14,7 @@ func TestWebhooksIntegration(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	user := ct.CreateTestUser(t, db, false)
 

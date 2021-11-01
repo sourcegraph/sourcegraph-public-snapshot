@@ -43,6 +43,15 @@ const batchSpecExecutionCompleted = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
+    __typename: 'BatchSpec',
 })
 
 const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
@@ -64,6 +73,14 @@ const batchSpecExecutionFailed = (): BatchSpecExecutionFields => ({
         url: '/users/mrnugget',
         namespaceName: 'mrnugget',
     },
+    workspaceResolution: {
+        __typename: 'BatchSpecWorkspaceResolution',
+        workspaces: {
+            totalCount: 0,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [],
+        },
+    },
 })
 
 add('Completed', () => (
@@ -71,7 +88,7 @@ add('Completed', () => (
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionCompleted())}
                 expandStage="srcPreview"
             />
@@ -84,7 +101,7 @@ add('Failed', () => (
         {props => (
             <BatchSpecExecutionDetailsPage
                 {...props}
-                executionID="123123"
+                batchSpecID="123123"
                 fetchBatchSpecExecution={() => of(batchSpecExecutionFailed())}
                 expandStage="srcPreview"
             />

@@ -16,7 +16,7 @@ import (
 func TestReposourceCloneURLToRepoName(t *testing.T) {
 	ctx := context.Background()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	database.Mocks.ExternalServices.List = func(database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return []*types.ExternalService{

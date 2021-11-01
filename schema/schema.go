@@ -619,6 +619,8 @@ type ExternalIdentity struct {
 type FusionClient struct {
 	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
 	Enabled bool `json:"enabled,omitempty"`
+	// IncludeBinaries description: Whether to include binary files
+	IncludeBinaries bool `json:"includeBinaries,omitempty"`
 	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
 	LookAhead int `json:"lookAhead"`
 	// MaxChanges description: How many changes to fetch during initial clone. The default of -1 will fetch all known changes

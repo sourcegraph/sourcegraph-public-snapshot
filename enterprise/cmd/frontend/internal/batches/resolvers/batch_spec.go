@@ -309,6 +309,13 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		return nil, err
 	}
 
+	repoIDs := specs.RepoIDs()
+
+	// If no changeset specs match, we don't need to compute anything.
+	if len(repoIDs) == 0 {
+		return &emptyEatchChangesCodeHostConnectionResolver{}, nil
+	}
+
 	offset := 0
 	if args.After != nil {
 		offset, err = strconv.Atoi(*args.After)
@@ -322,7 +329,8 @@ func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, arg
 		onlyWithoutCredential: args.OnlyWithoutCredential,
 		store:                 r.store,
 		opts: store.ListCodeHostsOpts{
-			RepoIDs: specs.RepoIDs(),
+			RepoIDs:             repoIDs,
+			OnlyWithoutWebhooks: args.OnlyWithoutWebhooks,
 		},
 		limitOffset: database.LimitOffset{
 			Limit:  int(args.First),
@@ -380,7 +388,7 @@ func (r *batchSpecResolver) StartedAt(ctx context.Context) (*graphqlbackend.Date
 		return nil, nil
 	}
 
-	return graphqlbackend.DateTimeOrNil(&stats.StartedAt), nil
+	return &graphqlbackend.DateTime{Time: stats.StartedAt}, nil
 }
 
 func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.DateTime, error) {
@@ -405,7 +413,7 @@ func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*graphqlbackend.Dat
 		return nil, nil
 	}
 
-	return graphqlbackend.DateTimeOrNil(&stats.FinishedAt), nil
+	return &graphqlbackend.DateTime{Time: stats.FinishedAt}, nil
 }
 
 func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {

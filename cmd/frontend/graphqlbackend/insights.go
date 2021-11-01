@@ -17,6 +17,7 @@ type InsightsResolver interface {
 	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -25,7 +26,8 @@ type InsightsResolver interface {
 	RemoveInsightViewFromDashboard(ctx context.Context, args *RemoveInsightViewFromDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	AddInsightViewToDashboard(ctx context.Context, args *AddInsightViewToDashboardArgs) (InsightsDashboardPayloadResolver, error)
 
-	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (CreateInsightResultResolver, error)
+	CreateLineChartSearchInsight(ctx context.Context, args *CreateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
+	UpdateLineChartSearchInsight(ctx context.Context, args *UpdateLineChartSearchInsightArgs) (InsightViewPayloadResolver, error)
 
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
@@ -57,6 +59,7 @@ type InsightsPointsArgs struct {
 }
 
 type InsightSeriesResolver interface {
+	SeriesId() string
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 	Status(ctx context.Context) (InsightStatusResolver, error)
@@ -85,6 +88,7 @@ type InsightDirtyQueryResolver interface {
 type InsightsDashboardsArgs struct {
 	First *int32
 	After *string
+	ID    *graphql.ID
 }
 
 type InsightsDashboardConnectionResolver interface {
@@ -253,6 +257,26 @@ type CreateLineChartSearchInsightInput struct {
 	Options    LineChartOptionsInput
 }
 
+type UpdateLineChartSearchInsightArgs struct {
+	Id    graphql.ID
+	Input UpdateLineChartSearchInsightInput
+}
+
+type UpdateLineChartSearchInsightInput struct {
+	DataSeries          []LineChartSearchInsightDataSeriesInput
+	PresentationOptions LineChartOptionsInput
+	ViewControls        InsightViewControlsInput
+}
+
+type InsightViewControlsInput struct {
+	Filters InsightViewFiltersInput
+}
+
+type InsightViewFiltersInput struct {
+	IncludeRepoRegex *string
+	ExcludeRepoRegex *string
+}
+
 type LineChartSearchInsightDataSeriesInput struct {
 	Query           string
 	TimeScope       TimeScopeInput
@@ -282,6 +306,12 @@ type LineChartOptionsInput struct {
 	Title *string
 }
 
-type CreateInsightResultResolver interface {
+type InsightViewPayloadResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
+}
+
+type InsightViewQueryArgs struct {
+	First *int32
+	After *string
+	Id    *graphql.ID
 }

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -58,7 +59,7 @@ type SearchImplementer interface {
 }
 
 // NewSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewSearchImplementer(ctx context.Context, db dbutil.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+func NewSearchImplementer(ctx context.Context, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchImplementer", args.Query)
 	defer func() {
 		tr.SetError(err)
@@ -191,7 +192,7 @@ func getBoolPtr(b *bool, def bool) bool {
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	*run.SearchInputs
-	db                  dbutil.DB
+	db                  database.DB
 	invalidateRepoCache bool // if true, invalidates the repo cache when evaluating search subexpressions.
 
 	// stream if non-nil will send all search events we receive down it.
@@ -244,7 +245,7 @@ func decodedViewerFinalSettings(ctx context.Context, db dbutil.DB) (_ *schema.Se
 		return mockDecodedViewerFinalSettings, nil
 	}
 
-	cascade, err := (&schemaResolver{db: db}).ViewerSettings(ctx)
+	cascade, err := (&schemaResolver{db: database.NewDB(db)}).ViewerSettings(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -343,7 +344,8 @@ func (r *searchResolver) suggestFilePaths(ctx context.Context, limit int) ([]Sea
 
 	args.Repos = resolved.RepoRevs
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(ctx, &args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		return nil, err
 	}

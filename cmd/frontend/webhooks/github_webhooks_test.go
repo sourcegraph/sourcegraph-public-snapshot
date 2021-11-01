@@ -111,7 +111,7 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 
 	t.Parallel()
 
-	db := dbtest.NewDB(t, *dsn)
+	db := dbtest.NewFromDSN(t, *dsn)
 
 	ctx := context.Background()
 

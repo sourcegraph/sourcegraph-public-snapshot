@@ -91,11 +91,17 @@
 
 .actions {
     display: flex;
+    align-items: center;
     padding-top: 0.75rem;
     padding-bottom: 0.5rem;
     border-top: 1px solid var(--hover-overlay-separator-color);
     padding-left: var(--hover-overlay-horizontal-padding);
     padding-right: var(--hover-overlay-horizontal-padding);
+}
+
+.actions-inner {
+    margin-right: auto;
+    white-space: nowrap;
 }
 
 .action {
@@ -105,6 +111,10 @@
 
 .action + .action {
     margin-left: 0.25rem;
+}
+
+.overlay-logo {
+    margin-left: 1rem;
 }
 
 .loader-row {

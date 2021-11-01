@@ -1,5 +1,5 @@
 import classNames from 'classnames'
-import BookOpenVariantIcon from 'mdi-react/BookOpenVariantIcon'
+import BookOpenBlankVariantIcon from 'mdi-react/BookOpenBlankVariantIcon'
 import React from 'react'
 
 import { DismissibleAlert } from '@sourcegraph/web/src/components/DismissibleAlert'
@@ -14,7 +14,7 @@ export const DocumentationWelcomeAlert: React.FunctionComponent = () => (
         <div className="card">
             <div className="card-body p-3">
                 <h1>
-                    <BookOpenVariantIcon className="icon-inline mr-2" />
+                    <BookOpenBlankVariantIcon className="icon-inline mr-2" />
                     API docs, for your code
                 </h1>
                 <ul className="mb-0 pl-3">

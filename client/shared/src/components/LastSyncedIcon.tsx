@@ -1,6 +1,6 @@
 import classNames from 'classnames'
 import format from 'date-fns/format'
-import CloudSyncOutlineIcon from 'mdi-react/CloudSyncOutlineIcon'
+import WeatherCloudyClockIcon from 'mdi-react/WeatherCloudyClockIcon'
 import React from 'react'
 
 import styles from './LastSyncedIcon.module.scss'
@@ -14,7 +14,7 @@ export const LastSyncedIcon: React.FunctionComponent<Props> = props => {
     const formattedTime = format(Date.parse(props.lastSyncedTime), "yyyy-MM-dd'T'HH:mm:ss")
 
     return (
-        <CloudSyncOutlineIcon
+        <WeatherCloudyClockIcon
             className={classNames(props.className, styles.lastSyncedIcon, 'icon-inline', 'text-muted')}
             data-tooltip={`Last synced: ${formattedTime}`}
         />

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { SourcegraphIcon } from './SourcegraphIcon'
+import { SourcegraphIcon } from '@sourcegraph/wildcard'
 
 export interface SourcegraphIconButtonProps
     extends Pick<JSX.IntrinsicElements['a'], 'href' | 'title' | 'rel' | 'className' | 'onClick' | 'target'> {

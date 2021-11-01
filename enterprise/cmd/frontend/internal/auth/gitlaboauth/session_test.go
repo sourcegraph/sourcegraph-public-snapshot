@@ -30,7 +30,7 @@ func Test_CreateCodeHostConnectionHandlesExistingService(t *testing.T) {
 func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 	t.Helper()
 
-	db := dbtest.NewDB(t, "")
+	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
 	s := &sessionIssuerHelper{}

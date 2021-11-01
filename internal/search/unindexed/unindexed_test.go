@@ -98,7 +98,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +139,8 @@ func TestSearchFilesInRepos(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch = args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err = zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +215,8 @@ func TestSearchFilesInReposStream(t *testing.T) {
 		SearcherURLs: endpoint.Static("test"),
 	}
 
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +296,9 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	args.Repos[0].ListRefs = func(context.Context, api.RepoName) ([]git.Ref, error) {
 		return []git.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
 	}
-	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, search.TextRequest, func([]*search.RepositoryRevisions) {})
+
+	globalSearch := args.Mode == search.ZoektGlobalSearch
+	zoektArgs, err := zoektutil.NewIndexedSearchRequest(context.Background(), args, globalSearch, search.TextRequest, func([]*search.RepositoryRevisions) {})
 	if err != nil {
 		t.Fatal(err)
 	}
