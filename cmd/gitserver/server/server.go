@@ -940,7 +940,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	)
 
 	searchStart := time.Now()
-	defer func() { searchDuration.Observe(time.Since(searchStart).Seconds()) }()
 	searchRunning.Inc()
 	defer searchRunning.Dec()
 
@@ -965,6 +964,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	eventWriter.Event("done", protocol.NewSearchEventDone(false, err))
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(err)
+	searchDuration.
+		WithLabelValues(strconv.FormatBool(err != nil)).
+		Observe(time.Since(searchStart).Seconds())
 
 	if honey.Enabled() || traceLogs {
 		actor := r.Header.Get("X-Sourcegraph-Actor")
@@ -991,7 +993,6 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			log15.Debug("TRACE gitserver search", mapToLog15Ctx(ev.Fields())...)
 		}
 	}
-
 }
 
 func (s *Server) search(ctx context.Context, matchesBuf *streamhttp.JSONArrayBuf, args *protocol.SearchRequest) (limitHit bool, err error) {
@@ -1944,11 +1945,11 @@ var (
 		Name: "src_gitserver_search_running",
 		Help: "number of gitserver.Search running concurrently.",
 	})
-	searchDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_gitserver_search_duration_seconds",
 		Help:    "gitserver.Search duration in seconds.",
 		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
-	})
+	}, []string{"error"})
 	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
 		Name:    "src_gitserver_search_latency_seconds",
 		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
