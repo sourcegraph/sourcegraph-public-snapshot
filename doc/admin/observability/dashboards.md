@@ -8689,7 +8689,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `max(rate(src_repoupdater_sched_error[1m]))`
+Query: `max(rate(src_repoupdater_sched_error[10m]))`
 
 </details>
 
