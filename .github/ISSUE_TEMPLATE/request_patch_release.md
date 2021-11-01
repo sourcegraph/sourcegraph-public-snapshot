@@ -13,9 +13,9 @@ assignees: ''
 
 ---
 
-The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
+The intent of the questions below is to ensure we keep Sourcegraph high quality and [only create patch releases based on a strict criteria.](https://handbook.sourcegraph.com/engineering/releases#patch-releases) If you can answer yes to many or most of these questions, we will be happy to create the patch release.
 
-I have read [when and why we perform patch releases](https://about.sourcegraph.com/handbook/engineering/releases#when-are-patch-releases-performed) and answer the questions as follows:
+I have read [when and why we perform patch releases](https://handbook.sourcegraph.com/engineering/releases#patch-releases) and answer the questions as follows:
 
 > Are users/customers actively asking us for these changes and cannot wait until the next full release?
 
@@ -41,7 +41,7 @@ I have read [when and why we perform patch releases](https://about.sourcegraph.c
 
 ---
 
-**For the [release captain](https://about.sourcegraph.com/handbook/engineering/releases#release-captain)** - after reviewing this request:
+**For the [release captain](https://handbook.sourcegraph.com/engineering/releases#release-captain)** - after reviewing this request:
 
 - [ ] **Comment on this issue** with a decision regarding the request.
 - [ ] If approved, **add it to a patch release**:

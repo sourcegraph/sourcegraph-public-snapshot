@@ -18,7 +18,7 @@ assignees: ''
 #### Feedback
 
 <!-- 
-    The customer's feedback, filtered of all sensitive information. Links to Chorus/Productboard/Google Docs welcome, but avoid Slack links from Slack channels with a limited retention policy (see https://about.sourcegraph.com/handbook/communication/team_chat#retention).  
+    The customer's feedback, filtered of all sensitive information. Links to Chorus/Productboard/Google Docs welcome, but avoid Slack links from Slack channels with a limited retention policy (see https://handbook.sourcegraph.com/communication/team_chat#retention).  
 -->
 
 #### Customer

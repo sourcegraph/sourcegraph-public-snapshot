@@ -11,11 +11,19 @@ This page outlines how to accept a contribution to the [Sourcegraph repository](
 
 ## Buildkite
 
-To request a Buildkite build for a pull request from a fork, check out the branch and use [the `sg` CLI](../background-information/sg/index.md) to request a build after reviewing the code:
+To request a [Buildkite build](../background-information/continuous_integration.md#buildkite-pipelines) for a pull request from a fork, a build must be manually requested after reviewing the contributor's changes. A successful Buildkite build is required for a pull request to be merged.
+
+> WARNING: Builds do not happen automatically for forks for security reasons - Buildkite build runs have access to a variety of secrets used in testing. When reviewing, ensure that there are no unexpected usages of secrets or attempts to expose secrets in logs or external services.
+
+### Request a build directly
+
+Once changes have been reviewed, a build can be requested directly for a commit with [the `sg` CLI](../background-information/sg/index.md):
 
 ```sh
-sg ci build
+sg ci build --commit $COMMIT
 ```
+
+### Check out and request a build
 
 To check out a pull request's code locally, use [the `gh` CLI](https://cli.github.com/):
 
@@ -23,10 +31,14 @@ To check out a pull request's code locally, use [the `gh` CLI](https://cli.githu
 gh pr checkout $NUMBER
 ```
 
-Alternatively, it is also possible to check out the branch without having to re-clone the forked repo by running:
+Alternatively, it is also possible to check out the branch without having to re-clone the forked repo by running the following - make sure that the created branch name exactly matches their branch name, otherwise Buildkite will not match the created build to their branch:
 
 ```sh
 git fetch git@github.com:$THEIR_USERNAME/sourcegraph $THEIR_BRANCH:$THEIR_BRANCH
 ```
 
-Make sure that the created branch name exactly matches their branch name, otherwise Buildkite will not match the created build to their branch.
+Then, use [the `sg` CLI](../background-information/sg/index.md) to request a build after reviewing the code:
+
+```sh
+sg ci build
+```

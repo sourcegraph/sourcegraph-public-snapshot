@@ -12,6 +12,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/hashicorp/go-multierror"
+	"github.com/inconshreveable/log15"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -895,10 +896,15 @@ func (e *ExternalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 			return errors.Wrapf(err, "error unredacting config")
 		}
 		cfg, err := newSvc.Configuration()
-		if err != nil {
-			return errors.Wrap(err, "parsing config")
+		if err == nil {
+			hasWebhooks = configurationHasWebhooks(cfg)
+		} else {
+			// Legacy configurations might not be valid JSON; in that case, they
+			// also can't have webhooks, so we'll just log the issue and move
+			// on.
+			log15.Warn("cannot parse external service configuration as JSON", "err", err, "id", id)
+			hasWebhooks = false
 		}
-		hasWebhooks = configurationHasWebhooks(cfg)
 		update.Config = &newSvc.Config
 
 		normalized, err = e.ValidateConfig(ctx, ValidateExternalServiceConfigOptions{
@@ -1414,11 +1420,15 @@ WHERE EXISTS(
 func (e *ExternalServiceStore) recalculateFields(es *types.ExternalService, rawConfig string) error {
 	es.Unrestricted = !envvar.SourcegraphDotComMode() && !gjson.Get(es.Config, "authorization").Exists()
 
+	hasWebhooks := false
 	cfg, err := extsvc.ParseConfig(es.Kind, rawConfig)
-	if err != nil {
-		return errors.Wrap(err, "parsing configuration")
+	if err == nil {
+		hasWebhooks = configurationHasWebhooks(cfg)
+	} else {
+		// Legacy configurations might not be valid JSON; in that case, they
+		// also can't have webhooks, so we'll just log the issue and move on.
+		log15.Warn("cannot parse external service configuration as JSON", "err", err, "id", es.ID)
 	}
-	hasWebhooks := configurationHasWebhooks(cfg)
 	es.HasWebhooks = &hasWebhooks
 
 	return nil

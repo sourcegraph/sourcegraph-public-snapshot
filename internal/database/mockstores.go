@@ -21,7 +21,6 @@ type MockStores struct {
 	UserCredentials MockUserCredentials
 	UserEmails      MockUserEmails
 	UserPublicRepos MockUserPublicRepos
-	SearchContexts  MockSearchContexts
 
 	Phabricator MockPhabricator
 
@@ -32,8 +31,6 @@ type MockStores struct {
 	ExternalServices MockExternalServices
 
 	Authz MockAuthz
-
-	EventLogs MockEventLogs
 
 	FeatureFlags MockFeatureFlags
 }

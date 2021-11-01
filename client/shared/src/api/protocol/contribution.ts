@@ -84,6 +84,9 @@ export interface ActionContribution {
     /** The title that succinctly describes what this action does. */
     title?: TemplateExpression
 
+    /** The title that succinctly describes what this action is even though it's disabled. */
+    disabledTitle?: TemplateExpression
+
     /**
      * The category that describes the group of related actions of which this action is a member.
      *
@@ -270,6 +273,12 @@ export interface MenuItemContribution {
      * displayed. The expression may use values from the context in which the contribution would be displayed.
      */
     when?: Expression<boolean>
+
+    /**
+     * An expression that, if given, must evaluate to true (or a truthy value) for this contribution to be
+     * disabled. The expression may use values from the context in which the contribution would be displayed.
+     */
+    disabledWhen?: Expression<boolean>
 
     /**
      * The group in which this item is displayed. This defines the sort order of menu items. The group value is an

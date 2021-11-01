@@ -140,7 +140,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = multierror.Append(err, tryInterpretErrorWithStderr(err, stderrBuf.String()))
+			err = multierror.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String()))
 		}
 	}()
 
@@ -158,7 +158,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	scanner := NewCommitScanner(stdoutReader)
 	for scanner.Scan() {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return nil
 		}
 		cv := scanner.NextRawCommit()
 		batch = append(batch, cv)
@@ -174,7 +174,11 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	return scanner.Err()
 }
 
-func tryInterpretErrorWithStderr(err error, stderr string) error {
+func tryInterpretErrorWithStderr(ctx context.Context, err error, stderr string) error {
+	if ctx.Err() != nil {
+		// Ignore errors when context is cancelled
+		return nil
+	}
 	if strings.Contains(stderr, "does not have any commits yet") {
 		// Ignore no commits error error
 		return nil

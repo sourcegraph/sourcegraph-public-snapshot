@@ -28,6 +28,7 @@ type CodeIntelResolver interface {
 	DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (*EmptyResponse, error)
 	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error) // TODO - rename ...ForRepo
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) ([]*RepositoryResolver, error)
 	PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) ([]GitObjectFilterPreviewResolver, error)
 	NodeResolvers() map[string]NodeByIDFunc
 }
@@ -236,6 +237,8 @@ type DiagnosticResolver interface {
 
 type CodeIntelConfigurationPolicy struct {
 	Name                      string
+	RepositoryID              *int32
+	RepositoryPatterns        *[]string
 	Type                      GitObjectType
 	Pattern                   string
 	RetentionEnabled          bool
@@ -256,7 +259,8 @@ type CreateCodeIntelligenceConfigurationPolicyArgs struct {
 }
 
 type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
-	ID graphql.ID
+	ID         graphql.ID
+	Repository *graphql.ID
 	CodeIntelConfigurationPolicy
 }
 
@@ -274,6 +278,10 @@ type UpdateRepositoryIndexConfigurationArgs struct {
 	Configuration string
 }
 
+type PreviewRepositoryFilterArgs struct {
+	Pattern string
+}
+
 type PreviewGitObjectFilterArgs struct {
 	Type    GitObjectType
 	Pattern string
@@ -286,6 +294,8 @@ type GitObjectFilterPreviewResolver interface {
 
 type CodeIntelligenceConfigurationPolicyResolver interface {
 	ID() graphql.ID
+	Repository(ctx context.Context) (*RepositoryResolver, error)
+	RepositoryPatterns() *[]string
 	Name() string
 	Type() (GitObjectType, error)
 	Pattern() string

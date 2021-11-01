@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
-	codeintelhttpapi "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -17,11 +16,12 @@ func NewCodeIntelUploadHandler(ctx context.Context, db dbutil.DB, internal bool)
 		return nil, err
 	}
 
-	handler := codeintelhttpapi.NewUploadHandler(
+	handler := httpapi.NewUploadHandler(
 		db,
 		&httpapi.DBStoreShim{Store: services.dbStore},
 		services.uploadStore,
 		internal,
+		httpapi.DefaultValidatorByCodeHost,
 	)
 
 	return handler, nil

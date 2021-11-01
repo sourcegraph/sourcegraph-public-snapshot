@@ -225,6 +225,11 @@ sg ci logs
 # Push logs of most recent main failure to local Loki for analysis
 # You can spin up a Loki instance with 'sg run loki grafana'
 sg ci logs --branch main --out http://127.0.0.1:3100
+
+# Manually trigger a build on the CI with the current branch
+sg ci build 
+# Manually trigger a build on the CI on the current branch, but with a specific commit
+sg ci build --commit my-commit
 ```
 
 ### `sg teammate` - Get current time or open their handbook page

@@ -2,7 +2,6 @@ package zoekt
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -286,10 +285,14 @@ func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.Zoek
 		tr.Finish()
 	}()
 
-	zoektArgs.Query, err = zoektGlobalQuery(zoektArgs.Query, repoOptions, userPrivateRepos)
+	defaultScope, err := DefaultGlobalQueryScope(repoOptions)
 	if err != nil {
 		return nil, err
 	}
+	includePrivate := repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any
+	zoektGlobalQuery := NewGlobalZoektQuery(zoektArgs.Query, defaultScope, includePrivate)
+	zoektGlobalQuery.ApplyPrivateFilter(userPrivateRepos)
+	zoektArgs.Query = zoektGlobalQuery.Generate()
 	return &IndexedUniverseSearchRequest{Args: zoektArgs}, nil
 }
 
@@ -432,64 +435,6 @@ func NewIndexedSubsetSearchRequest(ctx context.Context, repos []*search.Reposito
 
 		DisableUnindexedSearch: index == query.Only,
 	}, nil
-}
-
-// zoektGlobalQuery constructs a query that searches the entire universe of indexed repositories.
-//
-// We construct 2 Zoekt queries. One query for public repos and one query for
-// private repos.
-//
-// We only have to search "HEAD", because global queries, per definition, don't
-// have a repo: filter and consequently no rev: filter. This makes the code a bit
-// simpler because we don't have to resolve revisions before sending off (global)
-// requests to Zoekt.
-func zoektGlobalQuery(q zoektquery.Q, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
-	scopeQ, err := zoektGlobalQueryScope(repoOptions, userPrivateRepos)
-	if err != nil {
-		return nil, err
-	}
-	return zoektquery.Simplify(zoektquery.NewAnd(q, scopeQ)), nil
-}
-
-func zoektGlobalQueryScope(repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (zoektquery.Q, error) {
-	var qs []zoektquery.Q
-
-	// Public or Any
-	if repoOptions.Visibility == query.Public || repoOptions.Visibility == query.Any {
-		rc := zoektquery.RcOnlyPublic
-		apply := func(f zoektquery.RawConfig, b bool) {
-			if !b {
-				return
-			}
-			rc |= f
-		}
-		apply(zoektquery.RcOnlyArchived, repoOptions.OnlyArchived)
-		apply(zoektquery.RcNoArchived, repoOptions.NoArchived)
-		apply(zoektquery.RcOnlyForks, repoOptions.OnlyForks)
-		apply(zoektquery.RcNoForks, repoOptions.NoForks)
-
-		children := []zoektquery.Q{&zoektquery.Branch{Pattern: "HEAD", Exact: true}, rc}
-		for _, pat := range repoOptions.MinusRepoFilters {
-			re, err := regexp.Compile(`(?i)` + pat)
-			if err != nil {
-				return nil, errors.Wrapf(err, "invalid regex for -repo filter %q", pat)
-			}
-			children = append(children, &zoektquery.Not{Child: &zoektquery.RepoRegexp{Regexp: re}})
-		}
-
-		qs = append(qs, zoektquery.NewAnd(children...))
-	}
-
-	// Private or Any
-	if (repoOptions.Visibility == query.Private || repoOptions.Visibility == query.Any) && len(userPrivateRepos) > 0 {
-		ids := make([]uint32, 0, len(userPrivateRepos))
-		for _, r := range userPrivateRepos {
-			ids = append(ids, uint32(r.ID))
-		}
-		qs = append(qs, zoektquery.NewSingleBranchesRepos("HEAD", ids...))
-	}
-
-	return zoektquery.NewOr(qs...), nil
 }
 
 func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c streaming.Sender) error {
