@@ -46,10 +46,10 @@ var BeforeCreateExternalService func(context.Context, dbutil.DB) error
 type ExternalServiceStore struct {
 	*basestore.Store
 
-	GitHubValidators          []func(*schema.GitHubConnection) error
-	GitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
-	BitbucketServerValidators []func(*schema.BitbucketServerConnection) error
-	PerforceValidators        []func(*schema.PerforceConnection) error
+	gitHubValidators          []func(*schema.GitHubConnection) error
+	gitLabValidators          []func(*schema.GitLabConnection, []schema.AuthProviders) error
+	bitbucketServerValidators []func(*schema.BitbucketServerConnection) error
+	perforceValidators        []func(*schema.PerforceConnection) error
 
 	key encryption.Key
 
@@ -60,16 +60,34 @@ func (e *ExternalServiceStore) copy() *ExternalServiceStore {
 	return &ExternalServiceStore{
 		Store:                     e.Store,
 		key:                       e.key,
-		GitHubValidators:          e.GitHubValidators,
-		GitLabValidators:          e.GitLabValidators,
-		BitbucketServerValidators: e.BitbucketServerValidators,
-		PerforceValidators:        e.PerforceValidators,
+		gitHubValidators:          e.gitHubValidators,
+		gitLabValidators:          e.gitLabValidators,
+		bitbucketServerValidators: e.bitbucketServerValidators,
+		perforceValidators:        e.perforceValidators,
 	}
 }
 
 // ExternalServices instantiates and returns a new ExternalServicesStore with prepared statements.
-var ExternalServices = func(db dbutil.DB) *ExternalServiceStore {
+var ExternalServices = NewExternalServiceStore
+
+func NewExternalServiceStore(db dbutil.DB) *ExternalServiceStore {
 	return &ExternalServiceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+}
+
+func NewExternalServiceStoreWithValidators(
+	db dbutil.DB,
+	gitHubValidators []func(*schema.GitHubConnection) error,
+	gitLabValidators []func(*schema.GitLabConnection, []schema.AuthProviders) error,
+	bitbucketServerValidators []func(*schema.BitbucketServerConnection) error,
+	perforceValidators []func(*schema.PerforceConnection) error,
+) *ExternalServiceStore {
+	return &ExternalServiceStore{
+		Store:                     basestore.NewWithDB(db, sql.TxOptions{}),
+		gitHubValidators:          gitHubValidators,
+		gitLabValidators:          gitLabValidators,
+		bitbucketServerValidators: bitbucketServerValidators,
+		perforceValidators:        perforceValidators,
+	}
 }
 
 // ExternalServicesWith instantiates and returns a new ExternalServicesStore with prepared statements.
@@ -395,7 +413,7 @@ func validateOtherExternalServiceConnection(c *schema.OtherExternalServiceConnec
 
 func (e *ExternalServiceStore) validateGitHubConnection(ctx context.Context, id int64, c *schema.GitHubConnection) error {
 	err := new(multierror.Error)
-	for _, validate := range e.GitHubValidators {
+	for _, validate := range e.gitHubValidators {
 		err = multierror.Append(err, validate(c))
 	}
 
@@ -410,7 +428,7 @@ func (e *ExternalServiceStore) validateGitHubConnection(ctx context.Context, id 
 
 func (e *ExternalServiceStore) validateGitLabConnection(ctx context.Context, id int64, c *schema.GitLabConnection, ps []schema.AuthProviders) error {
 	err := new(multierror.Error)
-	for _, validate := range e.GitLabValidators {
+	for _, validate := range e.gitLabValidators {
 		err = multierror.Append(err, validate(c, ps))
 	}
 
@@ -421,7 +439,7 @@ func (e *ExternalServiceStore) validateGitLabConnection(ctx context.Context, id 
 
 func (e *ExternalServiceStore) validateBitbucketServerConnection(ctx context.Context, id int64, c *schema.BitbucketServerConnection) error {
 	err := new(multierror.Error)
-	for _, validate := range e.BitbucketServerValidators {
+	for _, validate := range e.bitbucketServerValidators {
 		err = multierror.Append(err, validate(c))
 	}
 
@@ -440,7 +458,7 @@ func (e *ExternalServiceStore) validateBitbucketCloudConnection(ctx context.Cont
 
 func (e *ExternalServiceStore) validatePerforceConnection(ctx context.Context, id int64, c *schema.PerforceConnection) error {
 	err := new(multierror.Error)
-	for _, validate := range e.PerforceValidators {
+	for _, validate := range e.perforceValidators {
 		err = multierror.Append(err, validate(c))
 	}
 
