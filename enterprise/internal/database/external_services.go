@@ -12,7 +12,7 @@ import (
 
 // NewExternalServicesStore returns an OSS database.ExternalServicesStore set with
 // enterprise validators.
-func NewExternalServicesStore(db dbutil.DB) *database.ExternalServiceStore {
+func NewExternalServicesStore(db dbutil.DB) database.ExternalServiceStore {
 	return database.NewExternalServiceStoreWithValidators(
 		db,
 		[]func(*schema.GitHubConnection) error{github.ValidateAuthz},

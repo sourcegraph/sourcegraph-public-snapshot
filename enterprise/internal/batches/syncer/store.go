@@ -19,7 +19,7 @@ type SyncStore interface {
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	Transact(context.Context) (*store.Store, error)
 	Repos() database.RepoStore
-	ExternalServices() *database.ExternalServiceStore
+	ExternalServices() database.ExternalServiceStore
 	Clock() func() time.Time
 	DB() dbutil.DB
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)

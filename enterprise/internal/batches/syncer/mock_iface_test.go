@@ -75,7 +75,7 @@ func NewMockSyncStore() *MockSyncStore {
 			},
 		},
 		ExternalServicesFunc: &SyncStoreExternalServicesFunc{
-			defaultHook: func() *database.ExternalServiceStore {
+			defaultHook: func() database.ExternalServiceStore {
 				return nil
 			},
 		},
@@ -379,15 +379,15 @@ func (c SyncStoreDBFuncCall) Results() []interface{} {
 // SyncStoreExternalServicesFunc describes the behavior when the
 // ExternalServices method of the parent MockSyncStore instance is invoked.
 type SyncStoreExternalServicesFunc struct {
-	defaultHook func() *database.ExternalServiceStore
-	hooks       []func() *database.ExternalServiceStore
+	defaultHook func() database.ExternalServiceStore
+	hooks       []func() database.ExternalServiceStore
 	history     []SyncStoreExternalServicesFuncCall
 	mutex       sync.Mutex
 }
 
 // ExternalServices delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockSyncStore) ExternalServices() *database.ExternalServiceStore {
+func (m *MockSyncStore) ExternalServices() database.ExternalServiceStore {
 	r0 := m.ExternalServicesFunc.nextHook()()
 	m.ExternalServicesFunc.appendCall(SyncStoreExternalServicesFuncCall{r0})
 	return r0
@@ -396,7 +396,7 @@ func (m *MockSyncStore) ExternalServices() *database.ExternalServiceStore {
 // SetDefaultHook sets function that is called when the ExternalServices
 // method of the parent MockSyncStore instance is invoked and the hook queue
 // is empty.
-func (f *SyncStoreExternalServicesFunc) SetDefaultHook(hook func() *database.ExternalServiceStore) {
+func (f *SyncStoreExternalServicesFunc) SetDefaultHook(hook func() database.ExternalServiceStore) {
 	f.defaultHook = hook
 }
 
@@ -404,7 +404,7 @@ func (f *SyncStoreExternalServicesFunc) SetDefaultHook(hook func() *database.Ext
 // ExternalServices method of the parent MockSyncStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *SyncStoreExternalServicesFunc) PushHook(hook func() *database.ExternalServiceStore) {
+func (f *SyncStoreExternalServicesFunc) PushHook(hook func() database.ExternalServiceStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -412,21 +412,21 @@ func (f *SyncStoreExternalServicesFunc) PushHook(hook func() *database.ExternalS
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *SyncStoreExternalServicesFunc) SetDefaultReturn(r0 *database.ExternalServiceStore) {
-	f.SetDefaultHook(func() *database.ExternalServiceStore {
+func (f *SyncStoreExternalServicesFunc) SetDefaultReturn(r0 database.ExternalServiceStore) {
+	f.SetDefaultHook(func() database.ExternalServiceStore {
 		return r0
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *SyncStoreExternalServicesFunc) PushReturn(r0 *database.ExternalServiceStore) {
-	f.PushHook(func() *database.ExternalServiceStore {
+func (f *SyncStoreExternalServicesFunc) PushReturn(r0 database.ExternalServiceStore) {
+	f.PushHook(func() database.ExternalServiceStore {
 		return r0
 	})
 }
 
-func (f *SyncStoreExternalServicesFunc) nextHook() func() *database.ExternalServiceStore {
+func (f *SyncStoreExternalServicesFunc) nextHook() func() database.ExternalServiceStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -461,7 +461,7 @@ func (f *SyncStoreExternalServicesFunc) History() []SyncStoreExternalServicesFun
 type SyncStoreExternalServicesFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *database.ExternalServiceStore
+	Result0 database.ExternalServiceStore
 }
 
 // Args returns an interface slice containing the arguments of this

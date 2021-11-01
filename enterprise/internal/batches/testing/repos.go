@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind string) *types.Repo {
+func TestRepo(t *testing.T, store database.ExternalServiceStore, serviceKind string) *types.Repo {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -46,7 +46,7 @@ func TestRepo(t *testing.T, store *database.ExternalServiceStore, serviceKind st
 	return repo
 }
 
-func TestRepoWithService(t *testing.T, store *database.ExternalServiceStore, name string, svc *types.ExternalService) *types.Repo {
+func TestRepoWithService(t *testing.T, store database.ExternalServiceStore, name string, svc *types.ExternalService) *types.Repo {
 	t.Helper()
 
 	return &types.Repo{
