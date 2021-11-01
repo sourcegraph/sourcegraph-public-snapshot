@@ -42,6 +42,8 @@ brews:
     # `src-cli`
     install: |
       bin.install "src"
+    ids:
+      - tarball
 dockers:
   - dockerfile: Dockerfile.release
     image_templates:
