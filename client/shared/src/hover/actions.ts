@@ -99,6 +99,7 @@ export interface HoverActionsContext extends Context<TextDocumentPositionParamet
     ['goToDefinition.error']: boolean
     ['findReferences.url']: string | null
     hoverPosition: TextDocumentPositionParameters & URLToFileContext
+    hoveredOnDefinition: boolean
 }
 
 /**
@@ -158,30 +159,43 @@ export function getHoverActionsContext(
         ),
     ]).pipe(
         map(
-            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => ({
-                'goToDefinition.showLoading': definitionURLOrError === LOADING,
-                'goToDefinition.url':
-                    (definitionURLOrError !== LOADING &&
+            ([definitionURLOrError, hasReferenceProvider, showFindReferences]): HoverActionsContext => {
+                const fileUrl =
+                    definitionURLOrError !== LOADING && !isErrorLike(definitionURLOrError) && definitionURLOrError?.url
+                        ? definitionURLOrError.url
+                        : ''
+
+                const hoveredFileUrl = urlToFile(
+                    { ...hoverContext, position: hoverContext },
+                    { part: hoverContext.part }
+                )
+
+                return {
+                    'goToDefinition.showLoading': definitionURLOrError === LOADING,
+                    'goToDefinition.url':
+                        (definitionURLOrError !== LOADING &&
+                            !isErrorLike(definitionURLOrError) &&
+                            definitionURLOrError?.url) ||
+                        null,
+                    'goToDefinition.notFound':
+                        definitionURLOrError !== LOADING &&
                         !isErrorLike(definitionURLOrError) &&
-                        definitionURLOrError?.url) ||
-                    null,
-                'goToDefinition.notFound':
-                    definitionURLOrError !== LOADING &&
-                    !isErrorLike(definitionURLOrError) &&
-                    definitionURLOrError === null,
-                'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
+                        definitionURLOrError === null,
+                    'goToDefinition.error': isErrorLike(definitionURLOrError) && (definitionURLOrError as any).stack,
 
-                'findReferences.url':
-                    hasReferenceProvider && showFindReferences
-                        ? urlToFile(
-                              { ...hoverContext, position: hoverContext, viewState: 'references' },
-                              { part: hoverContext.part }
-                          )
-                        : null,
+                    'findReferences.url':
+                        hasReferenceProvider && showFindReferences
+                            ? urlToFile(
+                                  { ...hoverContext, position: hoverContext, viewState: 'references' },
+                                  { part: hoverContext.part }
+                              )
+                            : null,
 
-                // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
-                hoverPosition: parameters,
-            })
+                    // Store hoverPosition for the goToDefinition action's commandArguments to refer to.
+                    hoverPosition: parameters,
+                    hoveredOnDefinition: hoveredFileUrl === fileUrl,
+                }
+            }
         ),
         distinctUntilChanged((a, b) => isEqual(a, b))
     )
@@ -343,6 +357,7 @@ export function registerHoverContributions({
                         // definition was found.
                         id: 'goToDefinition.preloaded',
                         title: 'Go to definition',
+                        disabledTitle: 'You are at the definition',
                         command: 'open',
                         // eslint-disable-next-line no-template-curly-in-string
                         commandArguments: ['${goToDefinition.url}'],
@@ -355,10 +370,12 @@ export function registerHoverContributions({
                         {
                             action: 'goToDefinition',
                             when: 'goToDefinition.error || goToDefinition.showLoading',
+                            disabledWhen: 'hoveredOnDefinition',
                         },
                         {
                             action: 'goToDefinition.preloaded',
                             when: 'goToDefinition.url',
+                            disabledWhen: 'hoveredOnDefinition',
                         },
                     ],
                 },
@@ -445,6 +462,7 @@ export function registerHoverContributions({
                             action: 'findReferences',
                             when:
                                 'findReferences.url && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)',
+                            disabledWhen: 'false',
                         },
                     ],
                 },
