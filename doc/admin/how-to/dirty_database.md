@@ -48,7 +48,7 @@ Sourcegraphs migration files take for form of `sql` files following the snake ca
    * It’s possible that one or more commands from the migration ran successfully already. In these cases you may need to run the sql transaction in pieces. For example if a migration file creates multiple indexes and one index already exist you'll need to manually run this transaction skipping that line or adding `IF NOT EXISTS` to the transaction.
    * If you’re running into unique index creation errors because of duplicate values please let us know at support@sourcegraph.com or via your enterprise support channel. 
 
-### 3. Verify database is clean and declare dirty=false
+### 3. Verify database is clean and declare `dirty=false`
 
 1. **Manually clear the dirty flag on the `schema_migrations` table**, example `psql` query:
 ```
