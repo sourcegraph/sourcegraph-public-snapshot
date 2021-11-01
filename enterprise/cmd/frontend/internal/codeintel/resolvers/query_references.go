@@ -281,10 +281,16 @@ func (r *queryResolver) pageRemoteReferences(
 			return nil, false, nil
 		}
 
+		ignoreIDs := []int{}
+		for _, adjustedUpload := range adjustedUploads {
+			ignoreIDs = append(ignoreIDs, adjustedUpload.Upload.ID)
+		}
+
 		// Find the next batch of indexes to perform a moniker search over
 		referenceUploadIDs, recordsScanned, totalRecords, err := r.uploadIDsWithReferences(
 			ctx,
 			orderedMonikers,
+			ignoreIDs,
 			maximumIndexesPerMonikerSearch,
 			cursor.UploadOffset,
 			traceLog,
@@ -385,6 +391,7 @@ func rangeContainsPosition(r lsifstore.Range, pos lsifstore.Position) bool {
 func (r *queryResolver) uploadIDsWithReferences(
 	ctx context.Context,
 	orderedMonikers []precise.QualifiedMonikerData,
+	ignoreIDs []int,
 	limit int,
 	offset int,
 	traceLog observation.TraceLogger,
@@ -399,6 +406,11 @@ func (r *queryResolver) uploadIDsWithReferences(
 			err = multierror.Append(err, errors.Wrap(closeErr, "dbstore.ReferenceIDsAndFilters.Close"))
 		}
 	}()
+
+	ignoreIDsMap := map[int]struct{}{}
+	for _, id := range ignoreIDs {
+		ignoreIDsMap[id] = struct{}{}
+	}
 
 	filtered := map[int]struct{}{}
 
@@ -415,6 +427,11 @@ func (r *queryResolver) uploadIDsWithReferences(
 		if _, ok := filtered[packageReference.DumpID]; ok {
 			// This index includes a definition so we can skip testing the filters here. The index
 			// will be included in the moniker search regardless if it contains additional references.
+			continue
+		}
+
+		if _, ok := ignoreIDsMap[packageReference.DumpID]; ok {
+			// Ignore this dump
 			continue
 		}
 
