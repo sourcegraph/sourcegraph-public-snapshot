@@ -84,7 +84,7 @@ export interface ActionContribution {
     /** The title that succinctly describes what this action does. */
     title?: TemplateExpression
 
-    /** The title that succinctly describes what it is when the action is disabled. */
+    /** The title that succinctly describes what this action is even though it's disabled. */
     disabledTitle?: TemplateExpression
 
     /**
