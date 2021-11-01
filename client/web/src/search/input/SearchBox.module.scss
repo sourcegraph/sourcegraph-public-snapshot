@@ -126,7 +126,9 @@
         padding-left: 0.35rem;
 
         @media (--xs-breakpoint-down) {
-            display: inline-flex;
+            // Important is kept to give this display a higher priority at this screen size
+            //  since ToggleContainer has an opposing display of flex
+            display: inline-flex !important;
             margin-top: 0.75rem;
             padding-left: 0;
         }
@@ -134,6 +136,7 @@
 
     &__button {
         display: flex;
+
         @media (--xs-breakpoint-down) {
             display: inline-flex;
             flex-direction: row-reverse;

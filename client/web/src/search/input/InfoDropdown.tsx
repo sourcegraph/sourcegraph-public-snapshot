@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import React from 'react'
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
@@ -11,6 +12,8 @@ interface QueryFieldExample {
     /** The value for the example. Will be displayed as an inline code block. */
     value: string
 }
+
+import styles from './InfoDropdown.module.scss'
 
 interface Props {
     title: string
@@ -32,7 +35,11 @@ export class InfoDropdown extends React.Component<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <Dropdown isOpen={this.state.isOpen} toggle={this.toggleIsOpen} className="info-dropdown d-flex">
+            <Dropdown
+                isOpen={this.state.isOpen}
+                toggle={this.toggleIsOpen}
+                className={classNames('d-flex', styles.infoDropdown)}
+            >
                 <>
                     <DropdownToggle
                         tag="span"
@@ -41,12 +48,12 @@ export class InfoDropdown extends React.Component<Props, State> {
                     >
                         <HelpCircleOutlineIcon className="icon-inline small" />
                     </DropdownToggle>
-                    <DropdownMenu right={true} className="pb-0 info-dropdown__item">
+                    <DropdownMenu right={true} className={classNames('pb-0', styles.item)}>
                         <DropdownItem header={true}>
                             <strong>{this.props.title}</strong>
                         </DropdownItem>
                         <DropdownItem divider={true} />
-                        <div className="info-dropdown__content">
+                        <div className={styles.content}>
                             <small dangerouslySetInnerHTML={{ __html: renderMarkdown(this.props.markdown) }} />
                         </div>
 
