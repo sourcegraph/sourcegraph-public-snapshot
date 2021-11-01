@@ -1,6 +1,6 @@
 # How to troubleshoot a dirty database
 
-This document will take you through how to resolve a 'dirty database' error. During an upgrade, the database has to be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error.
+This document will take you through how to resolve a 'dirty database' error. During an upgrade, the `pgsql`, `codeintel-db`, and `codeinsights-db` databases must be migrated. If the upgrade was interrupted during the migration, this can result in a 'dirty database' error. 
 
 The error will look something like this:
 
@@ -8,22 +8,45 @@ The error will look something like this:
 ERROR: Failed to migrate the DB. Please contact support@sourcegraph.com for further assistance: Dirty database version 1528395797. Fix and force version.
 ```
 
+Migration interruption usually results from a migration query that has run too long and is interupted by a timeout, or an SQL error. Resolving this error requires discovering which migration file failed to run, and manually attempting to run that migration. 
+
 ## Prerequisites
 
-* This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred, and that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
+* This document assumes that you are installing Sourcegraph or were attempting an upgrade when an error occurred. 
 * **NOTE: If you encountered this error during an upgrade, ensure you followed the [proper step upgrade process documented here.](https://docs.sourcegraph.com/admin/updates) If you skipped a minor version during an upgrade, you will need to revert back to the last minor version your instance was on before following the steps in this document.**
+
+The following procedure requires that you are able to execute commands from inside the database container. Learn more about shelling into [kubernetes](https://docs.sourcegraph.com/admin/install/kubernetes/operations#access-the-database), [docker-compose](https://docs.sourcegraph.com/admin/install/docker-compose/operations#access-the-database), and [Sourcegraph single-container](https://docs.sourcegraph.com/admin/install/docker/operations#access-the-database) instances at these links. 
 
 ## Steps to resolve
 
-1. Check schema version. If it's dirty, then note the version number by using this command:
 
-`SELECT * FROM schema_migrations;`
+### 1. Identify incomplete migration
 
-2. Find the up migration with that version in https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend
+Check schema version, by querying the database version table: `SELECT * FROM schema_migrations;` If it's dirty, then note the version number. 
 
-3. Run the code there explicitly
-4. Manually clear the dirty flag on the `schema_migrations` table
-5. Start up again and the remaining migrations should succeed, otherwise repeat
+Example:
+```
+SELECT * FROM schema_migrations;
+version | dirty
+------------+-------
+1528395539 | t
+(1 row)
+```
+This indicates that migration `1528395539` was running, but has not yet completed. 
+
+_Note: for codeintel the schema version table is called `codeintel_schema_migrations` and for codeinsights its called `codeinsights_schema_migrations`_
+
+### 2. Run the sql queries to finish incomplete migrations
+Sourcegraphs migration files take for form of `sql` files following the snake case naming schema `<version>_<description>.<up or down>.sql` and can be found [here](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/migrations).
+
+1. Find the up migration with that version in [https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend](https://github.com/sourcegraph/sourcegraph/tree/main/migrations/frontend)
+
+2. Run the code there explicitly
+
+### 3. Verify database is clean and declare dirty=false
+3. Manually clear the dirty flag on the `schema_migrations` table, example `psql` query:
+   *  `UPDATE schema_migrations SET version=1528395918, dirty=false;` 
+4. Start up again and the remaining migrations should succeed, otherwise repeat
 
 * When migrations run, the `schema_migrations` table is updated to show the state of migrations.
   * The `dirty` column indicates whether a migration is in-process, and
