@@ -2395,6 +2395,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 		//  1. A user with newer code host connection sync
 		//  2. A user never had user-centric syncing
 		//  3. A user with up-to-date permissions data
+		//  4. A user with newer code host connection sync from the organization the user is a member of
 		qs := []*sqlf.Query{
 			// ID=1, with newer code host connection sync
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES ('alice')`),
@@ -2405,6 +2406,11 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 			// ID=3, with up-to-date permissions data
 			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`),
 			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id) VALUES(3, 'GitHub #3', 'GITHUB', '{}', 3)`),
+			// ID=4, with newer code host connection sync from the organization the user is a member of
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('david')`),
+			sqlf.Sprintf(`INSERT INTO orgs(id, name) VALUES(1, 'david-org')`),
+			sqlf.Sprintf(`INSERT INTO org_members(org_id, user_id) VALUES(1, 4)`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, namespace_org_id, last_sync_at) VALUES(4, 'GitHub #4', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`),
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2450,6 +2456,19 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		// Give "david" some permissions
+		err = s.SetUserPermissions(ctx,
+			&authz.UserPermissions{
+				UserID: 4,
+				Perm:   authz.Read,
+				Type:   authz.PermRepos,
+				IDs:    toBitmap(1),
+			},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		// Both "alice" and "bob" have outdated permissions
 		results, err := s.UserIDsWithOutdatedPerms(ctx)
 		if err != nil {
@@ -2461,7 +2480,7 @@ func testPermsStore_UserIDsWithOutdatedPerms(db *sql.DB) func(*testing.T) {
 		}
 		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 
-		expIDs := []int32{1, 2}
+		expIDs := []int32{1, 2, 4}
 		if diff := cmp.Diff(expIDs, ids); diff != "" {
 			t.Fatal(diff)
 		}
