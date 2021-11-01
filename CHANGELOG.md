@@ -17,9 +17,13 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Fixed
 
-- `src search` will not fail anymore on systems where the pager `less` is not installed. [#644](https://github.com/sourcegraph/src-cli/pull/644)
-
 ### Removed
+
+## 3.33.5
+
+### Fixed
+
+- `src search` will not fail anymore on systems where the pager `less` is not installed. [#644](https://github.com/sourcegraph/src-cli/pull/644)
 
 ## 3.33.4
 
