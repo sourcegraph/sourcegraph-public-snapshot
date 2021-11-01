@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -18,7 +19,7 @@ import (
 // "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
 // to false. "Warnings" are all other validation problems.
 func NewAuthzProviders(
-	cfg schema.SiteConfiguration,
+	cfg *conf.Unified,
 	conns []*types.GitLabConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
