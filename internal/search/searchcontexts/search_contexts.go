@@ -47,7 +47,7 @@ func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
 	return ParsedSearchContextSpec{SearchContextName: searchContextSpec}
 }
 
-func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSpec string) (*types.SearchContext, error) {
+func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (*types.SearchContext, error) {
 	parsedSearchContextSpec := ParseSearchContextSpec(searchContextSpec)
 	hasNamespaceName := parsedSearchContextSpec.NamespaceName != ""
 	hasSearchContextName := parsedSearchContextSpec.SearchContextName != ""
@@ -55,17 +55,17 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 	if IsGlobalSearchContextSpec(searchContextSpec) {
 		return GetGlobalSearchContext(), nil
 	} else if hasNamespaceName && hasSearchContextName {
-		namespace, err := database.Namespaces(db).GetByName(ctx, parsedSearchContextSpec.NamespaceName)
+		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
 			return nil, err
 		}
-		return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{
+		return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
 			Name:            parsedSearchContextSpec.SearchContextName,
 			NamespaceUserID: namespace.User,
 			NamespaceOrgID:  namespace.Organization,
 		})
 	} else if hasNamespaceName && !hasSearchContextName {
-		namespace, err := database.Namespaces(db).GetByName(ctx, parsedSearchContextSpec.NamespaceName)
+		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func ResolveSearchContextSpec(ctx context.Context, db dbutil.DB, searchContextSp
 		return GetOrganizationSearchContext(namespace.Organization, parsedSearchContextSpec.NamespaceName, parsedSearchContextSpec.NamespaceName), nil
 	}
 	// Check if instance-level context
-	return database.SearchContexts(db).GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
+	return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
 }
 
 func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
@@ -247,20 +247,20 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 	return database.SearchContexts(db).DeleteSearchContext(ctx, searchContext.ID)
 }
 
-func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.SearchContext, error) {
+func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types.SearchContext, error) {
 	searchContexts := []*types.SearchContext{GetGlobalSearchContext()}
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() || !envvar.SourcegraphDotComMode() {
 		return searchContexts, nil
 	}
 
-	user, err := database.Users(db).GetByID(ctx, a.UID)
+	user, err := db.Users().GetByID(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
 	searchContexts = append(searchContexts, GetUserSearchContext(a.UID, user.Username))
 
-	organizations, err := database.Orgs(db).GetOrgsWithRepositoriesByUserID(ctx, a.UID)
+	organizations, err := db.Orgs().GetOrgsWithRepositoriesByUserID(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -271,8 +271,8 @@ func GetAutoDefinedSearchContexts(ctx context.Context, db dbutil.DB) ([]*types.S
 	return searchContexts, nil
 }
 
-func GetRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {
-	searchContextRepositoryRevisions, err := database.SearchContexts(db).GetSearchContextRepositoryRevisions(ctx, searchContextID)
+func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]*search.RepositoryRevisions, error) {
+	searchContextRepositoryRevisions, err := db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, searchContextID)
 	if err != nil {
 		return nil, err
 	}
