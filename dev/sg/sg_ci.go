@@ -43,8 +43,7 @@ var (
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
 
 	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
-	ciBuildBranchFlag = ciBuildFlagSet.String("branch", "", "Branch name to build (defaults to current branch)")
-	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit to build (defaults to current commit)")
+	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
 )
 
 // get branch from flag or git
@@ -192,12 +191,9 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					return err
 				}
 
-				branch := *ciBuildBranchFlag
-				if branch == "" {
-					branch, err = run.TrimResult(run.GitCmd("branch", "--show-current"))
-					if err != nil {
-						return err
-					}
+				branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+				if err != nil {
+					return err
 				}
 
 				commit := *ciBuildCommitFlag
@@ -206,15 +202,6 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 					if err != nil {
 						return err
 					}
-				}
-
-				_, err = run.GitCmd("merge-base", "--is-ancestor", commit, branch)
-				if err != nil {
-					var exitErr *exec.ExitError
-					if errors.As(err, &exitErr) {
-						return fmt.Errorf("commit %s does not belong to the branch %s: %w", commit, branch, exitErr)
-					}
-					return err
 				}
 
 				out.WriteLine(output.Linef("", output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
