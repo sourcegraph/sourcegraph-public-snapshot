@@ -33,7 +33,5 @@ type MockStores struct {
 
 	Authz MockAuthz
 
-	EventLogs MockEventLogs
-
 	FeatureFlags MockFeatureFlags
 }
