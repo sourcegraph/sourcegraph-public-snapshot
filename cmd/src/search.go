@@ -86,34 +86,40 @@ Other tips:
 		queryString := flagSet.Arg(0)
 
 		// For pagination, pipe our own output to 'less -R'
-		if *lessFlag && !*jsonFlag && isatty.IsTerminal(os.Stdout.Fd()) {
-			cmdPath, err := os.Executable()
-			if err != nil {
-				return err
-			}
+		if *lessFlag && !*jsonFlag {
+			// But first we check whether we can use `less`. (Instead of
+			// combining the conditions here into one, we use a 2nd conditional
+			// so we don't need to do `exec.LookPath` if flags disable `less`)
+			_, err := exec.LookPath("less")
+			if err == nil && isatty.IsTerminal(os.Stdout.Fd()) {
+				cmdPath, err := os.Executable()
+				if err != nil {
+					return err
+				}
 
-			srcCmd := exec.Command(cmdPath, append([]string{"search"}, args...)...)
+				srcCmd := exec.Command(cmdPath, append([]string{"search"}, args...)...)
 
-			// Because we do not want the default "no color when piping" behavior to take place.
-			srcCmd.Env = envSetDefault(os.Environ(), "COLOR", "t")
+				// Because we do not want the default "no color when piping" behavior to take place.
+				srcCmd.Env = envSetDefault(os.Environ(), "COLOR", "t")
 
-			srcStderr, err := srcCmd.StderrPipe()
-			if err != nil {
-				return err
-			}
-			srcStdout, err := srcCmd.StdoutPipe()
-			if err != nil {
-				return err
-			}
-			if err := srcCmd.Start(); err != nil {
-				return err
-			}
+				srcStderr, err := srcCmd.StderrPipe()
+				if err != nil {
+					return err
+				}
+				srcStdout, err := srcCmd.StdoutPipe()
+				if err != nil {
+					return err
+				}
+				if err := srcCmd.Start(); err != nil {
+					return err
+				}
 
-			lessCmd := exec.Command("less", "-R")
-			lessCmd.Stdin = io.MultiReader(srcStdout, srcStderr)
-			lessCmd.Stderr = os.Stderr
-			lessCmd.Stdout = os.Stdout
-			return lessCmd.Run()
+				lessCmd := exec.Command("less", "-R")
+				lessCmd.Stdin = io.MultiReader(srcStdout, srcStderr)
+				lessCmd.Stderr = os.Stderr
+				lessCmd.Stdout = os.Stdout
+				return lessCmd.Run()
+			}
 		}
 
 		client := cfg.apiClient(apiFlags, flagSet.Output())
