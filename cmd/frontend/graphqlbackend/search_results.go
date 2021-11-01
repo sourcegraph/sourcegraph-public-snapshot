@@ -671,14 +671,33 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		}
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
+			typ := search.TextRequest
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+			if err != nil {
+				return nil, nil, err
+			}
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            typ,
+				FileMatchLimit: args.PatternInfo.FileMatchLimit,
+				Select:         args.PatternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			searcherArgs := &search.SearcherParameters{
+				SearcherURLs:    args.SearcherURLs,
+				PatternInfo:     args.PatternInfo,
+				UseFullDeadline: args.UseFullDeadline,
+			}
+
 			jobs = append(jobs, &unindexed.StructuralSearch{
-				RepoFetcher: unindexed.NewRepoFetcher(r.stream, &args),
-				Mode:        args.Mode,
-				SearcherArgs: search.SearcherParameters{
-					SearcherURLs:    args.SearcherURLs,
-					PatternInfo:     args.PatternInfo,
-					UseFullDeadline: args.UseFullDeadline,
-				},
+				ZoektArgs:    zoektArgs,
+				SearcherArgs: searcherArgs,
+
+				Mode:              args.Mode,
+				UseIndex:          args.PatternInfo.Index,
+				ContainsRefGlobs:  query.ContainsRefGlobs(q),
+				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
 			})
 		}
 	}
