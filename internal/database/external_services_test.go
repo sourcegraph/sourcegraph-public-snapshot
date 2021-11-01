@@ -30,17 +30,18 @@ import (
 
 func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
-		name             string
-		noNamespace      bool
-		namespaceUserID  int32
-		namespaceOrgID   int32
-		kinds            []string
-		afterID          int64
-		wantQuery        string
-		onlyCloudDefault bool
-		includeDeleted   bool
-		noCachedWebhooks bool
-		wantArgs         []interface{}
+		name                 string
+		noNamespace          bool
+		excludeNamespaceUser bool
+		namespaceUserID      int32
+		namespaceOrgID       int32
+		kinds                []string
+		afterID              int64
+		wantQuery            string
+		onlyCloudDefault     bool
+		includeDeleted       bool
+		noCachedWebhooks     bool
+		wantArgs             []interface{}
 	}{
 		{
 			name:      "no condition",
@@ -78,6 +79,11 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery:       "deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NULL",
 		},
 		{
+			name:                 "want exclude namespace user",
+			excludeNamespaceUser: true,
+			wantQuery:            "deleted_at IS NULL AND namespace_user_id IS NULL",
+		},
+		{
 			name:      "has after ID",
 			afterID:   10,
 			wantQuery: "deleted_at IS NULL AND id < $1",
@@ -102,14 +108,15 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			opts := ExternalServicesListOptions{
-				NoNamespace:      test.noNamespace,
-				NamespaceUserID:  test.namespaceUserID,
-				NamespaceOrgID:   test.namespaceOrgID,
-				Kinds:            test.kinds,
-				AfterID:          test.afterID,
-				OnlyCloudDefault: test.onlyCloudDefault,
-				IncludeDeleted:   test.includeDeleted,
-				noCachedWebhooks: test.noCachedWebhooks,
+				NoNamespace:          test.noNamespace,
+				ExcludeNamespaceUser: test.excludeNamespaceUser,
+				NamespaceUserID:      test.namespaceUserID,
+				NamespaceOrgID:       test.namespaceOrgID,
+				Kinds:                test.kinds,
+				AfterID:              test.afterID,
+				OnlyCloudDefault:     test.onlyCloudDefault,
+				IncludeDeleted:       test.includeDeleted,
+				noCachedWebhooks:     test.noCachedWebhooks,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {

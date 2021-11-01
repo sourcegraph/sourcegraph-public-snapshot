@@ -145,8 +145,12 @@ type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
 	IDs []int64
 	// When true, only include external services not under any namespace (i.e. owned
-	// by all site admins), and value of NamespaceUserID is ignored.
+	// by all site admins), and values of NamespaceUserID, NamespaceOrgID and
+	// ExcludeNamespaceUser are ignored.
 	NoNamespace bool
+	// When true, will exclude external services under any user namespace, and
+	// values of NamespaceUserID and NamespaceOrgID are ignored.
+	ExcludeNamespaceUser bool
 	// When specified, only include external services under given user namespace.
 	NamespaceUserID int32
 	// When specified, only include external services under given organization namespace.
@@ -190,6 +194,8 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.NoNamespace {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL AND namespace_org_id IS NULL`))
+	} else if o.ExcludeNamespaceUser {
+		conds = append(conds, sqlf.Sprintf(`namespace_user_id IS NULL`))
 	} else if o.NamespaceUserID > 0 {
 		conds = append(conds, sqlf.Sprintf(`namespace_user_id = %d`, o.NamespaceUserID))
 	} else if o.NamespaceOrgID > 0 {
