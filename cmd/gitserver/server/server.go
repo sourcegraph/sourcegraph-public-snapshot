@@ -939,6 +939,12 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	)
 	defer tr.Finish()
 
+	searchRunning.Inc()
+	defer searchRunning.Dec()
+
+	searchStart := time.Now()
+	defer func() { searchDuration.Observe(time.Since(searchStart).Seconds()) }()
+
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
@@ -999,8 +1005,12 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 	}
 
+	var latencyOnce sync.Once
 	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
 		tr.LogFields(otlog.Int("flushing", len(data)))
+		latencyOnce.Do(func() {
+			searchLatency.Observe(time.Since(searchStart).Seconds())
+		})
 		return eventWriter.EventBytes("matches", data)
 	})
 
@@ -1902,6 +1912,22 @@ var (
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
+
+	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_search_running",
+		Help: "number of gitserver.Search running concurrently.",
+	})
+	searchDuration = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_duration_seconds",
+		Help:    "gitserver.Search duration in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
+	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_latency_seconds",
+		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
+
 	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",
