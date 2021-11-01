@@ -80,9 +80,6 @@ func (s *userPublicRepoStore) SetUserRepo(ctx context.Context, upr UserPublicRep
 }
 
 func (s *userPublicRepoStore) ListByUser(ctx context.Context, userID int32) ([]UserPublicRepo, error) {
-	if mock := Mocks.UserPublicRepos.ListByUser; mock != nil {
-		return mock(ctx, userID)
-	}
 	rows, err := s.Query(ctx, sqlf.Sprintf(
 		"SELECT user_id, repo_uri, repo_id FROM user_public_repos WHERE user_id = %v",
 		userID,
