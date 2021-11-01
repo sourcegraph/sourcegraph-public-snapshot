@@ -45,7 +45,6 @@ require (
 	github.com/felixge/httpsnoop v1.0.2
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/getsentry/raven-go v0.2.0
-	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
 	github.com/go-enry/go-enry/v2 v2.7.2
 	github.com/go-openapi/strfmt v0.20.3
@@ -128,7 +127,6 @@ require (
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/gosyntect v0.0.0-20210422223331-645353f16ddc
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20211020041242-9f6088e5b163
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20211020041242-9f6088e5b163
 	github.com/stretchr/testify v1.7.0
 	github.com/stripe/stripe-go v70.15.0+incompatible
@@ -310,6 +308,7 @@ require (
 )
 
 require (
+	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-kit/log v0.2.0 // indirect
 	github.com/go-logr/logr v1.1.0 // indirect
 	github.com/golang/glog v1.0.0 // indirect
