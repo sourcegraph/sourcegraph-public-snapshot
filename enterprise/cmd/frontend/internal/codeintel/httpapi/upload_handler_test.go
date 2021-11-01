@@ -13,14 +13,21 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/inconshreveable/log15"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/uploadstore/mocks"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -421,6 +428,100 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 	}
 }
 
+func TestHandleEnqueueAuth(t *testing.T) {
+	setupRepoMocks(t)
+
+	db := dbtesting.GetDB(t)
+	mockDBStore := NewMockDBStore()
+	mockUploadStore := uploadstoremocks.NewMockStore()
+
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			LsifEnforceAuth: true,
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	mockDBStore.TransactFunc.SetDefaultReturn(mockDBStore, nil)
+	mockDBStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
+	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+
+	testURL, err := url.Parse("http://test.com/upload")
+	if err != nil {
+		t.Fatalf("unexpected error constructing url: %s", err)
+	}
+	testURL.RawQuery = (url.Values{
+		"commit":      []string{testCommit},
+		"root":        []string{"proj/"},
+		"repository":  []string{"github.com/test/test"},
+		"indexerName": []string{"lsif-go"},
+	}).Encode()
+
+	users := []struct {
+		name       string
+		siteAdmin  bool
+		noUser     bool
+		statusCode int
+	}{
+		{
+			name:       "chad",
+			siteAdmin:  true,
+			statusCode: http.StatusAccepted,
+		},
+		{
+			name:       "owning-user",
+			siteAdmin:  false,
+			statusCode: http.StatusAccepted,
+		},
+		{
+			name:       "non-owning-user",
+			siteAdmin:  false,
+			statusCode: http.StatusUnauthorized,
+		},
+		{
+			noUser:     true,
+			statusCode: http.StatusUnauthorized,
+		},
+	}
+
+	for _, user := range users {
+		var expectedContents []byte
+		for i := 0; i < 20000; i++ {
+			expectedContents = append(expectedContents, byte(i))
+		}
+
+		w := httptest.NewRecorder()
+		r, err := http.NewRequest("POST", testURL.String(), bytes.NewReader(expectedContents))
+		if err != nil {
+			t.Fatalf("unexpected error constructing request: %s", err)
+		}
+
+		if !user.noUser {
+			userID := insertTestUser(t, db, user.name, user.siteAdmin)
+			r = r.WithContext(actor.WithActor(r.Context(), actor.FromUser(userID)))
+		}
+
+		h := &UploadHandler{
+			db:          db,
+			dbStore:     mockDBStore,
+			uploadStore: mockUploadStore,
+			validators: map[string]func(context.Context, *http.Request, string) (int, error){
+				"github": func(context.Context, *http.Request, string) (int, error) {
+					if user.name != "owning-user" {
+						return http.StatusUnauthorized, errors.New("sample text import cycle")
+					}
+					return 200, nil
+				},
+			},
+		}
+		h.handleEnqueue(w, r)
+
+		if w.Code != user.statusCode {
+			t.Errorf("unexpected status code for user %s. want=%d have=%d", user.name, user.statusCode, w.Code)
+		}
+	}
+}
+
 func setupRepoMocks(t testing.TB) {
 	t.Cleanup(func() {
 		backend.Mocks.Repos.GetByName = nil
@@ -440,4 +541,15 @@ func setupRepoMocks(t testing.TB) {
 		}
 		return "", nil
 	}
+}
+
+func insertTestUser(t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
+	t.Helper()
+
+	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
+	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return userID
 }
