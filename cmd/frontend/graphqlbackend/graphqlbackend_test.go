@@ -74,7 +74,7 @@ func TestRepository(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
@@ -84,7 +84,7 @@ func TestResolverTo(t *testing.T) {
 		&GitTreeEntryResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: database.NewDB(db)},
+		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&repositorySuggestionResolver{},

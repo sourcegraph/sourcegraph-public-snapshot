@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -21,7 +20,7 @@ var _ graphqlbackend.UserConnectionResolver = &userConnectionResolver{}
 // userConnectionResolver resolves a list of user from the roaring bitmap with pagination.
 type userConnectionResolver struct {
 	ids *roaring.Bitmap
-	db  dbutil.DB
+	db  database.DB
 
 	first int32
 	after *string

@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
@@ -22,7 +21,7 @@ func (r *schemaResolver) Organizations(args *struct {
 }
 
 type orgConnectionResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	opt database.OrgsListOptions
 }
 

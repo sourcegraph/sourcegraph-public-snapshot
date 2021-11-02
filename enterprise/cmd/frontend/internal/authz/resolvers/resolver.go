@@ -314,7 +314,7 @@ func (r *Resolver) AuthorizedUsers(ctx context.Context, args *graphqlbackend.Rep
 	}
 
 	return &userConnectionResolver{
-		db:    r.store.Handle().DB(),
+		db:    database.NewDB(r.store.Handle().DB()),
 		ids:   p.UserIDs,
 		first: args.First,
 		after: args.After,

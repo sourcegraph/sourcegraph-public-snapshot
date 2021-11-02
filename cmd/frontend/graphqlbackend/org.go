@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -51,11 +50,11 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 }
 
 type OrgResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	org *types.Org
 }
 
-func NewOrg(db dbutil.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
+func NewOrg(db database.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
 
 func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 

@@ -11,12 +11,12 @@ import (
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db database.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	if err := initServices(ctx, db); err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 	return nil
 }
 
-func newResolver(ctx context.Context, db dbutil.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
+func newResolver(ctx context.Context, db database.DB, observationContext *observation.Context) (gql.CodeIntelResolver, error) {
 	policyMatcher := policies.NewMatcher(
 		services.gitserverClient,
 		policies.NoopExtractor,
@@ -66,7 +66,7 @@ func newResolver(ctx context.Context, db dbutil.DB, observationContext *observat
 	return codeintelgqlresolvers.NewResolver(db, innerResolver), nil
 }
 
-func newUploadHandler(ctx context.Context, db dbutil.DB) (func(internal bool) http.Handler, error) {
+func newUploadHandler(ctx context.Context, db database.DB) (func(internal bool) http.Handler, error) {
 	internalHandler, err := NewCodeIntelUploadHandler(ctx, db, true)
 	if err != nil {
 		return nil, err
