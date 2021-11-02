@@ -144,6 +144,16 @@ const batchChangeFragment = gql`
                 createdAt
                 applyURL
             }
+            codeHostsWithoutWebhooks: viewerBatchChangesCodeHosts(first: 3, onlyWithoutWebhooks: true) {
+                nodes {
+                    externalServiceKind
+                    externalServiceURL
+                }
+                pageInfo {
+                    hasNextPage
+                }
+                totalCount
+            }
         }
     }
 
