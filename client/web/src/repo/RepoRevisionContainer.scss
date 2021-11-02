@@ -1,4 +1,3 @@
-@import '../tree/Tree';
 @import './GitReference';
 @import './RepoRevisionSidebar';
 @import './RevisionsPopover/RevisionsPopover';
@@ -28,6 +27,7 @@
         &-resizable {
             max-width: 60%;
             min-width: 8rem;
+
             &--open .tree {
                 width: 16rem;
             }
