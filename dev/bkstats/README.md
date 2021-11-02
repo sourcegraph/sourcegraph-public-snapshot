@@ -10,13 +10,14 @@ $ go run main.go -token $BUILDKITE_API_TOKEN -date 2021-10-22 -pipeline sourcegr
 On 2021-10-22, the pipeline was red for 1h8m32.856s
 ```
 
-### Buildkite API token 
+### Buildkite API token
 
 1. Go over [your personal settings](https://buildkite.com/user/api-access-tokens)
 2. Create a new token with the following permissions:
-  - check `sourcegraph` organization
-  - `read_builds`
-  - `read_pipelines`
+
+- check `sourcegraph` organization
+- `read_builds`
+- `read_pipelines`
 
 ## Computation details
 
