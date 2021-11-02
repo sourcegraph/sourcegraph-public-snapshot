@@ -62,6 +62,7 @@ type operations struct {
 	executeBatchSpec                     *observation.Operation
 	cancelBatchSpec                      *observation.Operation
 	replaceBatchSpecInput                *observation.Operation
+	retryBatchSpecWorkspaces             *observation.Operation
 	createChangesetSpec                  *observation.Operation
 	getBatchChangeMatchingBatchSpec      *observation.Operation
 	getNewestBatchSpec                   *observation.Operation
@@ -110,6 +111,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			executeBatchSpec:                     op("ExecuteBatchSpec"),
 			cancelBatchSpec:                      op("CancelBatchSpec"),
 			replaceBatchSpecInput:                op("ReplaceBatchSpecInput"),
+			retryBatchSpecWorkspaces:             op("RetryBatchSpecWorkspaces"),
 			createChangesetSpec:                  op("CreateChangesetSpec"),
 			getBatchChangeMatchingBatchSpec:      op("GetBatchChangeMatchingBatchSpec"),
 			getNewestBatchSpec:                   op("GetNewestBatchSpec"),
@@ -1141,4 +1143,85 @@ func computeBatchSpecState(ctx context.Context, s *store.Store, spec *btypes.Bat
 	}
 
 	return btypes.ComputeBatchSpecState(spec, stats), nil
+}
+
+// RetryBatchSpecWorkspaces retries the BatchSpecWorkspaceExecutionJobs
+// attached to the given BatchSpecWorkspaces.
+func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []int64) (err error) {
+	ctx, endObservation := s.operations.retryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	if len(workspaceIDs) == 0 {
+		return errors.New("no workspaces specified")
+	}
+
+	tx, err := s.store.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// Load workspaces
+	workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{IDs: workspaceIDs})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspaces")
+	}
+
+	var batchSpecID int64 = -1
+	var changesetSpecIDs []int64
+
+	for _, w := range workspaces {
+		// Check that batch spec is the same
+		if batchSpecID != -1 && w.BatchSpecID != batchSpecID {
+			return errors.New("workspaces do not belong to the same batch spec")
+		}
+
+		batchSpecID = w.BatchSpecID
+		changesetSpecIDs = append(changesetSpecIDs, w.ChangesetSpecIDs...)
+	}
+
+	// Check that batch spec is not applied
+	_, err = tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
+	if err != store.ErrNoResults {
+		return errors.Wrap(err, "batch spec has already been applied")
+	}
+
+	// Load jobs and check their state
+	jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
+		BatchSpecWorkspaceIDs: workspaceIDs,
+	})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspace execution jobs")
+	}
+
+	var errs *multierror.Error
+	var jobIDs = make([]int64, len(jobs))
+
+	for i, j := range jobs {
+		if !j.State.Retryable() {
+			errs = multierror.Append(errs, errors.Newf("job %d not retryable", j.ID))
+		}
+		jobIDs[i] = j.ID
+	}
+
+	if err := errs.ErrorOrNil(); err != nil {
+		return err
+	}
+
+	// Delete the old jobs
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	}
+
+	// Delete the changeset specs they have created
+	if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecIDs}); err != nil {
+		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	}
+
+	// Create new jobs
+	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspaceIDs); err != nil {
+		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
+	}
+
+	return nil
 }

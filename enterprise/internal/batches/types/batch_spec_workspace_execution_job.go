@@ -36,6 +36,13 @@ func (s BatchSpecWorkspaceExecutionJobState) Valid() bool {
 // ToGraphQL returns the GraphQL representation of the worker state.
 func (s BatchSpecWorkspaceExecutionJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
 
+// Retryable returns whether the state is retryable.
+func (s BatchSpecWorkspaceExecutionJobState) Retryable() bool {
+	return s == BatchSpecWorkspaceExecutionJobStateErrored ||
+		s == BatchSpecWorkspaceExecutionJobStateFailed ||
+		s == BatchSpecWorkspaceExecutionJobStateCompleted
+}
+
 type BatchSpecWorkspaceExecutionJob struct {
 	ID int64
 

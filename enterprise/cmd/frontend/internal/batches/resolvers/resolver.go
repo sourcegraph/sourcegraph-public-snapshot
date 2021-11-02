@@ -1540,8 +1540,28 @@ func (r *Resolver) RetryBatchSpecWorkspaceExecution(ctx context.Context, args *g
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
 		return nil, err
 	}
-	// TODO(ssbc): not implemented
-	return nil, errors.New("not implemented yet")
+
+	var workspaceIDs []int64
+	for _, raw := range args.BatchSpecWorkspaces {
+		id, err := unmarshalBatchSpecWorkspaceID(raw)
+		if err != nil {
+			return nil, err
+		}
+
+		if id == 0 {
+			return nil, ErrIDIsZero{}
+		}
+
+		workspaceIDs = append(workspaceIDs, id)
+	}
+
+	svc := service.New(r.store)
+	err := svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r *Resolver) RetryBatchSpecExecution(ctx context.Context, args *graphqlbackend.RetryBatchSpecExecutionArgs) (*graphqlbackend.EmptyResponse, error) {
