@@ -248,39 +248,28 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 			}
 		} else {
 			// If it's a frontend series, we can just update it.
-			if len(series.RepositoryScope.Repositories) > 0 {
-				err = tx.UpdateFrontendSeries(ctx, series)
+			existingRepos := getExistingSeriesRepositories(*series.SeriesId, views[0].Series)
+			if len(series.RepositoryScope.Repositories) > 0 && len(existingRepos) > 0 {
+				err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
+					SeriesID:          *series.SeriesId,
+					Query:             series.Query,
+					Repositories:      series.RepositoryScope.Repositories,
+					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
+					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
+				})
 				if err != nil {
 					return nil, errors.Wrap(err, "UpdateFrontendSeries")
 				}
 			} else {
-				// Otherwise, we detach the existing series.
 				err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
 				if err != nil {
 					return nil, errors.Wrap(err, "RemoveViewSeries")
 				}
-
-				// Then attach it as a new series.
 				err = createAndAttachSeries(ctx, tx, view, series)
 				if err != nil {
 					return nil, errors.Wrap(err, "createAndAttachSeries")
 				}
 			}
-
-			// There are 2 more cases here. (Unless these aren't real use cases)
-			// FE -> BE series. This will just work, I think. It will be treated as a BE series and will get deleted
-			//   and add the new one.
-			// BE -> FE series. This might need another case. We do have an array of existing series, so we could
-			//   match those up by id to detect this. Then we just treat it the same as the case for the BE series.
-			//   So maybe we want a helper function to determine an update to a FE -> FE series, vs. the other 3 cases.
-
-			// Another thought is that we can just delete/attach every time, to simplify the code. It doesn't feel
-			// like a huge performance consideration.
-
-			// One thing I think we'll lose out on here is consistent ordering. This can probably be tackled
-			// as a separate issue (as long as we do it before we release,) but I think we may need another
-			// db field for "position" or something. Otherwise I imagine that updating a dataseries might
-			// move it to the end of the list which would be a bad UX.
 
 			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
 				Label:  emptyIfNil(series.Options.Label),
@@ -290,7 +279,6 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				return nil, errors.Wrap(err, "UpdateViewSeries")
 			}
 		}
-
 	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
 }
@@ -354,18 +342,17 @@ func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefi
 func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
 	var seriesToAdd types.InsightSeries
 
-	matchingSeries, err := tx.FindMatchingSeries(ctx, series)
+	matchingSeries, err := tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+		Query:             series.Query,
+		StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
+		StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
 	if err != nil {
 		return errors.Wrap(err, "FindMatchingSeries")
 	}
 
 	if matchingSeries == nil {
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
-			// I may be missing something, but I'm not sure I understand why we need a SeriesID field. It's an encoded version of the query
-			// string, but we also have the query string itself. Plus, now that timescopes can differ, the query string isn't enough.
-			// And the API-created series don't even have the same sort of id as the ones from the settings.
-			// Can we not just match on those relevent fields instead of creating an separate id?
-			SeriesID:            ksuid.New().String(), // ignoring sharing data series for now, we will just always generate unique series
+			SeriesID:            ksuid.New().String(),
 			Query:               series.Query,
 			CreatedAt:           time.Now(),
 			Repositories:        series.RepositoryScope.Repositories,
@@ -377,7 +364,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		}
 	} else {
 		seriesToAdd = *matchingSeries
-		// We'll need a way as well to set deleted_at to NULL in case this series had been deleted already.
 	}
 
 	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{
@@ -400,4 +386,13 @@ func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlba
 		}
 	}
 	return false
+}
+
+func getExistingSeriesRepositories(seriesId string, existingSeries []types.InsightViewSeries) []string {
+	for i := range existingSeries {
+		if existingSeries[i].SeriesID == seriesId {
+			return existingSeries[i].Repositories
+		}
+	}
+	return nil
 }

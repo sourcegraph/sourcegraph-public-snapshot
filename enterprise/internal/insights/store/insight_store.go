@@ -7,7 +7,6 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 
 	"github.com/cockroachdb/errors"
@@ -331,21 +330,36 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
-	return s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	err := s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	if err != nil {
+		return err
+	}
+	// Enable the series in case it had previously been soft-deleted.
+	err = s.SetSeriesEnabled(ctx, series.SeriesID, true)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string, viewId int) error {
-	return s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
-
-	// TODO
-	// When we remove a series from a view, we should:
-	// 1. Detect if this series is now orphaned. (Does it exist in any rows in the insight_view_series table?)
-	// 2. If it is orphaned, fill in the timestamp for deleted_at to NOW.
-
-	// Separately, we can add a background process to clean up series that have been deleted for X amount of time.
-	// This is also where we could add logic for "big" and "small" series and decide if we want to keep some around
-	// for longer than others. Another bucket would be FE series which we can probably delete very quickly because
-	// they'll never get re-used.
+	err := s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
+	if err != nil {
+		return err
+	}
+	// Delete the series if there are no longer any references to it.
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(countSeriesReferencesSql, seriesId)))
+	if err != nil {
+		return err
+	}
+	if count != 0 {
+		return nil
+	}
+	err = s.SetSeriesEnabled(ctx, seriesId, false)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
@@ -547,17 +561,34 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
 }
 
-// TODO: Probably shouldn't pass GraphQL args straight to the store. Also implement this
-func (s *InsightStore) FindMatchingSeries(ctx context.Context, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
-	// AKA the "Query," "SampleUntervalUnit," and "SampleIntervalValue" are all the same. Also make sure repositories is empty.
-	// DO consider "deleted" series as well.
-	return nil, nil
+type MatchSeriesArgs struct {
+	Query             string
+	StepIntervalUnit  string
+	StepIntervalValue int
 }
 
-// TODO: Probably shouldn't pass GraphQL args straight to the store. Also implement this
-func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
-	// We can update the frontend series because we aren't storing the timeseries data and it's really just a regular update.
-	return nil
+func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (*types.InsightSeries, error) {
+	q := sqlf.Sprintf(findMatchingSeriesSql, args.Query, args.StepIntervalUnit, args.StepIntervalUnit)
+	rows, err := scanDataSeries(s.Query(ctx, q))
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return nil, nil
+	}
+	return &rows[0], nil
+}
+
+type UpdateFrontendSeriesArgs struct {
+	SeriesID          string
+	Query             string
+	Repositories      []string
+	StepIntervalUnit  string
+	StepIntervalValue int
+}
+
+func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, args.Repositories, args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
 }
 
 const setSeriesStatusSql = `
@@ -651,4 +682,24 @@ select id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value from insight_series
 WHERE %s
+`
+
+const countSeriesReferencesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:CountSeriesReferences
+SELECT COUNT(*) from insight_view_series
+WHERE insight_series_id = %s
+`
+
+const findMatchingSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:FindMatchinSeries
+SELECT * from insight_series
+WHERE (repositories = '{}' OR repositories is NULL)
+  AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s
+`
+
+const updateFrontendSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateFrontendSeries
+UPDATE insight_series
+SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
+WHERE series_id = %s
 `
