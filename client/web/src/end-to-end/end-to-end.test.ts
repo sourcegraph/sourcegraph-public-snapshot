@@ -894,8 +894,8 @@ describe('e2e test suite', () => {
                     sourcegraphBaseUrl + '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d'
                 )
                 // click on directory
-                await driver.page.waitForSelector('.tree-entry', { visible: true })
-                await driver.page.click('.tree-entry')
+                await driver.page.waitForSelector('[data-testid="tree-entry"]', { visible: true })
+                await driver.page.click('[data-testid="tree-entry"]')
                 await driver.assertWindowLocation(
                     '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
                 )

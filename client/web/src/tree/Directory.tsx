@@ -74,7 +74,7 @@ export const Directory: React.FunctionComponent<TreeChildProps> = (props: TreeCh
                 </div>
                 {props.loading && (
                     <div className="tree__row-loader">
-                        <LoadingSpinner className="icon-inline tree-page__entries-loader" />
+                        <LoadingSpinner className="icon-inline" />
                     </div>
                 )}
             </div>
