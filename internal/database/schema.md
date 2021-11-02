@@ -1895,6 +1895,7 @@ Contains security-relevant events with a long time horizon for storage.
  author_user_id | integer                  |           |          | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
+    "settings_global_id" btree (id DESC) WHERE user_id IS NULL AND org_id IS NULL
     "settings_org_id_idx" btree (org_id)
     "settings_user_id_idx" btree (user_id)
 Foreign-key constraints:
