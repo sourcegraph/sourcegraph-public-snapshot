@@ -82,7 +82,7 @@ func TestDocumentationDefinitions(t *testing.T) {
 	store := populateTestStore(t)
 
 	testCases := []autogold.Value{
-		autogold.Want("/github.com/sourcegraph/lsif-go/internal/index#NewIndexer", []Location{Location{
+		autogold.Want("/github.com/sourcegraph/lsif-go/internal/index#NewIndexer", []Location{{
 			DumpID: 1,
 			Path:   "internal/index/indexer.go",
 			Range: Range{
@@ -96,7 +96,7 @@ func TestDocumentationDefinitions(t *testing.T) {
 				},
 			},
 		}}),
-		autogold.Want("/github.com/sourcegraph/lsif-go/internal/gomod#versionPattern", []Location{Location{
+		autogold.Want("/github.com/sourcegraph/lsif-go/internal/gomod#versionPattern", []Location{{
 			DumpID: 1,
 			Path:   "internal/gomod/module.go",
 			Range: Range{
@@ -110,7 +110,7 @@ func TestDocumentationDefinitions(t *testing.T) {
 				},
 			},
 		}}),
-		autogold.Want("/github.com/sourcegraph/lsif-go/cmd/lsif-go#main", []Location{Location{
+		autogold.Want("/github.com/sourcegraph/lsif-go/cmd/lsif-go#main", []Location{{
 			DumpID: 1,
 			Path:   "cmd/lsif-go/main.go",
 			Range: Range{
