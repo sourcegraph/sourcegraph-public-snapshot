@@ -244,10 +244,12 @@ func scanProtects(rc io.Reader, s *protectsScanner) error {
 			return err
 		}
 	}
+	var finalizeErr error
 	if s.finalize != nil {
-		return s.finalize()
+		finalizeErr = s.finalize()
 	}
-	return nil
+	scanErr := scanner.Err()
+	return errors.CombineErrors(scanErr, finalizeErr)
 }
 
 // scanRepoIncludesExcludes converts `p4 protects` to Postgres SIMILAR TO-compatible
