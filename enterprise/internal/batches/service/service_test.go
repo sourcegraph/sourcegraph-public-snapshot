@@ -1814,6 +1814,82 @@ func TestService(t *testing.T) {
 			assertChangesetSpecsDeleted(t, s, []*btypes.ChangesetSpec{changesetSpec1, changesetSpec2})
 			assertJobsCreatedFor(t, s, []int64{workspaceIDs[0], workspaceIDs[1], workspaceIDs[2]})
 		})
+
+		t.Run("batch spec already applied", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(spec.UserID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			failedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+				StartedAt:            time.Now(),
+				FinishedAt:           time.Now(),
+				FailureMessage:       &failureMessage,
+			}
+			createJob(t, s, failedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			if err == nil {
+				t.Fatal("no error")
+			}
+			if err.Error() != "batch spec already applied" {
+				t.Fatalf("wrong error: %s", err)
+			}
+		})
+
+		t.Run("job not retryable", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := &btypes.BatchSpecWorkspace{
+				BatchSpecID: spec.ID,
+				RepoID:      rs[0].ID,
+				Steps: []batcheslib.Step{
+					{Run: "echo hello", Container: "alpine:3"},
+				},
+			}
+
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			queuedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+			}
+			createJob(t, s, queuedJob)
+
+			// RETRY
+			err := svc.RetryBatchSpecWorkspaces(ctx, []int64{ws.ID})
+			if err == nil {
+				t.Fatal("no error")
+			}
+			if !strings.Contains(err.Error(), "not retryable") {
+				t.Fatalf("wrong error: %s", err)
+			}
+		})
 	})
 }
 

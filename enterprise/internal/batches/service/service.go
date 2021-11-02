@@ -1182,8 +1182,11 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 
 	// Check that batch spec is not applied
 	_, err = tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpecID})
-	if err != store.ErrNoResults {
-		return errors.Wrap(err, "batch spec has already been applied")
+	if err != nil && err != store.ErrNoResults {
+		return errors.Wrap(err, "checking whether batch spec has been applied")
+	}
+	if err == nil {
+		return errors.New("batch spec already applied")
 	}
 
 	// Load jobs and check their state
