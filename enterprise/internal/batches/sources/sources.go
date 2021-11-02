@@ -47,7 +47,7 @@ type SourcerStore interface {
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
 	Repos() database.RepoStore
-	ExternalServices() *database.ExternalServiceStore
+	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
 }
 
@@ -126,7 +126,7 @@ func (s *sourcer) loadBatchesSource(ctx context.Context, tx SourcerStore, extern
 	return css, nil
 }
 
-func gitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
+func gitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
 	// Empty authenticators are not allowed.
 	if au == nil {
 		return nil, ErrNoPushCredentials{}
@@ -234,7 +234,7 @@ func WithSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSo
 // loadExternalService looks up all external services that are connected to the given repo.
 // The first external service to have a token configured will be returned then.
 // If no external service matching the above criteria is found, an error is returned.
-func loadExternalService(ctx context.Context, s *database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
+func loadExternalService(ctx context.Context, s database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
 	es, err := s.List(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -357,7 +357,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 }
 
 // extractCloneURL returns a remote URL from the repo, preferring HTTPS over SSH.
-func extractCloneURL(ctx context.Context, s *database.ExternalServiceStore, repo *types.Repo) (string, error) {
+func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo *types.Repo) (string, error) {
 	if len(repo.Sources) == 0 {
 		return "", errors.New("no clone URL found for repo")
 	}

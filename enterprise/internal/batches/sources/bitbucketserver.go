@@ -62,7 +62,7 @@ func newBitbucketServerSource(c *schema.BitbucketServerConnection, cf *httpcli.F
 	}, nil
 }
 
-func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store *database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
+func (s BitbucketServerSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
 	return gitserverPushConfig(ctx, store, repo, s.au)
 }
 

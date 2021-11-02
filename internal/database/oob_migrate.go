@@ -403,7 +403,7 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 
 	store := ExternalServicesWith(tx)
 
-	svcs, err := store.list(ctx, ExternalServicesListOptions{
+	svcs, err := store.List(ctx, ExternalServicesListOptions{
 		OrderByDirection: "ASC",
 		IncludeDeleted:   true,
 		LimitOffset:      &LimitOffset{Limit: m.BatchSize},
