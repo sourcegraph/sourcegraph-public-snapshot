@@ -195,6 +195,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 - Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 - Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+- Check that gitserver containers have enough CPU/memory and are not getting throttled.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-blob-load-latency).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
