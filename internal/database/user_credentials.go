@@ -160,10 +160,6 @@ type UserCredentialScope struct {
 // authenticator. If the scope already has a credential, an error will be
 // returned.
 func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
-	if Mocks.UserCredentials.Create != nil {
-		return Mocks.UserCredentials.Create(ctx, scope, credential)
-	}
-
 	id, err := keyID(ctx, s.key)
 	if err != nil {
 		return nil, err
@@ -197,10 +193,6 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 // Update updates a user credential in the database. If the credential cannot be found,
 // an error is returned.
 func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
-	if Mocks.UserCredentials.Update != nil {
-		return Mocks.UserCredentials.Update(ctx, credential)
-	}
-
 	credential.UpdatedAt = timeutil.Now()
 
 	q := sqlf.Sprintf(
@@ -229,10 +221,6 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
 func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
-	if Mocks.UserCredentials.Delete != nil {
-		return Mocks.UserCredentials.Delete(ctx, id)
-	}
-
 	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
@@ -251,10 +239,6 @@ func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
-	if Mocks.UserCredentials.GetByID != nil {
-		return Mocks.UserCredentials.GetByID(ctx, id)
-	}
-
 	q := sqlf.Sprintf(
 		"SELECT %s FROM user_credentials WHERE id = %s",
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -275,10 +259,6 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 // GetByScope returns the user credential matching the given scope, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
-	if Mocks.UserCredentials.GetByScope != nil {
-		return Mocks.UserCredentials.GetByScope(ctx, scope)
-	}
-
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -331,10 +311,6 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 
 // List returns all user credentials matching the given options.
 func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
-	if Mocks.UserCredentials.List != nil {
-		return Mocks.UserCredentials.List(ctx, opts)
-	}
-
 	preds := []*sqlf.Query{}
 	if opts.Scope.Domain != "" {
 		preds = append(preds, sqlf.Sprintf("domain = %s", opts.Scope.Domain))
