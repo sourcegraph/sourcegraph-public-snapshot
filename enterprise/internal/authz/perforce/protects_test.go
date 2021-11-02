@@ -78,8 +78,6 @@ func TestConvertToGlobMatch(t *testing.T) {
 		want:  "./**.c",
 		shouldMatch: []string{
 			"./file.c", "./dir/file.c",
-			// TODO: unsure if this needs to be matched
-			// "file.c", "dir/file.c"
 		},
 	}, {
 		name:  "//gra*/dep*",
@@ -87,8 +85,6 @@ func TestConvertToGlobMatch(t *testing.T) {
 		want:  `//gra*/dep*{/,}`,
 		shouldMatch: []string{
 			"//graph/depot/", "//graphs/depots",
-			// TODO: unsure if this needs to be matched
-			// "gravity/deposits",
 		},
 		shouldNotMatch: []string{"//graph/depot/release1/"},
 	}, {
