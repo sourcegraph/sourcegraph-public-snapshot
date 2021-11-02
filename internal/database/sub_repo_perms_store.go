@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -27,7 +26,7 @@ type SubRepoPermsStore struct {
 }
 
 // SubRepoPerms returns a new SubRepoPermsStore with the given parameters.
-func SubRepoPerms(db dbutil.DB, clock func() time.Time) *SubRepoPermsStore {
+func SubRepoPerms(db dbutil.DB) *SubRepoPermsStore {
 	return &SubRepoPermsStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
