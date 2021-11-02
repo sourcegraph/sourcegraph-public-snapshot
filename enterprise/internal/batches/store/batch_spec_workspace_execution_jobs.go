@@ -428,60 +428,6 @@ WHERE
 	id = %s
 `
 
-// RetryBatchSpecWorkspaceExecutionJobs retrys the matching
-// BatchSpecWorkspaceExecutionJobs.
-//
-// The returned list of records may not match the list of the given IDs, if
-// some of the records were not completed, failed or errored.
-func (s *Store) RetryBatchSpecWorkspaceExecutionJobs(ctx context.Context, ids []int64) (err error) {
-	ctx, endObservation := s.operations.retryBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
-	defer endObservation(1, observation.Args{})
-
-	if len(ids) == 0 {
-		return errors.New("no IDs given")
-	}
-
-	q := sqlf.Sprintf(
-		retryBatchSpecWorkspaceExecutionJobsQueryFmtstr,
-		// IDs
-		pq.Array(ids),
-		// Retryable states
-		btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
-		btypes.BatchSpecWorkspaceExecutionJobStateErrored,
-		btypes.BatchSpecWorkspaceExecutionJobStateFailed,
-		// New state
-		btypes.BatchSpecWorkspaceExecutionJobStateQueued,
-		s.now(),
-		sqlf.Join(BatchSpecWorkspaceExecutionJobColumns.ToSqlf(), ", "),
-	)
-
-	return s.Exec(ctx, q)
-}
-
-var retryBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:RetryBatchSpecWorkspaceExecutionJobs
-WITH candidates AS (
-	SELECT
-		batch_spec_workspace_execution_jobs.id
-	FROM
-		batch_spec_workspace_execution_jobs
-	WHERE
-		batch_spec_workspace_execution_jobs.id = ANY (%s) -- ids
-		AND
-		batch_spec_workspace_execution_jobs.state IN (%s, %s, %s)
-	ORDER BY id
-	FOR UPDATE
-)
-UPDATE
-	batch_spec_workspace_execution_jobs
-SET
-	cancel = false,
-	state = %s,
-	updated_at = %s
-WHERE
-	id IN (SELECT id FROM candidates)
-`
-
 func ScanBatchSpecWorkspaceExecutionJob(wj *btypes.BatchSpecWorkspaceExecutionJob, s dbutil.Scanner) error {
 	var executionLogs []dbworkerstore.ExecutionLogEntry
 	var failureMessage string
