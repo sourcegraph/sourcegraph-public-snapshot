@@ -86,13 +86,13 @@ func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bo
 // verification email.
 func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email string) error {
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+	if err := CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
 		return err
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
-	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
+	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) == nil; !isSiteAdmin {
 		abused, reason, err := checkEmailAbuse(ctx, db, userID)
 		if err != nil {
 			return err

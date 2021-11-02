@@ -37,7 +37,7 @@ func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin b
 	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
-	currentUser, err := CurrentUser(ctx, db)
+	currentUser, err := CurrentUser(ctx, database.NewDB(db))
 	if err != nil {
 		return err
 	}

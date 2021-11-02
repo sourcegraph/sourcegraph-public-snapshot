@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -65,7 +66,7 @@ var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforc
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
 	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
 	// only allow site admins to see it.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return "", err
 	}
 

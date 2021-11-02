@@ -161,7 +161,7 @@ func (r *siteResolver) AccessTokens(ctx context.Context, args *struct {
 }) (*accessTokenConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all access tokens. This is safe as the
 	// token values themselves are not stored in our database.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil, err
 	}
 

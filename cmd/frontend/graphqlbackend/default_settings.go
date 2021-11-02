@@ -8,6 +8,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -87,7 +88,7 @@ func (r *defaultSettingsResolver) LatestSettings(ctx context.Context) (*settings
 		return nil, err
 	}
 	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: string(contents)}
-	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{database.NewDB(r.db), &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }

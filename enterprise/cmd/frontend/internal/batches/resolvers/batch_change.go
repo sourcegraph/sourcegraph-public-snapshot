@@ -287,7 +287,7 @@ func (r *batchChangeResolver) BatchSpecs(
 	args *graphqlbackend.ListBatchSpecArgs,
 ) (graphqlbackend.BatchSpecConnectionResolver, error) {
 	// TODO(ssbc): currently admin only.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.DB()); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.store.DB())); err != nil {
 		return nil, err
 	}
 

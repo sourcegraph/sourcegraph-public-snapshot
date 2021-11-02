@@ -81,7 +81,7 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 	return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
 }
 
-func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
+func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
 	if namespaceUserID != 0 && namespaceOrgID != 0 {
 		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
 	}
@@ -107,7 +107,7 @@ func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db dbut
 		return errors.New("search context user does not match current user")
 	} else if namespaceOrgID != 0 {
 		// Only members of the org have write access to org search contexts
-		membership, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, namespaceOrgID, user.ID)
+		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, namespaceOrgID, user.ID)
 		if err != nil {
 			return err
 		}
@@ -165,7 +165,7 @@ func validateSearchContextDoesNotExist(ctx context.Context, db dbutil.DB, search
 	return err
 }
 
-func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot override global search context")
 	}
@@ -195,14 +195,14 @@ func CreateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, err
 	}
 
-	searchContext, err = database.SearchContexts(db).CreateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	searchContext, err = db.SearchContexts().CreateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
 	return searchContext, nil
 }
 
-func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
+func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
 	if IsGlobalSearchContext(searchContext) {
 		return nil, errors.New("cannot update global search context")
 	}
@@ -227,14 +227,14 @@ func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db dbutil.D
 		return nil, err
 	}
 
-	searchContext, err = database.SearchContexts(db).UpdateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	searchContext, err = db.SearchContexts().UpdateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
 	return searchContext, nil
 }
 
-func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types.SearchContext) error {
+func DeleteSearchContext(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
 	if IsAutoDefinedSearchContext(searchContext) {
 		return errors.New("cannot delete auto-defined search context")
 	}
@@ -244,7 +244,7 @@ func DeleteSearchContext(ctx context.Context, db dbutil.DB, searchContext *types
 		return err
 	}
 
-	return database.SearchContexts(db).DeleteSearchContext(ctx, searchContext.ID)
+	return db.SearchContexts().DeleteSearchContext(ctx, searchContext.ID)
 }
 
 func GetAutoDefinedSearchContexts(ctx context.Context, db database.DB) ([]*types.SearchContext, error) {
