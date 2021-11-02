@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
 import * as Monaco from 'monaco-editor'
@@ -17,6 +18,7 @@ import { SearchPatternType } from '../graphql-operations'
 
 import { LATEST_VERSION } from './results/StreamingSearchResults'
 import { StreamingSearchResultsList, StreamingSearchResultsListProps } from './results/StreamingSearchResultsList'
+import styles from './SearchConsolePage.module.scss'
 import { useQueryIntelligence, useQueryDiagnostics } from './useQueryIntelligence'
 
 import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
@@ -155,7 +157,7 @@ export const SearchConsolePage: React.FunctionComponent<SearchConsolePageProps> 
                         value={searchQuery.value}
                     />
                 </div>
-                <div className="flex-1 p-1 search-console-page__results">
+                <div className={classNames('flex-1 p-1', styles.results)}>
                     {results &&
                         (results.state === 'loading' ? (
                             <LoadingSpinner />

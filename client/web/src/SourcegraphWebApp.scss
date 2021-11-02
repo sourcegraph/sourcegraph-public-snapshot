@@ -81,12 +81,8 @@ body,
 @import './Layout';
 @import './api/ApiConsole';
 @import './global/GlobalDebug';
-@import './search/SearchConsolePage';
 @import './search/ShepherdTour';
-@import './search/results/SearchResultsInfoBar';
 @import './search/results/progress/StreamingProgress.scss';
-@import './settings/MonacoSettingsEditor';
-@import './settings/SettingsFile';
 @import './tree/Tree';
 @import './repo/RepoContainer';
 @import './components/Dialog';
