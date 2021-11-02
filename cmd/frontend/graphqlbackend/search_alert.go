@@ -123,7 +123,6 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 	globbing := getBoolPtr(r.UserSettings.SearchGlobbing, false)
 
 	repoFilters, minusRepoFilters := q.Repositories()
-	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 	contextFilters, _ := q.StringValues(query.FieldContext)
 	onlyForks, noForks, forksNotSet := false, false, true
 	if fork := q.Fork(); fork != nil {
@@ -134,29 +133,14 @@ func (r *searchResolver) alertForNoResolvedRepos(ctx context.Context, q query.Q)
 	archived := q.Archived()
 	archivedNotSet := archived == nil
 
-	// Handle repogroup-only scenarios.
-	if len(repoFilters) == 0 && len(repoGroupFilters) == 0 && len(minusRepoFilters) == 0 {
+	if len(repoFilters) == 0 && len(minusRepoFilters) == 0 {
 		return &searchAlert{
 			prometheusType: "no_resolved_repos__no_repositories",
 			title:          "Add repositories or connect repository hosts",
 			description:    "There are no repositories to search. Add an external service connection to your code host.",
 		}
 	}
-	if len(repoFilters) == 0 && len(repoGroupFilters) == 1 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__repogroup_empty",
-			title:          fmt.Sprintf("Add repositories to repogroup:%s to see results", repoGroupFilters[0]),
-			description:    fmt.Sprintf("The repository group %q is empty. See the documentation for configuration and troubleshooting.", repoGroupFilters[0]),
-		}
-	}
-	if len(repoFilters) == 0 && len(repoGroupFilters) > 1 {
-		return &searchAlert{
-			prometheusType: "no_resolved_repos__repogroup_none_in_common",
-			title:          "Repository groups have no repositories in common",
-			description:    "No repository exists in all of the specified repository groups.",
-		}
-	}
-	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && (len(repoFilters) > 0 || len(repoGroupFilters) > 0) {
+	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
 		proposedQueries := []*searchQueryDescription{{
 			description: "search in the global context",
@@ -269,9 +253,9 @@ func (r *searchResolver) errorForOverRepoLimit(ctx context.Context) *errOverRepo
 	// nothing for now.
 
 	var proposedQueries []*searchQueryDescription
-	description := "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results."
+	description := "Use a 'repo:' or 'context:' filter to narrow your search and see results."
 	if envvar.SourcegraphDotComMode() {
-		description = "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
+		description = "Use a 'repo:' or 'context:' filter to narrow your search and see results or set up a self-hosted Sourcegraph instance to search an unlimited number of repositories."
 	}
 	if backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil {
 		description += " As a site admin, you can increase the limit by changing maxReposToSearch in site config."
@@ -626,13 +610,6 @@ func alertForInvalidRevision(revision string) *searchAlert {
 	}
 }
 
-func alertForRepoGroupsDeprecation() *searchAlert {
-	return &searchAlert{
-		title:       "Repogroups are deprecated",
-		description: "Repogroups are deprecated in the current (3.33) release and will be removed in the following (3.34) release. Learn more about the deprecation and how to migrate repogroups to search contexts in our blog post: https://about.sourcegraph.com/blog/introducing-search-contexts.",
-	}
-}
-
 type alertObserver struct {
 	// Inputs are used to generate alert messages based on the query.
 	Inputs *run.SearchInputs
@@ -678,10 +655,6 @@ func (o *alertObserver) update(alert *searchAlert) {
 //  Done returns the highest priority alert and a multierror.Error containing
 //  all errors that could not be converted to alerts.
 func (o *alertObserver) Done(stats *streaming.Stats) (*searchAlert, error) {
-	if repoGroupFilters, _ := o.Inputs.Query.StringValues(query.FieldRepoGroup); len(repoGroupFilters) > 0 {
-		o.update(alertForRepoGroupsDeprecation())
-	}
-
 	if !o.hasResults && o.Inputs.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.Inputs.OriginalQuery) {
 		o.update(alertForStructuralSearchNotSet(o.Inputs.OriginalQuery))
 	}

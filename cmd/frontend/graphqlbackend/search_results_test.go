@@ -1025,7 +1025,6 @@ func TestIsGlobalSearch(t *testing.T) {
 		{name: "user search context", searchQuery: "foo context:@userA", mode: search.DefaultMode},
 		{name: "structural search", searchQuery: "foo", patternType: query.SearchTypeStructural, mode: search.DefaultMode},
 		{name: "repo", searchQuery: "foo repo:sourcegraph/sourcegraph", mode: search.DefaultMode},
-		{name: "repogroup", searchQuery: "foo repogroup:grp", mode: search.DefaultMode},
 		{name: "repohasfile", searchQuery: "foo repohasfile:bar", mode: search.DefaultMode},
 		{name: "global search context", searchQuery: "foo context:global", mode: search.ZoektGlobalSearch},
 		{name: "global search", searchQuery: "foo", mode: search.ZoektGlobalSearch},
