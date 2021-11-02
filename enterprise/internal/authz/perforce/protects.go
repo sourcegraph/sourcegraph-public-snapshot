@@ -312,19 +312,19 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 // authorization, including sub-repo perms and exact depot-as-repo matches.
 func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
 	// Get glob equivalents of all depots
-	configuredDepotMatches := make([]globMatch, len(configuredDepots))
-	for i, depot := range configuredDepots {
+	var configuredDepotMatches []globMatch
+	for _, depot := range configuredDepots {
 		// treat depots as wildcards
 		m, err := convertToGlobMatch(string(depot) + "**")
 		if err != nil {
-			log15.Error("unexpected failure to convert depot to pattern",
+			log15.Error("unexpected failure to convert depot to pattern - using a no-op pattern",
 				"depot", depot,
 				"error", err)
 			continue
 		}
 		// preserve original name by overriding the wildcard version of the original text
 		m.original = string(depot)
-		configuredDepotMatches[i] = m
+		configuredDepotMatches = append(configuredDepotMatches, m)
 	}
 
 	// relevantDepots determines the set of configured depots relevant to the given globMatch
