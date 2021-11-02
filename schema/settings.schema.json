@@ -181,14 +181,6 @@
             "pointer": true
           }
         },
-        "acceptSearchSuggestionOnEnter": {
-          "description": "Whether the search bar should select completion suggestions when pressing enter",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
