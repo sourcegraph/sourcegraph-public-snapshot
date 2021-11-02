@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -65,23 +67,24 @@ type InsightQueryArgs struct {
 // Get returns all matching insight series for insights without any other associations (such as dashboards).
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
 	preds := make([]*sqlf.Query, 0, 4)
+	var viewConditions []*sqlf.Query
 
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
 		for _, id := range args.UniqueIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(args.UniqueID) > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id = %s", args.UniqueID))
 	}
 	if args.DashboardID > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 	if !args.WithoutAuthorization {
-		preds = append(preds, sqlf.Sprintf("iv.id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
 	}
 
 	cursor := insightViewPageCursor{
@@ -89,26 +92,28 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 		limit: args.Limit,
 	}
 
-	q := sqlf.Sprintf(getInsightByViewSql, insightViewQuery(cursor), sqlf.Join(preds, "\n AND"))
+	q := sqlf.Sprintf(getInsightByViewSql, insightViewQuery(cursor, viewConditions), sqlf.Join(preds, "\n AND"))
+	log15.Info("GetInsightViews", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
 // GetAll returns all matching viewable insight series for the provided context, including associated insights (dashboards).
 func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
 	preds := make([]*sqlf.Query, 0, 3)
+	var viewConditions []*sqlf.Query
 
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
 		for _, id := range args.UniqueIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(args.UniqueID) > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id = %s", args.UniqueID))
 	}
 	if args.DashboardID > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 
@@ -118,9 +123,10 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 
 	q := sqlf.Sprintf(getInsightsVisibleToUserSql,
-		insightViewQuery(cursor),
+		insightViewQuery(cursor, viewConditions),
 		visibleDashboardsQuery(args.UserID, args.OrgID),
 		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
+	log15.Info("GetInsightViews", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -376,12 +382,12 @@ type insightViewPageCursor struct {
 	limit int
 }
 
-func insightViewQuery(cursor insightViewPageCursor) *sqlf.Query {
-	var cond *sqlf.Query
+func insightViewQuery(cursor insightViewPageCursor, viewConditions []*sqlf.Query) *sqlf.Query {
+	var cond []*sqlf.Query
 	if cursor.after != "" {
-		cond = sqlf.Sprintf("unique_id > %s", cursor.after)
+		cond = append(cond, sqlf.Sprintf("unique_id > %s", cursor.after))
 	} else {
-		cond = sqlf.Sprintf("TRUE")
+		cond = append(cond, sqlf.Sprintf("TRUE"))
 	}
 	var limit *sqlf.Query
 	if cursor.limit > 0 {
@@ -389,7 +395,11 @@ func insightViewQuery(cursor insightViewPageCursor) *sqlf.Query {
 	} else {
 		limit = sqlf.Sprintf("")
 	}
-	return sqlf.Sprintf(insightViewQuerySql, cond, limit)
+	cond = append(cond, viewConditions...)
+
+	q := sqlf.Sprintf(insightViewQuerySql, sqlf.Join(cond, "AND"), limit)
+	log15.Info("insightViewQuery", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
+	return q
 }
 
 const insightViewQuerySql = `
