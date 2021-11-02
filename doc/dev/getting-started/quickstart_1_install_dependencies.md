@@ -1,4 +1,4 @@
-# Quickstart step 1: Install dependencies
+q# Quickstart step 1: Install dependencies
 
 Sourcegraph has the following dependencies:
 
@@ -70,8 +70,7 @@ Below are instructions to install these dependencies:
           hash psql
           ```
           
-          If this command emits no output, you are free to move to the next step. Otherwise, you installed a Homebrew recipe that does not modify your `$PATH` by default.
-          Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`.
+          If this command emits no output, you are free to move to the next step. Otherwise, you installed a Homebrew recipe that does not modify your `$PATH` by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`.
           Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
           ```
