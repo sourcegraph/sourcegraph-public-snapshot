@@ -88,28 +88,27 @@ func hasPerforceWildcard(match string) bool {
 // PostgreSQL's SIMILAR TO equivalents for Perforce file match syntaxes.
 //
 // See: https://www.postgresql.org/docs/12/functions-matching.html#FUNCTIONS-SIMILARTO-REGEXP
-var postgresMatchSyntax = map[string]string{
+var postgresMatchSyntax = strings.NewReplacer(
 	// Matches anything, including directory slashes.
-	perforceWildcardMatchAll: "%",
+	perforceWildcardMatchAll, "%",
 	// Character class that matches anything except another '/' supported.
-	perforceWildcardMatchDirectory: "[^/]+",
-}
+	perforceWildcardMatchDirectory, "[^/]+",
+)
 
 // convertToPostgresMatch converts supported patterns to PostgreSQL equivalents.
 func convertToPostgresMatch(match string) string {
-	for perforce, postgres := range postgresMatchSyntax {
-		match = strings.ReplaceAll(match, perforce, postgres)
-	}
-	return match
+	return postgresMatchSyntax.Replace(match)
 }
 
-// Glob equivalents for Perforce file match syntaxes.
-var globMatchSyntax = map[string]string{
+// Glob syntax equivalents for _glob-escaped_ Perforce file match syntaxes.
+//
+// See: authz.SubRepoPermissions
+var globMatchSyntax = strings.NewReplacer(
 	// Matches any sequence of characters
-	perforceWildcardMatchAll: "**",
+	glob.QuoteMeta(perforceWildcardMatchAll), "**",
 	// Matches any sequence of non-separator characters
-	perforceWildcardMatchDirectory: "*",
-}
+	glob.QuoteMeta(perforceWildcardMatchDirectory), "*",
+)
 
 type globMatch struct {
 	glob.Glob
@@ -126,9 +125,7 @@ func convertToGlobMatch(match string) (globMatch, error) {
 	match = glob.QuoteMeta(match)
 
 	// Replace glob-escaped Perforce syntax with glob syntax
-	for perforce, globSyntax := range globMatchSyntax {
-		match = strings.ReplaceAll(match, glob.QuoteMeta(perforce), globSyntax)
-	}
+	match = globMatchSyntax.Replace(match)
 
 	// Allow a trailing '/' on trailing single wildcards
 	if strings.HasSuffix(match, "*") && !strings.HasSuffix(match, "**") && !strings.HasSuffix(match, `\*`) {
@@ -298,10 +295,10 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 		finalize: func() error {
 			// Treat all Contains paths as prefixes.
 			for i, include := range perms.IncludeContains {
-				perms.IncludeContains[i] = extsvc.RepoID(string(include) + postgresMatchSyntax[perforceWildcardMatchAll])
+				perms.IncludeContains[i] = extsvc.RepoID(convertToPostgresMatch(string(include) + perforceWildcardMatchAll))
 			}
 			for i, exclude := range perms.ExcludeContains {
-				perms.ExcludeContains[i] = extsvc.RepoID(string(exclude) + postgresMatchSyntax[perforceWildcardMatchAll])
+				perms.ExcludeContains[i] = extsvc.RepoID(convertToPostgresMatch(string(exclude) + perforceWildcardMatchAll))
 			}
 			return nil
 		},
