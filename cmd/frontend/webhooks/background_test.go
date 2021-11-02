@@ -2,13 +2,14 @@ package webhooks
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 )
 
 func TestPurgeHandler(t *testing.T) {
