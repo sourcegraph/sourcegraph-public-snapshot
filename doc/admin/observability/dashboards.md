@@ -12621,170 +12621,565 @@ Query: `sum by (op)(increase(src_apiworker_command_errors_total{op=~"teardown.*"
 
 <br />
 
-### Executor: Container monitoring (not available on server)
+### Executor: Executor: Compute instance metrics
 
-#### executor: container_missing
+#### executor: node_cpu_utilization
 
-<p class="subtitle">Container missing</p>
+<p class="subtitle">CPU utilization (minus idle/iowait)</p>
 
-This value is the number of times a container has not been seen for more than one minute. If you observe this
-value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
-
-- **Kubernetes:**
-	- Determine if the pod was OOM killed using `kubectl describe pod (executor|sourcegraph-code-intel-indexers|executor-batches)` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p (executor|sourcegraph-code-intel-indexers|executor-batches)`.
-- **Docker Compose:**
-	- Determine if the pod was OOM killed using `docker inspect -f '{{json .State}}' (executor|sourcegraph-code-intel-indexers|executor-batches)` (look for `"OOMKilled":true`) and, if so, consider increasing the memory limit of the (executor|sourcegraph-code-intel-indexers|executor-batches) container in `docker-compose.yml`.
-	- Check the logs before the container restarted to see if there are `panic:` messages or similar using `docker logs (executor|sourcegraph-code-intel-indexers|executor-batches)` (note this will include logs from the previous and currently running container).
+Indicates the amount of CPU time excluding idle and iowait time, divided by the number of cores, as a percentage.
 
 This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100700` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `count by(name) ((time() - container_last_seen{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}) > 60)`
+Query: `sum(rate(node_cpu_seconds_total{job="sourcegraph-code-intel-indexer-nodes",mode!~"(idle|iowait)",instance=~"$instance"}[$__rate_interval])) by(instance) / count(node_cpu_seconds_total{job="sourcegraph-code-intel-indexer-nodes",mode="system",instance=~"$instance"}) by (instance) * 100`
 
 </details>
 
 <br />
 
-#### executor: container_cpu_usage
+#### executor: node_cpu_saturation_cpu_wait
 
-<p class="subtitle">Container cpu usage total (1m average) across all cores by instance</p>
+<p class="subtitle">CPU saturation (time waiting)</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-container-cpu-usage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100701` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}`
-
-</details>
-
-<br />
-
-#### executor: container_memory_usage
-
-<p class="subtitle">Container memory usage by instance</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#executor-container-memory-usage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100702` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `cadvisor_container_memory_usage_percentage_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}`
-
-</details>
-
-<br />
-
-#### executor: fs_io_operations
-
-<p class="subtitle">Filesystem reads and writes rate by instance over 1h</p>
-
-This value indicates the number of filesystem read and write operations by containers of this service.
-When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+Indicates the average summed time a number of (but strictly not all) non-idle processes spent waiting for CPU time. If this is higher than normal, then the CPU is underpowered for the workload and more powerful machines should be provisioned. This only represents a "less-than-all processes" time, because for processes to be waiting for CPU time there must be other process(es) consuming CPU time.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100703` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100701` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Core application team](https://handbook.sourcegraph.com/engineering/core-application).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by(name) (rate(container_fs_reads_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[1h]) + rate(container_fs_writes_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[1h]))`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])`
 
 </details>
 
 <br />
 
-### Executor: Provisioning indicators (not available on server)
+#### executor: node_memory_utilization
 
-#### executor: provisioning_container_cpu_usage_long_term
+<p class="subtitle">Memory utilization</p>
 
-<p class="subtitle">Container cpu usage total (90th percentile over 1d) across all cores by instance</p>
+Indicates the amount of available memory (including cache and buffers) as a percentage. Consistently high numbers are generally fine so long memory saturation figures are within acceptable ranges, these figures may be more useful for informing executor provisioning decisions, such as increasing worker parallelism, down-sizing machines etc.
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100710` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(1 - sum(node_memory_MemAvailable_bytes{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}) by (instance) / sum(node_memory_MemTotal_bytes{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}) by (instance)) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_memory_saturation_vmeff
+
+<p class="subtitle">Memory saturation (vmem efficiency)</p>
+
+Indicates the efficiency of page reclaim, calculated as pgsteal/pgscan. Optimal figures are short spikes of near 100% and above, indicating that a high ratio of scanned pages are actually being freed, or exactly 0%, indicating that pages arent being scanned as there is no memory pressure. Sustained numbers >~100% may be sign of imminent memory exhaustion, while sustained 0% < x < ~100% figures are very serious.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100711` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `(rate(node_vmstat_pgsteal_anon{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_memory_saturation_pressure_stalled
+
+<p class="subtitle">Memory saturation (fully stalled)</p>
+
+Indicates the amount of time all non-idle processes were stalled waiting on memory operations to complete. This is often correlated with vmem efficiency ratio when pressure on available memory is high. If they`re not correlated, this could indicate issues with the machine hardware and/or configuration.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100712` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_memory_stalled_seconds_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_utilization
+
+<p class="subtitle">Disk IO utilization (percentage time spent in IO)</p>
+
+Indicates the percentage of time a disk was busy. If this is less than 100%, then the disk has spare utilization capacity. However, a value of 100% does not necesarily indicate the disk is at max capacity. For single, serial request-serving devices, 100% may indicate maximum saturation, but for SSDs and RAID arrays this is less likely to be the case, as they are capable of serving multiple requests in parallel, other metrics such as throughput and request queue size should be factored in.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100720` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_saturation
+
+<p class="subtitle">Disk IO saturation (avg IO queue size)</p>
+
+Indicates the number of outstanding/queued IO requests. High but short-lived queue sizes may not present an issue, but if theyre consistently/often high and/or monotonically increasing, the disk may be failing or simply too slow for the amount of activity required. Consider replacing the drive(s) with SSDs if they are not already and/or replacing the faulty drive(s), if any.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100721` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_saturation_pressure_full
+
+<p class="subtitle">Disk IO saturation (avg time of all processes stalled)</p>
+
+Indicates the averaged amount of time for which all non-idle processes were stalled waiting for IO to complete simultaneously aka where no processes could make progress.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100722` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_io_stalled_seconds_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_utilization
+
+<p class="subtitle">Network IO utilization (Rx)</p>
+
+Indicates the average summed receiving throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100730` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_bytes_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) by(instance) * 8`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO saturation (Rx packets dropped)</p>
+
+Number of dropped received packets. This can happen if the receive queues/buffers become full due to slow packet processing throughput. The queues/buffers could be configured to be larger as a stop-gap but the processing application should be investigated as soon as possible. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=not%20otherwise%20counted.-,rx_dropped,-Number%20of%20packets
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100731` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_drop_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO errors (Rx)</p>
+
+Number of bad/malformed packets received. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=excluding%20the%20FCS.-,rx_errors,-Total%20number%20of
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100732` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_errs_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_utilization
+
+<p class="subtitle">Network IO utilization (Tx)</p>
+
+Indicates the average summed transmitted throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100740` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_bytes_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) by(instance) * 8`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO saturation (Tx packets dropped)</p>
+
+Number of dropped transmitted packets. This can happen if the receiving side`s receive queues/buffers become full due to slow packet processing throughput, the network link is congested etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100741` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_drop_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO errors (Tx)</p>
+
+Number of packet transmission errors. This is distinct from tx packet dropping, and can indicate a failing NIC, improperly configured network options anywhere along the line, signal noise etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100742` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_errs_total{job="sourcegraph-code-intel-indexer-nodes",instance=~"$instance"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+### Executor: Executor: Docker Registry Mirror instance metrics
+
+#### executor: node_cpu_utilization
+
+<p class="subtitle">CPU utilization (minus idle/iowait)</p>
+
+Indicates the amount of CPU time excluding idle and iowait time, divided by the number of cores, as a percentage.
+
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100800` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[1d])`
+Query: `sum(rate(node_cpu_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",mode!~"(idle|iowait)",instance=~".*"}[$__rate_interval])) by(instance) / count(node_cpu_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",mode="system",instance=~".*"}) by (instance) * 100`
 
 </details>
 
 <br />
 
-#### executor: provisioning_container_memory_usage_long_term
+#### executor: node_cpu_saturation_cpu_wait
 
-<p class="subtitle">Container memory usage (1d maximum) by instance</p>
+<p class="subtitle">CPU saturation (time waiting)</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
+Indicates the average summed time a number of (but strictly not all) non-idle processes spent waiting for CPU time. If this is higher than normal, then the CPU is underpowered for the workload and more powerful machines should be provisioned. This only represents a "less-than-all processes" time, because for processes to be waiting for CPU time there must be other process(es) consuming CPU time.
+
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100801` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[1d])`
+Query: `rate(node_pressure_cpu_waiting_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])`
 
 </details>
 
 <br />
 
-#### executor: provisioning_container_cpu_usage_short_term
+#### executor: node_memory_utilization
 
-<p class="subtitle">Container cpu usage total (5m maximum) across all cores by instance</p>
+<p class="subtitle">Memory utilization</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
+Indicates the amount of available memory (including cache and buffers) as a percentage. Consistently high numbers are generally fine so long memory saturation figures are within acceptable ranges, these figures may be more useful for informing executor provisioning decisions, such as increasing worker parallelism, down-sizing machines etc.
+
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100810` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])`
+Query: `(1 - sum(node_memory_MemAvailable_bytes{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}) by (instance) / sum(node_memory_MemTotal_bytes{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}) by (instance)) * 100`
 
 </details>
 
 <br />
 
-#### executor: provisioning_container_memory_usage_short_term
+#### executor: node_memory_saturation_vmeff
 
-<p class="subtitle">Container memory usage (5m maximum) by instance</p>
+<p class="subtitle">Memory saturation (vmem efficiency)</p>
 
-Refer to the [alert solutions reference](./alert_solutions.md#executor-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
+Indicates the efficiency of page reclaim, calculated as pgsteal/pgscan. Optimal figures are short spikes of near 100% and above, indicating that a high ratio of scanned pages are actually being freed, or exactly 0%, indicating that pages arent being scanned as there is no memory pressure. Sustained numbers >~100% may be sign of imminent memory exhaustion, while sustained 0% < x < ~100% figures are very serious.
+
+This panel has no related alerts.
 
 To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100811` on your Sourcegraph instance.
 
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^(executor|sourcegraph-code-intel-indexers|executor-batches).*"}[5m])`
+Query: `(rate(node_vmstat_pgsteal_anon{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_direct{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_file{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgsteal_kswapd{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) / (rate(node_vmstat_pgscan_anon{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_direct{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_file{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]) + rate(node_vmstat_pgscan_kswapd{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) * 100`
+
+</details>
+
+<br />
+
+#### executor: node_memory_saturation_pressure_stalled
+
+<p class="subtitle">Memory saturation (fully stalled)</p>
+
+Indicates the amount of time all non-idle processes were stalled waiting on memory operations to complete. This is often correlated with vmem efficiency ratio when pressure on available memory is high. If they`re not correlated, this could indicate issues with the machine hardware and/or configuration.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100812` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_memory_stalled_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_utilization
+
+<p class="subtitle">Disk IO utilization (percentage time spent in IO)</p>
+
+Indicates the percentage of time a disk was busy. If this is less than 100%, then the disk has spare utilization capacity. However, a value of 100% does not necesarily indicate the disk is at max capacity. For single, serial request-serving devices, 100% may indicate maximum saturation, but for SSDs and RAID arrays this is less likely to be the case, as they are capable of serving multiple requests in parallel, other metrics such as throughput and request queue size should be factored in.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100820` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_saturation
+
+<p class="subtitle">Disk IO saturation (avg IO queue size)</p>
+
+Indicates the number of outstanding/queued IO requests. High but short-lived queue sizes may not present an issue, but if theyre consistently/often high and/or monotonically increasing, the disk may be failing or simply too slow for the amount of activity required. Consider replacing the drive(s) with SSDs if they are not already and/or replacing the faulty drive(s), if any.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100821` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(label_replace(label_replace(rate(node_disk_io_time_weighted_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval]), "disk", "$1", "device", "^([^d].+)"), "disk", "ignite", "device", "dm-.*")) by(instance,disk)`
+
+</details>
+
+<br />
+
+#### executor: node_io_disk_saturation_pressure_full
+
+<p class="subtitle">Disk IO saturation (avg time of all processes stalled)</p>
+
+Indicates the averaged amount of time for which all non-idle processes were stalled waiting for IO to complete simultaneously aka where no processes could make progress.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100822` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(node_pressure_io_stalled_seconds_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_utilization
+
+<p class="subtitle">Network IO utilization (Rx)</p>
+
+Indicates the average summed receiving throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100830` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_bytes_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) by(instance) * 8`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO saturation (Rx packets dropped)</p>
+
+Number of dropped received packets. This can happen if the receive queues/buffers become full due to slow packet processing throughput. The queues/buffers could be configured to be larger as a stop-gap but the processing application should be investigated as soon as possible. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=not%20otherwise%20counted.-,rx_dropped,-Number%20of%20packets
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100831` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_drop_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO errors (Rx)</p>
+
+Number of bad/malformed packets received. https://www.kernel.org/doc/html/latest/networking/statistics.html#:~:text=excluding%20the%20FCS.-,rx_errors,-Total%20number%20of
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100832` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_receive_errs_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_utilization
+
+<p class="subtitle">Network IO utilization (Tx)</p>
+
+Indicates the average summed transmitted throughput of all network interfaces. This is often predominantly composed of the WAN/internet-connected interface, and knowing normal/good figures depends on knowing the bandwidth of the underlying hardware and the workloads.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100840` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_bytes_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) by(instance) * 8`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO saturation (Tx packets dropped)</p>
+
+Number of dropped transmitted packets. This can happen if the receiving side`s receive queues/buffers become full due to slow packet processing throughput, the network link is congested etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100841` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_drop_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) by(instance)`
+
+</details>
+
+<br />
+
+#### executor: node_io_network_saturation
+
+<p class="subtitle">Network IO errors (Tx)</p>
+
+Number of packet transmission errors. This is distinct from tx packet dropping, and can indicate a failing NIC, improperly configured network options anywhere along the line, signal noise etc.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100842` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `sum(rate(node_network_transmit_errs_total{job="sourcegraph-code-intel-indexer-docker-registry-mirror-nodes",instance=~".*"}[$__rate_interval])) by(instance)`
 
 </details>
 
@@ -12827,27 +13222,6 @@ To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=100901`
 <summary>Technical details</summary>
 
 Query: `max by(instance) (go_gc_duration_seconds{job=~".*(executor|sourcegraph-code-intel-indexers|executor-batches)"})`
-
-</details>
-
-<br />
-
-### Executor: Kubernetes monitoring (only available on Kubernetes)
-
-#### executor: pods_available_percentage
-
-<p class="subtitle">Percentage pods available</p>
-
-Refer to the [alert solutions reference](./alert_solutions.md#executor-pods-available-percentage) for 1 alert related to this panel.
-
-To see this panel, visit `/-/debug/grafana/d/executor/executor?viewPanel=101000` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code-intel team](https://handbook.sourcegraph.com/engineering/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by(app) (up{app=~".*(executor|sourcegraph-code-intel-indexers|executor-batches)"}) / count by (app) (up{app=~".*(executor|sourcegraph-code-intel-indexers|executor-batches)"}) * 100`
 
 </details>
 
