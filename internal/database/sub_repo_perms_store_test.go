@@ -167,12 +167,13 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := map[api.RepoID]authz.SubRepoPermissions{
-		1: {
+
+	want := map[api.RepoName]authz.SubRepoPermissions{
+		"github.com/foo/bar": {
 			PathIncludes: []string{"/src/foo/*"},
 			PathExcludes: []string{"/src/bar/*"},
 		},
-		2: {
+		"github.com/foo/baz": {
 			PathIncludes: []string{"/src/foo2/*"},
 			PathExcludes: []string{"/src/bar2/*"},
 		},

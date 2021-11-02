@@ -133,10 +133,11 @@ WHERE user_id = %s
 }
 
 // GetByUser fetches all sub repo perms for a user keyed by repo.
-func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoID]authz.SubRepoPermissions, error) {
+func (s *SubRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT repo_id, path_includes, path_excludes
+SELECT r.name, path_includes, path_excludes
 FROM sub_repo_permissions
+JOIN repo r on r.id = repo_id
 WHERE user_id = %s
   AND version = %s
 `, userID, SubRepoPermsVersion)
@@ -146,14 +147,14 @@ WHERE user_id = %s
 		return nil, errors.Wrap(err, "getting sub repo permissions by user")
 	}
 
-	result := make(map[api.RepoID]authz.SubRepoPermissions)
+	result := make(map[api.RepoName]authz.SubRepoPermissions)
 	for rows.Next() {
 		var perms authz.SubRepoPermissions
-		var repoID api.RepoID
-		if err := rows.Scan(&repoID, pq.Array(&perms.PathIncludes), pq.Array(&perms.PathExcludes)); err != nil {
+		var repoName api.RepoName
+		if err := rows.Scan(&repoName, pq.Array(&perms.PathIncludes), pq.Array(&perms.PathExcludes)); err != nil {
 			return nil, errors.Wrap(err, "scanning row")
 		}
-		result[repoID] = perms
+		result[repoName] = perms
 	}
 
 	if err := rows.Close(); err != nil {

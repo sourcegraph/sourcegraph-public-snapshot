@@ -13,13 +13,13 @@ import (
 // paths but will be extended in future to support other pieces of metadata, for
 // example branch.
 type RepoContent struct {
-	Repo api.RepoID
+	Repo api.RepoName
 	Path string
 }
 
 // PermissionsGetter allow getting sub repository permissions.
 type PermissionsGetter interface {
-	GetByUser(ctx context.Context, userID int32) (map[api.RepoID]SubRepoPermissions, error)
+	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
 }
 
 // SubRepoPermsClient is responsible for checking whether a user has access to
