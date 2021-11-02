@@ -19,7 +19,7 @@ import (
 
 func TestGitCommitResolver(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 
 	commit := &gitapi.Commit{
 		ID:      "c1",

@@ -26,7 +26,7 @@ import (
 
 func TestRepositoryComparison(t *testing.T) {
 	ctx := context.Background()
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(new(dbtesting.MockDB))
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"

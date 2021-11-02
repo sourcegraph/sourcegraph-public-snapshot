@@ -8,14 +8,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func init() {
 	frontendregistry.ExtensionRegistry.PublishersFunc = extensionRegistryPublishers
 }
 
-func extensionRegistryPublishers(ctx context.Context, db dbutil.DB, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
+func extensionRegistryPublishers(ctx context.Context, db database.DB, args *graphqlutil.ConnectionArgs) (graphqlbackend.RegistryPublisherConnection, error) {
 	var opt dbPublishersListOptions
 	args.Set(&opt.LimitOffset)
 	return &registryPublisherConnection{opt: opt, db: db}, nil
@@ -29,7 +28,7 @@ type registryPublisherConnection struct {
 	once               sync.Once
 	registryPublishers []*dbPublisher
 	err                error
-	db                 dbutil.DB
+	db                 database.DB
 }
 
 func (r *registryPublisherConnection) compute(ctx context.Context) ([]*dbPublisher, error) {

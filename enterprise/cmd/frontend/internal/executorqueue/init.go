@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
@@ -17,7 +17,7 @@ import (
 )
 
 // Init initializes the executor endpoints required for use with the executor service.
-func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
+func Init(ctx context.Context, db database.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
 	accessToken := func() string {
 		if accessToken := conf.Get().ExecutorsAccessToken; accessToken != "" {
 			return accessToken

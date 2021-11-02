@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -60,12 +59,12 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 
 // UserResolver implements the GraphQL User type.
 type UserResolver struct {
-	db   dbutil.DB
+	db   database.DB
 	user *types.User
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
-func NewUserResolver(db dbutil.DB, user *types.User) *UserResolver {
+func NewUserResolver(db database.DB, user *types.User) *UserResolver {
 	return &UserResolver{db: db, user: user}
 }
 
@@ -229,7 +228,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
-func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
+func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
 	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
@@ -431,7 +430,7 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func viewerCanChangeUsername(ctx context.Context, db dbutil.DB, userID int32) bool {
+func viewerCanChangeUsername(ctx context.Context, db database.DB, userID int32) bool {
 	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return false
 	}
@@ -450,7 +449,7 @@ func viewerCanChangeUsername(ctx context.Context, db dbutil.DB, userID int32) bo
 //
 // If that subject's username is different from the proposed one, then a
 // change is being attempted and may be rejected by viewerCanChangeUsername.
-func viewerIsChangingUsername(ctx context.Context, db dbutil.DB, subjectUserID int32, proposedUsername string) bool {
+func viewerIsChangingUsername(ctx context.Context, db database.DB, subjectUserID int32, proposedUsername string) bool {
 	subject, err := database.Users(db).GetByID(ctx, subjectUserID)
 	if err != nil {
 		log15.Warn("viewerIsChangingUsername", "error", err)
