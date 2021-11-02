@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -134,30 +134,32 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 	return &searchContextResolver{searchContext, r.db}, nil
 }
 
-func repositoryByID(ctx context.Context, id graphql.ID, db dbutil.DB) (*graphqlbackend.RepositoryResolver, error) {
-	var repoID api.RepoID
-	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
-		return nil, err
-	}
-	repo, err := database.Repos(db).Get(ctx, repoID)
-	if err != nil {
-		return nil, err
-	}
-	return graphqlbackend.NewRepositoryResolver(database.NewDB(db), repo), nil
-}
-
 func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	repoIDs := make([]api.RepoID, 0, len(args))
 	for _, repository := range args {
-		repoResolver, err := repositoryByID(ctx, repository.RepositoryID, r.db)
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
+		repoIDs = append(repoIDs, repoID)
+	}
+	idToRepo, err := database.Repos(r.db).GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
+	for _, repository := range args {
+		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
+		if err != nil {
+			return nil, err
+		}
+		repo, ok := idToRepo[repoID]
+		if !ok {
+			return nil, errors.Errorf("cannot find repo with id: %q", repository.RepositoryID)
+		}
 		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo: types.RepoName{
-				ID:   repoResolver.IDInt32(),
-				Name: repoResolver.RepoName(),
-			},
+			Repo:      types.RepoName{ID: repo.ID, Name: repo.Name},
 			Revisions: repository.Revisions,
 		})
 	}
