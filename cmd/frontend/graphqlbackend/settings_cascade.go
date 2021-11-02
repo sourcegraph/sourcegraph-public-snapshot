@@ -36,7 +36,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: r.db, gqlID: singletonSiteGQLID}}}
+	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: database.NewDB(r.db), gqlID: singletonSiteGQLID}}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil

@@ -26,11 +26,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- An issue that causes the server to panic when performing a structural search via the GQL API for a query that also matches missing repos (affected versions 3.33.0 and 3.32.0). [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
+- An issue that causes the server to panic when performing a structural search via the GQL API for a query that also
+  matches missing repos (affected versions 3.33.0 and 3.32.0)
+  . [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
+- Improve detection for Docker running in non-linux
+  environments. [#23477](https://github.com/sourcegraph/sourcegraph/issues/23477)
 
 ### Removed
 
 - All version contexts functionality (deprecated in 3.33) is now removed. [#26267](https://github.com/sourcegraph/sourcegraph/issues/26267)
+- Query filter `repogroup` (deprecated in 3.33) is now removed. [#24277](https://github.com/sourcegraph/sourcegraph/issues/24277)
 
 ## 3.33.0
 

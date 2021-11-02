@@ -26,12 +26,14 @@ func isSiteAdmin(ctx context.Context, db dbutil.DB) bool {
 	return user != nil && user.SiteAdmin
 }
 
-func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) bool {
-	validatorByCodeHost := map[string]func(context.Context, *http.Request, string) (int, error){
-		"github.com": enforceAuthViaGitHub,
-	}
+var DefaultValidatorByCodeHost = map[string]func(context.Context, *http.Request, string) (int, error){
+	"github.com": enforceAuthViaGitHub,
+}
 
-	for codeHost, validator := range validatorByCodeHost {
+type AuthValidatorMap = map[string]func(context.Context, *http.Request, string) (int, error)
+
+func enforceAuth(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string, validators AuthValidatorMap) bool {
+	for codeHost, validator := range validators {
 		if !strings.HasPrefix(repoName, codeHost) {
 			continue
 		}

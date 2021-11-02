@@ -44,15 +44,15 @@ func unmarshalOrgInvitationID(id graphql.ID) (orgInvitationID int64, err error) 
 }
 
 func (r *organizationInvitationResolver) Organization(ctx context.Context) (*OrgResolver, error) {
-	return OrgByIDInt32(ctx, r.db, r.v.OrgID)
+	return OrgByIDInt32(ctx, database.NewDB(r.db), r.v.OrgID)
 }
 
 func (r *organizationInvitationResolver) Sender(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.v.SenderUserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.v.SenderUserID)
 }
 
 func (r *organizationInvitationResolver) Recipient(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.v.RecipientUserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.v.RecipientUserID)
 }
 func (r *organizationInvitationResolver) CreatedAt() DateTime { return DateTime{Time: r.v.CreatedAt} }
 func (r *organizationInvitationResolver) NotifiedAt() *DateTime {

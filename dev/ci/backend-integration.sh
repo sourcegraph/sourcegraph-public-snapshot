@@ -7,4 +7,6 @@ SG_ROOT=$(pwd)
 set -ex
 
 # Setup single-server instance and run tests
-./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/backend-integration-against-server.sh"
+# backend integration tests requires a Github Enterprise Token
+GITHUB_TOKEN=$GHE_GITHUB_TOKEN
+GITHUB_TOKEN=$GITHUB_TOKEN ./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/backend-integration-against-server.sh"

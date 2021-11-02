@@ -239,10 +239,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				wait, // wait for all steps to pass
 				triggerUpdaterPipeline)
 		}
-	}
 
-	// Collect all build failures (if any) and upload them on Grafana Cloud.
-	ops.Append(uploadBuildLogs())
+		// Collect all build failures (if any) and upload them on Grafana Cloud.
+		if c.RunType.Is(MainBranch) {
+			ops.Append(uploadBuildLogs())
+		}
+	}
 
 	// Construct pipeline
 	pipeline := &bk.Pipeline{

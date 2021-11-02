@@ -263,9 +263,29 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
+	// This is a bandage solution to speed up the go tests by running the slowest ones
+	// concurrently. As a results, the PR time affecting only Go code is divided by two.
+	slowPackages := []string{
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
+		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
+		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
+		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+	}
+
 	pipeline.AddStep(":go: Test",
-		bk.Cmd("./dev/ci/go-test.sh"),
+		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowPackages, " ")),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+
+	for _, slowPkg := range slowPackages {
+		// Trim the package name for readability
+		name := strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")
+		pipeline.AddStep(":go: Test ("+name+")",
+			bk.Cmd("./dev/ci/go-test.sh only "+slowPkg),
+			bk.Cmd("dev/ci/codecov.sh -c -F go"))
+	}
 }
 
 // Builds the OSS and Enterprise Go commands.

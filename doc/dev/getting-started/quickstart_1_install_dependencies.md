@@ -66,7 +66,11 @@ Below are instructions to install these dependencies:
 
       3. Ensure `psql`, the PostgreSQL command line client, is on your `$PATH`.
 
-          Homebrew does not put it there by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`.
+          ```
+          hash psql
+          ```
+          
+          If this command emits no output, you are free to move to the next step. Otherwise, you installed a Homebrew recipe that does not modify your `$PATH` by default. Homebrew gives you the command to run to insert `psql` in your path in the "Caveats" section of `brew info postgresql`.
           Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (`/usr/local` below) and shell (bash below).
 
           ```

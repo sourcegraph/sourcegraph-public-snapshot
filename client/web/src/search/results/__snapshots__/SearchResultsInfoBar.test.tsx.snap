@@ -2,11 +2,11 @@
 
 exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
 <div
-  className="search-results-info-bar"
+  className="searchResultsInfoBar"
   data-testid="results-info-bar"
 >
   <div
-    className="search-results-info-bar__row"
+    className="row"
   >
     <button
       aria-pressed={false}
@@ -40,17 +40,17 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
     </button>
     <div />
     <div
-      className="search-results-info-bar__expander"
+      className="expander"
     />
     <ul
       className="nav align-items-center"
     >
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
@@ -77,10 +77,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       </li>
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item"
+        className="navItem"
       >
         <button
           className="btn btn-sm btn-outline-secondary text-decoration-none"
@@ -108,11 +108,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
 
 exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query 1`] = `
 <div
-  className="search-results-info-bar"
+  className="searchResultsInfoBar"
   data-testid="results-info-bar"
 >
   <div
-    className="search-results-info-bar__row"
+    className="row"
   >
     <button
       aria-pressed={false}
@@ -146,17 +146,17 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     </button>
     <div />
     <div
-      className="search-results-info-bar__expander"
+      className="expander"
     />
     <ul
       className="nav align-items-center"
     >
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none create-code-monitor-button"
@@ -183,7 +183,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </a>
       </li>
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
@@ -210,10 +210,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       </li>
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item"
+        className="navItem"
       >
         <button
           className="btn btn-sm btn-outline-secondary text-decoration-none"
@@ -241,11 +241,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
 
 exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create monitor from query, user not logged in 1`] = `
 <div
-  className="search-results-info-bar"
+  className="searchResultsInfoBar"
   data-testid="results-info-bar"
 >
   <div
-    className="search-results-info-bar__row"
+    className="row"
   >
     <button
       aria-pressed={false}
@@ -279,17 +279,17 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
     </button>
     <div />
     <div
-      className="search-results-info-bar__expander"
+      className="expander"
     />
     <ul
       className="nav align-items-center"
     >
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <div
           className="menu-nav-item btn-group"
@@ -400,7 +400,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         </div>
       </li>
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <div
           className="menu-nav-item btn-group"
@@ -505,10 +505,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       </li>
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item"
+        className="navItem"
       >
         <button
           className="btn btn-sm btn-outline-secondary text-decoration-none"
@@ -536,11 +536,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
 
 exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot create monitor from query 1`] = `
 <div
-  className="search-results-info-bar"
+  className="searchResultsInfoBar"
   data-testid="results-info-bar"
 >
   <div
-    className="search-results-info-bar__row"
+    className="row"
   >
     <button
       aria-pressed={false}
@@ -574,17 +574,17 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
     </button>
     <div />
     <div
-      className="search-results-info-bar__expander"
+      className="expander"
     />
     <ul
       className="nav align-items-center"
     >
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
         data-tooltip="Code monitors only support type:diff or type:commit searches."
       >
         <a
@@ -614,7 +614,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         </a>
       </li>
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <a
           className="btn btn-sm btn-outline-secondary text-decoration-none test-save-search-link"
@@ -641,10 +641,10 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       </li>
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item"
+        className="navItem"
       >
         <button
           className="btn btn-sm btn-outline-secondary text-decoration-none"
@@ -672,11 +672,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
 
 exports[`SearchResultsInfoBar unauthenticated user 1`] = `
 <div
-  className="search-results-info-bar"
+  className="searchResultsInfoBar"
   data-testid="results-info-bar"
 >
   <div
-    className="search-results-info-bar__row"
+    className="row"
   >
     <button
       aria-pressed={false}
@@ -710,17 +710,17 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
     </button>
     <div />
     <div
-      className="search-results-info-bar__expander"
+      className="expander"
     />
     <ul
       className="nav align-items-center"
     >
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <div
           className="menu-nav-item btn-group"
@@ -831,7 +831,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         </div>
       </li>
       <li
-        className="nav-item mr-2"
+        className="mr-2 navItem"
       >
         <div
           className="menu-nav-item btn-group"
@@ -936,10 +936,10 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       </li>
       <li
         aria-hidden="true"
-        className="search-results-info-bar__divider"
+        className="divider"
       />
       <li
-        className="nav-item"
+        className="navItem"
       >
         <button
           className="btn btn-sm btn-outline-secondary text-decoration-none"

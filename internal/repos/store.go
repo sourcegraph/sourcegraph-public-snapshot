@@ -38,7 +38,7 @@ type Store struct {
 	// RepoStore is a database.RepoStore using the same database handle.
 	RepoStore database.RepoStore
 	// ExternalServiceStore is a database.ExternalServiceStore using the same database handle.
-	ExternalServiceStore *database.ExternalServiceStore
+	ExternalServiceStore database.ExternalServiceStore
 
 	txtrace *trace.Trace
 	txctx   context.Context

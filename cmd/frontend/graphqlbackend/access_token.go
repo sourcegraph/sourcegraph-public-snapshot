@@ -51,7 +51,7 @@ func unmarshalAccessTokenID(id graphql.ID) (accessTokenID int64, err error) {
 func (r *accessTokenResolver) ID() graphql.ID { return marshalAccessTokenID(r.accessToken.ID) }
 
 func (r *accessTokenResolver) Subject(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.accessToken.SubjectUserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.accessToken.SubjectUserID)
 }
 
 func (r *accessTokenResolver) Scopes() []string { return r.accessToken.Scopes }
@@ -59,7 +59,7 @@ func (r *accessTokenResolver) Scopes() []string { return r.accessToken.Scopes }
 func (r *accessTokenResolver) Note() string { return r.accessToken.Note }
 
 func (r *accessTokenResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.accessToken.CreatorUserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.accessToken.CreatorUserID)
 }
 
 func (r *accessTokenResolver) CreatedAt() DateTime { return DateTime{Time: r.accessToken.CreatedAt} }

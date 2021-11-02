@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -115,24 +117,31 @@ func TestNamespace(t *testing.T) {
 
 func TestNamespaceByName(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
-		db := database.NewDB(nil)
-		resetMocks()
 		const (
 			wantName   = "alice"
 			wantUserID = 123
 		)
-		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+
+		ns := dbmock.NewMockNamespaceStore()
+		ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 			if name != wantName {
 				t.Errorf("got %q, want %q", name, wantName)
 			}
 			return &database.Namespace{Name: "alice", User: wantUserID}, nil
-		}
-		database.Mocks.Users.GetByID = func(_ context.Context, id int32) (*types.User, error) {
+		})
+
+		users := dbmock.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 			if id != wantUserID {
 				t.Errorf("got %d, want %d", id, wantUserID)
 			}
 			return &types.User{ID: wantUserID, Username: wantName}, nil
-		}
+		})
+
+		db := dbmock.NewMockDB()
+		db.NamespacesFunc.SetDefaultReturn(ns)
+		db.UsersFunc.SetDefaultReturn(users)
+
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -154,27 +163,36 @@ func TestNamespaceByName(t *testing.T) {
 			`,
 			},
 		})
+		mockrequire.Called(t, ns.GetByNameFunc)
+		mockrequire.Called(t, users.GetByIDFunc)
 	})
 
 	t.Run("organization", func(t *testing.T) {
-		db := database.NewDB(nil)
-		resetMocks()
 		const (
 			wantName  = "acme"
 			wantOrgID = 3
 		)
-		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+
+		ns := dbmock.NewMockNamespaceStore()
+		ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 			if name != wantName {
 				t.Errorf("got %q, want %q", name, wantName)
 			}
 			return &database.Namespace{Name: "alice", Organization: wantOrgID}, nil
-		}
-		database.Mocks.Orgs.GetByID = func(_ context.Context, id int32) (*types.Org, error) {
+		})
+
+		orgs := dbmock.NewMockOrgStore()
+		orgs.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.Org, error) {
 			if id != wantOrgID {
 				t.Errorf("got %d, want %d", id, wantOrgID)
 			}
 			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
-		}
+		})
+
+		db := dbmock.NewMockDB()
+		db.NamespacesFunc.SetDefaultReturn(ns)
+		db.OrgsFunc.SetDefaultReturn(orgs)
+
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),
@@ -196,14 +214,17 @@ func TestNamespaceByName(t *testing.T) {
 			`,
 			},
 		})
+
+		mockrequire.Called(t, ns.GetByNameFunc)
+		mockrequire.Called(t, orgs.GetByIDFunc)
 	})
 
 	t.Run("invalid", func(t *testing.T) {
-		db := database.NewDB(nil)
-		resetMocks()
-		database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-			return nil, database.ErrNamespaceNotFound
-		}
+		ns := dbmock.NewMockNamespaceStore()
+		ns.GetByNameFunc.SetDefaultReturn(nil, database.ErrNamespaceNotFound)
+		db := dbmock.NewMockDB()
+		db.NamespacesFunc.SetDefaultReturn(ns)
+
 		RunTests(t, []*Test{
 			{
 				Schema: mustParseGraphQLSchema(t, db),

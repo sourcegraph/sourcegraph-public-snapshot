@@ -228,10 +228,6 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 
 // LatestPing returns the most recently recorded ping event.
 func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {
-	if Mocks.EventLogs.LatestPing != nil {
-		return Mocks.EventLogs.LatestPing(ctx)
-	}
-
 	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE name='ping' ORDER BY id DESC LIMIT 1`))
 	if err != nil {
 		return nil, err

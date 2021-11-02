@@ -82,6 +82,12 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Testing Go code](background-information/languages/testing_go_code.md)
 - [Testing web code](background-information/testing_web_code.md)
 
+### Security
+
+- [Security policy](https://about.sourcegraph.com/security/)
+- [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
+- [CSRF security model](security/csrf_security_model.md)
+
 ### Tools
 
 - [Renovate dependency updates](background-information/renovate.md)

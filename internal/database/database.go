@@ -1,7 +1,6 @@
 package database
 
 import (
-	"context"
 	"database/sql"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -15,9 +14,9 @@ import (
 // and remove dbutil.DB altogether.
 type DB interface {
 	dbutil.DB
-	dbutil.TxBeginner
 	AccessTokens() AccessTokenStore
 	EventLogs() EventLogStore
+	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -48,20 +47,16 @@ type db struct {
 
 var _ DB = (*db)(nil)
 
-func (d *db) BeginTx(ctx context.Context, o *sql.TxOptions) (*sql.Tx, error) {
-	tb, ok := d.DB.(dbutil.TxBeginner)
-	if !ok {
-		return nil, basestore.ErrNotTransactable
-	}
-	return tb.BeginTx(ctx, o)
-}
-
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
 }
 
 func (d *db) EventLogs() EventLogStore {
 	return EventLogs(d.DB)
+}
+
+func (d *db) ExternalServices() ExternalServiceStore {
+	return ExternalServices(d.DB)
 }
 
 func (d *db) FeatureFlags() FeatureFlagStore {
@@ -126,4 +121,12 @@ func (d *db) UserPublicRepos() UserPublicRepoStore {
 
 func (d *db) Users() UserStore {
 	return Users(d.DB)
+}
+
+func (d *db) Unwrap() dbutil.DB {
+	// Recursively unwrap in case we ever call `database.NewDB()` with a `database.DB`
+	if unwrapper, ok := d.DB.(dbutil.Unwrapper); ok {
+		return unwrapper.Unwrap()
+	}
+	return d.DB
 }

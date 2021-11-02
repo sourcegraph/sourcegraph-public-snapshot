@@ -1160,7 +1160,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			}()
 
 			r := &externalServiceConnectionResolver{
-				db:  db,
+				db:  database.NewDB(db),
 				opt: test.opt,
 			}
 			pageInfo, err := r.PageInfo(context.Background())

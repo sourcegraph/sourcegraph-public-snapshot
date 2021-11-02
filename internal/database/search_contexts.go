@@ -225,10 +225,6 @@ func (s *searchContextsStore) listSearchContexts(ctx context.Context, cond *sqlf
 }
 
 func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts ListSearchContextsPageOptions, opts ListSearchContextsOptions) ([]*types.SearchContext, error) {
-	if Mocks.SearchContexts.ListSearchContexts != nil {
-		return Mocks.SearchContexts.ListSearchContexts(ctx, pageOpts, opts)
-	}
-
 	conds, err := getSearchContextsQueryConditions(opts)
 	if err != nil {
 		return nil, err
@@ -238,10 +234,6 @@ func (s *searchContextsStore) ListSearchContexts(ctx context.Context, pageOpts L
 }
 
 func (s *searchContextsStore) CountSearchContexts(ctx context.Context, opts ListSearchContextsOptions) (int32, error) {
-	if Mocks.SearchContexts.CountSearchContexts != nil {
-		return Mocks.SearchContexts.CountSearchContexts(ctx, opts)
-	}
-
 	conds, err := getSearchContextsQueryConditions(opts)
 	if err != nil {
 		return -1, err
@@ -265,10 +257,6 @@ type GetSearchContextOptions struct {
 }
 
 func (s *searchContextsStore) GetSearchContext(ctx context.Context, opts GetSearchContextOptions) (*types.SearchContext, error) {
-	if Mocks.SearchContexts.GetSearchContext != nil {
-		return Mocks.SearchContexts.GetSearchContext(ctx, opts)
-	}
-
 	conds := []*sqlf.Query{}
 	if opts.NamespaceUserID == 0 && opts.NamespaceOrgID == 0 {
 		conds = append(conds, sqlf.Sprintf("sc.namespace_user_id IS NULL"), sqlf.Sprintf("sc.namespace_org_id IS NULL"))
@@ -483,10 +471,6 @@ WHERE sc.search_context_id = %d
 `
 
 func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
-	if Mocks.SearchContexts.GetSearchContextRepositoryRevisions != nil {
-		return Mocks.SearchContexts.GetSearchContextRepositoryRevisions(ctx, searchContextID)
-	}
-
 	authzConds, err := AuthzQueryConds(ctx, s.Handle().DB())
 	if err != nil {
 		return nil, err

@@ -13,7 +13,9 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -271,6 +273,8 @@ func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, ar
 			return nil, err
 		}
 		opts.RepositoryID = int(id64)
+	} else {
+		opts.ConsiderPatterns = true
 	}
 
 	policies, err := r.resolver.GetConfigurationPolicies(ctx, opts)
@@ -310,6 +314,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	configurationPolicy, err := r.resolver.CreateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		RepositoryID:              repositoryID,
 		Name:                      args.Name,
+		RepositoryPatterns:        args.RepositoryPatterns,
 		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
@@ -344,6 +349,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 	if err := r.resolver.UpdateConfigurationPolicy(ctx, store.ConfigurationPolicy{
 		ID:                        int(id),
 		Name:                      args.Name,
+		RepositoryPatterns:        args.RepositoryPatterns,
 		Type:                      store.GitObjectType(args.Type),
 		Pattern:                   args.Pattern,
 		RetentionEnabled:          args.RetentionEnabled,
@@ -410,6 +416,25 @@ func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args 
 	}
 
 	return &gql.EmptyResponse{}, nil
+}
+
+func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.PreviewRepositoryFilterArgs) ([]*gql.RepositoryResolver, error) {
+	ids, err := r.resolver.PreviewRepositoryFilter(ctx, args.Pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
+	for _, id := range ids {
+		repo, err := backend.Repos.Get(ctx, api.RepoID(id))
+		if err != nil {
+			return nil, err
+		}
+
+		resolvers = append(resolvers, gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo))
+	}
+
+	return resolvers, nil
 }
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *gql.PreviewGitObjectFilterArgs) ([]gql.GitObjectFilterPreviewResolver, error) {
