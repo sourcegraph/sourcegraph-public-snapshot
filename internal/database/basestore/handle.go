@@ -30,7 +30,16 @@ func (h *TransactableHandle) DB() dbutil.DB {
 
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *TransactableHandle) InTransaction() bool {
-	_, ok := h.db.(dbutil.Tx)
+	db := h.db
+	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
+		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or
+		// *sql.Tx.  This is needed because below, we attempt to cast the db as
+		// a dbutil.Tx, which is not implemented by database.db. This should
+		// eventually be removed once dbutil.DB is subsumed by database.DB
+		db = unwrapper.Unwrap()
+	}
+
+	_, ok := db.(dbutil.Tx)
 	return ok
 }
 
@@ -43,8 +52,18 @@ func (h *TransactableHandle) InTransaction() bool {
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and calling Done in one goroutine may not finalize the expected unit of work.
 func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
+	db := h.db
+	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
+		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or
+		// *sql.Tx.  This is needed because below, we attempt to cast the db as
+		// a dbutil.TxBeginner, which is not implemented by database.db. This
+		// should eventually be removed once dbutil.DB is subsumed by
+		// database.DB
+		db = unwrapper.Unwrap()
+	}
+
 	if h.InTransaction() {
-		savepoint, err := newSavepoint(ctx, h.db)
+		savepoint, err := newSavepoint(ctx, db)
 		if err != nil {
 			return nil, err
 		}
@@ -53,7 +72,7 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 		return h, nil
 	}
 
-	tb, ok := h.db.(dbutil.TxBeginner)
+	tb, ok := db.(dbutil.TxBeginner)
 	if !ok {
 		return nil, ErrNotTransactable
 	}
@@ -72,6 +91,15 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 // transaction/savepoint. If the store does not wrap a transaction the original error value
 // is returned unchanged.
 func (h *TransactableHandle) Done(err error) error {
+	db := h.db
+	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
+		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or *sql.Tx
+		// This is needed because below, we try to cast db as dbutil.Tx, which
+		// is not implemented by database.db. This should eventually be removed once
+		// dbutil.DB is subsumed by database.DB
+		db = unwrapper.Unwrap()
+	}
+
 	if n := len(h.savepoints); n > 0 {
 		var savepoint *savepoint
 		savepoint, h.savepoints = h.savepoints[n-1], h.savepoints[:n-1]
@@ -82,7 +110,7 @@ func (h *TransactableHandle) Done(err error) error {
 		return combineErrors(err, savepoint.Rollback())
 	}
 
-	tx, ok := h.db.(dbutil.Tx)
+	tx, ok := db.(dbutil.Tx)
 	if !ok {
 		return err
 	}

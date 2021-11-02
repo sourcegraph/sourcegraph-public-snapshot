@@ -66,6 +66,7 @@ type RepoStore interface {
 	Transact(context.Context) (RepoStore, error)
 	With(basestore.ShareableStore) RepoStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
+	Done(error) error
 
 	Count(context.Context, ReposListOptions) (int, error)
 	Create(context.Context, ...*types.Repo) error

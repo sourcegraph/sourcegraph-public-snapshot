@@ -18,9 +18,6 @@ type MockDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
-	// BeginTxFunc is an instance of a mock function object controlling the
-	// behavior of the method BeginTx.
-	BeginTxFunc *DBBeginTxFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
@@ -93,11 +90,6 @@ func NewMockDB() *MockDB {
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() database.AccessTokenStore {
 				return nil
-			},
-		},
-		BeginTxFunc: &DBBeginTxFunc{
-			defaultHook: func(context.Context, *sql.TxOptions) (*sql.Tx, error) {
-				return nil, nil
 			},
 		},
 		EventLogsFunc: &DBEventLogsFunc{
@@ -214,9 +206,6 @@ func NewMockDBFrom(i database.DB) *MockDB {
 	return &MockDB{
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
-		},
-		BeginTxFunc: &DBBeginTxFunc{
-			defaultHook: i.BeginTx,
 		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
@@ -381,114 +370,6 @@ func (c DBAccessTokensFuncCall) Args() []interface{} {
 // invocation.
 func (c DBAccessTokensFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// DBBeginTxFunc describes the behavior when the BeginTx method of the
-// parent MockDB instance is invoked.
-type DBBeginTxFunc struct {
-	defaultHook func(context.Context, *sql.TxOptions) (*sql.Tx, error)
-	hooks       []func(context.Context, *sql.TxOptions) (*sql.Tx, error)
-	history     []DBBeginTxFuncCall
-	mutex       sync.Mutex
-}
-
-// BeginTx delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) BeginTx(v0 context.Context, v1 *sql.TxOptions) (*sql.Tx, error) {
-	r0, r1 := m.BeginTxFunc.nextHook()(v0, v1)
-	m.BeginTxFunc.appendCall(DBBeginTxFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the BeginTx method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBBeginTxFunc) SetDefaultHook(hook func(context.Context, *sql.TxOptions) (*sql.Tx, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// BeginTx method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBBeginTxFunc) PushHook(hook func(context.Context, *sql.TxOptions) (*sql.Tx, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *DBBeginTxFunc) SetDefaultReturn(r0 *sql.Tx, r1 error) {
-	f.SetDefaultHook(func(context.Context, *sql.TxOptions) (*sql.Tx, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *DBBeginTxFunc) PushReturn(r0 *sql.Tx, r1 error) {
-	f.PushHook(func(context.Context, *sql.TxOptions) (*sql.Tx, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBBeginTxFunc) nextHook() func(context.Context, *sql.TxOptions) (*sql.Tx, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBBeginTxFunc) appendCall(r0 DBBeginTxFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBBeginTxFuncCall objects describing the
-// invocations of this function.
-func (f *DBBeginTxFunc) History() []DBBeginTxFuncCall {
-	f.mutex.Lock()
-	history := make([]DBBeginTxFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBBeginTxFuncCall is an object that describes an invocation of method
-// BeginTx on an instance of MockDB.
-type DBBeginTxFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *sql.TxOptions
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *sql.Tx
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBBeginTxFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBBeginTxFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // DBEventLogsFunc describes the behavior when the EventLogs method of the

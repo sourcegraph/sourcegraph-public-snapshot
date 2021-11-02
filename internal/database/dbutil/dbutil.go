@@ -64,6 +64,12 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
+// An Unwrapper unwraps itself into its nested DB.
+// This is currently necessary because
+type Unwrapper interface {
+	Unwrap() DB
+}
+
 func IsPostgresError(err error, codename string) bool {
 	var e *pgconn.PgError
 	return errors.As(err, &e) && e.Code == codename
