@@ -95,7 +95,7 @@ func (r *externalServiceResolver) Namespace(ctx context.Context) (*NamespaceReso
 		return nil, nil
 	}
 	userID := MarshalUserID(r.externalService.NamespaceUserID)
-	n, err := NamespaceByID(ctx, r.db, userID)
+	n, err := NamespaceByID(ctx, database.NewDB(r.db), userID)
 	if err != nil {
 		return nil, err
 	}

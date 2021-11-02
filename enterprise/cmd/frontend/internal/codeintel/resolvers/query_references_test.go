@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
@@ -236,4 +237,66 @@ func TestReferencesRemote(t *testing.T) {
 			t.Errorf("unexpected monikers (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func TestIgnoredIDs(t *testing.T) {
+	mockDBStore := NewMockDBStore()
+
+	resolver := newQueryResolver(
+		mockDBStore,
+		NewMockLSIFStore(),
+		newCachedCommitChecker(NewMockGitserverClient()),
+		noopPositionAdjuster(),
+		42,
+		"deadbeef",
+		"s1/main.go",
+		[]dbstore.Dump{},
+		newOperations(&observation.TestContext),
+	)
+
+	refDumpID := 50
+
+	run := func(ignoreIDs []int, wantDumps []int) {
+		filter, err := bloomfilter.CreateFilter([]string{"padLeft"})
+		if err != nil {
+			t.Fatalf("unexpected error encoding bloom filter: %s", err)
+		}
+		pkg := shared.PackageReference{Package: shared.Package{DumpID: refDumpID}, Filter: filter}
+		scanner := dbstore.PackageReferenceScannerFromSlice(pkg)
+		mockDBStore.ReferenceIDsAndFiltersFunc.PushReturn(scanner, 1, nil)
+
+		gotDumps, scanned, totalCount, err := resolver.uploadIDsWithReferences(
+			context.Background(),
+			[]precise.QualifiedMonikerData{{MonikerData: precise.MonikerData{Identifier: "padLeft"}}},
+			ignoreIDs,
+			10,
+			0,
+			func(fields ...log.Field) {},
+		)
+
+		if err != nil {
+			t.Fatalf("uploadIDsWithReferences: %s", err)
+		}
+		if totalCount != 1 {
+			t.Fatalf("expected totalCount=1 from uploadIDsWithReferences, got totalCount=%d", totalCount)
+		}
+		if scanned != 1 {
+			t.Fatalf("expected scanned=1 from uploadIDsWithReferences, got scanned=%d", scanned)
+		}
+		if diff := cmp.Diff(wantDumps, gotDumps); diff != "" {
+			t.Errorf("unexpected dumps (-want +got):\n%s", diff)
+		}
+	}
+
+	// When we do not ignore any dumps, we expect uploadIDsWithReferences to return the dump
+	run(
+		[]int{},          // ignoreIDs
+		[]int{refDumpID}, // wanted dumps
+	)
+
+	// When we ignore the dump, we expect uploadIDsWithReferences to not return the dump
+	run(
+		[]int{refDumpID}, // ignoreIDs
+		[]int{},          // wanted dumps
+	)
 }

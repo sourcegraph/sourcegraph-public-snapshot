@@ -15,32 +15,46 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type SavedSearchStore struct {
+type SavedSearchStore interface {
+	Create(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
+	Delete(context.Context, int32) error
+	GetByID(context.Context, int32) (*api.SavedQuerySpecAndConfig, error)
+	IsEmpty(context.Context) (bool, error)
+	ListAll(context.Context) ([]api.SavedQuerySpecAndConfig, error)
+	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
+	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
+	Transact(context.Context) (SavedSearchStore, error)
+	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
+	With(basestore.ShareableStore) SavedSearchStore
+	basestore.ShareableStore
+}
+
+type savedSearchStore struct {
 	*basestore.Store
 }
 
 // SavedSearches instantiates and returns a new SavedSearchStore with prepared statements.
-func SavedSearches(db dbutil.DB) *SavedSearchStore {
-	return &SavedSearchStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func SavedSearches(db dbutil.DB) SavedSearchStore {
+	return &savedSearchStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewSavedSearchStoreWithDB instantiates and returns a new SavedSearchStore using the other store handle.
-func SavedSearchesWith(other basestore.ShareableStore) *SavedSearchStore {
-	return &SavedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
+func SavedSearchesWith(other basestore.ShareableStore) SavedSearchStore {
+	return &savedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *SavedSearchStore) With(other basestore.ShareableStore) *SavedSearchStore {
-	return &SavedSearchStore{Store: s.Store.With(other)}
+func (s *savedSearchStore) With(other basestore.ShareableStore) SavedSearchStore {
+	return &savedSearchStore{Store: s.Store.With(other)}
 }
 
-func (s *SavedSearchStore) Transact(ctx context.Context) (*SavedSearchStore, error) {
+func (s *savedSearchStore) Transact(ctx context.Context) (SavedSearchStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &SavedSearchStore{Store: txBase}, err
+	return &savedSearchStore{Store: txBase}, err
 }
 
 // IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
 // instance.
-func (s *SavedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
+func (s *savedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
 	q := `SELECT true FROM saved_searches LIMIT 1`
 	var isNotEmpty bool
 	err := s.Handle().DB().QueryRowContext(ctx, q).Scan(&isNotEmpty)
@@ -58,7 +72,7 @@ func (s *SavedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure that only users
 // with the proper permissions can access the returned saved searches.
-func (s *SavedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
+func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
 	if Mocks.SavedSearches.ListAll != nil {
 		return Mocks.SavedSearches.ListAll(ctx)
 	}
@@ -115,7 +129,7 @@ func (s *SavedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure this response
 // only makes it to users with proper permissions to access the saved search.
-func (s *SavedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
+func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
 	if Mocks.SavedSearches.GetByID != nil {
 		return Mocks.SavedSearches.GetByID(ctx, id)
 	}
@@ -158,7 +172,7 @@ func (s *SavedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQue
 // user is an admin. It is the callers responsibility to ensure that only the
 // specified user or users with proper permissions can access the returned
 // saved searches.
-func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
+func (s *savedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
 	if Mocks.SavedSearches.ListSavedSearchesByUserID != nil {
 		return Mocks.SavedSearches.ListSavedSearchesByUserID(ctx, userID)
 	}
@@ -214,7 +228,7 @@ func (s *SavedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID
 // user is an admin. It is the callers responsibility to ensure only admins or
 // members of the specified organization can access the returned saved
 // searches.
-func (s *SavedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
+func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
 	var savedSearches []*types.SavedSearch
 	conds := sqlf.Sprintf("WHERE org_id=%d", orgID)
 	query := sqlf.Sprintf(`SELECT
@@ -249,7 +263,7 @@ func (s *SavedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID i
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to create the saved search.
-func (s *SavedSearchStore) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
+func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Create != nil {
 		return Mocks.SavedSearches.Create(ctx, newSavedSearch)
 	}
@@ -299,7 +313,7 @@ func (s *SavedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the update.
-func (s *SavedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
+func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	if Mocks.SavedSearches.Update != nil {
 		return Mocks.SavedSearches.Update(ctx, savedSearch)
 	}
@@ -343,7 +357,7 @@ func (s *SavedSearchStore) Update(ctx context.Context, savedSearch *types.SavedS
 // 🚨 SECURITY: This method does NOT verify the user's identity or that the
 // user is an admin. It is the callers responsibility to ensure the user has
 // proper permissions to perform the delete.
-func (s *SavedSearchStore) Delete(ctx context.Context, id int32) (err error) {
+func (s *savedSearchStore) Delete(ctx context.Context, id int32) (err error) {
 	if Mocks.SavedSearches.Delete != nil {
 		return Mocks.SavedSearches.Delete(ctx, id)
 	}

@@ -25,7 +25,7 @@ import { CodeMonitoringProps } from '../../code-monitoring'
 import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
 import { SearchPatternType } from '../../graphql-operations'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../CtaIcons'
-import styles from '../FeatureTour.module.scss'
+import featureTourStyles from '../FeatureTour.module.scss'
 import { defaultPopperModifiers } from '../input/tour-options'
 import {
     getTourOptions,
@@ -36,11 +36,12 @@ import {
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import { CreateCodeInsightButton } from './components/CreateCodeInsightButton'
+import styles from './SearchResultsInfoBar.module.scss'
 
 function getFeatureTourElementFn(isAuthenticatedUser: boolean): (onClose: () => void) => HTMLElement {
     return (onClose: () => void): HTMLElement => {
         const container = document.createElement('div')
-        container.className = styles.featureTourStep
+        container.className = featureTourStyles.featureTourStep
         container.innerHTML = `
             <div>
                 <strong>New</strong>: Create a code monitor to get notified about new search results for a query.
@@ -131,7 +132,7 @@ const ExperimentalActionButton: React.FunctionComponent<ExperimentalActionButton
 const QuotesInterpretedLiterallyNotice: React.FunctionComponent<SearchResultsInfoBarProps> = props =>
     props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
         <small
-            className="search-results-info-bar__notice"
+            className={styles.notice}
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
@@ -207,7 +208,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
         const toURL = `/code-monitoring/new?${searchParameters.toString()}`
         return (
             <li
-                className="nav-item mr-2"
+                className={classNames('mr-2', styles.navItem)}
                 data-tooltip={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
@@ -251,7 +252,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
     const saveSearchButton = useMemo(
         () => (
-            <li className="nav-item mr-2">
+            <li className={classNames('mr-2', styles.navItem)}>
                 <ExperimentalActionButton
                     showExperimentalVersion={showActionButtonExperimentalVersion}
                     onNonExperimentalLinkClick={props.onSaveQueryClick}
@@ -292,8 +293,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
     }
 
     return (
-        <div className={classNames(props.className, 'search-results-info-bar')} data-testid="results-info-bar">
-            <div className="search-results-info-bar__row">
+        <div className={classNames(props.className, styles.searchResultsInfoBar)} data-testid="results-info-bar">
+            <div className={styles.row}>
                 <button
                     type="button"
                     className={classNames('btn btn-sm btn-outline-secondary d-flex d-lg-none', showFilters && 'active')}
@@ -309,7 +310,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
                 <QuotesInterpretedLiterallyNotice {...props} />
 
-                <div className="search-results-info-bar__expander" />
+                <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
                     <ActionsContainer
@@ -333,7 +334,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
                     </ActionsContainer>
 
                     {(codeInsightsButton || createCodeMonitorButton || saveSearchButton) && (
-                        <li className="search-results-info-bar__divider" aria-hidden="true" />
+                        <li className={styles.divider} aria-hidden="true" />
                     )}
 
                     {codeInsightsButton}
@@ -342,8 +343,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<SearchResultsInfoBarP
 
                     {props.resultsFound && (
                         <>
-                            <li className="search-results-info-bar__divider" aria-hidden="true" />
-                            <li className="nav-item">
+                            <li className={styles.divider} aria-hidden="true" />
+                            <li className={classNames(styles.navItem)}>
                                 <button
                                     type="button"
                                     onClick={props.onExpandAllResultsToggle}

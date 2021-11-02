@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -473,7 +474,7 @@ type alertSearchImplementer struct {
 }
 
 func (a alertSearchImplementer) Results(context.Context) (*SearchResultsResolver, error) {
-	return &SearchResultsResolver{db: a.db, SearchResults: a.alert.wrapResults()}, nil
+	return &SearchResultsResolver{db: database.NewDB(a.db), SearchResults: a.alert.wrapResults()}, nil
 }
 
 func (alertSearchImplementer) Suggestions(context.Context, *searchSuggestionsArgs) ([]SearchSuggestionResolver, error) {

@@ -7,94 +7,95 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/hashicorp/go-multierror"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 )
 
-var githubURL = url.URL{Scheme: "https", Host: "api.github.com"}
+var (
+	ErrGitHubMissingToken = errors.New("must provide github_token")
+	ErrGitHubUnauthorized = errors.New("you do not have write permission to this GitHub repository")
 
-func enforceAuthGithub(ctx context.Context, w http.ResponseWriter, r *http.Request, repoName string) (int, error) {
+	githubURL = &url.URL{Scheme: "https", Host: "api.github.com"}
+)
+
+func enforceAuthViaGitHub(ctx context.Context, r *http.Request, repoName string) (int, error) {
+	githubToken := r.URL.Query().Get("github_token")
+	if githubToken == "" {
+		return http.StatusUnauthorized, ErrGitHubMissingToken
+	}
+
+	if author, err := checkGitHubPermissions(ctx, repoName, github.NewV3Client(githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)); err != nil {
+		return http.StatusInternalServerError, err
+	} else if !author {
+		return http.StatusUnauthorized, ErrGitHubUnauthorized
+	}
+
+	return 0, nil
+}
+
+func checkGitHubPermissions(ctx context.Context, repoName string, client GitHubClient) (bool, error) {
 	nameWithOwner := strings.TrimPrefix(repoName, "github.com/")
+
+	if author, wrongTokenType, err := checkGitHubAppInstallationPermissions(ctx, nameWithOwner, client); !wrongTokenType {
+		return author, err
+	}
+
+	return checkGitHubUserRepositoryPermissions(ctx, nameWithOwner, client)
+}
+
+// checkGitHubAppInstallationPermissions attempts to use the given client as if it's authorized as
+// a GitHub app installation with access to certain repositories. If this client is authorized as a
+// user instead, then wrongTokenType will be true. Otherwise, we check if the given name and owner
+// is present in set of visible repositories, indicating authorship of the user initiating the current
+// upload request.
+func checkGitHubAppInstallationPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (author bool, wrongTokenType bool, _ error) {
+	installationRepositories, err := client.ListInstallationRepositories(ctx)
+	if err != nil {
+		// A 403 error with this text indicates that the supplied token is a user token and not
+		// an app installation token. We'll send back a special flag to the caller to inform them
+		// that they should fall back to hitting the repository endpoint as the user.
+		if githubErr, ok := err.(*github.APIError); ok && githubErr.Code == 403 && strings.Contains(githubErr.Message, "installation access token") {
+			return false, true, nil
+		}
+
+		return false, false, errors.Wrap(err, "githubClient.ListInstallationRepositories")
+	}
+
+	for _, repository := range installationRepositories {
+		if repository.NameWithOwner == nameWithOwner {
+			return true, false, nil
+		}
+	}
+
+	return false, false, nil
+}
+
+// checkGitHubUserRepositoryPermissions attempts to use the given client as if it's authorized as
+// a user. This method returns true when the given name and owner is visible to the user initiating
+// the current upload request and that user has write permissions on the repo.
+func checkGitHubUserRepositoryPermissions(ctx context.Context, nameWithOwner string, client GitHubClient) (bool, error) {
 	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
 	if err != nil {
-		return http.StatusNotFound, errors.New("invalid GitHub repository: nameWithOwner=" + nameWithOwner)
+		return false, errors.New("invalid GitHub repository: nameWithOwner=" + nameWithOwner)
 	}
 
-	q := r.URL.Query()
-	githubToken := q.Get("github_token")
-	if githubToken == "" {
-		return http.StatusUnauthorized, errors.New("must provide github_token")
+	repository, err := client.GetRepository(ctx, owner, name)
+	if err != nil {
+		if _, ok := err.(*github.RepoNotFoundError); ok {
+			return false, nil
+		}
+
+		return false, errors.Wrap(err, "githubClient.GetRepository")
 	}
 
-	client := github.NewV3Client(&githubURL, &auth.OAuthBearerToken{Token: githubToken}, nil)
-
-	// There are 2 supported ways to authenticate the upload:
-	//
-	// 1. If the given token is a GitHub App installation token, then we use the
-	//
-	//    https://developer.github.com/v3/apps/installations/#list-repositories
-	//
-	//    endpoint to see if the associated GitHub App has been installed on the given repository.
-	//
-	//    One example of this is the built-in GITHUB_TOKEN in GitHub Actions:
-	//
-	//    https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
-	//
-	// 2. If the given token is a personal access token, then we use the
-	//
-	//    https://developer.github.com/v3/repos/#get
-	//
-	//    endpoint to see if the user has write access to the given repository.
-	//
-	// We don't know which kind of token was provided, so we try authenticating
-	// the user via each in turn.
-
-	authViaGithubApp := func() error {
-		repos, err := client.ListInstallationRepositories(ctx)
-		if err != nil {
-			return err
-		}
-		for _, repo := range repos {
-			if repo.NameWithOwner == nameWithOwner {
-				return nil
-			}
-		}
-		return errors.Errorf("given repository %s not listed in installed repositories", nameWithOwner)
-	}
-
-	authViaReposEndpoint := func() error {
-		repo, err := client.GetRepository(ctx, owner, name)
-		if err != nil {
-			return errors.Wrap(err, "unable to get repository permissions")
-		}
-
-		switch repo.ViewerPermission {
+	if repository != nil {
+		switch repository.ViewerPermission {
 		case "ADMIN", "MAINTAIN", "WRITE":
-			return nil
-		default:
-			return errors.New("you do not have write permission to the repository")
+			// Can edit repository contents
+			return true, nil
 		}
 	}
 
-	err = nil
-	var authErr error
-
-	// Must try authenticating via GitHub App before the repos endpoint because
-	// the repos endpoint always reports no permissions with a GitHub App
-	// installation token.
-	authErr = authViaGithubApp()
-	if authErr == nil {
-		return 0, nil
-	}
-	err = multierror.Append(err, authErr)
-
-	authErr = authViaReposEndpoint()
-	if authErr == nil {
-		return 0, nil
-	}
-	err = multierror.Append(err, authErr)
-
-	return http.StatusUnauthorized, err
+	return false, nil
 }

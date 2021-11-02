@@ -17,9 +17,10 @@ func TestUsers(t *testing.T) {
 		return []*types.User{{Username: "user1"}, {Username: "user2"}}, nil
 	}
 	database.Mocks.Users.Count = func(context.Context, *database.UsersListOptions) (int, error) { return 2, nil }
+	db := database.NewDB(nil)
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					users {

@@ -150,6 +150,25 @@ mutation CreateFeatureFlagOverride{
 
 The `namespace` argument is the graphql ID of either a user or an organization.
 
+### Listing all feature flags (including A/B tests)
+
+To list all currently running A/B tests:
+
+```graphql
+query FetchFeatureFlags {
+  featureFlags {
+    ... on FeatureFlagBoolean {
+      name
+      value
+    }
+    ... on FeatureFlagRollout {
+      name
+      rolloutBasisPoints
+    }
+  }
+}
+```
+
 ## Further reading
 
 - Initial RFC [#286](https://docs.google.com/document/d/1aT8uI3mUXpm9IK9_WbXhFM5ahHj9KQeQ521hd9EE5U8/edit)

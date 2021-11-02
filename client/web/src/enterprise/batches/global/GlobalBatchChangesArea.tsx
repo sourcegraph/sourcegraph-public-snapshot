@@ -12,7 +12,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../components/HeroPage'
-import { Page } from '../../../components/Page'
 import { lazyComponent } from '../../../util/lazyComponent'
 import type { BatchChangeClosePageProps } from '../close/BatchChangeClosePage'
 import type { CreateBatchChangePageProps } from '../create/CreateBatchChangePage'
@@ -83,7 +82,7 @@ interface AuthenticatedProps extends Props {
 }
 
 export const AuthenticatedBatchChangesArea = withAuthenticatedUser<AuthenticatedProps>(({ match, ...outerProps }) => (
-    <Page>
+    <div className="w-100">
         <Switch>
             <Route
                 render={props => <BatchChangeListPage headingElement="h1" {...outerProps} {...props} />}
@@ -97,7 +96,7 @@ export const AuthenticatedBatchChangesArea = withAuthenticatedUser<Authenticated
             />
             <Route component={NotFoundPage} key="hardcoded-key" />
         </Switch>
-    </Page>
+    </div>
 ))
 
 export interface NamespaceBatchChangesAreaProps extends Props {
@@ -116,13 +115,9 @@ export const NamespaceBatchChangesArea = withAuthenticatedUser<
                 )}
             />
             <Route
-                path={`${match.url}/create`}
-                render={props => <CreateBatchChangePage headingElement="h2" {...outerProps} {...props} />}
-            />
-            <Route
-                path={`${match.url}/executions/:executionID`}
-                render={({ match, ...props }: RouteComponentProps<{ executionID: string }>) => (
-                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} executionID={match.params.executionID} />
+                path={`${match.url}/executions/:batchSpecID`}
+                render={({ match, ...props }: RouteComponentProps<{ batchSpecID: string }>) => (
+                    <BatchSpecExecutionDetailsPage {...outerProps} {...props} batchSpecID={match.params.batchSpecID} />
                 )}
             />
             <Route

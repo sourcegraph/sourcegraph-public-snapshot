@@ -16,27 +16,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type PhabricatorStore struct {
+type PhabricatorStore interface {
+	Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error)
+	CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error)
+	CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error)
+	GetByName(context.Context, api.RepoName) (*types.PhabricatorRepo, error)
+	Transact(context.Context) (PhabricatorStore, error)
+	With(basestore.ShareableStore) PhabricatorStore
+	basestore.ShareableStore
+}
+
+type phabricatorStore struct {
 	*basestore.Store
 }
 
 // Phabricator instantiates and returns a new PhabricatorStore with prepared statements.
-func Phabricator(db dbutil.DB) *PhabricatorStore {
-	return &PhabricatorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Phabricator(db dbutil.DB) PhabricatorStore {
+	return &phabricatorStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewPhabricatorStoreWithDB instantiates and returns a new PhabricatorStore using the other store handle.
-func PhabricatorWith(other basestore.ShareableStore) *PhabricatorStore {
-	return &PhabricatorStore{Store: basestore.NewWithHandle(other.Handle())}
+func PhabricatorWith(other basestore.ShareableStore) PhabricatorStore {
+	return &phabricatorStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *PhabricatorStore) With(other basestore.ShareableStore) *PhabricatorStore {
-	return &PhabricatorStore{Store: s.Store.With(other)}
+func (s *phabricatorStore) With(other basestore.ShareableStore) PhabricatorStore {
+	return &phabricatorStore{Store: s.Store.With(other)}
 }
 
-func (s *PhabricatorStore) Transact(ctx context.Context) (*PhabricatorStore, error) {
+func (s *phabricatorStore) Transact(ctx context.Context) (PhabricatorStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &PhabricatorStore{Store: txBase}, err
+	return &phabricatorStore{Store: txBase}, err
 }
 
 type errPhabricatorRepoNotFound struct {
@@ -49,7 +59,7 @@ func (err errPhabricatorRepoNotFound) Error() string {
 
 func (err errPhabricatorRepoNotFound) NotFound() bool { return true }
 
-func (p *PhabricatorStore) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricatorStore) Create(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
@@ -65,7 +75,7 @@ func (p *PhabricatorStore) Create(ctx context.Context, callsign string, name api
 	return r, nil
 }
 
-func (p *PhabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	r := &types.PhabricatorRepo{
 		Callsign: callsign,
 		Name:     name,
@@ -84,7 +94,7 @@ func (p *PhabricatorStore) CreateOrUpdate(ctx context.Context, callsign string, 
 	return r, nil
 }
 
-func (p *PhabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
+func (p *phabricatorStore) CreateIfNotExists(ctx context.Context, callsign string, name api.RepoName, phabURL string) (*types.PhabricatorRepo, error) {
 	repo, err := p.GetByName(ctx, name)
 	if err != nil {
 		if !errors.HasType(err, errPhabricatorRepoNotFound{}) {
@@ -95,7 +105,7 @@ func (p *PhabricatorStore) CreateIfNotExists(ctx context.Context, callsign strin
 	return repo, nil
 }
 
-func (p *PhabricatorStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
+func (p *phabricatorStore) getBySQL(ctx context.Context, query string, args ...interface{}) ([]*types.PhabricatorRepo, error) {
 	rows, err := p.Handle().DB().QueryContext(ctx, "SELECT id, callsign, repo_name, url FROM phabricator_repos "+query, args...)
 	if err != nil {
 		return nil, err
@@ -117,7 +127,7 @@ func (p *PhabricatorStore) getBySQL(ctx context.Context, query string, args ...i
 	return repos, nil
 }
 
-func (p *PhabricatorStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.PhabricatorRepo, error) {
+func (p *phabricatorStore) getOneBySQL(ctx context.Context, query string, args ...interface{}) (*types.PhabricatorRepo, error) {
 	rows, err := p.getBySQL(ctx, query, args...)
 	if err != nil {
 		return nil, err
@@ -128,11 +138,7 @@ func (p *PhabricatorStore) getOneBySQL(ctx context.Context, query string, args .
 	return rows[0], nil
 }
 
-func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
-	if Mocks.Phabricator.GetByName != nil {
-		return Mocks.Phabricator.GetByName(name)
-	}
-
+func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
 	opt := ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &LimitOffset{
@@ -181,8 +187,4 @@ func (p *PhabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 	}
 
 	return p.getOneBySQL(ctx, "WHERE repo_name=$1", name)
-}
-
-type MockPhabricator struct {
-	GetByName func(repo api.RepoName) (*types.PhabricatorRepo, error)
 }

@@ -25,6 +25,7 @@ import (
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Repos.MockGetByName(t, "github.com/gorilla/mux", 2)
 	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -37,7 +38,7 @@ func TestRepository_Commit(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

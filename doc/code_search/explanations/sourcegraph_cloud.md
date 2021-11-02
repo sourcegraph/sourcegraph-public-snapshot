@@ -46,7 +46,7 @@ Even though Sourcegraph cloud is in private beta, it has been designed with secu
 See also:
 
 - [Who can see your code on Sourcegraph cloud](./code_visibility_on_sourcegraph_cloud.md)
-- [Our security infrastructure](https://about.sourcegraph.com/handbook/engineering/security/infrastructure)
+- [Our security infrastructure](https://handbook.sourcegraph.com/engineering/cloud/security/infrastructure)
 - [Our Terms of Service](https://about.sourcegraph.com/terms-dotcom) and [Privacy Policy](https://about.sourcegraph.com/privacy/)
 
 If you have further questions, reach out to our [security team](mailto:security@sourcegraph.com).

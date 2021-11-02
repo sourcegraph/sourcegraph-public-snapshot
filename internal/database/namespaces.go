@@ -29,27 +29,35 @@ var (
 	ErrNamespaceNotFound    = errors.New("namespace not found")
 )
 
-type NamespaceStore struct {
+type NamespaceStore interface {
+	basestore.ShareableStore
+	With(other basestore.ShareableStore) NamespaceStore
+	Transact(ctx context.Context) (NamespaceStore, error)
+	GetByID(ctx context.Context, orgID, userID int32) (*Namespace, error)
+	GetByName(ctx context.Context, name string) (*Namespace, error)
+}
+
+type namespaceStore struct {
 	*basestore.Store
 }
 
 // Namespaces instantiates and returns a new NamespaceStore with prepared statements.
-func Namespaces(db dbutil.DB) *NamespaceStore {
-	return &NamespaceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func Namespaces(db dbutil.DB) NamespaceStore {
+	return &namespaceStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // NewNamespaceStoreWithDB instantiates and returns a new NamespaceStore using the other store handle.
-func NamespacesWith(other basestore.ShareableStore) *NamespaceStore {
-	return &NamespaceStore{Store: basestore.NewWithHandle(other.Handle())}
+func NamespacesWith(other basestore.ShareableStore) NamespaceStore {
+	return &namespaceStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
-func (s *NamespaceStore) With(other basestore.ShareableStore) *NamespaceStore {
-	return &NamespaceStore{Store: s.Store.With(other)}
+func (s *namespaceStore) With(other basestore.ShareableStore) NamespaceStore {
+	return &namespaceStore{Store: s.Store.With(other)}
 }
 
-func (s *NamespaceStore) Transact(ctx context.Context) (*NamespaceStore, error) {
+func (s *namespaceStore) Transact(ctx context.Context) (NamespaceStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &NamespaceStore{Store: txBase}, err
+	return &namespaceStore{Store: txBase}, err
 }
 
 // GetByID looks up the namespace by an ID.
@@ -59,14 +67,10 @@ func (s *NamespaceStore) Transact(ctx context.Context) (*NamespaceStore, error) 
 // returned; if neither are given, ErrNamespaceNoID is returned.
 //
 // If no namespace is found, ErrNamespaceNotFound is returned.
-func (s *NamespaceStore) GetByID(
+func (s *namespaceStore) GetByID(
 	ctx context.Context,
 	orgID, userID int32,
 ) (*Namespace, error) {
-	if Mocks.Namespaces.GetByID != nil {
-		return Mocks.Namespaces.GetByID(ctx, orgID, userID)
-	}
-
 	preds := []*sqlf.Query{}
 	if orgID != 0 && userID != 0 {
 		return nil, ErrNamespaceMultipleIDs
@@ -90,14 +94,10 @@ func (s *NamespaceStore) GetByID(
 // organization names.
 //
 // If no namespace is found, ErrNamespaceNotFound is returned.
-func (s *NamespaceStore) GetByName(
+func (s *namespaceStore) GetByName(
 	ctx context.Context,
 	name string,
 ) (*Namespace, error) {
-	if Mocks.Namespaces.GetByName != nil {
-		return Mocks.Namespaces.GetByName(ctx, name)
-	}
-
 	var n Namespace
 	if err := s.getNamespace(ctx, &n, []*sqlf.Query{
 		sqlf.Sprintf("name = %s", name),
@@ -107,7 +107,7 @@ func (s *NamespaceStore) GetByName(
 	return &n, nil
 }
 
-func (s *NamespaceStore) getNamespace(ctx context.Context, n *Namespace, preds []*sqlf.Query) error {
+func (s *namespaceStore) getNamespace(ctx context.Context, n *Namespace, preds []*sqlf.Query) error {
 	q := getNamespaceQuery(preds)
 	err := s.QueryRow(
 		ctx,

@@ -73,7 +73,7 @@ const OrgNode: React.FunctionComponent<OrgNodeProps> = ({ node, history, onDidUp
                         <SettingsIcon className="icon-inline" /> Settings
                     </Link>{' '}
                     <Link
-                        to={`${orgURL(node.name)}/members`}
+                        to={`${orgURL(node.name)}/settings/members`}
                         className="btn btn-sm btn-secondary"
                         data-tooltip="Organization members"
                     >

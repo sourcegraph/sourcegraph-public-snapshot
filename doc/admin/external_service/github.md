@@ -34,12 +34,12 @@ The GitHub service requires a `token` in order to access their API. There are tw
 - **[Personal access token](https://help.github.com/en/articles/creating-a-personal-access-token-for-the-command-line)**:<br>This gives Sourcegraph the same level of access to repositories as the account that created the token. If you're not wanting to mix your personal repositories with your organizations repositories, you could add an entry to the `exclude` array, or you can use a machine user token.
 - **[Machine user token](https://developer.github.com/v3/guides/managing-deploy-keys/#machine-users)**:<br>Generates a token for a machine user that is affiliated with an organization instead of a user account.
 
-No token scopes are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
+No [token scopes](https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps#available-scopes) are required if you only want to sync public repositories and don't want to use any of the following features. Otherwise, the following token scopes are required for specific features:
 
 | Feature                                               | Required token scopes                                                                                          |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [Sync private repositories](#github)                  | `read:repo`                                                                                                    |
-| [Sync repository permissions][permissions]            | `write:repo`                                                                                                   |
+| [Sync private repositories](#github)                  | `repo`                                                                                                         |
+| [Sync repository permissions][permissions]            | `repo`                                                                                                         |
 | [Repository permissions caching][permissions-caching] | `write:org`                                                                                                    |
 | [Batch changes][batch-changes]                        | `repo`, `read:org`, `user:email`, `read:discussion`, and `workflow` ([learn more][batch-changes-interactions]) |
 
@@ -47,6 +47,17 @@ No token scopes are required if you only want to sync public repositories and do
 [permissions-caching]: ../repo/permissions.md#teams-and-organizations-permissions-caching
 [batch-changes]: ../../batch_changes/index.md
 [batch-changes-interactions]: ../../batch_changes/explanations/permissions_in_batch_changes.md#code-host-interactions-in-batch-changes
+
+<span class="virtual-br"></span>
+
+> WARNING: In addition to the prerequisite token scopes, the account attached to the token must actually have access to the relevant resources for [complete permissions sync](./../repo/permissions.md#complete-sync-vs-incremental-sync) (i.e. you cannot grant `repo` access to a repository that the token's account itself does not have write access for).
+>
+> For example:
+>
+> - If the `repo` scope is needed, the token's account must have write access to all repositories as well. This can happen by being added as a direct contributor, being on a team with write access to the repository, being an admin for the repository's organization, and so on.
+> - If the `write:org` scope is needed, the token's account must have write access for all organizations as well. This can happen by being an admin in the organization.
+>
+> Learn more about how the GitHub API is used in the corresponding feature documentation.
 
 ## GitHub.com rate limits
 

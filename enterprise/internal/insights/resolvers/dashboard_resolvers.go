@@ -28,7 +28,7 @@ var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloa
 var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
 
 type dashboardConnectionResolver struct {
-	orgStore *database.OrgStore
+	orgStore database.OrgStore
 	args     *graphqlbackend.InsightsDashboardsArgs
 
 	baseInsightResolver
@@ -59,6 +59,16 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 		if err != nil {
 			d.err = errors.Wrap(err, "getUserPermissions")
 			return
+		}
+
+		if d.args.ID != nil {
+			id, err := unmarshalDashboardID(*d.args.ID)
+			if err != nil {
+				d.err = errors.Wrap(err, "unmarshalDashboardID")
+			}
+			if !id.isVirtualized() {
+				args.ID = int(id.Arg)
+			}
 		}
 
 		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)

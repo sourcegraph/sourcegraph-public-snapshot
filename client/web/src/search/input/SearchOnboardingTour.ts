@@ -1,6 +1,7 @@
 /**
  * This file contains utility functions for the search onboarding tour.
  */
+import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -17,6 +18,7 @@ import { isMacPlatform } from '../../util'
 import { QueryState } from '../helpers'
 
 import { MonacoQueryInputProps } from './MonacoQueryInput'
+import styles from './SearchOnboardingTour.module.scss'
 import { defaultPopperModifiers, defaultTourOptions } from './tour-options'
 
 const tourOptions: Shepherd.Tour.TourOptions = {
@@ -41,11 +43,11 @@ function generateStep(options: { tour: Shepherd.Tour; stepNumber: number; conten
     const close = document.createElement('div')
     close.className = 'd-flex align-items-center'
     close.innerHTML = `
-        <div class="tour-card__separator"></div>
-        <div class="tour-card__close">${closeIconSvg}</div>
-    `
+         <div class=${styles.separator}></div>
+         <div class=${styles.close}>${closeIconSvg}</div>
+     `
     element.append(close)
-    element.querySelector('.tour-card__close')?.addEventListener('click', () => {
+    element.querySelector(styles.close)?.addEventListener('click', () => {
         options.tour.cancel()
         eventLogger.log('CloseOnboardingTourClicked', { stage: options.stepNumber }, { stage: options.stepNumber })
     })
@@ -71,10 +73,10 @@ function generateStep1(
     const content = document.createElement('div')
     content.className = 'd-flex align-items-center'
     content.innerHTML = `
-        <div class="tour-card__title">Get started</div>
-        <button type="button" class="btn btn-link p-0 tour-card__link tour-language-button">Search a language</button>
-        <button type="button" class="btn btn-link p-0 tour-card__link tour-repo-button">Search a repository</button>
-    `
+         <div class=${styles.title}>Get started</div>
+         <button type="button" class="btn btn-link p-0 ${styles.link} tour-language-button">Search a language</button>
+         <button type="button" class="btn btn-link p-0 ${styles.link} tour-repo-button">Search a repository</button>
+     `
     content.querySelector('.tour-language-button')?.addEventListener('click', () => {
         languageButtonHandler()
         eventLogger.log('OnboardingTourLanguageOptionClicked')
@@ -165,9 +167,9 @@ const generateStepContent = (title: string, description: string): HTMLElement =>
     const element = document.createElement('div')
     element.className = 'd-flex align-items-center'
     element.innerHTML = `
-        <div class="tour-card__title">${title}</div>
-        <div class="tour-card__description text-monospace">${description}</div>
-    `
+         <div class=${styles.title}>${title}</div>
+         <div class="${styles.description} text-monospace">${description}</div>
+     `
     return element
 }
 
@@ -191,9 +193,10 @@ const useTourWithSteps = ({
                         tour.show('filter-repository')
                     }
                 ),
-                classes: 'tour-card tour-card--arrow-left-up',
+                // "tour-card" class usages are kept for testing in `search-onboarding.test.ts` since we can't add attributes into step elements
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftUp, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'bottom',
                 },
                 popperOptions: {
@@ -212,9 +215,9 @@ const useTourWithSteps = ({
                         eventLogger.log('ViewedOnboardingTourFilterLangStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-left-down',
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftDown, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'top',
                 },
                 popperOptions: {
@@ -233,9 +236,9 @@ const useTourWithSteps = ({
                         eventLogger.log('ViewedOnboardingTourFilterRepoStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-left-down',
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftDown, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'top',
                 },
                 popperOptions: {
@@ -254,9 +257,9 @@ const useTourWithSteps = ({
                         eventLogger.log('ViewedOnboardingTourAddQueryTermStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-left-up',
+                classes: classNames(styles.tourCard, styles.tourCardArrowLeftUp, 'tour-card'),
                 attachTo: {
-                    element: '.search-page__input-container',
+                    element: '[data-search-page-input-container]',
                     on: 'bottom',
                 },
                 popperOptions: {
@@ -275,15 +278,15 @@ const useTourWithSteps = ({
                         eventLogger.log('ViewedOnboardingTourSubmitSearchStep')
                     },
                 },
-                classes: 'tour-card tour-card--arrow-right-down',
+                classes: classNames(styles.tourCard, styles.tourCardArrowRightDown, 'tour-card'),
                 attachTo: {
-                    element: '[data-testid="search-button"]',
+                    element: '[data-search-button]',
                     on: 'top',
                 },
                 popperOptions: {
                     modifiers: [{ name: 'offset', options: { offset: [-140, 8] } }],
                 },
-                advanceOn: { selector: '[data-testid="search-button"]', event: 'click' },
+                advanceOn: { selector: '[data-search-button]', event: 'click' },
             },
         ])
     }, [tour, setQueryState])

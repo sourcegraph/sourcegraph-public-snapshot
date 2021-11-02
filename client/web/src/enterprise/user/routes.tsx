@@ -30,6 +30,11 @@ export const enterpriseUserAreaRoutes: readonly UserAreaRoute[] = [
         condition: () => SHOW_BUSINESS_FEATURES,
     },
     {
+        path: '/batch-changes/create',
+        render: props => <Redirect to={`/batch-changes/create?namespace=${props.user.username}`} />,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
+    },
+    {
         path: '/batch-changes',
         render: props => <NamespaceBatchChangesArea {...props} namespaceID={props.user.id} />,
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,

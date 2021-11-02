@@ -29,7 +29,11 @@ type DBStore interface {
 	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (map[int]int, error)
 	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
 	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]dbstore.SourcedCommits, error)
-	RefreshCommitResolvability(ctx context.Context, repositoryID int, commit string, delete bool, now time.Time) (int, int, error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
+	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
+	RepoIDsByGlobPattern(ctx context.Context, pattern string) ([]int, error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error)
 }
 
 type DBStoreShim struct {

@@ -19,7 +19,7 @@
 //    If you have a need for this, it is a strong signal you should NOT be using the shared definition
 //    anymore and should instead copy it and apply your modifications.
 //
-// Learn more about monitoring in https://about.sourcegraph.com/handbook/engineering/observability/monitoring_pillars
+// Learn more about monitoring in https://handbook.sourcegraph.com/engineering/observability/monitoring_pillars
 package shared
 
 import (

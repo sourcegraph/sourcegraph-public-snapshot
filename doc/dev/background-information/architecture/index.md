@@ -127,7 +127,7 @@ We're actively working on removing this limitation.
 
 If you want to learn more about code insights:
 
-- [Code insights team page](https://about.sourcegraph.com/handbook/engineering/web/code-insights)
+- [Code insights team page](https://handbook.sourcegraph.com/engineering/code-graph/code-insights#code-insights-team)
 - [Code insights product document (PD)](https://docs.google.com/document/d/1d34gCpt_rUOMAun8phcjNsFofGaaA_N_8znmgaugdKw/edit)
 - [Original code insights RFC](https://docs.google.com/document/d/1EHzor6I1GhVVIpl70mH-c10b1tNEl_p1xRMJ9qHQfoc/edit)
 
@@ -276,7 +276,7 @@ Observability encapsulates the monitoring and debugging of Sourcegraph deploymen
 Sourcegraph is designed, and ships with, a number of observability tools and capabilities out-of-the box to enable visibility into the health and state of a Sourcegraph deployment.
 
 Monitoring includes [metrics and dashboards](../../../admin/observability/metrics.md), [alerting](../../../admin/observability/alerting.md), and [health checking](../../../admin/observability/health_checks.md) capabilities.
-Learn more about monitoring in the [monitoring architecture overview](https://about.sourcegraph.com/handbook/engineering/observability/monitoring_architecture).
+Learn more about monitoring in the [monitoring architecture overview](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture).
 
 - [grafana](../observability/grafana.md) is the frontend for service metrics, and ships with customized dashboards for Sourcegraph services.
 - [prometheus](../observability/prometheus.md) handles scraping of service metrics, and ships with recording rules, alert rules, and alerting capabilities.
@@ -293,7 +293,7 @@ If you want to learn more about observability:
 
 - [Observability for site administrators](../../../admin/observability/index.md)
 - [Observability developer documentation](../observability/index.md)
-- [Observability at Sourcegraph](https://about.sourcegraph.com/handbook/engineering/observability)
+- [Observability at Sourcegraph](https://handbook.sourcegraph.com/engineering/observability)
 
 ## Other resources
 
