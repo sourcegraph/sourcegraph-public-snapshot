@@ -386,8 +386,8 @@ func (m *ExternalServiceWebhookMigrator) Progress(ctx context.Context) (float64,
 				CAST(c1.count AS float) / CAST(c2.count AS float)
 			END
 		FROM
-			(SELECT COUNT(*) AS count FROM external_services WHERE has_webhooks IS NOT NULL) c1,
-			(SELECT COUNT(*) AS count FROM external_services) c2
+			(SELECT COUNT(*) AS count FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NOT NULL) c1,
+			(SELECT COUNT(*) AS count FROM external_services WHERE deleted_at IS NULL) c2
 	`)))
 	return progress, err
 }
@@ -405,7 +405,6 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 
 	svcs, err := store.List(ctx, ExternalServicesListOptions{
 		OrderByDirection: "ASC",
-		IncludeDeleted:   true,
 		LimitOffset:      &LimitOffset{Limit: m.BatchSize},
 		noCachedWebhooks: true,
 		forUpdate:        true,

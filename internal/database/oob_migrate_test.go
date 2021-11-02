@@ -770,6 +770,29 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		}
 		svcs = append(svcs, svc)
 
+		// We'll also add another external service that is deleted, and
+		// shouldn't count.
+		if err := basestore.Exec(
+			ctx,
+			sqlf.Sprintf(`
+				INSERT INTO
+					external_services
+					(
+						kind,
+						display_name,
+						config,
+						deleted_at
+					)
+					VALUES (%s, %s, %s, NOW())
+				`,
+				extsvc.KindOther,
+				"deleted",
+				"{}",
+			),
+		); err != nil {
+			t.Fatal(err)
+		}
+
 		return svcs
 	}
 

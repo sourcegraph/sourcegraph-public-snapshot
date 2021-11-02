@@ -39,7 +39,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		afterID              int64
 		wantQuery            string
 		onlyCloudDefault     bool
-		includeDeleted       bool
 		noCachedWebhooks     bool
 		wantArgs             []interface{}
 	}{
@@ -95,11 +94,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
 		},
 		{
-			name:           "has IncludeDeleted",
-			includeDeleted: true,
-			wantQuery:      "TRUE",
-		},
-		{
 			name:             "has noCachedWebhooks",
 			noCachedWebhooks: true,
 			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
@@ -115,7 +109,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				Kinds:                test.kinds,
 				AfterID:              test.afterID,
 				OnlyCloudDefault:     test.onlyCloudDefault,
-				IncludeDeleted:       test.includeDeleted,
 				noCachedWebhooks:     test.noCachedWebhooks,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
