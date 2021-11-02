@@ -961,7 +961,9 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 
 	// Run the search
 	limitHit, err := s.search(ctx, &args, matchesBuf)
-	eventWriter.Event("done", protocol.NewSearchEventDone(false, err))
+	if err := eventWriter.Event("done", protocol.NewSearchEventDone(false, err)); err != nil {
+		log15.Warn("failed to send done event", "error", err)
+	}
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(err)
 	searchDuration.
@@ -971,7 +973,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	if honey.Enabled() || traceLogs {
 		actor := r.Header.Get("X-Sourcegraph-Actor")
 		ev := honey.Event("gitserver-search")
-		ev.SampleRate = 16
+		ev.SampleRate = honeySampleRate("", actor == "internal")
 		ev.AddField("repo", args.Repo)
 		ev.AddField("revisions", args.Revisions)
 		ev.AddField("include_diff", args.IncludeDiff)
@@ -995,6 +997,8 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
+// concern itself with event types, and all instrumentation is handled in the calling function.
 func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
 
 	args.Repo = protocol.NormalizeRepo(args.Repo)
