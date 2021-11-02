@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -39,7 +40,7 @@ type UserConnectionResolver interface {
 var _ UserConnectionResolver = &userConnectionResolver{}
 
 type userConnectionResolver struct {
-	db           database.DB
+	db           dbutil.DB
 	opt          database.UsersListOptions
 	activePeriod *string
 
@@ -141,7 +142,7 @@ func (r *userConnectionResolver) useCache() bool {
 // staticUserConnectionResolver implements the GraphQL type UserConnection based on an underlying
 // list of users that is computed statically.
 type staticUserConnectionResolver struct {
-	db    database.DB
+	db    dbutil.DB
 	users []*types.User
 }
 

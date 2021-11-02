@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 type featuredExtensionsResolver struct {
@@ -14,7 +14,7 @@ type featuredExtensionsResolver struct {
 
 	featuredExtensions []graphqlbackend.RegistryExtension
 	err                error
-	db                 database.DB
+	db                 dbutil.DB
 }
 
 func (r *extensionRegistryResolver) FeaturedExtensions(ctx context.Context) (graphqlbackend.FeaturedExtensionsConnection, error) {

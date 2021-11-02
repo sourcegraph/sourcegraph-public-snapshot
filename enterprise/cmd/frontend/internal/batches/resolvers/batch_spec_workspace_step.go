@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -123,7 +122,7 @@ func (r *batchSpecWorkspaceStepResolver) DiffStat(ctx context.Context) (*graphql
 
 func (r *batchSpecWorkspaceStepResolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
 	if r.stepInfo.Diff != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, database.NewDB(r.store.DB()), r.repo, r.baseRev, *r.stepInfo.Diff)
+		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DB(), r.repo, r.baseRev, *r.stepInfo.Diff)
 	}
 	return nil, nil
 }

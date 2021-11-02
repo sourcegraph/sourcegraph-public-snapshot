@@ -24,7 +24,7 @@ func init() {
 }
 
 func TestDeleteLSIFUpload(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	t.Cleanup(func() {
 		database.Mocks.Users.GetByCurrentAuthUser = nil
@@ -49,7 +49,7 @@ func TestDeleteLSIFUpload(t *testing.T) {
 }
 
 func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFUpload:42")))
 	mockResolver := resolvermocks.NewMockResolver()
@@ -60,7 +60,7 @@ func TestDeleteLSIFUploadUnauthenticated(t *testing.T) {
 }
 
 func TestDeleteLSIFIndex(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	t.Cleanup(func() {
 		database.Mocks.Users.GetByCurrentAuthUser = nil
@@ -85,7 +85,7 @@ func TestDeleteLSIFIndex(t *testing.T) {
 }
 
 func TestDeleteLSIFIndexUnauthenticated(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	id := graphql.ID(base64.StdEncoding.EncodeToString([]byte("LSIFIndex:42")))
 	mockResolver := resolvermocks.NewMockResolver()

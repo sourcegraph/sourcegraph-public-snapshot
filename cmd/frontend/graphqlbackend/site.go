@@ -51,7 +51,7 @@ func (r *schemaResolver) Site() *siteResolver {
 }
 
 type siteResolver struct {
-	db    database.DB
+	db    dbutil.DB
 	gqlID string // == singletonSiteGQLID, not the site ID
 }
 

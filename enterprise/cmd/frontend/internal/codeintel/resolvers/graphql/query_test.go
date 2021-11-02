@@ -9,12 +9,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	resolvermocks "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/mocks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
 func TestRanges(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -36,7 +35,7 @@ func TestRanges(t *testing.T) {
 }
 
 func TestDefinitions(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -58,7 +57,7 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestReferences(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -97,7 +96,7 @@ func TestReferences(t *testing.T) {
 }
 
 func TestReferencesDefaultLimit(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -123,7 +122,7 @@ func TestReferencesDefaultLimit(t *testing.T) {
 }
 
 func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -143,7 +142,7 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 }
 
 func TestHover(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	mockResolver.HoverFunc.SetDefaultReturn("text", lsifstore.Range{}, true, nil)
@@ -166,7 +165,7 @@ func TestHover(t *testing.T) {
 }
 
 func TestDiagnostics(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -189,7 +188,7 @@ func TestDiagnostics(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultLimit(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
@@ -211,7 +210,7 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 }
 
 func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	mockResolver := resolvermocks.NewMockQueryResolver()
 	resolver := NewQueryResolver(mockResolver, NewCachedLocationResolver(db))
