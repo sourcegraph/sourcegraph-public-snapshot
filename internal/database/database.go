@@ -18,6 +18,7 @@ type DB interface {
 	dbutil.TxBeginner
 	AccessTokens() AccessTokenStore
 	EventLogs() EventLogStore
+	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	Namespaces() NamespaceStore
 	OrgInvitations() OrgInvitationStore
@@ -62,6 +63,10 @@ func (d *db) AccessTokens() AccessTokenStore {
 
 func (d *db) EventLogs() EventLogStore {
 	return EventLogs(d.DB)
+}
+
+func (d *db) ExternalServices() ExternalServiceStore {
+	return ExternalServices(d.DB)
 }
 
 func (d *db) FeatureFlags() FeatureFlagStore {

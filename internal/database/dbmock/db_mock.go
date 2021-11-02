@@ -27,6 +27,9 @@ type MockDB struct {
 	// ExecContextFunc is an instance of a mock function object controlling
 	// the behavior of the method ExecContext.
 	ExecContextFunc *DBExecContextFunc
+	// ExternalServicesFunc is an instance of a mock function object
+	// controlling the behavior of the method ExternalServices.
+	ExternalServicesFunc *DBExternalServicesFunc
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *DBFeatureFlagsFunc
@@ -105,6 +108,11 @@ func NewMockDB() *MockDB {
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: func(context.Context, string, ...interface{}) (sql.Result, error) {
 				return nil, nil
+			},
+		},
+		ExternalServicesFunc: &DBExternalServicesFunc{
+			defaultHook: func() database.ExternalServiceStore {
+				return nil
 			},
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
@@ -215,6 +223,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		ExecContextFunc: &DBExecContextFunc{
 			defaultHook: i.ExecContext,
+		},
+		ExternalServicesFunc: &DBExternalServicesFunc{
+			defaultHook: i.ExternalServices,
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
@@ -695,6 +706,106 @@ func (c DBExecContextFuncCall) Args() []interface{} {
 // invocation.
 func (c DBExecContextFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBExternalServicesFunc describes the behavior when the ExternalServices
+// method of the parent MockDB instance is invoked.
+type DBExternalServicesFunc struct {
+	defaultHook func() database.ExternalServiceStore
+	hooks       []func() database.ExternalServiceStore
+	history     []DBExternalServicesFuncCall
+	mutex       sync.Mutex
+}
+
+// ExternalServices delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) ExternalServices() database.ExternalServiceStore {
+	r0 := m.ExternalServicesFunc.nextHook()()
+	m.ExternalServicesFunc.appendCall(DBExternalServicesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ExternalServices
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBExternalServicesFunc) SetDefaultHook(hook func() database.ExternalServiceStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ExternalServices method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBExternalServicesFunc) PushHook(hook func() database.ExternalServiceStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBExternalServicesFunc) SetDefaultReturn(r0 database.ExternalServiceStore) {
+	f.SetDefaultHook(func() database.ExternalServiceStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBExternalServicesFunc) PushReturn(r0 database.ExternalServiceStore) {
+	f.PushHook(func() database.ExternalServiceStore {
+		return r0
+	})
+}
+
+func (f *DBExternalServicesFunc) nextHook() func() database.ExternalServiceStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBExternalServicesFunc) appendCall(r0 DBExternalServicesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBExternalServicesFuncCall objects
+// describing the invocations of this function.
+func (f *DBExternalServicesFunc) History() []DBExternalServicesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBExternalServicesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBExternalServicesFuncCall is an object that describes an invocation of
+// method ExternalServices on an instance of MockDB.
+type DBExternalServicesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ExternalServiceStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBExternalServicesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBExternalServicesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBFeatureFlagsFunc describes the behavior when the FeatureFlags method of

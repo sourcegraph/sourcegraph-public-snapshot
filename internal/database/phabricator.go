@@ -139,10 +139,6 @@ func (p *phabricatorStore) getOneBySQL(ctx context.Context, query string, args .
 }
 
 func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*types.PhabricatorRepo, error) {
-	if Mocks.Phabricator.GetByName != nil {
-		return Mocks.Phabricator.GetByName(name)
-	}
-
 	opt := ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &LimitOffset{
@@ -191,8 +187,4 @@ func (p *phabricatorStore) GetByName(ctx context.Context, name api.RepoName) (*t
 	}
 
 	return p.getOneBySQL(ctx, "WHERE repo_name=$1", name)
-}
-
-type MockPhabricator struct {
-	GetByName func(repo api.RepoName) (*types.PhabricatorRepo, error)
 }

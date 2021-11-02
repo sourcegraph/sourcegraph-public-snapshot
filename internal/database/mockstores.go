@@ -22,8 +22,6 @@ type MockStores struct {
 	UserEmails      MockUserEmails
 	UserPublicRepos MockUserPublicRepos
 
-	Phabricator MockPhabricator
-
 	ExternalAccounts MockExternalAccounts
 
 	OrgInvitations MockOrgInvitations
