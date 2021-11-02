@@ -42,9 +42,10 @@ func (s *SubRepoPermsClient) CheckPermissions(ctx context.Context, userID int32,
 	// Check repo
 	repoRules, ok := srp[content.Repo]
 	if !ok {
-		// No sub-repository rules exist so we'll assume read access has already been
-		// enforced at the repo level
-		return Read, nil
+		// All repos that support sub-repo permissions should at the very least have an
+		// "allow all" rule. If no rules exist it implies that we haven't performed a
+		// permissions sync yet and it is safer to assume no access is allowed.
+		return None, nil
 	}
 
 	// TODO: This will be very slow until we can cache compiled rules
