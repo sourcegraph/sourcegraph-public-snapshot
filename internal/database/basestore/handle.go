@@ -33,7 +33,7 @@ func (h *TransactableHandle) InTransaction() bool {
 	db := h.db
 	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
 		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or
-		// *sql.Tx.  This is needed because below, we attempt to cast the db as
+		// *sql.Tx. This is needed because below, we attempt to cast the db as
 		// a dbutil.Tx, which is not implemented by database.db. This should
 		// eventually be removed once dbutil.DB is subsumed by database.DB
 		db = unwrapper.Unwrap()
