@@ -366,6 +366,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		seriesToAdd = *matchingSeries
 	}
 
+	// BUG: If the user tries to attach the same series (the same query and timescope) to an insight view multiple times,
+	// this will fail because it violates the unique key constraint. This will be solved by: #26905
+	// Alternately we could detect this and return an error?
 	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{
 		Label:  emptyIfNil(series.Options.Label),
 		Stroke: emptyIfNil(series.Options.LineColor),
@@ -375,6 +378,8 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	}
 	return nil
 }
+
+// TODO I think we need another check to make sure that all of the series given to us actually already exist on the insight.
 
 func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
 	for i := range inputSeries {

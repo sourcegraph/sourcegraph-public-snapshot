@@ -568,10 +568,15 @@ type MatchSeriesArgs struct {
 }
 
 func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (*types.InsightSeries, error) {
-	q := sqlf.Sprintf(findMatchingSeriesSql, args.Query, args.StepIntervalUnit, args.StepIntervalUnit)
+	where := sqlf.Sprintf(
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue,
+	)
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
 	rows, err := scanDataSeries(s.Query(ctx, q))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "FindMatchingSeries")
 	}
 	if len(rows) == 0 {
 		return nil, nil
@@ -588,7 +593,7 @@ type UpdateFrontendSeriesArgs struct {
 }
 
 func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
-	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, args.Repositories, args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, pq.Array(args.Repositories), args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
 }
 
 const setSeriesStatusSql = `
@@ -686,15 +691,9 @@ WHERE %s
 
 const countSeriesReferencesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CountSeriesReferences
-SELECT COUNT(*) from insight_view_series
-WHERE insight_series_id = %s
-`
-
-const findMatchingSeriesSql = `
--- source: enterprise/internal/insights/store/insight_store.go:FindMatchinSeries
-SELECT * from insight_series
-WHERE (repositories = '{}' OR repositories is NULL)
-  AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s
+SELECT COUNT(*) FROM insight_view_series viewSeries
+	INNER JOIN insight_series series ON viewSeries.insight_series_id = series.id
+WHERE series.series_id = %s
 `
 
 const updateFrontendSeriesSql = `
