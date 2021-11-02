@@ -222,7 +222,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 			return nil, err
 		}
 	} else if r.opt.OrgID != 0 {
-		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, database.NewDB(r.db), r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
