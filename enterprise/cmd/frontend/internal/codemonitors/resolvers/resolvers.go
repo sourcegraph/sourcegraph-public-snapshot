@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -535,7 +536,7 @@ func (m *monitor) ID() graphql.ID {
 }
 
 func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), m.Monitor.CreatedBy)
+	return graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.Monitor.CreatedBy)
 }
 
 func (m *monitor) CreatedAt() graphqlbackend.DateTime {
@@ -552,9 +553,9 @@ func (m *monitor) Enabled() bool {
 
 func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
 	if m.NamespaceOrgID == nil {
-		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), *m.NamespaceUserID)
+		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *m.NamespaceUserID)
 	} else {
-		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.store.Handle().DB(), *m.NamespaceOrgID)
+		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *m.NamespaceOrgID)
 	}
 	return n, err
 }
@@ -780,9 +781,9 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	for _, r := range ms {
 		n := graphqlbackend.NamespaceResolver{}
 		if r.NamespaceOrgID == nil {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), *r.NamespaceUserID)
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *r.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.store.Handle().DB(), *r.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *r.NamespaceOrgID)
 		}
 		if err != nil {
 			return nil, err

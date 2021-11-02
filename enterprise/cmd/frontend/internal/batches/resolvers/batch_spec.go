@@ -159,7 +159,7 @@ func (r *batchSpecResolver) Description() graphqlbackend.BatchChangeDescriptionR
 }
 
 func (r *batchSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.store.DB()), r.batchSpec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -525,9 +525,9 @@ func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbacke
 		)
 
 		if r.batchSpec.NamespaceUserID != 0 {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceUserID)
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.store.DB()), r.batchSpec.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DB(), r.batchSpec.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, database.NewDB(r.store.DB()), r.batchSpec.NamespaceOrgID)
 		}
 
 		if errcode.IsNotFound(err) {

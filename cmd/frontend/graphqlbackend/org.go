@@ -34,7 +34,7 @@ func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	return OrgByID(ctx, r.db, args.ID)
 }
 
-func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,8 @@ func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, er
 	return OrgByIDInt32(ctx, db, orgID)
 }
 
-func OrgByIDInt32(ctx context.Context, db dbutil.DB, orgID int32) (*OrgResolver, error) {
-	org, err := database.Orgs(db).GetByID(ctx, orgID)
+func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
+	org, err := db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}

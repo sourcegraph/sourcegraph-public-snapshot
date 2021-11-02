@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	"go.uber.org/atomic"
@@ -20,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -949,8 +950,6 @@ func TestSearchContext(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	db := dbtest.NewDB(t)
-
 	tts := []struct {
 		name        string
 		searchQuery string
@@ -974,6 +973,23 @@ func TestSearchContext(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			repos := dbmock.NewMockRepoStore()
+			repos.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{}, nil)
+			repos.CountFunc.SetDefaultReturn(0, nil)
+
+			ns := dbmock.NewMockNamespaceStore()
+			ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
+				userID, ok := users[name]
+				if !ok {
+					t.Errorf("User with ID %d not found", userID)
+				}
+				return &database.Namespace{Name: name, User: userID}, nil
+			})
+
+			db := dbmock.NewMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.NamespacesFunc.SetDefaultReturn(ns)
+
 			resolver := searchResolver{
 				SearchInputs: &run.SearchInputs{
 					Plan:         p,
@@ -983,35 +999,14 @@ func TestSearchContext(t *testing.T) {
 				reposMu:  &sync.Mutex{},
 				resolved: &searchrepos.Resolved{},
 				zoekt:    mockZoekt,
-				db:       database.NewDB(db),
+				db:       db,
 			}
-
-			numGetByNameCalls := 0
-			database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
-				return []types.RepoName{}, nil
-			}
-			database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 0, nil }
-			database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-				userID, ok := users[name]
-				if !ok {
-					t.Errorf("User with ID %d not found", userID)
-				}
-				numGetByNameCalls += 1
-				return &database.Namespace{Name: name, User: userID}, nil
-			}
-			defer func() {
-				database.Mocks.Repos.ListRepoNames = nil
-				database.Mocks.Repos.Count = nil
-				database.Mocks.Namespaces.GetByName = nil
-			}()
 
 			_, err = resolver.Results(context.Background())
 			if err != nil {
 				t.Fatal(err)
 			}
-			if numGetByNameCalls != tt.numContexts {
-				t.Fatalf("got %d, want %d", numGetByNameCalls, tt.numContexts)
-			}
+			mockrequire.CalledN(t, ns.GetByNameFunc, tt.numContexts)
 		})
 	}
 }

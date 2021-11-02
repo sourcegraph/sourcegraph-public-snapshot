@@ -91,14 +91,14 @@ func (r savedSearchResolver) Query() string { return r.s.Query }
 
 func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
 	if r.s.OrgID != nil {
-		n, err := NamespaceByID(ctx, r.db, MarshalOrgID(*r.s.OrgID))
+		n, err := NamespaceByID(ctx, database.NewDB(r.db), MarshalOrgID(*r.s.OrgID))
 		if err != nil {
 			return nil, err
 		}
 		return &NamespaceResolver{n}, nil
 	}
 	if r.s.UserID != nil {
-		n, err := NamespaceByID(ctx, r.db, MarshalUserID(*r.s.UserID))
+		n, err := NamespaceByID(ctx, database.NewDB(r.db), MarshalUserID(*r.s.UserID))
 		if err != nil {
 			return nil, err
 		}
