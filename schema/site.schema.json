@@ -1159,7 +1159,7 @@
           "!go": { "pointer": true }
         },
         "retention": {
-          "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). By default, this is \"72h\", or three days.",
+          "description": "How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is \"72h\", or three days.",
           "type": "string",
           "default": "72h"
         }

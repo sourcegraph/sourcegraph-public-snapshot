@@ -1741,7 +1741,7 @@ type VersionContextRevision struct {
 type WebhookLogging struct {
 	// Enabled description: Whether incoming webhooks are logged. If omitted, logging is enabled on sites without encryption. If one or more encryption keys are present, this setting must be enabled manually; as webhooks may contain sensitive data, admins of encrypted sites may want to enable webhook encryption via encryption.keys.webhookLogKey.
 	Enabled *bool `json:"enabled,omitempty"`
-	// Retention description: How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). By default, this is "72h", or three days.
+	// Retention description: How long incoming webhooks are retained. The string format is that of the Duration type in the Go time package (https://golang.org/pkg/time/#ParseDuration). Values lower than 1 hour will be treated as 1 hour. By default, this is "72h", or three days.
 	Retention string `json:"retention,omitempty"`
 }
 

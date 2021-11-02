@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/loghandlers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -261,6 +262,12 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
 
+	// Start a periodic worker to purge stale webhook logs. The 1 hour period is
+	// documented in the site configuration schema; it's extremely unlikely that
+	// a retention period below several hours would be useful anyway, and this
+	// saves us waking up too often.
+	webhookLogPurger := goroutine.NewPeriodicGoroutine(ctx, 1*time.Hour, webhooks.NewPurgeHandler(db, keyring.Default().WebhookLogKey))
+
 	// Parse GraphQL schema and set up resolvers that depend on dbconn.Global
 	// being initialized
 	if dbconn.Global == nil {
@@ -290,6 +297,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	routines := []goroutine.BackgroundRoutine{
 		server,
 		outOfBandMigrationRunner,
+		webhookLogPurger,
 	}
 	if internalAPI != nil {
 		routines = append(routines, internalAPI)
