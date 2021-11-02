@@ -5646,6 +5646,60 @@ Query: `sum by(app) (up{app=~".*query-runner"}) / count by (app) (up{app=~".*que
 
 <br />
 
+## Redis Store
+
+<p class="subtitle">Holds data that cannot be easily recomputed, like sessions.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/redis-store/redis-store` on your Sourcegraph instance.
+
+### Redis Store: Redis Up
+
+#### redis-store: redis-store_up
+
+<p class="subtitle">Determination if redis-store is currently alive</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-store-redis-store-up) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis-store/redis-store?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `redis_up{app="redis-store"}`
+
+</details>
+
+<br />
+
+## Redis Cache
+
+<p class="subtitle">Holds data that can be easily recomputed.</p>
+
+To see this dashboard, visit `/-/debug/grafana/d/redis-cache/redis-cache` on your Sourcegraph instance.
+
+### Redis Cache: Redis Cache Up
+
+#### redis-cache: redis-cache_up
+
+<p class="subtitle">Determination if redis-store is currently alive</p>
+
+Refer to the [alert solutions reference](./alert_solutions.md#redis-cache-redis-cache-up) for 1 alert related to this panel.
+
+To see this panel, visit `/-/debug/grafana/d/redis-cache/redis-cache?viewPanel=100000` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Devops team](https://handbook.sourcegraph.com/engineering/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `redis_up{app="redis-cache"}`
+
+</details>
+
+<br />
+
 ## Worker
 
 <p class="subtitle">Manages background processes.</p>
