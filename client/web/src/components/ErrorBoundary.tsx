@@ -130,10 +130,20 @@ function shouldErrorBeReported(error: unknown): boolean {
         // Ignore Server error responses (5xx)
         return error.status < 500
     }
-
+    if (isWebpackChunkError(error) || isAbortError(error) || isNotAuthenticatedError(error)) {
+        return false
+    }
     return true
 }
 
 function isWebpackChunkError(value: unknown): boolean {
     return isErrorLike(value) && value.name === 'ChunkLoadError'
+}
+
+function isAbortError(value: unknown): boolean {
+    return isErrorLike(value) && value.name === 'AbortError'
+}
+
+function isNotAuthenticatedError(value: unknown): boolean {
+    return isErrorLike(value) && value.message.includes('not authenticated')
 }
