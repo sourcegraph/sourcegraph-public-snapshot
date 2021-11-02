@@ -1,4 +1,4 @@
-q# Quickstart step 1: Install dependencies
+# Quickstart step 1: Install dependencies
 
 Sourcegraph has the following dependencies:
 
