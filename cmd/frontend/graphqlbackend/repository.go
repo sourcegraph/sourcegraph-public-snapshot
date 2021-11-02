@@ -314,6 +314,9 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 		if r.innerRepo != nil && !r.innerRepo.CreatedAt.IsZero() {
 			return
 		}
+		if r.innerRepo.ID == DONT_RESOLVE_REPO_UID {
+			return
+		}
 
 		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 

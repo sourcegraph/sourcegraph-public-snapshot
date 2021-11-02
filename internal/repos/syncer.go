@@ -115,6 +115,8 @@ type syncHandler struct {
 }
 
 func (s *syncHandler) Handle(ctx context.Context, record workerutil.Record) (err error) {
+	// Slow down syncing to show intermediate state
+	time.Sleep(10 * time.Second)
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
