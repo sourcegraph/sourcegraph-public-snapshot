@@ -22,11 +22,11 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/shared/src/util/er
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { getFileDecorations } from '../backend/features'
-import { ErrorAlert } from '../components/alerts'
 import { TreeFields } from '../graphql-operations'
 import { fetchTreeEntries } from '../repo/backend'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
+import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
 import { TreeNode } from './Tree'
 import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
@@ -188,10 +188,9 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         return (
             <>
                 {isErrorLike(treeOrError) ? (
-                    <ErrorAlert
+                    <TreeRowAlert
                         // needed because of dynamic styling
                         style={errorWidth(localStorage.getItem(this.props.sizeKey) ? this.props.sizeKey : undefined)}
-                        className="tree__row tree__row-alert"
                         prefix="Error loading tree"
                         error={treeOrError}
                     />
@@ -201,13 +200,13 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                      * We should not be stealing focus here, we should let the user focus on the actual items listed.
                      * Issue: https://github.com/sourcegraph/sourcegraph/issues/19167
                      */
-                    <table className="tree-layer" tabIndex={0}>
+                    <TreeLayerTable tabIndex={0}>
                         <tbody>
                             <tr>
-                                <td className="tree__cell">
+                                <TreeLayerCell>
                                     {treeOrError === LOADING ? (
-                                        <div className="tree__row-loader">
-                                            <LoadingSpinner className="icon-inline" />
+                                        <div>
+                                            <LoadingSpinner className="icon-inline tree-page__entries-loader" />
                                             Loading tree
                                         </div>
                                     ) : (
@@ -225,10 +224,10 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                             />
                                         )
                                     )}
-                                </td>
+                                </TreeLayerCell>
                             </tr>
                         </tbody>
-                    </table>
+                    </TreeLayerTable>
                 )}
             </>
         )
