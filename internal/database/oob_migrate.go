@@ -405,7 +405,6 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 
 	svcs, err := store.List(ctx, ExternalServicesListOptions{
 		OrderByDirection: "ASC",
-		IncludeDeleted:   true,
 		LimitOffset:      &LimitOffset{Limit: m.BatchSize},
 		noCachedWebhooks: true,
 		forUpdate:        true,

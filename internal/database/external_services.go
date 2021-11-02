@@ -210,8 +210,6 @@ type ExternalServicesListOptions struct {
 	// When true, will only return services that have the cloud_default flag set to
 	// true.
 	OnlyCloudDefault bool
-	// When true, deleted external services are included.
-	IncludeDeleted bool
 
 	*LimitOffset
 
@@ -224,12 +222,7 @@ type ExternalServicesListOptions struct {
 }
 
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
-	conds := []*sqlf.Query{}
-	if o.IncludeDeleted {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
-	} else {
-		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
-	}
+	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if len(o.IDs) > 0 {
 		ids := make([]*sqlf.Query, 0, len(o.IDs))
 		for _, id := range o.IDs {
