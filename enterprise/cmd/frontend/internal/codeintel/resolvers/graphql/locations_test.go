@@ -31,7 +31,7 @@ const numCommits = 10 // per repo
 const numPaths = 10   // per commit
 
 func TestCachedLocationResolver(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -170,7 +170,7 @@ func TestCachedLocationResolver(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownRepository(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -200,7 +200,7 @@ func TestCachedLocationResolverUnknownRepository(t *testing.T) {
 }
 
 func TestCachedLocationResolverUnknownCommit(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil
@@ -234,7 +234,7 @@ func TestCachedLocationResolverUnknownCommit(t *testing.T) {
 }
 
 func TestResolveLocations(t *testing.T) {
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	t.Cleanup(func() {
 		database.Mocks.Repos.Get = nil

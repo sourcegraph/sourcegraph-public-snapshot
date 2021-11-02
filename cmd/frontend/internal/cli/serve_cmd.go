@@ -125,7 +125,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -199,7 +199,7 @@ func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oob
 	}
 
 	// Run enterprise setup hook
-	enterprise := enterpriseSetupHook(database.NewDB(db), outOfBandMigrationRunner)
+	enterprise := enterpriseSetupHook(db, outOfBandMigrationRunner)
 
 	ui.InitRouter(db, enterprise.CodeIntelResolver)
 

@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -22,7 +23,7 @@ import (
 // - Organization settings
 // - Current user settings
 type settingsCascade struct {
-	db database.DB
+	db dbutil.DB
 	// At most 1 of these fields is set.
 	unauthenticatedActor bool
 	subject              *settingsSubject

@@ -19,7 +19,7 @@ import (
 
 func TestPreviewRepositoryComparisonResolver(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(new(dbtesting.MockDB))
+	db := new(dbtesting.MockDB)
 
 	const testDiffFiles = 3
 	const testOldFile = `First

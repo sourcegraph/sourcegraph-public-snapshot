@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -14,7 +14,7 @@ type FileMatchResolver struct {
 	result.FileMatch
 
 	RepoResolver *RepositoryResolver
-	db           database.DB
+	db           dbutil.DB
 }
 
 // Equal provides custom comparison which is used by go-cmp

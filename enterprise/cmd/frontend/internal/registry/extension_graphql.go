@@ -12,11 +12,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // extensionDBResolver implements the GraphQL type RegistryExtension.
 type extensionDBResolver struct {
-	db database.DB
+	db dbutil.DB
 	v  *dbExtension
 
 	// Supplied as part of list endpoints, but
