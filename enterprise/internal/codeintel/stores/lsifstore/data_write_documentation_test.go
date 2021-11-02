@@ -121,11 +121,11 @@ func TestWriteDocumentationPathInfo(t *testing.T) {
 
 	// Query the path info and snapshot it.
 	t.Run("query path info", func(t *testing.T) {
-		gotPage, err := store.DocumentationPathInfo(ctx, testBundleID, pathInfo.PathID)
+		got, err := store.DocumentationPathInfo(ctx, testBundleID, pathInfo.PathID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		autogold.Equal(t, gotPage)
+		autogold.Equal(t, got)
 	})
 }
 
