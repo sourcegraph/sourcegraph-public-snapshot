@@ -60,7 +60,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		})
 		// Apply the user's orgs' settings.
 		for _, org := range orgs {
-			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: r.db, org: org}})
+			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: database.NewDB(r.db), org: org}})
 		}
 		// Apply the user's own settings last (it has highest priority).
 		subjects = append(subjects, r.subject)

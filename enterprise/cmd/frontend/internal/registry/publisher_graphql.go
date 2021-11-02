@@ -38,7 +38,7 @@ func extensionRegistryViewerPublishers(ctx context.Context, db dbutil.DB) ([]gra
 		return nil, err
 	}
 	for _, org := range orgs {
-		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(db, org)})
+		publishers = append(publishers, &registryPublisher{org: graphqlbackend.NewOrg(database.NewDB(db), org)})
 	}
 	return publishers, nil
 }
@@ -142,7 +142,7 @@ func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db dbutil
 		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, p.orgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(db), p.orgID)
 	default:
 		return errRegistryUnknownPublisher
 	}

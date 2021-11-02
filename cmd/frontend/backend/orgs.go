@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -18,8 +17,8 @@ var ErrNotAuthenticated = errors.New("not authenticated")
 //
 // It is used when an action on a user can be performed by site admins and the
 // organization's members, but nobody else.
-func CheckOrgAccessOrSiteAdmin(ctx context.Context, db dbutil.DB, orgID int32) error {
-	return checkOrgAccess(ctx, database.NewDB(db), orgID, true)
+func CheckOrgAccessOrSiteAdmin(ctx context.Context, db database.DB, orgID int32) error {
+	return checkOrgAccess(ctx, db, orgID, true)
 }
 
 // CheckOrgAccess returns an error if the user is not a member of the
