@@ -10,16 +10,19 @@ export interface DashboardCreateInput {
     name: string
     visibility: string
     insightIds?: string[]
+    type?: string
 }
 
 export interface DashboardUpdateInput {
     previousDashboard: SettingsBasedInsightDashboard
     nextDashboardInput: DashboardCreateInput
+    id?: string
 }
 
 export interface DashboardDeleteInput {
     dashboardSettingKey: string
     dashboardOwnerId: string
+    id?: string
 }
 
 export interface FindInsightByNameInput {

@@ -7,8 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -18,16 +20,12 @@ func init() {
 }
 
 func TestLatestPingHandler(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	db := dbtesting.GetDB(t)
+	t.Parallel()
 
 	t.Run("non-admins can't access the ping data", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 		rec := httptest.NewRecorder()
-		latestPingHandler(new(dbtesting.MockDB))(rec, req)
+		latestPingHandler(dbmock.NewMockDB())(rec, req)
 
 		if have, want := rec.Code, http.StatusUnauthorized; have != want {
 			t.Errorf("status code: have %d, want %d", have, want)
@@ -56,8 +54,10 @@ func TestLatestPingHandler(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.desc, func(t *testing.T) {
-			database.Mocks.EventLogs.LatestPing = test.pingFn
-			defer func() { database.Mocks.EventLogs.LatestPing = nil }()
+			el := dbmock.NewMockEventLogStore()
+			el.LatestPingFunc.SetDefaultHook(test.pingFn)
+			db := dbmock.NewMockDB()
+			db.EventLogsFunc.SetDefaultReturn(el)
 
 			req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 			rec := httptest.NewRecorder()
@@ -76,6 +76,7 @@ func TestLatestPingHandler(t *testing.T) {
 			if have, want := string(body), test.wantBody; have != want {
 				t.Errorf("Body: have %q, want %q", have, want)
 			}
+			mockrequire.Called(t, el.LatestPingFunc)
 		})
 	}
 }

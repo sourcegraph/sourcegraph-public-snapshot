@@ -9,7 +9,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 
-import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery } from './helpers'
+import { QueryState, SubmitSearchParameters, submitSearch, toggleSubquery, canSubmitSearch } from './helpers'
 
 type QueryStateUpdate = QueryState | ((queryState: QueryState) => QueryState)
 
@@ -77,7 +77,7 @@ export const useNavbarQueryState = create<NavbarQueryState>((set, get) => ({
     },
     submitSearch: (parameters, updates = []) => {
         const query = updateQuery(get().queryState.query, updates)
-        if (query !== '') {
+        if (canSubmitSearch(query, parameters.selectedSearchContextSpec)) {
             submitSearch({ ...parameters, query })
         }
     },

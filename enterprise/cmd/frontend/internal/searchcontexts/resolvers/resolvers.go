@@ -16,12 +16,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db dbutil.DB) graphqlbackend.SearchContextsResolver {
+func NewResolver(db database.DB) graphqlbackend.SearchContextsResolver {
 	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -143,7 +143,7 @@ func repositoryByID(ctx context.Context, id graphql.ID, db dbutil.DB) (*graphqlb
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewRepositoryResolver(db, repo), nil
+	return graphqlbackend.NewRepositoryResolver(database.NewDB(db), repo), nil
 }
 
 func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
@@ -250,7 +250,7 @@ func (r *Resolver) SearchContexts(ctx context.Context, args *graphqlbackend.List
 		OrderByDescending: args.Descending,
 	}
 
-	searchContextsStore := database.SearchContexts(r.db)
+	searchContextsStore := r.db.SearchContexts()
 	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, After: afterCursor}
 	searchContexts, err := searchContextsStore.ListSearchContexts(ctx, pageOpts, opts)
 	if err != nil {
@@ -326,7 +326,7 @@ func (r *Resolver) SearchContextByID(ctx context.Context, id graphql.ID) (graphq
 
 type searchContextResolver struct {
 	sc *types.SearchContext
-	db dbutil.DB
+	db database.DB
 }
 
 func (r *searchContextResolver) ID() graphql.ID {

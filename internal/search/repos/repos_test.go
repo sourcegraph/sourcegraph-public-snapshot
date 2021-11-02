@@ -9,21 +9,20 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
-
-var dsn = flag.String("dsn", "", "Database connection string to use in integration tests")
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -52,11 +51,6 @@ func TestRevisionValidation(t *testing.T) {
 		return "", &gitdomain.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
 	}
 	defer func() { git.Mocks.ResolveRevision = nil }()
-
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, opts database.ReposListOptions) ([]types.RepoName, error) {
-		return []types.RepoName{{Name: "repoFoo"}}, nil
-	}
-	defer func() { database.Mocks.Repos.List = nil }()
 
 	tests := []struct {
 		repoFilters              []string
@@ -163,8 +157,13 @@ func TestRevisionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
+			repos := dbmock.NewMockRepoStore()
+			repos.ListRepoNamesFunc.SetDefaultReturn([]types.RepoName{{Name: "repoFoo"}}, nil)
+			db := dbmock.NewMockDB()
+			db.ReposFunc.SetDefaultReturn(repos)
+
 			op := search.RepoOptions{RepoFilters: tt.repoFilters}
-			repositoryResolver := &Resolver{}
+			repositoryResolver := &Resolver{DB: db}
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -176,6 +175,7 @@ func TestRevisionValidation(t *testing.T) {
 			if tt.wantErr != err {
 				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
 			}
+			mockrequire.Called(t, repos.ListRepoNamesFunc)
 		})
 	}
 }
@@ -431,8 +431,6 @@ func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
 }
 
 func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
-	db := dbtest.NewFromDSN(t, *dsn)
-
 	const (
 		wantName   = "alice"
 		wantUserID = 123
@@ -442,7 +440,9 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+	repos := dbmock.NewMockRepoStore()
+	repos.CountFunc.SetDefaultReturn(6, nil)
+	repos.ListRepoNamesFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		if op.UserID != wantUserID {
 			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
 		}
@@ -472,19 +472,19 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 				Name: "external.com/c",
 			},
 		}, nil
-	}
-	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 6, nil }
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
+	})
+
+	ns := dbmock.NewMockNamespaceStore()
+	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
 		if name != wantName {
 			t.Fatalf("got %q, want %q", name, wantName)
 		}
 		return &database.Namespace{Name: wantName, User: wantUserID}, nil
-	}
-	defer func() {
-		database.Mocks.Repos.ListRepoNames = nil
-		database.Mocks.Repos.Count = nil
-		database.Mocks.Namespaces.GetByName = nil
-	}()
+	})
+
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.NamespacesFunc.SetDefaultReturn(ns)
 
 	op := search.RepoOptions{
 		Query:             queryInfo,
@@ -513,6 +513,10 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	if diff := cmp.Diff(got, want, nil); diff != "" {
 		t.Errorf("unexpected diff: %s", diff)
 	}
+
+	mockrequire.Called(t, ns.GetByNameFunc)
+	mockrequire.Called(t, repos.CountFunc)
+	mockrequire.Called(t, repos.ListRepoNamesFunc)
 }
 
 func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecifier {
@@ -524,7 +528,6 @@ func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecif
 }
 
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {
-	db := dbtest.NewFromDSN(t, *dsn)
 	searchContext := &types.SearchContext{ID: 1, Name: "searchcontext"}
 	repoA := types.RepoName{ID: 1, Name: "example.com/a"}
 	repoB := types.RepoName{ID: 2, Name: "example.com/b"}
@@ -536,32 +539,33 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	git.Mocks.ResolveRevision = func(spec string, opt git.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(spec), nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
+
+	repos := dbmock.NewMockRepoStore()
+	repos.CountFunc.SetDefaultReturn(2, nil)
+	repos.ListRepoNamesFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
 		}
 		return []types.RepoName{repoA, repoB}, nil
-	}
-	database.Mocks.Repos.Count = func(ctx context.Context, op database.ReposListOptions) (int, error) { return 2, nil }
-	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
+	})
+
+	sc := dbmock.NewMockSearchContextsStore()
+	sc.GetSearchContextFunc.SetDefaultHook(func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		if opts.Name != searchContext.Name {
 			t.Fatalf("got %q, want %q", opts.Name, searchContext.Name)
 		}
 		return searchContext, nil
-	}
-	database.Mocks.SearchContexts.GetSearchContextRepositoryRevisions = func(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
+	})
+	sc.GetSearchContextRepositoryRevisionsFunc.SetDefaultHook(func(ctx context.Context, searchContextID int64) ([]*types.SearchContextRepositoryRevisions, error) {
 		if searchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", searchContextID, searchContext.ID)
 		}
 		return searchContextRepositoryRevisions, nil
-	}
-	defer func() {
-		git.Mocks.ResolveRevision = nil
-		database.Mocks.Repos.ListRepoNames = nil
-		database.Mocks.Repos.Count = nil
-		database.Mocks.SearchContexts.GetSearchContext = nil
-		database.Mocks.SearchContexts.GetSearchContextRepositoryRevisions = nil
-	}()
+	})
+
+	db := dbmock.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.SearchContextsFunc.SetDefaultReturn(sc)
 
 	queryInfo, err := query.ParseLiteral("foo")
 	if err != nil {

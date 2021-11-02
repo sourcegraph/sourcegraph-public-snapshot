@@ -9,12 +9,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 type FeatureFlagResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	inner *featureflag.FeatureFlag
 }
 
@@ -33,7 +32,7 @@ func (f *FeatureFlagResolver) ToFeatureFlagRollout() (*FeatureFlagRolloutResolve
 }
 
 type FeatureFlagBooleanResolver struct {
-	db dbutil.DB
+	db database.DB
 	// Invariant: inner.Bool is non-nil
 	inner *featureflag.FeatureFlag
 }
@@ -49,7 +48,7 @@ func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureF
 }
 
 type FeatureFlagRolloutResolver struct {
-	db dbutil.DB
+	db database.DB
 	// Invariant: inner.Rollout is non-nil
 	inner *featureflag.FeatureFlag
 }
@@ -64,7 +63,7 @@ func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureF
 	return overridesToResolvers(f.db, overrides), nil
 }
 
-func overridesToResolvers(db dbutil.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
+func overridesToResolvers(db database.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
 	res := make([]*FeatureFlagOverrideResolver, 0, len(input))
 	for _, flag := range input {
 		res = append(res, &FeatureFlagOverrideResolver{db, flag})
@@ -73,7 +72,7 @@ func overridesToResolvers(db dbutil.DB, input []*featureflag.Override) []*Featur
 }
 
 type FeatureFlagOverrideResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	inner *featureflag.Override
 }
 
@@ -171,7 +170,7 @@ func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolv
 	return flagsToResolvers(r.db, flags), nil
 }
 
-func flagsToResolvers(db dbutil.DB, flags []*featureflag.FeatureFlag) []*FeatureFlagResolver {
+func flagsToResolvers(db database.DB, flags []*featureflag.FeatureFlag) []*FeatureFlagResolver {
 	res := make([]*FeatureFlagResolver, 0, len(flags))
 	for _, flag := range flags {
 		res = append(res, &FeatureFlagResolver{db, flag})

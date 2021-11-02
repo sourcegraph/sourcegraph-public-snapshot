@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/stripeutil"
-	db_ "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -86,7 +86,7 @@ func (r *productSubscription) Name() string {
 }
 
 func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.db, r.v.UserID)
+	return graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.db), r.v.UserID)
 }
 
 func (r *productSubscription) Events(ctx context.Context) ([]graphqlbackend.ProductSubscriptionEvent, error) {
@@ -118,7 +118,7 @@ func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend
 	// Return newest license.
 	licenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{
 		ProductSubscriptionID: r.v.ID,
-		LimitOffset:           &db_.LimitOffset{Limit: 1},
+		LimitOffset:           &database.LimitOffset{Limit: 1},
 	})
 	if err != nil {
 		return nil, err
@@ -183,7 +183,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 		return nil, err
 	}
 
-	user, err := graphqlbackend.UserByID(ctx, r.DB, args.AccountID)
+	user, err := graphqlbackend.UserByID(ctx, database.NewDB(r.DB), args.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -230,7 +230,7 @@ func (r ProductSubscriptionLicensingResolver) SetProductSubscriptionBilling(ctx 
 }
 
 func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx context.Context, args *graphqlbackend.CreatePaidProductSubscriptionArgs) (*graphqlbackend.CreatePaidProductSubscriptionResult, error) {
-	user, err := graphqlbackend.UserByID(ctx, r.DB, args.AccountID)
+	user, err := graphqlbackend.UserByID(ctx, database.NewDB(r.DB), args.AccountID)
 	if err != nil {
 		return nil, err
 	}
@@ -463,7 +463,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 	var accountUser *graphqlbackend.UserResolver
 	if args.Account != nil {
 		var err error
-		accountUser, err = graphqlbackend.UserByID(ctx, r.DB, *args.Account)
+		accountUser, err = graphqlbackend.UserByID(ctx, database.NewDB(r.DB), *args.Account)
 		if err != nil {
 			return nil, err
 		}

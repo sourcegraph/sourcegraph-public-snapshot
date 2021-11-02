@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -34,7 +34,7 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db dbutil.DB) http.Handler {
+func StreamHandler(db database.DB) http.Handler {
 	return &streamHandler{
 		db:                  db,
 		newSearchResolver:   defaultNewSearchResolver,
@@ -44,8 +44,8 @@ func StreamHandler(db dbutil.DB) http.Handler {
 }
 
 type streamHandler struct {
-	db                  dbutil.DB
-	newSearchResolver   func(context.Context, dbutil.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
+	db                  database.DB
+	newSearchResolver   func(context.Context, database.DB, *graphqlbackend.SearchArgs) (searchResolver, error)
 	flushTickerInternal time.Duration
 	pingTickerInterval  time.Duration
 }
@@ -281,7 +281,7 @@ LOOP:
 func (h *streamHandler) startSearch(ctx context.Context, a *args) (events <-chan streaming.SearchEvent, inputs run.SearchInputs, results func() (*graphqlbackend.SearchResultsResolver, error)) {
 	eventsC := make(chan streaming.SearchEvent)
 
-	search, err := h.newSearchResolver(ctx, h.db, &graphqlbackend.SearchArgs{
+	search, err := h.newSearchResolver(ctx, database.NewDB(h.db), &graphqlbackend.SearchArgs{
 		Query:       a.Query,
 		Version:     a.Version,
 		PatternType: strPtr(a.PatternType),
@@ -321,7 +321,7 @@ type searchResolver interface {
 	Inputs() run.SearchInputs
 }
 
-func defaultNewSearchResolver(ctx context.Context, db dbutil.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
+func defaultNewSearchResolver(ctx context.Context, db database.DB, args *graphqlbackend.SearchArgs) (searchResolver, error) {
 	return graphqlbackend.NewSearchImplementer(ctx, db, args)
 }
 

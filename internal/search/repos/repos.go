@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -47,7 +46,7 @@ func (r *Resolved) String() string {
 }
 
 type Resolver struct {
-	DB                  dbutil.DB
+	DB                  database.DB
 	SearchableReposFunc searchableReposFunc
 }
 
@@ -128,6 +127,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		} else if searchContext.NamespaceUserID != 0 {
 			options.UserID = searchContext.NamespaceUserID
 			options.IncludeUserPublicRepos = true
+		} else if searchContext.NamespaceOrgID != 0 {
+			options.OrgID = searchContext.NamespaceOrgID
 		}
 
 		if op.Ranked {
@@ -147,7 +148,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			excludedC <- computeExcludedRepositories(ctx, r.DB, op.Query, options)
 		}()
 
-		repos, err = database.Repos(r.DB).ListRepoNames(ctx, options)
+		repos, err = r.DB.Repos().ListRepoNames(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		excluded = <-excludedC
@@ -323,7 +324,7 @@ type ExcludedRepos struct {
 
 // computeExcludedRepositories returns a list of excluded repositories (Forks or
 // archives) based on the search Query.
-func computeExcludedRepositories(ctx context.Context, db dbutil.DB, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
+func computeExcludedRepositories(ctx context.Context, db database.DB, q query.Q, op database.ReposListOptions) (excluded ExcludedRepos) {
 	if q == nil {
 		return ExcludedRepos{}
 	}
@@ -343,7 +344,7 @@ func computeExcludedRepositories(ctx context.Context, db dbutil.DB, q query.Q, o
 			selectForks.OnlyForks = true
 			selectForks.NoForks = false
 			var err error
-			numExcludedForks, err = database.Repos(db).Count(ctx, selectForks)
+			numExcludedForks, err = db.Repos().Count(ctx, selectForks)
 			if err != nil {
 				log15.Warn("repo count for excluded fork", "err", err)
 			}
@@ -360,7 +361,7 @@ func computeExcludedRepositories(ctx context.Context, db dbutil.DB, q query.Q, o
 			selectArchived.OnlyArchived = true
 			selectArchived.NoArchived = false
 			var err error
-			numExcludedArchived, err = database.Repos(db).Count(ctx, selectArchived)
+			numExcludedArchived, err = db.Repos().Count(ctx, selectArchived)
 			if err != nil {
 				log15.Warn("repo count for excluded archive", "err", err)
 			}

@@ -12,6 +12,8 @@ import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema
 import settingsSchema from '../../../../schema/settings.schema.json'
 import { MonacoEditor } from '../components/MonacoEditor'
 
+import styles from './MonacoSettingsEditor.module.scss'
+
 /**
  * Minimal shape of a JSON Schema. These values are treated as opaque, so more specific types are
  * not needed.
@@ -99,7 +101,7 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
         return (
             <MonacoEditor
                 id={this.props.id}
-                className={classNames('monaco-settings-editor', this.props.className)}
+                className={classNames(styles.monacoSettingsEditor, this.props.className)}
                 language={this.props.language || 'json'}
                 height={this.props.height || 400}
                 isLightTheme={this.props.isLightTheme}

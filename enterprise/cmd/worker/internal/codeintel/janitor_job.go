@@ -68,9 +68,10 @@ func (j *janitorJob) Routines(ctx context.Context) ([]goroutine.BackgroundRoutin
 	}
 
 	routines := []goroutine.BackgroundRoutine{
-		// Reconciliation
+		// Reconciliation and denormalization
 		janitor.NewDeletedRepositoryJanitor(dbStoreShim, janitorConfigInst.CleanupTaskInterval, metrics),
 		janitor.NewUnknownCommitJanitor(dbStoreShim, janitorConfigInst.CommitResolverMinimumTimeSinceLastCheck, janitorConfigInst.CommitResolverBatchSize, janitorConfigInst.CommitResolverTaskInterval, metrics),
+		janitor.NewRepositoryPatternMatcher(dbStoreShim, lsifStoreShim, janitorConfigInst.CleanupTaskInterval, janitorConfigInst.ConfigurationPolicyMembershipBatchSize, metrics),
 
 		// Expiration
 		janitor.NewAbandonedUploadJanitor(dbStoreShim, janitorConfigInst.UploadTimeout, janitorConfigInst.CleanupTaskInterval, metrics),

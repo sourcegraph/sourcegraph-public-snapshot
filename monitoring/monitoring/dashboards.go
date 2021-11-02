@@ -30,6 +30,8 @@ func (u UnitType) short() string {
 		return "rps"
 	case WritesPerSecond:
 		return "wps"
+	case RequestsPerSecond:
+		return "reqps"
 	default:
 		panic("never here")
 	}
@@ -56,10 +58,13 @@ const (
 	BitsPerSecond UnitType = "bps"
 
 	// ReadsPerSecond, e.g for representing disk IO.
-	ReadsPerSecond = "rps"
+	ReadsPerSecond UnitType = "rps"
 
 	// WritesPerSecond, e.g for representing disk IO.
-	WritesPerSecond = "wps"
+	WritesPerSecond UnitType = "wps"
+
+	// RequestsPerSecond, e.g. for representing number of HTTP requests per second
+	RequestsPerSecond UnitType = "reqps"
 )
 
 // setPanelSize is a helper to set a panel's size.

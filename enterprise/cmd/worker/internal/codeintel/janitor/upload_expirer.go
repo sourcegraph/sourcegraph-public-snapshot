@@ -116,6 +116,7 @@ func (e *uploadExpirer) handleRepository(
 	// only to this repository.
 	repositoryPolicies, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
 		RepositoryID:     repositoryID,
+		ConsiderPatterns: true,
 		ForDataRetention: true,
 	})
 	if err != nil {

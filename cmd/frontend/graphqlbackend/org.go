@@ -34,7 +34,7 @@ func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	return OrgByID(ctx, r.db, args.ID)
 }
 
-func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,8 @@ func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, er
 	return OrgByIDInt32(ctx, db, orgID)
 }
 
-func OrgByIDInt32(ctx context.Context, db dbutil.DB, orgID int32) (*OrgResolver, error) {
-	org, err := database.Orgs(db).GetByID(ctx, orgID)
+func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
+	org, err := db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -250,7 +250,13 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	if err := backend.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
 	}
-
+	memberCount, err := database.OrgMembers(r.db).MemberCount(ctx, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if memberCount == 1 {
+		return nil, errors.New("you can’t remove the only member of an organization")
+	}
 	log15.Info("removing user from org", "user", userID, "org", orgID)
 	return nil, database.OrgMembers(r.db).Remove(ctx, orgID, userID)
 }

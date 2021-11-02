@@ -62,6 +62,11 @@ func (e *RepoNotFoundErr) NotFound() bool {
 }
 
 type RepoStore interface {
+	basestore.ShareableStore
+	Transact(context.Context) (RepoStore, error)
+	With(basestore.ShareableStore) RepoStore
+	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
+
 	Count(context.Context, ReposListOptions) (int, error)
 	Create(context.Context, ...*types.Repo) error
 	Delete(context.Context, ...api.RepoID) error
@@ -77,8 +82,6 @@ type RepoStore interface {
 	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
-	Transact(context.Context) (RepoStore, error)
-	With(basestore.ShareableStore) RepoStore
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -91,13 +94,13 @@ type repoStore struct {
 }
 
 // Repos instantiates and returns a new RepoStore with prepared statements.
-func Repos(db dbutil.DB) *repoStore {
+func Repos(db dbutil.DB) RepoStore {
 	return &repoStore{Store: basestore.NewWithDB(db, sql.TxOptions{})}
 }
 
 // ReposWith instantiates and returns a new RepoStore using the other
 // store handle.
-func ReposWith(other basestore.ShareableStore) *repoStore {
+func ReposWith(other basestore.ShareableStore) RepoStore {
 	return &repoStore{Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -1478,39 +1481,6 @@ SET
 FROM repo_ids
 WHERE deleted_at IS NULL
 AND repo.id = repo_ids.id::int
-`
-
-// Block blocks the given repositories with the provided reason.
-func (s *repoStore) Block(ctx context.Context, reason string, ids ...api.RepoID) error {
-	if len(ids) == 0 {
-		return nil
-	}
-	s.ensureStore()
-
-	encodedIds, err := json.Marshal(ids)
-	if err != nil {
-		return err
-	}
-
-	q := sqlf.Sprintf(blockReposQuery, string(encodedIds), reason)
-
-	err = s.Exec(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "block")
-	}
-
-	return nil
-}
-
-const blockReposQuery = `
-WITH repo_ids AS (
-  SELECT jsonb_array_elements_text(%s)::int AS id
-)
-UPDATE repo
-SET blocked = repo_block(%s, now())
-FROM repo_ids
-WHERE blocked IS NULL
-AND repo.id = repo_ids.id
 `
 
 // ListEnabledNames returns a list of all enabled repo names. This is commonly

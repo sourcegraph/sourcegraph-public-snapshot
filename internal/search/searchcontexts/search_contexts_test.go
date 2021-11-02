@@ -9,10 +9,13 @@ import (
 	"testing"
 
 	"github.com/cockroachdb/errors"
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -22,29 +25,41 @@ func init() {
 }
 
 func TestResolvingValidSearchContextSpecs(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name                  string
 		searchContextSpec     string
 		wantSearchContextName string
 	}{
 		{name: "resolve user search context", searchContextSpec: "@user", wantSearchContextName: "user"},
+		{name: "resolve organization search context", searchContextSpec: "@org", wantSearchContextName: "org"},
 		{name: "resolve global search context", searchContextSpec: "global", wantSearchContextName: "global"},
 		{name: "resolve empty search context as global", searchContextSpec: "", wantSearchContextName: "global"},
 		{name: "resolve namespaced search context", searchContextSpec: "@user/test", wantSearchContextName: "test"},
 		{name: "resolve namespaced search context with / in name", searchContextSpec: "@user/test/version", wantSearchContextName: "test/version"},
 	}
 
-	db := new(dbtesting.MockDB)
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-		return &database.Namespace{Name: name, User: 1}, nil
-	}
-	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
+	ns := dbmock.NewMockNamespaceStore()
+	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
+		if name == "user" {
+			return &database.Namespace{Name: name, User: 1}, nil
+		}
+		if name == "org" {
+			return &database.Namespace{Name: name, Organization: 1}, nil
+		}
+		t.Fatal("Unexpected namespace name for GetByName. Expected `user` or `org`, received: #{name}")
+		return nil, nil
+	})
+
+	sc := dbmock.NewMockSearchContextsStore()
+	sc.GetSearchContextFunc.SetDefaultHook(func(_ context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		return &types.SearchContext{Name: opts.Name}, nil
-	}
-	defer func() {
-		database.Mocks.Namespaces.GetByName = nil
-		database.Mocks.SearchContexts.GetSearchContext = nil
-	}()
+	})
+
+	db := dbmock.NewMockDB()
+	db.NamespacesFunc.SetDefaultReturn(ns)
+	db.SearchContextsFunc.SetDefaultReturn(sc)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -57,9 +72,14 @@ func TestResolvingValidSearchContextSpecs(t *testing.T) {
 			}
 		})
 	}
+
+	mockrequire.Called(t, sc.GetSearchContextFunc)
+	mockrequire.Called(t, ns.GetByNameFunc)
 }
 
 func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name              string
 		searchContextSpec string
@@ -67,20 +87,19 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 	}{
 		{name: "invalid format", searchContextSpec: "+user", wantErr: "search context not found"},
 		{name: "user not found", searchContextSpec: "@user", wantErr: "search context \"@user\" not found"},
+		{name: "org not found", searchContextSpec: "@org", wantErr: "search context \"@org\" not found"},
 		{name: "empty user not found", searchContextSpec: "@", wantErr: "search context not found"},
 	}
 
-	db := new(dbtesting.MockDB)
-	database.Mocks.Namespaces.GetByName = func(ctx context.Context, name string) (*database.Namespace, error) {
-		return &database.Namespace{}, nil
-	}
-	database.Mocks.SearchContexts.GetSearchContext = func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
-		return nil, errors.New("search context not found")
-	}
-	defer func() {
-		database.Mocks.Namespaces.GetByName = nil
-		database.Mocks.SearchContexts.GetSearchContext = nil
-	}()
+	ns := dbmock.NewMockNamespaceStore()
+	ns.GetByNameFunc.SetDefaultReturn(&database.Namespace{}, nil)
+
+	sc := dbmock.NewMockSearchContextsStore()
+	sc.GetSearchContextFunc.SetDefaultReturn(nil, errors.New("search context not found"))
+
+	db := dbmock.NewMockDB()
+	db.NamespacesFunc.SetDefaultReturn(ns)
+	db.SearchContextsFunc.SetDefaultReturn(sc)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -93,6 +112,9 @@ func TestResolvingInvalidSearchContextSpecs(t *testing.T) {
 			}
 		})
 	}
+
+	mockrequire.Called(t, ns.GetByNameFunc)
+	mockrequire.Called(t, sc.GetSearchContextFunc)
 }
 
 func TestConstructingSearchContextSpecs(t *testing.T) {
@@ -141,7 +163,7 @@ func TestResolvingSearchContextRepoNames(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	u := database.Users(db)
 	r := database.Repos(db)
 
@@ -180,7 +202,7 @@ func TestSearchContextWriteAccessValidation(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	u := database.Users(db)
 
 	org, err := database.Orgs(db).Create(internalCtx, "myorg", nil)
@@ -300,7 +322,7 @@ func TestCreatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	u := database.Users(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -401,7 +423,7 @@ func TestUpdatingSearchContexts(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	u := database.Users(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -485,7 +507,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 	}
 
 	internalCtx := actor.WithInternalActor(context.Background())
-	db := dbtesting.GetDB(t)
+	db := dbtest.NewDB(t)
 	u := database.Users(db)
 
 	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
@@ -493,7 +515,7 @@ func TestDeletingAutoDefinedSearchContext(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	autoDefinedSearchContext := GetUserSearchContext(user1.Username, user1.ID)
+	autoDefinedSearchContext := GetUserSearchContext(user1.ID, user1.Username)
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user1.ID})
 	err = DeleteSearchContext(ctx, db, autoDefinedSearchContext)
 

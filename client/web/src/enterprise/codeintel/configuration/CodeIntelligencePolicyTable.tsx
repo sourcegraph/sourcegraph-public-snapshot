@@ -50,6 +50,25 @@ export const CodeIntelligencePolicyTable: FunctionComponent<CodeIntelligencePoli
                                 ? 'branches'
                                 : ''}{' '}
                             matching <span className="text-monospace">{policy.pattern}</span>
+                            {policy.repositoryPatterns && (
+                                <>
+                                    {' '}
+                                    in repositories matching{' '}
+                                    {policy.repositoryPatterns.map((pattern, index) => (
+                                        <>
+                                            {index !== 0 &&
+                                                (index === (policy.repositoryPatterns || []).length - 1 ? (
+                                                    <>, or </>
+                                                ) : (
+                                                    <>, </>
+                                                ))}
+                                            <span key={pattern} className="text-monospace">
+                                                {pattern}
+                                            </span>
+                                        </>
+                                    ))}
+                                </>
+                            )}
                         </div>
 
                         <div>

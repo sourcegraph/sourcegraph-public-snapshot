@@ -45,11 +45,11 @@ type organizationMembershipResolver struct {
 }
 
 func (r *organizationMembershipResolver) Organization(ctx context.Context) (*OrgResolver, error) {
-	return OrgByIDInt32(ctx, r.db, r.membership.OrgID)
+	return OrgByIDInt32(ctx, database.NewDB(r.db), r.membership.OrgID)
 }
 
 func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.membership.UserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.membership.UserID)
 }
 
 func (r *organizationMembershipResolver) CreatedAt() DateTime {

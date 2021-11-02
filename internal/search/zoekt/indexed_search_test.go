@@ -718,7 +718,8 @@ func TestZoektGlobalQueryScope(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			q, err := zoektGlobalQueryScope(tc.opts, tc.priv)
+			includePrivate := tc.opts.Visibility == query.Private || tc.opts.Visibility == query.Any
+			defaultScope, err := DefaultGlobalQueryScope(tc.opts)
 			if err != nil || tc.wantErr != "" {
 				if got := fmt.Sprintf("%s", err); !strings.Contains(got, tc.wantErr) {
 					t.Fatalf("expected error to contain %q: %s", tc.wantErr, got)
@@ -728,6 +729,9 @@ func TestZoektGlobalQueryScope(t *testing.T) {
 				}
 				return
 			}
+			zoektGlobalQuery := NewGlobalZoektQuery(&zoektquery.Const{Value: true}, defaultScope, includePrivate)
+			zoektGlobalQuery.ApplyPrivateFilter(tc.priv)
+			q := zoektGlobalQuery.Generate()
 			if got := zoektquery.Simplify(q).String(); got != tc.want {
 				t.Fatalf("unexpected scoped query:\nwant: %s\ngot:  %s", tc.want, got)
 			}

@@ -54,7 +54,7 @@ func createRepo(ctx context.Context, t *testing.T, db *sql.DB, repo *types.Repo)
 		Archived:     repo.Archived,
 	}
 
-	if err := Repos(db).Upsert(ctx, op); err != nil {
+	if err := upsertRepo(ctx, db, op); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -167,12 +167,10 @@ INSERT INTO repo (
   WHERE NOT EXISTS (SELECT 1 FROM upsert)
 )`
 
-// Upsert updates the repository if it already exists (keyed on name) and
+// upsertRepo updates the repository if it already exists (keyed on name) and
 // inserts it if it does not.
-//
-// Upsert exists for testing purposes only. Repository mutations are managed
-// by repo-updater.
-func (s *repoStore) Upsert(ctx context.Context, op InsertRepoOp) error {
+func upsertRepo(ctx context.Context, db dbutil.DB, op InsertRepoOp) error {
+	s := Repos(db)
 	insert := false
 
 	// We optimistically assume the repo is already in the table, so first
@@ -647,7 +645,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 
 	// Insert a repo which should never be returned since we always specify
 	// OnlyCloned.
-	if err := repos.Upsert(ctx, InsertRepoOp{Name: "not-on-gitserver"}); err != nil {
+	if err := upsertRepo(ctx, db, InsertRepoOp{Name: "not-on-gitserver"}); err != nil {
 		t.Fatal(err)
 	}
 

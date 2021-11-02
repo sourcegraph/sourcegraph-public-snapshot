@@ -9,6 +9,7 @@ package buildkite
 import (
 	"encoding/json"
 	"io"
+	"regexp"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -72,10 +73,20 @@ type Step struct {
 	ArtifactPaths          string                 `json:"artifact_paths,omitempty"`
 	ConcurrencyGroup       string                 `json:"concurrency_group,omitempty"`
 	Concurrency            int                    `json:"concurrency,omitempty"`
+	Parallelism            int                    `json:"parallelism,omitempty"`
 	Skip                   string                 `json:"skip,omitempty"`
 	SoftFail               []softFailExitStatus   `json:"soft_fail,omitempty"`
 	Retry                  *RetryOptions          `json:"retry,omitempty"`
 	Agents                 map[string]string      `json:"agents,omitempty"`
+}
+
+var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+
+// GenerateKey will automatically generate a key based on the
+// step label, and return it.
+func (s *Step) GenerateKey() string {
+	s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
+	return s.Key
 }
 
 type RetryOptions struct {
@@ -116,7 +127,27 @@ func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
 	for _, opt := range AfterEveryStepOpts {
 		opt(step)
 	}
+
+	if step.Key == "" {
+		step.GenerateKey()
+	}
+
 	p.Steps = append(p.Steps, step)
+}
+
+// AddEnsureStep adds a step that has a dependency on all other steps prior to this step.
+func (p *Pipeline) AddEnsureStep(label string, opts ...StepOpt) {
+	p.AddStep(label, opts...)
+	lastStep := p.Steps[len(p.Steps)-1].(*Step)
+
+	// Collect all keys to make this step depends on all others.
+	keys := []string{}
+	for _, step := range p.Steps {
+		if s, ok := step.(*Step); ok && step != lastStep {
+			keys = append(keys, s.Key)
+		}
+	}
+	lastStep.DependsOn = keys
 }
 
 func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
@@ -125,6 +156,9 @@ func (p *Pipeline) AddTrigger(label string, opts ...StepOpt) {
 	}
 	for _, opt := range opts {
 		opt(step)
+	}
+	if step.Key == "" {
+		step.GenerateKey()
 	}
 	p.Steps = append(p.Steps, step)
 }
@@ -182,6 +216,14 @@ func ConcurrencyGroup(group string) StepOpt {
 func Concurrency(limit int) StepOpt {
 	return func(step *Step) {
 		step.Concurrency = limit
+	}
+}
+
+// Parallelism tells Buildkite to run this job multiple time in parallel,
+// which is very useful to QA a flake fix.
+func Parallelism(count int) StepOpt {
+	return func(step *Step) {
+		step.Parallelism = count
 	}
 }
 

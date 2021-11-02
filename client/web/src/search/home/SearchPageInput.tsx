@@ -20,10 +20,12 @@ import { Notices } from '../../global/Notices'
 import { KeyboardShortcutsProps } from '../../keyboardShortcuts/keyboardShortcuts'
 import { Settings } from '../../schema/settings.schema'
 import { ThemePreferenceProps } from '../../theme'
-import { submitSearch, SubmitSearchParameters } from '../helpers'
+import { canSubmitSearch, submitSearch, SubmitSearchParameters } from '../helpers'
 import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
+
+import styles from './SearchPageInput.module.scss'
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -89,7 +91,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                 ? `${props.hiddenQueryPrefix} ${userQueryState.query}`
                 : userQueryState.query
 
-            if (query !== '') {
+            if (canSubmitSearch(query, props.selectedSearchContextSpec)) {
                 submitSearch({
                     source: 'home',
                     query,
@@ -124,7 +126,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                <div className="search-page__input-container">
+                <div data-search-page-input-container={true} className={styles.inputContainer}>
                     {/* Search onboarding tour must be rendered before the SearchBox so
                     the Monaco autocomplete suggestions are not blocked by the tour. */}
                     <div ref={tourContainer} />
@@ -138,7 +140,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                     />
                 </div>
-                <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

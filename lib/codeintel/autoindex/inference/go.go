@@ -16,16 +16,6 @@ func GoPatterns() []*regexp.Regexp {
 	}
 }
 
-func CanIndexGoRepo(gitclient GitClient, paths []string) bool {
-	for _, path := range paths {
-		if isGoModulePath(path) || isPreModuleGoProjectPath(path) {
-			return true
-		}
-	}
-
-	return false
-}
-
 const lsifGoImage = "sourcegraph/lsif-go:latest"
 
 func InferGoIndexJobs(gitclient GitClient, paths []string) (indexes []config.IndexJob) {

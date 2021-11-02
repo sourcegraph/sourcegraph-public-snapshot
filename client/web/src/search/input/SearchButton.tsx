@@ -18,7 +18,7 @@ interface Props {
 export const SearchButton: React.FunctionComponent<Props> = ({ hideHelpButton, className }) => (
     <div className={className}>
         <button
-            data-testid="search-button"
+            data-search-button={true}
             className={classNames('btn btn-primary test-search-button', styles.btn)}
             type="submit"
             aria-label="Search"
