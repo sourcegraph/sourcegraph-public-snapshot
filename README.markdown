@@ -127,6 +127,18 @@ mv /usr/local/bin/src /usr/local/bin/src-cli
 
 You can then invoke it via `src-cli`.
 
+## Telemetry
+
+`src` includes the operating system and architecture in the `User-Agent` header sent to Sourcegraph. For example, running `src` version 3.21.10 on an x86-64 Linux host will result in this header:
+
+```
+src-cli/3.21.10 linux amd64
+```
+
+To disable this and _only_ send the version, you can set `-user-agent-telemetry=false` for a single command, or set the `SRC_DISABLE_USER_AGENT_TELEMETRY` environment variable to any non-blank string.
+
+As with [other Sourcegraph telemetry](https://docs.sourcegraph.com/dev/background-information/telemetry), any collected data is only sent to Sourcegraph.com in aggregate form.
+
 ## Development
 
 Some useful notes on developing `src` can be found in [DEVELOPMENT.md](DEVELOPMENT.md).

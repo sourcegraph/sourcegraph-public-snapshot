@@ -13,6 +13,8 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Added
 
+- Requests to Sourcegraph will now include the operating system and architecture `src` is running on by default. To disable this, set the `SRC_DISABLE_USER_AGENT_TELEMETRY` environment variable to any non-empty string, or provide the `-user-agent-telemetry=false` flag on the command line. [#15769](https://github.com/sourcegraph/sourcegraph/issues/15769)
+
 ### Changed
 
 ### Fixed

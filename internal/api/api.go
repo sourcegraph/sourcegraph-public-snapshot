@@ -10,11 +10,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 
 	ioaux "github.com/jig/teereadcloser"
 	"github.com/kballard/go-shellquote"
 	"github.com/mattn/go-isatty"
+	"github.com/sourcegraph/src-cli/internal/version"
 )
 
 // Client instances provide methods to create API requests.
@@ -160,6 +162,11 @@ func (c *client) createHTTPRequest(ctx context.Context, method, p string, body i
 	req, err := http.NewRequestWithContext(ctx, method, strings.TrimRight(c.opts.Endpoint, "/")+"/"+p, body)
 	if err != nil {
 		return nil, err
+	}
+	if c.opts.Flags.UserAgentTelemetry() {
+		req.Header.Set("User-Agent", fmt.Sprintf("src-cli/%s %s %s", version.BuildTag, runtime.GOOS, runtime.GOARCH))
+	} else {
+		req.Header.Set("User-Agent", "src-cli/"+version.BuildTag)
 	}
 	if c.opts.AccessToken != "" {
 		req.Header.Set("Authorization", "token "+c.opts.AccessToken)
