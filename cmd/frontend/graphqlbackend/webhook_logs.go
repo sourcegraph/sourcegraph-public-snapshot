@@ -19,6 +19,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+// webhookLogArgs are the arguments common to the two queries that provide
+// access to webhook logs: the webhookLogs method on the top level query, and on
+// the ExternalService type.
 type webhookLogsArgs struct {
 	First      *int
 	After      *string
@@ -27,6 +30,8 @@ type webhookLogsArgs struct {
 	Until      *time.Time
 }
 
+// toListOpts transforms the GraphQL webhookLogsArgs into options that can be
+// provided to the WebhookLogStore's Count and List methods.
 func (args *webhookLogsArgs) toListOpts(externalServiceID int64) (database.WebhookLogListOpts, error) {
 	opts := database.WebhookLogListOpts{
 		ExternalServiceID: &externalServiceID,
@@ -55,6 +60,8 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID int64) (database.Webho
 	return opts, nil
 }
 
+// WebhookLogs is the top level query used to return webhook logs that weren't
+// resolved to a specific external service.
 func (r *schemaResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
 	return newWebhookLogConnectionResolver(ctx, r.db, args, 0)
 }
@@ -64,11 +71,13 @@ type webhookLogConnectionResolver struct {
 	externalServiceID int64
 	store             database.WebhookLogStore
 
+	// Memoised fields to calculate the nodes and page info on the connection.
 	once sync.Once
 	logs []*types.WebhookLog
 	next int64
 	err  error
 
+	// Memoised fields to calculate the total count on the connection.
 	totalCountOnce sync.Once
 	totalCount     int64
 	totalCountErr  error
