@@ -190,7 +190,6 @@ func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]g
 }
 
 func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-
 	return graphqlutil.HasNextPage(false), nil
 }
 
