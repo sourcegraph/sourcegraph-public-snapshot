@@ -130,7 +130,7 @@ func convertToGlobMatch(match string) (globMatch, error) {
 		match = strings.ReplaceAll(match, glob.QuoteMeta(perforce), globSyntax)
 	}
 
-	// Allow a tailing '/' on trailing single wildcards
+	// Allow a trailing '/' on trailing single wildcards
 	if strings.HasSuffix(match, "*") && !strings.HasSuffix(match, "**") && !strings.HasSuffix(match, `\*`) {
 		match += `{/,}`
 	}
@@ -335,7 +335,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 		return
 	}
 
-	// Helper function for retrieving an existing SubRepoPermissions of instantiating one
+	// Helper function for retrieving an existing SubRepoPermissions or instantiating one
 	getSubRepoPerms := func(repo extsvc.RepoID) *authz.SubRepoPermissions {
 		if _, ok := perms.SubRepoPermissions[repo]; !ok {
 			perms.SubRepoPermissions[repo] = &authz.SubRepoPermissions{}
@@ -366,7 +366,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 
 					var i int
 					for _, exclude := range srp.PathExcludes {
-						// Perforce ACLs can have conflict rules and the later one wins, so
+						// Perforce ACLs can have conflicting rules and the later one wins, so
 						// if we get a match here we drop the existing rule.
 						originalExclude, exists := patternsToGlob[exclude]
 						if !exists {
@@ -398,7 +398,7 @@ func fullRepoPermsScanner(perms *authz.ExternalUserPermissions, configuredDepots
 
 				var i int
 				for _, include := range srp.PathIncludes {
-					// Perforce ACLs can have conflict rules and the later one wins, so
+					// Perforce ACLs can have conflicting rules and the later one wins, so
 					// if we get a match here we drop the existing rule.
 					includeGlob, exists := patternsToGlob[include]
 					if !exists {
