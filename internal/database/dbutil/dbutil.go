@@ -64,6 +64,15 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
+// An Unwrapper unwraps itself into its nested DB.
+// This is necessary because the concrete type of a dbutil.DB
+// is used to assert interfaces like `Tx` and `TxBeginner`, so
+// wrapping a dbutil.DB breaks those interface assertions.
+type Unwrapper interface {
+	// Unwrap returns the inner DB. If defined, it must return a valid DB (never nil).
+	Unwrap() DB
+}
+
 func IsPostgresError(err error, codename string) bool {
 	var e *pgconn.PgError
 	return errors.As(err, &e) && e.Code == codename
