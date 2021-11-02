@@ -20,6 +20,7 @@ import {
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     TimeIntervalStepUnit,
+    GetInsightsResult,
 } from '@sourcegraph/web/src/graphql-operations'
 
 import {
@@ -43,6 +44,7 @@ import {
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
+    FindInsightByNameInput,
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
     InsightCreateInput,
@@ -82,37 +84,163 @@ function getStepInterval(insight: SearchBasedInsight): [TimeIntervalStepUnit, nu
     return castUnits[0]
 }
 
+/**
+ * Helper function to parse the dashboard type from the grants object.
+ * TODO: Remove this function when settings api is deprecated
+ *
+ * @param grants {object} - A grants object from an insight dashboard
+ * @param grants.global {boolean}
+ * @param grants.users {string[]}
+ * @param grants.organizations {string[]}
+ * @returns - The type of the dashboard
+ */
+export const parseType = (grants?: {
+    global?: boolean
+    users?: string[]
+    organizations?: string[]
+}): InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global => {
+    if (grants?.global) {
+        return InsightsDashboardType.Global
+    }
+    if (grants?.organizations?.length) {
+        return InsightsDashboardType.Organization
+    }
+    return InsightsDashboardType.Personal
+}
+
+/**
+ * Helper function to parse a grants object from a given type and visibility.
+ * TODO: Remove this function when settings api is deprecated
+ *
+ * @param type {('personal'|'organization'|'global')} - The type of the dashboard
+ * @param visibility {string} - Usually the user or organization id
+ * @returns - A properly formatted grants object
+ */
+export const parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
+    const grants: InsightsPermissionGrantsInput = {}
+    if (type === 'personal') {
+        grants.users = [visibility]
+    }
+    if (type === 'organization') {
+        grants.organizations = [visibility]
+    }
+    if (type === 'global') {
+        grants.global = true
+    }
+
+    return grants
+}
+
+const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => ({
+    type: InsightType.Backend,
+    // This is our convenstion around insight id, by this id prefix
+    // we make a difference between search and lang stats insight
+    id: `${InsightTypePrefix.search}.${insight.id}`,
+    visibility: '',
+    title: insight.presentation.title,
+    series: insight.dataSeries.map(series => ({
+        name: series.label,
+        query:
+            insight.dataSeriesDefinitions.find(definition => definition.seriesId === series.seriesId)?.query ||
+            'QUERY NOT FOUND',
+        stroke: insight.presentation.seriesPresentation.find(presentation => presentation.seriesId === series.seriesId)
+            ?.color,
+    })),
+})
+
+const insightViewsFieldsFragment = gql`
+    fragment InsightViewsFields on InsightView {
+        id
+        presentation {
+            ... on LineChartInsightViewPresentation {
+                title
+                seriesPresentation {
+                    seriesId
+                    label
+                    color
+                }
+            }
+        }
+        dataSeries {
+            seriesId
+            label
+            points {
+                dateTime
+                value
+            }
+            status {
+                totalPoints
+                pendingJobs
+                completedJobs
+                failedJobs
+                backfillQueuedAt
+            }
+        }
+        dataSeriesDefinitions {
+            ... on SearchInsightDataSeriesDefinition {
+                seriesId
+                query
+                repositoryScope {
+                    repositories
+                }
+                timeScope {
+                    ... on InsightIntervalTimeScope {
+                        unit
+                        value
+                    }
+                }
+            }
+        }
+    }
+`
+
 export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
-    public getInsights = (ids?: string[]): Observable<Insight[]> => {
-        console.warn('TODO: Implement getInsights for GraphQL API')
-        return of([])
-    }
+    public getInsights = (ids?: string[]): Observable<Insight[]> =>
+        fromObservableQuery(
+            this.apolloClient.watchQuery<GetInsightsResult>({
+                query: gql`
+                    query GetInsights {
+                        insightViews {
+                            nodes {
+                                ...InsightViewsFields
+                            }
+                        }
+                    }
+                    ${insightViewsFieldsFragment}
+                `,
+            })
+        ).pipe(
+            map(({ data }) => {
+                const insightViews = data.insightViews.nodes.map(mapInsightView)
+                if (ids) {
+                    return insightViews.filter(insight => ids.includes(insight.id))
+                }
+
+                return insightViews
+            })
+        )
 
     public getInsightById = (id: string): Observable<Insight | null> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<GetInsightResult>({
                 query: gql`
-                    query GetInsight($ids: [ID!]) {
-                        insights(ids: $ids) {
+                    query GetInsight($id: ID!) {
+                        insightViews(id: $id) {
                             nodes {
-                                id
-                                title
-                                series {
-                                    label
-                                }
+                                ...InsightViewsFields
                             }
                         }
                     }
+                    ${insightViewsFieldsFragment}
                 `,
-                variables: { ids: [id] },
+                variables: { id },
             })
         ).pipe(
-            map(result => {
-                const { data } = result
-                const insightData = data.insights?.nodes[0]
+            map(({ data }) => {
+                const insightData = data.insightViews.nodes[0]
 
                 if (!insightData) {
                     return null
@@ -120,24 +248,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
                 // TODO [VK] Support lang stats insight
                 // TODO [VK] Support different type of insight backend based and FE insight
-                return {
-                    type: InsightType.Backend,
-                    // This is our convenstion around insight id, by this id prefix
-                    // we make a difference between search and lang stats insight
-                    id: `${InsightTypePrefix.search}.${insightData.id}`,
-                    visibility: '',
-                    title: insightData.title,
-                    series: insightData.series.map(series => ({
-                        name: series.label,
-                        // TODO [VK] we don't have series query and color in gql API but we should add this
-                        query: '',
-                        stroke: '',
-                    })),
-                }
+                return mapInsightView(insightData)
             })
         )
 
-    public findInsightByName = errorMockMethod('findInsightByName')
+    public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> =>
+        this.getInsights().pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
     public getReachableInsights = errorMockMethod('getReachableInsights')
     public getBackendInsightData = errorMockMethod('getBackendInsightData')
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
@@ -234,7 +350,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         title: dashboard.title,
                         insightIds: dashboard.views?.nodes.map(view => view.id),
                         grants: dashboard.grants,
-                        type: this.parseType(dashboard.grants),
+                        type: parseType(dashboard.grants),
                     })
                 )
             )
@@ -244,53 +360,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public findDashboardByName = errorMockMethod('findDashboardByName')
 
-    /**
-     * Helper function to parse the dashboard type from the grants object.
-     * TODO: Remove this function when settings api is deprecated
-     *
-     * @param grants {object} - A grants object from an insight dashboard
-     * @param grants.global {boolean}
-     * @param grants.users {string[]}
-     * @param grants.organizations {string[]}
-     * @returns - The type of the dashboard
-     */
-    private parseType(grants?: {
-        global?: boolean
-        users?: string[]
-        organizations?: string[]
-    }): InsightsDashboardType.Personal | InsightsDashboardType.Organization | InsightsDashboardType.Global {
-        if (grants?.global) {
-            return InsightsDashboardType.Global
-        }
-        if (grants?.organizations?.length) {
-            return InsightsDashboardType.Organization
-        }
-        return InsightsDashboardType.Personal
-    }
-
-    /**
-     * Helper function to parse a grants object from a given type and visibility.
-     * TODO: Remove this function when settings api is deprecated
-     *
-     * @param type {('personal'|'organization'|'global')} - The type of the dashboard
-     * @param visibility {string} - Usually the user or organization id
-     * @returns - A properly formatted grants object
-     */
-    private parseGrants = (type: string, visibility: string): InsightsPermissionGrantsInput => {
-        const grants: InsightsPermissionGrantsInput = {}
-        if (type === 'personal') {
-            grants.users = [visibility]
-        }
-        if (type === 'organization') {
-            grants.organizations = [visibility]
-        }
-        if (type === 'global') {
-            grants.global = true
-        }
-
-        return grants
-    }
-
     public createDashboard = (input: DashboardCreateInput): Observable<void> => {
         if (!input.type) {
             throw new Error('`grants` are required to create a new dashboard')
@@ -298,7 +367,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         const mappedInput: CreateInsightsDashboardInput = {
             title: input.name,
-            grants: this.parseGrants(input.type, input.visibility),
+            grants: parseGrants(input.type, input.visibility),
         }
 
         return from(
@@ -347,7 +416,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
         const input: UpdateInsightsDashboardInput = {
             title: nextDashboardInput.name,
-            grants: this.parseGrants(nextDashboardInput.type, nextDashboardInput.visibility),
+            grants: parseGrants(nextDashboardInput.type, nextDashboardInput.visibility),
         }
 
         return from(
