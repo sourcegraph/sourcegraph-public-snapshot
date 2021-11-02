@@ -6,8 +6,6 @@ cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 SG_ROOT=$(pwd)
 set -ex
 
-GITHU
-
 # Setup single-server instance and run tests
 # backend integration tests requires a Github Enterprise Token
 GITHUB_TOKEN=$GHE_GITHUB_TOKEN
