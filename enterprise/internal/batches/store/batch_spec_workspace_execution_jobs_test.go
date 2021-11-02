@@ -538,6 +538,9 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 				BatchSpecWorkspaceIDs: ids,
 			})
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			if have, want := len(jobs), len(workspaces); have != want {
 				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
@@ -558,6 +561,9 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 				BatchSpecWorkspaceIDs: ids,
 			})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if have, want := len(jobs), len(workspaces); have != want {
 				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
 			}
@@ -574,6 +580,9 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 				IDs: jobIDs,
 			})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if have, want := len(jobs), 0; have != want {
 				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
 			}
@@ -615,6 +624,9 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
 				IDs: jobIDs,
 			})
+			if err != nil {
+				t.Fatal(err)
+			}
 			if have, want := len(jobs), 0; have != want {
 				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
 			}
