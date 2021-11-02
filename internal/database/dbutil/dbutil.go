@@ -65,8 +65,11 @@ type TxBeginner interface {
 }
 
 // An Unwrapper unwraps itself into its nested DB.
-// This is currently necessary because
+// This is necessary because the concrete type of a dbutil.DB
+// is used to assert interfaces like `Tx` and `TxBeginner`, so
+// wrapping a dbutil.DB breaks those interface assertions.
 type Unwrapper interface {
+	// Unwrap returns the inner DB. If defined, it must return a valid DB (never nil).
 	Unwrap() DB
 }
 

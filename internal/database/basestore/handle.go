@@ -30,15 +30,7 @@ func (h *TransactableHandle) DB() dbutil.DB {
 
 // InTransaction returns true if the underlying database handle is in a transaction.
 func (h *TransactableHandle) InTransaction() bool {
-	db := h.db
-	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
-		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or
-		// *sql.Tx. This is needed because below, we attempt to cast the db as
-		// a dbutil.Tx, which is not implemented by database.db. This should
-		// eventually be removed once dbutil.DB is subsumed by database.DB
-		db = unwrapper.Unwrap()
-	}
-
+	db := tryUnwrap(h.db)
 	_, ok := db.(dbutil.Tx)
 	return ok
 }
@@ -52,15 +44,7 @@ func (h *TransactableHandle) InTransaction() bool {
 // goroutines on the same handle will not be deterministic: either transaction could nest the other one,
 // and calling Done in one goroutine may not finalize the expected unit of work.
 func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle, error) {
-	db := h.db
-	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
-		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or
-		// *sql.Tx.  This is needed because below, we attempt to cast the db as
-		// a dbutil.TxBeginner, which is not implemented by database.db. This
-		// should eventually be removed once dbutil.DB is subsumed by
-		// database.DB
-		db = unwrapper.Unwrap()
-	}
+	db := tryUnwrap(h.db)
 
 	if h.InTransaction() {
 		savepoint, err := newSavepoint(ctx, db)
@@ -91,14 +75,7 @@ func (h *TransactableHandle) Transact(ctx context.Context) (*TransactableHandle,
 // transaction/savepoint. If the store does not wrap a transaction the original error value
 // is returned unchanged.
 func (h *TransactableHandle) Done(err error) error {
-	db := h.db
-	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
-		// Unwrap in case the dbutil.DB is a database.db instead of *sql.DB or *sql.Tx
-		// This is needed because below, we try to cast db as dbutil.Tx, which
-		// is not implemented by database.db. This should eventually be removed once
-		// dbutil.DB is subsumed by database.DB
-		db = unwrapper.Unwrap()
-	}
+	db := tryUnwrap(h.db)
 
 	if n := len(h.savepoints); n > 0 {
 		var savepoint *savepoint
@@ -119,6 +96,19 @@ func (h *TransactableHandle) Done(err error) error {
 		return tx.Commit()
 	}
 	return combineErrors(err, tx.Rollback())
+}
+
+// tryUnwrap attempts to unwrap a dbutil.DB into a child dbutil.DB.
+// This is necessary because for transactions, we do interface assertions
+// on the concrete type, but these interface assertions will fail if dbutil.DB
+// is not of the concrete type *sql.DB or *sql.Tx. With types like database.db,
+// which implement dbutil.DB by embedding the interface, this is problematic.
+// Eventually, this should go away once dbutil.DB is subsumed by database.DB.
+func tryUnwrap(db dbutil.DB) dbutil.DB {
+	if unwrapper, ok := db.(dbutil.Unwrapper); ok {
+		return unwrapper.Unwrap()
+	}
+	return db
 }
 
 // combineErrors returns a multierror containing all fo the non-nil error parameter values.
