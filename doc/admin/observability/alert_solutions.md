@@ -3094,7 +3094,7 @@ with your code hosts connections or networking issues affecting communication wi
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> repo-updater: 1+ repositories schedule error rate for 10m0s
+- <span class="badge badge-critical">critical</span> repo-updater: 1+ repositories schedule error rate for 5m0s
 
 **Possible solutions**
 
