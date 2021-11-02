@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
@@ -377,8 +378,12 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 	}})
 	defer endObservation(1, observation.Args{})
 
+	// If a search would exceed 3 seconds, just give up. We'll issue a lo of searches, so we'd
+	// rather have this than the DB pressure.
+	ctx, _ = context.WithTimeout(ctx, 3*time.Second)
+
 	q := apidocs.ParseQuery(query)
-	resultLimit := 50
+	resultLimit := 10
 
 	// In the repo clause we forbid substring matches. Although performance would be fine, asa user
 	// you often do not want e.g. "go net/http" to match a repo like github.com/jane/goexploration
@@ -504,7 +509,7 @@ FROM (
 		-- have results from multiple uploads (the table is cleaned up asynchronously in the
 		-- background to avoid lock contention at insert time.)
 		AND result.dump_id = (
-			SELECT dump_id FROM lsif_data_docs_search_current_public current
+			SELECT dump_id FROM lsif_data_docs_search_current_$SUFFIX current
 			WHERE
 				current.dump_id = result.dump_id
 				AND current.dump_root = result.dump_root
