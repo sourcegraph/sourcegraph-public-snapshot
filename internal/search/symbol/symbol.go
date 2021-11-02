@@ -35,33 +35,20 @@ const DefaultSymbolLimit = 100
 
 var MockSearchSymbols func(ctx context.Context, args *search.TextParameters, limit int) (res []result.Match, stats *streaming.Stats, err error)
 
-// Search searches the given repos in parallel for symbols matching the given search query
-// it can be used for both search suggestions and search results
-//
-// May return partial results and an error
-func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int, stream streaming.Sender) (err error) {
-	if MockSearchSymbols != nil {
-		results, stats, err := MockSearchSymbols(ctx, args, limit)
-		stream.Send(streaming.SearchEvent{
-			Results: results,
-			Stats:   stats.Deref(),
-		})
-		return err
-	}
-
-	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
+func symbolSearchInRepos(
+	ctx context.Context,
+	request zoektutil.IndexedSearchRequest,
+	patternInfo *search.TextPatternInfo,
+	notSearcherOnly bool,
+	limit int,
+	cancel context.CancelFunc,
+	stream streaming.Sender,
+) (err error) {
+	tr, ctx := trace.New(ctx, "Symbol search in repos", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
-
-	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
-	defer cancel()
-
-	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, globalSearch, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
-	if err != nil {
-		return err
-	}
 
 	run := parallel.NewRun(conf.SearchSymbolsParallelism())
 
@@ -93,7 +80,7 @@ func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, g
 		goroutine.Go(func() {
 			defer run.Release()
 
-			matches, err := searchInRepo(ctx, repoRevs, args.PatternInfo, limit)
+			matches, err := searchInRepo(ctx, repoRevs, patternInfo, limit)
 			stats, err := searchrepos.HandleRepoSearchResult(repoRevs, len(matches) > limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -111,6 +98,36 @@ func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, g
 	}
 
 	return run.Wait()
+}
+
+// Search searches the given repos in parallel for symbols matching the given search query
+// it can be used for both search suggestions and search results
+//
+// May return partial results and an error
+func Search(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int, stream streaming.Sender) (err error) {
+	if MockSearchSymbols != nil {
+		results, stats, err := MockSearchSymbols(ctx, args, limit)
+		stream.Send(streaming.SearchEvent{
+			Results: results,
+			Stats:   stats.Deref(),
+		})
+		return err
+	}
+
+	tr, ctx := trace.New(ctx, "Search symbols", fmt.Sprintf("query: %+v, numRepoRevs: %d", args.PatternInfo, len(args.Repos)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	ctx, stream, cancel := streaming.WithLimit(ctx, stream, limit)
+	defer cancel()
+
+	request, err := zoektutil.NewIndexedSearchRequest(ctx, args, globalSearch, search.SymbolRequest, zoektutil.MissingRepoRevStatus(stream))
+	if err != nil {
+		return err
+	}
+	return symbolSearchInRepos(ctx, request, args.PatternInfo, notSearcherOnly, limit, cancel, stream)
 }
 
 func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
