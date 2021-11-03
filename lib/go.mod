@@ -23,6 +23,7 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mattn/go-runewidth v0.0.12
+	github.com/mitchellh/copystructure v1.2.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/rogpeppe/go-internal v1.8.0 // indirect
 	github.com/sourcegraph/go-diff v0.6.1
