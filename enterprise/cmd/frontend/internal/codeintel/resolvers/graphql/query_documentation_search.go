@@ -35,7 +35,7 @@ type documentationResultResolver struct {
 	result precise.DocumentationSearchResult
 }
 
-func (r *documentationResultResolver) Lang() string      { return r.result.Lang }
+func (r *documentationResultResolver) Language() string  { return r.result.Lang }
 func (r *documentationResultResolver) RepoName() string  { return r.result.RepoName }
 func (r *documentationResultResolver) SearchKey() string { return r.result.SearchKey }
 func (r *documentationResultResolver) PathID() string    { return r.result.PathID }
