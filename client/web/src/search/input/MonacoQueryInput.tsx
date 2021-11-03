@@ -7,9 +7,7 @@ import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { toMonacoRange } from '@sourcegraph/shared/src/search/query/monaco'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { isErrorLike } from '@sourcegraph/shared/src/util/errors'
 import { hasProperty } from '@sourcegraph/shared/src/util/types'
 
 import { CaseSensitivityProps, PatternTypeProps, SearchContextProps } from '..'
@@ -25,8 +23,7 @@ export interface MonacoQueryInputProps
     extends ThemeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'>,
         Pick<PatternTypeProps, 'patternType'>,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
-        SettingsCascadeProps {
+        Pick<SearchContextProps, 'selectedSearchContextSpec'> {
     isSourcegraphDotCom: boolean // significant for query suggestions
     queryState: QueryState
     onChange: (newState: QueryState) => void
@@ -114,12 +111,8 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
     isSourcegraphDotCom,
     isLightTheme,
     className,
-    settingsCascade,
     onHandleFuzzyFinder,
 }) => {
-    const acceptSearchSuggestionOnEnter: boolean | undefined =
-        !isErrorLike(settingsCascade.final) &&
-        settingsCascade.final?.experimentalFeatures?.acceptSearchSuggestionOnEnter
     const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
 
     // Trigger a layout of the Monaco editor when its container gets resized.
@@ -274,68 +267,37 @@ export const MonacoQueryInput: React.FunctionComponent<MonacoQueryInputProps> = 
             return
         }
 
-        if (!acceptSearchSuggestionOnEnter) {
-            // Unconditionally trigger the search when pressing `Enter`,
-            // including when there are visible completion suggestions.
-            const disposables = [
-                editor.addAction({
-                    id: 'submitOnEnter',
-                    label: 'submitOnEnter',
-                    keybindings: [Monaco.KeyCode.Enter],
-                    run: () => {
-                        onSubmit()
-                        editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-                    },
-                }),
-            ]
-
-            if (onHandleFuzzyFinder) {
-                disposables.push(
-                    editor.addAction({
-                        id: 'triggerFuzzyFinder',
-                        label: 'triggerFuzzyFinder',
-                        keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
-                        run: () => onHandleFuzzyFinder(true),
-                    })
-                )
-            }
-
-            return () => {
-                for (const disposable of disposables) {
-                    disposable.dispose()
-                }
-            }
-        }
-
-        const run = (): void => {
-            onSubmit()
-            editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
-        }
+        // Unconditionally trigger the search when pressing `Enter`,
+        // including when there are visible completion suggestions.
         const disposables = [
-            // Trigger the search with "Enter" on the condition that there are
-            // no visible completion suggestions.
             editor.addAction({
                 id: 'submitOnEnter',
                 label: 'submitOnEnter',
                 keybindings: [Monaco.KeyCode.Enter],
-                precondition: '!suggestWidgetVisible',
-                run,
-            }),
-            // Unconditionally trigger the search with "Command/Ctrl + Enter",
-            // ignoring the visibility of completion suggestions.
-            editor.addAction({
-                id: 'submitOnCommandEnter',
-                label: 'submitOnCommandEnter',
-                keybindings: [Monaco.KeyCode.Enter | Monaco.KeyMod.CtrlCmd],
-                run,
+                run: () => {
+                    onSubmit()
+                    editor.trigger('submitOnEnter', 'hideSuggestWidget', [])
+                },
             }),
         ]
+
+        if (onHandleFuzzyFinder) {
+            disposables.push(
+                editor.addAction({
+                    id: 'triggerFuzzyFinder',
+                    label: 'triggerFuzzyFinder',
+                    keybindings: [Monaco.KeyMod.CtrlCmd | Monaco.KeyCode.KEY_P],
+                    run: () => onHandleFuzzyFinder(true),
+                })
+            )
+        }
+
         return () => {
             for (const disposable of disposables) {
                 disposable.dispose()
             }
         }
-    }, [editor, onSubmit, onHandleFuzzyFinder, acceptSearchSuggestionOnEnter])
+    }, [editor, onSubmit, onHandleFuzzyFinder])
 
     const options: Monaco.editor.IStandaloneEditorConstructionOptions = {
         readOnly: false,

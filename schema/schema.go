@@ -1448,8 +1448,6 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// AcceptSearchSuggestionOnEnter description: Whether the search bar should select completion suggestions when pressing enter
-	AcceptSearchSuggestionOnEnter *bool `json:"acceptSearchSuggestionOnEnter,omitempty"`
 	// ApiDocs description: Enables API documentation.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
