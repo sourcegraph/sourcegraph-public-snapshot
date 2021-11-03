@@ -2378,15 +2378,15 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## redis: redis-store_up
 
-<p class="subtitle">determination if redis-store is currently alive</p>
+<p class="subtitle">redis-store up</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> redis: less than 0 determination if redis-store is currently alive for 1m0s
+- <span class="badge badge-critical">critical</span> redis: less than 1 redis-store up for 10s
 
 **Possible solutions**
 
-- 							-- Ensure redis-store is  running
+- Ensure redis-store is running.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-redis-store-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -2402,15 +2402,15 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 ## redis: redis-cache_up
 
-<p class="subtitle">determination if redis-store is currently alive</p>
+<p class="subtitle">redis-store up</p>
 
 **Descriptions**
 
-- <span class="badge badge-critical">critical</span> redis: less than 0 determination if redis-store is currently alive for 1m0s
+- <span class="badge badge-critical">critical</span> redis: less than 1 redis-store up for 10s
 
 **Possible solutions**
 
-- 							-- Ensure redis-cache is running
+- Ensure redis-cache is running
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#redis-redis-cache-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

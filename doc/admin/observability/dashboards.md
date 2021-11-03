@@ -5656,7 +5656,7 @@ To see this dashboard, visit `/-/debug/grafana/d/redis/redis` on your Sourcegrap
 
 #### redis: redis-store_up
 
-<p class="subtitle">Determination if redis-store is currently alive</p>
+<p class="subtitle">Redis-store up</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-store-up) for 1 alert related to this panel.
 
@@ -5677,7 +5677,7 @@ Query: `redis_up{app="redis-store"}`
 
 #### redis: redis-cache_up
 
-<p class="subtitle">Determination if redis-store is currently alive</p>
+<p class="subtitle">Redis-store up</p>
 
 Refer to the [alert solutions reference](./alert_solutions.md#redis-redis-cache-up) for 1 alert related to this panel.
 

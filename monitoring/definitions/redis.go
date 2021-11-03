@@ -19,13 +19,14 @@ func Redis() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{Name: "redis-store_up",
-							Description: "determination if redis-store is currently alive", Owner: monitoring.ObservableOwnerDevOps,
+							Description: "redis-store up", Owner: monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-store"}`,
 							DataMustExist: true,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:      monitoring.Alert().LessOrEqual(0, nil).For(1 * time.Minute),
+							Critical:      monitoring.Alert().LessOrEqual(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
-							-- Ensure redis-store is  running`},
+								- Ensure redis-store is running.
+							`},
 					}},
 			},
 			{
@@ -34,13 +35,14 @@ func Redis() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{Name: "redis-cache_up",
-							Description: "determination if redis-store is currently alive", Owner: monitoring.ObservableOwnerDevOps,
+							Description: "redis-store up", Owner: monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-cache"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: true,
-							Critical:      monitoring.Alert().LessOrEqual(0, nil).For(1 * time.Minute),
+							Critical:      monitoring.Alert().LessOrEqual(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
-							-- Ensure redis-cache is running`},
+								- Ensure redis-cache is running
+							`},
 					}}},
 		},
 
