@@ -6,18 +6,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
-func RedisStore() *monitoring.Container {
-	const (
-		containerName = "redis-store"
-	)
+func Redis() *monitoring.Container {
 
 	return &monitoring.Container{
-		Name:        "redis-store",
-		Title:       "Redis Store",
-		Description: "Holds data that cannot be easily recomputed, like sessions.",
+		Name:        "redis",
+		Title:       "Redis",
+		Description: "Metrics from both redis databases.",
 		Templates:   nil,
 		Groups: []monitoring.Group{
-			{Title: "Redis Up",
+			{Title: "Redis Store",
 				Hidden: false,
 				Rows: []monitoring.Row{
 					{
@@ -29,25 +26,10 @@ func RedisStore() *monitoring.Container {
 							Critical:      monitoring.Alert().LessOrEqual(0, nil).For(1 * time.Minute),
 							PossibleSolutions: `
 							-- Ensure redis-store is  running`},
-					},
-				}},
-		},
-
-		NoSourcegraphDebugServer: false,
-	}
-}
-
-func RedisCache() *monitoring.Container {
-	const (
-		containerName = "redis-cache"
-	)
-
-	return &monitoring.Container{
-		Name:        "redis-cache",
-		Title:       "Redis Cache",
-		Description: "Holds data that can be easily recomputed.",
-		Groups: []monitoring.Group{
-			{Title: "Redis Cache Up",
+					}},
+			},
+			{
+				Title:  "Redis Cache",
 				Hidden: false,
 				Rows: []monitoring.Row{
 					{
@@ -59,9 +41,9 @@ func RedisCache() *monitoring.Container {
 							Critical:      monitoring.Alert().LessOrEqual(0, nil).For(1 * time.Minute),
 							PossibleSolutions: `
 							-- Ensure redis-cache is running`},
-					},
-				}},
+					}}},
 		},
+
 		NoSourcegraphDebugServer: false,
 	}
 }
