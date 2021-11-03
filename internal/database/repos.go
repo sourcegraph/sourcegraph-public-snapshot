@@ -395,6 +395,13 @@ const getSourcesByRepoQueryStr = `
 )
 `
 
+var minimalRepoColumns = []string{
+	"repo.id",
+	"repo.name",
+	"repo.private",
+	"repo.stars",
+}
+
 var repoColumns = []string{
 	"repo.id",
 	"repo.name",
@@ -413,11 +420,6 @@ var repoColumns = []string{
 	"repo.metadata",
 	"repo.blocked",
 	getSourcesByRepoQueryStr,
-}
-
-// id, name, private
-func minimalColumns(columns []string) []string {
-	return columns[:3]
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -738,7 +740,7 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	}()
 	s.ensureStore()
 
-	opt.Select = minimalColumns(repoColumns)
+	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
@@ -748,7 +750,7 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.RepoName
 		var private bool
-		err := rows.Scan(&r.ID, &r.Name, &private)
+		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars})
 		if err != nil {
 			return err
 		}
