@@ -19,7 +19,7 @@ var ErrNotAuthenticated = errors.New("not authenticated")
 // It is used when an action on a user can be performed by site admins and the
 // organization's members, but nobody else.
 func CheckOrgAccessOrSiteAdmin(ctx context.Context, db dbutil.DB, orgID int32) error {
-	return checkOrgAccess(ctx, db, orgID, true)
+	return checkOrgAccess(ctx, database.NewDB(db), orgID, true)
 }
 
 // CheckOrgAccess returns an error if the user is not a member of the
@@ -27,17 +27,17 @@ func CheckOrgAccessOrSiteAdmin(ctx context.Context, db dbutil.DB, orgID int32) e
 //
 // It is used when an action on a user can be performed by the organization's
 // members, but nobody else.
-func CheckOrgAccess(ctx context.Context, db dbutil.DB, orgID int32) error {
+func CheckOrgAccess(ctx context.Context, db database.DB, orgID int32) error {
 	return checkOrgAccess(ctx, db, orgID, false)
 }
 
 // checkOrgAccess is a helper method used above which allows optionally allowing
 // site admins to access all organisations.
-func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin bool) error {
+func checkOrgAccess(ctx context.Context, db database.DB, orgID int32, allowAdmin bool) error {
 	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
-	currentUser, err := CurrentUser(ctx, database.NewDB(db))
+	currentUser, err := CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -52,8 +52,8 @@ func checkOrgAccess(ctx context.Context, db dbutil.DB, orgID int32, allowAdmin b
 
 var ErrNotAnOrgMember = errors.New("current user is not an org member")
 
-func checkUserIsOrgMember(ctx context.Context, db dbutil.DB, userID, orgID int32) error {
-	resp, err := database.OrgMembers(db).GetByOrgIDAndUserID(ctx, orgID, userID)
+func checkUserIsOrgMember(ctx context.Context, db database.DB, userID, orgID int32) error {
+	resp, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, orgID, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return ErrNotAnOrgMember

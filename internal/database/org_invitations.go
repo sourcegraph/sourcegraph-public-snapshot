@@ -83,10 +83,6 @@ func (err OrgInvitationNotFoundError) Error() string {
 }
 
 func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error) {
-	if Mocks.OrgInvitations.Create != nil {
-		return Mocks.OrgInvitations.Create(orgID, senderUserID, recipientUserID)
-	}
-
 	t := &OrgInvitation{
 		OrgID:           orgID,
 		SenderUserID:    senderUserID,
@@ -110,10 +106,6 @@ func (s *orgInvitationStore) Create(ctx context.Context, orgID, senderUserID, re
 //
 // 🚨 SECURITY: The caller must ensure that the actor is permitted to view this org invitation.
 func (s *orgInvitationStore) GetByID(ctx context.Context, id int64) (*OrgInvitation, error) {
-	if Mocks.OrgInvitations.GetByID != nil {
-		return Mocks.OrgInvitations.GetByID(id)
-	}
-
 	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("id=%d", id)}, nil)
 	if err != nil {
 		return nil, err
@@ -241,10 +233,6 @@ func (s *orgInvitationStore) Respond(ctx context.Context, id int64, recipientUse
 // Revoke marks an org invitation as revoked. The recipient is forbidden from responding to it after
 // it has been revoked.
 func (s *orgInvitationStore) Revoke(ctx context.Context, id int64) error {
-	if Mocks.OrgInvitations.Revoke != nil {
-		return Mocks.OrgInvitations.Revoke(id)
-	}
-
 	res, err := s.Handle().DB().ExecContext(ctx, "UPDATE org_invitations SET revoked_at=now() WHERE id=$1 AND revoked_at IS NULL AND deleted_at IS NULL", id)
 	if err != nil {
 		return err
@@ -257,11 +245,4 @@ func (s *orgInvitationStore) Revoke(ctx context.Context, id int64) error {
 		return OrgInvitationNotFoundError{[]interface{}{id}}
 	}
 	return nil
-}
-
-// MockOrgInvitations mocks the org invitations store.
-type MockOrgInvitations struct {
-	Create  func(orgID, senderUserID, recipientUserID int32) (*OrgInvitation, error)
-	GetByID func(id int64) (*OrgInvitation, error)
-	Revoke  func(id int64) error
 }
