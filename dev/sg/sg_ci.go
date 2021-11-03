@@ -40,6 +40,7 @@ var (
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
 	ciStatusWaitFlag   = ciStatusFlagSet.Bool("wait", false, "Wait by blocking until the build is finished.")
+	ciStatusBuildFlag  = ciStatusFlagSet.String("build", "", "Override branch detection with a specific build number")
 
 	ciBuildFlagSet    = flag.NewFlagSet("sg ci build", flag.ExitOnError)
 	ciBuildCommitFlag = ciBuildFlagSet.String("commit", "", "commit from the current branch to build (defaults to current commit)")
@@ -117,7 +118,11 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 
 				// Just support main pipeline for now
 				var build *buildkite.Build
-				build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				if *ciStatusBuildFlag != "" {
+					build, err = client.GetBuildByNumber(ctx, "sourcegraph", *ciStatusBuildFlag)
+				} else {
+					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				}
 				if err != nil {
 					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 				}
@@ -167,8 +172,8 @@ Note that Sourcegraph's CI pipelines are under our enterprise license: https://g
 				// build status finalized
 				failed := printBuildResults(build, *ciStatusWaitFlag)
 
-				if !branchFromFlag {
-					// If we're not on a specific branch, warn if build commit is not your commit
+				if !branchFromFlag && *ciStatusBuildFlag == "" {
+					// If we're not on a specific branch and not asking for a specific build, warn if build commit is not your commit
 					commit, err := run.GitCmd("rev-parse", "HEAD")
 					if err != nil {
 						return err
