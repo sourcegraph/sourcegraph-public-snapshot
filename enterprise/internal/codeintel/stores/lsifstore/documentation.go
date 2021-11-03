@@ -482,7 +482,8 @@ WITH
 	matching_tags AS (
 		SELECT id, tags
 		FROM lsif_data_docs_search_tags_$SUFFIX
-		WHERE %s LIMIT 10 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
+		WHERE %s -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
+		LIMIT 10
 	)
 SELECT
 	result_id,
