@@ -32,8 +32,10 @@ type SubRepoPermissionChecker interface {
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermsClient is responsible for checking whether a user has access to
-// data within a repo. The intention is for this client to be created once at
-// startup and passed in to all places that need to check sub repo permissions.
+// data within a repo. Sub-repository permissions enforcement is on top of existing
+// repository permissions, which means the user must already have access to the
+// repository itself. The intention is for this client to be created once at startup
+// and passed in to all places that need to check sub repo permissions.
 type SubRepoPermsClient struct {
 	PermissionsGetter PermissionsGetter
 }
