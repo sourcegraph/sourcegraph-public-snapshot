@@ -32,8 +32,12 @@ export function isExtensionInsight(insight: Insight): insight is ExtensionInsigh
     return insight.type === InsightType.Extension
 }
 
-export function isSearchBasedInsight(possibleInsight: { id: string }): possibleInsight is SearchBasedInsight {
-    return isSearchBasedInsightId(possibleInsight.id)
+export function isSearchBasedInsight(possibleInsight: {
+    id: string
+    __typename?: string
+}): possibleInsight is SearchBasedInsight {
+    // TODO: update this check after deprecating settings api
+    return possibleInsight.__typename === 'InsightView' || isSearchBasedInsightId(possibleInsight.id)
 }
 
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {

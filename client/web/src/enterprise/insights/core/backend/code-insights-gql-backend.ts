@@ -29,7 +29,6 @@ import {
     InsightDashboard,
     InsightsDashboardType,
     InsightType,
-    InsightTypePrefix,
     isSearchBasedInsight,
     SearchBasedInsight,
 } from '../types'
@@ -136,11 +135,9 @@ export const parseGrants = (type: string, visibility: string): InsightsPermissio
 }
 
 const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => ({
+    __typename: insight.__typename,
     type: InsightType.Backend,
-    // TODO: map prefix to type based on presentation.__typename
-    // This is our convenstion around insight id, by this id prefix
-    // we make a difference between search and lang stats insight
-    id: `${InsightTypePrefix.search}.${insight.id}`,
+    id: insight.id,
     visibility: '',
     title: insight.presentation.title,
     series: insight.dataSeries.map(series => ({
@@ -154,10 +151,7 @@ const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]):
 })
 
 const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
-    // TODO: map prefix to type based on presentation.__typename
-    // This is our convenstion around insight id, by this id prefix
-    // we make a difference between search and lang stats insight
-    id: `${InsightTypePrefix.search}.${insight.id}`,
+    id: insight.id,
     title: insight.presentation.title,
     description: '',
     series: insight.dataSeries.map(series => ({
@@ -236,8 +230,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             map(({ data }) => {
                 const insightViews = data.insightViews.nodes.map(mapInsightView)
                 if (ids) {
-                    const mappedIds = new Set(ids.map(id => `${InsightTypePrefix.search}.${id}`))
-                    return insightViews.filter(insight => mappedIds.has(insight.id))
+                    return insightViews.filter(insight => ids.includes(insight.id))
                 }
 
                 return insightViews
