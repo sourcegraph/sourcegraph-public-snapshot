@@ -19,11 +19,13 @@ window.addEventListener('error', error => {
     }
 })
 
+export type SentrySDK = Hub & {
+    init: typeof init
+    onLoad: typeof onLoad
+}
+
 declare global {
-    const Sentry: Hub & {
-        init: typeof init
-        onLoad: typeof onLoad
-    }
+    const Sentry: SentrySDK
 }
 
 if (typeof Sentry !== 'undefined') {

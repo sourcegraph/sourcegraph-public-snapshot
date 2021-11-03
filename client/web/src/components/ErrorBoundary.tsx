@@ -126,7 +126,7 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 
 function shouldErrorBeReported(error: unknown): boolean {
     // Report errors only in production environment.
-    if (process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
         return false
     }
 
