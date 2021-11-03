@@ -457,7 +457,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 		}
 		if provider == nil {
 			// NOTE: User code host connection can only be added on sourcegraph.com, and
-			//  authorization is enforced everything, it does not make sense that we cannot
+			//  authorization is enforced for everything, it does not make sense that we cannot
 			//  derive an `authz.Provider` from it.
 			log15.Warn("PermsSyncer.fetchUserPermsViaExternalServices.noAuthzProvider",
 				"userID", userID,
