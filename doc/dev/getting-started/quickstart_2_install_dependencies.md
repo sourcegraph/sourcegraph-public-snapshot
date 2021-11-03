@@ -1,4 +1,4 @@
-# Quickstart step 1: Install dependencies
+# Quickstart step 2: Install dependencies
 
 Sourcegraph has the following dependencies:
 
@@ -122,7 +122,7 @@ Below are instructions to install these dependencies:
         set -x NVM_DIR ~/.nvm
         ```
 
-7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
+7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Cloning our repository](quickstart_3_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
@@ -256,4 +256,4 @@ asdf plugin add yarn
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-[< Previous](index.md) | [Next >](quickstart_2_clone_repository.md)
+[< Previous](quickstart_1_install_sg.md) | [Next >](quickstart_3_clone_repository.md)
