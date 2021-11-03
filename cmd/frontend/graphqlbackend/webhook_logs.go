@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -77,7 +76,7 @@ type webhookLogConnectionResolver struct {
 	err  error
 }
 
-func newWebhookLogConnectionResolver(ctx context.Context, db dbutil.DB, args *webhookLogsArgs, externalServiceID int64) (*webhookLogConnectionResolver, error) {
+func newWebhookLogConnectionResolver(ctx context.Context, db database.DB, args *webhookLogsArgs, externalServiceID int64) (*webhookLogConnectionResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
@@ -96,7 +95,7 @@ func (r *webhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 	}
 
 	nodes := make([]*webhookLogResolver, len(logs))
-	db := r.store.Handle().DB()
+	db := database.NewDB(r.store.Handle().DB())
 	for i, log := range logs {
 		nodes[i] = &webhookLogResolver{
 			db:  db,
@@ -146,7 +145,7 @@ func (r *webhookLogConnectionResolver) compute(ctx context.Context) ([]*types.We
 }
 
 type webhookLogResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	log *types.WebhookLog
 }
 
@@ -159,7 +158,7 @@ func unmarshalWebhookLogID(id graphql.ID) (logID int64, err error) {
 	return
 }
 
-func webhookLogByID(ctx context.Context, db dbutil.DB, gqlID graphql.ID) (*webhookLogResolver, error) {
+func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookLogResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}

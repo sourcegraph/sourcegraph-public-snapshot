@@ -94,35 +94,35 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	// We'll test everything else below, but let's just make sure the admin
 	// check occurs.
 	t.Run("unauthenticated user", func(t *testing.T) {
-		resetMocks()
-		defer resetMocks()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return nil, nil
-		}
-		_, err := newWebhookLogConnectionResolver(context.Background(), nil, nil, 0)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, 0)
 		assert.ErrorIs(t, err, backend.ErrNotAuthenticated)
 	})
 
 	t.Run("regular user", func(t *testing.T) {
-		resetMocks()
-		defer resetMocks()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{}, nil
-		}
-		_, err := newWebhookLogConnectionResolver(context.Background(), nil, nil, 0)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, 0)
 		assert.ErrorIs(t, err, backend.ErrMustBeSiteAdmin)
 	})
 
 	t.Run("admin user", func(t *testing.T) {
-		resetMocks()
-		defer resetMocks()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{SiteAdmin: true}, nil
-		}
-		_, err := newWebhookLogConnectionResolver(context.Background(), nil, nil, 0)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
+		_, err := newWebhookLogConnectionResolver(context.Background(), db, nil, 0)
 		assert.Nil(t, err)
 	})
 }
@@ -140,9 +140,16 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 	// webhookLogResolvers.
 	db := &basestore.TransactableHandle{}
 
-	t.Run("empty and has no further pages", func(t *testing.T) {
+	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *dbmock.MockWebhookLogStore {
 		store := dbmock.NewMockWebhookLogStore()
-		store.ListFunc.SetDefaultReturn([]*types.WebhookLog{}, 0, nil)
+		store.ListFunc.SetDefaultReturn(logs, next, err)
+		store.HandleFunc.SetDefaultReturn(db)
+
+		return store
+	}
+
+	t.Run("empty and has no further pages", func(t *testing.T) {
+		store := createMockStore([]*types.WebhookLog{}, 0, nil)
 
 		r := &webhookLogConnectionResolver{
 			args: &webhookLogsArgs{
@@ -173,9 +180,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("full and has next page", func(t *testing.T) {
-		store := dbmock.NewMockWebhookLogStore()
-		store.ListFunc.SetDefaultReturn(logs, 20, nil)
-		store.HandleFunc.SetDefaultReturn(db)
+		store := createMockStore(logs, 20, nil)
 
 		r := &webhookLogConnectionResolver{
 			args: &webhookLogsArgs{
@@ -209,8 +214,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		want := errors.New("error")
-		store := dbmock.NewMockWebhookLogStore()
-		store.ListFunc.SetDefaultReturn(nil, 0, want)
+		store := createMockStore(nil, 0, want)
 
 		r := &webhookLogConnectionResolver{
 			args: &webhookLogsArgs{
