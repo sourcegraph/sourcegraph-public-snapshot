@@ -257,7 +257,7 @@ type InsightsDashboard implements Node {
     """
     The list of associated insights to the dashboard.
     """
-    views: InsightViewConnection
+    views(first: Int, after: ID): InsightViewConnection
 
     """
     The permission grants assossiated with the dashboard.

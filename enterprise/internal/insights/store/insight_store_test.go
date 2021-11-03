@@ -22,9 +22,9 @@ func TestGet(t *testing.T) {
 	defer cleanup()
 	now := time.Now().Truncate(time.Microsecond).Round(0)
 
-	_, err := timescale.Exec(`INSERT INTO insight_view (title, description, unique_id)
-									VALUES ('test title', 'test description', 'unique-1'),
-									       ('test title 2', 'test description 2', 'unique-2')`)
+	_, err := timescale.Exec(`INSERT INTO insight_view (id, title, description, unique_id)
+									VALUES (1, 'test title', 'test description', 'unique-1'),
+									       (2, 'test title 2', 'test description 2', 'unique-2')`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,6 +67,7 @@ func TestGet(t *testing.T) {
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-1",
 				Title:               "test title",
@@ -84,6 +85,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 			},
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-2",
 				Title:               "test title",
@@ -101,6 +103,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color2",
 			},
 			{
+				ViewID:              2,
 				UniqueID:            "unique-2",
 				SeriesID:            "series-id-2",
 				Title:               "test title 2",
@@ -134,6 +137,7 @@ func TestGet(t *testing.T) {
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-1",
 				Title:               "test title",
@@ -151,6 +155,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 			},
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-2",
 				Title:               "test title",
@@ -183,6 +188,7 @@ func TestGet(t *testing.T) {
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-1",
 				Title:               "test title",
@@ -200,6 +206,7 @@ func TestGet(t *testing.T) {
 				LineColor:           "color1",
 			},
 			{
+				ViewID:              1,
 				UniqueID:            "unique-1",
 				SeriesID:            "series-id-2",
 				Title:               "test title",
@@ -604,6 +611,7 @@ func TestAttachSeriesView(t *testing.T) {
 
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{{
+			ViewID:              1,
 			UniqueID:            view.UniqueID,
 			SeriesID:            series.SeriesID,
 			Title:               view.Title,
