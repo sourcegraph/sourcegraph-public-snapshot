@@ -612,7 +612,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	)
 
 	// Set sub-repository permissions
-	srp := edb.SubRepoPerms(s.reposStore.Handle().DB(), time.Now)
+	srp := database.SubRepoPerms(s.reposStore.Handle().DB())
 	for spec, perm := range subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
 			return errors.Wrapf(err, "upserting sub repo perms %v for user %d", spec, user.ID)

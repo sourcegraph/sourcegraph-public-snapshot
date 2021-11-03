@@ -532,14 +532,14 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		return []api.RepoID{}, nil
 	}
 	var upsertWithSpecCalled int
-	edb.Mocks.SubRepoPerms.UpsertWithSpec = func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+	database.Mocks.SubRepoPerms.UpsertWithSpec = func(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
 		upsertWithSpecCalled++
 		return nil
 	}
 	defer func() {
 		database.Mocks = database.MockStores{}
 		edb.Mocks.Perms = edb.MockPerms{}
-		edb.Mocks.SubRepoPerms = edb.MockSubRepoPerms{}
+		database.Mocks.SubRepoPerms = database.MockSubRepoPerms{}
 	}()
 
 	permsStore := edb.Perms(nil, timeutil.Now)

@@ -19,6 +19,7 @@ type MockStores struct {
 	Users           MockUsers
 	UserCredentials MockUserCredentials
 	UserEmails      MockUserEmails
+	SubRepoPerms    MockSubRepoPerms
 
 	ExternalAccounts MockExternalAccounts
 
