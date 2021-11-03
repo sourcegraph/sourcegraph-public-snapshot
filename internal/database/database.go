@@ -27,6 +27,7 @@ type DB interface {
 	SavedSearches() SavedSearchStore
 	SearchContexts() SearchContextsStore
 	Settings() SettingsStore
+	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
@@ -97,6 +98,10 @@ func (d *db) SearchContexts() SearchContextsStore {
 
 func (d *db) Settings() SettingsStore {
 	return Settings(d.DB)
+}
+
+func (d *db) SubRepoPerms() SubRepoPermsStore {
+	return SubRepoPerms(d.DB)
 }
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
