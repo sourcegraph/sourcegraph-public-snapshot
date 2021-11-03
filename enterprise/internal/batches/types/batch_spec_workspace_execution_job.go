@@ -14,9 +14,12 @@ type BatchSpecWorkspaceExecutionJobState string
 const (
 	BatchSpecWorkspaceExecutionJobStateQueued     BatchSpecWorkspaceExecutionJobState = "queued"
 	BatchSpecWorkspaceExecutionJobStateProcessing BatchSpecWorkspaceExecutionJobState = "processing"
-	BatchSpecWorkspaceExecutionJobStateErrored    BatchSpecWorkspaceExecutionJobState = "errored"
 	BatchSpecWorkspaceExecutionJobStateFailed     BatchSpecWorkspaceExecutionJobState = "failed"
 	BatchSpecWorkspaceExecutionJobStateCompleted  BatchSpecWorkspaceExecutionJobState = "completed"
+
+	// There is no Errored state because automatic-retry of
+	// BatchSpecWorkspaceExecutionJobs is disabled. If a job fails, it's
+	// "failed" and needs to be retried manually.
 )
 
 // Valid returns true if the given BatchSpecWorkspaceExecutionJobState is valid.
@@ -24,7 +27,6 @@ func (s BatchSpecWorkspaceExecutionJobState) Valid() bool {
 	switch s {
 	case BatchSpecWorkspaceExecutionJobStateQueued,
 		BatchSpecWorkspaceExecutionJobStateProcessing,
-		BatchSpecWorkspaceExecutionJobStateErrored,
 		BatchSpecWorkspaceExecutionJobStateFailed,
 		BatchSpecWorkspaceExecutionJobStateCompleted:
 		return true
