@@ -243,12 +243,19 @@ func (r *batchSpecWorkspaceResolver) ChangesetSpecs(ctx context.Context) (*[]gra
 }
 
 func (r *batchSpecWorkspaceResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+	if r.execution == nil {
+		return nil, nil
+	}
+	if r.execution.State != btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
+		return nil, nil
+	}
+
 	// TODO: Cache this computation.
 	resolvers, err := r.ChangesetSpecs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolvers == nil {
+	if resolvers == nil || len(*resolvers) == 0 {
 		return nil, nil
 	}
 	var totalDiff graphqlbackend.DiffStat

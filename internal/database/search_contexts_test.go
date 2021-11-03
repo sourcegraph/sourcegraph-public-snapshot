@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func createSearchContexts(ctx context.Context, store *SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
+func createSearchContexts(ctx context.Context, store SearchContextsStore, searchContexts []*types.SearchContext) ([]*types.SearchContext, error) {
 	emptyRepositoryRevisions := []*types.SearchContextRepositoryRevisions{}
 	createdSearchContexts := make([]*types.SearchContext, len(searchContexts))
 	for idx, searchContext := range searchContexts {
@@ -377,8 +377,8 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	repoAName := types.RepoName{ID: repoA.ID, Name: repoA.Name}
-	repoBName := types.RepoName{ID: repoB.ID, Name: repoB.Name}
+	repoAName := types.MinimalRepo{ID: repoA.ID, Name: repoA.Name}
+	repoBName := types.MinimalRepo{ID: repoB.ID, Name: repoB.Name}
 
 	// Create a search context with initial repository revisions
 	initialRepositoryRevisions := []*types.SearchContextRepositoryRevisions{
@@ -812,7 +812,7 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 		searchContexts[idx], err = sc.CreateSearchContextWithRepositoryRevisions(
 			internalCtx,
 			searchContext,
-			[]*types.SearchContextRepositoryRevisions{{Repo: types.RepoName{ID: repos[idx].ID, Name: repos[idx].Name}, Revisions: []string{testRevision}}},
+			[]*types.SearchContextRepositoryRevisions{{Repo: types.MinimalRepo{ID: repos[idx].ID, Name: repos[idx].Name}, Revisions: []string{testRevision}}},
 		)
 		if err != nil {
 			t.Fatalf("Expected no error, got %s", err)

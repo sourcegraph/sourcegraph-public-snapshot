@@ -7,14 +7,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 var ErrNoAccessExternalService = errors.New("the authenticated user does not have access to this external service")
 
 // CheckExternalServiceAccess checks whether the current user is allowed to
 // access the supplied external service.
-func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) error {
+func CheckExternalServiceAccess(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) error {
 	// Fast path that doesn't need to hit DB as we can get id from context
 	a := actor.FromContext(ctx)
 	if namespaceUserID > 0 && a.IsAuthenticated() && namespaceUserID == a.UID {
@@ -35,8 +34,8 @@ func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUser
 
 // CheckOrgExternalServices checks if the feature organization can own external services
 // is allowed or not
-func CheckOrgExternalServices(ctx context.Context, db dbutil.DB, orgID int32) error {
-	enabled, err := database.FeatureFlags(db).GetOrgFeatureFlag(ctx, orgID, "org-code")
+func CheckOrgExternalServices(ctx context.Context, db database.DB, orgID int32) error {
+	enabled, err := db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, "org-code")
 	if err != nil {
 		return err
 	} else if enabled {

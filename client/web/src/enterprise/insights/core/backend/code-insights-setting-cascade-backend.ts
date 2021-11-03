@@ -144,9 +144,9 @@ export class CodeInsightsSettingsCascadeBackend implements CodeInsightsBackend {
         return of(getInsightsDashboards(subjects, final))
     }
 
-    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | null> =>
+    public getDashboardById = (dashboardId?: string): Observable<InsightDashboard | undefined> =>
         this.getDashboards().pipe(
-            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? '') ?? null))
+            switchMap(dashboards => of(findDashboardByUrlId(dashboards, dashboardId ?? 'all') ?? undefined))
         )
 
     public findDashboardByName = (name: string): Observable<InsightDashboard | null> =>

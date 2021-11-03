@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -235,7 +236,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 		j := 0
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: types.RepoName{
+				Repo: types.MinimalRepo{
 					ID:   api.RepoID(i),
 					Name: api.RepoName(chars[j] + "/repoName" + strconv.Itoa(i)),
 				},
@@ -279,7 +280,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -297,7 +298,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 						query.SearchType(0),
 					},
 				},
-				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description: "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -310,7 +311,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -322,7 +323,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -340,7 +341,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 						query.SearchType(0),
 					},
 				},
-				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description: "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 	}
@@ -355,7 +356,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				t.Fatal(err)
 			}
 			sr := searchResolver{
-				db: db,
+				db: database.NewDB(db),
 				SearchInputs: &run.SearchInputs{
 					OriginalQuery: test.query,
 					Plan:          plan,
@@ -433,7 +434,7 @@ func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	sr := searchResolver{
-		db: db,
+		db: database.NewDB(db),
 		SearchInputs: &run.SearchInputs{
 			OriginalQuery: searchQuery,
 			Query:         q,

@@ -9,7 +9,7 @@ We have a variety of tooling on [Buildkite](https://buildkite.com/sourcegraph/so
 [Tests](../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph).
 Pipeline steps are generated using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci).
 
-To see what checks will get run against your checked out branch and changes, use [`sg`](../getting-started/quickstart_3_install_sg.md):
+To see what checks will get run against your checked out branch and changes, use [`sg`](../getting-started/quickstart_1_install_sg.md):
 
 ```sh
 sg ci preview

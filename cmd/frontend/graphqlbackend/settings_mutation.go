@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 // Deprecated: The GraphQL type Configuration is deprecated.
@@ -38,7 +37,7 @@ type settingsMutationGroupInput struct {
 }
 
 type settingsMutation struct {
-	db      dbutil.DB
+	db      database.DB
 	input   *settingsMutationGroupInput
 	subject *settingsSubject
 }
@@ -197,7 +196,7 @@ func (r *settingsMutation) doUpdateSettings(ctx context.Context, computeEdits fu
 
 func (r *settingsMutation) getCurrentSettings(ctx context.Context) (string, error) {
 	// Get the settings file whose contents to mutate.
-	settings, err := database.Settings(r.db).GetLatest(ctx, r.subject.toSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, r.subject.toSubject())
 	if err != nil {
 		return "", err
 	}

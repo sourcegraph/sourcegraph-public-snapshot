@@ -17,8 +17,8 @@ jobs:
                   team/search=@lguychard
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
-                  team/distribution=@davejrt @ggilmore @daxmc99 @dan-mckean
+                  team/distribution=@dan-mckean @stephanx
                   team/delivery=@davejrt @ggilmore @dan-mckean @caugustus-sourcegraph @stephanx
-                  team/security=@dan-mckean
+                  team/security=@dcomas
                   team/dev-experience=@taylorsperry @pdubroy
                   team/repo-management=@jplahn @dan-mckean

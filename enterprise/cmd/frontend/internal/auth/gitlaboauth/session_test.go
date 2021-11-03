@@ -65,7 +65,7 @@ func createCodeHostConnectionHelper(t *testing.T, serviceExists bool) {
 		AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness",
 	}
 
-	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (*database.ExternalServiceStore, error) {
+	database.Mocks.ExternalServices.Transact = func(ctx context.Context) (database.ExternalServiceStore, error) {
 		return database.ExternalServices(db), nil
 	}
 	database.Mocks.ExternalServices.Done = func(err error) error {

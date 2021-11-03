@@ -111,41 +111,83 @@ var ComputePredicateRegistry = query.PredicateRegistry{
 	},
 }
 
-var arrowSyntax = lazyregexp.New(`\s*->\s*`)
-
-func parseReplace(pattern *query.Pattern) (Command, bool, error) {
+func parseContentPredicate(pattern *query.Pattern) (string, string, bool) {
 	if !pattern.Annotation.Labels.IsSet(query.IsAlias) {
 		// pattern is not set via `content:`, so it cannot be a replace command.
-		return nil, false, nil
+		return "", "", false
 	}
 	value, _, ok := query.ScanPredicate("content", []byte(pattern.Value), ComputePredicateRegistry)
 	if !ok {
-		return nil, false, nil
+		return "", "", false
 	}
 	name, args := query.ParseAsPredicate(value)
+	return name, args, true
+}
+
+var arrowSyntax = lazyregexp.New(`\s*->\s*`)
+
+func parseArrowSyntax(args string) (string, string, error) {
 	parts := arrowSyntax.Split(args, 2)
 	if len(parts) != 2 {
-		return nil, false, errors.New("invalid replace statement, no left and right hand sides of `->`")
+		return "", "", errors.New("invalid arrow statement, no left and right hand sides of `->`")
+	}
+	return parts[0], parts[1], nil
+}
+
+func parseReplace(pattern *query.Pattern) (Command, bool, error) {
+	name, args, ok := parseContentPredicate(pattern)
+	if !ok {
+		return nil, false, nil
+	}
+	left, right, err := parseArrowSyntax(args)
+	if err != nil {
+		return nil, false, err
 	}
 
 	var matchPattern MatchPattern
 	switch name {
 	case "replace", "replace.regexp":
 		var err error
-		matchPattern, err = toRegexpPattern(parts[0])
+		matchPattern, err = toRegexpPattern(left)
 		if err != nil {
 			return nil, false, errors.Wrap(err, "replace command")
 		}
 	case "replace.structural":
 		// structural search doesn't do any match pattern validation
-		matchPattern = &Comby{Value: parts[0]}
+		matchPattern = &Comby{Value: left}
+	default:
+		// unrecognized name
+		return nil, false, nil
 	}
 
-	return &Replace{MatchPattern: matchPattern, ReplacePattern: parts[1]}, true, nil
+	return &Replace{MatchPattern: matchPattern, ReplacePattern: right}, true, nil
 }
 
 func parseOutput(pattern *query.Pattern) (Command, bool, error) {
-	return nil, false, nil
+	name, args, ok := parseContentPredicate(pattern)
+	if !ok {
+		return nil, false, nil
+	}
+	left, right, err := parseArrowSyntax(args)
+	if err != nil {
+		return nil, false, err
+	}
+
+	var matchPattern MatchPattern
+	switch name {
+	case "output":
+		var err error
+		matchPattern, err = toRegexpPattern(left)
+		if err != nil {
+			return nil, false, errors.Wrap(err, "output command")
+		}
+	default:
+		// unrecognized name
+		return nil, false, nil
+	}
+
+	// The default separator is newline and cannot be changed currently.
+	return &Output{MatchPattern: matchPattern, OutputPattern: right, Separator: "\n"}, true, nil
 }
 
 func parseMatchOnly(pattern *query.Pattern) (Command, bool, error) {

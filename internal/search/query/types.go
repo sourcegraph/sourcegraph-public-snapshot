@@ -380,7 +380,6 @@ func (q Q) valueToTypedValue(field, value string, label labels) []*Value {
 		return []*Value{{Regexp: parseRegexpOrPanic(field, value)}}
 
 	case
-		FieldRepoGroup, "g",
 		FieldContext:
 		return []*Value{{String: &value}}
 

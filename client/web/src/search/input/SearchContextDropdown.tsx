@@ -12,6 +12,7 @@ import { useTemporarySetting } from '../../settings/temporary/useTemporarySettin
 import { SubmitSearchProps } from '../helpers'
 
 import { SearchContextCtaPrompt } from './SearchContextCtaPrompt'
+import styles from './SearchContextDropdown.module.scss'
 import { SearchContextMenu } from './SearchContextMenu'
 
 export interface SearchContextDropdownProps
@@ -84,22 +85,20 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
             isOpen={isOpen}
             toggle={toggleOpen}
             a11y={false} /* Override default keyboard events in reactstrap */
-            className={classNames('search-context-dropdown ', className)}
+            className={className}
         >
             <DropdownToggle
                 className={classNames(
-                    'search-context-dropdown__button',
+                    styles.button,
                     'dropdown-toggle',
                     'test-search-context-dropdown',
-                    {
-                        'search-context-dropdown__button--open': isOpen,
-                    }
+                    isOpen && styles.buttonOpen
                 )}
                 color="link"
                 disabled={isContextFilterInQuery}
                 data-tooltip={disabledTooltipText}
             >
-                <code className="search-context-dropdown__button-content test-selected-search-context-spec">
+                <code className={classNames('test-selected-search-context-spec', styles.buttonContent)}>
                     <span className="search-filter-keyword">context:</span>
                     {selectedSearchContextSpec?.startsWith('@') ? (
                         <>
@@ -111,7 +110,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                     )}
                 </code>
             </DropdownToggle>
-            <DropdownMenu positionFixed={true} className="search-context-dropdown__menu">
+            <DropdownMenu positionFixed={true} className={styles.menu}>
                 {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}

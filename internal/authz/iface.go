@@ -58,7 +58,7 @@ type ExternalUserPermissions struct {
 
 	// SubRepoPermissions denotes sub-repository content access control rules where
 	// relevant.
-	SubRepoPermissions map[extsvc.RepoID]SubRepoPermissions
+	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
 }
 
 // FetchPermsOptions declares options when performing permissions sync.
@@ -116,6 +116,10 @@ type Provider interface {
 	// to decide whether to discard.
 	FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts FetchPermsOptions) ([]extsvc.AccountID, error)
 
+	// FetchUserPermsByToken is similar to FetchUserPerms but only requires a token
+	// in order to communicate with the code host.
+	FetchUserPermsByToken(ctx context.Context, token string, opts FetchPermsOptions) (*ExternalUserPermissions, error)
+
 	// ServiceType returns the service type (e.g., "gitlab") of this authz provider.
 	ServiceType() string
 
@@ -130,4 +134,11 @@ type Provider interface {
 	// Validate checks the configuration and credentials of the authz provider and returns any
 	// problems.
 	Validate() (problems []string)
+}
+
+// ErrUnauthenticated indicates an unauthenticated request.
+type ErrUnauthenticated struct{}
+
+func (e ErrUnauthenticated) Error() string {
+	return "request is unauthenticated"
 }

@@ -9,6 +9,7 @@ import (
 )
 
 func TestOrgs(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
 		return &types.User{SiteAdmin: true}, nil
@@ -19,7 +20,7 @@ func TestOrgs(t *testing.T) {
 	database.Mocks.Orgs.Count = func(context.Context, database.OrgsListOptions) (int, error) { return 2, nil }
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					organizations {

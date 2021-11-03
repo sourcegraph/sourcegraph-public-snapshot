@@ -2,6 +2,7 @@ import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
+import { TreeLayerTable } from './components'
 import { SingleChildTreeLayer } from './SingleChildTreeLayer'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
@@ -44,7 +45,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
 
     return (
         <div>
-            <table className="tree-layer">
+            <TreeLayerTable>
                 <tbody>
                     <tr>
                         <td>
@@ -76,7 +77,7 @@ export const ChildTreeLayer: React.FunctionComponent<ChildTreeLayerProps> = (pro
                         </td>
                     </tr>
                 </tbody>
-            </table>
+            </TreeLayerTable>
         </div>
     )
 }

@@ -14,7 +14,7 @@ import (
 
 type CommitMatch struct {
 	Commit     gitapi.Commit
-	Repo       types.RepoName
+	Repo       types.MinimalRepo
 	Refs       []string
 	SourceRefs []string
 	// MessagePreview and DiffPreview are mutually exclusive. Only one should be set
@@ -37,7 +37,7 @@ func (r *CommitMatch) ResultCount() int {
 	return 1
 }
 
-func (r *CommitMatch) RepoName() types.RepoName {
+func (r *CommitMatch) RepoName() types.MinimalRepo {
 	return r.Repo
 }
 

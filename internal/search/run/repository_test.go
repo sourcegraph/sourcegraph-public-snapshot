@@ -33,9 +33,9 @@ func TestSearchRepositories(t *testing.T) {
 		t.Skip("TestSeachRepositories only works in local dev and is not reliable in CI")
 	}
 	repositories := []*search.RepositoryRevisions{
-		{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
-		{Repo: types.RepoName{ID: 456, Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
-		{Repo: types.RepoName{ID: 789, Name: "bar/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
+		{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
+		{Repo: types.MinimalRepo{ID: 456, Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
+		{Repo: types.MinimalRepo{ID: 789, Name: "bar/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}},
 	}
 
 	zoekt := &searchbackend.FakeSearcher{}
@@ -47,7 +47,7 @@ func TestSearchRepositories(t *testing.T) {
 		case "foo/one":
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repoName},
+					Repo:     types.MinimalRepo{ID: 123, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
 				},
@@ -55,7 +55,7 @@ func TestSearchRepositories(t *testing.T) {
 		case "bar/one":
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 789, Name: repoName},
+					Repo:     types.MinimalRepo{ID: 789, Name: repoName},
 					InputRev: &rev,
 					Path:     "f.go",
 				},
@@ -142,12 +142,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	zoekt := &searchbackend.FakeSearcher{}
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			rev := "1a2b3c"
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
+					Repo:     types.MinimalRepo{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
@@ -172,7 +172,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
@@ -195,12 +195,12 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			rev := "1a2b3c"
 			return []result.Match{&result.FileMatch{
 				File: result.File{
-					Repo:     types.RepoName{ID: 123, Name: repo.Repo.Name},
+					Repo:     types.MinimalRepo{ID: 123, Name: repo.Repo.Name},
 					InputRev: &rev,
 					Path:     "foo.go",
 				},
@@ -225,7 +225,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := &search.RepositoryRevisions{Repo: types.RepoName{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []search.RevisionSpecifier{{RevSpec: ""}}}
 		unindexed.MockSearchFilesInRepos = func() ([]result.Match, *streaming.Stats, error) {
 			return nil, &streaming.Stats{}, nil
 		}
@@ -296,7 +296,7 @@ func BenchmarkSearchRepositories(b *testing.B) {
 	n := 200 * 1000
 	repos := make([]*search.RepositoryRevisions, n)
 	for i := 0; i < n; i++ {
-		repo := types.RepoName{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
+		repo := types.MinimalRepo{Name: api.RepoName("github.com/org/repo" + strconv.Itoa(i))}
 		repos[i] = &search.RepositoryRevisions{Repo: repo, Revs: []search.RevisionSpecifier{{}}}
 	}
 	q, _ := query.ParseLiteral("context.WithValue")
@@ -328,8 +328,8 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func mkRepos(names ...string) []types.RepoName {
-	var repos []types.RepoName
+func mkRepos(names ...string) []types.MinimalRepo {
+	var repos []types.MinimalRepo
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -339,7 +339,7 @@ func mkRepos(names ...string) []types.RepoName {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, types.MinimalRepo{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }

@@ -162,6 +162,32 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 				}
 			}
 		})
+
+		t.Run("ByID", func(t *testing.T) {
+			for _, ws := range workspaces {
+				have, _, err := s.ListBatchSpecWorkspaces(ctx, ListBatchSpecWorkspacesOpts{
+					IDs: []int64{ws.ID},
+				})
+
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if ws.RepoID == deletedRepo.ID {
+					if len(have) != 0 {
+						t.Fatalf("expected zero results, but got: %d", len(have))
+					}
+					return
+				}
+				if len(have) != 1 {
+					t.Fatalf("wrong number of results. have=%d", len(have))
+				}
+
+				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspace{ws}); diff != "" {
+					t.Fatalf("invalid jobs returned: %s", diff)
+				}
+			}
+		})
 	})
 
 	t.Run("MarkSkippedBatchSpecWorkspaces", func(t *testing.T) {

@@ -32,6 +32,21 @@ func Executor() *monitoring.Container {
 				Query: "batches,codeintel",
 				Type:  "custom",
 			},
+			{
+				Label:      "Compute Instance",
+				Name:       "instance",
+				AllValue:   ".*",
+				IncludeAll: true,
+				Query:      "label_values(node_exporter_build_info{job=\"sourcegraph-code-intel-indexer-nodes\"}, instance)",
+				Type:       "query",
+				Datasource: monitoring.StringPtr("Prometheus"),
+				Sort:       1,
+				Refresh: sdk.BoolInt{
+					Flag:  true,
+					Value: monitoring.Int64Ptr(1),
+				},
+				Hide: 0,
+			},
 		},
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewExecutorQueueGroup(queueContainerName),
@@ -42,11 +57,11 @@ func Executor() *monitoring.Container {
 			shared.CodeIntelligence.NewExecutorExecutionCommandGroup(containerName),
 			shared.CodeIntelligence.NewExecutorTeardownCommandGroup(containerName),
 
+			shared.NewNodeExporterGroup(containerName, "sourcegraph-code-intel-indexer-nodes", "Compute", "$instance"),
+			shared.NewNodeExporterGroup(containerName, "sourcegraph-code-intel-indexer-docker-registry-mirror-nodes", "Docker Registry Mirror", ".*"),
+
 			// Resource monitoring
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 		},
 	}
 }

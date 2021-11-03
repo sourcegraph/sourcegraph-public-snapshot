@@ -525,7 +525,7 @@ describe('Blob viewer', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Wait for some line decoration attachment portal
-            await driver.page.waitForSelector('.line-decoration-attachment-portal', { timeout })
+            await driver.page.waitForSelector('[data-line-decoration-attachment-portal]', { timeout })
             assert(
                 !(await driver.page.$('#line-decoration-attachment-1')),
                 'Expected line 1 to not have a decoration attachment portal'

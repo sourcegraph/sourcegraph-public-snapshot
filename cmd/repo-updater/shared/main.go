@@ -354,7 +354,7 @@ type scheduler interface {
 	ListRepos() []string
 
 	// EnsureScheduled ensures that all the repos provided are known to the scheduler.
-	EnsureScheduled([]types.RepoName)
+	EnsureScheduled([]types.MinimalRepo)
 }
 
 type permsSyncer interface {
@@ -445,7 +445,7 @@ func syncScheduler(ctx context.Context, sched scheduler, gitserverClient *gitser
 		// of the queue
 		managed := sched.ListRepos()
 
-		uncloned, err := baseRepoStore.ListRepoNames(ctx, database.ReposListOptions{Names: managed, NoCloned: true})
+		uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{Names: managed, NoCloned: true})
 		if err != nil {
 			log15.Warn("failed to fetch list of uncloned repositories", "error", err)
 			return

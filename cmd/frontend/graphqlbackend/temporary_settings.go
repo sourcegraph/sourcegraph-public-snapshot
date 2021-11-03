@@ -7,12 +7,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 )
 
 type TemporarySettingsResolver struct {
-	db    dbutil.DB
+	db    database.DB
 	inner *ts.TemporarySettings
 }
 
@@ -22,7 +21,7 @@ func (r *schemaResolver) TemporarySettings(ctx context.Context) (*TemporarySetti
 		return nil, errors.New("not authenticated")
 	}
 
-	temporarySettings, err := database.TemporarySettings(r.db).GetTemporarySettings(ctx, a.UID)
+	temporarySettings, err := r.db.TemporarySettings().GetTemporarySettings(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +38,7 @@ func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args st
 		return nil, errors.New("not authenticated")
 	}
 
-	return &EmptyResponse{}, database.TemporarySettings(r.db).OverwriteTemporarySettings(ctx, a.UID, args.Contents)
+	return &EmptyResponse{}, r.db.TemporarySettings().OverwriteTemporarySettings(ctx, a.UID, args.Contents)
 }
 
 func (r *schemaResolver) EditTemporarySettings(ctx context.Context, args struct{ SettingsToEdit string }) (*EmptyResponse, error) {
@@ -48,5 +47,5 @@ func (r *schemaResolver) EditTemporarySettings(ctx context.Context, args struct{
 		return nil, errors.New("not authenticated")
 	}
 
-	return &EmptyResponse{}, database.TemporarySettings(r.db).EditTemporarySettings(ctx, a.UID, args.SettingsToEdit)
+	return &EmptyResponse{}, r.db.TemporarySettings().EditTemporarySettings(ctx, a.UID, args.SettingsToEdit)
 }

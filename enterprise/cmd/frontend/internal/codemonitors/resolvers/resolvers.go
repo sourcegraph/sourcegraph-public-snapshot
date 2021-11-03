@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	cm "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/email"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -209,7 +210,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 // actions (emails, webhooks) immediately. This is useful during development and
 // troubleshooting. Only site admins can call this functions.
 func (r *Resolver) ResetTriggerQueryTimestamps(ctx context.Context, args *graphqlbackend.ResetTriggerQueryTimestampsArgs) (*graphqlbackend.EmptyResponse, error) {
-	err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.store.Handle().DB())
+	err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.store.Handle().DB()))
 	if err != nil {
 		return nil, err
 	}
@@ -429,9 +430,9 @@ func (r *Resolver) isAllowedToCreate(ctx context.Context, owner graphql.ID) erro
 	}
 	switch kind := relay.UnmarshalKind(owner); kind {
 	case "User":
-		return backend.CheckSiteAdminOrSameUser(ctx, r.store.Handle().DB(), ownerInt32)
+		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.store.Handle().DB()), ownerInt32)
 	case "Org":
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, r.store.Handle().DB(), ownerInt32)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(r.store.Handle().DB()), ownerInt32)
 	default:
 		return errors.Errorf("provided ID is not a namespace")
 	}
@@ -535,7 +536,7 @@ func (m *monitor) ID() graphql.ID {
 }
 
 func (m *monitor) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), m.Monitor.CreatedBy)
+	return graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), m.Monitor.CreatedBy)
 }
 
 func (m *monitor) CreatedAt() graphqlbackend.DateTime {
@@ -552,9 +553,9 @@ func (m *monitor) Enabled() bool {
 
 func (m *monitor) Owner(ctx context.Context) (n graphqlbackend.NamespaceResolver, err error) {
 	if m.NamespaceOrgID == nil {
-		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), *m.NamespaceUserID)
+		n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *m.NamespaceUserID)
 	} else {
-		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.store.Handle().DB(), *m.NamespaceOrgID)
+		n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *m.NamespaceOrgID)
 	}
 	return n, err
 }
@@ -780,9 +781,9 @@ func (m *monitorEmail) Recipients(ctx context.Context, args *graphqlbackend.List
 	for _, r := range ms {
 		n := graphqlbackend.NamespaceResolver{}
 		if r.NamespaceOrgID == nil {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, m.store.Handle().DB(), *r.NamespaceUserID)
+			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *r.NamespaceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, m.store.Handle().DB(), *r.NamespaceOrgID)
+			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, database.NewDB(m.store.Handle().DB()), *r.NamespaceOrgID)
 		}
 		if err != nil {
 			return nil, err

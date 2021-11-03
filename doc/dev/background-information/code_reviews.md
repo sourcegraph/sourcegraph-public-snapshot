@@ -82,7 +82,7 @@ Do:
 
 Don't:
 
-- Submit a PR that would cause the main branch to [non-releaseable](https://about.sourcegraph.com/handbook/engineering/continuous_releasability).
+- Submit a PR that would cause the main branch to [non-releaseable](https://handbook.sourcegraph.com/engineering/continuous_releasability).
 - Submit PRs with multiple overlapping concerns. Every PR should have an obvious goals. PRs tackling multiple issues at once should be split into more highly-focused PRs when possible. For example, a necessary refactor for a feature addition should be split into a (prerequisite) refactor PR, followed by a (subsequent) feature addition PR. Highly cohesive PRs enable reviewers to effectively hold the state of the change in their head.
 
 ## What makes an effective code review?
@@ -118,7 +118,7 @@ Don't:
 
 ## GitHub notifications
 
-Ensure that you have you [GitHub notification settings](https://about.sourcegraph.com/handbook/engineering/github-notifications) configured correctly so that you are responsive to comments on PRs that you have authored and to review requests from teammates.
+Ensure that you have you [GitHub notification settings](https://handbook.sourcegraph.com/engineering/github-notifications) configured correctly so that you are responsive to comments on PRs that you have authored and to review requests from teammates.
 
 ## Who should I get a code review from?
 

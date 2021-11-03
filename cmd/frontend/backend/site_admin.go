@@ -16,7 +16,7 @@ import (
 var ErrMustBeSiteAdmin = errors.New("must be site admin")
 
 // CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
-func CheckCurrentUserIsSiteAdmin(ctx context.Context, db dbutil.DB) error {
+func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
 	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (e *InsufficientAuthorizationError) Unauthorized() bool { return true }
 // user themselves, but nobody else.
 //
 // Returns an error without the name of the given user.
-func CheckSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, subjectUserID int32) error {
+func CheckSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID int32) error {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
 		return nil
@@ -77,7 +77,7 @@ func CheckSiteAdminOrSameUser(ctx context.Context, db dbutil.DB, subjectUserID i
 	if isSiteAdminErr == nil {
 		return nil
 	}
-	_, err := database.Users(db).GetByID(ctx, subjectUserID)
+	_, err := db.Users().GetByID(ctx, subjectUserID)
 	if err != nil {
 		return &InsufficientAuthorizationError{fmt.Sprintf("must be authenticated as an admin (%s)", isSiteAdminErr.Error())}
 	}
@@ -96,8 +96,8 @@ func CheckSameUser(ctx context.Context, subjectUserID int32) error {
 
 // CurrentUser gets the current authenticated user
 // It returns nil, nil if no user is found
-func CurrentUser(ctx context.Context, db dbutil.DB) (*types.User, error) {
-	user, err := database.Users(db).GetByCurrentAuthUser(ctx)
+func CurrentUser(ctx context.Context, db database.DB) (*types.User, error) {
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return nil, nil

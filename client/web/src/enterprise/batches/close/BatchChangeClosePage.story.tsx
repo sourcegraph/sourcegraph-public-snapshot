@@ -69,6 +69,11 @@ const batchChangeDefaults: BatchChangeFields = {
     currentSpec: {
         originalInput: 'name: awesome-batch-change\ndescription: somestring',
         supersedingBatchSpec: null,
+        codeHostsWithoutWebhooks: {
+            nodes: [],
+            pageInfo: { hasNextPage: false },
+            totalCount: 0,
+        },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',

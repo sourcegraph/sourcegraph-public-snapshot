@@ -118,10 +118,11 @@ export const SearchNavbarItem: React.FunctionComponent<Props> = (props: Props) =
                     input?.select()
                 }}
             />
-            {isFuzzyFinderVisible && props.isRepositoryRelatedPage && fuzzyFinder && (
+            {props.isRepositoryRelatedPage && fuzzyFinder && (
                 <FuzzyFinder
                     caseInsensitiveFileCountThreshold={fuzzyFinderCaseInsensitiveFileCountThreshold}
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                    isVisible={isFuzzyFinderVisible}
                 />
             )}
         </Form>

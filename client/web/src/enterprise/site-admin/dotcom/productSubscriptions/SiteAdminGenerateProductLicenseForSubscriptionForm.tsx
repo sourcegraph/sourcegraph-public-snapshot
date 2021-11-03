@@ -154,7 +154,7 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                         </datalist>
                         <small className="form-text text-muted">
                             Tags restrict a license. Please refer to{' '}
-                            <a href="https://about.sourcegraph.com/handbook/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer">
+                            <a href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer">
                                 How to create a license key for a new prospect or new customer
                             </a>{' '}
                             for a complete guide.

@@ -263,9 +263,29 @@ func addBrandedTests(pipeline *bk.Pipeline) {
 
 // Adds the Go test step.
 func addGoTests(pipeline *bk.Pipeline) {
+	// This is a bandage solution to speed up the go tests by running the slowest ones
+	// concurrently. As a results, the PR time affecting only Go code is divided by two.
+	slowPackages := []string{
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore",   // 224s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/lsifstore", // 122s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                   // 82+162s
+		"github.com/sourcegraph/sourcegraph/internal/database",                              // 253s
+		"github.com/sourcegraph/sourcegraph/internal/repos",                                 // 106s
+		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                    // 52 + 60
+		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                   // 100s
+	}
+
 	pipeline.AddStep(":go: Test",
-		bk.Cmd("./dev/ci/go-test.sh"),
+		bk.Cmd("./dev/ci/go-test.sh exclude "+strings.Join(slowPackages, " ")),
 		bk.Cmd("dev/ci/codecov.sh -c -F go"))
+
+	for _, slowPkg := range slowPackages {
+		// Trim the package name for readability
+		name := strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")
+		pipeline.AddStep(":go: Test ("+name+")",
+			bk.Cmd("./dev/ci/go-test.sh only "+slowPkg),
+			bk.Cmd("dev/ci/codecov.sh -c -F go"))
+	}
 }
 
 // Builds the OSS and Enterprise Go commands.
@@ -354,6 +374,7 @@ func wait(pipeline *bk.Pipeline) {
 func triggerAsync(buildOptions bk.BuildOptions) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":snail: Trigger async",
+			bk.Key("trigger:async"),
 			bk.Trigger("sourcegraph-async"),
 			bk.Async(true),
 			bk.Build(buildOptions),
@@ -564,7 +585,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Cmd("./dev/ci/trivy/trivy-scan-high-critical.sh"),
 		}
 
-		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: 🔎 %q", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: %q", app), cmds...)
 	}
 }
 
@@ -686,5 +707,17 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 			bk.Cmd("./enterprise/cmd/executor/docker-mirror/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: docker registry mirror image", stepOpts...)
+	}
+}
+
+func uploadBuildLogs() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		stepOpts := []bk.StepOpt{
+			// Allow the upload to fail without failing the build.
+			bk.SoftFail(1),
+			bk.AllowDependencyFailure(),
+			bk.Cmd("./enterprise/dev/upload-build-logs.sh"),
+		}
+		pipeline.AddEnsureStep(":file_cabinet: Uploading build logs", stepOpts...)
 	}
 }

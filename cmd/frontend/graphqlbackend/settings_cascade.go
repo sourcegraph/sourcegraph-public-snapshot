@@ -36,7 +36,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		return mockSettingsCascadeSubjects()
 	}
 
-	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: r.db, gqlID: singletonSiteGQLID}}}
+	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: database.NewDB(r.db), gqlID: singletonSiteGQLID}}}
 
 	if r.unauthenticatedActor {
 		return subjects, nil
@@ -60,7 +60,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, err
 		})
 		// Apply the user's orgs' settings.
 		for _, org := range orgs {
-			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: r.db, org: org}})
+			subjects = append(subjects, &settingsSubject{org: &OrgResolver{db: database.NewDB(r.db), org: org}})
 		}
 		// Apply the user's own settings last (it has highest priority).
 		subjects = append(subjects, r.subject)
@@ -231,5 +231,5 @@ func (r schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, e
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return schemaResolver{db: r.db}.ViewerSettings(ctx)
+	return schemaResolver{db: database.NewDB(r.db)}.ViewerSettings(ctx)
 }

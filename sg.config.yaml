@@ -551,11 +551,12 @@ commands:
     cmd: |
       .bin/jaeger-all-in-one-${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH) --log-level ${JAEGER_LOG_LEVEL}
     install: |
+      set -e
       mkdir -p "${JAEGER_DISK}"
 
       suffix="${JAEGER_VERSION}-$(go env GOOS)-$(go env GOARCH)"
       target="$PWD/.bin/jaeger-all-in-one-${suffix}"
-      url="https://github.com/jaegertracing/jaeger/releases/download/v${version}/jaeger-${suffix}.tar.gz"
+      url="https://github.com/jaegertracing/jaeger/releases/download/v${JAEGER_VERSION}/jaeger-${suffix}.tar.gz"
 
       if [ ! -f "${target}" ]; then
         echo "downloading ${url}" 1>&2
@@ -567,7 +568,7 @@ commands:
     env:
       JAEGER_VERSION: 1.18.1
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
-      JAEGER_LOG_LEVEL: info
+      JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
 
   grafana:

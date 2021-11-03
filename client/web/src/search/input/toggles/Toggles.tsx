@@ -17,6 +17,7 @@ import { SubmitSearchProps } from '../../helpers'
 
 import { CopyQueryButton } from './CopyQueryButton'
 import { QueryInputToggle } from './QueryInputToggle'
+import styles from './Toggles.module.scss'
 
 export interface TogglesProps
     extends PatternTypeProps,
@@ -102,7 +103,7 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
     const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
 
     return (
-        <div className={classNames('toggle-container', className)}>
+        <div className={classNames(className, styles.toggleContainer)}>
             <QueryInputToggle
                 {...props}
                 title="Case sensitivity"
@@ -160,12 +161,12 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
                     ]}
                 />
             )}
-            <div className="toggle-container__separator" />
+            <div className={styles.separator} />
             <CopyQueryButton
                 fullQuery={fullQuery}
                 keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
                 isMacPlatform={isMacPlatform}
-                className="toggle-container__toggle toggle-container__copy-query-button"
+                className={classNames(styles.toggle, styles.copyQueryButton)}
             />
         </div>
     )

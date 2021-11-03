@@ -67,7 +67,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 			Limit: 1,
 		},
 	}
-	notCloned, err := database.Repos(db).ListRepoNames(ctx, opts)
+	notCloned, err := database.Repos(db).ListMinimalRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing not-cloned repos")
 	}
@@ -87,7 +87,7 @@ func FetchStatusMessages(ctx context.Context, db dbutil.DB, u *types.User) ([]St
 			Limit: 1,
 		},
 	}
-	failedSync, err := database.Repos(db).ListRepoNames(ctx, opts)
+	failedSync, err := database.Repos(db).ListMinimalRepos(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "counting repo sync failures")
 	}
