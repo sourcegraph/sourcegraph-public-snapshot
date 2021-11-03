@@ -23,13 +23,13 @@ type PermissionsGetter interface {
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
 }
 
-// PermissionChecker is the interface exposed by the SubRepoPermsClient and is
+// SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
-type PermissionChecker interface {
+type SubRepoPermissionChecker interface {
 	CheckPermissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 }
 
-var _ PermissionChecker = &SubRepoPermsClient{}
+var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
 // SubRepoPermsClient is responsible for checking whether a user has access to
 // data within a repo. The intention is for this client to be created once at
