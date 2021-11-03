@@ -543,12 +543,12 @@ FROM (
 		-- If we found matching lang names, filter to just those.
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_lang_names) > 0 THEN
 			result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
-		ELSE result.lang_name_id IS NOT NULL END)
+		ELSE TRUE END)
 
 		-- If we found matching tags, filter to just those.
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
 			result.tags_id = ANY(array(SELECT id FROM matching_tags))
-		ELSE result.tags_id IS NOT NULL END)
+		ELSE TRUE END)
 
 	-- maximum candidates we'll consider: the more candidates we have the better ranking we get,
 	-- but the slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
