@@ -159,7 +159,7 @@ func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []
 			return nil, errors.Errorf("cannot find repo with id: %q", repository.RepositoryID)
 		}
 		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo:      types.RepoName{ID: repo.ID, Name: repo.Name},
+			Repo:      types.MinimalRepo{ID: repo.ID, Name: repo.Name},
 			Revisions: repository.Revisions,
 		})
 	}

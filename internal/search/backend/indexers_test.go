@@ -14,7 +14,7 @@ import (
 )
 
 func TestReposSubset(t *testing.T) {
-	var indexed map[string][]types.RepoName
+	var indexed map[string][]types.MinimalRepo
 	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
 		Indexed: func(ctx context.Context, k string) map[uint32]*zoekt.MinimalRepoListEntry {
@@ -29,12 +29,12 @@ func TestReposSubset(t *testing.T) {
 		},
 	}
 
-	repos := make(map[string]types.RepoName)
-	getRepos := func(names ...string) (rs []types.RepoName) {
+	repos := make(map[string]types.MinimalRepo)
+	getRepos := func(names ...string) (rs []types.MinimalRepo) {
 		for _, name := range names {
 			r, ok := repos[name]
 			if !ok {
-				r = types.RepoName{
+				r = types.MinimalRepo{
 					ID:   api.RepoID(rand.Int31()),
 					Name: api.RepoName(name),
 				}
@@ -48,9 +48,9 @@ func TestReposSubset(t *testing.T) {
 	cases := []struct {
 		name     string
 		hostname string
-		indexed  map[string][]types.RepoName
-		repos    []types.RepoName
-		want     []types.RepoName
+		indexed  map[string][]types.MinimalRepo
+		repos    []types.MinimalRepo
+		want     []types.MinimalRepo
 		errS     string
 	}{{
 		name:     "bad hostname",
@@ -65,7 +65,7 @@ func TestReposSubset(t *testing.T) {
 		name:     "none",
 		hostname: "bar",
 		repos:    getRepos("foo-1", "foo-2", "foo-3"),
-		want:     []types.RepoName{},
+		want:     []types.MinimalRepo{},
 	}, {
 		name:     "subset",
 		hostname: "foo",
@@ -84,7 +84,7 @@ func TestReposSubset(t *testing.T) {
 	}, {
 		name:     "drop",
 		hostname: "foo",
-		indexed: map[string][]types.RepoName{
+		indexed: map[string][]types.MinimalRepo{
 			"foo": getRepos("foo-1", "foo-drop", "bar-drop", "bar-keep"),
 			"bar": getRepos("foo-1", "bar-drop"),
 		},

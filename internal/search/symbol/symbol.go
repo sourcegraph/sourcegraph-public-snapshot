@@ -205,7 +205,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 // indexedSymbols checks to see if Zoekt has indexed symbols information for a
 // repository at a specific commit. If it has it returns the branch name (for
 // use when querying zoekt). Otherwise an empty string is returned.
-func indexedSymbolsBranch(ctx context.Context, repo *types.RepoName, commit string) string {
+func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit string) string {
 	z := search.Indexed()
 	if z == nil {
 		return ""
@@ -232,7 +232,7 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.RepoName, commit stri
 	return ""
 }
 
-func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, branch string, queryString *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	raw := *queryString
 	if raw == "" {
 		raw = ".*"
@@ -322,7 +322,7 @@ func searchZoekt(ctx context.Context, repoName types.RepoName, commitID api.Comm
 	return
 }
 
-func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
+func Compute(ctx context.Context, repoName types.MinimalRepo, commitID api.CommitID, inputRev *string, query *string, first *int32, includePatterns *[]string) (res []*result.SymbolMatch, err error) {
 	// TODO(keegancsmith) we should be able to use indexedSearchRequest here
 	// and remove indexedSymbolsBranch.
 	if branch := indexedSymbolsBranch(ctx, &repoName, string(commitID)); branch != "" {
@@ -377,7 +377,7 @@ func Compute(ctx context.Context, repoName types.RepoName, commitID api.CommitID
 
 // GetMatchAtLineCharacter retrieves the shortest matching symbol (if exists) defined
 // at a specific line number and character offset in the provided file.
-func GetMatchAtLineCharacter(ctx context.Context, repo types.RepoName, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
+func GetMatchAtLineCharacter(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, filePath string, line int, character int) (*result.SymbolMatch, error) {
 	// Should be large enough to include all symbols from a single file
 	first := int32(999999)
 	emptyString := ""

@@ -21,7 +21,7 @@ import (
 )
 
 func TestReposIndex(t *testing.T) {
-	allRepos := []types.RepoName{
+	allRepos := []types.MinimalRepo{
 		{ID: 1, Name: "github.com/popular/foo"},
 		{ID: 2, Name: "github.com/popular/bar"},
 		{ID: 3, Name: "github.com/alice/foo"},
@@ -32,7 +32,7 @@ func TestReposIndex(t *testing.T) {
 
 	cases := []struct {
 		name      string
-		indexable []types.RepoName
+		indexable []types.MinimalRepo
 		body      string
 		want      []string
 	}{{
@@ -75,9 +75,9 @@ func TestReposIndex(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := &reposListServer{
-				ListIndexable:   fakeListIndexable(tc.indexable),
-				StreamRepoNames: fakeStreamRepoNames(allRepos),
-				Indexers:        suffixIndexers(true),
+				ListIndexable:      fakeListIndexable(tc.indexable),
+				StreamMinimalRepos: fakeStreamMinimalRepos(allRepos),
+				Indexers:           suffixIndexers(true),
 			}
 
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
@@ -121,14 +121,14 @@ func TestReposIndex(t *testing.T) {
 	}
 }
 
-func fakeListIndexable(indexable []types.RepoName) func(context.Context) ([]types.RepoName, error) {
-	return func(context.Context) ([]types.RepoName, error) {
+func fakeListIndexable(indexable []types.MinimalRepo) func(context.Context) ([]types.MinimalRepo, error) {
+	return func(context.Context) ([]types.MinimalRepo, error) {
 		return indexable, nil
 	}
 }
 
-func fakeStreamRepoNames(repos []types.RepoName) func(context.Context, database.ReposListOptions, func(*types.RepoName)) error {
-	return func(ctx context.Context, opt database.ReposListOptions, cb func(*types.RepoName)) error {
+func fakeStreamMinimalRepos(repos []types.MinimalRepo) func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error {
+	return func(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
 		names := make(map[string]bool, len(opt.Names))
 		for _, name := range opt.Names {
 			names[name] = true
@@ -154,7 +154,7 @@ func fakeStreamRepoNames(repos []types.RepoName) func(context.Context, database.
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -162,7 +162,7 @@ func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexe
 		return nil, errors.New("empty hostname")
 	}
 
-	var filter []types.RepoName
+	var filter []types.MinimalRepo
 	for _, r := range indexable {
 		if strings.HasSuffix(string(r.Name), hostname) {
 			filter = append(filter, r)

@@ -125,7 +125,7 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 }
 
 // getRepoInputRev returns the repo and inputRev associated with file.
-func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.RepoName, inputRevs []string) {
+func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
 	repoRev := rb.repoRevs[api.RepoID(file.RepositoryID)]
 
 	// We search zoekt by repo ID. It is possible that the name has come out
@@ -133,7 +133,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Re
 	// hash in that case. We intend to restucture this code to avoid this, but
 	// this is the fix to avoid potential nil panics.
 	if repoRev == nil {
-		repo := types.RepoName{
+		repo := types.MinimalRepo{
 			ID:   api.RepoID(file.RepositoryID),
 			Name: api.RepoName(file.Repository),
 		}
@@ -278,7 +278,7 @@ func (s *IndexedUniverseSearchRequest) UnindexedRepos() []*search.RepositoryRevi
 // on all indexed repositories. Strongly avoid calling this constructor
 // directly, and use NewIndexedSearchRequest instead, which will validate your
 // inputs and figure out the kind of indexed search to run.
-func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.ZoektParameters, repoOptions search.RepoOptions, userPrivateRepos []types.RepoName) (_ *IndexedUniverseSearchRequest, err error) {
+func newIndexedUniverseSearchRequest(ctx context.Context, zoektArgs *search.ZoektParameters, repoOptions search.RepoOptions, userPrivateRepos []types.MinimalRepo) (_ *IndexedUniverseSearchRequest, err error) {
 	tr, _ := trace.New(ctx, "newIndexedUniverseSearchRequest", "text")
 	defer func() {
 		tr.SetError(err)
@@ -485,8 +485,8 @@ func doZoektSearchGlobal(ctx context.Context, args *search.ZoektParameters, c st
 	}
 
 	return args.Zoekt.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, func(file *zoekt.FileMatch) (types.RepoName, []string) {
-			repo := types.RepoName{
+		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
+			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
@@ -676,7 +676,7 @@ func zoektFileMatchToLineMatches(file *zoekt.FileMatch) []*result.LineMatch {
 	return lines
 }
 
-func zoektFileMatchToSymbolResults(repoName types.RepoName, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
+func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
 	newFile := &result.File{
 		Path:     file.FileName,
 		Repo:     repoName,

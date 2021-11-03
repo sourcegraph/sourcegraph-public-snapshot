@@ -293,7 +293,7 @@ func orderedFuzzyRegexp(pieces []string) string {
 	return "(" + strings.Join(pieces, ").*?(") + ")"
 }
 
-func logCommitSearchResultsToMatches(op *search.CommitParameters, repoName types.RepoName, rawResults []*git.LogCommitSearchResult) []*result.CommitMatch {
+func logCommitSearchResultsToMatches(op *search.CommitParameters, repoName types.MinimalRepo, rawResults []*git.LogCommitSearchResult) []*result.CommitMatch {
 	if len(rawResults) == 0 {
 		return nil
 	}

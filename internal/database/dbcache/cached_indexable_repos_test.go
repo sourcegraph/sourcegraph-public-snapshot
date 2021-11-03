@@ -80,7 +80,7 @@ func TestListIndexableRepos(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []types.RepoName{
+			want := []types.MinimalRepo{
 				{
 					ID:   api.RepoID(11),
 					Name: "github.com/foo/bar11",
@@ -108,7 +108,7 @@ func TestListIndexableRepos(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want := []types.RepoName{
+			want := []types.MinimalRepo{
 				{
 					ID:   api.RepoID(11),
 					Name: "github.com/foo/bar11",

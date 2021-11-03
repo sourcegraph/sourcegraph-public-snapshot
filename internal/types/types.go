@@ -389,14 +389,14 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-// RepoName represents a source code repository name, its ID and number of stars.
-type RepoName struct {
+// MinimalRepo represents a source code repository name, its ID and number of stars.
+type MinimalRepo struct {
 	ID    api.RepoID
 	Name  api.RepoName
 	Stars int
 }
 
-func (r *RepoName) ToRepo() *Repo {
+func (r *MinimalRepo) ToRepo() *Repo {
 	return &Repo{
 		ID:    r.ID,
 		Name:  r.Name,
@@ -404,12 +404,12 @@ func (r *RepoName) ToRepo() *Repo {
 	}
 }
 
-// RepoNames is an utility type with convenience methods for operating on lists of repo names
-type RepoNames []RepoName
+// MinimalRepos is an utility type with convenience methods for operating on lists of repo names
+type MinimalRepos []MinimalRepo
 
-func (rs RepoNames) Len() int           { return len(rs) }
-func (rs RepoNames) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
-func (rs RepoNames) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+func (rs MinimalRepos) Len() int           { return len(rs) }
+func (rs MinimalRepos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs MinimalRepos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 type CodeHostRepository struct {
 	Name       string
@@ -1212,6 +1212,6 @@ type SearchContext struct {
 // converted when needed. We could use search.RepositoryRevisions directly instead, but it
 // introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
 type SearchContextRepositoryRevisions struct {
-	Repo      RepoName
+	Repo      MinimalRepo
 	Revisions []string
 }
