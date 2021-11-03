@@ -425,25 +425,27 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 	// better results - so this is ideal.
 	matchingRepoNameIDs, err := s.documentationSearchRepoNameIDs(ctx, tableSuffix, q.PossibleRepos)
 
-	repoNamesWhereClause := sqlf.Sprintf("")
-	if len(matchingRepoNameIDs) > 0 {
-		repoNamesWhereClause = sqlf.Sprintf("AND result.repo_name_id = ANY(%s)", pq.Array(matchingRepoNameIDs))
-	}
-
-	var primary []*sqlf.Query
+	var primary *sqlf.Query
 	if len(matchingRepoNameIDs) > 0 {
 		// Primary WHERE clauses to use when searching over a smaller subset of repositories.
-		primary = append(primary, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
-		primary = append(primary, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
-		primary = append(primary, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
-		primary = append(primary, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+		var clauses []*sqlf.Query
+		clauses = append(clauses, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+
+		// We found matching repo names, so filter to just those.
+		primaryClause := sqlf.Sprintf("(%s)", sqlf.Join(clauses, "OR"))
+		primary = sqlf.Sprintf("%s AND result.repo_name_id = ANY(%s)", primaryClause, pq.Array(matchingRepoNameIDs))
 	} else {
 		// Primary WHERE clauses to use when searching over ALL repositories. Because there is so
 		// much to search over in this case, we do not do prefix/suffix matching (so no reverse
 		// index lookups), and do not use ":*" tsquery prefix matching operators (which are very
 		// slow).
-		primary = append(primary, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, false))
-		primary = append(primary, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, false))
+		var clauses []*sqlf.Query
+		clauses = append(clauses, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, false))
+		clauses = append(clauses, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, false))
+		primary = sqlf.Sprintf("(%s)", sqlf.Join(clauses, "OR"))
 	}
 
 	langTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
@@ -452,8 +454,7 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 		langTagsClause, // matching_lang_names CTE WHERE conditions
 		langTagsClause, // matching_tags CTE WHERE conditions
 
-		sqlf.Sprintf("(%s)", sqlf.Join(primary, "OR")), // primary WHERE clause
-		repoNamesWhereClause,
+		primary,                      // primary WHERE clause
 		debugAPIDocsSearchCandidates, // maximum candidates for consideration.
 
 		apidocs.TextSearchRank("search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
@@ -522,6 +523,7 @@ FROM (
 		--     OR result.label_reverse_tsv @@ '''retuoR'':*'
 		--   )
 		-- )
+		-- AND result.repo_name_id = ANY(...)
 		--
 		-- If we're matching over many repos, we choose a much lighter weight query that is very
 		-- strict and thus turns up worse results:
@@ -542,9 +544,6 @@ FROM (
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_lang_names) > 0 THEN
 			result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
 		ELSE result.lang_name_id IS NOT NULL END)
-
-		-- If we found matching repo names, filter to just those.
-		%s
 
 		-- If we found matching tags, filter to just those.
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
