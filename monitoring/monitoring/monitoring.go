@@ -498,6 +498,8 @@ func (o ObservableOwner) toMarkdown() string {
 		slug = "cloud/devops"
 	case ObservableOwnerSearchCore:
 		slug = "search/core"
+	case ObservableOwnerCloudSaaS:
+		slug = "cloud/saas"
 	default:
 		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
