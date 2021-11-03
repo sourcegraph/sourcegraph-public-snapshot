@@ -92,7 +92,7 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		}); err != nil {
 			// This is non-fatal, but almost certainly indicates a significant
 			// problem nonetheless.
-			log15.Warn("error writing webhook log", "err", err)
+			log15.Error("error writing webhook log", "err", err)
 		}
 	})
 }

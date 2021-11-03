@@ -71,16 +71,10 @@ type webhookLogConnectionResolver struct {
 	externalServiceID int64
 	store             database.WebhookLogStore
 
-	// Memoised fields to calculate the nodes and page info on the connection.
 	once sync.Once
 	logs []*types.WebhookLog
 	next int64
 	err  error
-
-	// Memoised fields to calculate the total count on the connection.
-	totalCountOnce sync.Once
-	totalCount     int64
-	totalCountErr  error
 }
 
 func newWebhookLogConnectionResolver(ctx context.Context, db dbutil.DB, args *webhookLogsArgs, externalServiceID int64) (*webhookLogConnectionResolver, error) {
@@ -96,14 +90,16 @@ func newWebhookLogConnectionResolver(ctx context.Context, db dbutil.DB, args *we
 }
 
 func (r *webhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLogResolver, error) {
-	if err := r.compute(ctx); err != nil {
+	logs, _, err := r.compute(ctx)
+	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*webhookLogResolver, len(r.logs))
-	for i, log := range r.logs {
+	nodes := make([]*webhookLogResolver, len(logs))
+	db := r.store.Handle().DB()
+	for i, log := range logs {
 		nodes[i] = &webhookLogResolver{
-			db:  r.store.Handle().DB(),
+			db:  db,
 			log: log,
 		}
 	}
@@ -112,33 +108,28 @@ func (r *webhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 }
 
 func (r *webhookLogConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	r.totalCountOnce.Do(func() {
-		r.totalCountErr = func() error {
-			opts, err := r.args.toListOpts(r.externalServiceID)
-			if err != nil {
-				return err
-			}
+	opts, err := r.args.toListOpts(r.externalServiceID)
+	if err != nil {
+		return 0, err
+	}
 
-			r.totalCount, err = r.store.Count(ctx, opts)
-			return err
-		}()
-	})
-
-	return int32(r.totalCount), r.totalCountErr
+	count, err := r.store.Count(ctx, opts)
+	return int32(count), err
 }
 
 func (r *webhookLogConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	if err := r.compute(ctx); err != nil {
+	_, next, err := r.compute(ctx)
+	if err != nil {
 		return nil, err
 	}
 
-	if r.next == 0 {
+	if next == 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
-	return graphqlutil.NextPageCursor(fmt.Sprint(r.next)), nil
+	return graphqlutil.NextPageCursor(fmt.Sprint(next)), nil
 }
 
-func (r *webhookLogConnectionResolver) compute(ctx context.Context) error {
+func (r *webhookLogConnectionResolver) compute(ctx context.Context) ([]*types.WebhookLog, int64, error) {
 	r.once.Do(func() {
 		r.err = func() error {
 			opts, err := r.args.toListOpts(r.externalServiceID)
@@ -151,7 +142,7 @@ func (r *webhookLogConnectionResolver) compute(ctx context.Context) error {
 		}()
 	})
 
-	return r.err
+	return r.logs, r.next, r.err
 }
 
 type webhookLogResolver struct {

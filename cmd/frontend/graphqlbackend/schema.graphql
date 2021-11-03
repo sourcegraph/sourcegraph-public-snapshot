@@ -1407,6 +1407,8 @@ type Query {
 
     """
     Returns recently received webhooks that did not match an external service.
+
+    Only site admins can access this field.
     """
     webhookLogs(
         """
@@ -6372,7 +6374,7 @@ type WebhookLogConnection {
 """
 A single logged webhook delivery.
 """
-type WebhookLog {
+type WebhookLog implements Node {
     """
     The webhook log ID.
     """

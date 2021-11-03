@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -49,7 +50,7 @@ func WebhookLogsWith(other basestore.ShareableStore, key encryption.Key) *webhoo
 func (s *webhookLogStore) Create(ctx context.Context, log *types.WebhookLog) error {
 	var receivedAt time.Time
 	if log.ReceivedAt.IsZero() {
-		receivedAt = time.Now()
+		receivedAt = timeutil.Now()
 	} else {
 		receivedAt = log.ReceivedAt
 	}
@@ -199,7 +200,7 @@ func (s *webhookLogStore) List(ctx context.Context, opts WebhookLogListOpts) ([]
 	if err != nil {
 		return nil, 0, err
 	}
-	defer rows.Close()
+	defer func() { basestore.CloseRows(rows, err) }()
 
 	logs := []*types.WebhookLog{}
 	for rows.Next() {
@@ -220,7 +221,7 @@ func (s *webhookLogStore) List(ctx context.Context, opts WebhookLogListOpts) ([]
 }
 
 func (s *webhookLogStore) DeleteStale(ctx context.Context, retention time.Duration) error {
-	before := time.Now().Add(-retention)
+	before := timeutil.Now().Add(-retention)
 
 	q := sqlf.Sprintf(
 		webhookLogDeleteStaleQueryFmtstr,
@@ -303,9 +304,7 @@ WHERE
 	received_at <= %s
 `
 
-func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.WebhookLog, sc interface {
-	Scan(...interface{}) error
-}) error {
+func (s *webhookLogStore) scanWebhookLog(ctx context.Context, log *types.WebhookLog, sc dbutil.Scanner) error {
 	var (
 		encKeyID          string
 		externalServiceID int64 = -1
