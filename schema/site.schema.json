@@ -125,6 +125,11 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
+        "enableSubRepoPermissions": {
+          "description": "Enables sub-repo permission checking",
+          "type": "boolean",
+          "default": false
+        },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",
           "type": "object",

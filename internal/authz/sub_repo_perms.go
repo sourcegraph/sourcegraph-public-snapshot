@@ -8,6 +8,7 @@ import (
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // RepoContent specifies data existing in a repo. It currently only supports
@@ -36,11 +37,18 @@ type SubRepoPermissionsGetter interface {
 // repository permissions, which means the user must already have access to the
 // repository itself. The intention is for this client to be created once at startup
 // and passed in to all places that need to check sub repo permissions.
+//
+// Note that sub-repo permissions are currently opt-in via the
+// experimentalFeatures.enableSubRepoPermissions option.
 type SubRepoPermsClient struct {
 	PermissionsGetter SubRepoPermissionsGetter
 }
 
 func (s *SubRepoPermsClient) CheckPermissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
+		return Read, nil
+	}
+
 	if s.PermissionsGetter == nil {
 		return None, errors.New("SubRepoPermissionsGetter is nil")
 	}
