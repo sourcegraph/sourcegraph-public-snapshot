@@ -727,6 +727,16 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 	e.ensureStore()
 
 	for _, s := range svcs {
+		// 🚨 SECURITY: For all GitHub and GitLab code host connections on Sourcegraph
+		// Cloud, we always want to enforce repository permissions using OAuth to
+		// prevent unexpected resource leaking.
+		if envvar.SourcegraphDotComMode() {
+			s.Config, err = upsertAuthorizationToExternalService(s.Kind, s.Config)
+			if err != nil {
+				return err
+			}
+		}
+
 		if err := e.recalculateFields(s, s.Config); err != nil {
 			return err
 		}

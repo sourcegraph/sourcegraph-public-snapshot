@@ -456,7 +456,13 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 			return nil, errors.Wrapf(err, "new provider from external service %d", svc.ID)
 		}
 		if provider == nil {
-			// We have no authz provider configured for this external service
+			// NOTE: User code host connection can only be added on sourcegraph.com, and
+			//  authorization is enforced for everything, it does not make sense that we cannot
+			//  derive an `authz.Provider` from it.
+			log15.Warn("PermsSyncer.fetchUserPermsViaExternalServices.noAuthzProvider",
+				"userID", userID,
+				"id", svc.ID,
+			)
 			continue
 		}
 
