@@ -396,7 +396,6 @@ func insightViewQuery(cursor insightViewPageCursor, viewConditions []*sqlf.Query
 	cond = append(cond, viewConditions...)
 
 	q := sqlf.Sprintf(insightViewQuerySql, sqlf.Join(cond, "AND"), limit)
-	log15.Info("insightViewQuery", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return q
 }
 
