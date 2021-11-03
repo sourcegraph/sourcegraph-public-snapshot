@@ -60,7 +60,6 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		if err := r.ParseForm(); err != nil {
 			return err
 		}
-		repoNames := r.Form["repo"]
 
 		indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
 		for _, idStr := range r.Form["repoID"] {
@@ -72,47 +71,28 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			indexedIDs = append(indexedIDs, api.RepoID(id))
 		}
 
-		if len(repoNames) > 0 && len(indexedIDs) > 0 {
-			http.Error(w, "only allowed to specify one of repoID or repo", http.StatusBadRequest)
+		if len(indexedIDs) == 0 {
+			http.Error(w, "atleast one repoID required", http.StatusBadRequest)
 			return nil
 		}
 
-		// Preload repos to support fast lookups by repo name.
-		// This does NOT support fetching by URI (unlike Repos.GetByName). Zoekt
-		// will always ask us actual repo names and not URIs, though. This way,
-		// we can also save the additional round trip to the database when the
-		// repo is not found.
+		// Preload repos to support fast lookups by repo ID.
 		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{
-			Names: repoNames,
-			IDs:   indexedIDs,
+			IDs: indexedIDs,
 		})
-		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
+		reposMap := make(map[api.RepoID]*types.Repo, len(repos))
 		for _, repo := range repos {
-			reposMap[repo.Name] = repo
+			reposMap[repo.ID] = repo
 		}
 
-		if len(indexedIDs) > 0 {
-			reposIDsMap := make(map[api.RepoID]*types.Repo, len(repos))
-			for _, repo := range repos {
-				reposIDsMap[repo.ID] = repo
-			}
-			for _, id := range indexedIDs {
-				if repo, ok := reposIDsMap[id]; ok {
-					repoNames = append(repoNames, string(repo.Name))
-				} else {
-					repoNames = append(repoNames, fmt.Sprintf("!DOES-NOT-EXIST-REPO-ID-%d", id))
-				}
-			}
-		}
-
-		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
+		getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 			if loadReposErr != nil {
 				return nil, loadReposErr
 			}
 			// Replicate what database.Repos.GetByName would do here:
-			repo, ok := reposMap[api.RepoName(repoName)]
+			repo, ok := reposMap[api.RepoID(repoID)]
 			if !ok {
-				return nil, &database.RepoNotFoundErr{Name: api.RepoName(repoName)}
+				return nil, &database.RepoNotFoundErr{ID: api.RepoID(repoID)}
 			}
 
 			getVersion := func(branch string) (string, error) {
@@ -126,7 +106,7 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 				return string(commitID), err
 			}
 
-			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
 			return &searchbackend.RepoIndexOptions{
 				Name:       string(repo.Name),
@@ -139,12 +119,7 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			}, nil
 		}
 
-		// Build list of repo IDs to fetch revisions for.
-		repoIDs := make([]api.RepoID, len(repos))
-		for i, repo := range repos {
-			repoIDs[i] = repo.ID
-		}
-		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
+		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, indexedIDs)
 		getSearchContextRevisions := func(repoID int32) ([]string, error) {
 			if revisionsForRepoErr != nil {
 				return nil, revisionsForRepoErr
@@ -152,7 +127,14 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			return revisionsForRepo[api.RepoID(repoID)], nil
 		}
 
-		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoNames...)
+		// searchbackend uses int32 instead of api.RepoID currently, so build
+		// up a slice of that.
+		repoIDs := make([]int32, len(indexedIDs))
+		for i := range indexedIDs {
+			repoIDs[i] = int32(indexedIDs[i])
+		}
+
+		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoIDs...)
 		_, _ = w.Write(b)
 		return nil
 	}
