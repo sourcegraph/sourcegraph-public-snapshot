@@ -536,19 +536,6 @@ FROM (
 		--
 		%s
 
-		-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
-		-- have results from multiple uploads (the table is cleaned up asynchronously in the
-		-- background to avoid lock contention at insert time.)
-		AND result.dump_id = (
-			SELECT dump_id FROM lsif_data_docs_search_current_$SUFFIX current
-			WHERE
-				current.dump_id = result.dump_id
-				AND current.dump_root = result.dump_root
-				AND lang_name_id = result.lang_name_id
-			ORDER BY current.created_at DESC, id
-			LIMIT 1
-		)
-
 		-- If we found matching lang names, filter to just those.
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_lang_names) > 0 THEN
 			result.lang_name_id = ANY(array(SELECT id FROM matching_lang_names))
@@ -566,6 +553,19 @@ FROM (
 	-- but the slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
 	LIMIT %s
 ) sub
+-- Select only results that come from the latest upload, since lsif_data_docs_search_* may have
+-- results from multiple uploads (the table is cleaned up asynchronously in the background to avoid
+-- lock contention at insert time.) We cannot do this in the inner CTE above as it adds ~80ms per
+-- result to check, and the inner CTE selects ~10k results.
+WHERE sub.dump_id = (
+	SELECT dump_id FROM lsif_data_docs_search_current_$SUFFIX current
+	WHERE
+		current.dump_id = sub.dump_id
+		AND current.dump_root = sub.dump_root
+		AND lang_name_id = sub.lang_name_id
+	ORDER BY current.created_at DESC, id
+	LIMIT 1
+)
 ORDER BY
 	-- First rank by search keys, as those are ideally super specific if you write the correct
 	-- format.
