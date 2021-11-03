@@ -50,6 +50,8 @@ export const CopyQueryButton: React.FunctionComponent<Props> = (props: Props) =>
                 type="button"
                 className={classNames('btn btn-icon btn-link-sm', props.className)}
                 data-tooltip={copied ? 'Copied!' : copyFullQueryTooltip}
+                aria-label={copied ? 'Copied!' : copyFullQueryTooltip}
+                aria-live="polite"
                 onClick={nextClick}
             >
                 <ClipboardOutlineIcon size={16} className="icon-inline" />
