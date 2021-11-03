@@ -393,7 +393,7 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
         }
 
         this.setWorkspaceSearchContext(this.state.selectedSearchContextSpec).catch(error => {
-            console.error('Error sending search context to extensions', error)
+            console.error('Error sending search context to extensions!', error)
         })
 
         this.userRepositoriesUpdates.next()
