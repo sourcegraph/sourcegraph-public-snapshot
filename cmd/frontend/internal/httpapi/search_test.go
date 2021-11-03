@@ -41,11 +41,6 @@ func TestReposIndex(t *testing.T) {
 		body:      `{"Hostname": "foo"}`,
 		want:      []string{"github.com/popular/foo", "github.com/alice/foo"},
 	}, {
-		name:      "indexed",
-		indexable: allRepos,
-		body:      `{"Hostname": "foo", "Indexed": ["github.com/alice/bar"]}`,
-		want:      []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
-	}, {
 		name:      "indexedids",
 		indexable: allRepos,
 		body:      `{"Hostname": "foo", "IndexedIDs": [4]}`,
@@ -55,11 +50,6 @@ func TestReposIndex(t *testing.T) {
 		indexable: indexableRepos,
 		body:      `{"Hostname": "foo"}`,
 		want:      []string{"github.com/popular/foo"},
-	}, {
-		name:      "dot-com indexed",
-		indexable: indexableRepos,
-		body:      `{"Hostname": "foo", "Indexed": ["github.com/popular/bar"]}`,
-		want:      []string{"github.com/popular/foo", "github.com/popular/bar"},
 	}, {
 		name:      "dot-com indexedids",
 		indexable: indexableRepos,
