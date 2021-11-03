@@ -7,7 +7,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -20,6 +20,7 @@ type ChangesetSpecRepository struct {
 	BaseRef string
 	BaseRev string
 }
+
 type ChangesetSpecInput struct {
 	// This is the old graphql.Repository
 	BaseRepositoryID string
@@ -35,16 +36,7 @@ type ChangesetSpecInput struct {
 
 	// These were on executionResult
 
-	// Diff is the produced by executing all steps.
-	Diff string `json:"diff"`
-	// ChangedFiles are files that have been changed by all steps.
-	ChangedFiles *git.Changes `json:"changedFiles"`
-	// Outputs are the outputs produced by all steps.
-	Outputs map[string]interface{} `json:"outputs"`
-	// Path relative to the repository's root directory in which the steps
-	// have been executed.
-	// No leading slashes. Root directory is blank string.
-	Path string
+	Result execution.Result
 }
 
 type ChangesetSpecFeatureFlags struct {
@@ -56,10 +48,10 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 	tmplCtx := &template.ChangesetTemplateContext{
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{
-			Changes: input.ChangedFiles,
-			Path:    input.Path,
+			Changes: input.Result.ChangedFiles,
+			Path:    input.Result.Path,
 		},
-		Outputs: input.Outputs,
+		Outputs: input.Result.Outputs,
 		Repository: template.Repository{
 			Name:        input.Repository.Name,
 			FileMatches: input.Repository.FileMatches,
@@ -156,7 +148,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		}
 
 		// TODO: Regarding 'defaultBranch', see comment above
-		diffsByBranch, err := groupFileDiffs(input.Diff, defaultBranch, groups)
+		diffsByBranch, err := groupFileDiffs(input.Result.Diff, defaultBranch, groups)
 		if err != nil {
 			return specs, errors.Wrap(err, "grouping diffs failed")
 		}
@@ -169,7 +161,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 			specs = append(specs, spec)
 		}
 	} else {
-		spec, err := newSpec(defaultBranch, input.Diff)
+		spec, err := newSpec(defaultBranch, input.Result.Diff)
 		if err != nil {
 			return nil, err
 		}

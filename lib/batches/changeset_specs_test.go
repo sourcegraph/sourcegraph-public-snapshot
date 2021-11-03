@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/copystructure"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
@@ -70,11 +71,13 @@ func TestCreateChangesetSpecs(t *testing.T) {
 			Published: parsePublishedFieldString(t, "false"),
 		},
 
-		Diff: "cool diff",
-		ChangedFiles: &git.Changes{
-			Modified: []string{"README.md"},
+		Result: execution.Result{
+			Diff: "cool diff",
+			ChangedFiles: &git.Changes{
+				Modified: []string{"README.md"},
+			},
+			Outputs: map[string]interface{}{},
 		},
-		Outputs: map[string]interface{}{},
 	}
 
 	inputWith := func(task *ChangesetSpecInput, f func(task *ChangesetSpecInput)) *ChangesetSpecInput {
