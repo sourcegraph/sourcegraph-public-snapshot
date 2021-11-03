@@ -18,11 +18,6 @@ type RepoContent struct {
 	Path string
 }
 
-// PermissionsGetter allow getting sub repository permissions.
-type PermissionsGetter interface {
-	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
-}
-
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
 type SubRepoPermissionChecker interface {
@@ -31,18 +26,23 @@ type SubRepoPermissionChecker interface {
 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
 
+// SubRepoPermissionsGetter allow getting sub repository permissions.
+type SubRepoPermissionsGetter interface {
+	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
+}
+
 // SubRepoPermsClient is responsible for checking whether a user has access to
 // data within a repo. Sub-repository permissions enforcement is on top of existing
 // repository permissions, which means the user must already have access to the
 // repository itself. The intention is for this client to be created once at startup
 // and passed in to all places that need to check sub repo permissions.
 type SubRepoPermsClient struct {
-	PermissionsGetter PermissionsGetter
+	PermissionsGetter SubRepoPermissionsGetter
 }
 
 func (s *SubRepoPermsClient) CheckPermissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	if s.PermissionsGetter == nil {
-		return None, errors.New("PermissionsGetter is nil")
+		return None, errors.New("SubRepoPermissionsGetter is nil")
 	}
 
 	srp, err := s.PermissionsGetter.GetByUser(ctx, userID)
