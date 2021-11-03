@@ -15,7 +15,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -31,7 +30,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -111,24 +109,22 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		//
 		// 🚨 SECURITY: This must be correctly implemented to hide anything about
 		// files that a user should not see.
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			perms, err := s.SubRepoPerms.CheckPermissions(ctx, a.UID, authz.RepoContent{
-				Repo: p.Repo,
-				Path: match.Path,
-			})
-			if err != nil {
-				log15.Warn("streamSearch.onMatches: error when validating sub-repo permissions",
-					"error", err,
-					"repo", p.Repo,
-					"match", match.Path)
-			}
-			if err != nil || !perms.Include(authz.Read) {
-				return
-			}
+		perms, err := s.SubRepoPerms.CurrentUserPermissions(ctx, authz.RepoContent{
+			Repo: p.Repo,
+			Path: match.Path,
+		})
+		if err != nil {
+			s.Log.Warn("streamSearch.onMatches: error when validating sub-repo permissions",
+				"error", err,
+				"repo", p.Repo)
+		}
+		if err != nil || !perms.Include(authz.Read) {
+			return // Skip this match
 		}
 
 		if err := matchesBuf.Append(match); err != nil {
-			log.Printf("failed appending match to buffer: %s", err)
+			s.Log.Error("failed appending match to buffer",
+				"error", err)
 		}
 	}
 
@@ -146,10 +142,12 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 
 	// Flush remaining matches before sending a different event
 	if err := matchesBuf.Flush(); err != nil {
-		log.Printf("failed to flush matches: %s", err)
+		s.Log.Warn("failed to flush matches",
+			"error", err)
 	}
 	if err := eventWriter.Event("done", doneEvent); err != nil {
-		log.Printf("failed to send done event: %s", err)
+		s.Log.Warn("failed to send done event",
+			"error", err)
 	}
 }
 
