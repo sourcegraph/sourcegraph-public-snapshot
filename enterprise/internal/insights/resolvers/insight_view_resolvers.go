@@ -235,7 +235,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		if !seriesFound(existingSeries, args.Input.DataSeries) {
 			err = tx.RemoveSeriesFromView(ctx, existingSeries.SeriesID, view.ID)
 			if err != nil {
-				return nil, errors.Wrap(err, "RemoveViewSeries")
+				return nil, errors.Wrap(err, "RemoveSeriesFromView")
 			}
 		}
 	}

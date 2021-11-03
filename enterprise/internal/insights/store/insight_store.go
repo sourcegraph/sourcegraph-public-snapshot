@@ -576,7 +576,7 @@ func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesA
 	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
 	rows, err := scanDataSeries(s.Query(ctx, q))
 	if err != nil {
-		return nil, errors.Wrap(err, "FindMatchingSeries")
+		return nil, err
 	}
 	if len(rows) == 0 {
 		return nil, nil
