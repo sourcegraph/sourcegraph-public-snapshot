@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 // Request represents a request to searcher
 type Request struct {
-	// Repo is the name of the repository to search. eg "github.com/gorilla/mux"
+	// Repo is the name of the repository to search, eg "github.com/gorilla/mux".
+	// Must be non-empty.
 	Repo api.RepoName
 
 	// RepoID is the Sourcegraph repository id of the repo to search.
@@ -56,6 +59,23 @@ type Request struct {
 	// Whether the revision to be searched is indexed or unindexed. This matters for
 	// structural search because it will query Zoekt for indexed structural search.
 	Indexed bool
+}
+
+func (p *Request) ValidateParams() error {
+	if p.Repo == "" {
+		return errors.New("Repo must be non-empty")
+	}
+	// Surprisingly this is the same sanity check used in the git source.
+	if len(p.Commit) != 40 {
+		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
+	}
+	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
+		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
+	}
+	if p.IsNegated && p.IsStructuralPat {
+		return errors.New("Negated patterns are not supported for structural searches")
+	}
+	return nil
 }
 
 // PatternInfo describes a search request on a repo. Most of the fields

@@ -31,6 +31,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
@@ -47,8 +49,9 @@ const (
 
 // Service is the search service. It is an http.Handler.
 type Service struct {
-	Store *store.Store
-	Log   log15.Logger
+	Store        *store.Store
+	SubRepoPerms authz.SubRepoPermissionChecker
+	Log          log15.Logger
 }
 
 // ServeHTTP handles HTTP based search requests
@@ -79,7 +82,7 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// search file content in that case.
 		p.PatternMatchesContent = true
 	}
-	if err := validateParams(&p); err != nil {
+	if err := p.ValidateParams(); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -104,6 +107,26 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
+		// Drop all results that do user has insufficient permissions for.
+		//
+		// 🚨 SECURITY: This must be correctly implemented to hide anything about
+		// files that a user should not see.
+		if a := actor.FromContext(ctx); a.IsAuthenticated() {
+			perms, err := s.SubRepoPerms.CheckPermissions(ctx, a.UID, authz.RepoContent{
+				Repo: p.Repo,
+				Path: match.Path,
+			})
+			if err != nil {
+				log15.Warn("streamSearch.onMatches: error when validating sub-repo permissions",
+					"error", err,
+					"repo", p.Repo,
+					"match", match.Path)
+			}
+			if err != nil || !perms.Include(authz.Read) {
+				return
+			}
+		}
+
 		if err := matchesBuf.Append(match); err != nil {
 			log.Printf("failed appending match to buffer: %s", err)
 		}
@@ -244,23 +267,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	} else {
 		return false, regexSearch(ctx, rg, zf, p.Limit, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}
-}
-
-func validateParams(p *protocol.Request) error {
-	if p.Repo == "" {
-		return errors.New("Repo must be non-empty")
-	}
-	// Surprisingly this is the same sanity check used in the git source.
-	if len(p.Commit) != 40 {
-		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
-	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
-		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
-	}
-	if p.IsNegated && p.IsStructuralPat {
-		return errors.New("Negated patterns are not supported for structural searches")
-	}
-	return nil
 }
 
 const megabyte = float64(1000 * 1000)

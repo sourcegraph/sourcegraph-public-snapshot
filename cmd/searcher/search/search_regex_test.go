@@ -163,7 +163,7 @@ func benchSearchRegex(b *testing.B, p *protocol.Request) {
 	}
 	b.ReportAllocs()
 
-	err := validateParams(p)
+	err := p.ValidateParams()
 	if err != nil {
 		b.Fatal(err)
 	}

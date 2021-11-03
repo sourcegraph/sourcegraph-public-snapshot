@@ -18,7 +18,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -57,6 +60,11 @@ func main() {
 		cacheSizeBytes = i * 1000 * 1000
 	}
 
+	opts := dbconn.Opts{DSN: "", DBName: "searcher", AppName: "searcher"}
+	if err := dbconn.SetupGlobalConnection(opts); err != nil {
+		log.Fatalf("failed to set up database connection: %s", err)
+	}
+
 	service := &search.Service{
 		Store: &store.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
@@ -67,6 +75,9 @@ func main() {
 			MaxCacheSizeBytes: cacheSizeBytes,
 		},
 		Log: log15.Root(),
+		SubRepoPerms: &authz.SubRepoPermsClient{
+			PermissionsGetter: database.SubRepoPerms(dbconn.Global),
+		},
 	}
 	service.Store.Start()
 
