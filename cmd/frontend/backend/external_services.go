@@ -26,7 +26,7 @@ func CheckExternalServiceAccess(ctx context.Context, db dbutil.DB, namespaceUser
 	}
 
 	// Special case when external service has no owner
-	if namespaceUserID == 0 && namespaceOrgID == 0 && CheckCurrentUserIsSiteAdmin(ctx, db) == nil {
+	if namespaceUserID == 0 && namespaceOrgID == 0 && CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) == nil {
 		return nil
 	}
 

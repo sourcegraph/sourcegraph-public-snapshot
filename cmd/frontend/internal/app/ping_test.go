@@ -23,9 +23,14 @@ func TestLatestPingHandler(t *testing.T) {
 	t.Parallel()
 
 	t.Run("non-admins can't access the ping data", func(t *testing.T) {
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+
 		req, _ := http.NewRequest("GET", "/site-admin/pings/latest", nil)
 		rec := httptest.NewRecorder()
-		latestPingHandler(dbmock.NewMockDB())(rec, req)
+		latestPingHandler(db)(rec, req)
 
 		if have, want := rec.Code, http.StatusUnauthorized; have != want {
 			t.Errorf("status code: have %d, want %d", have, want)

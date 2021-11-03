@@ -129,7 +129,7 @@ func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigrat
 			}
 
 			siteadminOrHandler := func(handler func()) {
-				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), db)
+				err := backend.CheckCurrentUserIsSiteAdmin(r.Context(), database.NewDB(db))
 				if err == nil {
 					// User is site admin, let them proceed.
 					next.ServeHTTP(w, r)

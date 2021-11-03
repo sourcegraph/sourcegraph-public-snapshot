@@ -15,7 +15,6 @@ type MockStores struct {
 	Orgs          MockOrgs
 	OrgMembers    MockOrgMembers
 	SavedSearches MockSavedSearches
-	Settings      MockSettings
 	Users         MockUsers
 	UserEmails    MockUserEmails
 	SubRepoPerms  MockSubRepoPerms

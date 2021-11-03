@@ -18,7 +18,7 @@ type externalAccountResolver struct {
 	account extsvc.Account
 }
 
-func externalAccountByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*externalAccountResolver, error) {
+func externalAccountByID(ctx context.Context, db database.DB, id graphql.ID) (*externalAccountResolver, error) {
 	externalAccountID, err := unmarshalExternalAccountID(id)
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	// GitLab, but only site admins can view account data for all other types.
 	var err error
 	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
-		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+		err = backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.db), actor.FromContext(ctx).UID)
 	} else {
 		err = backend.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
 	}

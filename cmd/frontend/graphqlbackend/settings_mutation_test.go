@@ -6,22 +6,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestSettingsMutation_EditSettings(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-		return &types.User{ID: 1}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	}
-	database.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
-		return &api.Settings{ID: 1, Contents: "{}"}, nil
-	}
-	database.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+	settings := dbmock.NewMockSettingsStore()
+	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
+	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `{
   "p": {
     "x": 123
@@ -30,8 +26,11 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 			t.Errorf("got %q, want %q", contents, want)
 		}
 		return &api.Settings{ID: 2, Contents: contents}, nil
-	}
-	db := database.NewDB(nil)
+	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SettingsFunc.SetDefaultReturn(settings)
 
 	RunTests(t, []*Test{
 		{
@@ -63,23 +62,22 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 }
 
 func TestSettingsMutation_OverwriteSettings(t *testing.T) {
-	resetMocks()
-	database.Mocks.Users.GetByID = func(context.Context, int32) (*types.User, error) {
-		return &types.User{ID: 1}, nil
-	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1, SiteAdmin: false}, nil
-	}
-	database.Mocks.Settings.GetLatest = func(context.Context, api.SettingsSubject) (*api.Settings, error) {
-		return &api.Settings{ID: 1, Contents: "{}"}, nil
-	}
-	database.Mocks.Settings.CreateIfUpToDate = func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+
+	settings := dbmock.NewMockSettingsStore()
+	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
+	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
 		if want := `x`; contents != want {
 			t.Errorf("got %q, want %q", contents, want)
 		}
 		return &api.Settings{ID: 2, Contents: contents}, nil
-	}
-	db := database.NewDB(nil)
+	})
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SettingsFunc.SetDefaultReturn(settings)
 
 	RunTests(t, []*Test{
 		{

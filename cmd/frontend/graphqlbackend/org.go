@@ -129,7 +129,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{database.NewDB(o.db), &settingsSubject{org: o}, settings, nil}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {
