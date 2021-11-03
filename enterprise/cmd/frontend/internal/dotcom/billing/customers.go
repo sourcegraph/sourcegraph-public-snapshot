@@ -13,6 +13,7 @@ import (
 	"github.com/stripe/stripe-go/customer"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -126,7 +127,7 @@ func createCustomerID(ctx context.Context, db dbutil.DB, userID int32) (string, 
 		return mockCreateCustomerID(userID)
 	}
 
-	user, err := graphqlbackend.UserByIDInt32(ctx, db, userID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(db), userID)
 	if err != nil {
 		return "", err
 	}

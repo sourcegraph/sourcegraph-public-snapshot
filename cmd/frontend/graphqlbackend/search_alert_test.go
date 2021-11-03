@@ -280,7 +280,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -298,7 +298,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 						query.SearchType(0),
 					},
 				},
-				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description: "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -311,7 +311,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -323,7 +323,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 				prometheusType:  "over_repo_limit",
 				title:           "Too many matching repositories",
 				proposedQueries: nil,
-				description:     "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description:     "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 		{
@@ -341,7 +341,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 						query.SearchType(0),
 					},
 				},
-				description: "Use a 'repo:' or 'repogroup:' filter to narrow your search and see results.",
+				description: "Use a 'repo:' or 'context:' filter to narrow your search and see results.",
 			},
 		},
 	}

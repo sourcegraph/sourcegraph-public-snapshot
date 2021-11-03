@@ -466,7 +466,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
 	}
-	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 
 	var settingForks, settingArchived bool
 	if v := r.UserSettings.SearchIncludeForks; v != nil {
@@ -513,7 +512,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
-		RepoGroupFilters:  repoGroupFilters,
 		SearchContextSpec: searchContextSpec,
 		UserSettings:      r.UserSettings,
 		OnlyForks:         fork == query.Only,
@@ -547,7 +545,6 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 				// We allow -repo: in global search.
 				return n.Negated
 			case
-				query.FieldRepoGroup,
 				query.FieldRepoHasFile:
 				return false
 			default:
@@ -943,25 +940,23 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 }
 
 // shouldInvalidateRepoCache returns whether resolved repos should be invalidated when
-// evaluating subexpressions. If a query contains more than one repo, revision,
-// or repogroup field, we should invalidate resolved repos, since multiple
-// repos, revisions, or repogroups imply that different repos may need to be
+// evaluating subexpressions. If a query contains more than one repo or revision field,
+// we should invalidate resolved repos, since multiple
+// repos or revisions imply that different repos may need to be
 // resolved.
 func shouldInvalidateRepoCache(plan query.Plan) bool {
-	var seenRepo, seenRevision, seenRepoGroup, seenContext int
+	var seenRepo, seenRevision, seenContext int
 	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
 		switch field {
 		case query.FieldRepo:
 			seenRepo += 1
 		case query.FieldRev:
 			seenRevision += 1
-		case query.FieldRepoGroup:
-			seenRepoGroup += 1
 		case query.FieldContext:
 			seenContext += 1
 		}
 	})
-	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
+	return seenRepo > 1 || seenRevision > 1 || seenContext > 1
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {

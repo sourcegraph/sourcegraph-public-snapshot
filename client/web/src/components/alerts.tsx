@@ -16,6 +16,28 @@ export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ erro
     <Markdown wrapper="span" dangerousInnerHTML={renderError(error)} />
 )
 
+export type ErrorAlertProps = {
+    /**
+     * An Error-like object or a string.
+     */
+    error: unknown
+
+    /**
+     * Whether to show an icon.
+     *
+     * @default true
+     */
+    icon?: boolean
+
+    /**
+     * Optional prefix for the message
+     */
+    prefix?: string
+
+    className?: string
+    style?: React.CSSProperties
+} & HTMLAttributes<HTMLDivElement>
+
 /**
  * Renders a given `Error` object in a Bootstrap danger alert.
  *
@@ -23,29 +45,13 @@ export const ErrorMessage: React.FunctionComponent<{ error: unknown }> = ({ erro
  * bullet points, respect line breaks, code and bolded elements.
  * Made to work with Go `multierror`.
  */
-export const ErrorAlert: React.FunctionComponent<
-    {
-        /**
-         * An Error-like object or a string.
-         */
-        error: unknown
-
-        /**
-         * Whether to show an icon.
-         *
-         * @default true
-         */
-        icon?: boolean
-
-        /**
-         * Optional prefix for the message
-         */
-        prefix?: string
-
-        className?: string
-        style?: React.CSSProperties
-    } & HTMLAttributes<HTMLDivElement>
-> = ({ error, className, icon = true, prefix, ...rest }) => {
+export const ErrorAlert: React.FunctionComponent<ErrorAlertProps> = ({
+    error,
+    className,
+    icon = true,
+    prefix,
+    ...rest
+}) => {
     prefix = prefix?.trim().replace(/:+$/, '')
     return (
         <div className={classNames('alert', 'alert-danger', className)} {...rest}>

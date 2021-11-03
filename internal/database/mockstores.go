@@ -12,7 +12,6 @@ type MockStores struct {
 	AccessTokens MockAccessTokens
 
 	Repos           MockRepos
-	Namespaces      MockNamespaces
 	Orgs            MockOrgs
 	OrgMembers      MockOrgMembers
 	SavedSearches   MockSavedSearches
@@ -20,9 +19,6 @@ type MockStores struct {
 	Users           MockUsers
 	UserCredentials MockUserCredentials
 	UserEmails      MockUserEmails
-	UserPublicRepos MockUserPublicRepos
-
-	Phabricator MockPhabricator
 
 	ExternalAccounts MockExternalAccounts
 

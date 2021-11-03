@@ -170,7 +170,9 @@ describe('Search contexts', () => {
     test('Create search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            RepositoriesByNames: ({ names }) => ({
+                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            }),
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
                     __typename: 'SearchContext',
@@ -238,7 +240,9 @@ describe('Search contexts', () => {
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoryRedirect: ({ repoName }) => createRepositoryRedirectResult(repoName),
+            RepositoriesByNames: ({ names }) => ({
+                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
+            }),
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {
                     __typename: 'SearchContext',

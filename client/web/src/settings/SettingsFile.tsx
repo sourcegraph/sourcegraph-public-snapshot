@@ -15,6 +15,8 @@ import { settingsActions } from '../site-admin/configHelpers'
 import adminConfigurationStyles from '../site-admin/SiteAdminConfigurationPage.module.scss'
 import { eventLogger } from '../tracking/eventLogger'
 
+import styles from './SettingsFile.module.scss'
+
 interface Props extends ThemeProps, TelemetryProps {
     history: H.History
 
@@ -164,7 +166,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
             this.state.contents === undefined ? this.getPropsSettingsContentsOrEmpty() : this.state.contents
 
         return (
-            <div className="settings-file test-settings-file d-flex flex-grow-1 flex-column">
+            <div className={classNames('test-settings-file d-flex flex-grow-1 flex-column', styles.settingsFile)}>
                 <SaveToolbar
                     dirty={dirty}
                     error={this.props.commitError}

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -89,7 +90,7 @@ func (r *bulkOperationResolver) Errors(ctx context.Context) ([]graphqlbackend.Ch
 }
 
 func (r *bulkOperationResolver) Initiator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	return graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.bulkOperation.UserID)
+	return graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.store.DB()), r.bulkOperation.UserID)
 }
 
 func (r *bulkOperationResolver) ChangesetCount() int32 {

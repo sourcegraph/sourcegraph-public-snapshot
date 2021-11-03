@@ -208,6 +208,12 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 			continue
 		}
 
+		if opts.State == "failed" && job.SoftFailed {
+			// Soft fails are not a state, but an attribute of failed jobs.
+			// Ignore them, so we don't count them as failures.
+			continue
+		}
+
 		l, _, err := c.bk.Jobs.GetJobLog(buildkiteOrg, pipeline, buildID, *job.ID)
 		if err != nil {
 			return nil, err

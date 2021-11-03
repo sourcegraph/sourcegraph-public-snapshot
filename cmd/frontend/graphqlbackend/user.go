@@ -71,7 +71,7 @@ func NewUserResolver(db dbutil.DB, user *types.User) *UserResolver {
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
 // non-nil error.
-func UserByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*UserResolver, error) {
+func UserByID(ctx context.Context, db database.DB, id graphql.ID) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
@@ -81,8 +81,8 @@ func UserByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*UserResolver, 
 
 // UserByIDInt32 looks up and returns the user with the given database ID. If no such user exists,
 // it returns a non-nil error.
-func UserByIDInt32(ctx context.Context, db dbutil.DB, id int32) (*UserResolver, error) {
-	user, err := database.Users(db).GetByID(ctx, id)
+func UserByIDInt32(ctx context.Context, db database.DB, id int32) (*UserResolver, error) {
+	user, err := db.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

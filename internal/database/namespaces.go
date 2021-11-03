@@ -71,10 +71,6 @@ func (s *namespaceStore) GetByID(
 	ctx context.Context,
 	orgID, userID int32,
 ) (*Namespace, error) {
-	if Mocks.Namespaces.GetByID != nil {
-		return Mocks.Namespaces.GetByID(ctx, orgID, userID)
-	}
-
 	preds := []*sqlf.Query{}
 	if orgID != 0 && userID != 0 {
 		return nil, ErrNamespaceMultipleIDs
@@ -102,10 +98,6 @@ func (s *namespaceStore) GetByName(
 	ctx context.Context,
 	name string,
 ) (*Namespace, error) {
-	if Mocks.Namespaces.GetByName != nil {
-		return Mocks.Namespaces.GetByName(ctx, name)
-	}
-
 	var n Namespace
 	if err := s.getNamespace(ctx, &n, []*sqlf.Query{
 		sqlf.Sprintf("name = %s", name),

@@ -58,7 +58,7 @@ type ExternalUserPermissions struct {
 
 	// SubRepoPermissions denotes sub-repository content access control rules where
 	// relevant.
-	SubRepoPermissions map[extsvc.RepoID]SubRepoPermissions
+	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
 }
 
 // FetchPermsOptions declares options when performing permissions sync.

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type productSubscriptionPreviewInvoice struct {
@@ -61,7 +62,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 	var accountUserID *int32
 	if args.Account != nil {
 		// There is a customer ID given.
-		accountUser, err := graphqlbackend.UserByID(ctx, r.DB, *args.Account)
+		accountUser, err := graphqlbackend.UserByID(ctx, database.NewDB(r.DB), *args.Account)
 		if err != nil {
 			return nil, err
 		}

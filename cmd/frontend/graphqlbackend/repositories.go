@@ -290,14 +290,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	)), nil
 }
 
-func repoNamesToStrings(repoNames []api.RepoName) []string {
-	strings := make([]string, len(repoNames))
-	for i, repoName := range repoNames {
-		strings[i] = string(repoName)
-	}
-	return strings
-}
-
 func toDBRepoListColumn(ob string) database.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":

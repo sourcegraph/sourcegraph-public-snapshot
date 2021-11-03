@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
@@ -59,7 +60,7 @@ func (r *batchChangeResolver) Description() *string {
 }
 
 func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchChange.InitialApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.store.DB()), r.batchChange.InitialApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -67,7 +68,7 @@ func (r *batchChangeResolver) InitialApplier(ctx context.Context) (*graphqlbacke
 }
 
 func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), r.batchChange.LastApplierID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.store.DB()), r.batchChange.LastApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -85,7 +86,7 @@ func (r *batchChangeResolver) SpecCreator(ctx context.Context) (*graphqlbackend.
 	if err != nil {
 		return nil, err
 	}
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DB(), spec.UserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, database.NewDB(r.store.DB()), spec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -113,13 +114,13 @@ func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlback
 		if r.batchChange.NamespaceUserID != 0 {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
 				ctx,
-				r.store.DB(),
+				database.NewDB(r.store.DB()),
 				r.batchChange.NamespaceUserID,
 			)
 		} else {
 			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
 				ctx,
-				r.store.DB(),
+				database.NewDB(r.store.DB()),
 				r.batchChange.NamespaceOrgID,
 			)
 		}

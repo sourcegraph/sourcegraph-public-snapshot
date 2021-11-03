@@ -131,7 +131,7 @@ func (s *Store) Repos() database.RepoStore {
 }
 
 // ExternalServices returns a database.ExternalServiceStore using the same connection as this store.
-func (s *Store) ExternalServices() *database.ExternalServiceStore {
+func (s *Store) ExternalServices() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s)
 }
 

@@ -71,27 +71,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		limit = search.SearchLimits(conf.Get()).MaxRepos
 	}
 
-	// If any repo groups are specified, take the intersection of the repo
-	// groups and the set of repos specified with repo:. (If none are specified
-	// with repo:, then include all from the group.)
-	if groupNames := op.RepoGroupFilters; len(groupNames) > 0 {
-		groups, err := ResolveRepoGroups(ctx, r.DB, op.UserSettings)
-		if err != nil {
-			return Resolved{}, err
-		}
-
-		unionedPatterns, numPatterns := RepoGroupsToIncludePatterns(groupNames, groups)
-		includePatterns = append(includePatterns, unionedPatterns)
-
-		tr.LazyPrintf("repogroups: adding %d repos to include pattern", numPatterns)
-
-		// Ensure we don't omit any repos explicitly included via a repo group. (Each explicitly
-		// listed repo generates at least one pattern.)
-		if numPatterns > limit {
-			limit = numPatterns
-		}
-	}
-
 	// note that this mutates the strings in includePatterns, stripping their
 	// revision specs, if they had any.
 	includePatternRevs, err := findPatternRevs(includePatterns)

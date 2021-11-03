@@ -45,7 +45,7 @@ func unmarshalExternalAccountID(id graphql.ID) (externalAccountID int32, err err
 
 func (r *externalAccountResolver) ID() graphql.ID { return marshalExternalAccountID(r.account.ID) }
 func (r *externalAccountResolver) User(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.account.UserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.account.UserID)
 }
 func (r *externalAccountResolver) ServiceType() string { return r.account.ServiceType }
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }

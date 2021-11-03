@@ -1,13 +1,25 @@
 package inference
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
+
+func TestJavaPatterns(t *testing.T) {
+	testLangPatterns(t, JavaPatterns(), []PathTestCase{
+		{"lsif-java.json", true},
+		{"A.java", true},
+		{"A.scala", true},
+		{"A.kt", true},
+		// TODO: Turn these on after adding support for more complex projects.
+		// {"settings.gradle", true}
+		// {"build.gradle", true}
+		// {"pom.xml", true}
+	})
+}
 
 func TestInferJavaIndexJobs(t *testing.T) {
 	paths := []string{
@@ -28,31 +40,5 @@ func TestInferJavaIndexJobs(t *testing.T) {
 	}
 	if diff := cmp.Diff(expectedIndexJobs, InferJavaIndexJobs(NewMockGitClient(), paths)); diff != "" {
 		t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
-	}
-}
-
-func TestJavaPatterns(t *testing.T) {
-	paths := []string{
-		"lsif-java.json",
-		"A.java",
-		"A.scala",
-		"A.kt",
-		// "settings.gradle",
-		// "build.gradle",
-		// "pom.xml",
-	}
-
-	for _, path := range paths {
-		match := false
-		for _, pattern := range JavaPatterns() {
-			if pattern.MatchString(path) {
-				match = true
-				break
-			}
-		}
-
-		if !match {
-			t.Error(fmt.Sprintf("failed to match %s", path))
-		}
 	}
 }

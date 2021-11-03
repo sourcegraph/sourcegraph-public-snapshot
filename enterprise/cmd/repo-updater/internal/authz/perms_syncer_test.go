@@ -550,7 +550,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 			IncludeContains: []extsvc.RepoID{"//Engineering/"},
 			ExcludeContains: []extsvc.RepoID{"//Engineering/Security/"},
 
-			SubRepoPermissions: map[extsvc.RepoID]authz.SubRepoPermissions{
+			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
 				"abc": {
 					PathIncludes: []string{"include1", "include2"},
 					PathExcludes: []string{"exclude1", "exclude2"},

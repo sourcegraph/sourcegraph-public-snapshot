@@ -59,7 +59,7 @@ func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Sk
 	base.Title = fmt.Sprintf("%s %s", amount, titleVerb)
 
 	if len(repos) == 1 {
-		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `repogroup:` or other filters.", repos[0].Name(), messageReason)
+		base.Message = fmt.Sprintf("`%s` %s. Try searching again or reducing the scope of your query with `repo:`,  `context:` or other filters.", repos[0].Name(), messageReason)
 	} else {
 		sampleSize := 10
 		if sampleSize > len(repos) {
@@ -67,7 +67,7 @@ func skippedReposHandler(repos []Namer, titleVerb, messageReason string, base Sk
 		}
 
 		var b strings.Builder
-		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `repogroup:` or other filters.", amount, messageReason)
+		_, _ = fmt.Fprintf(&b, "%s repositories %s. Try searching again or reducing the scope of your query with `repo:`, `context:` or other filters.", amount, messageReason)
 		for _, repo := range repos[:sampleSize] {
 			_, _ = fmt.Fprintf(&b, "\n* `%s`", repo.Name())
 		}
