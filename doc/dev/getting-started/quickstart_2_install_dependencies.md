@@ -122,7 +122,7 @@ Below are instructions to install these dependencies:
         set -x NVM_DIR ~/.nvm
         ```
 
-7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Cloning our repository](quickstart_2_clone_repository.md) for cloning the repository):
+7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Cloning our repository](quickstart_3_clone_repository.md) for cloning the repository):
 
     ```
     nvm install
