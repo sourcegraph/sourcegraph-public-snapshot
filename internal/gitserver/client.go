@@ -30,10 +30,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/go-rendezvous"
-
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -58,12 +56,6 @@ func ResetClientMocks() {
 	ClientMocks = emptyClientMocks
 }
 
-type readallSubRepoPermissionsChecker struct{}
-
-func (m *readallSubRepoPermissionsChecker) CurrentUserPermissions(ctx context.Context, content authz.RepoContent) (authz.Perms, error) {
-	return authz.Read, nil
-}
-
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
 func NewClient(cli httpcli.Doer) *Client {
@@ -71,11 +63,8 @@ func NewClient(cli httpcli.Doer) *Client {
 		Addrs: func() []string {
 			return conf.Get().ServiceConnections.GitServers
 		},
-		HTTPClient: cli,
-		// Temporarily add a SubRepoPermissionsChecker that gives access to all sub-repo
-		// content
-		SubRepoPermissionsChecker: &readallSubRepoPermissionsChecker{},
-		HTTPLimiter:               parallel.NewRun(500),
+		HTTPClient:  cli,
+		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
@@ -90,9 +79,6 @@ type Client struct {
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
-
-	// SubRepoPermissionsChecker allows us to check for access at the sub-repo level
-	SubRepoPermissionsChecker authz.SubRepoPermissionChecker
 
 	// Addrs is a function which should return the addresses for gitservers. It
 	// is called each time a request is made. The function must be safe for
