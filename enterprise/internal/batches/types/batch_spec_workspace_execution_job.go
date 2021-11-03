@@ -38,8 +38,7 @@ func (s BatchSpecWorkspaceExecutionJobState) ToGraphQL() string { return strings
 
 // Retryable returns whether the state is retryable.
 func (s BatchSpecWorkspaceExecutionJobState) Retryable() bool {
-	return s == BatchSpecWorkspaceExecutionJobStateErrored ||
-		s == BatchSpecWorkspaceExecutionJobStateFailed ||
+	return s == BatchSpecWorkspaceExecutionJobStateFailed ||
 		s == BatchSpecWorkspaceExecutionJobStateCompleted
 }
 

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -882,13 +883,14 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 // access to the namespace org.
 // If both values are zero, an error is returned.
 func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, namespaceOrgID int32) (err error) {
-	ctx, endObservation := s.operations.checkNamespaceAccess.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	return s.checkNamespaceAccessWithDB(ctx, s.store.DB(), namespaceUserID, namespaceOrgID)
+}
 
+func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, s.store.DB(), namespaceOrgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
 	} else if namespaceUserID != 0 {
-		return backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), namespaceUserID)
+		return backend.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
 	} else {
 		return ErrNoNamespace
 	}
@@ -1178,6 +1180,18 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 
 		batchSpecID = w.BatchSpecID
 		changesetSpecIDs = append(changesetSpecIDs, w.ChangesetSpecIDs...)
+	}
+
+	// Make sure the user has access to retry it.
+	batchSpec, err := tx.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: batchSpecID})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec")
+	}
+
+	// Check whether the current user has access to either one of the namespaces.
+	err = s.checkNamespaceAccessWithDB(ctx, tx.DB(), batchSpec.NamespaceUserID, batchSpec.NamespaceOrgID)
+	if err != nil {
+		return errors.Wrap(err, "checking whether user has access")
 	}
 
 	// Check that batch spec is not applied

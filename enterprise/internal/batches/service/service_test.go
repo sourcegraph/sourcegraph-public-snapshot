@@ -68,28 +68,6 @@ func TestServicePermissionLevels(t *testing.T) {
 		return batchChange, changeset, spec
 	}
 
-	assertAuthError := func(t *testing.T, err error) {
-		t.Helper()
-
-		if err == nil {
-			t.Fatalf("expected error. got none")
-		}
-		if err != nil {
-			if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
-				t.Fatalf("wrong error: %s (%T)", err, err)
-			}
-		}
-	}
-
-	assertNoAuthError := func(t *testing.T, err error) {
-		t.Helper()
-
-		// Ignore other errors, we only want to check whether it's an auth error
-		if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
-			t.Fatalf("got auth error")
-		}
-	}
-
 	tests := []struct {
 		name              string
 		batchChangeAuthor int32
@@ -1784,15 +1762,6 @@ func TestService(t *testing.T) {
 			}
 			createJob(t, s, failedJob)
 
-			erroredJob := &btypes.BatchSpecWorkspaceExecutionJob{
-				BatchSpecWorkspaceID: workspaceIDs[1],
-				State:                btypes.BatchSpecWorkspaceExecutionJobStateErrored,
-				StartedAt:            time.Now(),
-				FinishedAt:           time.Now(),
-				FailureMessage:       &failureMessage,
-			}
-			createJob(t, s, erroredJob)
-
 			completedJob := &btypes.BatchSpecWorkspaceExecutionJob{
 				BatchSpecWorkspaceID: workspaceIDs[2],
 				State:                btypes.BatchSpecWorkspaceExecutionJobStateCompleted,
@@ -1801,9 +1770,7 @@ func TestService(t *testing.T) {
 			}
 			createJob(t, s, completedJob)
 
-			jobs := []*btypes.BatchSpecWorkspaceExecutionJob{
-				failedJob, erroredJob, completedJob,
-			}
+			jobs := []*btypes.BatchSpecWorkspaceExecutionJob{failedJob, completedJob}
 
 			// RETRY
 			if err := svc.RetryBatchSpecWorkspaces(ctx, workspaceIDs); err != nil {
@@ -1889,6 +1856,29 @@ func TestService(t *testing.T) {
 			if !strings.Contains(err.Error(), "not retryable") {
 				t.Fatalf("wrong error: %s", err)
 			}
+		})
+
+		t.Run("user is not namespace user and not admin", func(t *testing.T) {
+			// admin owns batch spec
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			ws := testWorkspace(spec.ID, rs[0].ID)
+			if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
+				t.Fatal(err)
+			}
+
+			queuedJob := &btypes.BatchSpecWorkspaceExecutionJob{
+				BatchSpecWorkspaceID: ws.ID,
+				State:                btypes.BatchSpecWorkspaceExecutionJobStateQueued,
+			}
+			createJob(t, s, queuedJob)
+
+			// userCtx uses user as actor
+			err := svc.RetryBatchSpecWorkspaces(userCtx, []int64{ws.ID})
+			assertAuthError(t, err)
 		})
 	})
 }
@@ -2006,4 +1996,34 @@ func testChangeset(repoID api.RepoID, batchChange int64, extState btypes.Changes
 	}
 
 	return changeset
+}
+
+func testWorkspace(batchSpecID int64, repoID api.RepoID) *btypes.BatchSpecWorkspace {
+	return &btypes.BatchSpecWorkspace{
+		BatchSpecID: batchSpecID,
+		RepoID:      repoID,
+		Steps:       []batcheslib.Step{{Run: "echo hello", Container: "alpine:3"}},
+	}
+}
+
+func assertAuthError(t *testing.T, err error) {
+	t.Helper()
+
+	if err == nil {
+		t.Fatalf("expected error. got none")
+	}
+	if err != nil {
+		if !errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+			t.Fatalf("wrong error: %s (%T)", err, err)
+		}
+	}
+}
+
+func assertNoAuthError(t *testing.T, err error) {
+	t.Helper()
+
+	// Ignore other errors, we only want to check whether it's an auth error
+	if errors.HasType(err, &backend.InsufficientAuthorizationError{}) {
+		t.Fatalf("got auth error")
+	}
 }
