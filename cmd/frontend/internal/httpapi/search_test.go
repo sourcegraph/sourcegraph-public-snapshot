@@ -75,9 +75,9 @@ func TestReposIndex(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := &reposListServer{
-				ListIndexable:   fakeListIndexable(tc.indexable),
+				ListIndexable:      fakeListIndexable(tc.indexable),
 				StreamMinimalRepos: fakeStreamMinimalRepos(allRepos),
-				Indexers:        suffixIndexers(true),
+				Indexers:           suffixIndexers(true),
 			}
 
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))

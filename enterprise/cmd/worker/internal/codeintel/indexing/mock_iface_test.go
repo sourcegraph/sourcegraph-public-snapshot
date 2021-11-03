@@ -2506,25 +2506,26 @@ type IndexingRepoStoreListMinimalReposFunc struct {
 	mutex       sync.Mutex
 }
 
-// ListMinimalRepos delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
+// ListMinimalRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
 func (m *MockIndexingRepoStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types.MinimalRepo, error) {
 	r0, r1 := m.ListMinimalReposFunc.nextHook()(v0, v1)
 	m.ListMinimalReposFunc.appendCall(IndexingRepoStoreListMinimalReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the ListMinimalRepos method
-// of the parent MockIndexingRepoStore instance is invoked and the hook
-// queue is empty.
+// SetDefaultHook sets function that is called when the ListMinimalRepos
+// method of the parent MockIndexingRepoStore instance is invoked and the
+// hook queue is empty.
 func (f *IndexingRepoStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// ListMinimalRepos method of the parent MockIndexingRepoStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
+// ListMinimalRepos method of the parent MockIndexingRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
 func (f *IndexingRepoStoreListMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)

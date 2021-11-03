@@ -1781,8 +1781,8 @@ func (c RepoStoreListIndexableReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// RepoStoreListMinimalReposFunc describes the behavior when the ListMinimalRepos
-// method of the parent MockRepoStore instance is invoked.
+// RepoStoreListMinimalReposFunc describes the behavior when the
+// ListMinimalRepos method of the parent MockRepoStore instance is invoked.
 type RepoStoreListMinimalReposFunc struct {
 	defaultHook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
 	hooks       []func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
@@ -1790,17 +1790,17 @@ type RepoStoreListMinimalReposFunc struct {
 	mutex       sync.Mutex
 }
 
-// ListMinimalRepos delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
+// ListMinimalRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
 func (m *MockRepoStore) ListMinimalRepos(v0 context.Context, v1 database.ReposListOptions) ([]types.MinimalRepo, error) {
 	r0, r1 := m.ListMinimalReposFunc.nextHook()(v0, v1)
 	m.ListMinimalReposFunc.appendCall(RepoStoreListMinimalReposFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the ListMinimalRepos method
-// of the parent MockRepoStore instance is invoked and the hook queue is
-// empty.
+// SetDefaultHook sets function that is called when the ListMinimalRepos
+// method of the parent MockRepoStore instance is invoked and the hook queue
+// is empty.
 func (f *RepoStoreListMinimalReposFunc) SetDefaultHook(hook func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)) {
 	f.defaultHook = hook
 }
@@ -1861,8 +1861,8 @@ func (f *RepoStoreListMinimalReposFunc) History() []RepoStoreListMinimalReposFun
 	return history
 }
 
-// RepoStoreListMinimalReposFuncCall is an object that describes an invocation
-// of method ListMinimalRepos on an instance of MockRepoStore.
+// RepoStoreListMinimalReposFuncCall is an object that describes an
+// invocation of method ListMinimalRepos on an instance of MockRepoStore.
 type RepoStoreListMinimalReposFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
@@ -2114,7 +2114,8 @@ func (c RepoStoreQueryFuncCall) Results() []interface{} {
 }
 
 // RepoStoreStreamMinimalReposFunc describes the behavior when the
-// StreamMinimalRepos method of the parent MockRepoStore instance is invoked.
+// StreamMinimalRepos method of the parent MockRepoStore instance is
+// invoked.
 type RepoStoreStreamMinimalReposFunc struct {
 	defaultHook func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
 	hooks       []func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
@@ -2138,9 +2139,9 @@ func (f *RepoStoreStreamMinimalReposFunc) SetDefaultHook(hook func(context.Conte
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// StreamMinimalRepos method of the parent MockRepoStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
+// StreamMinimalRepos method of the parent MockRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
 func (f *RepoStoreStreamMinimalReposFunc) PushHook(hook func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
