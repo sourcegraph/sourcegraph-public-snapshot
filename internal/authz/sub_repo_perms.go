@@ -22,6 +22,8 @@ type RepoContent struct {
 
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
+//
+//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms.go
 type SubRepoPermissionChecker interface {
 	// CurrentUserPermissions returns the level of access the authenticated user within
 	// the provided context has.
@@ -59,6 +61,11 @@ type SubRepoPermsClient struct {
 func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
+		// Are sub-repo permissions enabled at the site level
+		if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
+			return Read, nil
+		}
+		// Otherwise, do not give access
 		return None, &ErrUnauthenticated{}
 	}
 
