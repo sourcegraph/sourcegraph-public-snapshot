@@ -135,3 +135,13 @@ type Provider interface {
 	// problems.
 	Validate() (problems []string)
 }
+
+type ErrForbidden struct{}
+
+func (e ErrForbidden) Error() string {
+	return "forbidden"
+}
+
+func (e ErrForbidden) Forbidden() bool {
+	return true
+}

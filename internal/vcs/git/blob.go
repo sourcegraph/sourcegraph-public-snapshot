@@ -10,6 +10,7 @@ import (
 	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
@@ -88,6 +89,14 @@ type blobReader struct {
 
 func newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
 	if err := ensureAbsoluteCommit(commit); err != nil {
+		return nil, err
+	}
+
+	err := gitserver.DefaultClient.SubRepoPermissionsChecker.CurrentUserCanRead(ctx, authz.RepoContent{
+		Repo: repo,
+		Path: name,
+	})
+	if err != nil {
 		return nil, err
 	}
 
