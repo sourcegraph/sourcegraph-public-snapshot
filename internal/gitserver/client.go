@@ -338,7 +338,8 @@ func (c *Client) Search(ctx context.Context, args *protocol.SearchRequest, onMat
 		return false, err
 	}
 
-	resp, err := c.do(ctx, repoName, "POST", "search", buf.Bytes())
+	uri := "http://" + c.AddrForRepo(repoName) + "/search"
+	resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
 	if err != nil {
 		return false, err
 	}
@@ -662,13 +663,13 @@ func (c *Client) RequestRepoMigrate(ctx context.Context, repo api.RepoName) (*pr
 		MigrateFrom: c.AddrForRepo(repo),
 	}
 
-	// We set "op" to the HTTP URL of the gitserver instance that should be the new owner of this
+	// We set "uri" to the HTTP URL of the gitserver instance that should be the new owner of this
 	// "repo" based on the rendezvous hashing scheme. This way, when the gitserver instance receives
 	// the request at /repo-update, it will treat it as a new clone operation and attempt to clone
 	// the repo from the URL set in MigrateFrom - the gitserver instance that owns this repo based
 	// on the existing hashing scheme.
-	op := c.RendezvousAddrForRepo(repo) + "/repo-update"
-	resp, err := c.httpPost(ctx, repo, op, req)
+	uri := "http://" + c.RendezvousAddrForRepo(repo) + "/repo-update"
+	resp, err := c.httpPostWithURI(ctx, repo, uri, req)
 	if err != nil {
 		return nil, err
 	}
@@ -972,31 +973,47 @@ func (c *Client) Remove(ctx context.Context, repo api.RepoName) error {
 	return nil
 }
 
+// httpPost will apply the MD5 hashing scheme on the repo name to determine the gitserver instance
+// to which the HTTP POST request is sent. To use the rendezvous hashing scheme, see
+// httpPostWithURI.
 func (c *Client) httpPost(ctx context.Context, repo api.RepoName, op string, payload interface{}) (resp *http.Response, err error) {
 	b, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
-	return c.do(ctx, repo, "POST", op, b)
+
+	uri := "http://" + c.AddrForRepo(repo) + "/" + op
+	return c.do(ctx, repo, "POST", uri, b)
 }
 
-// do performs a request to a gitserver, sharding based on the given
-// repo name (the repo name is otherwise not used).
-func (c *Client) do(ctx context.Context, repo api.RepoName, method, op string, payload []byte) (resp *http.Response, err error) {
+// httpPostWithURI does not apply any transformations to the given URI. This allows the consumer to
+// use the predetermined hashing scheme (md5 or rendezvous) of their choice to derive the gitserver
+// instance to which the HTTP POST request is sent.
+func (c *Client) httpPostWithURI(ctx context.Context, repo api.RepoName, uri string, payload interface{}) (resp *http.Response, err error) {
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.do(ctx, repo, "POST", uri, b)
+}
+
+// do performs a request to a gitserver instance based on the address in the uri argument.
+func (c *Client) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+	parsedURL, err := url.ParseRequestURI(uri)
+	if err != nil {
+		return nil, errors.Wrap(err, "do")
+	}
+
 	span, ctx := ot.StartSpanFromContext(ctx, "Client.do")
 	defer func() {
-		span.LogKV("repo", string(repo), "method", method, "op", op)
+		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
 		if err != nil {
 			ext.Error.Set(span, true)
 			span.SetTag("err", err.Error())
 		}
 		span.Finish()
 	}()
-
-	uri := op
-	if !strings.HasPrefix(op, "http") {
-		uri = "http://" + c.AddrForRepo(repo) + "/" + op
-	}
 
 	req, err := http.NewRequest(method, uri, bytes.NewReader(payload))
 	if err != nil {

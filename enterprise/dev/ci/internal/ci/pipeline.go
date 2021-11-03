@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
@@ -104,7 +105,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// set it up separately from CoreTestOperations
 			ops.Append(triggerAsync(buildOptions))
 		}
-
 		ops.Merge(CoreTestOperations(c.ChangedFiles, CoreTestOperationsOptions{}))
 
 	case BackendIntegrationTests:
@@ -139,7 +139,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case ImagePatch:
 		// only build candidate image for the specified image in the branch name
-		// see https://about.sourcegraph.com/handbook/engineering/deployments/testing#building-docker-images-for-a-specific-branch
+		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
 		patchImage := c.Branch[20:]
 		if !contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
@@ -152,8 +152,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{}))
-		// Publish images
-		ops.Append(publishFinalDockerImage(c, patchImage, false))
+		// Publish images after everything is done
+		ops.Append(wait,
+			publishFinalDockerImage(c, patchImage, false))
 
 	case ImagePatchNoTest:
 		// If this is a no-test branch, then run only the Docker build. No tests are run.
@@ -201,22 +202,24 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 
-		// Slow tests
-		if c.RunType.Is(MainDryRun, MainBranch) {
-			ops.Append(backendIntegrationTests(c.candidateImageTag()))
-		}
-
 		// Core tests
 		ops.Merge(CoreTestOperations(nil, CoreTestOperationsOptions{
 			ChromaticShouldAutoAccept: c.RunType.Is(MainBranch),
 		}))
 
-		// Trigger e2e late so that it can leverage candidate images
-		ops.Append(triggerE2EandQA(e2eAndQAOptions{
-			candidateImage: c.candidateImageTag(),
-			buildOptions:   buildOptions,
-			async:          c.RunType.Is(MainBranch),
-		}))
+		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
+		const minimumUpgradeableVersion = "3.32.0"
+
+		// Various integration tests
+		ops.Append(
+			backendIntegrationTests(c.candidateImageTag()),
+			codeIntelQA(c.candidateImageTag()),
+			serverE2E(c.candidateImageTag()),
+			serverQA(c.candidateImageTag()),
+			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+
+		// All operations before this point are required
+		ops.Append(wait)
 
 		// Add final artifacts
 		for _, dockerImage := range images.SourcegraphDockerImages {
@@ -233,9 +236,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
 			ops.Append(
-				// wait for all steps to pass
-				wait,
+				wait, // wait for all steps to pass
 				triggerUpdaterPipeline)
+		}
+
+		// Collect all build failures (if any) and upload them on Grafana Cloud.
+		if c.RunType.Is(MainBranch) {
+			ops.Append(uploadBuildLogs())
 		}
 	}
 
@@ -244,5 +251,29 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env: env,
 	}
 	ops.Apply(pipeline)
+
+	// Validate generated pipeline has unique keys
+	if err := ensureUniqueKeys(pipeline); err != nil {
+		return nil, err
+	}
+
 	return pipeline, nil
+}
+
+func ensureUniqueKeys(pipeline *bk.Pipeline) error {
+	occurences := map[string]int{}
+	for _, step := range pipeline.Steps {
+		if s, ok := step.(*buildkite.Step); ok {
+			if s.Key == "" {
+				return fmt.Errorf("empty key on step with label %q", s.Label)
+			}
+			occurences[s.Key] += 1
+		}
+	}
+	for k, count := range occurences {
+		if count > 1 {
+			return fmt.Errorf("non unique key on step with key %q", k)
+		}
+	}
+	return nil
 }

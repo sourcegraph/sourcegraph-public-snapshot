@@ -1,6 +1,6 @@
 # Indexing the OSS universe
 
-Sourcegraph is on a mission to [make coding more accessible to the world](https://about.sourcegraph.com/handbook/company/strategy#vision).
+Sourcegraph is on a mission to [make coding more accessible to the world](https://handbook.sourcegraph.com/company/strategy).
 
 In order to execute on this mission, Sourcegraph has committed to indexing every open source repository (on GitLab and GitHub) with 1 or more stars. This adds up to more than 5.5 million repositories. By indexing these repositories, Sourcegraph allows any engineer to tap into the knowledge of the open source universe near-instantaneously. You can read more about our decision to do this [here](https://about.sourcegraph.com/blog/why-index-the-oss-universe/).
 

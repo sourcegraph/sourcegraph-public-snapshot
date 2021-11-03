@@ -121,6 +121,7 @@ func Frontend() *monitoring.Container {
 							PossibleSolutions: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Trace a request to see what the slowest part is: https://docs.sourcegraph.com/admin/observability/tracing
+								- Check that gitserver containers have enough CPU/memory and are not getting throttled.
 							`,
 						},
 					},

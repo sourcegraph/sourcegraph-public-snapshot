@@ -922,70 +922,122 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	tr, ctx := trace.New(r.Context(), "search", "")
+	defer tr.Finish()
+
+	// Decode the request
 	protocol.RegisterGob()
-	var req protocol.SearchRequest
-	if err := gob.NewDecoder(r.Body).Decode(&req); err != nil {
+	var args protocol.SearchRequest
+	if err := gob.NewDecoder(r.Body).Decode(&args); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	s.search(w, r, &req)
-}
-
-func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.SearchRequest) {
-	tr, ctx := trace.New(r.Context(), "search", "")
 	tr.LogFields(
+		otlog.String("repo", string(args.Repo)),
+		otlog.Bool("include_diff", args.IncludeDiff),
 		otlog.String("query", args.Query.String()),
 		otlog.Int("limit", args.Limit),
 	)
-	defer tr.Finish()
+
+	searchStart := time.Now()
+	searchRunning.Inc()
+	defer searchRunning.Dec()
+
+	eventWriter, err := streamhttp.NewWriter(w)
+	if err != nil {
+		tr.SetError(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var latencyOnce sync.Once
+	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
+		tr.LogFields(otlog.Int("flushing", len(data)))
+		latencyOnce.Do(func() {
+			searchLatency.Observe(time.Since(searchStart).Seconds())
+		})
+		return eventWriter.EventBytes("matches", data)
+	})
+
+	// Run the search
+	limitHit, err := s.search(ctx, &args, matchesBuf)
+	if err := eventWriter.Event("done", protocol.NewSearchEventDone(false, err)); err != nil {
+		log15.Warn("failed to send done event", "error", err)
+	}
+	tr.LogFields(otlog.Bool("limit_hit", limitHit))
+	tr.SetError(err)
+	searchDuration.
+		WithLabelValues(strconv.FormatBool(err != nil)).
+		Observe(time.Since(searchStart).Seconds())
+
+	if honey.Enabled() || traceLogs {
+		actor := r.Header.Get("X-Sourcegraph-Actor")
+		ev := honey.Event("gitserver-search")
+		ev.SampleRate = honeySampleRate("", actor == "internal")
+		ev.AddField("repo", args.Repo)
+		ev.AddField("revisions", args.Revisions)
+		ev.AddField("include_diff", args.IncludeDiff)
+		ev.AddField("actor", actor)
+		ev.AddField("query", args.Query.String())
+		ev.AddField("limit", args.Limit)
+		ev.AddField("duration_ms", time.Since(searchStart).Milliseconds())
+		if err != nil {
+			ev.AddField("error", err.Error())
+		}
+		if traceID := trace.ID(ctx); traceID != "" {
+			ev.AddField("traceID", traceID)
+			ev.AddField("trace", trace.URL(traceID))
+		}
+		if honey.Enabled() {
+			_ = ev.Send()
+		}
+		if traceLogs {
+			log15.Debug("TRACE gitserver search", mapToLog15Ctx(ev.Fields())...)
+		}
+	}
+}
+
+// search handles the core logic of the search. It is passed a matchesBuf so it doesn't need to
+// concern itself with event types, and all instrumentation is handled in the calling function.
+func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, matchesBuf *streamhttp.JSONArrayBuf) (limitHit bool, err error) {
 
 	args.Repo = protocol.NormalizeRepo(args.Repo)
 	if args.Limit == 0 {
 		args.Limit = math.MaxInt32
 	}
 
-	eventWriter, err := streamhttp.NewWriter(w)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	dir := s.dir(args.Repo)
 	if !repoCloned(dir) {
 		if conf.Get().DisableAutoGitUpdates {
 			log15.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			return false, &gitdomain.RepoNotExistError{
 				Repo: args.Repo,
-			}))
-			return
+			}
 		}
 
 		cloneProgress, cloneInProgress := s.locker.Status(dir)
 		if cloneInProgress {
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			return false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: true,
 				CloneProgress:   cloneProgress,
-			}))
-			return
+			}
 		}
 
 		cloneProgress, err := s.cloneRepo(ctx, args.Repo, nil)
 		if err != nil {
 			log15.Debug("error starting repo clone", "repo", args.Repo, "err", err)
-			eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+			return false, &gitdomain.RepoNotExistError{
 				Repo:            args.Repo,
 				CloneInProgress: false,
-			}))
-			return
+			}
 		}
 
-		eventWriter.Event("done", protocol.NewSearchEventDone(false, &gitdomain.RepoNotExistError{
+		return false, &gitdomain.RepoNotExistError{
 			Repo:            args.Repo,
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
-		}))
-		return
+		}
 	}
 
 	if !conf.Get().DisableAutoGitUpdates {
@@ -998,11 +1050,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 			}
 		}
 	}
-
-	matchesBuf := streamhttp.NewJSONArrayBuf(8*1024, func(data []byte) error {
-		tr.LogFields(otlog.Int("flushing", len(data)))
-		return eventWriter.EventBytes("matches", data)
-	})
 
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
@@ -1035,7 +1082,6 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 	})
 
 	// Write matching commits to the stream, flushing occasionally
-	limitHit := false
 	g.Go(func() error {
 		defer cancel()
 		defer matchesBuf.Flush()
@@ -1071,11 +1117,7 @@ func (s *Server) search(w http.ResponseWriter, r *http.Request, args *protocol.S
 		}
 	})
 
-	err = g.Wait()
-	doneEvent := protocol.NewSearchEventDone(limitHit, err)
-	if err := eventWriter.Event("done", doneEvent); err != nil {
-		log15.Warn("failed to send done event", "error", err)
-	}
+	return limitHit, g.Wait()
 }
 
 // matchCount returns either:
@@ -1902,6 +1944,22 @@ var (
 		Help:    "gitserver.Command latencies in seconds.",
 		Buckets: trace.UserLatencyBuckets,
 	}, []string{"cmd", "repo", "status"})
+
+	searchRunning = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "src_gitserver_search_running",
+		Help: "number of gitserver.Search running concurrently.",
+	})
+	searchDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_duration_seconds",
+		Help:    "gitserver.Search duration in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	}, []string{"error"})
+	searchLatency = promauto.NewHistogram(prometheus.HistogramOpts{
+		Name:    "src_gitserver_search_latency_seconds",
+		Help:    "gitserver.Search latency (time until first result is sent) in seconds.",
+		Buckets: []float64{0.01, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30},
+	})
+
 	pendingClones = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "src_gitserver_clone_queue",
 		Help: "number of repos waiting to be cloned.",

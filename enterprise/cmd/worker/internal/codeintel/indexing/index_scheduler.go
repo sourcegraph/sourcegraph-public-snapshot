@@ -114,8 +114,9 @@ func (s *IndexScheduler) handleRepository(
 	// Retrieve the set of configuration policies that affect indexing. These policies are applied
 	// only to this repository.
 	repositoryPolicies, err := s.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
-		RepositoryID: repositoryID,
-		ForIndexing:  true,
+		RepositoryID:     repositoryID,
+		ConsiderPatterns: true,
+		ForIndexing:      true,
 	})
 	if err != nil {
 		return errors.Wrap(err, "dbstore.GetConfigurationPolicies")

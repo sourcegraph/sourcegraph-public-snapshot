@@ -148,35 +148,63 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 }
 
 function validatePolicy(policy: CodeIntelligenceConfigurationPolicyFields): boolean {
-    const invalid =
-        false ||
-        // Required values
-        policy.name === '' ||
-        (policy.pattern === '' && policy.type !== GitObjectType.GIT_COMMIT) ||
-        // Required select values
-        ![GitObjectType.GIT_COMMIT, GitObjectType.GIT_TAG, GitObjectType.GIT_TREE].includes(policy.type) ||
-        // Numeric validation (optional)
-        (policy.retentionDurationHours && policy.retentionDurationHours <= 0) ||
-        (policy.indexCommitMaxAgeHours && policy.indexCommitMaxAgeHours <= 0)
+    const invalidConditions = [
+        // Name is required
+        policy.name === '',
 
-    return !invalid
+        // Pattern is required if policy type is GIT_COMMIT
+        policy.type !== GitObjectType.GIT_COMMIT && policy.pattern === '',
+
+        // If repository patterns are supplied they must be non-empty
+        policy.repositoryPatterns?.some(pattern => pattern === ''),
+
+        // Policy type must be GIT_{COMMIT,TAG,TREE}
+        ![GitObjectType.GIT_COMMIT, GitObjectType.GIT_TAG, GitObjectType.GIT_TREE].includes(policy.type),
+
+        // If numeric values are supplied they must be non-negative
+        policy.retentionDurationHours && policy.retentionDurationHours <= 0,
+        policy.indexCommitMaxAgeHours && policy.indexCommitMaxAgeHours <= 0,
+    ]
+
+    return invalidConditions.every(isInvalid => !isInvalid)
 }
 
 function comparePolicies(
     a: CodeIntelligenceConfigurationPolicyFields,
     b?: CodeIntelligenceConfigurationPolicyFields
 ): boolean {
-    return (
-        b !== undefined &&
-        a.id === b.id &&
-        a.name === b.name &&
-        a.type === b.type &&
-        a.pattern === b.pattern &&
-        a.retentionEnabled === b.retentionEnabled &&
-        a.retentionDurationHours === b.retentionDurationHours &&
-        a.retainIntermediateCommits === b.retainIntermediateCommits &&
-        a.indexingEnabled === b.indexingEnabled &&
-        a.indexCommitMaxAgeHours === b.indexCommitMaxAgeHours &&
-        a.indexIntermediateCommits === b.indexIntermediateCommits
-    )
+    if (b === undefined) {
+        return false
+    }
+
+    const equalityConditions = [
+        a.id === b.id,
+        a.name === b.name,
+        a.type === b.type,
+        a.pattern === b.pattern,
+        a.retentionEnabled === b.retentionEnabled,
+        a.retentionDurationHours === b.retentionDurationHours,
+        a.retainIntermediateCommits === b.retainIntermediateCommits,
+        a.indexingEnabled === b.indexingEnabled,
+        a.indexCommitMaxAgeHours === b.indexCommitMaxAgeHours,
+        a.indexIntermediateCommits === b.indexIntermediateCommits,
+        comparePatterns(a.repositoryPatterns, b.repositoryPatterns),
+    ]
+
+    return equalityConditions.every(isEqual => isEqual)
+}
+
+function comparePatterns(a: string[] | null, b: string[] | null): boolean {
+    if (a === null && b === null) {
+        // Neither supplied
+        return true
+    }
+
+    if (!a || !b) {
+        // Only one supplied
+        return false
+    }
+
+    // Both supplied and their contents match
+    return a.length === b.length && a.every((pattern, index) => b[index] === pattern)
 }

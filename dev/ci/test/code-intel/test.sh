@@ -9,8 +9,5 @@ set -ex
 # Use candidate image built by main pipeline
 export IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
 
-# us.gcr.io is a private registry, ensure we can pull
-yes | gcloud auth configure-docker
-
 # Setup single-server instance and run tests
 ./dev/ci/run-integration.sh "${SG_ROOT}/dev/ci/test/code-intel/test-against-server.sh"

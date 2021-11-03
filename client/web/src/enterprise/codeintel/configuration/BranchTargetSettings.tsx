@@ -1,11 +1,19 @@
+import classNames from 'classnames'
 import { debounce } from 'lodash'
-import React, { FunctionComponent, useState, useMemo } from 'react'
+import TrashIcon from 'mdi-react/TrashIcon'
+import React, { FunctionComponent, useMemo, useState } from 'react'
+
+import { Tooltip } from '@sourcegraph/branded/src/components/tooltip/Tooltip'
+import { Button } from '@sourcegraph/wildcard'
 
 import { CodeIntelligenceConfigurationPolicyFields, GitObjectType } from '../../../graphql-operations'
 
-import { GitObjectPreview } from './GitObjectPreview'
+import styles from './BranchTargetSettings.module.scss'
+import { GitObjectPreviewWrapper } from './GitObjectPreview'
+import { RepositoryPreview } from './RepositoryPreview'
 
 const DEBOUNCED_WAIT = 250
+
 export interface BranchTargetSettingsProps {
     repoId?: string
     policy: CodeIntelligenceConfigurationPolicyFields
@@ -37,6 +45,9 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                 />
                 <small className="form-text text-muted">Required.</small>
             </div>
+
+            {!repoId && <ReposMatchingPatternList policy={policy} setPolicy={setPolicy} disabled={disabled} />}
+
             <div className="form-group">
                 <label htmlFor="type">Type</label>
                 <select
@@ -47,12 +58,10 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                         setPolicy({
                             ...policy,
                             type: value as GitObjectType,
-                            ...(value !== GitObjectType.GIT_TREE
-                                ? {
-                                      retainIntermediateCommits: false,
-                                      indexIntermediateCommits: false,
-                                  }
-                                : {}),
+                            ...(value !== GitObjectType.GIT_TREE && {
+                                retainIntermediateCommits: false,
+                                indexIntermediateCommits: false,
+                            }),
                         })
                     }
                     disabled={disabled}
@@ -82,7 +91,143 @@ export const BranchTargetSettings: FunctionComponent<BranchTargetSettingsProps> 
                     <small className="form-text text-muted">Required.</small>
                 </div>
             )}
-            {repoId && <GitObjectPreview repoId={repoId} type={policy.type} pattern={pattern} />}
+            {repoId && <GitObjectPreviewWrapper repoId={repoId} type={policy.type} pattern={pattern} />}
+        </>
+    )
+}
+
+interface ReposMatchingPatternListProps {
+    policy: CodeIntelligenceConfigurationPolicyFields
+    setPolicy: (policy: CodeIntelligenceConfigurationPolicyFields) => void
+    disabled: boolean
+}
+
+const ReposMatchingPatternList: FunctionComponent<ReposMatchingPatternListProps> = ({
+    policy,
+    setPolicy,
+    disabled,
+}) => (
+    <div className="mb-2">
+        {policy.repositoryPatterns === null ? (
+            <>
+                This configuration policy applies to all repositories.{' '}
+                {!disabled && (
+                    <>
+                        To restrict the set of repositories to which this configuration applies,{' '}
+                        <span
+                            className={styles.addRepositoryPattern}
+                            onClick={() =>
+                                setPolicy({
+                                    ...policy,
+                                    repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
+                                })
+                            }
+                            aria-hidden="true"
+                        >
+                            add a repository pattern
+                        </span>
+                        .
+                    </>
+                )}
+            </>
+        ) : (
+            <>
+                <div className={styles.grid}>
+                    {policy.repositoryPatterns.map((repositoryPattern, index) => (
+                        <ReposMatchingPattern
+                            key={index}
+                            index={index}
+                            pattern={repositoryPattern}
+                            setPattern={value =>
+                                setPolicy({
+                                    ...policy,
+                                    repositoryPatterns: (policy.repositoryPatterns || []).map((value_, index_) =>
+                                        index === index_ ? value : value_
+                                    ),
+                                })
+                            }
+                            onDelete={() =>
+                                setPolicy({
+                                    ...policy,
+                                    repositoryPatterns: (policy.repositoryPatterns || []).filter(
+                                        (___, index_) => index !== index_
+                                    ),
+                                })
+                            }
+                            disabled={disabled}
+                        />
+                    ))}
+                </div>
+
+                {!disabled && (
+                    <>
+                        <div className="pb-2">
+                            <span
+                                className={classNames(styles.addRepositoryPattern)}
+                                onClick={() =>
+                                    setPolicy({
+                                        ...policy,
+                                        repositoryPatterns: (policy.repositoryPatterns || []).concat(['']),
+                                    })
+                                }
+                                aria-hidden="true"
+                            >
+                                Add a repository pattern
+                            </span>
+                        </div>
+                    </>
+                )}
+            </>
+        )}
+    </div>
+)
+
+interface ReposMatchingPatternProps {
+    index: number
+    pattern: string
+    setPattern: (value: string) => void
+    onDelete: () => void
+    disabled: boolean
+}
+
+const ReposMatchingPattern: FunctionComponent<ReposMatchingPatternProps> = ({
+    index,
+    pattern,
+    setPattern,
+    onDelete,
+    disabled,
+}) => {
+    const [previewPattern, setPreviewPattern] = useState(pattern)
+    const debouncedSetPattern = useMemo(() => debounce(value => setPreviewPattern(value), DEBOUNCED_WAIT), [])
+
+    return (
+        <>
+            <div className="form-group d-flex flex-column mb-0">
+                <label htmlFor="repo-pattern">Repository pattern #{index + 1}</label>
+                <input
+                    type="text"
+                    className="form-control text-monospace"
+                    value={pattern}
+                    onChange={({ target }) => {
+                        setPattern(target.value)
+                        debouncedSetPattern(target.value)
+                    }}
+                    disabled={disabled}
+                    required={true}
+                />
+                <small className="form-text text-muted">Required.</small>
+            </div>
+
+            <span className={classNames(styles.button, 'd-none d-md-inline')}>
+                <Button onClick={() => onDelete()} className="p-0 m-0 pt-4" disabled={disabled}>
+                    <Tooltip />
+                    <TrashIcon className="icon-inline text-danger" data-tooltip="Delete the repository pattern" />
+                </Button>
+            </span>
+
+            <div className={classNames(styles.preview, 'form-group d-flex flex-column')}>
+                <RepositoryPreview pattern={previewPattern} />
+            </div>
         </>
     )
 }

@@ -51,6 +51,11 @@ export const MOCK_BATCH_CHANGE: BatchChangeFields = {
     currentSpec: {
         originalInput: 'name: awesome-batch-changes\ndescription: somestring',
         supersedingBatchSpec: null,
+        codeHostsWithoutWebhooks: {
+            nodes: [],
+            pageInfo: { hasNextPage: false },
+            totalCount: 0,
+        },
     },
     bulkOperations: {
         __typename: 'BulkOperationConnection',

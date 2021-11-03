@@ -46,7 +46,7 @@ const fragment = gql`
         workspaceResolution {
             workspaces(first: 10000) {
                 nodes {
-                    ...BatchSpecWorkspaceFields
+                    ...CreateBatchSpecWorkspaceFields
                 }
             }
             state
@@ -75,7 +75,7 @@ const fragment = gql`
         }
     }
 
-    fragment BatchSpecWorkspaceFields on BatchSpecWorkspace {
+    fragment CreateBatchSpecWorkspaceFields on BatchSpecWorkspace {
         repository {
             id
             name

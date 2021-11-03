@@ -208,7 +208,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
+		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(r.db), repo))
 	}
 	return resolvers, nil
 }
@@ -288,14 +288,6 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 			Direction: r.opt.CursorDirection,
 		},
 	)), nil
-}
-
-func repoNamesToStrings(repoNames []api.RepoName) []string {
-	strings := make([]string, len(repoNames))
-	for i, repoName := range repoNames {
-		strings[i] = string(repoName)
-	}
-	return strings
 }
 
 func toDBRepoListColumn(ob string) database.RepoListColumn {

@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -343,7 +342,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db dbutil.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver) (*graphql.Schema, error) {
+func NewSchema(db database.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -440,14 +439,13 @@ type schemaResolver struct {
 	DotcomRootResolver
 	SearchContextsResolver
 
-	db                dbutil.DB
+	db                database.DB
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
 }
 
 // newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
-func newSchemaResolver(db dbutil.DB) *schemaResolver {
-
+func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
@@ -548,7 +546,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(r.db, repo), nil
+	return NewRepositoryResolver(database.NewDB(r.db), repo), nil
 }
 
 type RedirectResolver struct {
@@ -606,7 +604,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *struct {
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(database.NewDB(r.db), repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

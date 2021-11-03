@@ -78,7 +78,7 @@ func (r *registryPublisher) RegistryExtensionConnectionURL() (*string, error) {
 
 var errRegistryUnknownPublisher = errors.New("unknown registry extension publisher")
 
-func getRegistryPublisher(ctx context.Context, db dbutil.DB, publisher dbPublisher) (*registryPublisher, error) {
+func getRegistryPublisher(ctx context.Context, db database.DB, publisher dbPublisher) (*registryPublisher, error) {
 	switch {
 	case publisher.UserID != 0:
 		user, err := graphqlbackend.UserByIDInt32(ctx, db, publisher.UserID)

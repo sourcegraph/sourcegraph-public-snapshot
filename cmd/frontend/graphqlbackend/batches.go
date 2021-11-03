@@ -171,6 +171,7 @@ type ListViewerBatchChangesCodeHostsArgs struct {
 	First                 int32
 	After                 *string
 	OnlyWithoutCredential bool
+	OnlyWithoutWebhooks   bool
 }
 
 type BulkOperationBaseArgs struct {
@@ -506,6 +507,7 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceKind() string
 	ExternalServiceURL() string
 	RequiresSSH() bool
+	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
 }
 
@@ -781,6 +783,7 @@ type BatchSpecWorkspaceResolver interface {
 	Unsupported() bool
 
 	ChangesetSpecs(ctx context.Context) (*[]ChangesetSpecResolver, error)
+	DiffStat(ctx context.Context) (*DiffStat, error)
 	PlaceInQueue() *int32
 }
 

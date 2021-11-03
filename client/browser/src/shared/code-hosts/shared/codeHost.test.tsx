@@ -373,8 +373,8 @@ describe('codeHost', () => {
                 ])
                 await decorated(editor)
                 await tick()
-                expect(line.querySelectorAll('.line-decoration-attachment')).toHaveLength(1)
-                expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration')
+                expect(line.querySelectorAll('[data-line-decoration-attachment]')).toHaveLength(1)
+                expect(line.querySelector('[data-line-decoration-attachment]')!).toHaveTextContent('test decoration')
 
                 // Decorate the code view again, and verify that previous decorations
                 // are cleaned up and replaced by the new decorations.
@@ -397,8 +397,8 @@ describe('codeHost', () => {
                         take(1)
                     )
                     .toPromise()
-                expect(line.querySelectorAll('.line-decoration-attachment').length).toBe(1)
-                expect(line.querySelector('.line-decoration-attachment')!).toHaveTextContent('test decoration 2')
+                expect(line.querySelectorAll('[data-line-decoration-attachment]').length).toBe(1)
+                expect(line.querySelector('[data-line-decoration-attachment]')!).toHaveTextContent('test decoration 2')
             })
 
             it('decorates a diff code view', async () => {

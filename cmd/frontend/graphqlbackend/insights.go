@@ -17,6 +17,7 @@ type InsightsResolver interface {
 	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -58,6 +59,7 @@ type InsightsPointsArgs struct {
 }
 
 type InsightSeriesResolver interface {
+	SeriesId() string
 	Label() string
 	Points(ctx context.Context, args *InsightsPointsArgs) ([]InsightsDataPointResolver, error)
 	Status(ctx context.Context) (InsightStatusResolver, error)
@@ -86,6 +88,7 @@ type InsightDirtyQueryResolver interface {
 type InsightsDashboardsArgs struct {
 	First *int32
 	After *string
+	ID    *graphql.ID
 }
 
 type InsightsDashboardConnectionResolver interface {
@@ -305,4 +308,10 @@ type LineChartOptionsInput struct {
 
 type InsightViewPayloadResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
+}
+
+type InsightViewQueryArgs struct {
+	First *int32
+	After *string
+	Id    *graphql.ID
 }

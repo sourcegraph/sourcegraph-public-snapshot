@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -38,7 +39,7 @@ func (r *extensionDBResolver) ExtensionIDWithoutRegistry() string {
 }
 
 func (r *extensionDBResolver) Publisher(ctx context.Context) (graphqlbackend.RegistryPublisher, error) {
-	return getRegistryPublisher(ctx, r.db, r.v.Publisher)
+	return getRegistryPublisher(ctx, database.NewDB(r.db), r.v.Publisher)
 }
 
 func (r *extensionDBResolver) Name() string { return r.v.Name }

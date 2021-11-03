@@ -31,11 +31,12 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 		}
 		return &api.Settings{ID: 2, Contents: contents}, nil
 	}
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation($value: JSONValue) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
@@ -78,11 +79,12 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 		}
 		return &api.Settings{ID: 2, Contents: contents}, nil
 	}
+	db := database.NewDB(nil)
 
 	RunTests(t, []*Test{
 		{
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				mutation($contents: String!) {
 					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {

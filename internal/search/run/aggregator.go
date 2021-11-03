@@ -81,7 +81,7 @@ func (a *Aggregator) DoRepoSearch(ctx context.Context, args *search.TextParamete
 	return errors.Wrap(err, "repository search failed")
 }
 
-func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSearchMode) (err error) {
+func (a *Aggregator) DoSearch(ctx context.Context, job Job, repos []*search.RepositoryRevisions, mode search.GlobalSearchMode) (err error) {
 	tr, ctx := trace.New(ctx, "DoSearch", job.Name())
 	tr.LogFields(trace.Stringer("global_search_mode", mode))
 	defer func() {
@@ -90,12 +90,12 @@ func (a *Aggregator) DoSearch(ctx context.Context, job Job, mode search.GlobalSe
 		tr.Finish()
 	}()
 
-	err = job.Run(ctx, a)
+	err = job.Run(ctx, a, repos)
 	return errors.Wrap(err, job.Name()+" search failed")
 
 }
 
-func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, limit int) (err error) {
+func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParameters, notSearcherOnly, globalSearch bool, limit int) (err error) {
 	tr, ctx := trace.New(ctx, "doSymbolSearch", "")
 	defer func() {
 		a.Error(err)
@@ -103,7 +103,7 @@ func (a *Aggregator) DoSymbolSearch(ctx context.Context, args *search.TextParame
 		tr.Finish()
 	}()
 
-	err = symbol.Search(ctx, args, limit, a)
+	err = symbol.Search(ctx, args, notSearcherOnly, globalSearch, limit, a)
 	return errors.Wrap(err, "symbol search failed")
 }
 
@@ -126,7 +126,7 @@ func (a *Aggregator) DoDiffSearch(ctx context.Context, tp *search.TextParameters
 		tr.Finish()
 	}()
 
-	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "diff"); err != nil {
+	if err := commit.CheckSearchLimits(commit.HasTimeFilter(tp.Query), len(tp.Repos), "diff"); err != nil {
 		return err
 	}
 
@@ -147,7 +147,7 @@ func (a *Aggregator) DoCommitSearch(ctx context.Context, tp *search.TextParamete
 		tr.Finish()
 	}()
 
-	if err := commit.CheckSearchLimits(tp.Query, len(tp.Repos), "commit"); err != nil {
+	if err := commit.CheckSearchLimits(commit.HasTimeFilter(tp.Query), len(tp.Repos), "commit"); err != nil {
 		return err
 	}
 

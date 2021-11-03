@@ -292,7 +292,6 @@ func (p *TextPatternInfo) String() string {
 type RepoOptions struct {
 	RepoFilters       []string
 	MinusRepoFilters  []string
-	RepoGroupFilters  []string
 	SearchContextSpec string
 	UserSettings      *schema.Settings
 	NoForks           bool
@@ -321,9 +320,6 @@ func (op *RepoOptions) String() string {
 
 	if len(op.MinusRepoFilters) > 0 {
 		_, _ = fmt.Fprintf(&b, " -r=%v", op.MinusRepoFilters)
-	}
-	if len(op.RepoGroupFilters) > 0 {
-		_, _ = fmt.Fprintf(&b, " groups=%v", op.RepoGroupFilters)
 	}
 	if op.CommitAfter != "" {
 		_, _ = fmt.Fprintf(&b, " CommitAfter=%q", op.CommitAfter)

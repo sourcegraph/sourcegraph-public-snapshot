@@ -656,6 +656,7 @@ Check constraints:
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
     "external_service_repos_idx" btree (external_service_id, repo_id)
+    "external_service_repos_org_id_idx" btree (org_id) WHERE org_id IS NOT NULL
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
 Foreign-key constraints:
     "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
@@ -707,9 +708,11 @@ Foreign-key constraints:
  cloud_default     | boolean                  |           | not null | false
  encryption_key_id | text                     |           | not null | ''::text
  namespace_org_id  | integer                  |           |          | 
+ has_webhooks      | boolean                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "kind_cloud_default" UNIQUE, btree (kind, cloud_default) WHERE cloud_default = true AND deleted_at IS NULL
+    "external_services_has_webhooks_idx" btree (has_webhooks)
     "external_services_namespace_org_id_idx" btree (namespace_org_id)
     "external_services_namespace_user_id_idx" btree (namespace_user_id)
 Check constraints:
@@ -883,20 +886,22 @@ Stores data points for a code insight that do not need to be queried directly, b
 
 # Table "public.lsif_configuration_policies"
 ```
-           Column            |  Type   | Collation | Nullable |                         Default                         
------------------------------+---------+-----------+----------+---------------------------------------------------------
- id                          | integer |           | not null | nextval('lsif_configuration_policies_id_seq'::regclass)
- repository_id               | integer |           |          | 
- name                        | text    |           |          | 
- type                        | text    |           | not null | 
- pattern                     | text    |           | not null | 
- retention_enabled           | boolean |           | not null | 
- retention_duration_hours    | integer |           |          | 
- retain_intermediate_commits | boolean |           | not null | 
- indexing_enabled            | boolean |           | not null | 
- index_commit_max_age_hours  | integer |           |          | 
- index_intermediate_commits  | boolean |           | not null | 
- protected                   | boolean |           | not null | false
+           Column            |           Type           | Collation | Nullable |                         Default                         
+-----------------------------+--------------------------+-----------+----------+---------------------------------------------------------
+ id                          | integer                  |           | not null | nextval('lsif_configuration_policies_id_seq'::regclass)
+ repository_id               | integer                  |           |          | 
+ name                        | text                     |           |          | 
+ type                        | text                     |           | not null | 
+ pattern                     | text                     |           | not null | 
+ retention_enabled           | boolean                  |           | not null | 
+ retention_duration_hours    | integer                  |           |          | 
+ retain_intermediate_commits | boolean                  |           | not null | 
+ indexing_enabled            | boolean                  |           | not null | 
+ index_commit_max_age_hours  | integer                  |           |          | 
+ index_intermediate_commits  | boolean                  |           | not null | 
+ protected                   | boolean                  |           | not null | false
+ repository_patterns         | text[]                   |           |          | 
+ last_resolved_at            | timestamp with time zone |           |          | 
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -915,6 +920,8 @@ Indexes:
 
 **repository_id**: The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.
 
+**repository_patterns**: The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.
+
 **retain_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **retention_duration_hours**: The max age of data retained by this configuration policy. If null, the age is unbounded.
@@ -922,6 +929,23 @@ Indexes:
 **retention_enabled**: Whether or not this configuration policy affects data retention rules.
 
 **type**: The type of Git object (e.g., COMMIT, BRANCH, TAG).
+
+# Table "public.lsif_configuration_policies_repository_pattern_lookup"
+```
+  Column   |  Type   | Collation | Nullable | Default 
+-----------+---------+-----------+----------+---------
+ policy_id | integer |           | not null | 
+ repo_id   | integer |           | not null | 
+Indexes:
+    "lsif_configuration_policies_repository_pattern_lookup_pkey" PRIMARY KEY, btree (policy_id, repo_id)
+
+```
+
+A lookup table to get all the repository patterns by repository id that apply to a configuration policy.
+
+**policy_id**: The policy identifier associated with the repository.
+
+**repo_id**: The repository identifier associated with the policy.
 
 # Table "public.lsif_dependency_indexing_jobs"
 ```
@@ -1703,6 +1727,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "user_public_repos" CONSTRAINT "user_public_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
 Triggers:
     trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos()
@@ -1870,6 +1895,7 @@ Contains security-relevant events with a long time horizon for storage.
  author_user_id | integer                  |           |          | 
 Indexes:
     "settings_pkey" PRIMARY KEY, btree (id)
+    "settings_global_id" btree (id DESC) WHERE user_id IS NULL AND org_id IS NULL
     "settings_org_id_idx" btree (org_id)
     "settings_user_id_idx" btree (user_id)
 Foreign-key constraints:
@@ -1892,6 +1918,29 @@ Foreign-key constraints:
  author_user_id     | integer                  |           |          | 
 
 ```
+
+# Table "public.sub_repo_permissions"
+```
+    Column     |           Type           | Collation | Nullable | Default 
+---------------+--------------------------+-----------+----------+---------
+ repo_id       | integer                  |           | not null | 
+ user_id       | integer                  |           | not null | 
+ version       | integer                  |           | not null | 1
+ path_includes | text[]                   |           |          | 
+ path_excludes | text[]                   |           |          | 
+ updated_at    | timestamp with time zone |           | not null | now()
+Indexes:
+    "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
+    "sub_repo_perms_repo_id" btree (repo_id)
+    "sub_repo_perms_user_id" btree (user_id)
+    "sub_repo_perms_version" btree (version)
+Foreign-key constraints:
+    "sub_repo_permissions_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
+    "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+
+```
+
+Responsible for storing permissions at a finer granularity than repo
 
 # Table "public.survey_responses"
 ```
@@ -2117,6 +2166,7 @@ Referenced by:
     TABLE "search_contexts" CONSTRAINT "search_contexts_namespace_user_id_fk" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "settings" CONSTRAINT "settings_author_user_id_fkey" FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT
     TABLE "settings" CONSTRAINT "settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    TABLE "sub_repo_permissions" CONSTRAINT "sub_repo_permissions_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "survey_responses" CONSTRAINT "survey_responses_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id)
     TABLE "temporary_settings" CONSTRAINT "temporary_settings_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     TABLE "user_credentials" CONSTRAINT "user_credentials_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE

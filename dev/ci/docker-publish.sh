@@ -17,8 +17,6 @@
 
 set -e
 
-yes | gcloud auth configure-docker
-
 src="$1"
 
 echo "--- pulling $src"

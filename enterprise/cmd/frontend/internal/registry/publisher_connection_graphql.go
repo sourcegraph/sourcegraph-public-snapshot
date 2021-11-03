@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -53,7 +54,7 @@ func (r *registryPublisherConnection) Nodes(ctx context.Context) ([]graphqlbacke
 
 	var l []graphqlbackend.RegistryPublisher
 	for _, publisher := range publishers {
-		p, err := getRegistryPublisher(ctx, r.db, *publisher)
+		p, err := getRegistryPublisher(ctx, database.NewDB(r.db), *publisher)
 		if err != nil {
 			return nil, err
 		}
