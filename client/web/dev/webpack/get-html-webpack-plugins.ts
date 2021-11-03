@@ -43,7 +43,7 @@ export const getHTMLPage = ({
         <meta name="viewport" content="width=device-width, viewport-fit=cover" />
         <meta name="referrer" content="origin-when-cross-origin"/>
         <meta name="color-scheme" content="light dark"/>
-        ${cssBundle ? `<link rel="stylesheet" href="${cssBundle}">` : ''}
+        ${cssBundle ? `<link rel="preload" href="${cssBundle}" as="style">` : ''}
     </head>
     <body>
         <div id="root"></div>
