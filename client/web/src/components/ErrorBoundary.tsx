@@ -1,4 +1,3 @@
-import * as sentry from '@sentry/browser'
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ReloadIcon from 'mdi-react/ReloadIcon'
@@ -52,11 +51,11 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 
     public componentDidCatch(error: unknown, errorInfo: React.ErrorInfo): void {
         if (shouldErrorBeReported(error)) {
-            sentry.withScope(scope => {
+            Sentry.withScope(scope => {
                 for (const [key, value] of Object.entries(errorInfo)) {
                     scope.setExtra(key, value)
                 }
-                sentry.captureException(error)
+                Sentry.captureException(error)
             })
         }
     }
@@ -126,6 +125,11 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
 }
 
 function shouldErrorBeReported(error: unknown): boolean {
+    // Report errors only in production environment.
+    if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
+        return false
+    }
+
     if (error instanceof HTTPStatusError) {
         // Ignore Server error responses (5xx)
         return error.status < 500
