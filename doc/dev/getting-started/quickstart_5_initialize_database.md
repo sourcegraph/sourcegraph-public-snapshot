@@ -11,6 +11,8 @@ To initialize your database, you may have to set the appropriate environment var
 ```sh
 export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
 createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+# if you're running Postgres with Docker
+createdb --host=localhost --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 ```
 
 You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
