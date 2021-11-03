@@ -237,10 +237,13 @@ type operations struct {
 	listBatchSpecWorkspaces        *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
 
-	createBatchSpecWorkspaceExecutionJobs *observation.Operation
-	getBatchSpecWorkspaceExecutionJob     *observation.Operation
-	listBatchSpecWorkspaceExecutionJobs   *observation.Operation
-	cancelBatchSpecWorkspaceExecutionJobs *observation.Operation
+	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
+	getBatchSpecWorkspaceExecutionJob                  *observation.Operation
+	listBatchSpecWorkspaceExecutionJobs                *observation.Operation
+	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
+	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -361,10 +364,13 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
 
-			createBatchSpecWorkspaceExecutionJobs: op("CreateBatchSpecWorkspaceExecutionJobs"),
-			getBatchSpecWorkspaceExecutionJob:     op("GetBatchSpecWorkspaceExecutionJob"),
-			listBatchSpecWorkspaceExecutionJobs:   op("ListBatchSpecWorkspaceExecutionJobs"),
-			cancelBatchSpecWorkspaceExecutionJobs: op("CancelBatchSpecWorkspaceExecutionJobs"),
+			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
+			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
+			getBatchSpecWorkspaceExecutionJob:                  op("GetBatchSpecWorkspaceExecutionJob"),
+			listBatchSpecWorkspaceExecutionJobs:                op("ListBatchSpecWorkspaceExecutionJobs"),
+			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
+			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
+			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
