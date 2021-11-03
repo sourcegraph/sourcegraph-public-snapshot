@@ -3,7 +3,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS webhook_logs (
     id BIGSERIAL PRIMARY KEY,
     received_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    external_service_id INTEGER NULL REFERENCES external_services (id),
+    external_service_id INTEGER NULL REFERENCES external_services (id) ON DELETE CASCADE ON UPDATE CASCADE,
     status_code INTEGER NOT NULL,
     request BYTEA NOT NULL,
     response BYTEA NOT NULL,
