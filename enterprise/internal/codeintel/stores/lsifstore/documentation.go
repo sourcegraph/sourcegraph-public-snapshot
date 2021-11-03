@@ -380,7 +380,8 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 
 	// If a search would exceed 3 seconds, just give up. We'll issue a lo of searches, so we'd
 	// rather have this than the DB pressure.
-	ctx, _ = context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 
 	q := apidocs.ParseQuery(query)
 	resultLimit := 10
