@@ -31,11 +31,12 @@ const (
 var (
 	ciFlagSet = flag.NewFlagSet("sg ci", flag.ExitOnError)
 
-	ciLogsFlagSet    = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
-	ciLogsBranchFlag = ciLogsFlagSet.String("branch", "", "Branch name of build to find logs for (defaults to current branch)")
-	ciLogsJobState   = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
-	ciLogsJobQuery   = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
-	ciLogsOut        = ciLogsFlagSet.String("out", ciLogsOutStdout,
+	ciLogsFlagSet      = flag.NewFlagSet("sg ci logs", flag.ExitOnError)
+	ciLogsBranchFlag   = ciLogsFlagSet.String("branch", "", "Branch name of build to find logs for (defaults to current branch)")
+	ciLogsJobStateFlag = ciLogsFlagSet.String("state", "failed", "Job states to export logs for.")
+	ciLogsJobQueryFlag = ciLogsFlagSet.String("job", "", "ID or name of the job to export logs for.")
+	ciLogsBuildFlag    = ciLogsFlagSet.String("build", "", "Override branch detection with a specific build number")
+	ciLogsOutFlag      = ciLogsFlagSet.String("out", ciLogsOutStdout,
 		fmt.Sprintf("Output format, either 'stdout' or a URL pointing to a Loki instance, such as %q", loki.DefaultLokiURL))
 	ciStatusFlagSet    = flag.NewFlagSet("sg ci status", flag.ExitOnError)
 	ciStatusBranchFlag = ciStatusFlagSet.String("branch", "", "Branch name of build to check build status for (defaults to current branch)")
@@ -264,7 +265,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 					return err
 				}
 
-				build, err := client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				var build *buildkite.Build
+				if *ciLogsBuildFlag != "" {
+					build, err = client.GetBuildByNumber(ctx, "sourcegraph", *ciLogsBuildFlag)
+				} else {
+					build, err = client.GetMostRecentBuild(ctx, "sourcegraph", branch)
+				}
 				if err != nil {
 					return fmt.Errorf("failed to get most recent build for branch %q: %w", branch, err)
 				}
@@ -272,8 +278,8 @@ From there, you can start exploring logs with the Grafana explore panel.
 					*build.WebURL))
 
 				options := bk.ExportLogsOpts{
-					JobQuery: *ciLogsJobQuery,
-					State:    *ciLogsJobState,
+					JobQuery: *ciLogsJobQueryFlag,
+					State:    *ciLogsJobStateFlag,
 				}
 				logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
 				if err != nil {
@@ -285,7 +291,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					return nil
 				}
 
-				switch *ciLogsOut {
+				switch *ciLogsOutFlag {
 				case ciLogsOutStdout:
 					// Buildkite's timestamp thingo causes log lines to not render in terminal
 					bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
@@ -298,7 +304,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 					out.WriteLine(output.Linef("", output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
 
 				default:
-					lokiURL, err := url.Parse(*ciLogsOut)
+					lokiURL, err := url.Parse(*ciLogsOutFlag)
 					if err != nil {
 						return fmt.Errorf("invalid Loki target: %w", err)
 					}
