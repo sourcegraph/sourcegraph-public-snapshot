@@ -1,4 +1,4 @@
-# Quickstart step 1: Install dependencies
+# Quickstart step 2: Install dependencies
 
 Sourcegraph has the following dependencies:
 
@@ -256,4 +256,4 @@ asdf plugin add yarn
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-[< Previous](index.md) | [Next >](quickstart_2_clone_repository.md)
+[< Previous](quickstart_1_install_sg.md) | [Next >](quickstart_3_clone_repository.md)
