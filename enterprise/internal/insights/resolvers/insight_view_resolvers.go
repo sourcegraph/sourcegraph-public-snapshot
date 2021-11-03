@@ -348,7 +348,14 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 		return nil, err
 	}
 	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
+		if d.args.Filters != nil {
+			resolver.overrideFilters = &types.InsightViewFilters{
+				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
+				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
+			}
+		}
+		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, nil
 }
