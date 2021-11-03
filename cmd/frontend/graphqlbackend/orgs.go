@@ -40,7 +40,7 @@ func (r *orgConnectionResolver) Nodes(ctx context.Context) ([]*OrgResolver, erro
 	var l []*OrgResolver
 	for _, org := range orgs {
 		l = append(l, &OrgResolver{
-			db:  r.db,
+			db:  database.NewDB(r.db),
 			org: org,
 		})
 	}

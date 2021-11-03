@@ -13,13 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name string }) (*OrgResolver, error) {
-	org, err := database.Orgs(r.db).GetByName(ctx, args.Name)
+	org, err := r.db.Orgs().GetByName(ctx, args.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -51,11 +50,11 @@ func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolve
 }
 
 type OrgResolver struct {
-	db  dbutil.DB
+	db  database.DB
 	org *types.Org
 }
 
-func NewOrg(db dbutil.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
+func NewOrg(db database.DB, org *types.Org) *OrgResolver { return &OrgResolver{db: db, org: org} }
 
 func (o *OrgResolver) ID() graphql.ID { return MarshalOrgID(o.org.ID) }
 
@@ -96,13 +95,13 @@ func (o *OrgResolver) Members(ctx context.Context) (*staticUserConnectionResolve
 		return nil, err
 	}
 
-	memberships, err := database.OrgMembers(o.db).GetByOrgID(ctx, o.org.ID)
+	memberships, err := o.db.OrgMembers().GetByOrgID(ctx, o.org.ID)
 	if err != nil {
 		return nil, err
 	}
 	users := make([]*types.User, len(memberships))
 	for i, membership := range memberships {
-		user, err := database.Users(o.db).GetByID(ctx, membership.UserID)
+		user, err := o.db.Users().GetByID(ctx, membership.UserID)
 		if err != nil {
 			return nil, err
 		}
@@ -122,14 +121,14 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 		return nil, err
 	}
 
-	settings, err := database.Settings(o.db).GetLatest(ctx, o.settingsSubject())
+	settings, err := o.db.Settings().GetLatest(ctx, o.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{database.NewDB(o.db), &settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {
@@ -140,7 +139,7 @@ func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.Setting
 
 func (o *OrgResolver) ViewerPendingInvitation(ctx context.Context) (*organizationInvitationResolver, error) {
 	if actor := actor.FromContext(ctx); actor.IsAuthenticated() {
-		orgInvitation, err := database.OrgInvitations(o.db).GetPending(ctx, o.org.ID, actor.UID)
+		orgInvitation, err := o.db.OrgInvitations().GetPending(ctx, o.org.ID, actor.UID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
@@ -166,7 +165,7 @@ func (o *OrgResolver) ViewerIsMember(ctx context.Context) (bool, error) {
 	if !actor.IsAuthenticated() {
 		return false, nil
 	}
-	if _, err := database.OrgMembers(o.db).GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
+	if _, err := o.db.OrgMembers().GetByOrgIDAndUserID(ctx, o.org.ID, actor.UID); err != nil {
 		if errcode.IsNotFound(err) {
 			err = nil
 		}
@@ -300,11 +299,11 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if err := backend.CheckOrgExternalServices(ctx, database.NewDB(o.db), o.org.ID); err != nil {
+	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Only org members can list the org repositories.
-	if err := backend.CheckOrgAccess(ctx, database.NewDB(o.db), o.org.ID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
 			return nil, errors.New("must be a member of this organization to view its repositories")
 		}

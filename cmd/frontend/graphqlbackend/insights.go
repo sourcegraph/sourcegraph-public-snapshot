@@ -99,8 +99,13 @@ type InsightsDashboardConnectionResolver interface {
 type InsightsDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
-	Views() InsightViewConnectionResolver
+	Views(ctx context.Context, args DashboardInsightViewConnectionArgs) InsightViewConnectionResolver
 	Grants() InsightsPermissionGrantsResolver
+}
+
+type DashboardInsightViewConnectionArgs struct {
+	After *string
+	First *int32
 }
 
 type InsightsPermissionGrantsResolver interface {
