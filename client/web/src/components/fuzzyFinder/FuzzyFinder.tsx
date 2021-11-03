@@ -14,6 +14,8 @@ const DEFAULT_MAX_RESULTS = 100
 export interface FuzzyFinderProps {
     setIsVisible: Dispatch<SetStateAction<boolean>>
 
+    isVisible: boolean
+
     /**
      * The maximum number of files a repo can have to use case-insensitive fuzzy finding.
      *
@@ -31,6 +33,10 @@ export const FuzzyFinder: React.FunctionComponent<FuzzyFinderProps> = props => {
     const [fsm, setFsm] = useState<FuzzyFSM>({ key: 'empty' })
     const { repoName = '', commitID = '' } = parseBrowserRepoURL(location.pathname + location.search + location.hash)
     const { downloadFilename, isLoadingFilename, filenameError } = useFilename(repoName, commitID)
+
+    if (!props.isVisible) {
+        return null
+    }
 
     return (
         <FuzzyModal
