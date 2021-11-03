@@ -379,8 +379,6 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 	return nil
 }
 
-// TODO I think we need another check to make sure that all of the series given to us actually already exist on the insight.
-
 func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
 	for i := range inputSeries {
 		if inputSeries[i].SeriesId == nil {
