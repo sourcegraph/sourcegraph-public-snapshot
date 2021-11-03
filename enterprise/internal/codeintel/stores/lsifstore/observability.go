@@ -21,6 +21,7 @@ type operations struct {
 	documentationPathIDToID         *observation.Operation
 	documentationPathInfo           *observation.Operation
 	documentationReferences         *observation.Operation
+	documentationSearchRepoNameIDs  *observation.Operation
 	documentationSearch             *observation.Operation
 	exists                          *observation.Operation
 	hover                           *observation.Operation
@@ -84,6 +85,7 @@ func newOperations(observationContext *observation.Context) *operations {
 		documentationPathIDToID:         op("DocumentationPathIDToID"),
 		documentationPathInfo:           op("DocumentationPathInfo"),
 		documentationReferences:         op("DocumentationReferences"),
+		documentationSearchRepoNameIDs:  op("DocumentationSearchRepoNameIDs"),
 		documentationSearch:             op("DocumentationSearch"),
 		exists:                          op("Exists"),
 		hover:                           op("Hover"),

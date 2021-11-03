@@ -360,6 +360,39 @@ func (s *Store) documentationDefinitions(
 	return locations, totalCount, nil
 }
 
+// documentationSearchRepoNameIDs searches API documentation repositories in either the "public" or
+// "private" table. It returns primary key IDs from the lsif_data_docs_search_repo_names_$SUFFIX
+// table.
+//
+// 🚨 SECURITY: If the input tableSuffix is "private", then it is the callers responsibility to
+// enforce that the user only has the ability to view results that are from repositories they have
+// access to.
+func (s *Store) documentationSearchRepoNameIDs(ctx context.Context, tableSuffix string, possibleRepos []string) (_ []int64, err error) {
+	ctx, _, endObservation := s.operations.documentationSearchRepoNameIDs.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("table", tableSuffix),
+		log.String("possibleRepos", fmt.Sprint(possibleRepos)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return basestore.ScanInt64s(s.Store.Query(ctx, sqlf.Sprintf(
+		strings.ReplaceAll(documentationSearchRepoNameIDsQuery, "$SUFFIX", tableSuffix),
+		// In the repo clause we forbid substring matches. Although performance would be fine, as user
+		// you often do not want e.g. "go net/http" to match a repo like github.com/jane/goexploration
+		// because then your search would be limited to those repos only. Note that substring matching
+		// only applies to lexemes, so e.g. `sourcegraph/sourcegraph` would still match
+		// `sourcegraph/sourcegraph-testing`
+		apidocs.RepoSearchQuery("tsv", possibleRepos),
+	)))
+}
+
+const documentationSearchRepoNameIDsQuery = `
+-- source: enterprise/internal/codeintel/stores/lsifstore/documentation.go:documentationSearchRepos
+SELECT id
+FROM lsif_data_docs_search_repo_names_$SUFFIX
+WHERE %s -- e.g. (tsv @@ '''gorilla'' <-> ''/'' <-> ''mux''')
+LIMIT 100
+`
+
 // maximum candidates we'll consider: the more candidates we have the better ranking we get, but the
 // slower searching is. See https://about.sourcegraph.com/blog/postgres-text-search-balancing-query-time-and-relevancy/
 // 10,000 is an arbitrary choice based on current Sourcegraph.com corpus size and performance, it'll
@@ -373,6 +406,7 @@ var debugAPIDocsSearchCandidates, _ = strconv.ParseInt(env.Get("DEBUG_API_DOCS_S
 // access to.
 func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query string, repos []string) (_ []precise.DocumentationSearchResult, err error) {
 	ctx, _, endObservation := s.operations.documentationSearch.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("table", tableSuffix),
 		log.String("query", query),
 		log.String("repos", fmt.Sprint(repos)),
 	}})
@@ -386,37 +420,41 @@ func (s *Store) DocumentationSearch(ctx context.Context, tableSuffix, query stri
 	q := apidocs.ParseQuery(query)
 	resultLimit := 10
 
-	// In the repo clause we forbid substring matches. Although performance would be fine, asa user
-	// you often do not want e.g. "go net/http" to match a repo like github.com/jane/goexploration
-	// because then your search would be limited to those repos only. Note that substring matching
-	// only applies to lexemes, so
+	// Can we find matching repository names? If so, we'll filter to just those. This helps reduce
+	// our search space, which means we can use more fuzzy matching (like substring matching) for
+	// better results - so this is ideal.
+	matchingRepoNameIDs, err := s.documentationSearchRepoNameIDs(ctx, tableSuffix, q.PossibleRepos)
 
-	repoClause := apidocs.RepoSearchQuery("tsv", q.PossibleRepos)
+	repoNamesWhereClause := sqlf.Sprintf("")
+	if len(matchingRepoNameIDs) > 0 {
+		repoNamesWhereClause = sqlf.Sprintf("AND result.repo_name_id = ANY(%s)", pq.Array(matchingRepoNameIDs))
+	}
+
+	var primary []*sqlf.Query
+	if len(matchingRepoNameIDs) > 0 {
+		// Primary WHERE clauses to use when searching over a smaller subset of repositories.
+		primary = append(primary, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
+		primary = append(primary, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+		primary = append(primary, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
+		primary = append(primary, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
+	} else {
+		// Primary WHERE clauses to use when searching over ALL repositories. Because there is so
+		// much to search over in this case, we do not do prefix/suffix matching (so no reverse
+		// index lookups), and do not use ":*" tsquery prefix matching operators (which are very
+		// slow).
+		primary = append(primary, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, false))
+		primary = append(primary, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, false))
+	}
+
 	langTagsClause := apidocs.TextSearchQuery("tsv", q.MetaTerms, q.SubStringMatches)
-
-	// Primary WHERE clauses to use when searching over a smaller subset of repositories.
-	var subsetRepos []*sqlf.Query
-	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, q.SubStringMatches))
-	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
-	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, q.SubStringMatches))
-	subsetRepos = append(subsetRepos, apidocs.TextSearchQuery("result.label_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches))
-
-	// Primary WHERE clauses to use when searching over ALL repositories. Because there is so much
-	// to search over in this case, we do not do prefix/suffix matching (so no reverse index
-	// lookups), and do not use ":*" tsquery prefix matching operators (which are very slow).
-	var allRepos []*sqlf.Query
-	allRepos = append(allRepos, apidocs.TextSearchQuery("result.search_key_tsv", q.MainTerms, false))
-	allRepos = append(allRepos, apidocs.TextSearchQuery("result.label_tsv", q.MainTerms, false))
-
 	return s.scanDocumentationSearchResults(s.Store.Query(ctx, sqlf.Sprintf(
 		strings.ReplaceAll(documentationSearchQuery, "$SUFFIX", tableSuffix),
 		langTagsClause, // matching_lang_names CTE WHERE conditions
-		repoClause,     // matching_repo_names CTE WHERE conditions
 		langTagsClause, // matching_tags CTE WHERE conditions
 
-		sqlf.Sprintf("(%s)", sqlf.Join(subsetRepos, "OR")), // primary WHERE clause for searching over a small set of repos
-		sqlf.Sprintf("(%s)", sqlf.Join(allRepos, "OR")),    // primary WHERE clause for searching over ALL repos
-		debugAPIDocsSearchCandidates,                       // maximum candidates for consideration.
+		sqlf.Sprintf("(%s)", sqlf.Join(primary, "OR")), // primary WHERE clause
+		repoNamesWhereClause,
+		debugAPIDocsSearchCandidates, // maximum candidates for consideration.
 
 		apidocs.TextSearchRank("search_key_tsv", q.MainTerms, q.SubStringMatches),                          // search_key_rank
 		apidocs.TextSearchRank("search_key_reverse_tsv", apidocs.Reverse(q.MainTerms), q.SubStringMatches), // search_key_reverse_rank
@@ -435,15 +473,6 @@ WITH
 		SELECT id, lang_name
 		FROM lsif_data_docs_search_lang_names_$SUFFIX
 		WHERE %s LIMIT 1 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
-	),
-
-	-- Can we find matching repository names? If so, we'll filter to just those. This helps reduce
-	-- our search space, which means we can use more fuzzy matching (like substring matching) for
-	-- better results - so this is ideal.
-	matching_repo_names AS (
-		SELECT id, repo_name
-		FROM lsif_data_docs_search_repo_names_$SUFFIX
-		WHERE %s LIMIT 100 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http''')
 	),
 
 	-- Can we find a matching sequence of documentation/symbol tags? e.g. "private variable".
@@ -474,37 +503,38 @@ FROM (
 		-- If we found matching repo names, then we're searching over a very limited subset of repos
 		-- and can afford to enable the (much) more expensive substring matching which makes search
 		-- fuzzier. This is very nice, but just too expensive to use when searching over all repos.
-		CASE WHEN (SELECT COUNT(*) FROM matching_repo_names) > 0 THEN
-			-- e.g.
-			-- (
-			--   (
-			--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
-			--     OR result.search_key_tsv @@ '''Router'':*'
-			--   ) OR (
-			--     result.search_key_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
-			--     OR result.search_key_reverse_tsv @@ '''retuoR'':*'
-			--   ) OR (
-			--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
-			--     OR result.label_tsv @@ '''Router'':*'
-			--   ) OR (
-			--     result.label_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
-			--     OR result.label_reverse_tsv @@ '''retuoR'':*'
-			--   )
-			-- )
-			%s
-		ELSE
-			-- e.g.
-			-- (
-			--   (
-			--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'''
-			--     OR result.search_key_tsv @@ '''Router'''
-			--   ) OR (
-			--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'''
-			--     OR result.label_tsv @@ '''Router'''
-			--   )
-			-- )
-			%s
-		END
+		-- For example:
+		--
+		-- (
+		--   (
+		--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
+		--     OR result.search_key_tsv @@ '''Router'':*'
+		--   ) OR (
+		--     result.search_key_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
+		--     OR result.search_key_reverse_tsv @@ '''retuoR'':*'
+		--   ) OR (
+		--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'':*'
+		--     OR result.label_tsv @@ '''Router'':*'
+		--   ) OR (
+		--     result.label_reverse_tsv @@ '''ptth'' <-> ''/'' <-> ''ten'':*'
+		--     OR result.label_reverse_tsv @@ '''retuoR'':*'
+		--   )
+		-- )
+		--
+		-- If we're matching over many repos, we choose a much lighter weight query that is very
+		-- strict and thus turns up worse results:
+		--
+		-- (
+		--   (
+		--     result.search_key_tsv @@ '''net'' <-> ''/'' <-> ''http'''
+		--     OR result.search_key_tsv @@ '''Router'''
+		--   ) OR (
+		--     result.label_tsv @@ '''net'' <-> ''/'' <-> ''http'''
+		--     OR result.label_tsv @@ '''Router'''
+		--   )
+		-- )
+		--
+		%s
 
 		-- Select only results that come from the latest upload, since lsif_data_docs_search_* may
 		-- have results from multiple uploads (the table is cleaned up asynchronously in the
@@ -525,9 +555,7 @@ FROM (
 		ELSE result.lang_name_id IS NOT NULL END)
 
 		-- If we found matching repo names, filter to just those.
-		AND (CASE WHEN (SELECT COUNT(*) FROM matching_repo_names) > 0 THEN
-			result.repo_name_id = ANY(array(SELECT id FROM matching_repo_names))
-		ELSE result.repo_name_id IS NOT NULL END)
+		%s
 
 		-- If we found matching tags, filter to just those.
 		AND (CASE WHEN (SELECT COUNT(*) FROM matching_tags) > 0 THEN
