@@ -323,12 +323,9 @@ func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositorie
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorValue = ""
-		opt.CursorDirection = "next"
+		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{

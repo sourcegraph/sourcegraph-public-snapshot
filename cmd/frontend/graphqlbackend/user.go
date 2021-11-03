@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -386,12 +385,9 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorValue = ""
-		opt.CursorDirection = "next"
+		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{
