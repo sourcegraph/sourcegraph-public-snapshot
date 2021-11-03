@@ -23,6 +23,10 @@ type RepoContent struct {
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
 type SubRepoPermissionChecker interface {
+	// CurrentUserPermissions returns the level of access the authenticated user within
+	// the provided context has.
+	//
+	// If the context is unauthenticated, ErrUnauthenticated is returned.
 	CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error)
 }
 
@@ -55,7 +59,7 @@ type SubRepoPermsClient struct {
 func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
-		return None, ErrForbidden{}
+		return None, &ErrUnauthenticated{}
 	}
 
 	return s.Permissions(ctx, a.UID, content)
