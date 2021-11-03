@@ -135,3 +135,10 @@ type Provider interface {
 	// problems.
 	Validate() (problems []string)
 }
+
+// ErrUnauthenticated indicates an unauthenticated request.
+type ErrUnauthenticated struct{}
+
+func (e ErrUnauthenticated) Error() string {
+	return "request is unauthenticated"
+}
