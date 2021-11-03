@@ -184,7 +184,7 @@ extend type Query {
         query: String!
 
         """
-        A list of repositories to limit the search to (all by default)
+        A list of names of repositories to limit the search to (all by default)
         """
         repos: [String!]
     ): DocumentationSearchResults!
