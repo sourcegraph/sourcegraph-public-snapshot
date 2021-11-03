@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -92,7 +91,7 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db          dbutil.DB
+	db          database.DB
 	opt         database.ReposListOptions
 	cloned      bool
 	notCloned   bool
@@ -112,7 +111,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		if envvar.SourcegraphDotComMode() {
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)) == nil; !isSiteAdmin {
+			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
@@ -210,7 +209,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(r.db), repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
 	}
 	return resolvers, nil
 }
@@ -222,13 +221,13 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 			return nil, err
 		}
 	} else if r.opt.OrgID != 0 {
-		if err := backend.CheckOrgAccess(ctx, database.NewDB(r.db), r.opt.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 		// count does not respect repository permissions.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
 	}
@@ -263,7 +262,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	count, err := database.Repos(r.db).Count(ctx, r.opt)
+	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
 

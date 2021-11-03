@@ -24,6 +24,4 @@ type MockStores struct {
 	ExternalServices MockExternalServices
 
 	Authz MockAuthz
-
-	FeatureFlags MockFeatureFlags
 }
