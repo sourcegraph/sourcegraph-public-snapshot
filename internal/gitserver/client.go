@@ -60,8 +60,8 @@ func ResetClientMocks() {
 
 type readallSubRepoPermissionsChecker struct{}
 
-func (m *readallSubRepoPermissionsChecker) CurrentUserCanRead(ctx context.Context, content authz.RepoContent) error {
-	return nil
+func (m *readallSubRepoPermissionsChecker) CurrentUserPermissions(ctx context.Context, content authz.RepoContent) (authz.Perms, error) {
+	return authz.Read, nil
 }
 
 // NewClient returns a new gitserver.Client instantiated with default arguments

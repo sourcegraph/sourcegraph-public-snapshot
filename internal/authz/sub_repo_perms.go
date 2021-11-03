@@ -23,7 +23,7 @@ type RepoContent struct {
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
 type SubRepoPermissionChecker interface {
-	CurrentUserCanRead(ctx context.Context, content RepoContent) error
+	CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error)
 }
 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
@@ -52,23 +52,13 @@ type SubRepoPermsClient struct {
 	PermissionsGetter SubRepoPermissionsGetter
 }
 
-// CurrentUserCanRead returns a nil error if the user is allowed to read the
-// given content.
-func (s *SubRepoPermsClient) CurrentUserCanRead(ctx context.Context, content RepoContent) error {
+func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
-		return ErrForbidden{}
+		return None, ErrForbidden{}
 	}
 
-	perms, err := s.Permissions(ctx, a.UID, content)
-	if err != nil {
-		return errors.Wrap(err, "checking sub-repo permissions")
-	}
-	if !perms.Include(Read) {
-		return ErrForbidden{}
-	}
-
-	return nil
+	return s.Permissions(ctx, a.UID, content)
 }
 
 func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {

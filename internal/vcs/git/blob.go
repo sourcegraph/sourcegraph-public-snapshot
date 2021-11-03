@@ -92,12 +92,15 @@ func newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 		return nil, err
 	}
 
-	err := gitserver.DefaultClient.SubRepoPermissionsChecker.CurrentUserCanRead(ctx, authz.RepoContent{
+	perms, err := gitserver.DefaultClient.SubRepoPermissionsChecker.CurrentUserPermissions(ctx, authz.RepoContent{
 		Repo: repo,
 		Path: name,
 	})
 	if err != nil {
 		return nil, err
+	}
+	if !perms.Include(authz.Read) {
+		return nil, authz.ErrForbidden{}
 	}
 
 	cmd := gitserver.DefaultClient.Command("git", "show", string(commit)+":"+name)
