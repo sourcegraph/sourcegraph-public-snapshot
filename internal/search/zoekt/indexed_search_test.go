@@ -500,7 +500,7 @@ func TestZoektResultCountFactor(t *testing.T) {
 func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: types.RepoName{ID: api.RepoID(1), Name: "test/repo"},
+			Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "test/repo"},
 			Revs: []search.RevisionSpecifier{
 				{RevSpec: revSpec},
 			},
@@ -626,7 +626,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		}},
 	}
 
-	results := zoektFileMatchToSymbolResults(types.RepoName{Name: "foo"}, "master", file)
+	results := zoektFileMatchToSymbolResults(types.MinimalRepo{Name: "foo"}, "master", file)
 	var symbols []result.Symbol
 	for _, res := range results {
 		symbols = append(symbols, res.Symbol)
@@ -675,7 +675,7 @@ func TestZoektGlobalQueryScope(t *testing.T) {
 	cases := []struct {
 		name    string
 		opts    search.RepoOptions
-		priv    []types.RepoName
+		priv    []types.MinimalRepo
 		want    string
 		wantErr string
 	}{{
@@ -691,14 +691,14 @@ func TestZoektGlobalQueryScope(t *testing.T) {
 			NoArchived: true,
 			NoForks:    true,
 		},
-		priv: []types.RepoName{{ID: 1}, {ID: 2}},
+		priv: []types.MinimalRepo{{ID: 1}, {ID: 2}},
 		want: `(or (and branch="HEAD" rawConfig:RcOnlyPublic|RcNoForks|RcNoArchived) (branchesrepos HEAD:2))`,
 	}, {
 		name: "private",
 		opts: search.RepoOptions{
 			Visibility: query.Private,
 		},
-		priv: []types.RepoName{{ID: 1}, {ID: 2}},
+		priv: []types.MinimalRepo{{ID: 1}, {ID: 2}},
 		want: `(branchesrepos HEAD:2)`,
 	}, {
 		name: "minusrepofilter",
@@ -796,8 +796,8 @@ func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	return r
 }
 
-func mkRepos(names ...string) []types.RepoName {
-	var repos []types.RepoName
+func mkRepos(names ...string) []types.MinimalRepo {
+	var repos []types.MinimalRepo
 	for _, name := range names {
 		sum := md5.Sum([]byte(name))
 		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
@@ -807,7 +807,7 @@ func mkRepos(names ...string) []types.RepoName {
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.RepoName{ID: id, Name: api.RepoName(name)})
+		repos = append(repos, types.MinimalRepo{ID: id, Name: api.RepoName(name)})
 	}
 	return repos
 }

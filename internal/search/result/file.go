@@ -17,7 +17,7 @@ type File struct {
 	// preserve the original revision specifier from the user instead of navigating them to the
 	// absolute commit ID when they select a result.
 	InputRev *string        `json:"-"`
-	Repo     types.RepoName `json:"-"`
+	Repo     types.MinimalRepo `json:"-"`
 	CommitID api.CommitID   `json:"-"`
 	Path     string
 }
@@ -49,7 +49,7 @@ type FileMatch struct {
 	LimitHit bool
 }
 
-func (fm *FileMatch) RepoName() types.RepoName {
+func (fm *FileMatch) RepoName() types.MinimalRepo {
 	return fm.File.Repo
 }
 

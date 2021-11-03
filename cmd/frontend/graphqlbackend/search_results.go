@@ -136,11 +136,11 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
-		Name types.RepoName
+		Name types.MinimalRepo
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
@@ -1569,7 +1569,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
-		userPrivateRepos, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		userPrivateRepos, err := database.Repos(r.db).ListMinimalRepos(ctx, database.ReposListOptions{
 			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},

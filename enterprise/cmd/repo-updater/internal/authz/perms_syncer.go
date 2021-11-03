@@ -184,9 +184,9 @@ func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
 // elements at a time to workaround Postgres' limit of 65535 bind parameters
 // using exact name matching. This method only includes private repository names
 // and does not do deduplication on the returned list.
-func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.RepoName, error) {
+func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.MinimalRepo, error) {
 	if len(repoSpecs) == 0 {
-		return []types.RepoName{}, nil
+		return []types.MinimalRepo{}, nil
 	}
 
 	remaining := repoSpecs
@@ -195,9 +195,9 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 		nextCut = len(remaining)
 	}
 
-	repoNames := make([]types.RepoName, 0, len(repoSpecs))
+	repoNames := make([]types.MinimalRepo, 0, len(repoSpecs))
 	for nextCut > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepos: remaining[:nextCut],
 				OnlyPrivate:   true,
@@ -401,7 +401,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,
@@ -545,7 +545,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalServices(ctx context.Context, use
 	// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
 	// are meaningless and no need to trigger a DB query.
 	if len(includeContainsSpecs) > 0 {
-		rs, err := s.reposStore.RepoStore.ListRepoNames(ctx,
+		rs, err := s.reposStore.RepoStore.ListMinimalRepos(ctx,
 			database.ReposListOptions{
 				ExternalRepoIncludeContains: includeContainsSpecs,
 				ExternalRepoExcludeContains: excludeContainsSpecs,

@@ -142,9 +142,9 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 
 type reposListServer struct {
 	// ListIndexable returns the repositories to index.
-	ListIndexable func(context.Context) ([]types.RepoName, error)
+	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
-	StreamRepoNames func(context.Context, database.ReposListOptions, func(*types.RepoName)) error
+	StreamMinimalRepos func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -154,7 +154,7 @@ type reposListServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error)
+		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -189,10 +189,10 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, max(len(opt.Indexed), len(opt.IndexedIDs)))
-		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
+		err = h.StreamMinimalRepos(r.Context(), database.ReposListOptions{
 			IDs:   opt.IndexedIDs,
 			Names: opt.Indexed,
-		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
+		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {
 			return err

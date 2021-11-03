@@ -116,7 +116,7 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	reposStore := database.Repos(db)
 	reposList := &reposListServer{
 		ListIndexable:   backend.Repos.ListIndexable,
-		StreamRepoNames: reposStore.StreamRepoNames,
+		StreamMinimalRepos: reposStore.StreamMinimalRepos,
 		Indexers:        search.Indexers(),
 	}
 

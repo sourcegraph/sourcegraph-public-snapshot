@@ -35,7 +35,7 @@ type Resolved struct {
 
 	// Perf improvement: we precompute this map during repo resolution to save time
 	// on the critical path.
-	RepoSet         map[api.RepoID]types.RepoName
+	RepoSet         map[api.RepoID]types.MinimalRepo
 	MissingRepoRevs []*search.RepositoryRevisions
 	OverLimit       bool
 }
@@ -82,7 +82,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	var searchableRepos []types.RepoName
+	var searchableRepos []types.MinimalRepo
 
 	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
 		start := time.Now()
@@ -98,7 +98,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		}
 	}
 
-	var repos []types.RepoName
+	var repos []types.MinimalRepo
 	if len(searchableRepos) > 0 {
 		repos = searchableRepos
 		if len(repos) > limit {
@@ -134,7 +134,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			}
 		}
 
-		repos, err = r.DB.Repos().ListRepoNames(ctx, options)
+		repos, err = r.DB.Repos().ListMinimalRepos(ctx, options)
 		tr.LazyPrintf("Repos.List - done")
 
 		if err != nil {
@@ -154,7 +154,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			return Resolved{}, err
 		}
 	}
-	repoSet := make(map[api.RepoID]types.RepoName, len(repos))
+	repoSet := make(map[api.RepoID]types.MinimalRepo, len(repos))
 
 	for _, repo := range repos {
 		var repoRev search.RepositoryRevisions
@@ -500,11 +500,11 @@ func findPatternRevs(includePatterns []string) (includePatternRevs []patternRevs
 	return
 }
 
-type searchableReposFunc func(ctx context.Context) ([]types.RepoName, error)
+type searchableReposFunc func(ctx context.Context) ([]types.MinimalRepo, error)
 
 // searchableRepositories returns the intersection of calling gettRawSearchableRepos
 // (db) and indexed repos (zoekt), minus repos matching excludePatterns.
-func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.RepoName, err error) {
+func searchableRepositories(ctx context.Context, getRawSearchableRepos searchableReposFunc, excludePatterns []string) (_ []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "searchableRepositories", "")
 	defer func() {
 		tr.SetError(err)

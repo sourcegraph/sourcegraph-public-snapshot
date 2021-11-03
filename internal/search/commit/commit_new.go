@@ -233,7 +233,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	return newPred
 }
 
-func protocolMatchToCommitMatch(repo types.RepoName, diff bool, in protocol.CommitMatch) *result.CommitMatch {
+func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var (
 		matchBody       string
 		matchHighlights []result.HighlightedRange
