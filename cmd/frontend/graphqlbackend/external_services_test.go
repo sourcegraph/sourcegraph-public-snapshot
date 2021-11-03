@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -25,26 +26,15 @@ import (
 )
 
 func TestAddExternalService(t *testing.T) {
-	db := new(dbtesting.MockDB)
-
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-			return &types.User{ID: 1}, nil
-		}
-		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-			return &types.User{ID: 1}, nil
-		}
-		defer func() {
-			database.Mocks.Users = database.MockUsers{}
-		}()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.TagsFunc.SetDefaultReturn(map[string]bool{}, nil)
 
 		t.Run("user mode not enabled and no namespace", func(t *testing.T) {
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-				return map[string]bool{}, nil
-			}
-			defer func() {
-				database.Mocks.Users.Tags = nil
-			}()
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := newSchemaResolver(db).AddExternalService(ctx, &addExternalServiceArgs{})
@@ -57,12 +47,8 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("user mode not enabled and has namespace", func(t *testing.T) {
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-				return map[string]bool{}, nil
-			}
-			defer func() {
-				database.Mocks.Users.Tags = nil
-			}()
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(1)
@@ -90,12 +76,11 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-				return map[string]bool{}, nil
-			}
-			defer func() {
-				database.Mocks.Users.Tags = nil
-			}()
+			users := dbmock.NewMockUserStoreFrom(users)
+			users.CurrentUserAllowedExternalServicesFunc.SetDefaultReturn(conf.ExternalServiceModePublic, nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := MarshalUserID(2)
@@ -123,19 +108,15 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-				return map[string]bool{}, nil
-			}
-			defer func() {
-				database.Mocks.Users.Tags = nil
-			}()
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.CreateFunc.SetDefaultReturn(nil)
 
-			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-				return nil
-			}
-			defer func() {
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			users := dbmock.NewMockUserStoreFrom(users)
+			users.CurrentUserAllowedExternalServicesFunc.SetDefaultReturn(conf.ExternalServiceModePublic, nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := int32(1)
@@ -166,33 +147,19 @@ func TestAddExternalService(t *testing.T) {
 			})
 			defer conf.Mock(nil)
 
-			database.Mocks.Users.Tags = func(ctx context.Context, userID int32) (map[string]bool, error) {
-				return map[string]bool{
-					database.TagAllowUserExternalServicePublic: true,
-				}, nil
-			}
-			defer func() {
-				database.Mocks.Users.Tags = nil
-			}()
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.CreateFunc.SetDefaultReturn(nil)
 
-			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-				return nil
-			}
-			defer func() {
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-			}()
+			users := dbmock.NewMockUserStoreFrom(users)
+			users.CurrentUserAllowedExternalServicesFunc.SetDefaultReturn(conf.ExternalServiceModePublic, nil)
+			users.GetByIDFunc.SetDefaultReturn(
+				&types.User{ID: 1, Tags: []string{database.TagAllowUserExternalServicePublic}},
+				nil,
+			)
 
-			database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-				return &types.User{
-					ID: 1,
-					Tags: []string{
-						database.TagAllowUserExternalServicePublic,
-					},
-				}, nil
-			}
-			defer func() {
-				database.Mocks.Users = database.MockUsers{}
-			}()
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			userID := int32(1)
@@ -216,12 +183,12 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("org namespace requested, but feature is not allowed", func(t *testing.T) {
-			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
-				return false, nil
-			}
-			defer func() {
-				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
-			}()
+			featureFlags := dbmock.NewMockFeatureFlagStore()
+			featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(false, nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 			ctx := context.Background()
 			orgID := MarshalOrgID(1)
@@ -242,21 +209,19 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("org namespace requested, but user does not belong to the org", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-				return &types.User{ID: 1, SiteAdmin: true}, nil
-			}
-			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return nil, nil
-			}
-			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
-				return true, nil
-			}
+			users := dbmock.NewMockUserStoreFrom(users)
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-			defer func() {
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-				database.Mocks.Users = database.MockUsers{}
-				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
-			}()
+			orgMembers := dbmock.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+
+			featureFlags := dbmock.NewMockFeatureFlagStore()
+			featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			orgID := MarshalOrgID(1)
@@ -277,28 +242,26 @@ func TestAddExternalService(t *testing.T) {
 		})
 
 		t.Run("org namespace requested, and user belongs to the same org", func(t *testing.T) {
-			database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-				return &types.User{ID: 10, SiteAdmin: true}, nil
-			}
-			database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-				return &types.OrgMembership{
-					ID:     1,
-					OrgID:  42,
-					UserID: 10,
-				}, nil
-			}
-			database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-				return nil
-			}
-			database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
-				return true, nil
-			}
-			defer func() {
-				database.Mocks.Users = database.MockUsers{}
-				database.Mocks.OrgMembers = database.MockOrgMembers{}
-				database.Mocks.ExternalServices = database.MockExternalServices{}
-				database.Mocks.FeatureFlags = database.MockFeatureFlags{}
-			}()
+			users := dbmock.NewMockUserStoreFrom(users)
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 10, SiteAdmin: true}, nil)
+
+			orgMembers := dbmock.NewMockOrgMemberStore()
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(
+				&types.OrgMembership{ID: 1, OrgID: 42, UserID: 10},
+				nil,
+			)
+
+			externalServices := dbmock.NewMockExternalServiceStore()
+			externalServices.CreateFunc.SetDefaultReturn(nil)
+
+			featureFlags := dbmock.NewMockFeatureFlagStore()
+			featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+			db := dbmock.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 10})
 			orgID := MarshalOrgID(42)
@@ -319,21 +282,19 @@ func TestAddExternalService(t *testing.T) {
 		})
 	})
 
-	database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
-		return &types.User{SiteAdmin: true}, nil
-	}
-	database.Mocks.ExternalServices.Create = func(ctx context.Context, confGet func() *conf.Unified, externalService *types.ExternalService) error {
-		return nil
-	}
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	t.Cleanup(func() {
-		database.Mocks.Users = database.MockUsers{}
-		database.Mocks.ExternalServices = database.MockExternalServices{}
-	})
+	externalServices := dbmock.NewMockExternalServiceStore()
+	externalServices.CreateFunc.SetDefaultReturn(nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				addExternalService(input: {
@@ -363,7 +324,7 @@ func TestAddExternalService(t *testing.T) {
 }
 
 func TestUpdateExternalService(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -384,7 +345,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -410,7 +371,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -443,7 +404,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -477,7 +438,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			_, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -515,7 +476,7 @@ func TestUpdateExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			_, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -544,7 +505,7 @@ func TestUpdateExternalService(t *testing.T) {
 		}()
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(database.NewDB(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -592,7 +553,7 @@ func TestUpdateExternalService(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				updateExternalService(input: {
@@ -620,7 +581,7 @@ func TestUpdateExternalService(t *testing.T) {
 }
 
 func TestDeleteExternalService(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		database.Mocks.Users.GetByCurrentAuthUser = func(context.Context) (*types.User, error) {
@@ -641,7 +602,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -665,7 +626,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 
@@ -697,7 +658,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			_, err := newSchemaResolver(database.NewDB(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if err != nil {
@@ -725,7 +686,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 
@@ -763,7 +724,7 @@ func TestDeleteExternalService(t *testing.T) {
 			}()
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			_, err := newSchemaResolver(database.NewDB(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if err != nil {
@@ -795,7 +756,7 @@ func TestDeleteExternalService(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			mutation {
 				deleteExternalService(externalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=") {
@@ -816,7 +777,7 @@ func TestDeleteExternalService(t *testing.T) {
 }
 
 func TestExternalServices(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	db := database.NewDB(nil)
 
 	t.Run("authenticated as non-admin", func(t *testing.T) {
 		t.Run("read users external services", func(t *testing.T) {
@@ -831,7 +792,7 @@ func TestExternalServices(t *testing.T) {
 			})
 
 			id := MarshalUserID(2)
-			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -855,7 +816,7 @@ func TestExternalServices(t *testing.T) {
 			})
 
 			id := MarshalOrgID(2)
-			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -877,7 +838,7 @@ func TestExternalServices(t *testing.T) {
 				database.Mocks.Users = database.MockUsers{}
 			})
 
-			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := backend.ErrNoAccessExternalService; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -900,7 +861,7 @@ func TestExternalServices(t *testing.T) {
 			})
 
 			id := MarshalUserID(2)
-			result, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
+			result, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if want := backend.ErrNoAccessExternalService; err != want {
@@ -923,7 +884,7 @@ func TestExternalServices(t *testing.T) {
 			})
 
 			id := MarshalUserID(0)
-			_, err := newSchemaResolver(db).ExternalServices(context.Background(), &ExternalServicesArgs{
+			_, err := newSchemaResolver(database.NewDB(db)).ExternalServices(context.Background(), &ExternalServicesArgs{
 				Namespace: &id,
 			})
 			if err != nil {
@@ -976,7 +937,7 @@ func TestExternalServices(t *testing.T) {
 	RunTests(t, []*Test{
 		// Read all external services
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices() {
@@ -996,7 +957,7 @@ func TestExternalServices(t *testing.T) {
 		},
 		// Not allowed to read someone else's external service
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(namespace: "VXNlcjoy") {
@@ -1017,7 +978,7 @@ func TestExternalServices(t *testing.T) {
 		},
 		// LastSyncError included
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(namespace: "VXNlcjow") {
@@ -1041,7 +1002,7 @@ func TestExternalServices(t *testing.T) {
 		},
 		// Pagination
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(first: 1) {
@@ -1065,7 +1026,7 @@ func TestExternalServices(t *testing.T) {
 		`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 			{
 				externalServices(after: "RXh0ZXJuYWxTZXJ2aWNlOjE=") {
@@ -1160,7 +1121,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			}()
 
 			r := &externalServiceConnectionResolver{
-				db:  db,
+				db:  database.NewDB(db),
 				opt: test.opt,
 			}
 			pageInfo, err := r.PageInfo(context.Background())

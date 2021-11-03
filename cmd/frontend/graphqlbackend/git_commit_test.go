@@ -113,6 +113,7 @@ func TestGitCommitResolver(t *testing.T) {
 }
 
 func TestGitCommitFileNames(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.ExternalServices.List = func(opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		return nil, nil
@@ -133,7 +134,7 @@ func TestGitCommitFileNames(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {

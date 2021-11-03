@@ -78,7 +78,7 @@ func (r *registryPublisher) RegistryExtensionConnectionURL() (*string, error) {
 
 var errRegistryUnknownPublisher = errors.New("unknown registry extension publisher")
 
-func getRegistryPublisher(ctx context.Context, db dbutil.DB, publisher dbPublisher) (*registryPublisher, error) {
+func getRegistryPublisher(ctx context.Context, db database.DB, publisher dbPublisher) (*registryPublisher, error) {
 	switch {
 	case publisher.UserID != 0:
 		user, err := graphqlbackend.UserByIDInt32(ctx, db, publisher.UserID)
@@ -139,7 +139,7 @@ func (p *registryPublisherID) viewerCanAdminister(ctx context.Context, db dbutil
 	switch {
 	case p.userID != 0:
 		// 🚨 SECURITY: Check that the current user is either the publisher or a site admin.
-		return backend.CheckSiteAdminOrSameUser(ctx, db, p.userID)
+		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), p.userID)
 	case p.orgID != 0:
 		// 🚨 SECURITY: Check that the current user is a member of the publisher org.
 		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, p.orgID)

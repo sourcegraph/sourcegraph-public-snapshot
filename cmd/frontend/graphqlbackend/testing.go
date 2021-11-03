@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -15,20 +14,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-var (
-	parseSchemaOnce sync.Once
-	parseSchemaErr  error
-	parsedSchema    *graphql.Schema
-)
-
-func mustParseGraphQLSchema(t *testing.T) *graphql.Schema {
+func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
 	t.Helper()
 
-	parseSchemaOnce.Do(func() {
-		parsedSchema, parseSchemaErr = NewSchema(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-	})
+	parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}

@@ -31,6 +31,9 @@ type DBStore interface {
 	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]dbstore.SourcedCommits, error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, int, error)
+	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (configurationPolicies []dbstore.ConfigurationPolicy, err error)
+	RepoIDsByGlobPattern(ctx context.Context, pattern string) ([]int, error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int) (err error)
 }
 
 type DBStoreShim struct {

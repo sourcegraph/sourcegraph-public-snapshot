@@ -34,6 +34,7 @@ import { ChangesetsArchivedNotice } from './ChangesetsArchivedNotice'
 import { ClosedNotice } from './ClosedNotice'
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 import { UnpublishedNotice } from './UnpublishedNotice'
+import { WebhookAlert } from './WebhookAlert'
 
 export interface BatchChangeDetailsPageProps extends BatchChangeDetailsProps {
     /** The namespace ID. */
@@ -144,6 +145,7 @@ export const BatchChangeDetailsPage: React.FunctionComponent<BatchChangeDetailsP
                 className="mb-3"
             />
             <ChangesetsArchivedNotice history={history} location={location} />
+            <WebhookAlert batchChange={batchChange} />
             <BatchChangeStatsCard
                 closedAt={batchChange.closedAt}
                 stats={batchChange.changesetsStats}

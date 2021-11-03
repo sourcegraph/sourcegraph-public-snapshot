@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -24,21 +25,20 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		username := "alice"
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
-		db := new(dbtesting.MockDB)
 
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-			return &types.User{Username: username}, nil
-		}
-		database.Mocks.Orgs.GetOrgsWithRepositoriesByUserID = func(context.Context, int32) ([]*types.Org, error) {
-			return []*types.Org{}, nil
-		}
-		defer func() {
-			database.Mocks = database.MockStores{}
-		}()
+		users := dbmock.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
+
+		orgs := dbmock.NewMockOrgStore()
+		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{}, nil)
+
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgsFunc.SetDefaultReturn(orgs)
 
 		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
 		if err != nil {
@@ -61,6 +61,9 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 				t.Fatal("auto-defined search contexts should not return repositories")
 			}
 		}
+
+		mockrequire.Called(t, orgs.GetOrgsWithRepositoriesByUserIDFunc)
+		mockrequire.Called(t, users.GetByIDFunc)
 	})
 
 	t.Run("Auto defined search contexts for user where 1 organization has repository connected", func(t *testing.T) {
@@ -71,26 +74,23 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		orgDisplayName := "ACME Company"
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: key})
-		db := new(dbtesting.MockDB)
 
 		orig := envvar.SourcegraphDotComMode()
 		envvar.MockSourcegraphDotComMode(true)
 		defer envvar.MockSourcegraphDotComMode(orig) // reset
 
-		database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-			return &types.User{Username: username}, nil
-		}
-		database.Mocks.Orgs.GetOrgsWithRepositoriesByUserID = func(context.Context, int32) ([]*types.Org, error) {
-			return []*types.Org{{
-				ID:          orgID,
-				Name:        orgName,
-				DisplayName: &orgDisplayName,
-			}}, nil
-		}
+		users := dbmock.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: username}, nil)
+		orgs := dbmock.NewMockOrgStore()
+		orgs.GetOrgsWithRepositoriesByUserIDFunc.SetDefaultReturn([]*types.Org{{
+			ID:          orgID,
+			Name:        orgName,
+			DisplayName: &orgDisplayName,
+		}}, nil)
 
-		defer func() {
-			database.Mocks = database.MockStores{}
-		}()
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.OrgsFunc.SetDefaultReturn(orgs)
 
 		searchContexts, err := (&Resolver{db: db}).AutoDefinedSearchContexts(ctx)
 		if err != nil {
@@ -104,11 +104,15 @@ func TestAutoDefinedSearchContexts(t *testing.T) {
 		if !reflect.DeepEqual(searchContexts, want) {
 			t.Fatalf("got %+v, want %+v", searchContexts, want)
 		}
+
+		mockrequire.Called(t, users.GetByIDFunc)
+		mockrequire.Called(t, orgs.GetOrgsWithRepositoriesByUserIDFunc)
 	})
 }
 
 func TestSearchContexts(t *testing.T) {
-	db := new(dbtesting.MockDB)
+	t.Parallel()
+
 	ctx := context.Background()
 
 	userID := int32(1)
@@ -138,20 +142,19 @@ func TestSearchContexts(t *testing.T) {
 		},
 	}
 
-	database.Mocks.SearchContexts.CountSearchContexts = func(ctx context.Context, opts database.ListSearchContextsOptions) (int32, error) {
-		return 0, nil
-	}
-	defer func() { database.Mocks.SearchContexts.CountSearchContexts = nil }()
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			database.Mocks.SearchContexts.ListSearchContexts = func(ctx context.Context, pageOpts database.ListSearchContextsPageOptions, opts database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
+			sc := dbmock.NewMockSearchContextsStore()
+			sc.CountSearchContextsFunc.SetDefaultReturn(0, nil)
+			sc.ListSearchContextsFunc.SetDefaultHook(func(ctx context.Context, pageOpts database.ListSearchContextsPageOptions, opts database.ListSearchContextsOptions) ([]*types.SearchContext, error) {
 				if diff := cmp.Diff(tt.wantOpts, opts); diff != "" {
 					t.Fatalf("Mismatch (-want +got):\n%s", diff)
 				}
 				return []*types.SearchContext{}, nil
-			}
-			defer func() { database.Mocks.SearchContexts.ListSearchContexts = nil }()
+			})
+
+			db := dbmock.NewMockDB()
+			db.SearchContextsFunc.SetDefaultReturn(sc)
 
 			_, err := (&Resolver{db: db}).SearchContexts(ctx, tt.args)
 			expectErr := tt.wantErr != ""
@@ -164,6 +167,8 @@ func TestSearchContexts(t *testing.T) {
 			if expectErr && err != nil && !strings.Contains(err.Error(), tt.wantErr) {
 				t.Fatalf("wanted error containing %s, got %s", tt.wantErr, err)
 			}
+			mockrequire.Called(t, sc.CountSearchContextsFunc)
+			mockrequire.Called(t, sc.ListSearchContextsFunc)
 		})
 	}
 }

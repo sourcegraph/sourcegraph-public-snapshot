@@ -18,7 +18,7 @@ type externalAccountResolver struct {
 	account extsvc.Account
 }
 
-func externalAccountByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*externalAccountResolver, error) {
+func externalAccountByID(ctx context.Context, db database.DB, id graphql.ID) (*externalAccountResolver, error) {
 	externalAccountID, err := unmarshalExternalAccountID(id)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func unmarshalExternalAccountID(id graphql.ID) (externalAccountID int32, err err
 
 func (r *externalAccountResolver) ID() graphql.ID { return marshalExternalAccountID(r.account.ID) }
 func (r *externalAccountResolver) User(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.account.UserID)
+	return UserByIDInt32(ctx, database.NewDB(r.db), r.account.UserID)
 }
 func (r *externalAccountResolver) ServiceType() string { return r.account.ServiceType }
 func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
@@ -69,7 +69,7 @@ func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, 
 	// GitLab, but only site admins can view account data for all other types.
 	var err error
 	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
-		err = backend.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+		err = backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.db), actor.FromContext(ctx).UID)
 	} else {
 		err = backend.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
 	}

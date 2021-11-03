@@ -380,7 +380,7 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
+// the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
 type ObservableOwner string
 
 const (
@@ -400,7 +400,7 @@ func (o ObservableOwner) toMarkdown() string {
 	var slug string
 	// special cases for differences in how a team is named in ObservableOwner and how
 	// they are named in the handbook.
-	// see https://about.sourcegraph.com/handbook/engineering/eng_org#current-organization
+	// see https://handbook.sourcegraph.com/engineering/eng_org#current-organization
 	switch o {
 	case ObservableOwnerCodeIntel:
 		slug = "code-intelligence"
@@ -412,7 +412,7 @@ func (o ObservableOwner) toMarkdown() string {
 		slug = strings.ReplaceAll(string(o), " ", "-")
 	}
 
-	return fmt.Sprintf("[Sourcegraph %s team](https://about.sourcegraph.com/handbook/engineering/%s)",
+	return fmt.Sprintf("[Sourcegraph %s team](https://handbook.sourcegraph.com/engineering/%s)",
 		upperFirst(string(o)), slug)
 }
 

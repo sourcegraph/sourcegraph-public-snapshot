@@ -228,35 +228,6 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("repository groups", func(t *testing.T) {
-		const repoName = "github.com/sgtest/go-diff"
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), fmt.Sprintf(`{"search.repositoryGroups":{"gql_test_group": ["%s"]}}`, repoName))
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-
-		results, err := client.SearchFiles("repogroup:gql_test_group diff.")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		// Make sure there are results and all results are from the same repository
-		if len(results.Results) == 0 {
-			t.Fatal("Unexpected zero result")
-		}
-		for _, r := range results.Results {
-			if r.Repository.Name != repoName {
-				t.Fatalf("Repository: want %q but got %q", repoName, r.Repository.Name)
-			}
-		}
-	})
-
 	t.Run("repository search", func(t *testing.T) {
 		tests := []struct {
 			name        string

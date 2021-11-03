@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -12,6 +13,7 @@ import (
 )
 
 func TestOrganization(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
 		return &types.Org{ID: 1, Name: "acme"}, nil
@@ -19,7 +21,7 @@ func TestOrganization(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					organization(name: "acme") {
@@ -39,6 +41,7 @@ func TestOrganization(t *testing.T) {
 }
 
 func TestOrganizationRepositories(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
 		return &types.Org{ID: 1, Name: "acme"}, nil
@@ -71,7 +74,7 @@ func TestOrganizationRepositories(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					organization(name: "acme") {
@@ -102,12 +105,13 @@ func TestOrganizationRepositories(t *testing.T) {
 }
 
 func TestNode_Org(t *testing.T) {
+	db := database.NewDB(nil)
 	resetMocks()
 	database.Mocks.Orgs.MockGetByID_Return(t, &types.Org{ID: 1, Name: "acme"}, nil)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t),
+			Schema: mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					node(id: "T3JnOjE=") {
@@ -132,23 +136,17 @@ func TestNode_Org(t *testing.T) {
 
 func TestUnmarshalOrgID(t *testing.T) {
 	t.Run("Valid org ID is parsed correctly", func(t *testing.T) {
-		const id = 1
+		const id = int32(1)
 		namespaceOrgID := relay.MarshalID("Org", id)
-		org, err := UnmarshalOrgID(namespaceOrgID)
-		if err != nil {
-			t.Fatal("Error when unmarshalling valid org id: #{err}")
-		}
-		if id != org {
-			t.Fatal("ID mismatch: want #{id} but got #{org}")
-		}
+		orgID, err := UnmarshalOrgID(namespaceOrgID)
+		assert.NoError(t, err)
+		assert.Equal(t, id, orgID)
 	})
 
 	t.Run("Returns error for invalid org ID", func(t *testing.T) {
 		const id = 1
 		namespaceOrgID := relay.MarshalID("User", id)
 		_, err := UnmarshalOrgID(namespaceOrgID)
-		if err == nil {
-			t.Fatal("Expecting error, got: #{org}, #{err}")
-		}
+		assert.Error(t, err)
 	})
 }

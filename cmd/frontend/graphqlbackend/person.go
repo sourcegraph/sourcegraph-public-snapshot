@@ -99,5 +99,5 @@ func (r *PersonResolver) User(ctx context.Context) (*UserResolver, error) {
 	if user == nil || err != nil {
 		return nil, err
 	}
-	return NewUserResolver(r.db, user), nil
+	return NewUserResolver(database.NewDB(r.db), user), nil
 }

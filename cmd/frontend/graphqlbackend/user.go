@@ -7,7 +7,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -60,18 +59,18 @@ func (r *schemaResolver) User(ctx context.Context, args struct {
 
 // UserResolver implements the GraphQL User type.
 type UserResolver struct {
-	db   dbutil.DB
+	db   database.DB
 	user *types.User
 }
 
 // NewUserResolver returns a new UserResolver with given user object.
-func NewUserResolver(db dbutil.DB, user *types.User) *UserResolver {
+func NewUserResolver(db database.DB, user *types.User) *UserResolver {
 	return &UserResolver{db: db, user: user}
 }
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
 // non-nil error.
-func UserByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*UserResolver, error) {
+func UserByID(ctx context.Context, db database.DB, id graphql.ID) (*UserResolver, error) {
 	userID, err := UnmarshalUserID(id)
 	if err != nil {
 		return nil, err
@@ -81,8 +80,8 @@ func UserByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*UserResolver, 
 
 // UserByIDInt32 looks up and returns the user with the given database ID. If no such user exists,
 // it returns a non-nil error.
-func UserByIDInt32(ctx context.Context, db dbutil.DB, id int32) (*UserResolver, error) {
-	user, err := database.Users(db).GetByID(ctx, id)
+func UserByIDInt32(ctx context.Context, db database.DB, id int32) (*UserResolver, error) {
+	user, err := db.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +161,7 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 		return nil, err
 	}
 
-	settings, err := database.Settings(r.db).GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +236,7 @@ func CurrentUser(ctx context.Context, db dbutil.DB) (*UserResolver, error) {
 		}
 		return nil, err
 	}
-	return NewUserResolver(db, user), nil
+	return NewUserResolver(database.NewDB(db), user), nil
 }
 
 func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
@@ -386,12 +385,9 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorValue = ""
-		opt.CursorDirection = "next"
+		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{
@@ -432,14 +428,14 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 }
 
 func viewerCanChangeUsername(ctx context.Context, db dbutil.DB, userID int32) bool {
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
 		return false
 	}
 	if conf.Get().AuthEnableUsernameChanges {
 		return true
 	}
 	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	return backend.CheckCurrentUserIsSiteAdmin(ctx, db) == nil
+	return backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) == nil
 }
 
 // Users may be trying to change their own username, or someone else's.

@@ -84,7 +84,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil account", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password", nil)
 		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -94,7 +94,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the account", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -112,7 +112,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 	})
 
 	t.Run("no user found in account data", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -248,13 +248,57 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 			}
 		})
 	}
+
+	// Specific behaviour is tested in TestScanFullRepoPermissions
+	t.Run("SubRepoPermissions", func(t *testing.T) {
+		execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+			return io.NopCloser(strings.NewReader(`
+read user alice * //Sourcegraph/Engineering/...
+read user alice * -//Sourcegraph/Security/...
+`)), nil, nil
+		})
+		p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
+		p.depots = append(p.depots, "//Sourcegraph/")
+
+		got, err := p.FetchUserPerms(ctx,
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: extsvc.TypePerforce,
+					ServiceID:   "ssl:111.222.333.444:1666",
+				},
+				AccountData: extsvc.AccountData{
+					Data: (*json.RawMessage)(&accountData),
+				},
+			},
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(&authz.ExternalUserPermissions{
+			Exacts: []extsvc.RepoID{"//Sourcegraph/"},
+			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+				"//Sourcegraph/": {
+					PathIncludes: []string{
+						mustGlobPattern(t, "//Sourcegraph/Engineering/..."),
+					},
+					PathExcludes: []string{
+						mustGlobPattern(t, "//Sourcegraph/Security/..."),
+					},
+				},
+			},
+		}, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -264,7 +308,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password")
+		p := NewProvider("", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchRepoPerms(ctx,
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",
@@ -350,7 +394,7 @@ Users:
 }
 
 func NewTestProvider(urn, host, user, password string, execer p4Execer) *Provider {
-	p := NewProvider(urn, host, user, password)
+	p := NewProvider(urn, host, user, password, []extsvc.RepoID{})
 	p.p4Execer = execer
 	return p
 }

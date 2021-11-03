@@ -13,7 +13,7 @@ import (
 func TestDeduper(t *testing.T) {
 	commit := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
-			Repo: types.RepoName{
+			Repo: types.MinimalRepo{
 				Name: api.RepoName(repo),
 			},
 			Commit: gitapi.Commit{
@@ -24,7 +24,7 @@ func TestDeduper(t *testing.T) {
 
 	diff := func(repo, id string) *CommitMatch {
 		return &CommitMatch{
-			Repo: types.RepoName{
+			Repo: types.MinimalRepo{
 				Name: api.RepoName(repo),
 			},
 			Commit: gitapi.Commit{
@@ -44,7 +44,7 @@ func TestDeduper(t *testing.T) {
 	file := func(repo, commit, path string, lines []*LineMatch) *FileMatch {
 		return &FileMatch{
 			File: File{
-				Repo: types.RepoName{
+				Repo: types.MinimalRepo{
 					Name: api.RepoName(repo),
 				},
 				CommitID: api.CommitID(commit),

@@ -4,6 +4,7 @@ import React from 'react'
 import renderer from 'react-test-renderer'
 import sinon from 'sinon'
 
+import { AbortError } from '@sourcegraph/shared/src/api/util'
 import { HTTPStatusError } from '@sourcegraph/shared/src/backend/fetch'
 
 import { ErrorBoundary } from './ErrorBoundary'
@@ -17,7 +18,17 @@ const ThrowError: React.FunctionComponent = () => {
 
 /** Throws an error that resembles the Webpack error when chunk loading fails.  */
 const ThrowChunkError: React.FunctionComponent = () => {
-    throw new Error('Loading chunk 123 failed.')
+    const ChunkError = new Error('Loading chunk 123 failed.')
+    ChunkError.name = 'ChunkLoadError'
+    throw ChunkError
+}
+
+const ThrowAbortError: React.FunctionComponent = () => {
+    throw new AbortError()
+}
+
+const ThrowNotAuthenticatedError: React.FunctionComponent = () => {
+    throw new Error('not authenticated')
 }
 
 const ThrowHTTPStatusError: React.FunctionComponent<{ status?: number }> = ({ status = 500 }) => {
@@ -83,6 +94,45 @@ describe('ErrorBoundary', () => {
         expect(capturedError).toBeInstanceOf(HTTPStatusError)
         expect(capturedError).toHaveProperty('status', 400)
 
+        sentryCaptureException.restore()
+    })
+
+    test('Sentry should not capture AbortError', () => {
+        const sentryCaptureException = sinon.stub(sentry, 'captureException')
+
+        render(
+            <ErrorBoundary location={null}>
+                <ThrowAbortError />
+            </ErrorBoundary>
+        )
+
+        sinon.assert.notCalled(sentryCaptureException)
+        sentryCaptureException.restore()
+    })
+
+    test('Sentry should not capture ChunkLoadError', () => {
+        const sentryCaptureException = sinon.stub(sentry, 'captureException')
+
+        render(
+            <ErrorBoundary location={null}>
+                <ThrowChunkError />
+            </ErrorBoundary>
+        )
+
+        sinon.assert.notCalled(sentryCaptureException)
+        sentryCaptureException.restore()
+    })
+
+    test('Sentry should not capture not authenticated error', () => {
+        const sentryCaptureException = sinon.stub(sentry, 'captureException')
+
+        render(
+            <ErrorBoundary location={null}>
+                <ThrowNotAuthenticatedError />
+            </ErrorBoundary>
+        )
+
+        sinon.assert.notCalled(sentryCaptureException)
         sentryCaptureException.restore()
     })
 })

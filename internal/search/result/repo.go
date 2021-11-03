@@ -16,8 +16,8 @@ type RepoMatch struct {
 	Rev string
 }
 
-func (r RepoMatch) RepoName() types.RepoName {
-	return types.RepoName{
+func (r RepoMatch) RepoName() types.MinimalRepo {
+	return types.MinimalRepo{
 		Name: r.Name,
 		ID:   r.ID,
 	}

@@ -17,6 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Added documentation for merging site-config files. Available since 3.32 [#21220](https://github.com/sourcegraph/sourcegraph/issues/21220)
 - Added site config variable `cloneProgressLog` to optionally enable logging of clone progress to temporary files for debugging. Disabled by default. [#26568](https://github.com/sourcegraph/sourcegraph/pull/26568)
+- GNU's `wget` has been added to all `sourcegraph/*` Docker images that use `sourcegraph/alpine` as its base [#26823](https://github.com/sourcegraph/sourcegraph/pull/26823)
 
 ### Changed
 
@@ -25,11 +26,16 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- An issue that causes the server to panic when performing a structural search via the GQL API for a query that also matches missing repos (affected versions 3.33.0 and 3.32.0). [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
+- An issue that causes the server to panic when performing a structural search via the GQL API for a query that also
+  matches missing repos (affected versions 3.33.0 and 3.32.0)
+  . [#26630](https://github.com/sourcegraph/sourcegraph/pull/26630)
+- Improve detection for Docker running in non-linux
+  environments. [#23477](https://github.com/sourcegraph/sourcegraph/issues/23477)
 
 ### Removed
 
 - All version contexts functionality (deprecated in 3.33) is now removed. [#26267](https://github.com/sourcegraph/sourcegraph/issues/26267)
+- Query filter `repogroup` (deprecated in 3.33) is now removed. [#24277](https://github.com/sourcegraph/sourcegraph/issues/24277)
 
 ## 3.33.0
 

@@ -309,7 +309,6 @@ func nonPredicateRepos(q Basic) []Node {
 		case
 			FieldRepo,
 			FieldContext,
-			FieldRepoGroup,
 			FieldIndex,
 			FieldFork,
 			FieldArchived,

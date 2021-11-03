@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/billing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 type productSubscriptionPreviewInvoice struct {
@@ -61,7 +62,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 	var accountUserID *int32
 	if args.Account != nil {
 		// There is a customer ID given.
-		accountUser, err := graphqlbackend.UserByID(ctx, r.DB, *args.Account)
+		accountUser, err := graphqlbackend.UserByID(ctx, database.NewDB(r.DB), *args.Account)
 		if err != nil {
 			return nil, err
 		}
@@ -73,7 +74,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 		}
 		// 🚨 SECURITY: Users may only preview invoices for their own product subscriptions. Site admins
 		// may preview invoices for all product subscriptions.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, *accountUserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.DB), *accountUserID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -131,7 +132,7 @@ func (r ProductSubscriptionLicensingResolver) PreviewProductSubscriptionInvoice(
 		}
 		// 🚨 SECURITY: Only site admins and the subscription's account owner may preview invoices
 		// for product subscriptions.
-		if err := backend.CheckSiteAdminOrSameUser(ctx, r.DB, subToUpdate.v.UserID); err != nil {
+		if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(r.DB), subToUpdate.v.UserID); err != nil {
 			return nil, err
 		}
 

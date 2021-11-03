@@ -59,7 +59,7 @@ type createUserResult struct {
 	user *types.User
 }
 
-func (r *createUserResult) User() *UserResolver { return NewUserResolver(r.db, r.user) }
+func (r *createUserResult) User() *UserResolver { return NewUserResolver(database.NewDB(r.db), r.user) }
 
 func (r *createUserResult) ResetPasswordURL(ctx context.Context) (*string, error) {
 	if !userpasswd.ResetPasswordEnabled() {

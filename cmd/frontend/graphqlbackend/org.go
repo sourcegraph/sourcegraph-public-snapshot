@@ -34,7 +34,7 @@ func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	return OrgByID(ctx, r.db, args.ID)
 }
 
-func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, error) {
+func OrgByID(ctx context.Context, db database.DB, id graphql.ID) (*OrgResolver, error) {
 	orgID, err := UnmarshalOrgID(id)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,8 @@ func OrgByID(ctx context.Context, db dbutil.DB, id graphql.ID) (*OrgResolver, er
 	return OrgByIDInt32(ctx, db, orgID)
 }
 
-func OrgByIDInt32(ctx context.Context, db dbutil.DB, orgID int32) (*OrgResolver, error) {
-	org, err := database.Orgs(db).GetByID(ctx, orgID)
+func OrgByIDInt32(ctx context.Context, db database.DB, orgID int32) (*OrgResolver, error) {
+	org, err := db.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{database.NewDB(o.db), &settingsSubject{org: o}, settings, nil}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {
@@ -300,11 +300,11 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if err := backend.CheckOrgExternalServices(ctx, o.db, o.org.ID); err != nil {
+	if err := backend.CheckOrgExternalServices(ctx, database.NewDB(o.db), o.org.ID); err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Only org members can list the org repositories.
-	if err := backend.CheckOrgAccess(ctx, o.db, o.org.ID); err != nil {
+	if err := backend.CheckOrgAccess(ctx, database.NewDB(o.db), o.org.ID); err != nil {
 		if err == backend.ErrNotAnOrgMember {
 			return nil, errors.New("must be a member of this organization to view its repositories")
 		}
@@ -323,12 +323,9 @@ func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositorie
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorValue = ""
-		opt.CursorDirection = "next"
+		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{

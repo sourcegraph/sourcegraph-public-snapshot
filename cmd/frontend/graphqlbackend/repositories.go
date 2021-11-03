@@ -50,17 +50,19 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		if err != nil {
 			return nil, err
 		}
-		opt.CursorColumn = cursor.Column
-		opt.CursorValue = cursor.Value
-		opt.CursorDirection = cursor.Direction
+		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.CursorColumn = string(toDBRepoListColumn(args.OrderBy))
-		opt.CursorValue = ""
-		if args.Descending {
-			opt.CursorDirection = "prev"
-		} else {
-			opt.CursorDirection = "next"
+		cursor := database.Cursor{
+			Column: string(toDBRepoListColumn(args.OrderBy)),
 		}
+
+		if args.Descending {
+			cursor.Direction = "prev"
+		} else {
+			cursor.Direction = "next"
+		}
+
+		opt.Cursors = append(opt.Cursors, &cursor)
 	}
 
 	opt.FailedFetch = args.FailedFetch
@@ -110,7 +112,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 		if envvar.SourcegraphDotComMode() {
 			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+			if isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
 					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
 				}
@@ -220,13 +222,13 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 			return nil, err
 		}
 	} else if r.opt.OrgID != 0 {
-		if err := backend.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
+		if err := backend.CheckOrgAccess(ctx, database.NewDB(r.db), r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
 		// count does not respect repository permissions.
-		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 			return nil, err
 		}
 	}
@@ -270,32 +272,26 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	if err != nil {
 		return nil, err
 	}
-	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit {
+	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit || len(r.opt.Cursors) == 0 {
 		return graphqlutil.HasNextPage(false), nil
 	}
 
+	cursor := r.opt.Cursors[0]
+
 	var value string
-	switch r.opt.CursorColumn {
+	switch cursor.Column {
 	case string(database.RepoListName):
 		value = string(repos[len(repos)-1].Name)
 	case string(database.RepoListCreatedAt):
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
 	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
-		&repositoryCursor{
-			Column:    r.opt.CursorColumn,
+		&database.Cursor{
+			Column:    cursor.Column,
 			Value:     value,
-			Direction: r.opt.CursorDirection,
+			Direction: cursor.Direction,
 		},
 	)), nil
-}
-
-func repoNamesToStrings(repoNames []api.RepoName) []string {
-	strings := make([]string, len(repoNames))
-	for i, repoName := range repoNames {
-		strings[i] = string(repoName)
-	}
-	return strings
 }
 
 func toDBRepoListColumn(ob string) database.RepoListColumn {
