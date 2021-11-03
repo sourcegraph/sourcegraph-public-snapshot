@@ -1,7 +1,7 @@
-import { ApolloClient, gql } from '@apollo/client'
+import { ApolloClient, ApolloQueryResult, gql } from '@apollo/client'
 import { Duration } from 'date-fns'
 import { Observable, throwError, of, from } from 'rxjs'
-import { map, mapTo } from 'rxjs/operators'
+import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
@@ -21,6 +21,7 @@ import {
     LineChartSearchInsightInput,
     TimeIntervalStepUnit,
     GetInsightsResult,
+    InsightFields,
 } from '@sourcegraph/web/src/graphql-operations'
 
 import {
@@ -32,15 +33,17 @@ import {
     isSearchBasedInsight,
     SearchBasedInsight,
 } from '../types'
-import { isSearchBackendBasedInsight } from '../types/insight/search-insight'
+import { isSearchBackendBasedInsight, SearchBackendBasedInsight } from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
 
+import { InsightStillProcessingError } from './api/get-backend-insight'
 import { getLangStatsInsightContent } from './api/get-lang-stats-insight-content'
 import { getRepositorySuggestions } from './api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from './api/get-resolved-search-repositories'
 import { getSearchInsightContent } from './api/get-search-insight-content/get-search-insight-content'
 import { CodeInsightsBackend } from './code-insights-backend'
 import {
+    BackendInsightData,
     DashboardCreateInput,
     DashboardDeleteInput,
     DashboardUpdateInput,
@@ -49,6 +52,7 @@ import {
     GetSearchInsightContentInput,
     InsightCreateInput,
 } from './code-insights-backend-types'
+import { createViewContent } from './utils/create-view-content'
 
 const errorMockMethod = (methodName: string) => () => throwError(new Error(`Implement ${methodName} method first`))
 
@@ -133,6 +137,7 @@ export const parseGrants = (type: string, visibility: string): InsightsPermissio
 
 const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]): Insight => ({
     type: InsightType.Backend,
+    // TODO: map prefix to type based on presentation.__typename
     // This is our convenstion around insight id, by this id prefix
     // we make a difference between search and lang stats insight
     id: `${InsightTypePrefix.search}.${insight.id}`,
@@ -148,10 +153,25 @@ const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]):
     })),
 })
 
+const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
+    // TODO: map prefix to type based on presentation.__typename
+    // This is our convenstion around insight id, by this id prefix
+    // we make a difference between search and lang stats insight
+    id: `${InsightTypePrefix.search}.${insight.id}`,
+    title: insight.presentation.title,
+    description: '',
+    series: insight.dataSeries.map(series => ({
+        label: series.label,
+        points: series.points,
+        status: series.status,
+    })),
+})
+
 const insightViewsFieldsFragment = gql`
     fragment InsightViewsFields on InsightView {
         id
         presentation {
+            __typename
             ... on LineChartInsightViewPresentation {
                 title
                 seriesPresentation {
@@ -216,14 +236,15 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             map(({ data }) => {
                 const insightViews = data.insightViews.nodes.map(mapInsightView)
                 if (ids) {
-                    return insightViews.filter(insight => ids.includes(insight.id))
+                    const mappedIds = new Set(ids.map(id => `${InsightTypePrefix.search}.${id}`))
+                    return insightViews.filter(insight => mappedIds.has(insight.id))
                 }
 
                 return insightViews
             })
         )
 
-    public getInsightById = (id: string): Observable<Insight | null> =>
+    private getInsightView = (id: string): Observable<ApolloQueryResult<GetInsightResult>> =>
         fromObservableQuery(
             this.apolloClient.watchQuery<GetInsightResult>({
                 query: gql`
@@ -238,7 +259,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 `,
                 variables: { id },
             })
-        ).pipe(
+        )
+
+    public getInsightById = (id: string): Observable<Insight | null> =>
+        this.getInsightView(id).pipe(
             map(({ data }) => {
                 const insightData = data.insightViews.nodes[0]
 
@@ -255,7 +279,47 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> =>
         this.getInsights().pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
     public getReachableInsights = errorMockMethod('getReachableInsights')
-    public getBackendInsightData = errorMockMethod('getBackendInsightData')
+
+    // TODO: Rethink all of this method. Currently `createViewContent` expects a different format of
+    // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
+    // fit with both of those shapes.
+    public getBackendInsightData = (insight: SearchBackendBasedInsight): Observable<BackendInsightData> =>
+        this.getInsightView(insight.id).pipe(
+            // Note: this insight is guaranteed to exist since this function
+            // is only called from within a loop of insight ids
+            map(({ data }) => ({
+                insight: mapInsightView(data.insightViews.nodes[0]) as SearchBasedInsight,
+                insightFields: mapInsightFields(data.insightViews.nodes[0]),
+            })),
+            switchMap(({ insight, insightFields }) => {
+                if (!insight) {
+                    return throwError(new InsightStillProcessingError())
+                }
+
+                return of({ insight, insightFields })
+            }),
+            map(({ insight, insightFields }) => ({
+                id: insight.id,
+                view: {
+                    title: insight.title ?? insight.title,
+                    subtitle: '', // TODO: is this still used anywhere?
+                    content: [
+                        createViewContent(
+                            {
+                                id: insight.id,
+                                description: '',
+                                title: insight.title,
+                                series: insightFields.series,
+                            },
+                            insight.series
+                        ),
+                    ],
+                    isFetchingHistoricalData: insightFields.series.some(
+                        ({ status: { pendingJobs, backfillQueuedAt } }) => pendingJobs > 0 || backfillQueuedAt === null
+                    ),
+                },
+            }))
+        )
     public getBuiltInInsightData = errorMockMethod('getBuiltInInsightData')
 
     // We don't have insight visibility and subject levels in the new GQL API anymore.
