@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"path"
 
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
@@ -66,15 +67,18 @@ func (s *SubRepoPermsClient) CheckPermissions(ctx context.Context, userID int32,
 		excludeMatchers = append(excludeMatchers, g)
 	}
 
+	// Rules are created including the repo name
+	toMatch := path.Join(string(content.Repo), content.Path)
+
 	// The current path needs to either be included or NOT excluded and we'll give
 	// preference to exclusion.
 	for _, rule := range excludeMatchers {
-		if rule.Match(content.Path) {
+		if rule.Match(toMatch) {
 			return None, nil
 		}
 	}
 	for _, rule := range includeMatchers {
-		if rule.Match(content.Path) {
+		if rule.Match(toMatch) {
 			return Read, nil
 		}
 	}
