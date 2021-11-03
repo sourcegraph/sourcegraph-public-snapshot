@@ -341,13 +341,18 @@ func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefi
 
 func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
 	var seriesToAdd types.InsightSeries
+	var matchingSeries *types.InsightSeries
+	var err error
 
-	matchingSeries, err := tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
-		Query:             series.Query,
-		StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-		StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
-	if err != nil {
-		return errors.Wrap(err, "FindMatchingSeries")
+	// Don't try to match on frontend series
+	if len(series.RepositoryScope.Repositories) == 0 {
+		matchingSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+			Query:             series.Query,
+			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
+			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
+		if err != nil {
+			return errors.Wrap(err, "FindMatchingSeries")
+		}
 	}
 
 	if matchingSeries == nil {
