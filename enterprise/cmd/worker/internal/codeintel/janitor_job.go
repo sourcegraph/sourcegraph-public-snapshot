@@ -7,7 +7,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
@@ -20,7 +20,7 @@ import (
 
 type janitorJob struct{}
 
-func NewJanitorJob() shared.Job {
+func NewJanitorJob() job.Job {
 	return &janitorJob{}
 }
 

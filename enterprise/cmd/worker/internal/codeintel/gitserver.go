@@ -5,7 +5,7 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -21,7 +21,7 @@ func InitGitserverClient() (*gitserver.Client, error) {
 	return conn.(*gitserver.Client), err
 }
 
-var initGitserverClient = shared.NewMemoizedConstructor(func() (interface{}, error) {
+var initGitserverClient = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	observationContext := &observation.Context{
 		Logger:     log15.Root(),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
