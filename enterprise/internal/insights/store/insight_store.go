@@ -6,8 +6,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/insights"
@@ -93,7 +91,6 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	}
 
 	q := sqlf.Sprintf(getInsightByViewSql, insightViewQuery(cursor, viewConditions), sqlf.Join(preds, "\n AND"))
-	log15.Info("GetInsightViews", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -126,7 +123,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		insightViewQuery(cursor, viewConditions),
 		visibleDashboardsQuery(args.UserID, args.OrgID),
 		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
-	log15.Info("GetInsightViews", "query", q.Query(sqlf.PostgresBindVar), "args", q.Args())
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
@@ -171,6 +167,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
 		results = append(results, types.Insight{
+			ViewID:      seriesSet[0].ViewID,
 			UniqueID:    seriesSet[0].UniqueID,
 			Title:       seriesSet[0].Title,
 			Description: seriesSet[0].Description,
@@ -183,7 +180,7 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	}
 
 	sort.Slice(results, func(i, j int) bool {
-		return results[i].UniqueID < results[j].UniqueID
+		return results[i].ViewID < results[j].ViewID
 	})
 
 	return results
@@ -350,6 +347,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 	for rows.Next() {
 		var temp types.InsightViewSeries
 		if err := rows.Scan(
+			&temp.ViewID,
 			&temp.UniqueID,
 			&temp.Title,
 			&temp.Description,
@@ -666,7 +664,7 @@ RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
-SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
@@ -674,7 +672,7 @@ FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE %s
-ORDER BY iv.unique_id, i.series_id
+ORDER BY iv.id, i.series_id
 `
 
 const getInsightDataSeriesSql = `
@@ -687,7 +685,7 @@ WHERE %s
 
 const getInsightsVisibleToUserSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
-SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
        i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
@@ -700,5 +698,5 @@ WHERE (iv.id IN (SELECT insight_view_id
 				 WHERE deleted_at IS NULL AND db.id IN (%s))
    OR iv.id IN (%s))
 AND %s
-ORDER BY iv.unique_id;
+ORDER BY iv.id
 `
