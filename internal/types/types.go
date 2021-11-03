@@ -389,16 +389,18 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
-// RepoName represents a source code repository name and its ID.
+// RepoName represents a source code repository name, its ID and number of stars.
 type RepoName struct {
-	ID   api.RepoID
-	Name api.RepoName
+	ID    api.RepoID
+	Name  api.RepoName
+	Stars int
 }
 
 func (r *RepoName) ToRepo() *Repo {
 	return &Repo{
-		ID:   r.ID,
-		Name: r.Name,
+		ID:    r.ID,
+		Name:  r.Name,
+		Stars: r.Stars,
 	}
 }
 
