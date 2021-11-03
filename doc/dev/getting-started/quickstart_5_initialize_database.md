@@ -9,9 +9,6 @@ The development server startup script as well as the docker compose file provide
 To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
 
 ```sh
-export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
-createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
-# if you're running Postgres with Docker
 createdb --host=localhost --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 ```
 
