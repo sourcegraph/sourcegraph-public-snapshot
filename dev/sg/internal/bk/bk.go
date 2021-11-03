@@ -120,7 +120,6 @@ func (c *Client) GetBuildByNumber(ctx context.Context, pipeline string, number s
 }
 
 // TriggerBuild request a build on Buildkite API and returns that build.
-// If the API returns an error, it is returned.
 func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit string) (*buildkite.Build, error) {
 	build, _, err := c.bk.Builds.Create(buildkiteOrg, pipeline, &buildkite.CreateBuild{
 		Commit: commit,
