@@ -811,7 +811,7 @@ type DocumentationSearchResult {
     """
     The lowercase language name (go, java, etc.) OR, if unknown, the LSIF indexer name.
     """
-    lang: String!
+    language: String!
 
     """
     RepoName is the name of the repository containing this search key.
