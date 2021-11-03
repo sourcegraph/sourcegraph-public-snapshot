@@ -140,7 +140,9 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 	}
 }
 
-type reposListServer struct {
+// searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
+// interacts with (search-indexer).
+type searchIndexerServer struct {
 	// ListIndexable returns the repositories to index.
 	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
@@ -160,9 +162,8 @@ type reposListServer struct {
 	}
 }
 
-// serveIndex is used by zoekt to get the list of repositories for it to
-// index.
-func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) error {
+// serveList is used by zoekt to get the list of repositories for it to index.
+func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) error {
 	var opt struct {
 		// Hostname is used to determine the subset of repos to return
 		Hostname string
