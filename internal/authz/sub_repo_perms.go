@@ -66,13 +66,18 @@ func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content
 
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() {
-		return None, &ErrUnauthenticated{}
+		return None, ErrUnauthenticated{}
 	}
 
-	return s.permissions(ctx, a.UID, content)
+	return s.Permissions(ctx, a.UID, content)
 }
 
-func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+	// Are sub-repo permissions enabled at the site level
+	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
+		return Read, nil
+	}
+
 	if s.SupportedChecker == nil {
 		return None, errors.New("SupportedChecker is nil")
 	}
@@ -89,7 +94,7 @@ func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, cont
 
 	srp, err := s.PermissionsGetter.GetByUser(ctx, userID)
 	if err != nil {
-		return None, errors.Wrap(err, "getting permissions")
+		return None, errors.Wrap(err, "getting sub-repo permissions")
 	}
 
 	// Check repo

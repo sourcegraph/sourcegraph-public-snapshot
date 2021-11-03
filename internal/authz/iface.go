@@ -142,3 +142,13 @@ type ErrUnauthenticated struct{}
 func (e ErrUnauthenticated) Error() string {
 	return "request is unauthenticated"
 }
+
+type ErrForbidden struct{}
+
+func (e ErrForbidden) Error() string {
+	return "forbidden"
+}
+
+func (e ErrForbidden) Forbidden() bool {
+	return true
+}
