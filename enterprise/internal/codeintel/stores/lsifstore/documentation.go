@@ -472,7 +472,8 @@ WITH
 	matching_lang_names AS (
 		SELECT id, lang_name
 		FROM lsif_data_docs_search_lang_names_$SUFFIX
-		WHERE %s LIMIT 1 -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
+		WHERE %s -- e.g. (tsv @@ '''net'' <-> ''/'' <-> ''http'':*' OR tsv @@ '''Router'':*')
+		LIMIT 1
 	),
 
 	-- Can we find a matching sequence of documentation/symbol tags? e.g. "private variable".
