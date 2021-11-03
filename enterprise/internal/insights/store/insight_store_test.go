@@ -1225,7 +1225,6 @@ func TestUpdateFrontendSeries(t *testing.T) {
 			Enabled:             true,
 			SampleIntervalUnit:  "WEEK",
 			SampleIntervalValue: 1,
-			Repositories:        []string{},
 		}}).Equal(t, gotBeforeUpdate)
 
 		err = store.UpdateFrontendSeries(ctx, UpdateFrontendSeriesArgs{
