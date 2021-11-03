@@ -30,6 +30,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
@@ -101,6 +102,8 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
+	a := actor.FromContext(ctx)
+
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
@@ -109,7 +112,7 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		//
 		// 🚨 SECURITY: This must be correctly implemented to hide anything about
 		// files that a user should not see.
-		perms, err := s.SubRepoPerms.CurrentUserPermissions(ctx, authz.RepoContent{
+		perms, err := s.SubRepoPerms.Permissions(ctx, a.UID, authz.RepoContent{
 			Repo: p.Repo,
 			Path: match.Path,
 		})

@@ -26,10 +26,16 @@ type RepoContent struct {
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms.go
 type SubRepoPermissionChecker interface {
 	// CurrentUserPermissions returns the level of access the authenticated user within
-	// the provided context has.
+	// the provided context has for the requested content.
 	//
 	// If the context is unauthenticated, ErrUnauthenticated is returned.
 	CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error)
+
+	// Permissions returns the level of access the provided user has for the requested
+	// content.
+	//
+	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
+	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 }
 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
@@ -59,23 +65,18 @@ type SubRepoPermsClient struct {
 }
 
 func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		// Are sub-repo permissions enabled at the site level
-		if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
-			return Read, nil
-		}
-		// Otherwise, do not give access
-		return None, &ErrUnauthenticated{}
-	}
-
-	return s.Permissions(ctx, a.UID, content)
+	return s.Permissions(ctx, actor.FromContext(ctx).UID, content)
 }
 
 func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	// Are sub-repo permissions enabled at the site level
 	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
 		return Read, nil
+	}
+
+	// Reject anonymous users
+	if userID == 0 {
+		return None, &ErrUnauthenticated{}
 	}
 
 	if s.SupportedChecker == nil {

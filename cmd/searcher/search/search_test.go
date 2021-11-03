@@ -224,7 +224,7 @@ milton.png
 		// Allow and filter
 		{protocol.PatternInfo{Pattern: "bobheadxi", IsNegated: true}, func() authz.SubRepoPermissionChecker {
 			checker := authz.NewMockSubRepoPermissionChecker()
-			checker.CurrentUserPermissionsFunc.SetDefaultHook(func(c context.Context, rc authz.RepoContent) (authz.Perms, error) {
+			checker.PermissionsFunc.SetDefaultHook(func(c context.Context, uid int32, rc authz.RepoContent) (authz.Perms, error) {
 				switch rc.Path {
 				case "README.md", "file++.plus":
 					return authz.Read, nil
@@ -241,7 +241,7 @@ file++.plus
 		// Invert above test to validate
 		{protocol.PatternInfo{Pattern: "bobheadxi", IsNegated: true}, func() authz.SubRepoPermissionChecker {
 			checker := authz.NewMockSubRepoPermissionChecker()
-			checker.CurrentUserPermissionsFunc.SetDefaultHook(func(c context.Context, rc authz.RepoContent) (authz.Perms, error) {
+			checker.PermissionsFunc.SetDefaultHook(func(c context.Context, uid int32, rc authz.RepoContent) (authz.Perms, error) {
 				switch rc.Path {
 				case "README.md", "file++.plus":
 					return authz.None, nil
