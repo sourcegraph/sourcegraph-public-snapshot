@@ -133,7 +133,6 @@ func TestSearchResults(t *testing.T) {
 				t.Error("!calledReposListRepoNames")
 			}
 		}
-
 	})
 
 	t.Run("multiple terms regexp", func(t *testing.T) {
@@ -508,7 +507,8 @@ func TestSearchResultsHydration(t *testing.T) {
 			ID:          repoName,
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
-		}}
+		},
+	}
 
 	hydratedRepo := &types.Repo{
 
@@ -1051,7 +1051,6 @@ func TestIsGlobalSearch(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestZeroElapsedMilliseconds(t *testing.T) {

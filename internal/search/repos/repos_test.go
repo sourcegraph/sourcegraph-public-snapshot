@@ -441,7 +441,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	}
 
 	repos := dbmock.NewMockRepoStore()
-	repos.CountFunc.SetDefaultReturn(6, nil)
 	repos.ListRepoNamesFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		if op.UserID != wantUserID {
 			t.Fatalf("got %q, want %q", op.UserID, wantUserID)
@@ -515,7 +514,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	}
 
 	mockrequire.Called(t, ns.GetByNameFunc)
-	mockrequire.Called(t, repos.CountFunc)
 	mockrequire.Called(t, repos.ListRepoNamesFunc)
 }
 
@@ -541,7 +539,6 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	}
 
 	repos := dbmock.NewMockRepoStore()
-	repos.CountFunc.SetDefaultReturn(2, nil)
 	repos.ListRepoNamesFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.RepoName, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
