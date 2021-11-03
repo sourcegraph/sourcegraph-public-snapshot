@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,10 +16,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/search"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -48,126 +51,127 @@ func main() {
 
 	cases := []struct {
 		arg  protocol.PatternInfo
+		srp  authz.SubRepoPermissionChecker
 		want string
 	}{
-		{protocol.PatternInfo{Pattern: "foo"}, ""},
+		{protocol.PatternInfo{Pattern: "foo"}, nil, ""},
 
-		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true}, nil, `
 README.md:1:# Hello World
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IsCaseSensitive: true}, nil, `
 README.md:3:Hello world example in go
 main.go:6:	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "world"}, `
+		{protocol.PatternInfo{Pattern: "world"}, nil, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 main.go:6:	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "func.*main"}, ""},
+		{protocol.PatternInfo{Pattern: "func.*main"}, nil, ""},
 
-		{protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}, `
+		{protocol.PatternInfo{Pattern: "func.*main", IsRegExp: true}, nil, `
 main.go:5:func main() {
 `},
 
 		// https://github.com/sourcegraph/sourcegraph/issues/8155
-		{protocol.PatternInfo{Pattern: "^func", IsRegExp: true}, `
+		{protocol.PatternInfo{Pattern: "^func", IsRegExp: true}, nil, `
 main.go:5:func main() {
 `},
-		{protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true}, `
+		{protocol.PatternInfo{Pattern: "^FuNc", IsRegExp: true}, nil, `
 main.go:5:func main() {
 `},
 
-		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, ""},
+		{protocol.PatternInfo{Pattern: "mai", IsWordMatch: true}, nil, ""},
 
-		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, `
+		{protocol.PatternInfo{Pattern: "main", IsWordMatch: true}, nil, `
 main.go:1:package main
 main.go:5:func main() {
 `},
 
 		// Ensure we handle CaseInsensitive regexp searches with
 		// special uppercase chars in pattern.
-		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, `
+		{protocol.PatternInfo{Pattern: `printL\B`, IsRegExp: true}, nil, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, `
+		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README.md"}, nil, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.md"}}, nil, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"*.{md,txt}", "*.txt"}}, `
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"*.{md,txt}", "*.txt"}}, nil, `
 abc.txt:1:w
 `},
 
-		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", ExcludePattern: "README\\.md", PathPatternsAreRegExps: true}, nil, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"\\.md"}, PathPatternsAreRegExps: true}, nil, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, PathPatternsAreRegExps: true}, `
+		{protocol.PatternInfo{Pattern: "w", IncludePatterns: []string{"\\.(md|txt)", "README"}, PathPatternsAreRegExps: true}, nil, `
 README.md:1:# Hello World
 README.md:3:Hello world example in go
 `},
 
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{"*.{MD,go}"}, PathPatternsAreCaseSensitive: true}, nil, `
 main.go:6:	fmt.Println("Hello world")
 `},
-		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, `
+		{protocol.PatternInfo{Pattern: "world", IncludePatterns: []string{`\.(MD|go)`}, PathPatternsAreRegExps: true, PathPatternsAreCaseSensitive: true}, nil, `
 main.go:6:	fmt.Println("Hello world")
 `},
 
-		{protocol.PatternInfo{Pattern: "doesnotmatch"}, ""},
-		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, `
+		{protocol.PatternInfo{Pattern: "doesnotmatch"}, nil, ""},
+		{protocol.PatternInfo{Pattern: "", IsRegExp: false, IncludePatterns: []string{"\\.png"}, PathPatternsAreRegExps: true, PatternMatchesPath: true}, nil, `
 milton.png
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 main.go:1:package main
 main.go:2:
 main.go:3:import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*import \"fmt\"", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 main.go:1:package main
 main.go:2:
 main.go:3:import "fmt"
 `},
-		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 main.go:1:package main
 `},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
-`},
-		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 main.go:1:package main
 main.go:2:
 `},
-		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\\s*", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
+main.go:1:package main
+main.go:2:
+`},
+		{protocol.PatternInfo{Pattern: "\nfunc", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 main.go:4:
 main.go:5:func main() {
 `},
-		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:3:import "fmt"
-main.go:4:
-main.go:5:func main() {
-`},
-		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
-main.go:1:package main
-main.go:2:
+		{protocol.PatternInfo{Pattern: "\n\\s*func", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 main.go:3:import "fmt"
 main.go:4:
 main.go:5:func main() {
 `},
-		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, `
+		{protocol.PatternInfo{Pattern: "package main\n\nimport \"fmt\"\n\nfunc main\\(\\) {", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
+main.go:1:package main
+main.go:2:
+main.go:3:import "fmt"
+main.go:4:
+main.go:5:func main() {
+`},
+		{protocol.PatternInfo{Pattern: "\n", IsCaseSensitive: false, IsRegExp: true, PathPatternsAreRegExps: true, PatternMatchesPath: true, PatternMatchesContent: true}, nil, `
 README.md:1:# Hello World
 README.md:2:
 main.go:1:package main
@@ -179,34 +183,77 @@ main.go:6:	fmt.Println("Hello world")
 main.go:7:}
 `},
 
-		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, ``},
+		{protocol.PatternInfo{Pattern: "^$", IsRegExp: true}, nil, ``},
 		{protocol.PatternInfo{
 			Pattern:         "filename contains regex metachars",
 			IncludePatterns: []string{"file++.plus"},
 			IsStructuralPat: true,
 			IsRegExp:        true, // To test for a regression, imply that IsStructuralPat takes precedence.
-		}, `
+		}, nil, `
 file++.plus:1:filename contains regex metachars
 `},
 
-		{protocol.PatternInfo{Pattern: "World", IsNegated: true}, `
+		{protocol.PatternInfo{Pattern: "World", IsNegated: true}, nil, `
 abc.txt
 file++.plus
 milton.png
 `},
 
-		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true}, `
+		{protocol.PatternInfo{Pattern: "World", IsCaseSensitive: true, IsNegated: true}, nil, `
 abc.txt
 file++.plus
 main.go
 milton.png
 `},
 
-		{protocol.PatternInfo{Pattern: "fmt", IsNegated: true}, `
+		{protocol.PatternInfo{Pattern: "fmt", IsNegated: true}, nil, `
 README.md
 abc.txt
 file++.plus
 milton.png
+`},
+
+		// Sub-repo permissions filtering tests
+
+		// Unauthenticated context
+		{protocol.PatternInfo{Pattern: "bobheadxi", IsNegated: true}, func() authz.SubRepoPermissionChecker {
+			checker := authz.NewMockSubRepoPermissionChecker()
+			checker.CurrentUserPermissionsFunc.SetDefaultReturn(authz.None, &authz.ErrUnauthenticated{})
+			return checker
+		}(), ""},
+		// Allow and filter
+		{protocol.PatternInfo{Pattern: "bobheadxi", IsNegated: true}, func() authz.SubRepoPermissionChecker {
+			checker := authz.NewMockSubRepoPermissionChecker()
+			checker.CurrentUserPermissionsFunc.SetDefaultHook(func(c context.Context, rc authz.RepoContent) (authz.Perms, error) {
+				switch rc.Path {
+				case "README.md", "file++.plus":
+					return authz.Read, nil
+				case "abc.txt", "main.go":
+					return authz.None, nil
+				}
+				return authz.None, fmt.Errorf("no test case for path %q", rc.Path)
+			})
+			return checker
+		}(), `
+README.md
+file++.plus
+`},
+		// Invert above test to validate
+		{protocol.PatternInfo{Pattern: "bobheadxi", IsNegated: true}, func() authz.SubRepoPermissionChecker {
+			checker := authz.NewMockSubRepoPermissionChecker()
+			checker.CurrentUserPermissionsFunc.SetDefaultHook(func(c context.Context, rc authz.RepoContent) (authz.Perms, error) {
+				switch rc.Path {
+				case "README.md", "file++.plus":
+					return authz.None, nil
+				case "abc.txt", "main.go":
+					return authz.Read, nil
+				}
+				return authz.None, fmt.Errorf("no test case for path %q", rc.Path)
+			})
+			return checker
+		}(), `
+abc.txt
+main.go
 `},
 	}
 
@@ -220,14 +267,24 @@ milton.png
 		}, nil
 	}
 	defer cleanup()
-	ts := httptest.NewServer(&search.Service{Store: s})
-	defer ts.Close()
 
 	for i, test := range cases {
 		t.Run(strconv.Itoa(i), func(t *testing.T) {
 			if test.arg.IsStructuralPat && os.Getenv("CI") == "" {
 				t.Skip("skipping comby test when not on CI")
 			}
+
+			// Initialize a default SubRepoPermsClient
+			if test.srp == nil {
+				test.srp = &authz.SubRepoPermsClient{}
+			}
+
+			ts := httptest.NewServer(&search.Service{
+				Store:        s,
+				Log:          log15.New("test", i),
+				SubRepoPerms: test.srp,
+			})
+			defer ts.Close()
 
 			// CI can be very busy, so give lots of time to fetchTimeout.
 			fetchTimeout := 500 * time.Millisecond
