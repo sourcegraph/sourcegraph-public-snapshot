@@ -19,6 +19,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added site config variable `cloneProgressLog` to optionally enable logging of clone progress to temporary files for debugging. Disabled by default. [#26568](https://github.com/sourcegraph/sourcegraph/pull/26568)
 - GNU's `wget` has been added to all `sourcegraph/*` Docker images that use `sourcegraph/alpine` as its base [#26823](https://github.com/sourcegraph/sourcegraph/pull/26823)
 - Added the "no results page", a help page shown if a search doesn't return any results [#26154](https://github.com/sourcegraph/sourcegraph/pull/26154)
+- Added monitoring page for Redis databases [#26967](https://github.com/sourcegraph/sourcegraph/issues/26967)
 
 ### Changed
 
