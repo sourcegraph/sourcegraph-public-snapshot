@@ -16,17 +16,21 @@ type handler struct {
 }
 
 var _ goroutine.Handler = &handler{}
+var _ goroutine.ErrorHandler = &handler{}
 
 func (h *handler) Handle(ctx context.Context) error {
 	retention := calculateRetention(conf.Get())
 	log15.Debug("purging webhook logs", "retention", retention)
 
 	if err := h.store.DeleteStale(ctx, retention); err != nil {
-		log15.Error("error deleting stale webhook logs", "err", err)
 		return err
 	}
 
 	return nil
+}
+
+func (h *handler) HandleError(err error) {
+	log15.Error("error deleting stale webhook logs", "err", err)
 }
 
 // This matches the documented value in the site configuration schema.
