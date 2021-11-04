@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -627,7 +628,22 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// across all of Sourcegraph.
 
 		globalSearch := args.Mode == search.ZoektGlobalSearch
+		// skipUnindexed is a value that controls whether to run
+		// unindexed search in a specific scenario of queries that
+		// contain no repo-affecting filters (global mode). When on
+		// sourcegraph.com, we resolve only a subset of all indexed
+		// repos to search. This control flow implies len(searcherRepos)
+		// is always 0, meaning that we should not create jobs to run
+		// unindexed searcher.
 		skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
+		// searcherOnly is a value that controls whether to run
+		// unindexed search in one of two scenarios. The first scenario
+		// depends on if index:no is set (value true). The second
+		// scenario happens if queries contain no repo-affecting filters
+		// (global mode). When NOT on sourcegraph.com the we _may_
+		// resolve some subset of nonindexed repos to search, so wemay
+		// generate jobs that run searcher, but it is conditional on
+		// whether global zoekt search will run (value true).
 		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
 			if !skipUnindexed {
@@ -657,6 +673,33 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					ZoektArgs:         zoektArgs,
 					SearcherArgs:      searcherArgs,
 					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
+					NotSearcherOnly:   !searcherOnly,
+					UseIndex:          args.PatternInfo.Index,
+					ContainsRefGlobs:  query.ContainsRefGlobs(q),
+					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				})
+			}
+		}
+
+		if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
+			if !skipUnindexed {
+				typ := search.SymbolRequest
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+				zoektArgs := &search.ZoektParameters{
+					Query:          zoektQuery,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				jobs = append(jobs, &symbol.SymbolSearch{
+					ZoektArgs:         zoektArgs,
+					PatternInfo:       args.PatternInfo,
+					Limit:             r.MaxResults(),
 					NotSearcherOnly:   !searcherOnly,
 					UseIndex:          args.PatternInfo.Index,
 					ContainsRefGlobs:  query.ContainsRefGlobs(q),
@@ -1538,21 +1581,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// globalSearch controls whether we run a global zoekt search.
 	globalSearch := args.Mode == search.ZoektGlobalSearch
-	// skipUnindexed is a value that controls whether to run unindexed
-	// search in a specific scenario of queries that contain no
-	// repo-affecting filters (global mode). When on sourcegraph.com, the
-	// determineRepos call below returns a subset of indexed repos to
-	// search. This control flow implies len(searcherRepos) is always 0, so
-	// we skip running searcher in subsequent goroutine search jobs.
-	skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
-	// searcherOnly is a value that controls whether to run unindexed search
-	// in one of two scenarios. The first scenario depends on if index:no is
-	// set (value true). The second scenario happens if queries contain no
-	// repo-affecting filters (global mode). When NOT on sourcegraph.com the
-	// determineRepos _may_ return a subset of nonindexed repos to search,
-	// so we run searcher, but conditional only on whether global zoekt
-	// search will run (value true).
-	searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
 
 	// performance optimization: call zoekt early, resolve repos concurrently, filter
 	// search results with resolved repos.
@@ -1683,20 +1711,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		})
 	}
 
-	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
-		if !skipUnindexed {
-			wg := waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-
-				notSearcherOnly := !searcherOnly
-
-				_ = agg.DoSymbolSearch(ctx, args, notSearcherOnly, false, limit)
-			})
-		}
-	}
-
 	if featureflag.FromContext(ctx).GetBoolOr("cc_commit_search", true) {
 		addCommitSearch := func(diff bool) {
 			j, err := commit.NewSearchJob(args.Query, diff, int(args.PatternInfo.FileMatchLimit))
@@ -1747,6 +1761,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		case "Commit":
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		case "Symbol":
+			return waitGroup(args.ResultTypes.Without(result.TypeSymbol) == 0)
 		case "Text":
 			return waitGroup(true)
 		case "Structural":
