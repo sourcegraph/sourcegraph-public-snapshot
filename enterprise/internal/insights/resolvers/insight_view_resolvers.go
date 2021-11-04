@@ -218,6 +218,36 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			return nil, errors.Wrap(err, "AttachSeriesToView")
 		}
 	}
+
+	if args.Input.Dashboards != nil {
+		dashboardTx := r.dashboardStore.With(tx)
+
+		userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+		if err != nil {
+			return nil, errors.Wrap(err, "getUserPermissions")
+		}
+
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+
+			hasPermission, err := dashboardTx.HasDashboardPermission(ctx, []int{int(dashboardID.Arg)}, userIds, orgIds)
+			if err != nil {
+				return nil, errors.Wrapf(err, "HasDashboardPermission dashboardId:%s", id)
+			} else if !hasPermission {
+				return nil, errors.Newf("missing dashboard permissions dashboardId:%s", id)
+			}
+
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
+			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+			if err != nil {
+				return nil, errors.Wrap(err, "AddViewsToDashboard")
+			}
+		}
+	}
+
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
 }
 

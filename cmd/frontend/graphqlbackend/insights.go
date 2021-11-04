@@ -260,6 +260,7 @@ type CreateLineChartSearchInsightArgs struct {
 type CreateLineChartSearchInsightInput struct {
 	DataSeries []LineChartSearchInsightDataSeriesInput
 	Options    LineChartOptionsInput
+	Dashboards *[]graphql.ID
 }
 
 type UpdateLineChartSearchInsightArgs struct {
