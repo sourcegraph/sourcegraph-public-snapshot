@@ -52,10 +52,9 @@ Examples:
 		ctx, cancel := contextCancelOnInterrupt(context.Background())
 		defer cancel()
 
-		err := executeBatchSpecInWorkspaces(ctx, executeBatchSpecOpts{
+		err := executeBatchSpecInWorkspaces(ctx, &ui.JSONLines{}, executeBatchSpecOpts{
 			flags:  flags,
 			client: cfg.apiClient(flags.api, flagSet.Output()),
-			ui:     &ui.JSONLines{},
 		})
 		if err != nil {
 			return cmderrors.ExitCode(1, nil)
@@ -75,10 +74,10 @@ Examples:
 	})
 }
 
-func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts) (err error) {
+func executeBatchSpecInWorkspaces(ctx context.Context, ui *ui.JSONLines, opts executeBatchSpecOpts) (err error) {
 	defer func() {
 		if err != nil {
-			opts.ui.ExecutionError(err)
+			ui.ExecutionError(err)
 		}
 	}()
 
@@ -111,12 +110,12 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 	repoWorkspaces := convertWorkspaces(input.Workspaces)
 
 	// Parse the raw batch spec contained in the input
-	opts.ui.ParsingBatchSpec()
+	ui.ParsingBatchSpec()
 	batchSpec, err := svc.ParseBatchSpec([]byte(input.RawSpec))
 	if err != nil {
 		var multiErr *multierror.Error
 		if errors.As(err, &multiErr) {
-			opts.ui.ParsingBatchSpecFailure(multiErr)
+			ui.ParsingBatchSpecFailure(multiErr)
 			return cmderrors.ExitCode(2, nil)
 		} else {
 			// This shouldn't happen; let's just punt and let the normal
@@ -124,19 +123,19 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 			return err
 		}
 	}
-	opts.ui.ParsingBatchSpecSuccess()
+	ui.ParsingBatchSpecSuccess()
 
 	var workspaceCreator workspace.Creator
 
 	if svc.HasDockerImages(batchSpec) {
-		opts.ui.PreparingContainerImages()
-		images, err := svc.EnsureDockerImages(ctx, batchSpec, opts.ui.PreparingContainerImagesProgress)
+		ui.PreparingContainerImages()
+		images, err := svc.EnsureDockerImages(ctx, batchSpec, ui.PreparingContainerImagesProgress)
 		if err != nil {
 			return err
 		}
-		opts.ui.PreparingContainerImagesSuccess()
+		ui.PreparingContainerImagesSuccess()
 
-		opts.ui.DeterminingWorkspaceCreatorType()
+		ui.DeterminingWorkspaceCreatorType()
 		workspaceCreator = workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
 		if workspaceCreator.Type() == workspace.CreatorTypeVolume {
 			_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
@@ -144,13 +143,14 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 				return err
 			}
 		}
-		opts.ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
+		ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
 	}
 
 	// EXECUTION OF TASKS
 	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
 		Creator:       workspaceCreator,
 		CacheDir:      opts.flags.cacheDir,
+		Cache:         &executor.JSONLinesCache{Writer: ui},
 		ClearCache:    opts.flags.clearCache,
 		SkipErrors:    opts.flags.skipErrors,
 		CleanArchives: opts.flags.cleanArchives,
@@ -162,21 +162,21 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 		ImportChangesets: false,
 	})
 
-	opts.ui.CheckingCache()
+	ui.CheckingCache()
 	tasks := svc.BuildTasks(ctx, batchSpec, repoWorkspaces)
 	uncachedTasks, cachedSpecs, err := coord.CheckCache(ctx, tasks)
 	if err != nil {
 		return err
 	}
-	opts.ui.CheckingCacheSuccess(len(cachedSpecs), len(uncachedTasks))
+	ui.CheckingCacheSuccess(len(cachedSpecs), len(uncachedTasks))
 
-	taskExecUI := opts.ui.ExecutingTasks(*verbose, opts.flags.parallelism)
+	taskExecUI := ui.ExecutingTasks(*verbose, opts.flags.parallelism)
 	freshSpecs, _, err := coord.Execute(ctx, uncachedTasks, batchSpec, taskExecUI)
 	if err == nil || opts.flags.skipErrors {
 		if err == nil {
 			taskExecUI.Success()
 		} else {
-			opts.ui.ExecutingTasksSkippingErrors(err)
+			ui.ExecutingTasksSkippingErrors(err)
 		}
 	} else {
 		if err != nil {
@@ -189,16 +189,16 @@ func executeBatchSpecInWorkspaces(ctx context.Context, opts executeBatchSpecOpts
 
 	ids := make([]graphql.ChangesetSpecID, len(specs))
 
-	opts.ui.UploadingChangesetSpecs(len(specs))
+	ui.UploadingChangesetSpecs(len(specs))
 	for i, spec := range specs {
 		id, err := svc.CreateChangesetSpec(ctx, spec)
 		if err != nil {
 			return err
 		}
 		ids[i] = id
-		opts.ui.UploadingChangesetSpecsProgress(i+1, len(specs))
+		ui.UploadingChangesetSpecsProgress(i+1, len(specs))
 	}
-	opts.ui.UploadingChangesetSpecsSuccess(ids)
+	ui.UploadingChangesetSpecsSuccess(ids)
 
 	return nil
 }

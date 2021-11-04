@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
@@ -169,6 +170,22 @@ func (ui *JSONLines) ApplyingBatchSpecSuccess(batchChangeURL string) {
 
 func (ui *JSONLines) ExecutionError(err error) {
 	logOperationFailure(batcheslib.LogEventOperationBatchSpecExecution, &batcheslib.BatchSpecExecutionMetadata{Error: err.Error()})
+}
+
+var _ executor.JSONCacheWriter = &JSONLines{}
+
+func (ui *JSONLines) WriteExecutionResult(key string, value execution.Result) {
+	logOperationSuccess(batcheslib.LogEventOperationCacheResult, &batcheslib.CacheResultMetadata{
+		Key:   key,
+		Value: value,
+	})
+}
+
+func (ui *JSONLines) WriteAfterStepResult(key string, value execution.AfterStepResult) {
+	logOperationSuccess(batcheslib.LogEventOperationCacheAfterStepResult, &batcheslib.CacheAfterStepResultMetadata{
+		Key:   key,
+		Value: value,
+	})
 }
 
 type taskExecutionJSONLines struct {

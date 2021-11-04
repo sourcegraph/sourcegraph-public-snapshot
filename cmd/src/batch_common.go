@@ -193,18 +193,16 @@ type executeBatchSpecOpts struct {
 
 	applyBatchSpec bool
 
-	ui ui.ExecUI
-
 	client api.Client
 }
 
 // executeBatchSpec performs all the steps required to upload the batch spec to
 // Sourcegraph, including execution as needed and applying the resulting batch
 // spec if specified.
-func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error) {
+func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOpts) (err error) {
 	defer func() {
 		if err != nil {
-			opts.ui.ExecutionError(err)
+			ui.ExecutionError(err)
 		}
 	}()
 
@@ -228,12 +226,12 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	}
 
 	// Parse flags and build up our service and executor options.
-	opts.ui.ParsingBatchSpec()
+	ui.ParsingBatchSpec()
 	batchSpec, rawSpec, err := parseBatchSpec(&opts.flags.file, svc)
 	if err != nil {
 		var multiErr *multierror.Error
 		if errors.As(err, &multiErr) {
-			opts.ui.ParsingBatchSpecFailure(multiErr)
+			ui.ParsingBatchSpecFailure(multiErr)
 			return cmderrors.ExitCode(2, nil)
 		} else {
 			// This shouldn't happen; let's just punt and let the normal
@@ -241,26 +239,26 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 			return err
 		}
 	}
-	opts.ui.ParsingBatchSpecSuccess()
+	ui.ParsingBatchSpecSuccess()
 
-	opts.ui.ResolvingNamespace()
+	ui.ResolvingNamespace()
 	namespace, err := svc.ResolveNamespace(ctx, opts.flags.namespace)
 	if err != nil {
 		return err
 	}
-	opts.ui.ResolvingNamespaceSuccess(namespace)
+	ui.ResolvingNamespaceSuccess(namespace)
 
 	var workspaceCreator workspace.Creator
 
 	if svc.HasDockerImages(batchSpec) {
-		opts.ui.PreparingContainerImages()
-		images, err := svc.EnsureDockerImages(ctx, batchSpec, opts.ui.PreparingContainerImagesProgress)
+		ui.PreparingContainerImages()
+		images, err := svc.EnsureDockerImages(ctx, batchSpec, ui.PreparingContainerImagesProgress)
 		if err != nil {
 			return err
 		}
-		opts.ui.PreparingContainerImagesSuccess()
+		ui.PreparingContainerImagesSuccess()
 
-		opts.ui.DeterminingWorkspaceCreatorType()
+		ui.DeterminingWorkspaceCreatorType()
 		workspaceCreator = workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
 		if workspaceCreator.Type() == workspace.CreatorTypeVolume {
 			_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
@@ -268,34 +266,35 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 				return err
 			}
 		}
-		opts.ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
+		ui.DeterminingWorkspaceCreatorTypeSuccess(workspaceCreator.Type())
 	}
 
-	opts.ui.ResolvingRepositories()
+	ui.ResolvingRepositories()
 	repos, err := svc.ResolveRepositories(ctx, batchSpec)
 	if err != nil {
 		if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
-			opts.ui.ResolvingRepositoriesDone(repos, repoSet, nil)
+			ui.ResolvingRepositoriesDone(repos, repoSet, nil)
 		} else if repoSet, ok := err.(batches.IgnoredRepoSet); ok {
-			opts.ui.ResolvingRepositoriesDone(repos, nil, repoSet)
+			ui.ResolvingRepositoriesDone(repos, nil, repoSet)
 		} else {
 			return errors.Wrap(err, "resolving repositories")
 		}
 	} else {
-		opts.ui.ResolvingRepositoriesDone(repos, nil, nil)
+		ui.ResolvingRepositoriesDone(repos, nil, nil)
 	}
 
-	opts.ui.DeterminingWorkspaces()
+	ui.DeterminingWorkspaces()
 	workspaces, err := svc.DetermineWorkspaces(ctx, repos, batchSpec)
 	if err != nil {
 		return err
 	}
-	opts.ui.DeterminingWorkspacesSuccess(len(workspaces))
+	ui.DeterminingWorkspacesSuccess(len(workspaces))
 
 	// EXECUTION OF TASKS
 	coord := svc.NewCoordinator(executor.NewCoordinatorOpts{
 		Creator:          workspaceCreator,
 		CacheDir:         opts.flags.cacheDir,
+		Cache:            executor.NewDiskCache(opts.flags.cacheDir),
 		ClearCache:       opts.flags.clearCache,
 		SkipErrors:       opts.flags.skipErrors,
 		CleanArchives:    opts.flags.cleanArchives,
@@ -306,15 +305,15 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 		ImportChangesets: true,
 	})
 
-	opts.ui.CheckingCache()
+	ui.CheckingCache()
 	tasks := svc.BuildTasks(ctx, batchSpec, workspaces)
 	uncachedTasks, cachedSpecs, err := coord.CheckCache(ctx, tasks)
 	if err != nil {
 		return err
 	}
-	opts.ui.CheckingCacheSuccess(len(cachedSpecs), len(uncachedTasks))
+	ui.CheckingCacheSuccess(len(cachedSpecs), len(uncachedTasks))
 
-	taskExecUI := opts.ui.ExecutingTasks(*verbose, opts.flags.parallelism)
+	taskExecUI := ui.ExecutingTasks(*verbose, opts.flags.parallelism)
 	freshSpecs, logFiles, err := coord.Execute(ctx, uncachedTasks, batchSpec, taskExecUI)
 	if err != nil && !opts.flags.skipErrors {
 		return err
@@ -323,7 +322,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 		if err == nil {
 			taskExecUI.Success()
 		} else {
-			opts.ui.ExecutingTasksSkippingErrors(err)
+			ui.ExecutingTasksSkippingErrors(err)
 		}
 	} else {
 		if err != nil {
@@ -333,7 +332,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	}
 
 	if len(logFiles) > 0 && opts.flags.keepLogs {
-		opts.ui.LogFilesKept(logFiles)
+		ui.LogFilesKept(logFiles)
 	}
 
 	specs := append(cachedSpecs, freshSpecs...)
@@ -346,7 +345,7 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 	ids := make([]graphql.ChangesetSpecID, len(specs))
 
 	if len(specs) > 0 {
-		opts.ui.UploadingChangesetSpecs(len(specs))
+		ui.UploadingChangesetSpecs(len(specs))
 
 		for i, spec := range specs {
 			id, err := svc.CreateChangesetSpec(ctx, spec)
@@ -354,33 +353,33 @@ func executeBatchSpec(ctx context.Context, opts executeBatchSpecOpts) (err error
 				return err
 			}
 			ids[i] = id
-			opts.ui.UploadingChangesetSpecsProgress(i+1, len(specs))
+			ui.UploadingChangesetSpecsProgress(i+1, len(specs))
 		}
 
-		opts.ui.UploadingChangesetSpecsSuccess(ids)
+		ui.UploadingChangesetSpecsSuccess(ids)
 	} else if len(repos) == 0 {
-		opts.ui.NoChangesetSpecs()
+		ui.NoChangesetSpecs()
 	}
 
-	opts.ui.CreatingBatchSpec()
+	ui.CreatingBatchSpec()
 	id, url, err := svc.CreateBatchSpec(ctx, namespace, rawSpec, ids)
 	if err != nil {
-		return opts.ui.CreatingBatchSpecError(err)
+		return ui.CreatingBatchSpecError(err)
 	}
 	previewURL := cfg.Endpoint + url
-	opts.ui.CreatingBatchSpecSuccess(previewURL)
+	ui.CreatingBatchSpecSuccess(previewURL)
 
 	if !opts.applyBatchSpec {
-		opts.ui.PreviewBatchSpec(previewURL)
+		ui.PreviewBatchSpec(previewURL)
 		return
 	}
 
-	opts.ui.ApplyingBatchSpec()
+	ui.ApplyingBatchSpec()
 	batch, err := svc.ApplyBatchChange(ctx, id)
 	if err != nil {
 		return err
 	}
-	opts.ui.ApplyingBatchSpecSuccess(cfg.Endpoint + batch.URL)
+	ui.ApplyingBatchSpecSuccess(cfg.Endpoint + batch.URL)
 
 	return nil
 }

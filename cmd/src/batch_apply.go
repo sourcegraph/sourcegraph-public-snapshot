@@ -5,9 +5,10 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/src-cli/internal/batches/ui"
 	"github.com/sourcegraph/src-cli/internal/cmderrors"
+
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func init() {
@@ -50,13 +51,11 @@ Examples:
 			execUI = &ui.TUI{Out: out}
 		}
 
-		err := executeBatchSpec(ctx, executeBatchSpecOpts{
+		err := executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
 			flags:  flags,
 			client: cfg.apiClient(flags.api, flagSet.Output()),
 
 			applyBatchSpec: true,
-
-			ui: execUI,
 		})
 		if err != nil {
 			return cmderrors.ExitCode(1, nil)

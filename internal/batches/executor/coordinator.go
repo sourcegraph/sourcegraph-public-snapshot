@@ -44,6 +44,7 @@ type NewCoordinatorOpts struct {
 	EnsureImage     imageEnsurer
 	Creator         workspace.Creator
 	Client          api.Client
+	Cache           ExecutionCache
 
 	// Everything that follows are either command-line flags or features.
 
@@ -68,7 +69,6 @@ type NewCoordinatorOpts struct {
 }
 
 func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
-	cache := NewCache(opts.CacheDir)
 	logManager := log.NewManager(opts.TempDir, opts.KeepLogs)
 
 	exec := newExecutor(newExecutorOpts{
@@ -83,9 +83,8 @@ func NewCoordinator(opts NewCoordinatorOpts) *Coordinator {
 	})
 
 	return &Coordinator{
-		opts: opts,
-
-		cache:      cache,
+		opts:       opts,
+		cache:      opts.Cache,
 		exec:       exec,
 		logManager: logManager,
 	}

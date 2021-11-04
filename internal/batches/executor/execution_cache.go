@@ -152,7 +152,7 @@ type ExecutionCache interface {
 	Clear(ctx context.Context, key CacheKeyer) error
 }
 
-func NewCache(dir string) ExecutionCache {
+func NewDiskCache(dir string) ExecutionCache {
 	if dir == "" {
 		return &ExecutionNoOpCache{}
 	}
@@ -290,4 +290,50 @@ func (ExecutionNoOpCache) SetStepResult(ctx context.Context, key CacheKeyer, res
 
 func (ExecutionNoOpCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
 	return execution.AfterStepResult{}, false, nil
+}
+
+type JSONCacheWriter interface {
+	WriteExecutionResult(key string, value execution.Result)
+	WriteAfterStepResult(key string, value execution.AfterStepResult)
+}
+
+type JSONLinesCache struct {
+	Writer JSONCacheWriter
+}
+
+func (c *JSONLinesCache) Get(ctx context.Context, key CacheKeyer) (result execution.Result, found bool, err error) {
+	// noop
+	return execution.Result{}, false, nil
+}
+
+func (c *JSONLinesCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
+	k, err := key.Key()
+	if err != nil {
+		return err
+	}
+
+	c.Writer.WriteExecutionResult(k, result)
+
+	return nil
+}
+
+func (c *JSONLinesCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
+	k, err := key.Key()
+	if err != nil {
+		return err
+	}
+
+	c.Writer.WriteAfterStepResult(k, result)
+
+	return nil
+}
+
+func (c *JSONLinesCache) GetStepResult(ctx context.Context, key CacheKeyer) (result execution.AfterStepResult, found bool, err error) {
+	// noop
+	return execution.AfterStepResult{}, false, nil
+}
+
+func (c *JSONLinesCache) Clear(ctx context.Context, key CacheKeyer) error {
+	// noop
+	return nil
 }

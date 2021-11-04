@@ -49,14 +49,12 @@ Examples:
 			execUI = &ui.TUI{Out: out}
 		}
 
-		err := executeBatchSpec(ctx, executeBatchSpecOpts{
+		err := executeBatchSpec(ctx, execUI, executeBatchSpecOpts{
 			flags:  flags,
 			client: cfg.apiClient(flags.api, flagSet.Output()),
 
 			// Do not apply the uploaded batch spec
 			applyBatchSpec: false,
-
-			ui: execUI,
 		})
 		if err != nil {
 			return cmderrors.ExitCode(1, nil)
