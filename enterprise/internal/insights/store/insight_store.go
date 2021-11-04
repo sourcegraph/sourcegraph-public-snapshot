@@ -414,6 +414,10 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	return s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
 }
 
+func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string, viewId int) error {
+	return s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
+}
+
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
 func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, grants []InsightViewGrant) (_ types.InsightView, err error) {
 	tx, err := s.Transact(ctx)
@@ -459,10 +463,17 @@ func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (
 		view.Filters.ExcludeRepoRegex,
 		view.UniqueID,
 	))
-	if row.Err() != nil {
-		return types.InsightView{}, row.Err()
+	var id int
+	err = row.Scan(&id)
+	if err != nil {
+		return types.InsightView{}, errors.Wrap(err, "failed to update insight view")
 	}
+	view.ID = id
 	return view, nil
+}
+
+func (s *InsightStore) UpdateViewSeries(ctx context.Context, seriesId string, viewId int, metadata types.InsightViewSeriesMetadata) error {
+	return s.Exec(ctx, sqlf.Sprintf(updateInsightViewSeries, metadata.Label, metadata.Stroke, seriesId, viewId))
 }
 
 func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView, grants []InsightViewGrant) error {
@@ -642,6 +653,21 @@ INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stro
 VALUES (%s, %s, %s, %s);
 `
 
+const removeSeriesFromViewSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:RemoveSeriesFromView
+DELETE FROM insight_view_series vs
+USING insight_series s
+WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s;
+`
+
+const updateInsightViewSeries = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateViewSeries
+UPDATE insight_view_series vs
+SET label = %s, stroke = %s
+FROM insight_series s
+WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s
+`
+
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
 INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
@@ -651,7 +677,8 @@ returning id;`
 const updateInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateView
 UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s
-WHERE unique_id = %s;`
+WHERE unique_id = %s
+RETURNING id;`
 
 const createInsightSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateSeries

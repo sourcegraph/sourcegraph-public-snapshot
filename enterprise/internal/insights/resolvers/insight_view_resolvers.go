@@ -199,23 +199,9 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 
 	for _, series := range args.Input.DataSeries {
-		created, err := tx.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:            ksuid.New().String(), // ignoring sharing data series for now, we will just always generate unique series
-			Query:               series.Query,
-			CreatedAt:           time.Now(),
-			Repositories:        series.RepositoryScope.Repositories,
-			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
-		})
+		err = createAndAttachSeries(ctx, tx, view, series)
 		if err != nil {
-			return nil, errors.Wrap(err, "CreateSeries")
-		}
-		err = tx.AttachSeriesToView(ctx, created, view, types.InsightViewSeriesMetadata{
-			Label:  emptyIfNil(series.Options.Label),
-			Stroke: emptyIfNil(series.Options.LineColor),
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "AttachSeriesToView")
+			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
 	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
@@ -236,7 +222,15 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	// TODO: Check permissions #25971
 
-	_, err = tx.UpdateView(ctx, types.InsightView{
+	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetMapped")
+	}
+	if len(views) == 0 {
+		return nil, errors.New("No insight view found with this id")
+	}
+
+	view, err := tx.UpdateView(ctx, types.InsightView{
 		UniqueID: insightViewId,
 		Title:    emptyIfNil(args.Input.PresentationOptions.Title),
 		Filters: types.InsightViewFilters{
@@ -247,8 +241,34 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "UpdateView")
 	}
 
-	// TODO: Update data series here #25979
+	for _, existingSeries := range views[0].Series {
+		if !seriesFound(existingSeries, args.Input.DataSeries) {
+			err = tx.RemoveSeriesFromView(ctx, existingSeries.SeriesID, view.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "RemoveViewSeries")
+			}
+		}
+	}
 
+	for _, series := range args.Input.DataSeries {
+		if series.SeriesId == nil {
+			err = createAndAttachSeries(ctx, tx, view, series)
+			if err != nil {
+				return nil, errors.Wrap(err, "createAndAttachSeries")
+			}
+		} else {
+			// TODO: Update the series #25979
+
+			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
+				Label:  emptyIfNil(series.Options.Label),
+				Stroke: emptyIfNil(series.Options.LineColor),
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "UpdateViewSeries")
+			}
+		}
+
+	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
 }
 
@@ -399,4 +419,38 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		}
 	})
 	return r.views, r.next, r.err
+}
+
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	created, err := tx.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            ksuid.New().String(), // ignoring sharing data series for now, we will just always generate unique series
+		Query:               series.Query,
+		CreatedAt:           time.Now(),
+		Repositories:        series.RepositoryScope.Repositories,
+		SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
+		SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
+	})
+	if err != nil {
+		return errors.Wrap(err, "CreateSeries")
+	}
+	err = tx.AttachSeriesToView(ctx, created, view, types.InsightViewSeriesMetadata{
+		Label:  emptyIfNil(series.Options.Label),
+		Stroke: emptyIfNil(series.Options.LineColor),
+	})
+	if err != nil {
+		return errors.Wrap(err, "AttachSeriesToView")
+	}
+	return nil
+}
+
+func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
+	for i := range inputSeries {
+		if inputSeries[i].SeriesId == nil {
+			continue
+		}
+		if existingSeries.SeriesID == *inputSeries[i].SeriesId {
+			return true
+		}
+	}
+	return false
 }

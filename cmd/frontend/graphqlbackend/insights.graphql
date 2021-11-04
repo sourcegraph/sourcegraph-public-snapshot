@@ -614,6 +614,10 @@ Input for a line chart search insight data series.
 """
 input LineChartSearchInsightDataSeriesInput {
     """
+    Unique ID for the series. Omit this field if it's a new series.
+    """
+    seriesId: String
+    """
     The query string.
     """
     query: String!

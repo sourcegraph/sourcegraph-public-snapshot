@@ -283,6 +283,7 @@ type InsightViewFiltersInput struct {
 }
 
 type LineChartSearchInsightDataSeriesInput struct {
+	SeriesId        *string
 	Query           string
 	TimeScope       TimeScopeInput
 	RepositoryScope RepositoryScopeInput
