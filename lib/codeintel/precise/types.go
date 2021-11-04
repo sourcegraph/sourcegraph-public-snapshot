@@ -39,7 +39,7 @@ type RangeData struct {
 
 // MonikerData represent a unique name (eventually) attached to a range.
 type MonikerData struct {
-	Kind                 string // local, import, export
+	Kind                 string // local, import, export, implementation
 	Scheme               string // name of the package manager type
 	Identifier           string // unique identifier
 	PackageInformationID ID     // possibly empty
