@@ -164,7 +164,6 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			fmt.Printf("len(batchSpec.Steps)=%d", len(batchSpec.Steps))
 			if batchSpec.Steps[0].IfCondition() != tt.want {
 				t.Fatalf("wrong IfCondition. want=%q, got=%q", tt.want, batchSpec.Steps[0].IfCondition())
 			}

@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/query"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -550,11 +549,11 @@ type ReposListOptions struct {
 	IDs []api.RepoID
 
 	// UserID, if non zero, will limit the set of results to repositories added by the user
-	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	UserID int32
 
 	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
-	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	OrgID int32
 
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
@@ -579,10 +578,6 @@ type ReposListOptions struct {
 	// ExternalRepoExcludeContains is the list of specs to exclude repos using
 	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
 	ExternalRepoExcludeContains []api.ExternalRepoSpec
-
-	// PatternQuery is an expression tree of patterns to query. The atoms of
-	// the query are strings which are regular expression patterns.
-	PatternQuery query.Q
 
 	// NoForks excludes forks from the list.
 	NoForks bool
@@ -865,27 +860,6 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
 	}
 
-	if opt.PatternQuery != nil {
-		cond, err := query.Eval(opt.PatternQuery, func(q query.Q) (*sqlf.Query, error) {
-			pattern, ok := q.(string)
-			if !ok {
-				return nil, errors.Errorf("unexpected token in repo listing query: %q", q)
-			}
-			extraConds, err := parsePattern(pattern)
-			if err != nil {
-				return nil, err
-			}
-			if len(extraConds) == 0 {
-				return sqlf.Sprintf("TRUE"), nil
-			}
-			return sqlf.Join(extraConds, "AND"), nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		where = append(where, cond)
-	}
-
 	if len(opt.IDs) > 0 {
 		where = append(where, sqlf.Sprintf("id = ANY (%s)", pq.Array(opt.IDs)))
 	}
@@ -994,6 +968,10 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
+	} else if opt.SearchContextID != 0 {
+		// Joining on distinct search context repos to avoid returning duplicates
+		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
+		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposQuery, opt.UserID)
 		if opt.IncludeUserPublicRepos {
@@ -1004,10 +982,6 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	} else if opt.OrgID != 0 {
 		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
-	} else if opt.SearchContextID != 0 {
-		// Joining on distinct search context repos to avoid returning duplicates
-		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
-		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
