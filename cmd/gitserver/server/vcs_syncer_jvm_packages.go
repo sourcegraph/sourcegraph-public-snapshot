@@ -35,10 +35,10 @@ const (
 	jvmMajorVersion0 = 44
 )
 
-// sourcegraphMavenDependency is used to set GIT_AUTHOR_NAME for git commands
+// placeholderMavenDependency is used to set GIT_AUTHOR_NAME for git commands
 // that don't create commits or tags. The name of this dependency should never
 // be publicly visible so it can have any random value.
-var sourcegraphMavenDependency = reposource.MavenDependency{
+var placeholderMavenDependency = reposource.MavenDependency{
 	MavenModule: reposource.MavenModule{
 		GroupID:    "com.sourcegraph",
 		ArtifactID: "sourcegraph",
@@ -97,7 +97,7 @@ func (s *JVMPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, sourcegraphMavenDependency); err != nil {
+	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, placeholderMavenDependency); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +120,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 
 	tags := map[string]bool{}
 
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), sourcegraphMavenDependency)
+	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), placeholderMavenDependency)
 	if err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (s *JVMPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	for tag := range tags {
 		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
 			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir), sourcegraphMavenDependency); err != nil {
+			if _, err := runCommandInDirectory(ctx, cmd, string(dir), placeholderMavenDependency); err != nil {
 				log15.Error("Failed to delete git tag", "error", err, "tag", tag)
 				continue
 			}
