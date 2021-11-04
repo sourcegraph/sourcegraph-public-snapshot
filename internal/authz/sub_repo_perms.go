@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // RepoContent specifies data existing in a repo. It currently only supports
@@ -51,19 +50,18 @@ type SubRepoPermissionsSupportedChecker interface {
 // repository itself. The intention is for this client to be created once at startup
 // and passed in to all places that need to check sub repo permissions.
 //
+// It is recommended to use it behind the SubRepoPermissionChecker interface.
+//
 // Note that sub-repo permissions are currently opt-in via the
-// experimentalFeatures.enableSubRepoPermissions option.
+// `experimentalFeatures.enableSubRepoPermissions` option. Users should do a
+// `conf.Get().ExperimentalFeatures.EnableSubRepoPermissions` or equivalent before
+// calling functions.
 type SubRepoPermsClient struct {
 	SupportedChecker  SubRepoPermissionsSupportedChecker
 	PermissionsGetter SubRepoPermissionsGetter
 }
 
 func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
-	// Are sub-repo permissions enabled at the site level
-	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
-		return Read, nil
-	}
-
 	if userID == 0 {
 		return None, &ErrUnauthenticated{}
 	}
@@ -146,12 +144,6 @@ func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, con
 // If the context is unauthenticated, ErrUnauthenticated is returned. If the context is
 // internal, Read permissions is granted.
 func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
-	// Check config here, despite checking again in the s.Permissions implementation,
-	// because we also make some permissions decisions here.
-	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
-		return Read, nil
-	}
-
 	if !a.IsAuthenticated() {
 		return None, &ErrUnauthenticated{}
 	}
