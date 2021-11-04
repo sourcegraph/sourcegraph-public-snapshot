@@ -166,8 +166,6 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	var opt struct {
 		// Hostname is used to determine the subset of repos to return
 		Hostname string
-		// DEPRECATED: Indexed is the repository names of indexed repos by Hostname.
-		Indexed []string
 		// IndexedIDs are the repository IDs of indexed repos by Hostname.
 		IndexedIDs []api.RepoID
 	}
@@ -177,21 +175,15 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	if len(opt.Indexed) > 0 && len(opt.IndexedIDs) > 0 {
-		http.Error(w, "only allowed to specify one of Indexed or IndexedIDs", http.StatusBadRequest)
-		return nil
-	}
-
 	indexable, err := h.ListIndexable(r.Context())
 	if err != nil {
 		return err
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, max(len(opt.Indexed), len(opt.IndexedIDs)))
+		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
 		err = h.StreamMinimalRepos(r.Context(), database.ReposListOptions{
-			IDs:   opt.IndexedIDs,
-			Names: opt.Indexed,
+			IDs: opt.IndexedIDs,
 		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {
@@ -225,11 +217,4 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	}
 
 	return json.NewEncoder(w).Encode(&data)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }
