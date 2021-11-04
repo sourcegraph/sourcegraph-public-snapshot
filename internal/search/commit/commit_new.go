@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -29,53 +30,56 @@ type CommitSearch struct {
 	Limit         int
 }
 
-func (j CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
-	resultType := "commit"
-	if j.Diff {
-		resultType = "diff"
-	}
-	if err := CheckSearchLimits(j.HasTimeFilter, len(repos), resultType); err != nil {
-		return err
-	}
-
-	g, ctx := errgroup.WithContext(ctx)
-	for _, repoRev := range repos {
-		repoRev := repoRev // we close over repoRev in onMatches
-
-		// Skip the repo if no revisions were resolved for it
-		if len(repoRev.Revs) == 0 {
-			continue
+func (j *CommitSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
+	return repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+		resultType := "commit"
+		if j.Diff {
+			resultType = "diff"
 		}
-
-		args := &protocol.SearchRequest{
-			Repo:        repoRev.Repo.Name,
-			Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
-			Query:       j.Query,
-			IncludeDiff: j.Diff,
-			Limit:       j.Limit,
-		}
-
-		onMatches := func(in []protocol.CommitMatch) {
-			res := make([]result.Match, 0, len(in))
-			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
-			}
-			stream.Send(streaming.SearchEvent{
-				Results: res,
-			})
-		}
-
-		g.Go(func() error {
-			limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
-			stream.Send(streaming.SearchEvent{
-				Stats: streaming.Stats{
-					IsLimitHit: limitHit,
-				},
-			})
+		if err := CheckSearchLimits(j.HasTimeFilter, len(page.RepoRevs), resultType); err != nil {
 			return err
-		})
-	}
-	return g.Wait()
+		}
+
+		g, ctx := errgroup.WithContext(ctx)
+		for _, repoRev := range page.RepoRevs {
+			repoRev := repoRev // we close over repoRev in onMatches
+
+			// Skip the repo if no revisions were resolved for it
+			if len(repoRev.Revs) == 0 {
+				continue
+			}
+
+			args := &protocol.SearchRequest{
+				Repo:        repoRev.Repo.Name,
+				Revisions:   searchRevsToGitserverRevs(repoRev.Revs),
+				Query:       j.Query,
+				IncludeDiff: j.Diff,
+				Limit:       j.Limit,
+			}
+
+			onMatches := func(in []protocol.CommitMatch) {
+				res := make([]result.Match, 0, len(in))
+				for _, protocolMatch := range in {
+					res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
+				}
+				stream.Send(streaming.SearchEvent{
+					Results: res,
+				})
+			}
+
+			g.Go(func() error {
+				limitHit, err := gitserver.DefaultClient.Search(ctx, args, onMatches)
+				stream.Send(streaming.SearchEvent{
+					Stats: streaming.Stats{
+						IsLimitHit: limitHit,
+					},
+				})
+				return err
+			})
+		}
+
+		return g.Wait()
+	})
 }
 
 func (j CommitSearch) Name() string {
@@ -347,8 +351,10 @@ type DiffCommitError struct {
 	Max        int
 }
 
-type RepoLimitError DiffCommitError
-type TimeLimitError DiffCommitError
+type (
+	RepoLimitError DiffCommitError
+	TimeLimitError DiffCommitError
+)
 
 func (*RepoLimitError) Error() string {
 	return "repo limit error"

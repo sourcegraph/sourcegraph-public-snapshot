@@ -76,6 +76,7 @@ exports[`StreamingProgressCount should render correctly for 0 repositories 1`] =
      
     from 
     0
+     searched
      
     repositories
   </small>
@@ -107,6 +108,7 @@ exports[`StreamingProgressCount should render correctly for 1 item complete 1`] 
      
     from 
     1
+     searched
      
     repository
   </small>
@@ -138,6 +140,7 @@ exports[`StreamingProgressCount should render correctly for 123 items complete 1
      
     from 
     500
+     searched
      
     repositories
   </small>
@@ -169,6 +172,7 @@ exports[`StreamingProgressCount should render correctly for big numbers complete
      
     from 
     8.9k
+     searched
      
     repositories
   </small>
@@ -208,6 +212,7 @@ exports[`StreamingProgressCount should render correctly for limithit 1`] = `
      
     from 
     500
+     searched
      
     repositories
   </small>
