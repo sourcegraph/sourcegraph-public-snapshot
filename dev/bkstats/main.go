@@ -190,7 +190,11 @@ func postOnSlack(report *report) error {
 
 	// Parse the response, to check if it succeeded
 	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
+	_, err = buf.ReadFrom(resp.Body)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 	if buf.String() != "ok" {
 		return fmt.Errorf("failed to post on slack: %s", buf.String())
 	}
