@@ -140,10 +140,8 @@ func main() {
 			fmt.Println(detail)
 		}
 		fmt.Println(report.summary)
-	} else {
-		if err := postOnSlack(&report); err != nil {
-			panic(err)
-		}
+	} else if err := postOnSlack(&report); err != nil {
+		panic(err)
 	}
 }
 
