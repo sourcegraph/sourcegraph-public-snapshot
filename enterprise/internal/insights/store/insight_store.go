@@ -443,10 +443,6 @@ func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string
 	return nil
 }
 
-func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string, viewId int) error {
-	return s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
-}
-
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
 func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, grants []InsightViewGrant) (_ types.InsightView, err error) {
 	tx, err := s.Transact(ctx)
