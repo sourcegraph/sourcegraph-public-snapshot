@@ -7,9 +7,64 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
 const testExecutionCacheKeyEnv = "TEST_EXECUTION_CACHE_KEY_ENV"
+
+func TestExecutionKey_RegressionTest(t *testing.T) {
+	// This test is a regression that should fail when we change something that
+	// influences the cache key generation, which would lead to busted caches.
+	//
+	// If this test fails and you're sure about the change, update the `want`
+	// value below.
+
+	var steps []batches.Step
+	if err := yaml.Unmarshal([]byte(`
+- run:  if [[ -f "package.json" ]]; then cat package.json | jq -j .name; fi
+  container: jiapantw/jq-alpine:latest
+  outputs:
+    projectName:
+      value: ${{ step.stdout }}
+- run:  echo "This only runs in automation-testing" >> message.txt
+  container: alpine:3
+  if: ${{ eq repository.name "github.com/sourcegraph/automation-testing" }}
+- run: bar
+  container: alpine:3
+  env:
+    - FILE_TO_CHECK: .tool-versions
+    - `+testExecutionCacheKeyEnv+`
+`), &steps); err != nil {
+		t.Fatal(err)
+	}
+
+	key := ExecutionKey{
+		Repository: batches.Repository{
+			ID:          "graphql-id",
+			Name:        "github.com/sourcegraph/src-cli",
+			BaseRef:     "refs/heads/f00b4r",
+			BaseRev:     "c0mmit",
+			FileMatches: []string{"aa.go"},
+		},
+		Path:               "path/to/workspace",
+		OnlyFetchWorkspace: true,
+		Steps:              steps,
+		BatchChangeAttributes: &template.BatchChangeAttributes{
+			Name:        "Batch Change Name",
+			Description: "Batch Change Description",
+		},
+	}
+
+	have, err := key.Key()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	want := "fsDKj1Uf1jNMhRXCJXE6nQ"
+	if have != want {
+		t.Fatalf("regression detected! cache key changed. have=%q, want=%q", have, want)
+	}
+}
 
 func TestExecutionKey(t *testing.T) {
 	// Let's set up an array of steps that we can test with. One step will
