@@ -178,7 +178,6 @@ func postOnSlack(report *report) error {
 	if err != nil {
 		return fmt.Errorf("failed to post on slack: %w", err)
 	}
-	fmt.Printf("%s", string(body))
 	// Perform the HTTP Post on the webhook
 	req, err := http.NewRequest(http.MethodPost, slack, bytes.NewBuffer(body))
 	if err != nil {
