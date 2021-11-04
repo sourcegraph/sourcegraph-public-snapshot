@@ -42,7 +42,7 @@ type SubRepoPermissionsGetter interface {
 // SubRepoPermissionsSupportedChecker should be used to quickly check whether
 // sub-repo permissions are supported for the given repo.
 type SubRepoPermissionsSupportedChecker interface {
-	Supported(ctx context.Context, repo api.RepoName) (bool, error)
+	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
 }
 
 // SubRepoPermsClient is responsible for checking whether a user has access to
@@ -80,7 +80,7 @@ func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, cont
 		return None, errors.New("PermissionsGetter is nil")
 	}
 
-	if supported, err := s.SupportedChecker.Supported(ctx, content.Repo); err != nil {
+	if supported, err := s.SupportedChecker.RepoSupported(ctx, content.Repo); err != nil {
 		return None, errors.Wrap(err, "checking for sub-repo permissions support")
 	} else if !supported {
 		// We assume that repo level access has already been granted
