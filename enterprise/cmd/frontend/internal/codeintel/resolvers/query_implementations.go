@@ -80,7 +80,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	var locations []lsifstore.Location
 	if cursor.Phase == "local" {
 		for len(locations) < limit {
-			localLocations, hasMore, err := r.pageLocalReferences(ctx, "implementations", adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
+			localLocations, hasMore, err := r.pageLocalReferences(ctx, r.lsifStore.Implementations, adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}

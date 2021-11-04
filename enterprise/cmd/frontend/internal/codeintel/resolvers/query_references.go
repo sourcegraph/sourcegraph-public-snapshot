@@ -77,7 +77,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	if cursor.Phase == "local" {
 		localLocations, hasMore, err := r.pageLocalReferences(
 			ctx,
-			"references",
+			r.lsifStore.References,
 			adjustedUploads,
 			&cursor.LocalCursor,
 			limit-len(locations),
@@ -202,13 +202,15 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 	return adjustedUploads, nil
 }
 
+type getLocationsFn = func(ctx context.Context, bundleID int, path string, line int, character int, limit int, offset int) ([]lsifstore.Location, int, error)
+
 // pageLocalReferences returns a slice of the (local) result set denoted by the given cursor fulfilled by
 // traversing the LSIF graph. The given cursor will be adjusted to reflect the offsets required to resolve
 // the next page of results. If there are no more pages left in the result set, a false-valued flag is
 // returned.
 func (r *queryResolver) pageLocalReferences(
 	ctx context.Context,
-	ty string,
+	getLocations getLocationsFn,
 	adjustedUploads []adjustedUpload,
 	cursor *localCursor,
 	limit int,
@@ -225,11 +227,7 @@ func (r *queryResolver) pageLocalReferences(
 			continue
 		}
 
-		fn := r.lsifStore.References
-		if ty == "implementations" {
-			fn = r.lsifStore.Implementations
-		}
-		locations, totalCount, err := fn(
+		locations, totalCount, err := getLocations(
 			ctx,
 			adjustedUploads[i].Upload.ID,
 			adjustedUploads[i].AdjustedPathInBundle,
