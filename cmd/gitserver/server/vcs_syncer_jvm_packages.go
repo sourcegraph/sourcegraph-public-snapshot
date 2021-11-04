@@ -27,9 +27,9 @@ import (
 
 const (
 	// DO NOT CHANGE. This timestamp needs to be stable so that JVM package
-	// repos consistently produce the same git revhash.  Changing this
-	// timestamp will cause links to JVM package repos to return 404s
-	// because Sourcegraph URLs can optionally include the git commit sha.
+	// repos consistently produce the same git revhash. Sourcegraph URLs
+	// can optionally include this hash, so changing the timestamp (and hence
+	// hashes) will cause existing links to JVM package repos to return 404s.
 	stableGitCommitDate = "Thu Apr 8 14:24:52 2021 +0200"
 
 	jvmMajorVersion0 = 44
