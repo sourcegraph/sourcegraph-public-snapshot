@@ -6,94 +6,28 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
-const testExecutionCacheKeyEnv = "TEST_EXECUTION_CACHE_KEY_ENV"
+var cacheRepo1 = batches.Repository{
+	ID:          "src-cli",
+	Name:        "github.com/sourcegraph/src-cli",
+	BaseRef:     "refs/heads/main",
+	BaseRev:     "d34db33f",
+	FileMatches: []string{"README.md", "main.go"},
+}
 
-func TestTaskCacheKey(t *testing.T) {
-	// Let's set up an array of steps that we can test with. One step will
-	// depend on an environment variable outside the spec.
-	var steps []batcheslib.Step
-	if err := yaml.Unmarshal([]byte(`
-- run: foo
-  env:
-    FOO: BAR
-
-- run: bar
-  env:
-    - FOO: BAR
-    - `+testExecutionCacheKeyEnv+`
-`), &steps); err != nil {
-		t.Fatal(err)
-	}
-
-	// And now we can set up a key to work with.
-	key := TaskCacheKey{&Task{
-		Repository: testRepo1,
-		Steps:      steps,
-	}}
-
-	// All righty. Let's get ourselves a baseline cache key here.
-	initial, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	// Let's set an unrelated environment variable and ensure we still have the
-	// same key.
-	if err := os.Setenv(testExecutionCacheKeyEnv+"_UNRELATED", "foo"); err != nil {
-		t.Fatal(err)
-	}
-	have, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial != have {
-		t.Errorf("unexpected change in key: initial=%q have=%q", initial, have)
-	}
-
-	// Let's now set the environment variable referenced in the steps and verify
-	// that the cache key does change.
-	if err := os.Setenv(testExecutionCacheKeyEnv, "foo"); err != nil {
-		t.Fatal(err)
-	}
-	have, err = key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial == have {
-		t.Errorf("unexpected lack of change in key: %q", have)
-	}
-
-	// And, just to be sure, let's change it again.
-	if err := os.Setenv(testExecutionCacheKeyEnv, "bar"); err != nil {
-		t.Fatal(err)
-	}
-	again, err := key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial == again || have == again {
-		t.Errorf("unexpected lack of change in key: %q", again)
-	}
-
-	// Finally, if we unset the environment variable again, we should get a key
-	// that matches the initial key.
-	if err := os.Unsetenv(testExecutionCacheKeyEnv); err != nil {
-		t.Fatal(err)
-	}
-	have, err = key.Key()
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	if initial != have {
-		t.Errorf("unexpected change in key: initial=%q have=%q", initial, have)
-	}
+var cacheRepo2 = batches.Repository{
+	ID:          "sourcegraph",
+	Name:        "github.com/sourcegraph/sourcegraph",
+	BaseRef:     "refs/heads/main-2",
+	BaseRev:     "c0ff33",
+	FileMatches: []string{"main.go"},
 }
 
 const testDiff = `diff --git a/README.md b/README.md
@@ -120,19 +54,19 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 		return testTempDir
 	}
 
-	cacheKey1 := TaskCacheKey{Task: &Task{
-		Repository: testRepo1,
+	cacheKey1 := &cache.ExecutionKey{
+		Repository: cacheRepo1,
 		Steps: []batcheslib.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
-	}}
+	}
 
-	cacheKey2 := TaskCacheKey{Task: &Task{
-		Repository: testRepo2,
+	cacheKey2 := &cache.ExecutionKey{
+		Repository: cacheRepo2,
 		Steps: []batcheslib.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
-	}}
+	}
 
 	value := execution.Result{
 		Diff: testDiff,
@@ -166,7 +100,7 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 	assertCacheMiss(t, cache, cacheKey1)
 }
 
-func assertCacheHit(t *testing.T, c ExecutionDiskCache, k TaskCacheKey, want execution.Result) {
+func assertCacheHit(t *testing.T, c ExecutionDiskCache, k *cache.ExecutionKey, want execution.Result) {
 	t.Helper()
 
 	have, found, err := c.Get(context.Background(), k)
@@ -182,7 +116,7 @@ func assertCacheHit(t *testing.T, c ExecutionDiskCache, k TaskCacheKey, want exe
 	}
 }
 
-func assertCacheMiss(t *testing.T, c ExecutionDiskCache, k TaskCacheKey) {
+func assertCacheMiss(t *testing.T, c ExecutionDiskCache, k *cache.ExecutionKey) {
 	t.Helper()
 
 	_, found, err := c.Get(context.Background(), k)

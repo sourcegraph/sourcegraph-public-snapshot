@@ -2,157 +2,17 @@ package executor
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/cockroachdb/errors"
 
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-
-	"github.com/sourcegraph/src-cli/internal/batches/util"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 )
 
-func UserCacheDir() (string, error) {
-	userCacheDir, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(userCacheDir, "sourcegraph-src"), nil
-}
-
-type CacheKeyer interface {
-	Key() (string, error)
-	Slug() string
-}
-
-func resolveStepsEnvironment(steps []batcheslib.Step) ([]map[string]string, error) {
-	// We have to resolve the step environments and include them in the cache
-	// key to ensure that the cache is properly invalidated when an environment
-	// variable changes.
-	//
-	// Note that we don't base the cache key on the entire global environment:
-	// if an unrelated environment variable changes, that's fine. We're only
-	// interested in the ones that actually make it into the step container.
-	global := os.Environ()
-	envs := make([]map[string]string, len(steps))
-	for i, step := range steps {
-		// TODO: This should also render templates inside env vars.
-		env, err := step.Env.Resolve(global)
-		if err != nil {
-			return nil, errors.Wrapf(err, "resolving environment for step %d", i)
-		}
-		envs[i] = env
-	}
-	return envs, nil
-}
-
-func marshalHash(t *Task, envs []map[string]string) (string, error) {
-	raw, err := json.Marshal(struct {
-		*Task
-		Environments []map[string]string
-	}{
-		Task:         t,
-		Environments: envs,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	hash := sha256.Sum256(raw)
-	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
-}
-
-// StepsCacheKey implements the CacheKeyer interface for a Task and a *subset*
-// of its Steps, up to and including the step with index StepIndex in
-// Task.Steps.
-type StepsCacheKey struct {
-	*Task
-	StepIndex int
-}
-
-// Key converts the key into a string form that can be used to uniquely identify
-// the cache key in a more concise form than the entire Task.
-func (key StepsCacheKey) Key() (string, error) {
-	// Setup a copy of the Task that only includes the Steps up to and
-	// including key.StepIndex.
-	taskCopy := &Task{
-		Repository:            key.Task.Repository,
-		Path:                  key.Task.Path,
-		OnlyFetchWorkspace:    key.Task.OnlyFetchWorkspace,
-		BatchChangeAttributes: key.Task.BatchChangeAttributes,
-		Template:              key.Task.Template,
-		TransformChanges:      key.Task.TransformChanges,
-		Archive:               key.Task.Archive,
-	}
-
-	taskCopy.Steps = key.Task.Steps[0 : key.StepIndex+1]
-
-	// Resolve environment only for the subset of Steps
-	envs, err := resolveStepsEnvironment(taskCopy.Steps)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := marshalHash(taskCopy, envs)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s-step-%d", hash, key.StepIndex), err
-}
-
-func (key StepsCacheKey) Slug() string {
-	return util.SlugForRepo(key.Repository.Name, key.Repository.Rev())
-}
-
-// TaskCacheKey implements the CacheKeyer interface for a Task and all its
-// Steps.
-type TaskCacheKey struct {
-	*Task
-}
-
-// Key converts the key into a string form that can be used to uniquely identify
-// the cache key in a more concise form than the entire Task.
-func (key TaskCacheKey) Key() (string, error) {
-	envs, err := resolveStepsEnvironment(key.Task.Steps)
-	if err != nil {
-		return "", err
-	}
-
-	raw, err := json.Marshal(struct {
-		*Task
-		Environments []map[string]string
-	}{
-		Task:         key.Task,
-		Environments: envs,
-	})
-	if err != nil {
-		return "", err
-	}
-
-	hash := sha256.Sum256(raw)
-	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
-}
-
-func (key TaskCacheKey) Slug() string {
-	return util.SlugForRepo(key.Repository.Name, key.Repository.Rev())
-}
-
-type ExecutionCache interface {
-	Get(ctx context.Context, key CacheKeyer) (result execution.Result, found bool, err error)
-	Set(ctx context.Context, key CacheKeyer, result execution.Result) error
-
-	GetStepResult(ctx context.Context, key CacheKeyer) (result execution.AfterStepResult, found bool, err error)
-	SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error
-
-	Clear(ctx context.Context, key CacheKeyer) error
-}
-
-func NewDiskCache(dir string) ExecutionCache {
+func NewDiskCache(dir string) cache.Cache {
 	if dir == "" {
 		return &ExecutionNoOpCache{}
 	}
@@ -166,7 +26,7 @@ type ExecutionDiskCache struct {
 
 const cacheFileExt = ".json"
 
-func (c ExecutionDiskCache) cacheFilePath(key CacheKeyer) (string, error) {
+func (c ExecutionDiskCache) cacheFilePath(key cache.Keyer) (string, error) {
 	keyString, err := key.Key()
 	if err != nil {
 		return "", errors.Wrap(err, "calculating execution cache key")
@@ -175,7 +35,7 @@ func (c ExecutionDiskCache) cacheFilePath(key CacheKeyer) (string, error) {
 	return filepath.Join(c.Dir, key.Slug(), keyString+cacheFileExt), nil
 }
 
-func (c ExecutionDiskCache) Get(ctx context.Context, key CacheKeyer) (execution.Result, bool, error) {
+func (c ExecutionDiskCache) Get(ctx context.Context, key cache.Keyer) (execution.Result, bool, error) {
 	var result execution.Result
 
 	path, err := c.cacheFilePath(key)
@@ -222,7 +82,7 @@ func (c ExecutionDiskCache) writeCacheFile(path string, result interface{}) erro
 	return os.WriteFile(path, raw, 0600)
 }
 
-func (c ExecutionDiskCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
+func (c ExecutionDiskCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -231,7 +91,7 @@ func (c ExecutionDiskCache) Set(ctx context.Context, key CacheKeyer, result exec
 	return c.writeCacheFile(path, &result)
 }
 
-func (c ExecutionDiskCache) Clear(ctx context.Context, key CacheKeyer) error {
+func (c ExecutionDiskCache) Clear(ctx context.Context, key cache.Keyer) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -244,7 +104,7 @@ func (c ExecutionDiskCache) Clear(ctx context.Context, key CacheKeyer) error {
 	return os.Remove(path)
 }
 
-func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
+func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key cache.Keyer) (execution.AfterStepResult, bool, error) {
 	var result execution.AfterStepResult
 	path, err := c.cacheFilePath(key)
 	if err != nil {
@@ -259,7 +119,7 @@ func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key CacheKeyer) (
 	return result, found, nil
 }
 
-func (c ExecutionDiskCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
+func (c ExecutionDiskCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -272,23 +132,23 @@ func (c ExecutionDiskCache) SetStepResult(ctx context.Context, key CacheKeyer, r
 // retrieve cache entries.
 type ExecutionNoOpCache struct{}
 
-func (ExecutionNoOpCache) Get(ctx context.Context, key CacheKeyer) (result execution.Result, found bool, err error) {
+func (ExecutionNoOpCache) Get(ctx context.Context, key cache.Keyer) (result execution.Result, found bool, err error) {
 	return execution.Result{}, false, nil
 }
 
-func (ExecutionNoOpCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
+func (ExecutionNoOpCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
 	return nil
 }
 
-func (ExecutionNoOpCache) Clear(ctx context.Context, key CacheKeyer) error {
+func (ExecutionNoOpCache) Clear(ctx context.Context, key cache.Keyer) error {
 	return nil
 }
 
-func (ExecutionNoOpCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
+func (ExecutionNoOpCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
 	return nil
 }
 
-func (ExecutionNoOpCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
+func (ExecutionNoOpCache) GetStepResult(ctx context.Context, key cache.Keyer) (execution.AfterStepResult, bool, error) {
 	return execution.AfterStepResult{}, false, nil
 }
 
@@ -301,12 +161,12 @@ type JSONLinesCache struct {
 	Writer JSONCacheWriter
 }
 
-func (c *JSONLinesCache) Get(ctx context.Context, key CacheKeyer) (result execution.Result, found bool, err error) {
+func (c *JSONLinesCache) Get(ctx context.Context, key cache.Keyer) (result execution.Result, found bool, err error) {
 	// noop
 	return execution.Result{}, false, nil
 }
 
-func (c *JSONLinesCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
+func (c *JSONLinesCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -317,7 +177,7 @@ func (c *JSONLinesCache) Set(ctx context.Context, key CacheKeyer, result executi
 	return nil
 }
 
-func (c *JSONLinesCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
+func (c *JSONLinesCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -328,12 +188,12 @@ func (c *JSONLinesCache) SetStepResult(ctx context.Context, key CacheKeyer, resu
 	return nil
 }
 
-func (c *JSONLinesCache) GetStepResult(ctx context.Context, key CacheKeyer) (result execution.AfterStepResult, found bool, err error) {
+func (c *JSONLinesCache) GetStepResult(ctx context.Context, key cache.Keyer) (result execution.AfterStepResult, found bool, err error) {
 	// noop
 	return execution.AfterStepResult{}, false, nil
 }
 
-func (c *JSONLinesCache) Clear(ctx context.Context, key CacheKeyer) error {
+func (c *JSONLinesCache) Clear(ctx context.Context, key cache.Keyer) error {
 	// noop
 	return nil
 }

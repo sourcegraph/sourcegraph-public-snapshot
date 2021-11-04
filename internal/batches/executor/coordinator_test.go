@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
@@ -647,7 +648,7 @@ func (c *inMemoryExecutionCache) size() int {
 	return len(c.cache)
 }
 
-func (c *inMemoryExecutionCache) getCacheItem(key CacheKeyer) (interface{}, bool, error) {
+func (c *inMemoryExecutionCache) getCacheItem(key cache.Keyer) (interface{}, bool, error) {
 	k, err := key.Key()
 	if err != nil {
 		return execution.Result{}, false, err
@@ -660,7 +661,7 @@ func (c *inMemoryExecutionCache) getCacheItem(key CacheKeyer) (interface{}, bool
 	return res, ok, nil
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key CacheKeyer) (execution.Result, bool, error) {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key cache.Keyer) (execution.Result, bool, error) {
 	res, ok, err := c.getCacheItem(key)
 	if err != nil || !ok {
 		return execution.Result{}, ok, err
@@ -670,7 +671,7 @@ func (c *inMemoryExecutionCache) Get(ctx context.Context, key CacheKeyer) (execu
 	return execResult, ok, nil
 }
 
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -683,7 +684,7 @@ func (c *inMemoryExecutionCache) Set(ctx context.Context, key CacheKeyer, result
 	return nil
 }
 
-func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
+func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key cache.Keyer) (execution.AfterStepResult, bool, error) {
 	res, ok, err := c.getCacheItem(key)
 	if err != nil || !ok {
 		return execution.AfterStepResult{}, ok, err
@@ -693,7 +694,7 @@ func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key CacheKey
 	return execResult, ok, nil
 }
 
-func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
+func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -706,7 +707,7 @@ func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key CacheKey
 	return nil
 }
 
-func (c *inMemoryExecutionCache) Clear(ctx context.Context, key CacheKeyer) error {
+func (c *inMemoryExecutionCache) Clear(ctx context.Context, key cache.Keyer) error {
 	k, err := key.Key()
 	if err != nil {
 		return err

@@ -9,6 +9,7 @@ import (
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -30,7 +31,7 @@ type taskExecutor interface {
 type Coordinator struct {
 	opts NewCoordinatorOpts
 
-	cache      ExecutionCache
+	cache      cache.Cache
 	exec       taskExecutor
 	logManager log.LogManager
 }
@@ -44,7 +45,7 @@ type NewCoordinatorOpts struct {
 	EnsureImage     imageEnsurer
 	Creator         workspace.Creator
 	Client          api.Client
-	Cache           ExecutionCache
+	Cache           cache.Cache
 
 	// Everything that follows are either command-line flags or features.
 
@@ -180,7 +181,7 @@ func (c *Coordinator) setCachedStepResults(ctx context.Context, task *Task) erro
 	// We start at the back so that we can find the _last_ cached step,
 	// then restart execution on the following step.
 	for i := len(task.Steps) - 1; i > -1; i-- {
-		key := StepsCacheKey{Task: task, StepIndex: i}
+		key := cache.StepsCacheKey{ExecutionKey: task.cacheKey(), StepIndex: i}
 
 		// If we need to clear the cache, we optimistically try this for every
 		// step.
@@ -215,7 +216,10 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 
 	// Save the per-step results
 	for _, stepResult := range taskResult.stepResults {
-		key := StepsCacheKey{Task: taskResult.task, StepIndex: stepResult.StepIndex}
+		key := cache.StepsCacheKey{
+			ExecutionKey: taskResult.task.cacheKey(),
+			StepIndex:    stepResult.StepIndex,
+		}
 		if err := c.cache.SetStepResult(ctx, key, stepResult); err != nil {
 			return nil, errors.Wrapf(err, "caching result for step %d in %q", stepResult.StepIndex, taskResult.task.Repository.Name)
 		}

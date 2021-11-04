@@ -3,6 +3,7 @@ package executor
 import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -42,6 +43,18 @@ func (t *Task) ArchivePathToFetch() string {
 	return ""
 }
 
-func (t *Task) cacheKey() TaskCacheKey {
-	return TaskCacheKey{t}
+func (t *Task) cacheKey() *cache.ExecutionKey {
+	return &cache.ExecutionKey{
+		Repository: batcheslib.Repository{
+			ID:          t.Repository.ID,
+			Name:        t.Repository.Name,
+			BaseRef:     t.Repository.BaseRef(),
+			BaseRev:     t.Repository.Rev(),
+			FileMatches: t.Repository.SortedFileMatches(),
+		},
+		Path:                  t.Path,
+		OnlyFetchWorkspace:    t.OnlyFetchWorkspace,
+		Steps:                 t.Steps,
+		BatchChangeAttributes: t.BatchChangeAttributes,
+	}
 }
