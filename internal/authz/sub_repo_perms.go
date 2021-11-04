@@ -25,11 +25,11 @@ type RepoContent struct {
 //
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms.go
 type SubRepoPermissionChecker interface {
-	// CurrentUserPermissions returns the level of access the authenticated user within
-	// the provided context has.
+	// Permissions returns the level of access the provided user has for the requested
+	// content.
 	//
-	// If the context is unauthenticated, ErrUnauthenticated is returned.
-	CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error)
+	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
+	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
 }
 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
@@ -58,21 +58,16 @@ type SubRepoPermsClient struct {
 	PermissionsGetter SubRepoPermissionsGetter
 }
 
-func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
+func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	// Are sub-repo permissions enabled at the site level
 	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
 		return Read, nil
 	}
 
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
+	if userID == 0 {
 		return None, &ErrUnauthenticated{}
 	}
 
-	return s.permissions(ctx, a.UID, content)
-}
-
-func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	if s.SupportedChecker == nil {
 		return None, errors.New("SupportedChecker is nil")
 	}
@@ -137,4 +132,32 @@ func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, cont
 
 	// Return None if no rule matches to be safe
 	return None, nil
+}
+
+// CurrentUserPermissions returns the level of access the authenticated user within
+// the provided context has for the requested content by calling ActorPermissions.
+func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, content RepoContent) (Perms, error) {
+	return ActorPermissions(ctx, s, actor.FromContext(ctx), content)
+}
+
+// ActorPermissions returns the level of access the given actor has for the requested
+// content.
+//
+// If the context is unauthenticated, ErrUnauthenticated is returned. If the context is
+// internal, Read permissions is granted.
+func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
+	// Check config here, despite checking again in the s.Permissions implementation,
+	// because we also make some permissions decisions here.
+	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
+		return Read, nil
+	}
+
+	if !a.IsAuthenticated() {
+		return None, &ErrUnauthenticated{}
+	}
+	if a.IsInternal() {
+		return Read, nil
+	}
+
+	return s.Permissions(ctx, a.UID, content)
 }
