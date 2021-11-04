@@ -25,12 +25,6 @@ type RepoContent struct {
 //
 //go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms.go
 type SubRepoPermissionChecker interface {
-	// CurrentUserPermissions returns the level of access the authenticated user within
-	// the provided context has for the requested content.
-	//
-	// If the context is unauthenticated, ErrUnauthenticated is returned.
-	CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error)
-
 	// Permissions returns the level of access the provided user has for the requested
 	// content.
 	//
@@ -62,10 +56,6 @@ type SubRepoPermissionsSupportedChecker interface {
 type SubRepoPermsClient struct {
 	SupportedChecker  SubRepoPermissionsSupportedChecker
 	PermissionsGetter SubRepoPermissionsGetter
-}
-
-func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
-	return s.Permissions(ctx, actor.FromContext(ctx).UID, content)
 }
 
 func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
@@ -142,4 +132,12 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 
 	// Return None if no rule matches to be safe
 	return None, nil
+}
+
+// CurrentUserPermissions returns the level of access the authenticated user within
+// the provided context has for the requested content.
+//
+// If the context is unauthenticated, ErrUnauthenticated is returned.
+func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, content RepoContent) (Perms, error) {
+	return s.Permissions(ctx, actor.FromContext(ctx).UID, content)
 }
