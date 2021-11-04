@@ -744,6 +744,7 @@ func TestRemoveSeriesFromView(t *testing.T) {
 
 		sampleIntervalUnit := "MONTH"
 		want := []types.InsightViewSeries{{
+			ViewID:              1,
 			UniqueID:            view.UniqueID,
 			SeriesID:            series.SeriesID,
 			Title:               view.Title,
