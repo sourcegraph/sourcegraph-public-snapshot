@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
 type LogEvent struct {
@@ -76,6 +78,10 @@ func (l *LogEvent) UnmarshalJSON(data []byte) error {
 		l.Metadata = new(TaskStepMetadata)
 	case LogEventOperationTaskCalculatingDiff:
 		l.Metadata = new(TaskCalculatingDiffMetadata)
+	case LogEventOperationCacheResult:
+		l.Metadata = new(CacheResultMetadata)
+	case LogEventOperationCacheAfterStepResult:
+		l.Metadata = new(CacheAfterStepResultMetadata)
 	default:
 		return errors.Newf("invalid event type %s", l.Operation)
 	}
@@ -114,6 +120,8 @@ const (
 	LogEventOperationTaskPreparingStep         LogEventOperation = "TASK_PREPARING_STEP"
 	LogEventOperationTaskStep                  LogEventOperation = "TASK_STEP"
 	LogEventOperationTaskCalculatingDiff       LogEventOperation = "TASK_CALCULATING_DIFF"
+	LogEventOperationCacheResult               LogEventOperation = "CACHE_RESULT"
+	LogEventOperationCacheAfterStepResult      LogEventOperation = "CACHE_AFTER_STEP_RESULT"
 )
 
 type LogEventStatus string
@@ -247,4 +255,14 @@ type TaskStepMetadata struct {
 
 type TaskCalculatingDiffMetadata struct {
 	TaskID string `json:"taskID,omitempty"`
+}
+
+type CacheResultMetadata struct {
+	Key   string           `json:"key,omitempty"`
+	Value execution.Result `json:"value,omitempty"`
+}
+
+type CacheAfterStepResultMetadata struct {
+	Key   string                    `json:"key,omitempty"`
+	Value execution.AfterStepResult `json:"value,omitempty"`
 }
