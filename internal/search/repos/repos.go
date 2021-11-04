@@ -45,8 +45,7 @@ func (r *Resolved) String() string {
 }
 
 type Resolver struct {
-	DB                  database.DB
-	SearchableReposFunc searchableReposFunc
+	DB database.DB
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
@@ -82,64 +81,40 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	var searchableRepos []types.MinimalRepo
+	tr.LazyPrintf("Repos.List - start")
 
-	if envvar.SourcegraphDotComMode() && len(includePatterns) == 0 && !query.HasTypeRepo(op.Query) && searchcontexts.IsGlobalSearchContext(searchContext) {
-		start := time.Now()
-		searchableRepos, err = searchableRepositories(ctx, r.SearchableReposFunc, excludePatterns)
-		if err != nil {
-			return Resolved{}, errors.Wrap(err, "getting list of indexable repos")
-		}
-		tr.LazyPrintf("searchableRepos: took %s to add %d repos", time.Since(start), len(searchableRepos))
+	options := database.ReposListOptions{
+		IncludePatterns: includePatterns,
+		ExcludePattern:  UnionRegExps(excludePatterns),
+		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
+		LimitOffset:            &database.LimitOffset{Limit: limit + 1},
+		NoForks:                op.NoForks,
+		OnlyForks:              op.OnlyForks,
+		NoArchived:             op.NoArchived,
+		OnlyArchived:           op.OnlyArchived,
+		NoPrivate:              op.Visibility == query.Public,
+		OnlyPrivate:            op.Visibility == query.Private,
+		SearchContextID:        searchContext.ID,
+		UserID:                 searchContext.NamespaceUserID,
+		OrgID:                  searchContext.NamespaceOrgID,
+		IncludeUserPublicRepos: searchContext.NamespaceUserID != 0,
+	}
 
-		// Search all indexable repos since indexed search is fast.
-		if len(searchableRepos) > limit {
-			limit = len(searchableRepos)
+	if op.Ranked {
+		options.OrderBy = database.RepoListOrderBy{
+			{
+				Field:      database.RepoListStars,
+				Descending: true,
+				Nulls:      "LAST",
+			},
 		}
 	}
 
-	var repos []types.MinimalRepo
-	if len(searchableRepos) > 0 {
-		repos = searchableRepos
-		if len(repos) > limit {
-			repos = repos[:limit]
-		}
-	} else {
-		tr.LazyPrintf("Repos.List - start")
+	repos, err := r.DB.Repos().ListMinimalRepos(ctx, options)
+	tr.LazyPrintf("Repos.List - done")
 
-		options := database.ReposListOptions{
-			IncludePatterns: includePatterns,
-			ExcludePattern:  UnionRegExps(excludePatterns),
-			// List N+1 repos so we can see if there are repos omitted due to our repo limit.
-			LimitOffset:            &database.LimitOffset{Limit: limit + 1},
-			NoForks:                op.NoForks,
-			OnlyForks:              op.OnlyForks,
-			NoArchived:             op.NoArchived,
-			OnlyArchived:           op.OnlyArchived,
-			NoPrivate:              op.Visibility == query.Public,
-			OnlyPrivate:            op.Visibility == query.Private,
-			SearchContextID:        searchContext.ID,
-			UserID:                 searchContext.NamespaceUserID,
-			OrgID:                  searchContext.NamespaceOrgID,
-			IncludeUserPublicRepos: searchContext.NamespaceUserID != 0,
-		}
-
-		if op.Ranked {
-			options.OrderBy = database.RepoListOrderBy{
-				{
-					Field:      database.RepoListStars,
-					Descending: true,
-					Nulls:      "LAST",
-				},
-			}
-		}
-
-		repos, err = r.DB.Repos().ListMinimalRepos(ctx, options)
-		tr.LazyPrintf("Repos.List - done")
-
-		if err != nil {
-			return Resolved{}, err
-		}
+	if err != nil {
+		return Resolved{}, err
 	}
 	overLimit := len(repos) > limit
 	repoRevs := make([]*search.RepositoryRevisions, 0, len(repos))

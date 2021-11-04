@@ -111,10 +111,7 @@ func alertForTimeout(usedTime time.Duration, suggestTime time.Duration, r *searc
 // query does not contain any repos to search.
 func (r *searchResolver) reposExist(ctx context.Context, options search.RepoOptions) bool {
 	options.UserSettings = r.UserSettings
-	repositoryResolver := &searchrepos.Resolver{
-		DB:                  r.db,
-		SearchableReposFunc: backend.Repos.ListSearchable,
-	}
+	repositoryResolver := &searchrepos.Resolver{DB: r.db}
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }

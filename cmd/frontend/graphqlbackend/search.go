@@ -9,7 +9,6 @@ import (
 	"github.com/google/zoekt"
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -297,10 +296,7 @@ func (r *searchResolver) resolveRepositories(ctx context.Context, options search
 	tr.LazyPrintf("resolveRepositories - start")
 	defer tr.LazyPrintf("resolveRepositories - done")
 
-	repositoryResolver := &searchrepos.Resolver{
-		DB:                  r.db,
-		SearchableReposFunc: backend.Repos.ListSearchable,
-	}
+	repositoryResolver := &searchrepos.Resolver{DB: r.db}
 
 	return repositoryResolver.Resolve(ctx, options)
 }

@@ -11,9 +11,6 @@ import (
 	"github.com/cockroachdb/errors"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/zoekt"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
@@ -364,67 +361,6 @@ func TestSearchableRepositories(t *testing.T) {
 			}
 			if !reflect.DeepEqual(drNames, tc.want) {
 				t.Errorf("names of indexable repos = %v, want %v", drNames, tc.want)
-			}
-		})
-	}
-}
-
-func TestUseIndexableReposIfMissingOrGlobalSearchContext(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
-
-	queryInfo, err := query.ParseLiteral("foo")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	wantIndexableRepos := []string{
-		"default/one",
-		"default/two",
-		"default/three",
-	}
-	searchableRepos := make([]types.MinimalRepo, len(wantIndexableRepos))
-	zoektRepoListEntries := make([]*zoekt.RepoListEntry, len(wantIndexableRepos))
-	mockSearchableReposFunc := func(_ context.Context) ([]types.MinimalRepo, error) {
-		return searchableRepos, nil
-	}
-
-	for idx, name := range wantIndexableRepos {
-		searchableRepos[idx] = types.MinimalRepo{Name: api.RepoName(name)}
-		zoektRepoListEntries[idx] = &zoekt.RepoListEntry{
-			Repository: zoekt.Repository{
-				Name:     name,
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
-			},
-		}
-	}
-
-	tests := []struct {
-		name              string
-		searchContextSpec string
-	}{
-		{name: "use indexable repos if missing search context", searchContextSpec: ""},
-		{name: "use indexable repos with global search context", searchContextSpec: "global"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			op := search.RepoOptions{
-				SearchContextSpec: tt.searchContextSpec,
-				Query:             queryInfo,
-			}
-			repositoryResolver := &Resolver{SearchableReposFunc: mockSearchableReposFunc}
-			resolved, err := repositoryResolver.Resolve(context.Background(), op)
-			if err != nil {
-				t.Fatal(err)
-			}
-			var repoNames []string
-			for _, repoRev := range resolved.RepoRevs {
-				repoNames = append(repoNames, string(repoRev.Repo.Name))
-			}
-			if !reflect.DeepEqual(repoNames, wantIndexableRepos) {
-				t.Errorf("names of indexable repos = %v, want %v", repoNames, wantIndexableRepos)
 			}
 		})
 	}
