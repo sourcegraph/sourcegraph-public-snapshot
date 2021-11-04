@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 )
 
@@ -22,19 +23,18 @@ type ChangesetSpecRepository struct {
 }
 
 type ChangesetSpecInput struct {
-	// This is the old graphql.Repository
+	// BaseRepositoryID is the GraphQL ID of the base repository.
 	BaseRepositoryID string
+	// HeadRepositoryID is the GraphQL ID of the head repository. Until we
+	// support forks it always needs to be the same as BaseRepositoryID.
 	HeadRepositoryID string
 
-	// This is just a thin wrapper
+	// Repository contains information about the repository in which the changes were made.
 	Repository ChangesetSpecRepository
 
-	// These were on Task
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 	Template              *ChangesetTemplate              `json:"-"`
 	TransformChanges      *TransformChanges               `json:"-"`
-
-	// These were on executionResult
 
 	Result execution.Result
 }
@@ -123,7 +123,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 			BaseRef:        input.Repository.BaseRef,
 			BaseRev:        input.Repository.BaseRev,
 
-			HeadRef: ensureRefPrefix(branch),
+			HeadRef: git.EnsureRefPrefix(branch),
 			Title:   title,
 			Body:    body,
 			Commits: []GitCommitDescription{
@@ -269,11 +269,4 @@ func groupFileDiffs(completeDiff, defaultBranch string, groups []Group) (map[str
 		finalDiffsByBranch[branch] = string(printed)
 	}
 	return finalDiffsByBranch, nil
-}
-
-func ensureRefPrefix(ref string) string {
-	if strings.HasPrefix(ref, "refs/heads/") {
-		return ref
-	}
-	return "refs/heads/" + ref
 }
