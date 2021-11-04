@@ -22,6 +22,14 @@ This job periodically checks for repositories that can be auto-indexed and queue
 
 _This job currently no-ops outside of our public Cloud instance_. Keep an eye on our release notes for when this feature becomes generally available.
 
+#### `insights-job`
+This job contains all of the backgrounds processes for Code Insights. These processes periodically run and execute different tasks for Code Insights:
+1. Commit indexer
+2. Background query executor
+3. Historical data recorder
+4. Data clean up jobs
+5. Settings file insight definition migrations
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.
