@@ -719,7 +719,7 @@ checks:
     failMessage: "Failed to run 'docker-compose version'. Please make sure Docker is running."
 
   go:
-    cmd: go version
+    cmd: go version || (echo "➡️ Install Go or make it sure it is in the \$PATH" && exit 1)
     failMessage: 'Failed to run go'
 
   go-version:
