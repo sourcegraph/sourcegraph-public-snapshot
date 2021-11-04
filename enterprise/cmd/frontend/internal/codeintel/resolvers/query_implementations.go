@@ -80,7 +80,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	var locations []lsifstore.Location
 	if cursor.Phase == "local" {
 		for len(locations) < limit {
-			localLocations, hasMore, err := r.pageLocalReferences(ctx, r.lsifStore.Implementations, adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
+			localLocations, hasMore, err := r.pageLocalLocations(ctx, r.lsifStore.Implementations, adjustedUploads, &cursor.LocalCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
@@ -118,7 +118,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 	// Phase 3: Gather all "remote" locations in dependents via moniker search.
 	if cursor.Phase == "dependents" {
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "implementations", adjustedUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "implementations", adjustedUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}

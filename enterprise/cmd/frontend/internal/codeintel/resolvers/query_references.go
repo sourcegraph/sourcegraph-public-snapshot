@@ -75,7 +75,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 	// no more local results remaining.
 	var locations []lsifstore.Location
 	if cursor.Phase == "local" {
-		localLocations, hasMore, err := r.pageLocalReferences(
+		localLocations, hasMore, err := r.pageLocalLocations(
 			ctx,
 			r.lsifStore.References,
 			adjustedUploads,
@@ -119,7 +119,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		}
 
 		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteReferences(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
+			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), traceLog)
 			if err != nil {
 				return nil, "", err
 			}
@@ -204,11 +204,11 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 
 type getLocationsFn = func(ctx context.Context, bundleID int, path string, line int, character int, limit int, offset int) ([]lsifstore.Location, int, error)
 
-// pageLocalReferences returns a slice of the (local) result set denoted by the given cursor fulfilled by
+// pageLocalLocations returns a slice of the (local) result set denoted by the given cursor fulfilled by
 // traversing the LSIF graph. The given cursor will be adjusted to reflect the offsets required to resolve
 // the next page of results. If there are no more pages left in the result set, a false-valued flag is
 // returned.
-func (r *queryResolver) pageLocalReferences(
+func (r *queryResolver) pageLocalLocations(
 	ctx context.Context,
 	getLocations getLocationsFn,
 	adjustedUploads []adjustedUpload,
@@ -237,11 +237,11 @@ func (r *queryResolver) pageLocalReferences(
 			cursor.LocationOffset,
 		)
 		if err != nil {
-			return nil, false, errors.Wrap(err, "lsifstore.References")
+			return nil, false, errors.Wrap(err, "in an lsifstore locations call")
 		}
 
 		numLocations := len(locations)
-		traceLog(log.Int("pageLocalReferences.numLocations", numLocations))
+		traceLog(log.Int("pageLocalLocations.numLocations", numLocations))
 		cursor.LocationOffset += numLocations
 
 		if cursor.LocationOffset >= totalCount {
@@ -260,11 +260,11 @@ func (r *queryResolver) pageLocalReferences(
 // that can be passed to a single moniker search query.
 const maximumIndexesPerMonikerSearch = 50
 
-// pageRemoteReferences returns a slice of the (remote) result set denoted by the given cursor fulfilled by
+// pageRemoteLocations returns a slice of the (remote) result set denoted by the given cursor fulfilled by
 // performing a moniker search over a group of indexes. The given cursor will be adjusted to reflect the
 // offsets required to resolve the next page of results. If there are no more pages left in the result set,
 // a false-valued flag is returned.
-func (r *queryResolver) pageRemoteReferences(
+func (r *queryResolver) pageRemoteLocations(
 	ctx context.Context,
 	lsifDataTable string,
 	adjustedUploads []adjustedUpload,
@@ -319,7 +319,7 @@ func (r *queryResolver) pageRemoteReferences(
 	}
 
 	numLocations := len(locations)
-	traceLog(log.Int("pageLocalReferences.pageRemoteReferences", numLocations))
+	traceLog(log.Int("pageLocalLocations.numLocations", numLocations))
 	cursor.LocationOffset += numLocations
 
 	if cursor.LocationOffset >= totalCount {
