@@ -135,9 +135,29 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 }
 
 // CurrentUserPermissions returns the level of access the authenticated user within
-// the provided context has for the requested content.
-//
-// If the context is unauthenticated, ErrUnauthenticated is returned.
+// the provided context has for the requested content by calling ActorPermissions.
 func CurrentUserPermissions(ctx context.Context, s SubRepoPermissionChecker, content RepoContent) (Perms, error) {
-	return s.Permissions(ctx, actor.FromContext(ctx).UID, content)
+	return ActorPermissions(ctx, s, actor.FromContext(ctx), content)
+}
+
+// ActorPermissions returns the level of access the given actor has for the requested
+// content.
+//
+// If the context is unauthenticated, ErrUnauthenticated is returned. If the context is
+// internal, Read permissions is granted.
+func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
+	// Check config here, despite checking again in the s.Permissions implementation,
+	// because we also make some permissions decisions here.
+	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
+		return Read, nil
+	}
+
+	if !a.IsAuthenticated() {
+		return None, &ErrUnauthenticated{}
+	}
+	if a.IsInternal() {
+		return Read, nil
+	}
+
+	return s.Permissions(ctx, a.UID, content)
 }
