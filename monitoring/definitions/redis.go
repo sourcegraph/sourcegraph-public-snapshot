@@ -3,10 +3,16 @@ package definitions
 import (
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
 func Redis() *monitoring.Container {
+	const (
+		redisCache = "redis-cache"
+		redisStore = "redis-store"
+	)
 
 	return &monitoring.Container{
 		Name:        "redis",
@@ -19,16 +25,17 @@ func Redis() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name: "redis-store_up",
-							Description: "redis-store availability",
-							Owner: monitoring.ObservableOwnerDevOps,
+							Name:          "redis-store_up",
+							Description:   "redis-store availability",
+							Owner:         monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-store"}`,
 							DataMustExist: true,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:      monitoring.Alert().LessOrEqual(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
 								- Ensure redis-store is running and has not crashed.
-							`},
+							`,
+							Interpretation: "A value of 1 indicates the service is currently running"},
 					}},
 			},
 			{
@@ -37,17 +44,23 @@ func Redis() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name: "redis-cache_up",
-							Description: "redis-cache availability",
-							Owner: monitoring.ObservableOwnerDevOps,
+							Name:          "redis-cache_up",
+							Description:   "redis-cache availability",
+							Owner:         monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-cache"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: true,
 							Critical:      monitoring.Alert().LessOrEqual(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
 								- Ensure redis-cache is running
-							`},
-					}}},
+							`,
+							Interpretation: "A value of 1 indicates the service is currently running"},
+					}},
+			},
+			shared.NewProvisioningIndicatorsGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewProvisioningIndicatorsGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
+			shared.NewKubernetesMonitoringGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
 		},
 
 		NoSourcegraphDebugServer: false,
