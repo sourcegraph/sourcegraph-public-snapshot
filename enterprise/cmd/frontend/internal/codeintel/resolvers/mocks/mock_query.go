@@ -40,6 +40,9 @@ type MockQueryResolver struct {
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *QueryResolverHoverFunc
+	// ImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method Implementations.
+	ImplementationsFunc *QueryResolverImplementationsFunc
 	// RangesFunc is an instance of a mock function object controlling the
 	// behavior of the method Ranges.
 	RangesFunc *QueryResolverRangesFunc
@@ -95,6 +98,11 @@ func NewMockQueryResolver() *MockQueryResolver {
 				return "", lsifstore.Range{}, false, nil
 			},
 		},
+		ImplementationsFunc: &QueryResolverImplementationsFunc{
+			defaultHook: func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+				return nil, "", nil
+			},
+		},
 		RangesFunc: &QueryResolverRangesFunc{
 			defaultHook: func(context.Context, int, int) ([]resolvers.AdjustedCodeIntelligenceRange, error) {
 				return nil, nil
@@ -141,6 +149,9 @@ func NewMockQueryResolverFrom(i resolvers.QueryResolver) *MockQueryResolver {
 		},
 		HoverFunc: &QueryResolverHoverFunc{
 			defaultHook: i.Hover,
+		},
+		ImplementationsFunc: &QueryResolverImplementationsFunc{
+			defaultHook: i.Implementations,
 		},
 		RangesFunc: &QueryResolverRangesFunc{
 			defaultHook: i.Ranges,
@@ -1063,6 +1074,128 @@ func (c QueryResolverHoverFuncCall) Args() []interface{} {
 // invocation.
 func (c QueryResolverHoverFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// QueryResolverImplementationsFunc describes the behavior when the
+// Implementations method of the parent MockQueryResolver instance is
+// invoked.
+type QueryResolverImplementationsFunc struct {
+	defaultHook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)
+	hooks       []func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)
+	history     []QueryResolverImplementationsFuncCall
+	mutex       sync.Mutex
+}
+
+// Implementations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockQueryResolver) Implementations(v0 context.Context, v1 int, v2 int, v3 int, v4 string) ([]resolvers.AdjustedLocation, string, error) {
+	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.ImplementationsFunc.appendCall(QueryResolverImplementationsFuncCall{v0, v1, v2, v3, v4, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Implementations
+// method of the parent MockQueryResolver instance is invoked and the hook
+// queue is empty.
+func (f *QueryResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Implementations method of the parent MockQueryResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *QueryResolverImplementationsFunc) PushHook(hook func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *QueryResolverImplementationsFunc) SetDefaultReturn(r0 []resolvers.AdjustedLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *QueryResolverImplementationsFunc) PushReturn(r0 []resolvers.AdjustedLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *QueryResolverImplementationsFunc) nextHook() func(context.Context, int, int, int, string) ([]resolvers.AdjustedLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *QueryResolverImplementationsFunc) appendCall(r0 QueryResolverImplementationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of QueryResolverImplementationsFuncCall
+// objects describing the invocations of this function.
+func (f *QueryResolverImplementationsFunc) History() []QueryResolverImplementationsFuncCall {
+	f.mutex.Lock()
+	history := make([]QueryResolverImplementationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// QueryResolverImplementationsFuncCall is an object that describes an
+// invocation of method Implementations on an instance of MockQueryResolver.
+type QueryResolverImplementationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []resolvers.AdjustedLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c QueryResolverImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c QueryResolverImplementationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // QueryResolverRangesFunc describes the behavior when the Ranges method of

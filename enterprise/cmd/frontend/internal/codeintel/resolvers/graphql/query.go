@@ -12,6 +12,9 @@ import (
 // DefaultReferencesPageSize is the reference result page size when no limit is supplied.
 const DefaultReferencesPageSize = 100
 
+// DefaultReferencesPageSize is the implementation result page size when no limit is supplied.
+const DefaultImplementationsPageSize = 100
+
 // DefaultDiagnosticsPageSize is the diagnostic result page size when no limit is supplied.
 const DefaultDiagnosticsPageSize = 100
 
@@ -93,6 +96,24 @@ func (r *QueryResolver) References(ctx context.Context, args *gql.LSIFPagedQuery
 	}
 
 	locations, cursor, err := r.resolver.References(ctx, int(args.Line), int(args.Character), limit, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLocationConnectionResolver(locations, strPtr(cursor), r.locationResolver), nil
+}
+
+func (r *QueryResolver) Implementations(ctx context.Context, args *gql.LSIFPagedQueryPositionArgs) (gql.LocationConnectionResolver, error) {
+	limit := derefInt32(args.First, DefaultImplementationsPageSize)
+	if limit <= 0 {
+		return nil, ErrIllegalLimit
+	}
+	cursor, err := decodeCursor(args.After)
+	if err != nil {
+		return nil, err
+	}
+
+	locations, cursor, err := r.resolver.Implementations(ctx, int(args.Line), int(args.Character), limit, cursor)
 	if err != nil {
 		return nil, err
 	}

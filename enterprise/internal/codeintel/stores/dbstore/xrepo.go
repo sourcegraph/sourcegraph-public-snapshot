@@ -66,9 +66,10 @@ FROM lsif_dumps_with_repository_name u WHERE u.id IN (
 )
 `
 
-// ReferenceIDsAndFilters returns the total count of visible uploads that may refer to one of the given
-// monikers. Each upload identifier in the result set is paired with one or more compressed bloom filters
-// that encode more precisely the set of identifiers imported from dependent packages.
+// ReferenceIDsAndFilters returns visible uploads that refer (via package information) to any of the
+// given monikers' packages. Each upload identifier in the result set is paired with one or more
+// compressed bloom filters that encode more precisely the set of identifiers imported from dependent
+// packages.
 //
 // Visibility is determined in two parts: if the index belongs to the given repository, it is visible if
 // it can be seen from the given index; otherwise, an index is visible if it can be seen from the tip of
@@ -151,7 +152,7 @@ SELECT COUNT(distinct r.dump_id)
 func monikersToString(vs []precise.QualifiedMonikerData) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
+		strs = append(strs, fmt.Sprintf("%s:%s:%s:%s", v.Kind, v.Scheme, v.Identifier, v.Version))
 	}
 
 	return strings.Join(strs, ", ")

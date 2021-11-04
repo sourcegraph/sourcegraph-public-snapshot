@@ -71,19 +71,23 @@ func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers [
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
 
+	for i := range uploads {
+		r.uploadCache[uploads[i].ID] = uploads[i]
+	}
+
 	return filterUploadsWithCommits(ctx, r.cachedCommitChecker, uploads)
 }
 
 // monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
 const monikerLimit = 10
 
-// orderedMonikers returns the set of monikers attached to the ranges specified by the given upload list.
-// If kind is a non-empty string, monikers with a distinct kind are ignored.
+// orderedMonikers returns the set of monikers of the given kind(s) attached to the ranges specified by
+// the given upload list.
 //
-// The return slice is ordered by visible upload, then by specificity, i.e., monikers attached to enclosed
-// ranges before before monikers attached to enclosing ranges. Monikers are de-duplicated, such that the
-// second (third, ...) occurrences are removed.
-func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []adjustedUpload, kind string) ([]precise.QualifiedMonikerData, error) {
+// The return slice is ordered by visible upload, then by specificity, i.e., monikers attached to
+// enclosed ranges before before monikers attached to enclosing ranges. Monikers are de-duplicated, such
+// that the second (third, ...) occurrences are removed.
+func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []adjustedUpload, kinds ...string) ([]precise.QualifiedMonikerData, error) {
 	monikerSet := newQualifiedMonikerSet()
 
 	for i := range adjustedUploads {
@@ -100,7 +104,7 @@ func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []a
 
 		for _, monikers := range rangeMonikers {
 			for _, moniker := range monikers {
-				if moniker.PackageInformationID == "" || (kind != "" && moniker.Kind != kind) {
+				if moniker.PackageInformationID == "" || !sliceContains(kinds, moniker.Kind) {
 					continue
 				}
 
@@ -129,8 +133,8 @@ func (r *queryResolver) orderedMonikers(ctx context.Context, adjustedUploads []a
 	return monikerSet.monikers, nil
 }
 
-// monikerLocations returns the set of locations defined by any of the given uploads tagged with any of
-// the given monikers.
+// monikerLocations returns the set of locations (within the given uploads) with an attached moniker
+// whose scheme+identifier matches any of the given monikers.
 func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.Dump, orderedMonikers []precise.QualifiedMonikerData, tableName string, limit, offset int) ([]lsifstore.Location, int, error) {
 	ids := make([]int, 0, len(uploads))
 	for i := range uploads {
@@ -152,10 +156,10 @@ func (r *queryResolver) monikerLocations(ctx context.Context, uploads []dbstore.
 
 // adjustLocations translates a set of locations into an equivalent set of locations in the requested
 // commit.
-func (r *queryResolver) adjustLocations(ctx context.Context, uploadsByID map[int]dbstore.Dump, locations []lsifstore.Location) ([]AdjustedLocation, error) {
+func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifstore.Location) ([]AdjustedLocation, error) {
 	adjustedLocations := make([]AdjustedLocation, 0, len(locations))
 	for _, location := range locations {
-		adjustedLocation, err := r.adjustLocation(ctx, uploadsByID[location.DumpID], location)
+		adjustedLocation, err := r.adjustLocation(ctx, r.uploadCache[location.DumpID], location)
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +206,7 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given
-// lice. The slice is filtered in-place and returned (to update the slice length).
+// slice. The slice is filtered in-place and returned (to update the slice length).
 func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCommitChecker, uploads []dbstore.Dump) ([]dbstore.Dump, error) {
 	filtered := uploads[:0]
 
@@ -221,15 +225,6 @@ func filterUploadsWithCommits(ctx context.Context, cachedCommitChecker *cachedCo
 	return filtered, nil
 }
 
-func intsToString(ints []int) string {
-	segments := make([]string, 0, len(ints))
-	for _, id := range ints {
-		segments = append(segments, strconv.Itoa(id))
-	}
-
-	return strings.Join(segments, ", ")
-}
-
 func uploadIDsToString(vs []dbstore.Dump) string {
 	ids := make([]string, 0, len(vs))
 	for _, v := range vs {
@@ -242,8 +237,17 @@ func uploadIDsToString(vs []dbstore.Dump) string {
 func monikersToString(vs []precise.QualifiedMonikerData) string {
 	strs := make([]string, 0, len(vs))
 	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Scheme, v.Identifier, v.Version))
+		strs = append(strs, fmt.Sprintf("%s:%s:%s:%s", v.Kind, v.Scheme, v.Identifier, v.Version))
 	}
 
 	return strings.Join(strs, ", ")
+}
+
+func sliceContains(slice []string, str string) bool {
+	for _, el := range slice {
+		if el == str {
+			return true
+		}
+	}
+	return false
 }
