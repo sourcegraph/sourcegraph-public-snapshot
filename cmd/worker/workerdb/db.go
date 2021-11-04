@@ -1,16 +1,17 @@
-package shared
+package workerdb
 
 import (
 	"database/sql"
 
 	"github.com/cockroachdb/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/memo"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
-// InitDatabase initializes and returns a connection to the frontend database.
-func InitDatabase() (*sql.DB, error) {
+// Init initializes and returns a connection to the frontend database.
+func Init() (*sql.DB, error) {
 	conn, err := initDatabaseMemo.Init()
 	if err != nil {
 		return nil, err
@@ -19,7 +20,7 @@ func InitDatabase() (*sql.DB, error) {
 	return conn.(*sql.DB), nil
 }
 
-var initDatabaseMemo = NewMemoizedConstructor(func() (interface{}, error) {
+var initDatabaseMemo = memo.NewMemoizedConstructor(func() (interface{}, error) {
 	postgresDSN := WatchServiceConnectionValue(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})

@@ -7,7 +7,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/workerdb"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel/indexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindex/enqueuer"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies"
@@ -22,7 +23,7 @@ import (
 
 type indexingJob struct{}
 
-func NewIndexingJob() shared.Job {
+func NewIndexingJob() job.Job {
 	return &indexingJob{}
 }
 
@@ -37,7 +38,7 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	db, err := shared.InitDatabase()
+	db, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
