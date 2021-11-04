@@ -123,6 +123,11 @@ type fakeRepoStore struct {
 	Repos []types.MinimalRepo
 }
 
+func (f *fakeRepoStore) List(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
+	// currently unused.
+	return nil, nil
+}
+
 func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
 	names := make(map[string]bool, len(opt.Names))
 	for _, name := range opt.Names {
