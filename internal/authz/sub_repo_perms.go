@@ -59,25 +59,20 @@ type SubRepoPermsClient struct {
 }
 
 func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		// Are sub-repo permissions enabled at the site level
-		if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
-			return Read, nil
-		}
-		// Otherwise, do not give access
-		return None, &ErrUnauthenticated{}
-	}
-
-	return s.Permissions(ctx, a.UID, content)
-}
-
-func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	// Are sub-repo permissions enabled at the site level
 	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
 		return Read, nil
 	}
 
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return None, &ErrUnauthenticated{}
+	}
+
+	return s.permissions(ctx, a.UID, content)
+}
+
+func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
 	if s.SupportedChecker == nil {
 		return None, errors.New("SupportedChecker is nil")
 	}
