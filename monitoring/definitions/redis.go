@@ -35,7 +35,8 @@ func Redis() *monitoring.Container {
 				Rows: []monitoring.Row{
 					{
 						{Name: "redis-cache_up",
-							Description: "redis-store up", Owner: monitoring.ObservableOwnerDevOps,
+							Description: "redis-cache availability",
+							Owner: monitoring.ObservableOwnerDevOps,
 							Query:         `redis_up{app="redis-cache"}`,
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							DataMustExist: true,
