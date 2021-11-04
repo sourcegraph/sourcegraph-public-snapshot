@@ -181,7 +181,7 @@ func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo api.RepoName
 SELECT EXISTS(
   SELECT
   FROM external_services
-    JOIN external_service_repos esr on external_services.id = esr.external_service_id
+    JOIN external_service_repos esr ON external_services.id = esr.external_service_id
     JOIN repo r ON esr.repo_id = r.id
   WHERE r.name = %s
   AND kind IN ('PERFORCE')
