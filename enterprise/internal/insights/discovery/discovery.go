@@ -438,13 +438,11 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 		UniqueID:       from.ID,
 		OtherThreshold: from.OtherThreshold,
 	}
-
 	series := types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
 		Repositories:       []string{from.Repository},
 		SampleIntervalUnit: string(types.Month),
 	}
-
 	var grants []store.InsightViewGrant
 	if from.UserID != nil {
 		grants = []store.InsightViewGrant{store.UserGrant(int(*from.UserID))}
@@ -458,12 +456,10 @@ func migrateLangStatSeries(ctx context.Context, insightStore *store.InsightStore
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 	}
-
 	series, err = tx.CreateSeries(ctx, series)
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
 	}
-
 	err = tx.AttachSeriesToView(ctx, series, view, types.InsightViewSeriesMetadata{})
 	if err != nil {
 		return errors.Wrapf(err, "unable to migrate insight unique_id: %s", from.ID)
