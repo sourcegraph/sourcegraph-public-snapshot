@@ -777,6 +777,13 @@ func TestRemoveSeriesFromView(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("unexpected result after removing series from view (want/got): %s", diff)
 		}
+		gotSeries, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: series.SeriesID, IncludeDeleted: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(gotSeries) == 0 || gotSeries[0].Enabled {
+			t.Errorf("unexpected result: series does not exist or was not deleted after being removed from view")
+		}
 	})
 }
 
@@ -1134,5 +1141,129 @@ func TestSetSeriesEnabled(t *testing.T) {
 		if !got[0].Enabled {
 			t.Errorf("series is enabled but should be disabled")
 		}
+	})
+}
+
+func TestFindMatchingSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	_, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series id 1",
+		Query:               "query 1",
+		CreatedAt:           now,
+		OldestHistoricalAt:  now,
+		LastRecordedAt:      now,
+		NextRecordingAfter:  now,
+		LastSnapshotAt:      now,
+		NextSnapshotAfter:   now,
+		BackfillQueuedAt:    now,
+		SampleIntervalUnit:  string(types.Week),
+		SampleIntervalValue: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("find a matching series when one exists", func(t *testing.T) {
+		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 1", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
+		autogold.Want("FoundTrue", true).Equal(t, gotFound)
+	})
+	t.Run("find no matching series when none exist", func(t *testing.T) {
+		gotSeries, gotFound, err := store.FindMatchingSeries(ctx, MatchSeriesArgs{Query: "query 2", StepIntervalUnit: string(types.Week), StepIntervalValue: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Equal(t, gotSeries, autogold.ExportedOnly())
+		autogold.Want("FoundFalse", false).Equal(t, gotFound)
+	})
+}
+
+func TestUpdateFrontendSeries(t *testing.T) {
+	timescale, cleanup := insightsdbtesting.TimescaleDB(t)
+	defer cleanup()
+	now := time.Date(2021, 10, 14, 0, 0, 0, 0, time.UTC).Round(0).Truncate(time.Microsecond)
+	ctx := context.Background()
+
+	store := NewInsightStore(timescale)
+	store.Now = func() time.Time {
+		return now
+	}
+
+	_, err := store.CreateSeries(ctx, types.InsightSeries{
+		SeriesID:            "series id 1",
+		Query:               "query 1",
+		CreatedAt:           now,
+		OldestHistoricalAt:  now,
+		LastRecordedAt:      now,
+		NextRecordingAfter:  now,
+		LastSnapshotAt:      now,
+		NextSnapshotAfter:   now,
+		BackfillQueuedAt:    now,
+		SampleIntervalUnit:  string(types.Week),
+		SampleIntervalValue: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("updates a series", func(t *testing.T) {
+		gotBeforeUpdate, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: "series id 1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("BeforeUpdateSeries", []types.InsightSeries{{
+			ID:                  1,
+			SeriesID:            "series id 1",
+			Query:               "query 1",
+			CreatedAt:           now,
+			OldestHistoricalAt:  now,
+			LastRecordedAt:      now,
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			Enabled:             true,
+			SampleIntervalUnit:  "WEEK",
+			SampleIntervalValue: 1,
+		}}).Equal(t, gotBeforeUpdate)
+
+		err = store.UpdateFrontendSeries(ctx, UpdateFrontendSeriesArgs{
+			SeriesID:          "series id 1",
+			Query:             "updated query!",
+			StepIntervalUnit:  string(types.Month),
+			StepIntervalValue: 5,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		gotAfterUpdate, err := store.GetDataSeries(ctx, GetDataSeriesArgs{SeriesID: "series id 1"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("AfterUpdateSeries", []types.InsightSeries{{
+			ID:                  1,
+			SeriesID:            "series id 1",
+			Query:               "updated query!",
+			CreatedAt:           now,
+			OldestHistoricalAt:  now,
+			LastRecordedAt:      now,
+			NextRecordingAfter:  now,
+			LastSnapshotAt:      now,
+			NextSnapshotAfter:   now,
+			Enabled:             true,
+			SampleIntervalUnit:  "MONTH",
+			SampleIntervalValue: 5,
+		}}).Equal(t, gotAfterUpdate)
 	})
 }

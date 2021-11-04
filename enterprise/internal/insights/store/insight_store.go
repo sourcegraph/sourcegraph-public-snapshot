@@ -411,11 +411,36 @@ func (s *InsightStore) AttachSeriesToView(ctx context.Context,
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
-	return s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	err := s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	if err != nil {
+		return err
+	}
+	// Enable the series in case it had previously been soft-deleted.
+	err = s.SetSeriesEnabled(ctx, series.SeriesID, true)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string, viewId int) error {
-	return s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
+	err := s.Exec(ctx, sqlf.Sprintf(removeSeriesFromViewSql, seriesId, viewId))
+	if err != nil {
+		return err
+	}
+	// Delete the series if there are no longer any references to it.
+	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(countSeriesReferencesSql, seriesId)))
+	if err != nil {
+		return err
+	}
+	if count != 0 {
+		return nil
+	}
+	err = s.SetSeriesEnabled(ctx, seriesId, false)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
@@ -617,6 +642,41 @@ func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, en
 	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
 }
 
+type MatchSeriesArgs struct {
+	Query             string
+	StepIntervalUnit  string
+	StepIntervalValue int
+}
+
+func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
+	where := sqlf.Sprintf(
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue,
+	)
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
+	rows, err := scanDataSeries(s.Query(ctx, q))
+	if err != nil {
+		return types.InsightSeries{}, false, err
+	}
+	if len(rows) == 0 {
+		return types.InsightSeries{}, false, nil
+	}
+	return rows[0], true, nil
+}
+
+type UpdateFrontendSeriesArgs struct {
+	SeriesID          string
+	Query             string
+	Repositories      []string
+	StepIntervalUnit  string
+	StepIntervalValue int
+}
+
+func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, pq.Array(args.Repositories), args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
+}
+
 const setSeriesStatusSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:SetSeriesStatus
 UPDATE insight_series
@@ -725,4 +785,18 @@ WHERE (iv.id IN (SELECT insight_view_id
    OR iv.id IN (%s))
 AND %s
 ORDER BY iv.id
+`
+
+const countSeriesReferencesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:CountSeriesReferences
+SELECT COUNT(*) FROM insight_view_series viewSeries
+	INNER JOIN insight_series series ON viewSeries.insight_series_id = series.id
+WHERE series.series_id = %s
+`
+
+const updateFrontendSeriesSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:UpdateFrontendSeries
+UPDATE insight_series
+SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
+WHERE series_id = %s
 `
