@@ -410,6 +410,7 @@ func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, g
 		view.UniqueID,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
+		view.OtherThreshold,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
@@ -626,8 +627,8 @@ VALUES (%s, %s, %s, %s);
 
 const createInsightViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:CreateView
-INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex)
-VALUES (%s, %s, %s, %s, %s)
+INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex, other_threshold)
+VALUES (%s, %s, %s, %s, %s, %s)
 returning id;`
 
 const updateInsightViewSql = `

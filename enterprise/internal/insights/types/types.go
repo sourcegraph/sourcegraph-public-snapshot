@@ -50,11 +50,12 @@ type InsightViewSeriesMetadata struct {
 
 // InsightView is a single insight view that may or may not have any associated series.
 type InsightView struct {
-	ID          int
-	Title       string
-	Description string
-	UniqueID    string
-	Filters     InsightViewFilters
+	ID             int
+	Title          string
+	Description    string
+	UniqueID       string
+	Filters        InsightViewFilters
+	OtherThreshold float32
 }
 
 // InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
