@@ -12,11 +12,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
 // SubRepoPermsVersion is defines the version we are using to encode our include
 // and exclude patterns.
 const SubRepoPermsVersion = 1
+
+var SubRepoSupportedCodeHostKinds = []string{extsvc.KindPerforce}
+var supportedKindsQuery = make([]*sqlf.Query, len(SubRepoSupportedCodeHostKinds))
+
+func init() {
+	// Build this up at startup so we don't need to rebuild it every time
+	// RepoSupported is called
+	for i, kind := range SubRepoSupportedCodeHostKinds {
+		supportedKindsQuery[i] = sqlf.Sprintf("%s", kind)
+	}
+}
 
 type SubRepoPermsStore interface {
 	With(other basestore.ShareableStore) SubRepoPermsStore
@@ -184,9 +196,9 @@ SELECT EXISTS(
     JOIN external_service_repos esr ON external_services.id = esr.external_service_id
     JOIN repo r ON esr.repo_id = r.id
   WHERE r.name = %s
-  AND kind IN ('PERFORCE')
+  AND kind IN (%s)
 )
-`, repo)
+`, repo, sqlf.Join(supportedKindsQuery, ","))
 
 	supported, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
 	return supported, errors.Wrap(err, "checking for sub-repo support")
