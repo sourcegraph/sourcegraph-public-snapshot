@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -17,8 +18,56 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestServeConfiguration(t *testing.T) {
+	repos := []types.MinimalRepo{{
+		ID:    5,
+		Name:  "5",
+		Stars: 5,
+	}, {
+		ID:    6,
+		Name:  "6",
+		Stars: 6,
+	}}
+	srv := &searchIndexerServer{
+		RepoStore: &fakeRepoStore{Repos: repos},
+		SearchContextsStore: &fakeSearchContextsStore{Revisions: map[api.RepoID][]string{
+			6: {"a", "b"},
+		}},
+	}
+
+	git.Mocks.ResolveRevision = func(spec string, _ git.ResolveRevisionOptions) (api.CommitID, error) {
+		return api.CommitID("!" + spec), nil
+	}
+	t.Cleanup(func() { git.Mocks.ResolveRevision = nil })
+
+	data := url.Values{
+		"repoID": []string{"1", "5", "6"},
+	}
+	req := httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	w := httptest.NewRecorder()
+	if err := srv.serveConfiguration(w, req); err != nil {
+		t.Fatal(err)
+	}
+
+	resp := w.Result()
+	body, _ := io.ReadAll(resp.Body)
+
+	// This is a very fragile test since it will depend on changes to
+	// searchbackend.GetIndexOptions. If this becomes a problem we can make it
+	// more robust by shifting around responsibilities.
+	want := `{"Name":"","RepoID":0,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1"}
+{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}
+{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6}`
+
+	if d := cmp.Diff(want, string(body)); d != "" {
+		t.Fatalf("mismatch (-want, +got):\n%s", d)
+	}
+}
 
 func TestReposIndex(t *testing.T) {
 	allRepos := []types.MinimalRepo{
@@ -123,9 +172,17 @@ type fakeRepoStore struct {
 	Repos []types.MinimalRepo
 }
 
-func (f *fakeRepoStore) List(context.Context, database.ReposListOptions) ([]*types.Repo, error) {
-	// currently unused.
-	return nil, nil
+func (f *fakeRepoStore) List(_ context.Context, opts database.ReposListOptions) ([]*types.Repo, error) {
+	var repos []*types.Repo
+	for _, r := range f.Repos {
+		for _, id := range opts.IDs {
+			if id == r.ID {
+				repos = append(repos, r.ToRepo())
+			}
+		}
+	}
+
+	return repos, nil
 }
 
 func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
@@ -147,6 +204,14 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 	}
 
 	return nil
+}
+
+type fakeSearchContextsStore struct {
+	Revisions map[api.RepoID][]string
+}
+
+func (f *fakeSearchContextsStore) GetAllRevisionsForRepos(context.Context, []api.RepoID) (map[api.RepoID][]string, error) {
+	return f.Revisions, nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
