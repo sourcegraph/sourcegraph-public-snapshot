@@ -83,27 +83,24 @@ export const panelProps = {
                 registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
                 haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                 getPanelViews: () => pretendProxySubscribable(of(panels)),
-                getActiveViewComponentChanges: () =>
-                    pretendProxySubscribable(
-                        of(
-                            new ExtensionCodeEditor(
-                                {
-                                    type: 'CodeEditor',
-                                    viewerId: 'viewer#0',
-                                    resource: 'git://foo?1#/bar.go',
-                                    selections: [],
-                                    isActive: true,
-                                },
-                                new ExtensionDocument({
-                                    uri: 'git://foo?1#/bar.go',
-                                    languageId: 'go',
-                                    text: 'type My[Kingdom For] Generics',
-                                })
-                            )
-                        )
-                    ),
+                getActiveViewComponentChanges: () => pretendProxySubscribable(of(CODE_EDITOR_FIXTURE)),
                 getActiveCodeEditorPosition: () => pretendProxySubscribable(NEVER),
             })
         ),
     },
 }
+
+export const CODE_EDITOR_FIXTURE = new ExtensionCodeEditor(
+    {
+        type: 'CodeEditor',
+        viewerId: 'viewer#0',
+        resource: 'git://foo?1#/bar.go',
+        selections: [],
+        isActive: true,
+    },
+    new ExtensionDocument({
+        uri: 'git://foo?1#/bar.go',
+        languageId: 'go',
+        text: 'type My[Kingdom For] Generics',
+    })
+)
