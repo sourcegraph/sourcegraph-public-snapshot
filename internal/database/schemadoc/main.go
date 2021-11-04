@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -15,13 +16,13 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/lib/pq"
+	_ "github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-
-	"github.com/lib/pq"
-	_ "github.com/lib/pq"
 )
 
 type runFunc func(quiet bool, cmd ...string) (string, error)
@@ -60,13 +61,15 @@ func mainErr() error {
 func mainLocal() error {
 	dataSourcePrefix := "dbname=" + databaseNamePrefix
 
+	g, _ := errgroup.WithContext(context.Background())
 	for database, destinationFile := range databases {
-		if err := generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile); err != nil {
-			return err
-		}
+		database, destinationFile := database, destinationFile
+		g.Go(func() error {
+			return generateAndWrite(database, dataSourcePrefix+database.Name, nil, destinationFile)
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
 func mainContainer() error {
@@ -80,13 +83,15 @@ func mainContainer() error {
 
 	dataSourcePrefix := "postgres://postgres@127.0.0.1:5433/postgres?dbname=" + databaseNamePrefix
 
+	g, _ := errgroup.WithContext(context.Background())
 	for database, destinationFile := range databases {
-		if err := generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile); err != nil {
-			return err
-		}
+		database, destinationFile := database, destinationFile
+		g.Go(func() error {
+			return generateAndWrite(database, dataSourcePrefix+database.Name, prefix, destinationFile)
+		})
 	}
 
-	return nil
+	return g.Wait()
 }
 
 func generateAndWrite(database *dbconn.Database, dataSource string, commandPrefix []string, destinationFile string) error {
