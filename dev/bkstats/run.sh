@@ -26,6 +26,6 @@ set -eu
 pushd dev/bkstats
 
 echo "--- Posting report on Slack"
-go run main.go -token $BUILDKITE_TOKEN -slack $WEBHOOK_URL
+go run main.go -token="$BUILDKITE_TOKEN" -slack="$WEBHOOK_URL"
 
 popd
