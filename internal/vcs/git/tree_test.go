@@ -64,9 +64,9 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for _, symlink := range symlinks {
-		fi, err := Lstat(ctx, repo, commitID, symlink)
+		fi, err := lStat(ctx, repo, commitID, symlink)
 		if err != nil {
-			t.Fatalf("fs.Lstat(%s): %s", symlink, err)
+			t.Fatalf("fs.lStat(%s): %s", symlink, err)
 		}
 		if runtime.GOOS != "windows" {
 			// TODO(alexsaveliev) make it work on Windows too
@@ -75,7 +75,7 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 	}
 
 	// Also check the FileInfo returned by ReadDir to ensure it's
-	// consistent with the FileInfo returned by Lstat.
+	// consistent with the FileInfo returned by lStat.
 	entries, err := ReadDir(ctx, repo, commitID, ".", false)
 	if err != nil {
 		t.Fatalf("fs.ReadDir(.): %s", err)
