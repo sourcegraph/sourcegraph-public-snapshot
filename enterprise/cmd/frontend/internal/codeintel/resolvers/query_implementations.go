@@ -131,8 +131,6 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		}
 	}
 
-	cursor.Phase = "done"
-
 	traceLog(log.Int("numLocations", len(locations)))
 
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
