@@ -16,7 +16,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
@@ -493,11 +495,11 @@ index 02a19af..c9644dd 100644
 				{Run: `echo -e "foobar\n" >> README.md`},
 			},
 			CachedResultFound: true,
-			CachedResult: stepExecutionResult{
+			CachedResult: execution.AfterStepResult{
 				StepIndex:          0,
 				Diff:               cachedDiff,
 				Outputs:            map[string]interface{}{},
-				PreviousStepResult: template.StepResult{},
+				PreviousStepResult: execution.StepResult{},
 			},
 			Repository: testRepo1,
 		}
@@ -609,13 +611,13 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 				{Run: `echo "this is step 5" >> ${{ outputs.myOutput }}`},
 			},
 			CachedResultFound: true,
-			CachedResult: stepExecutionResult{
+			CachedResult: execution.AfterStepResult{
 				StepIndex: 2,
 				Diff:      cachedDiff,
 				Outputs: map[string]interface{}{
 					"myOutput": "my-output.txt",
 				},
-				PreviousStepResult: template.StepResult{
+				PreviousStepResult: execution.StepResult{
 					Files: &git.Changes{
 						Modified: []string{"README.md"},
 						Added:    []string{"README.txt"},

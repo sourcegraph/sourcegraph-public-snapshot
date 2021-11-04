@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 	"github.com/sourcegraph/src-cli/internal/batches/workspace"
+
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )
 
 type TaskExecutionErr struct {
@@ -45,8 +47,8 @@ func (e TaskExecutionErr) StatusText() string {
 // taskResult is a combination of a Task and the result of its execution.
 type taskResult struct {
 	task        *Task
-	result      executionResult
-	stepResults []stepExecutionResult
+	result      execution.Result
+	stepResults []execution.AfterStepResult
 }
 
 type newExecutorOpts struct {
@@ -190,7 +192,7 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 
 	return nil
 }
-func (x *executor) addResult(task *Task, result executionResult, stepResults []stepExecutionResult) {
+func (x *executor) addResult(task *Task, result execution.Result, stepResults []execution.AfterStepResult) {
 	x.resultsMu.Lock()
 	defer x.resultsMu.Unlock()
 

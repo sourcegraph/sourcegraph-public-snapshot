@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
@@ -26,36 +27,6 @@ import (
 
 	yamlv3 "gopkg.in/yaml.v3"
 )
-
-// stepExecutionResult is the executionResult after executing the step with the
-// given index in task.Steps.
-type stepExecutionResult struct {
-	// StepIndex is the index of the step in task.Steps
-	StepIndex int `json:"stepIndex"`
-	// Diff is the cumulative `git diff` after executing the Step.
-	Diff []byte `json:"diff"`
-	// Outputs is a copy of the Outputs after executing the Step.
-	Outputs map[string]interface{} `json:"outputs"`
-	// PreviousStepResult is the StepResult of the step before Step, if Step !=
-	// 0.
-	PreviousStepResult template.StepResult `json:"previousStepResult"`
-}
-
-type executionResult struct {
-	// Diff is the produced by executing all steps.
-	Diff string `json:"diff"`
-
-	// ChangedFiles are files that have been changed by all steps.
-	ChangedFiles *git.Changes `json:"changedFiles"`
-
-	// Outputs are the outputs produced by all steps.
-	Outputs map[string]interface{} `json:"outputs"`
-
-	// Path relative to the repository's root directory in which the steps
-	// have been executed.
-	// No leading slashes. Root directory is blank string.
-	Path string
-}
 
 type executionOpts struct {
 	wc          workspace.Creator
@@ -70,31 +41,31 @@ type executionOpts struct {
 	ui StepsExecutionUI
 }
 
-func runSteps(ctx context.Context, opts *executionOpts) (result executionResult, stepResults []stepExecutionResult, err error) {
+func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result, stepResults []execution.AfterStepResult, err error) {
 	opts.ui.ArchiveDownloadStarted()
 	err = opts.task.Archive.Ensure(ctx)
 	opts.ui.ArchiveDownloadFinished(err)
 	if err != nil {
-		return executionResult{}, nil, errors.Wrap(err, "fetching repo")
+		return execution.Result{}, nil, errors.Wrap(err, "fetching repo")
 	}
 	defer opts.task.Archive.Close()
 
 	opts.ui.WorkspaceInitializationStarted()
 	workspace, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.Archive)
 	if err != nil {
-		return executionResult{}, nil, errors.Wrap(err, "creating workspace")
+		return execution.Result{}, nil, errors.Wrap(err, "creating workspace")
 	}
 	defer workspace.Close(ctx)
 	opts.ui.WorkspaceInitializationFinished()
 
 	var (
-		execResult = executionResult{
+		execResult = execution.Result{
 			Diff:         "",
 			ChangedFiles: &git.Changes{},
 			Outputs:      make(map[string]interface{}),
 			Path:         opts.task.Path,
 		}
-		previousStepResult template.StepResult
+		previousStepResult execution.StepResult
 		startStep          int
 	)
 
@@ -186,7 +157,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 			return execResult, nil, errors.Wrap(err, "getting changed files in step")
 		}
 
-		result := template.StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
+		result := execution.StepResult{Files: changes, Stdout: &stdoutBuffer, Stderr: &stderrBuffer}
 
 		// Set stepContext.Step to current step's results before rendering outputs
 		stepContext.Step = result
@@ -200,7 +171,7 @@ func runSteps(ctx context.Context, opts *executionOpts) (result executionResult,
 		if err != nil {
 			return execResult, nil, errors.Wrap(err, "getting diff produced by step")
 		}
-		stepResult := stepExecutionResult{
+		stepResult := execution.AfterStepResult{
 			StepIndex:          i,
 			Diff:               stepDiff,
 			Outputs:            make(map[string]interface{}),

@@ -1,6 +1,10 @@
 package graphql
 
-import "github.com/sourcegraph/src-cli/internal/batches/util"
+import (
+	"sort"
+
+	"github.com/sourcegraph/src-cli/internal/batches/util"
+)
 
 const RepositoryFieldsFragment = `
 fragment repositoryFields on Repository {
@@ -65,4 +69,13 @@ func (r *Repository) Rev() string {
 	}
 
 	return r.DefaultBranch.Target.OID
+}
+
+func (r *Repository) SortedFileMatches() []string {
+	matches := make([]string, 0, len(r.FileMatches))
+	for path := range r.FileMatches {
+		matches = append(matches, path)
+	}
+	sort.Strings(matches)
+	return matches
 }

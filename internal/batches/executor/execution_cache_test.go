@@ -6,9 +6,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"gopkg.in/yaml.v3"
+
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
 const testExecutionCacheKeyEnv = "TEST_EXECUTION_CACHE_KEY_ENV"
@@ -132,7 +134,7 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 		},
 	}}
 
-	value := executionResult{
+	value := execution.Result{
 		Diff: testDiff,
 		ChangedFiles: &git.Changes{
 			Added: []string{"README.md"},
@@ -164,7 +166,7 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 	assertCacheMiss(t, cache, cacheKey1)
 }
 
-func assertCacheHit(t *testing.T, c ExecutionDiskCache, k TaskCacheKey, want executionResult) {
+func assertCacheHit(t *testing.T, c ExecutionDiskCache, k TaskCacheKey, want execution.Result) {
 	t.Helper()
 
 	have, found, err := c.Get(context.Background(), k)

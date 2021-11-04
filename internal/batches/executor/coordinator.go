@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/batches"
@@ -52,7 +53,7 @@ type NewCoordinatorOpts struct {
 	ClearCache bool
 	SkipErrors bool
 
-	// Used by createChangesetSpecs
+	// Used by batcheslib.BuildChangesetSpecs
 	Features batches.FeatureFlags
 
 	// When using `src batch exec` in SSBC we don't want to evaluate the
@@ -122,7 +123,7 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 		return specs, false, nil
 	}
 
-	var result executionResult
+	var result execution.Result
 	result, found, err = c.cache.Get(ctx, cacheKey)
 	if err != nil {
 		return specs, false, errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
@@ -140,12 +141,40 @@ func (c *Coordinator) checkCacheForTask(ctx context.Context, task *Task) (specs 
 		return specs, true, nil
 	}
 
-	specs, err = createChangesetSpecs(task, result, c.opts.Features)
+	specs, err = c.buildChangesetSpecs(task, result)
 	if err != nil {
 		return specs, false, err
 	}
 
 	return specs, true, nil
+}
+
+func (c Coordinator) buildChangesetSpecs(task *Task, result execution.Result) ([]*batcheslib.ChangesetSpec, error) {
+	input := &batcheslib.ChangesetSpecInput{
+		BaseRepositoryID: task.Repository.ID,
+		HeadRepositoryID: task.Repository.ID,
+		Repository: batcheslib.ChangesetSpecRepository{
+			Name:        task.Repository.Name,
+			FileMatches: task.Repository.SortedFileMatches(),
+			BaseRef:     task.Repository.BaseRef(),
+			BaseRev:     task.Repository.Rev(),
+		},
+		BatchChangeAttributes: task.BatchChangeAttributes,
+		Template:              task.Template,
+		TransformChanges:      task.TransformChanges,
+
+		Result: execution.Result{
+			Diff:         result.Diff,
+			ChangedFiles: result.ChangedFiles,
+			Outputs:      result.Outputs,
+			Path:         result.Path,
+		},
+	}
+
+	return batcheslib.BuildChangesetSpecs(input, batcheslib.ChangesetSpecFeatureFlags{
+		IncludeAutoAuthorDetails: c.opts.Features.IncludeAutoAuthorDetails,
+		AllowOptionalPublished:   c.opts.Features.AllowOptionalPublished,
+	})
 }
 
 func (c *Coordinator) setCachedStepResults(ctx context.Context, task *Task) error {
@@ -200,7 +229,7 @@ func (c *Coordinator) cacheAndBuildSpec(ctx context.Context, taskResult taskResu
 	}
 
 	// Build the changeset specs.
-	specs, err := createChangesetSpecs(taskResult.task, taskResult.result, c.opts.Features)
+	specs, err := c.buildChangesetSpecs(taskResult.task, taskResult.result)
 	if err != nil {
 		return nil, err
 	}

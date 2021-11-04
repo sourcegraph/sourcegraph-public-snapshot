@@ -16,12 +16,11 @@ require (
 	github.com/json-iterator/go v1.1.11
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51
 	github.com/mattn/go-isatty v0.0.12
-	github.com/mitchellh/copystructure v1.2.0
 	github.com/neelance/parallel v0.0.0-20160708114440-4de9ce63d14c
 	github.com/pkg/browser v0.0.0-20180916011732-0a3d74bf9ce4
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/sourcegraph/lib v0.0.0-20211025134328-131865293af3
+	github.com/sourcegraph/sourcegraph/lib v0.0.0-20211104093537-2b2516676fec
 	github.com/ssor/bom v0.0.0-20170718123548-6386211fdfcf // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
@@ -41,7 +40,6 @@ require (
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.12 // indirect
-	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect

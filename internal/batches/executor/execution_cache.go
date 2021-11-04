@@ -10,7 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/cockroachdb/errors"
+
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 
 	"github.com/sourcegraph/src-cli/internal/batches/util"
 )
@@ -141,11 +143,11 @@ func (key TaskCacheKey) Slug() string {
 }
 
 type ExecutionCache interface {
-	Get(ctx context.Context, key CacheKeyer) (result executionResult, found bool, err error)
-	Set(ctx context.Context, key CacheKeyer, result executionResult) error
+	Get(ctx context.Context, key CacheKeyer) (result execution.Result, found bool, err error)
+	Set(ctx context.Context, key CacheKeyer, result execution.Result) error
 
-	GetStepResult(ctx context.Context, key CacheKeyer) (result stepExecutionResult, found bool, err error)
-	SetStepResult(ctx context.Context, key CacheKeyer, result stepExecutionResult) error
+	GetStepResult(ctx context.Context, key CacheKeyer) (result execution.AfterStepResult, found bool, err error)
+	SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error
 
 	Clear(ctx context.Context, key CacheKeyer) error
 }
@@ -173,8 +175,8 @@ func (c ExecutionDiskCache) cacheFilePath(key CacheKeyer) (string, error) {
 	return filepath.Join(c.Dir, key.Slug(), keyString+cacheFileExt), nil
 }
 
-func (c ExecutionDiskCache) Get(ctx context.Context, key CacheKeyer) (executionResult, bool, error) {
-	var result executionResult
+func (c ExecutionDiskCache) Get(ctx context.Context, key CacheKeyer) (execution.Result, bool, error) {
+	var result execution.Result
 
 	path, err := c.cacheFilePath(key)
 	if err != nil {
@@ -220,7 +222,7 @@ func (c ExecutionDiskCache) writeCacheFile(path string, result interface{}) erro
 	return os.WriteFile(path, raw, 0600)
 }
 
-func (c ExecutionDiskCache) Set(ctx context.Context, key CacheKeyer, result executionResult) error {
+func (c ExecutionDiskCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -242,8 +244,8 @@ func (c ExecutionDiskCache) Clear(ctx context.Context, key CacheKeyer) error {
 	return os.Remove(path)
 }
 
-func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key CacheKeyer) (stepExecutionResult, bool, error) {
-	var result stepExecutionResult
+func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
+	var result execution.AfterStepResult
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return result, false, err
@@ -257,7 +259,7 @@ func (c ExecutionDiskCache) GetStepResult(ctx context.Context, key CacheKeyer) (
 	return result, found, nil
 }
 
-func (c ExecutionDiskCache) SetStepResult(ctx context.Context, key CacheKeyer, result stepExecutionResult) error {
+func (c ExecutionDiskCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
 	path, err := c.cacheFilePath(key)
 	if err != nil {
 		return err
@@ -270,11 +272,11 @@ func (c ExecutionDiskCache) SetStepResult(ctx context.Context, key CacheKeyer, r
 // retrieve cache entries.
 type ExecutionNoOpCache struct{}
 
-func (ExecutionNoOpCache) Get(ctx context.Context, key CacheKeyer) (result executionResult, found bool, err error) {
-	return executionResult{}, false, nil
+func (ExecutionNoOpCache) Get(ctx context.Context, key CacheKeyer) (result execution.Result, found bool, err error) {
+	return execution.Result{}, false, nil
 }
 
-func (ExecutionNoOpCache) Set(ctx context.Context, key CacheKeyer, result executionResult) error {
+func (ExecutionNoOpCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
 	return nil
 }
 
@@ -282,10 +284,10 @@ func (ExecutionNoOpCache) Clear(ctx context.Context, key CacheKeyer) error {
 	return nil
 }
 
-func (ExecutionNoOpCache) SetStepResult(ctx context.Context, key CacheKeyer, result stepExecutionResult) error {
+func (ExecutionNoOpCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
 	return nil
 }
 
-func (ExecutionNoOpCache) GetStepResult(ctx context.Context, key CacheKeyer) (stepExecutionResult, bool, error) {
-	return stepExecutionResult{}, false, nil
+func (ExecutionNoOpCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
+	return execution.AfterStepResult{}, false, nil
 }

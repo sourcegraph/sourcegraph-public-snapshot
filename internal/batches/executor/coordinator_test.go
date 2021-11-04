@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -77,8 +78,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, result: executionResult{Diff: `dummydiff1`}},
-					{task: sourcegraphTask, result: executionResult{Diff: `dummydiff2`}},
+					{task: srcCLITask, result: execution.Result{Diff: `dummydiff1`}},
+					{task: sourcegraphTask, result: execution.Result{Diff: `dummydiff2`}},
 				},
 			},
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
@@ -131,7 +132,7 @@ func TestCoordinator_Execute(t *testing.T) {
 				results: []taskResult{
 					{
 						task: srcCLITask,
-						result: executionResult{
+						result: execution.Result{
 							Diff: `dummydiff1`,
 							Outputs: map[string]interface{}{
 								"output1": "myOutputValue1",
@@ -196,8 +197,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, result: executionResult{Diff: nestedChangesDiff}},
-					{task: sourcegraphTask, result: executionResult{Diff: nestedChangesDiff}},
+					{task: srcCLITask, result: execution.Result{Diff: nestedChangesDiff}},
+					{task: sourcegraphTask, result: execution.Result{Diff: nestedChangesDiff}},
 				},
 			},
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
@@ -239,7 +240,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			// Execution succeeded in srcCLIRepo, but fails in sourcegraphRepo
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, result: executionResult{Diff: `dummydiff1`}},
+					{task: srcCLITask, result: execution.Result{Diff: `dummydiff1`}},
 				},
 				waitErr: stepFailedErr{
 					Err:         fmt.Errorf("something went wrong"),
@@ -421,13 +422,13 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	executor := &dummyExecutor{}
 	executor.results = []taskResult{{
 		task: task,
-		result: executionResult{
+		result: execution.Result{
 			Diff:         "dummydiff",
 			ChangedFiles: &git.Changes{},
 			Outputs:      map[string]interface{}{},
 			Path:         "",
 		},
-		stepResults: []stepExecutionResult{
+		stepResults: []execution.AfterStepResult{
 			{StepIndex: 0, Diff: []byte(`step-0-diff`)},
 			{StepIndex: 1, Diff: []byte(`step-1-diff`)},
 			{StepIndex: 2, Diff: []byte(`step-2-diff`)},
@@ -649,7 +650,7 @@ func (c *inMemoryExecutionCache) size() int {
 func (c *inMemoryExecutionCache) getCacheItem(key CacheKeyer) (interface{}, bool, error) {
 	k, err := key.Key()
 	if err != nil {
-		return executionResult{}, false, err
+		return execution.Result{}, false, err
 	}
 
 	c.mu.RLock()
@@ -659,17 +660,17 @@ func (c *inMemoryExecutionCache) getCacheItem(key CacheKeyer) (interface{}, bool
 	return res, ok, nil
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key CacheKeyer) (executionResult, bool, error) {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key CacheKeyer) (execution.Result, bool, error) {
 	res, ok, err := c.getCacheItem(key)
 	if err != nil || !ok {
-		return executionResult{}, ok, err
+		return execution.Result{}, ok, err
 	}
 
-	execResult, ok := res.(executionResult)
+	execResult, ok := res.(execution.Result)
 	return execResult, ok, nil
 }
 
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key CacheKeyer, result executionResult) error {
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key CacheKeyer, result execution.Result) error {
 	k, err := key.Key()
 	if err != nil {
 		return err
@@ -682,17 +683,17 @@ func (c *inMemoryExecutionCache) Set(ctx context.Context, key CacheKeyer, result
 	return nil
 }
 
-func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key CacheKeyer) (stepExecutionResult, bool, error) {
+func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key CacheKeyer) (execution.AfterStepResult, bool, error) {
 	res, ok, err := c.getCacheItem(key)
 	if err != nil || !ok {
-		return stepExecutionResult{}, ok, err
+		return execution.AfterStepResult{}, ok, err
 	}
 
-	execResult, ok := res.(stepExecutionResult)
+	execResult, ok := res.(execution.AfterStepResult)
 	return execResult, ok, nil
 }
 
-func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key CacheKeyer, result stepExecutionResult) error {
+func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key CacheKeyer, result execution.AfterStepResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err

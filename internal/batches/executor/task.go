@@ -2,6 +2,7 @@ package executor
 
 import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -30,8 +31,8 @@ type Task struct {
 
 	Archive repozip.Archive `json:"-"`
 
-	CachedResultFound bool                `json:"-"`
-	CachedResult      stepExecutionResult `json:"-"`
+	CachedResultFound bool                      `json:"-"`
+	CachedResult      execution.AfterStepResult `json:"-"`
 }
 
 func (t *Task) ArchivePathToFetch() string {
