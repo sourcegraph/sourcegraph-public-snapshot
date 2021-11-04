@@ -29,6 +29,7 @@ func (h *handler) Handle(ctx context.Context) error {
 	return nil
 }
 
+// This matches the documented value in the site configuration schema.
 const defaultRetention = 72 * time.Hour
 
 func calculateRetention(c *conf.Unified) time.Duration {

@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
+// janitor is a worker responsible for expunging stale webhook logs from the
+// database.
 type janitor struct{}
 
 var _ job.Job = &janitor{}
@@ -30,6 +32,10 @@ func (j *janitor) Routines(ctx context.Context) ([]goroutine.BackgroundRoutine, 
 	}
 
 	return []goroutine.BackgroundRoutine{
+		// The site configuration schema notes that retention values under an
+		// hour aren't supported, and this is why: there's no point running this
+		// operation more frequently than that, given it's purely a debugging
+		// tool.
 		goroutine.NewPeriodicGoroutine(context.Background(), 1*time.Hour, &handler{
 			store: database.WebhookLogs(db, keyring.Default().WebhookLogKey),
 		}),
