@@ -41,7 +41,8 @@ var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionU
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
 
 type insightViewResolver struct {
-	view *types.Insight
+	view            *types.Insight
+	overrideFilters *types.InsightViewFilters
 
 	baseInsightResolver
 }
@@ -53,33 +54,45 @@ func (i *insightViewResolver) ID() graphql.ID {
 }
 
 func (i *insightViewResolver) DefaultFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
-	return &insightViewFiltersResolver{view: i.view}, nil
+	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
 type insightViewFiltersResolver struct {
-	view *types.Insight
+	filters *types.InsightViewFilters
 }
 
 func (i *insightViewFiltersResolver) IncludeRepoRegex(ctx context.Context) (*string, error) {
-	return i.view.Filters.IncludeRepoRegex, nil
+	return i.filters.IncludeRepoRegex, nil
 }
 
 func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*string, error) {
-	return i.view.Filters.ExcludeRepoRegex, nil
+	return i.filters.ExcludeRepoRegex, nil
 }
 
 func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
-	panic("implement me")
+	if i.overrideFilters != nil {
+		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
+	}
+	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
+
+	var filters *types.InsightViewFilters
+	if i.overrideFilters != nil {
+		filters = i.overrideFilters
+	} else {
+		filters = &i.view.Filters
+	}
+
 	for j := range i.view.Series {
 		resolvers = append(resolvers, &insightSeriesResolver{
 			insightsStore:   i.timeSeriesStore,
 			workerBaseStore: i.workerBaseStore,
 			series:          i.view.Series[j],
 			metadataStore:   i.insightStore,
+			filters:         *filters,
 		})
 	}
 
@@ -376,7 +389,14 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 		return nil, err
 	}
 	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
+		if d.args.Filters != nil {
+			resolver.overrideFilters = &types.InsightViewFilters{
+				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
+				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
+			}
+		}
+		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, nil
 }
