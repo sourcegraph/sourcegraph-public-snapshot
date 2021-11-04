@@ -8,8 +8,8 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -300,8 +300,8 @@ type RepoOptions struct {
 	OnlyArchived      bool
 	CommitAfter       string
 	Visibility        query.RepoVisibility
-	Ranked            bool // Return results ordered by rank
 	Limit             int
+	Cursors           []*database.Cursor
 	CacheLookup       bool
 	Query             query.Q
 }

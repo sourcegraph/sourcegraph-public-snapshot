@@ -22,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
+	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -288,7 +288,7 @@ func callSearcherOverRepos(
 						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					stats, err := repos.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					stats, err := searchrepos.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: stats,
 					})
@@ -313,21 +313,25 @@ type TextSearch struct {
 	OnMissingRepoRevs zoektutil.OnMissingRepoRevs
 }
 
-func (t *TextSearch) Run(ctx context.Context, stream streaming.Sender, repos []*search.RepositoryRevisions) error {
+func (t *TextSearch) Run(ctx context.Context, stream streaming.Sender, repos searchrepos.Pager) error {
 	ctx, stream, cleanup := streaming.WithLimit(ctx, stream, int(t.FileMatchLimit))
 	defer cleanup()
 
-	request, ok, err := zoektutil.OnlyUnindexed(repos, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, repos, t.UseIndex, t.ZoektArgs, t.OnMissingRepoRevs)
+	return repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+		request, ok, err := zoektutil.OnlyUnindexed(page.RepoRevs, t.ZoektArgs.Zoekt, t.UseIndex, t.ContainsRefGlobs, t.OnMissingRepoRevs)
 		if err != nil {
 			return err
 		}
-	}
-	return SearchFilesInRepos(ctx, request, t.SearcherArgs, t.NotSearcherOnly, stream)
+
+		if !ok {
+			request, err = zoektutil.NewIndexedSubsetSearchRequest(ctx, page.RepoRevs, t.UseIndex, t.ZoektArgs, t.OnMissingRepoRevs)
+			if err != nil {
+				return err
+			}
+		}
+
+		return SearchFilesInRepos(ctx, request, t.SearcherArgs, t.NotSearcherOnly, stream)
+	})
 }
 
 func (*TextSearch) Name() string {
