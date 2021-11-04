@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -171,6 +172,11 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 		return "", err
 	}
 
+	tableDescriptions, err := fetchTableAndViewDescriptions(database.Name, run)
+	if err != nil {
+		return "", err
+	}
+
 	types, err := describeTypes(db)
 	if err != nil {
 		return "", err
@@ -195,7 +201,7 @@ func generateInternal(database *dbconn.Database, dataSource string, run runFunc)
 			for table := range ch {
 				logger.Println("describe", table.name)
 
-				doc, err := describeTable(db, database.Name, table, run)
+				doc, err := describeTable(db, database.Name, table, tableDescriptions)
 				if err != nil {
 					logger.Fatalf("error: %s", err)
 					continue
@@ -268,7 +274,27 @@ func getTables(db *sql.DB) (tables []table, _ error) {
 	return tables, nil
 }
 
-func describeTable(db *sql.DB, databaseName string, table table, run runFunc) (string, error) {
+var nameRe = regexp.MustCompile(`^\s*(Table|View) "public.(?P<name>\w+)"`)
+
+func fetchTableAndViewDescriptions(databaseName string, run runFunc) (map[string]string, error) {
+	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", `\d *`)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make(map[string]string)
+
+	objectDescriptions := strings.SplitAfter(out, "\n\n")
+	for _, objectDescription := range objectDescriptions {
+		if match := nameRe.FindStringSubmatch(objectDescription); match != nil {
+			res[match[2]] = objectDescription
+		}
+	}
+
+	return res, nil
+}
+
+func describeTable(db *sql.DB, databaseName string, table table, tableDescriptions map[string]string) (string, error) {
 	comment, err := getTableComment(db, table.name)
 	if err != nil {
 		return "", err
@@ -280,9 +306,9 @@ func describeTable(db *sql.DB, databaseName string, table table, run runFunc) (s
 	}
 
 	// Get postgres "describe table" output.
-	out, err := run(false, "psql", "-X", "--quiet", "--dbname", databaseNamePrefix+databaseName, "-c", fmt.Sprintf("\\d %s", table.name))
-	if err != nil {
-		return "", errors.Wrap(err, fmt.Sprintf("run: %s", out))
+	out, ok := tableDescriptions[table.name]
+	if !ok {
+		return "", errors.Errorf("no description found for table %v", table)
 	}
 
 	lines := strings.Split(out, "\n")
