@@ -445,11 +445,12 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
 	var seriesToAdd types.InsightSeries
 	var matchingSeries *types.InsightSeries
+	var foundSeries bool
 	var err error
 
 	// Don't try to match on frontend series
 	if len(series.RepositoryScope.Repositories) == 0 {
-		matchingSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
 			Query:             series.Query,
 			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
 			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
@@ -458,7 +459,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 		}
 	}
 
-	if matchingSeries == nil {
+	if !foundSeries {
 		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
 			SeriesID:            ksuid.New().String(),
 			Query:               series.Query,
