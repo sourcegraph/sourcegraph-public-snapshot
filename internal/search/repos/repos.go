@@ -121,7 +121,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 			SearchContextID:        searchContext.ID,
 			UserID:                 searchContext.NamespaceUserID,
 			OrgID:                  searchContext.NamespaceOrgID,
-			IncludeUserPublicRepos: searchContext.NamespaceUserID != 0,
+			IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
 		}
 
 		if op.Ranked {
@@ -308,7 +308,7 @@ func (r *Resolver) Excluded(ctx context.Context, op search.RepoOptions) (ex Excl
 		SearchContextID:        searchContext.ID,
 		UserID:                 searchContext.NamespaceUserID,
 		OrgID:                  searchContext.NamespaceOrgID,
-		IncludeUserPublicRepos: searchContext.NamespaceUserID != 0,
+		IncludeUserPublicRepos: searchContext.ID == 0 && searchContext.NamespaceUserID != 0,
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
