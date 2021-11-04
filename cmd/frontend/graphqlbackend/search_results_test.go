@@ -12,14 +12,12 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
@@ -55,7 +53,7 @@ func TestSearchResults(t *testing.T) {
 	}
 	db := new(dbtesting.MockDB)
 
-	limitOffset := &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1}
+	limitOffset := &database.LimitOffset{Limit: 500}
 
 	getResults := func(t *testing.T, query, version string) []string {
 		r, err := (&schemaResolver{db: database.NewDB(db)}).Search(context.Background(), &SearchArgs{Query: query, Version: version})
@@ -1006,7 +1004,6 @@ func TestSearchContext(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			mockrequire.CalledN(t, ns.GetByNameFunc, tt.numContexts)
 		})
 	}
 }

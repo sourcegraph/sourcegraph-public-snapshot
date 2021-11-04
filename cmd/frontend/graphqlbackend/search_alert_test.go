@@ -184,7 +184,7 @@ func TestAlertForDiffCommitSearchLimits(t *testing.T) {
 	}
 
 	for _, test := range cases {
-		alert := alertForError(test.multiErr)
+		alert, _ := (&searchResolver{}).errorToAlert(context.Background(), test.multiErr)
 		haveAlertDescription := alert.description
 		if diff := cmp.Diff(test.wantAlertDescription, haveAlertDescription); diff != "" {
 			t.Fatalf("test %s, mismatched alert (-want, +got):\n%s", test.name, diff)
@@ -218,7 +218,7 @@ func TestErrorToAlertStructuralSearch(t *testing.T) {
 			Errors:      test.errors,
 			ErrorFormat: multierror.ListFormatFunc,
 		}
-		haveAlert := alertForError(multiErr)
+		haveAlert, _ := (&searchResolver{}).errorToAlert(context.Background(), multiErr)
 
 		if haveAlert != nil && haveAlert.title != test.wantAlertTitle {
 			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.title, test.wantAlertTitle)
@@ -363,7 +363,8 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 					Query:         plan.ToParseTree(),
 					UserSettings: &schema.Settings{
 						SearchGlobbing: &test.globbing,
-					}},
+					},
+				},
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -371,7 +372,7 @@ func TestAlertForOverRepoLimit(t *testing.T) {
 			if test.cancelContext {
 				cancel()
 			}
-			alert, err := errorToAlert(sr.errorForOverRepoLimit(ctx))
+			alert, err := sr.errorToAlert(ctx, sr.errorForOverRepoLimit(ctx))
 			if err != nil {
 				t.Fatalf("unexpected error: %s", err)
 			}

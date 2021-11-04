@@ -1560,11 +1560,9 @@ func parseCursorConds(c *Cursor) (conds []*sqlf.Query, err error) {
 		return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
 	}
 
-	switch c.Column {
-	case string(RepoListName):
-		conds = append(conds, sqlf.Sprintf("name "+direction+" %s", c.Value))
-	case string(RepoListCreatedAt):
-		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", c.Value))
+	switch RepoListColumn(c.Column) {
+	case RepoListName, RepoListStars, RepoListCreatedAt, RepoListID:
+		conds = append(conds, sqlf.Sprintf(c.Column+" "+direction+" %s", c.Value))
 	default:
 		return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
 	}

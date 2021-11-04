@@ -15,7 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -108,7 +107,7 @@ func TestSearchRepositories(t *testing.T) {
 				Repos:       repositories,
 				Query:       q,
 				Zoekt:       zoekt,
-			}, int32(100))
+			}, 100)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -127,7 +126,7 @@ func TestSearchRepositories(t *testing.T) {
 	}
 }
 
-func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, limit int32) ([]result.Match, streaming.Stats, error) {
+func searchRepositoriesBatch(ctx context.Context, args *search.TextParameters, limit int) ([]result.Match, streaming.Stats, error) {
 	return streaming.CollectStream(func(stream streaming.Sender) error {
 		return SearchRepositories(ctx, args, limit, stream)
 	})
@@ -308,7 +307,7 @@ func BenchmarkSearchRepositories(b *testing.B) {
 		Query:       q,
 	}
 	for i := 0; i < b.N; i++ {
-		_, _, err := searchRepositoriesBatch(context.Background(), &tp, tp.PatternInfo.FileMatchLimit)
+		_, _, err := searchRepositoriesBatch(context.Background(), &tp, int(tp.PatternInfo.FileMatchLimit))
 		if err != nil {
 			b.Fatal(err)
 		}
