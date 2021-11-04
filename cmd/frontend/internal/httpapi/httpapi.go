@@ -113,12 +113,11 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 
-	reposStore := database.Repos(db)
 	// zoekt-indexserver endpoints
 	indexer := &searchIndexerServer{
-		ListIndexable:      backend.Repos.ListIndexable,
-		StreamMinimalRepos: reposStore.StreamMinimalRepos,
-		Indexers:           search.Indexers(),
+		ListIndexable: backend.Repos.ListIndexable,
+		RepoStore:     database.Repos(db),
+		Indexers:      search.Indexers(),
 	}
 	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 

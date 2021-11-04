@@ -146,7 +146,10 @@ type searchIndexerServer struct {
 	// ListIndexable returns the repositories to index.
 	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
-	StreamMinimalRepos func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
+	// RepoStore is a subset of database.RepoStore used by searchIndexerServer.
+	RepoStore interface {
+		StreamMinimalRepos(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
+	}
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -183,7 +186,7 @@ func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) 
 
 	if h.Indexers.Enabled() {
 		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
-		err = h.StreamMinimalRepos(r.Context(), database.ReposListOptions{
+		err = h.RepoStore.StreamMinimalRepos(r.Context(), database.ReposListOptions{
 			IDs: opt.IndexedIDs,
 		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
 

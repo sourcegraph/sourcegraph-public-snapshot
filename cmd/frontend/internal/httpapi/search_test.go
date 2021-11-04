@@ -65,9 +65,11 @@ func TestReposIndex(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			srv := &searchIndexerServer{
-				ListIndexable:      fakeListIndexable(tc.indexable),
-				StreamMinimalRepos: fakeStreamMinimalRepos(allRepos),
-				Indexers:           suffixIndexers(true),
+				ListIndexable: fakeListIndexable(tc.indexable),
+				RepoStore: &fakeRepoStore{
+					Repos: allRepos,
+				},
+				Indexers: suffixIndexers(true),
 			}
 
 			req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.body)))
@@ -117,27 +119,29 @@ func fakeListIndexable(indexable []types.MinimalRepo) func(context.Context) ([]t
 	}
 }
 
-func fakeStreamMinimalRepos(repos []types.MinimalRepo) func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error {
-	return func(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
-		names := make(map[string]bool, len(opt.Names))
-		for _, name := range opt.Names {
-			names[name] = true
-		}
+type fakeRepoStore struct {
+	Repos []types.MinimalRepo
+}
 
-		ids := make(map[api.RepoID]bool, len(opt.IDs))
-		for _, id := range opt.IDs {
-			ids[id] = true
-		}
-
-		for i := range repos {
-			r := &repos[i]
-			if names[string(r.Name)] || ids[r.ID] {
-				cb(&repos[i])
-			}
-		}
-
-		return nil
+func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
+	names := make(map[string]bool, len(opt.Names))
+	for _, name := range opt.Names {
+		names[name] = true
 	}
+
+	ids := make(map[api.RepoID]bool, len(opt.IDs))
+	for _, id := range opt.IDs {
+		ids[id] = true
+	}
+
+	for i := range f.Repos {
+		r := &f.Repos[i]
+		if names[string(r.Name)] || ids[r.ID] {
+			cb(&f.Repos[i])
+		}
+	}
+
+	return nil
 }
 
 // suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
