@@ -492,6 +492,7 @@ OR
 
 type DeleteChangesetSpecsOpts struct {
 	BatchSpecID int64
+	IDs         []int64
 }
 
 // DeleteChangesetSpecs deletes the ChangesetSpecs matching the given options.
@@ -501,8 +502,8 @@ func (s *Store) DeleteChangesetSpecs(ctx context.Context, opts DeleteChangesetSp
 	}})
 	defer endObservation(1, observation.Args{})
 
-	if opts.BatchSpecID == 0 {
-		return errors.New("BatchSpecID is 0")
+	if opts.BatchSpecID == 0 && len(opts.IDs) == 0 {
+		return errors.New("BatchSpecID is 0 and no IDs given")
 	}
 
 	q := deleteChangesetSpecsQuery(&opts)
@@ -521,6 +522,10 @@ func deleteChangesetSpecsQuery(opts *DeleteChangesetSpecsOpts) *sqlf.Query {
 
 	if opts.BatchSpecID != 0 {
 		preds = append(preds, sqlf.Sprintf("changeset_specs.batch_spec_id = %s", opts.BatchSpecID))
+	}
+
+	if len(opts.IDs) != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_specs.id = ANY(%s)", pq.Array(opts.IDs)))
 	}
 
 	return sqlf.Sprintf(deleteChangesetSpecsQueryFmtstr, sqlf.Join(preds, "\n AND "))

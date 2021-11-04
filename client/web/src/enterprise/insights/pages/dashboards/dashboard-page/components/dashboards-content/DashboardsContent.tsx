@@ -6,6 +6,7 @@ import { useHistory } from 'react-router-dom'
 import { LoadingSpinner } from '@sourcegraph/react-loading-spinner'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useObservable } from '@sourcegraph/shared/src/util/useObservable'
+import { authenticatedUser } from '@sourcegraph/web/src/auth'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { CodeInsightsBackendContext } from '../../../../../core/backend/code-insights-backend-context'
@@ -20,7 +21,6 @@ import { DashboardInsights } from './components/dashboard-inisghts/DashboardInsi
 import styles from './DashboardsContent.module.scss'
 import { useCopyURLHandler } from './hooks/use-copy-url-handler'
 import { useDashboardSelectHandler } from './hooks/use-dashboard-select-handler'
-import { findDashboardByUrlId } from './utils/find-dashboard-by-url-id'
 import { isDashboardConfigurable } from './utils/is-dashboard-configurable'
 
 export interface DashboardsContentProps extends TelemetryProps {
@@ -37,10 +37,13 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const { dashboardID, telemetryService } = props
 
     const history = useHistory()
-    const { getDashboards, getInsightSubjects } = useContext(CodeInsightsBackendContext)
+    const { getDashboards, getInsightSubjects, getDashboardById } = useContext(CodeInsightsBackendContext)
 
     const subjects = useObservable(useMemo(() => getInsightSubjects(), [getInsightSubjects]))
     const dashboards = useObservable(useMemo(() => getDashboards(), [getDashboards]))
+    const currentDashboard = useObservable(
+        useMemo(() => getDashboardById(dashboardID), [getDashboardById, dashboardID])
+    )
 
     // State to open/close add/remove insights modal UI
     const [isAddInsightOpen, setAddInsightsState] = useState<boolean>(false)
@@ -49,6 +52,8 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
     const handleDashboardSelect = useDashboardSelectHandler()
     const [copyURL, isCopied] = useCopyURLHandler()
     const menuReference = useRef<HTMLButtonElement | null>(null)
+
+    const user = useObservable(authenticatedUser)
 
     const handleSelect = (action: DashboardMenuAction): void => {
         switch (action) {
@@ -93,8 +98,6 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
         return <LoadingSpinner />
     }
 
-    const currentDashboard = findDashboardByUrlId(dashboards, dashboardID)
-
     return (
         <div>
             <section className="d-flex flex-wrap align-items-center">
@@ -105,6 +108,7 @@ export const DashboardsContent: React.FunctionComponent<DashboardsContentProps> 
                     dashboards={dashboards}
                     onSelect={handleDashboardSelect}
                     className={classNames(styles.dashboardSelect, 'mr-2')}
+                    user={user}
                 />
 
                 <DashboardMenu

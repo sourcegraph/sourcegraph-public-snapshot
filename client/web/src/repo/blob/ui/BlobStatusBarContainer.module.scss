@@ -1,0 +1,11 @@
+:root {
+    --blob-status-bar-height: 2rem;
+    // Used to calculate status bar `bottom` along with scrollbar width.
+    --blob-status-bar-vertical-gap: 1rem;
+    // Used to calculate status bar `right` along with scrollbar width.
+    --blob-status-bar-horizontal-gap: 0.5rem;
+}
+
+.blob-status-bar-container {
+    position: relative;
+}

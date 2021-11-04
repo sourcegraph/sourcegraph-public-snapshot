@@ -31,14 +31,17 @@ type UploadHandler struct {
 	db          dbutil.DB
 	dbStore     DBStore
 	uploadStore uploadstore.Store
+	validators  AuthValidatorMap
 	internal    bool
 }
 
-func NewUploadHandler(db dbutil.DB, dbStore DBStore, uploadStore uploadstore.Store, internal bool) http.Handler {
+func NewUploadHandler(db dbutil.DB, dbStore DBStore, uploadStore uploadstore.Store, internal bool, authValidators AuthValidatorMap) http.Handler {
 	handler := &UploadHandler{
+		db:          db,
 		dbStore:     dbStore,
 		uploadStore: uploadStore,
 		internal:    internal,
+		validators:  authValidators,
 	}
 
 	return http.HandlerFunc(handler.handleEnqueue)
@@ -63,7 +66,7 @@ func (h *UploadHandler) handleEnqueue(w http.ResponseWriter, r *http.Request) {
 		// 🚨 SECURITY: Ensure we return before proxying to the precise-code-intel-api-server upload
 		// endpoint. This endpoint is unprotected, so we need to make sure the user provides a valid
 		// token proving contributor access to the repository.
-		if !h.internal && conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx, h.db) && !enforceAuth(ctx, w, r, repoName) {
+		if !h.internal && conf.Get().LsifEnforceAuth && !isSiteAdmin(ctx, h.db) && !enforceAuth(ctx, w, r, repoName, h.validators) {
 			return
 		}
 

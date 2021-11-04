@@ -64,7 +64,7 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 		preds = append(preds, sqlf.Sprintf("db.id > %s", args.After))
 	}
 
-	preds = append(preds, dashboardPermissionsQuery(args))
+	preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
@@ -87,24 +87,26 @@ func (s *DBDashboardStore) DeleteDashboard(ctx context.Context, id int64) error 
 	return nil
 }
 
-func dashboardPermissionsQuery(args DashboardQueryArgs) *sqlf.Query {
+// visibleDashboardsQuery generates the SQL query for filtering dashboards based on granted permissions.
+// This returns a query that will generate a set of dashboard.id that the provided context can see.
+func visibleDashboardsQuery(userIDs, orgIDs []int) *sqlf.Query {
 	permsPreds := make([]*sqlf.Query, 0, 2)
-	if len(args.OrgID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.OrgID))
-		for _, id := range args.OrgID {
+	if len(orgIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(orgIDs))
+		for _, id := range orgIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("dg.org_id IN (%s)", sqlf.Join(elems, ",")))
+		permsPreds = append(permsPreds, sqlf.Sprintf("org_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	if len(args.UserID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.UserID))
-		for _, id := range args.UserID {
+	if len(userIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(userIDs))
+		for _, id := range userIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("dg.user_id IN (%s)", sqlf.Join(elems, ",")))
+		permsPreds = append(permsPreds, sqlf.Sprintf("user_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	permsPreds = append(permsPreds, sqlf.Sprintf("dg.global is true"))
-	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, "OR"))
+	permsPreds = append(permsPreds, sqlf.Sprintf("global is true"))
+	return sqlf.Sprintf("SELECT dashboard_id FROM dashboard_grants WHERE %s", sqlf.Join(permsPreds, "OR"))
 }
 
 func scanDashboard(rows *sql.Rows, queryErr error) (_ []*types.Dashboard, err error) {
@@ -283,7 +285,7 @@ func (s *DBDashboardStore) GetDashboardGrants(ctx context.Context, dashboardId i
 }
 
 func (s *DBDashboardStore) HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error) {
-	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, dashboardPermissionsQuery(DashboardQueryArgs{UserID: userIds, OrgID: orgIds}))
+	query := sqlf.Sprintf(getDashboardGrantsByPermissionsSql, dashboardId, visibleDashboardsQuery(userIds, orgIds))
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return count != 0, err
 }
@@ -359,8 +361,8 @@ SELECT * FROM dashboard_grants where dashboard_id = %s
 
 const getDashboardGrantsByPermissionsSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:GetDashboardGrants
-SELECT COUNT(*) FROM dashboard_grants as dg
-WHERE dg.dashboard_id = %s AND %s
+SELECT COUNT(*) FROM dashboard
+WHERE id = %s AND id in (%s);
 `
 
 const addDashboardGrantsSql = `

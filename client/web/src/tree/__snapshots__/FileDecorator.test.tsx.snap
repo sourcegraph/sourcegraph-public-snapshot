@@ -5,10 +5,10 @@ exports[`FileDecorator renders after text content 1`] = `
   class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
 >
   <div
-    class="file-decoration d-flex align-items-center"
+    class="d-flex align-items-center fileDecoration"
   >
     <small
-      class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+      class="text-monospace font-weight-normal test-file-decoration-text after"
       data-placement="bottom"
     >
       src decoration
@@ -22,16 +22,16 @@ exports[`FileDecorator renders both after text content and meter 1`] = `
   class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
 >
   <div
-    class="file-decoration d-flex align-items-center"
+    class="d-flex align-items-center fileDecoration"
   >
     <small
-      class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text"
+      class="text-monospace font-weight-normal test-file-decoration-text after"
       data-placement="bottom"
     >
       src decoration
     </small>
     <meter
-      class="file-decoration__meter test-file-decoration-meter ml-2"
+      class="test-file-decoration-meter meter ml-2"
       data-placement="bottom"
       high="60"
       low="50"
@@ -49,10 +49,10 @@ exports[`FileDecorator renders meter 1`] = `
   class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
 >
   <div
-    class="file-decoration d-flex align-items-center"
+    class="d-flex align-items-center fileDecoration"
   >
     <meter
-      class="file-decoration__meter test-file-decoration-meter"
+      class="test-file-decoration-meter meter"
       data-placement="bottom"
       high="60"
       low="50"
@@ -70,10 +70,10 @@ exports[`FileDecorator respects active state 1`] = `
   class="d-flex align-items-center text-nowrap pl-1 test-file-decoration-container"
 >
   <div
-    class="file-decoration d-flex align-items-center"
+    class="d-flex align-items-center fileDecoration"
   >
     <small
-      class="file-decoration__after text-monospace font-weight-normal test-file-decoration-text file-decoration__after--active"
+      class="text-monospace font-weight-normal test-file-decoration-text after afterActive"
       data-placement="bottom"
     >
       src decoration

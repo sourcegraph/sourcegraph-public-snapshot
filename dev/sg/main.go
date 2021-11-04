@@ -61,6 +61,7 @@ var (
 			ciCommand,
 			installCommand,
 			versionCommand,
+			secretCommand,
 		},
 	}
 )

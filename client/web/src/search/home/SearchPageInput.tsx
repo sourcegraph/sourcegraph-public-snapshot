@@ -25,6 +25,8 @@ import { SearchBox } from '../input/SearchBox'
 import { useSearchOnboardingTour } from '../input/SearchOnboardingTour'
 import { QuickLinks } from '../QuickLinks'
 
+import styles from './SearchPageInput.module.scss'
+
 interface Props
     extends SettingsCascadeProps<Settings>,
         ThemeProps,
@@ -124,7 +126,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
     return (
         <div className="d-flex flex-row flex-shrink-past-contents">
             <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                <div className="search-page__input-container">
+                <div data-search-page-input-container={true} className={styles.inputContainer}>
                     {/* Search onboarding tour must be rendered before the SearchBox so
                     the Monaco autocomplete suggestions are not blocked by the tour. */}
                     <div ref={tourContainer} />
@@ -138,7 +140,7 @@ export const SearchPageInput: React.FunctionComponent<Props> = (props: Props) =>
                         autoFocus={showOnboardingTour ? shouldFocusQueryInput : props.autoFocus !== false}
                     />
                 </div>
-                <QuickLinks quickLinks={quickLinks} className="search-page__input-sub-container" />
+                <QuickLinks quickLinks={quickLinks} className={styles.inputSubContainer} />
                 <Notices className="my-3" location="home" settingsCascade={props.settingsCascade} />
             </Form>
         </div>

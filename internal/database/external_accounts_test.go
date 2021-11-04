@@ -339,7 +339,7 @@ func TestExternalAccounts_Encryption(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listFirstAccount := func(s *UserExternalAccountsStore) extsvc.Account {
+	listFirstAccount := func(s UserExternalAccountsStore) extsvc.Account {
 		t.Helper()
 
 		accounts, err := s.List(ctx, ExternalAccountsListOptions{})

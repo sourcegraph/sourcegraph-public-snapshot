@@ -37,7 +37,7 @@ import (
 
 // newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
 // external clients.
-func newExternalHTTPHandler(db dbutil.DB, schema *graphql.Schema, gitHubWebhook webhooks.Registerer, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newExecutorProxyHandler enterprise.NewExecutorProxyHandler, rateLimitWatcher graphqlbackend.LimitWatcher) (http.Handler, error) {
+func newExternalHTTPHandler(db database.DB, schema *graphql.Schema, gitHubWebhook webhooks.Registerer, gitLabWebhook, bitbucketServerWebhook http.Handler, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newExecutorProxyHandler enterprise.NewExecutorProxyHandler, rateLimitWatcher graphqlbackend.LimitWatcher) (http.Handler, error) {
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()

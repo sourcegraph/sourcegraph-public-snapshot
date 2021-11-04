@@ -64,6 +64,15 @@ type TxBeginner interface {
 	BeginTx(context.Context, *sql.TxOptions) (*sql.Tx, error)
 }
 
+// An Unwrapper unwraps itself into its nested DB.
+// This is necessary because the concrete type of a dbutil.DB
+// is used to assert interfaces like `Tx` and `TxBeginner`, so
+// wrapping a dbutil.DB breaks those interface assertions.
+type Unwrapper interface {
+	// Unwrap returns the inner DB. If defined, it must return a valid DB (never nil).
+	Unwrap() DB
+}
+
 func IsPostgresError(err error, codename string) bool {
 	var e *pgconn.PgError
 	return errors.As(err, &e) && e.Code == codename
@@ -218,6 +227,38 @@ func (n NullInt) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return *n.N, nil
+}
+
+// NullBool represents a bool that may be null. NullBool implements the
+// sql.Scanner interface so it can be used as a scan destination, similar to
+// sql.NullString. When the scanned value is null, B is set to false.
+type NullBool struct{ B *bool }
+
+// Scan implements the Scanner interface.
+func (n *NullBool) Scan(value interface{}) error {
+	switch v := value.(type) {
+	case bool:
+		*n.B = v
+	case int:
+		*n.B = v != 0
+	case int32:
+		*n.B = v != 0
+	case int64:
+		*n.B = v != 0
+	case nil:
+		break
+	default:
+		return errors.Errorf("value is not bool: %T", value)
+	}
+	return nil
+}
+
+// Value implements the driver Valuer interface.
+func (n NullBool) Value() (driver.Value, error) {
+	if n.B == nil {
+		return nil, nil
+	}
+	return *n.B, nil
 }
 
 // JSONInt64Set represents an int64 set as a JSONB object where the keys are

@@ -570,6 +570,8 @@ type ExperimentalFeatures struct {
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
 	EnablePostSignupFlow bool `json:"enablePostSignupFlow,omitempty"`
+	// EnableSubRepoPermissions description: Enables sub-repo permission checking
+	EnableSubRepoPermissions bool `json:"enableSubRepoPermissions,omitempty"`
 	// EventLogging description: Enables user event logging inside of the Sourcegraph instance. This will allow admins to have greater visibility of user activity, such as frequently viewed pages, frequent searches, and more. These event logs (and any specific user actions) are only stored locally, and never leave this Sourcegraph instance.
 	EventLogging string `json:"eventLogging,omitempty"`
 	// JvmPackages description: Allow adding JVM packages code host connections
@@ -1191,6 +1193,8 @@ type ParentSourcegraph struct {
 
 // PerforceAuthorization description: If non-null, enforces Perforce depot permissions.
 type PerforceAuthorization struct {
+	// SubRepoPermissions description: Experimental: infer sub-repository permissions from protection rules.
+	SubRepoPermissions bool `json:"subRepoPermissions,omitempty"`
 }
 
 // PerforceConnection description: Configuration for a connection to Perforce Server.
@@ -1446,8 +1450,6 @@ type Settings struct {
 
 // SettingsExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 type SettingsExperimentalFeatures struct {
-	// AcceptSearchSuggestionOnEnter description: Whether the search bar should select completion suggestions when pressing enter
-	AcceptSearchSuggestionOnEnter *bool `json:"acceptSearchSuggestionOnEnter,omitempty"`
 	// ApiDocs description: Enables API documentation.
 	ApiDocs *bool `json:"apiDocs,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
@@ -1530,6 +1532,8 @@ type SiteConfiguration struct {
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
+	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
+	BatchChangesDisableWebhooksWarning bool `json:"batchChanges.disableWebhooksWarning,omitempty"`
 	// BatchChangesEnabled description: Enables/disables the Batch Changes feature.
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.

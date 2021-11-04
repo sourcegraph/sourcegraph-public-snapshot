@@ -1418,16 +1418,32 @@ AND NOT EXISTS (
 	return ids, nil
 }
 
-// UserIDsWithOutdatedPerms returns a list of user IDs who have newer code host
-// connection sync after last permissions sync.
+// UserIDsWithOutdatedPerms returns a list of user IDs who have had repository
+// syncing from either user or organization code host connection (that the user
+// is a member of) after last permissions sync.
 func (s *PermsStore) UserIDsWithOutdatedPerms(ctx context.Context) (map[int32]time.Time, error) {
 	q := sqlf.Sprintf(`
 -- source: enterprise/internal/database/perms_store.go:PermsStore.UserIDsWithOutdatedPerms
 SELECT
-	DISTINCT(external_services.namespace_user_id),
+	user_permissions.user_id,
 	user_permissions.synced_at
 FROM external_services
 JOIN user_permissions ON user_permissions.user_id = external_services.namespace_user_id
+WHERE
+	external_services.deleted_at IS NULL
+AND (
+		user_permissions.synced_at IS NULL
+	OR  external_services.last_sync_at >= user_permissions.synced_at
+)
+
+UNION
+
+SELECT
+	user_permissions.user_id,
+	user_permissions.synced_at
+FROM external_services
+JOIN org_members ON org_members.org_id = external_services.namespace_org_id
+JOIN user_permissions ON user_permissions.user_id = org_members.user_id
 WHERE
 	external_services.deleted_at IS NULL
 AND (
@@ -1528,6 +1544,32 @@ func (s *PermsStore) loadIDsWithTime(ctx context.Context, q *sqlf.Query) (map[in
 	}
 
 	return results, nil
+}
+
+// UserIsMemberOfOrgHasCodeHostConnection returns true if the user is a member
+// of any organization that has added code host connection.
+func (s *PermsStore) UserIsMemberOfOrgHasCodeHostConnection(ctx context.Context, userID int32) (has bool, err error) {
+	if Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection != nil {
+		return Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection(ctx, userID)
+	}
+
+	ctx, save := s.observe(ctx, "UserIsMemberOfOrgHasCodeHostConnection", "")
+	defer func() { save(&err, otlog.Int32("userID", userID)) }()
+
+	q := sqlf.Sprintf(`
+-- source: enterprise/internal/database/perms_store.go:PermsStore.UserIsMemberOfOrgHasCodeHostConnection
+SELECT EXISTS (
+	SELECT
+	FROM org_members
+	JOIN external_services ON external_services.namespace_org_id = org_id
+	WHERE user_id = %s
+)
+`, userID)
+	err = s.QueryRow(ctx, q).Scan(&has)
+	if err != nil {
+		return false, err
+	}
+	return has, nil
 }
 
 // PermsMetrics contains metrics values calculated by querying the database.

@@ -79,16 +79,14 @@ describe('SearchContextDropdown', () => {
     })
 
     it('should be enabled if query does not contain context filter', () => {
-        const element = mount(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repogroup:python)" />)
+        const element = mount(<SearchContextDropdown {...defaultProps} query="test (repo:foo or repo:python)" />)
         const dropdown = element.find(DropdownToggle)
         expect(dropdown.prop('disabled')).toBe(false)
         expect(dropdown.prop('data-tooltip')).toBe('')
     })
 
     it('should be disabled if query contains context filter', () => {
-        const element = mount(
-            <SearchContextDropdown {...defaultProps} query="test (context:foo or repogroup:python)" />
-        )
+        const element = mount(<SearchContextDropdown {...defaultProps} query="test (context:foo or repo:python)" />)
         const dropdown = element.find(DropdownToggle)
         expect(dropdown.prop('disabled')).toBe(true)
         expect(dropdown.prop('data-tooltip')).toBe('Overridden by query')

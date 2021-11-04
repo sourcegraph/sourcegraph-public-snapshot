@@ -32,6 +32,9 @@ export interface ActionItemAction {
 
     /** Whether the action item is active in the given context */
     active: boolean
+
+    /** Whether the action item should be disabled in the given context */
+    disabledWhen?: boolean
 }
 
 export interface ActionItemComponentProps
@@ -181,6 +184,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 </>
             )
             tooltip = this.props.action.actionItem.description
+        } else if (this.props.disabledWhen) {
+            content = this.props.action.disabledTitle
         } else {
             content = (
                 <>
@@ -247,7 +252,8 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State> {
                 disabled={
                     !this.props.active ||
                     ((this.props.disabledDuringExecution || this.props.showLoadingSpinnerDuringExecution) &&
-                        this.state.actionOrError === LOADING)
+                        this.state.actionOrError === LOADING) ||
+                    this.props.disabledWhen
                 }
                 disabledClassName={this.props.inactiveClassName}
                 className={classNames(

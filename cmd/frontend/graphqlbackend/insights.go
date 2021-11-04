@@ -17,6 +17,7 @@ type InsightsResolver interface {
 	// Queries
 	Insights(ctx context.Context, args *InsightsArgs) (InsightConnectionResolver, error)
 	InsightsDashboards(ctx context.Context, args *InsightsDashboardsArgs) (InsightsDashboardConnectionResolver, error)
+	InsightViews(ctx context.Context, args *InsightViewQueryArgs) (InsightViewConnectionResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -98,8 +99,13 @@ type InsightsDashboardConnectionResolver interface {
 type InsightsDashboardResolver interface {
 	Title() string
 	ID() graphql.ID
-	Views() InsightViewConnectionResolver
+	Views(ctx context.Context, args DashboardInsightViewConnectionArgs) InsightViewConnectionResolver
 	Grants() InsightsPermissionGrantsResolver
+}
+
+type DashboardInsightViewConnectionArgs struct {
+	After *string
+	First *int32
 }
 
 type InsightsPermissionGrantsResolver interface {
@@ -308,4 +314,10 @@ type LineChartOptionsInput struct {
 
 type InsightViewPayloadResolver interface {
 	View(ctx context.Context) (InsightViewResolver, error)
+}
+
+type InsightViewQueryArgs struct {
+	First *int32
+	After *string
+	Id    *graphql.ID
 }

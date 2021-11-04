@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 // Resolver is the main interface to code intel-related operations exposed to the GraphQL API.
@@ -40,7 +41,9 @@ type Resolver interface {
 	IndexConfiguration(ctx context.Context, repositoryID int) ([]byte, bool, error)
 	InferredIndexConfiguration(ctx context.Context, repositoryID int) (*config.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, configuration string) error
+	PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error)
 	PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error)
+	DocumentationSearch(ctx context.Context, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type resolver struct {
@@ -226,6 +229,10 @@ func (r *resolver) UpdateIndexConfigurationByRepositoryID(ctx context.Context, r
 	}
 
 	return r.dbStore.UpdateIndexConfigurationByRepositoryID(ctx, repositoryID, []byte(configuration))
+}
+
+func (r *resolver) PreviewRepositoryFilter(ctx context.Context, pattern string) ([]int, error) {
+	return r.dbStore.RepoIDsByGlobPattern(ctx, pattern)
 }
 
 func (r *resolver) PreviewGitObjectFilter(ctx context.Context, repositoryID int, gitObjectType dbstore.GitObjectType, pattern string) (map[string][]string, error) {

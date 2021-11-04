@@ -58,7 +58,7 @@ func (a *affiliatedRepositoriesConnection) Nodes(ctx context.Context) ([]*codeHo
 				return
 			}
 			// 🚨 SECURITY: check if user can access external service
-			err = backend.CheckExternalServiceAccess(ctx, a.db, svc.NamespaceUserID, svc.NamespaceOrgID)
+			err = backend.CheckExternalServiceAccess(ctx, database.NewDB(a.db), svc.NamespaceUserID, svc.NamespaceOrgID)
 			if err != nil {
 				a.err = err
 				return
@@ -170,7 +170,7 @@ func (r *codeHostRepositoryResolver) Private() bool {
 
 func (r *codeHostRepositoryResolver) CodeHost(ctx context.Context) *externalServiceResolver {
 	return &externalServiceResolver{
-		db:              r.db,
+		db:              database.NewDB(r.db),
 		externalService: r.codeHost,
 	}
 }

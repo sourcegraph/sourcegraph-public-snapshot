@@ -1,6 +1,5 @@
 export enum FilterType {
     repo = 'repo',
-    repogroup = 'repogroup',
     repohasfile = 'repohasfile',
     repohascommitafter = 'repohascommitafter',
     file = 'file',
@@ -27,7 +26,6 @@ export enum FilterType {
 /* eslint-disable unicorn/prevent-abbreviations */
 export enum AliasedFilterType {
     r = 'repo',
-    g = 'repogroup',
     f = 'file',
     l = 'lang',
     language = 'lang',

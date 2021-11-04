@@ -118,7 +118,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 	return timestamp
 }
 
-func newGitHubExternalService(t *testing.T, store *database.ExternalServiceStore) *types.ExternalService {
+func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
 	t.Helper()
 
 	clock := timeutil.NewFakeClock(time.Now(), 0)

@@ -60,7 +60,6 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 		if err := r.ParseForm(); err != nil {
 			return err
 		}
-		repoNames := r.Form["repo"]
 
 		indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
 		for _, idStr := range r.Form["repoID"] {
@@ -72,47 +71,28 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			indexedIDs = append(indexedIDs, api.RepoID(id))
 		}
 
-		if len(repoNames) > 0 && len(indexedIDs) > 0 {
-			http.Error(w, "only allowed to specify one of repoID or repo", http.StatusBadRequest)
+		if len(indexedIDs) == 0 {
+			http.Error(w, "atleast one repoID required", http.StatusBadRequest)
 			return nil
 		}
 
-		// Preload repos to support fast lookups by repo name.
-		// This does NOT support fetching by URI (unlike Repos.GetByName). Zoekt
-		// will always ask us actual repo names and not URIs, though. This way,
-		// we can also save the additional round trip to the database when the
-		// repo is not found.
+		// Preload repos to support fast lookups by repo ID.
 		repos, loadReposErr := database.Repos(db).List(ctx, database.ReposListOptions{
-			Names: repoNames,
-			IDs:   indexedIDs,
+			IDs: indexedIDs,
 		})
-		reposMap := make(map[api.RepoName]*types.Repo, len(repos))
+		reposMap := make(map[api.RepoID]*types.Repo, len(repos))
 		for _, repo := range repos {
-			reposMap[repo.Name] = repo
+			reposMap[repo.ID] = repo
 		}
 
-		if len(indexedIDs) > 0 {
-			reposIDsMap := make(map[api.RepoID]*types.Repo, len(repos))
-			for _, repo := range repos {
-				reposIDsMap[repo.ID] = repo
-			}
-			for _, id := range indexedIDs {
-				if repo, ok := reposIDsMap[id]; ok {
-					repoNames = append(repoNames, string(repo.Name))
-				} else {
-					repoNames = append(repoNames, fmt.Sprintf("!DOES-NOT-EXIST-REPO-ID-%d", id))
-				}
-			}
-		}
-
-		getRepoIndexOptions := func(repoName string) (*searchbackend.RepoIndexOptions, error) {
+		getRepoIndexOptions := func(repoID int32) (*searchbackend.RepoIndexOptions, error) {
 			if loadReposErr != nil {
 				return nil, loadReposErr
 			}
 			// Replicate what database.Repos.GetByName would do here:
-			repo, ok := reposMap[api.RepoName(repoName)]
+			repo, ok := reposMap[api.RepoID(repoID)]
 			if !ok {
-				return nil, &database.RepoNotFoundErr{Name: api.RepoName(repoName)}
+				return nil, &database.RepoNotFoundErr{ID: api.RepoID(repoID)}
 			}
 
 			getVersion := func(branch string) (string, error) {
@@ -126,7 +106,7 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 				return string(commitID), err
 			}
 
-			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, repoName)
+			priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
 
 			return &searchbackend.RepoIndexOptions{
 				Name:       string(repo.Name),
@@ -139,12 +119,7 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			}, nil
 		}
 
-		// Build list of repo IDs to fetch revisions for.
-		repoIDs := make([]api.RepoID, len(repos))
-		for i, repo := range repos {
-			repoIDs[i] = repo.ID
-		}
-		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, repoIDs)
+		revisionsForRepo, revisionsForRepoErr := database.SearchContexts(db).GetAllRevisionsForRepos(ctx, indexedIDs)
 		getSearchContextRevisions := func(repoID int32) ([]string, error) {
 			if revisionsForRepoErr != nil {
 				return nil, revisionsForRepoErr
@@ -152,7 +127,14 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 			return revisionsForRepo[api.RepoID(repoID)], nil
 		}
 
-		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoNames...)
+		// searchbackend uses int32 instead of api.RepoID currently, so build
+		// up a slice of that.
+		repoIDs := make([]int32, len(indexedIDs))
+		for i := range indexedIDs {
+			repoIDs[i] = int32(indexedIDs[i])
+		}
+
+		b := searchbackend.GetIndexOptions(&siteConfig, getRepoIndexOptions, getSearchContextRevisions, repoIDs...)
 		_, _ = w.Write(b)
 		return nil
 	}
@@ -160,9 +142,9 @@ func serveSearchConfiguration(db dbutil.DB) func(http.ResponseWriter, *http.Requ
 
 type reposListServer struct {
 	// ListIndexable returns the repositories to index.
-	ListIndexable func(context.Context) ([]types.RepoName, error)
+	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
 
-	StreamRepoNames func(context.Context, database.ReposListOptions, func(*types.RepoName)) error
+	StreamMinimalRepos func(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
 
 	// Indexers is the subset of searchbackend.Indexers methods we
 	// use. reposListServer is used by indexed-search to get the list of
@@ -172,7 +154,7 @@ type reposListServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.RepoName) ([]types.RepoName, error)
+		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -184,8 +166,6 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	var opt struct {
 		// Hostname is used to determine the subset of repos to return
 		Hostname string
-		// DEPRECATED: Indexed is the repository names of indexed repos by Hostname.
-		Indexed []string
 		// IndexedIDs are the repository IDs of indexed repos by Hostname.
 		IndexedIDs []api.RepoID
 	}
@@ -195,22 +175,16 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 		return err
 	}
 
-	if len(opt.Indexed) > 0 && len(opt.IndexedIDs) > 0 {
-		http.Error(w, "only allowed to specify one of Indexed or IndexedIDs", http.StatusBadRequest)
-		return nil
-	}
-
 	indexable, err := h.ListIndexable(r.Context())
 	if err != nil {
 		return err
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, max(len(opt.Indexed), len(opt.IndexedIDs)))
-		err = h.StreamRepoNames(r.Context(), database.ReposListOptions{
-			IDs:   opt.IndexedIDs,
-			Names: opt.Indexed,
-		}, func(r *types.RepoName) { indexed[uint32(r.ID)] = nil })
+		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(opt.IndexedIDs))
+		err = h.StreamMinimalRepos(r.Context(), database.ReposListOptions{
+			IDs: opt.IndexedIDs,
+		}, func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil })
 
 		if err != nil {
 			return err
@@ -243,11 +217,4 @@ func (h *reposListServer) serveIndex(w http.ResponseWriter, r *http.Request) err
 	}
 
 	return json.NewEncoder(w).Encode(&data)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

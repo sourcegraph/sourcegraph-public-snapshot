@@ -1,13 +1,18 @@
 package graphql
 
 import (
+	"context"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 )
 
 type configurationPolicyResolver struct {
@@ -26,6 +31,22 @@ func (r *configurationPolicyResolver) ID() graphql.ID {
 
 func (r *configurationPolicyResolver) Name() string {
 	return r.configurationPolicy.Name
+}
+
+func (r *configurationPolicyResolver) Repository(ctx context.Context) (*gql.RepositoryResolver, error) {
+	if r.configurationPolicy.RepositoryID == nil {
+		return nil, nil
+	}
+	repo, err := backend.Repos.Get(ctx, api.RepoID(*r.configurationPolicy.RepositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	return gql.NewRepositoryResolver(database.NewDB(dbconn.Global), repo), nil
+}
+
+func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
+	return r.configurationPolicy.RepositoryPatterns
 }
 
 func (r *configurationPolicyResolver) Type() (gql.GitObjectType, error) {

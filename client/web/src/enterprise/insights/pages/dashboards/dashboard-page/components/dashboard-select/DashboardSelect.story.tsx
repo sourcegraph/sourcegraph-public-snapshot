@@ -1,6 +1,7 @@
 import { storiesOf } from '@storybook/react'
 import React, { useState } from 'react'
 
+import { AuthenticatedUser } from '../../../../../../../auth'
 import { WebStory } from '../../../../../../../components/WebStory'
 import { InsightDashboard, InsightsDashboardType } from '../../../../../core/types'
 
@@ -87,8 +88,29 @@ const DASHBOARDS: InsightDashboard[] = [
     },
 ]
 
+const USER: Partial<AuthenticatedUser> = {
+    organizations: {
+        nodes: [
+            {
+                id: '1',
+                name: 'Sourcegraph',
+                displayName: 'Sourcegraph',
+                url: 'https://sourcegraph.com',
+                settingsURL: 'https://sourcegraph.com/settings',
+            },
+        ],
+    },
+}
+
 add('DashboardSelect', () => {
     const [value, setValue] = useState<string>()
 
-    return <DashboardSelect value={value} dashboards={DASHBOARDS} onSelect={dashboard => setValue(dashboard.id)} />
+    return (
+        <DashboardSelect
+            value={value}
+            dashboards={DASHBOARDS}
+            user={USER as AuthenticatedUser}
+            onSelect={dashboard => setValue(dashboard.id)}
+        />
+    )
 })

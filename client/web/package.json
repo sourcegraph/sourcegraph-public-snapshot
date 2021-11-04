@@ -30,17 +30,10 @@
     "eslint": "eslint --cache '**/*.[tj]s?(x)'",
     "stylelint": "stylelint 'src/**/*.scss' --quiet",
     "browserslist": "browserslist",
-    "analyze-bundle": "NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build",
-    "bundlesize": "bundlesize"
+    "analyze-bundle": "WEBPACK_USE_NAMED_CHUNKS=true NODE_ENV=production ENTERPRISE=1 WEBPACK_ANALYZER=1 yarn build",
+    "bundlesize": "bundlesize --config=./bundlesize.config.js"
   },
   "jest": {
     "testURL": "http://localhost:3080"
-  },
-  "bundlesize": [
-    {
-      "path": "../../ui/assets/scripts/*.js",
-      "maxSize": "600kb",
-      "compression": "brotli"
-    }
-  ]
+  }
 }

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"sort"
 	"time"
 
 	"github.com/lib/pq"
@@ -47,63 +48,105 @@ func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
 // InsightQueryArgs contains query predicates for fetching viewable insight series. Any provided values will be
 // included as query arguments.
 type InsightQueryArgs struct {
-	UniqueIDs []string
-	UniqueID  string
-	UserID    []int
-	OrgID     []int
+	UniqueIDs   []string
+	UniqueID    string
+	UserID      []int
+	OrgID       []int
+	DashboardID int
+
+	After string
+	Limit int
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
 	WithoutAuthorization bool
 }
 
-// Get returns all matching viewable insight series.
+// Get returns all matching insight series for insights without any other associations (such as dashboards).
 func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
 	preds := make([]*sqlf.Query, 0, 4)
+	var viewConditions []*sqlf.Query
 
 	if len(args.UniqueIDs) > 0 {
 		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
 		for _, id := range args.UniqueIDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
-		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(args.UniqueID) > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id = %s", args.UniqueID))
+	}
+	if args.DashboardID > 0 {
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 	if !args.WithoutAuthorization {
-		preds = append(preds, viewPermissionsQuery(args))
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
 	}
 
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+	cursor := insightViewPageCursor{
+		after: args.After,
+		limit: args.Limit,
 	}
 
-	q := sqlf.Sprintf(getInsightByViewSql, sqlf.Join(preds, "\n AND"))
+	q := sqlf.Sprintf(getInsightByViewSql, insightViewQuery(cursor, viewConditions), sqlf.Join(preds, "\n AND"))
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
-// viewPermissionsQuery generates the SQL query for selecting insight views based on granted permissions.
-func viewPermissionsQuery(args InsightQueryArgs) *sqlf.Query {
-	permsPreds := make([]*sqlf.Query, 0, 2)
-	if len(args.OrgID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.OrgID))
-		for _, id := range args.OrgID {
-			elems = append(elems, sqlf.Sprintf("%s", id))
-		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("ivg.org_id IN (%s)", sqlf.Join(elems, ",")))
-	}
-	if len(args.UserID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.UserID))
-		for _, id := range args.UserID {
-			elems = append(elems, sqlf.Sprintf("%s", id))
-		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("ivg.user_id IN (%s)", sqlf.Join(elems, ",")))
-	}
-	permsPreds = append(permsPreds, sqlf.Sprintf("ivg.global is true"))
+// GetAll returns all matching viewable insight series for the provided context, including associated insights (dashboards).
+func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
+	preds := make([]*sqlf.Query, 0, 3)
+	var viewConditions []*sqlf.Query
 
-	return sqlf.Sprintf("(%s)", sqlf.Join(permsPreds, "OR"))
+	if len(args.UniqueIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
+		for _, id := range args.UniqueIDs {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	if len(args.UniqueID) > 0 {
+		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id = %s", args.UniqueID))
+	}
+	if args.DashboardID > 0 {
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+	}
+	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
+
+	cursor := insightViewPageCursor{
+		after: args.After,
+		limit: args.Limit,
+	}
+
+	q := sqlf.Sprintf(getInsightsVisibleToUserSql,
+		insightViewQuery(cursor, viewConditions),
+		visibleDashboardsQuery(args.UserID, args.OrgID),
+		visibleViewsQuery(args.UserID, args.OrgID), sqlf.Join(preds, "AND"))
+	return scanInsightViewSeries(s.Query(ctx, q))
+}
+
+// visibleViewsQuery generates the SQL query for filtering insight views based on granted permissions.
+// This returns a query that will generate a set of insight_view.id that the provided context can see.
+func visibleViewsQuery(userIDs, orgIDs []int) *sqlf.Query {
+	permsPreds := make([]*sqlf.Query, 0, 2)
+	if len(orgIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(orgIDs))
+		for _, id := range orgIDs {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		permsPreds = append(permsPreds, sqlf.Sprintf("org_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	if len(userIDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(userIDs))
+		for _, id := range userIDs {
+			elems = append(elems, sqlf.Sprintf("%s", id))
+		}
+		permsPreds = append(permsPreds, sqlf.Sprintf("user_id IN (%s)", sqlf.Join(elems, ",")))
+	}
+	permsPreds = append(permsPreds, sqlf.Sprintf("global is true"))
+
+	return sqlf.Sprintf("SELECT insight_view_id FROM insight_view_grants WHERE %s", sqlf.Join(permsPreds, "OR"))
 }
 
 func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
@@ -112,6 +155,10 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 		return nil, err
 	}
 
+	return s.GroupByView(ctx, viewSeries), nil
+}
+
+func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.InsightViewSeries) []types.Insight {
 	mapped := make(map[string][]types.InsightViewSeries, len(viewSeries))
 	for _, series := range viewSeries {
 		mapped[series.UniqueID] = append(mapped[series.UniqueID], series)
@@ -120,6 +167,7 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 	results := make([]types.Insight, 0, len(mapped))
 	for _, seriesSet := range mapped {
 		results = append(results, types.Insight{
+			ViewID:      seriesSet[0].ViewID,
 			UniqueID:    seriesSet[0].UniqueID,
 			Title:       seriesSet[0].Title,
 			Description: seriesSet[0].Description,
@@ -131,7 +179,11 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 		})
 	}
 
-	return results, nil
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].ViewID < results[j].ViewID
+	})
+
+	return results
 }
 
 func (s *InsightStore) InsertDirtyQuery(ctx context.Context, series *types.InsightSeries, query *types.DirtyQuery) error {
@@ -248,7 +300,7 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
 	}
 	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("repositories is null"))
+		preds = append(preds, sqlf.Sprintf("repositories IS NULL OR CARDINALITY(repositories) = 0"))
 	}
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
@@ -295,6 +347,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 	for rows.Next() {
 		var temp types.InsightViewSeries
 		if err := rows.Scan(
+			&temp.ViewID,
 			&temp.UniqueID,
 			&temp.Title,
 			&temp.Description,
@@ -321,6 +374,34 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 	}
 	return results, nil
 }
+
+type insightViewPageCursor struct {
+	after string
+	limit int
+}
+
+func insightViewQuery(cursor insightViewPageCursor, viewConditions []*sqlf.Query) *sqlf.Query {
+	var cond []*sqlf.Query
+	if cursor.after != "" {
+		cond = append(cond, sqlf.Sprintf("unique_id > %s", cursor.after))
+	} else {
+		cond = append(cond, sqlf.Sprintf("TRUE"))
+	}
+	var limit *sqlf.Query
+	if cursor.limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %s", cursor.limit)
+	} else {
+		limit = sqlf.Sprintf("")
+	}
+	cond = append(cond, viewConditions...)
+
+	q := sqlf.Sprintf(insightViewQuerySql, sqlf.Join(cond, "AND"), limit)
+	return q
+}
+
+const insightViewQuerySql = `
+SELECT * FROM insight_view WHERE %s ORDER BY unique_id %s
+`
 
 // AttachSeriesToView will associate a given insight data series with a given insight view.
 func (s *InsightStore) AttachSeriesToView(ctx context.Context,
@@ -669,16 +750,15 @@ RETURNING id;`
 
 const getInsightByViewSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:Get
-SELECT iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
 i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
-FROM insight_view iv
+FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
-         JOIN insight_view_grants ivg ON iv.id = ivg.insight_view_id
 WHERE %s
-ORDER BY iv.unique_id, i.series_id
+ORDER BY iv.id, i.series_id
 `
 
 const getInsightDataSeriesSql = `
@@ -687,6 +767,24 @@ select id, series_id, query, created_at, oldest_historical_at, last_recorded_at,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value from insight_series
 WHERE %s
+`
+
+const getInsightsVisibleToUserSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:GetAllInsights
+SELECT iv.id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
+       i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
+       i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
+       i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex
+FROM (%s) iv
+JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
+JOIN insight_series i ON ivs.insight_series_id = i.id
+WHERE (iv.id IN (SELECT insight_view_id
+             FROM dashboard db
+             JOIN dashboard_insight_view div ON db.id = div.dashboard_id
+				 WHERE deleted_at IS NULL AND db.id IN (%s))
+   OR iv.id IN (%s))
+AND %s
+ORDER BY iv.id
 `
 
 const countSeriesReferencesSql = `

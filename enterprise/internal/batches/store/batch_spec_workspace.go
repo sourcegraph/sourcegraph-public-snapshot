@@ -196,6 +196,7 @@ type ListBatchSpecWorkspacesOpts struct {
 	LimitOpts
 	Cursor      int64
 	BatchSpecID int64
+	IDs         []int64
 }
 
 // ListBatchSpecWorkspaces lists batch changes with the given filters.
@@ -234,6 +235,10 @@ ORDER BY id ASC
 func listBatchSpecWorkspacesQuery(opts ListBatchSpecWorkspacesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
+	}
+
+	if len(opts.IDs) != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY(%s)", pq.Array(opts.IDs)))
 	}
 
 	if opts.BatchSpecID != 0 {

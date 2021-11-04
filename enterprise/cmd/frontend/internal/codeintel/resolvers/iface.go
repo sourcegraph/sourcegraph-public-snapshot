@@ -45,6 +45,7 @@ type DBStore interface {
 	DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error)
 	GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (store.IndexConfiguration, bool, error)
 	UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error
+	RepoIDsByGlobPattern(ctx context.Context, pattern string) ([]int, error)
 }
 
 type LSIFStore interface {
@@ -62,6 +63,7 @@ type LSIFStore interface {
 	DocumentationPathInfo(ctx context.Context, bundleID int, pathID string) (*precise.DocumentationPathInfoData, error)
 	DocumentationDefinitions(ctx context.Context, bundleID int, pathID string, limit, offset int) ([]lsifstore.Location, int, error)
 	DocumentationAtPosition(ctx context.Context, bundleID int, path string, line, character int) ([]string, error)
+	DocumentationSearch(ctx context.Context, table, query string, repos []string) ([]precise.DocumentationSearchResult, error)
 }
 
 type IndexEnqueuer interface {

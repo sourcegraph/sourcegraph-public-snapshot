@@ -80,7 +80,7 @@ const steps: Step[] = [
         description: 'Output help text about this tool',
         argNames: ['all'],
         run: (_config, all) => {
-            console.error('Sourcegraph release tool - https://about.sourcegraph.com/handbook/engineering/releases')
+            console.error('Sourcegraph release tool - https://handbook.sourcegraph.com/engineering/releases')
             console.error('\nUSAGE\n')
             console.error('\tyarn run release <step>')
             console.error('\nAVAILABLE STEPS\n')

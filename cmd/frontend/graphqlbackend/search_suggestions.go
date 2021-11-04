@@ -213,17 +213,16 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 		return mockShowRepoSuggestions()
 	}
 
-	// * If query contains only a single term (or 1 repogroup: token and a single term), treat it as a repo field here and ignore the other repo queries.
+	// * If query contains only a single term, treat it as a repo field here and ignore the other repo queries.
 	// * If only repo fields (except 1 term in query), show repo suggestions.
 
 	hasSingleField := len(r.Query.Fields()) == 1
 	hasTwoFields := len(r.Query.Fields()) == 2
 	hasSingleContextField := len(r.Query.Values(query.FieldContext)) == 1
-	hasSingleRepoGroupField := len(r.Query.Values(query.FieldRepoGroup)) == 1
 	var effectiveRepoFieldValues []string
-	if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && (hasSingleRepoGroupField || hasSingleContextField))) {
+	if len(r.Query.Values(query.FieldDefault)) == 1 && (hasSingleField || (hasTwoFields && hasSingleContextField)) {
 		effectiveRepoFieldValues = append(effectiveRepoFieldValues, r.Query.Values(query.FieldDefault)[0].ToString())
-	} else if len(r.Query.Values(query.FieldRepo)) > 0 && ((len(r.Query.Values(query.FieldRepoGroup)) > 0 && hasTwoFields) || (len(r.Query.Values(query.FieldRepoGroup)) == 0 && hasSingleField)) {
+	} else if len(r.Query.Values(query.FieldRepo)) > 0 && hasSingleField {
 		effectiveRepoFieldValues, _ = r.Query.Repositories()
 	}
 
@@ -248,7 +247,7 @@ func (r *searchResolver) showRepoSuggestions(ctx context.Context) ([]SearchSugge
 		resolvers := make([]SearchSuggestionResolver, 0, len(resolved.RepoRevs))
 		for i, rev := range resolved.RepoRevs {
 			resolvers = append(resolvers, repositorySuggestionResolver{
-				repo: NewRepositoryResolver(database.NewDB(r.db), rev.Repo.ToRepo()),
+				repo: NewRepositoryResolver(r.db, rev.Repo.ToRepo()),
 				// Encode the returned order in score.
 				score: math.MaxInt32 - i,
 			})
@@ -264,11 +263,11 @@ func (r *searchResolver) showFileSuggestions(ctx context.Context) ([]SearchSugge
 		return mockShowFileSuggestions()
 	}
 
-	// If only repos/repogroups and files are specified (and at most 1 term), then show file
+	// If only repos and files are specified (and at most 1 term), then show file
 	// suggestions.  If the query has a single term, then consider it to be a `file:` filter (to
 	// make it easy to jump to files by just typing in their name, not `file:<their name>`).
 	hasOnlyEmptyRepoField := len(r.Query.Values(query.FieldRepo)) > 0 && allEmptyStrings(r.Query.RegexpPatterns(query.FieldRepo)) && len(r.Query.Fields()) == 1
-	hasRepoOrFileFields := len(r.Query.Values(query.FieldRepoGroup)) > 0 || len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
+	hasRepoOrFileFields := len(r.Query.Values(query.FieldRepo)) > 0 || len(r.Query.Values(query.FieldFile)) > 0
 	if !hasOnlyEmptyRepoField && hasRepoOrFileFields && len(r.Query.Values(query.FieldDefault)) <= 1 {
 		ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 		defer cancel()
@@ -403,7 +402,7 @@ func (r *searchResolver) showSymbolMatches(ctx context.Context) ([]SearchSuggest
 				symbol: symbolResolver{
 					db: r.db,
 					commit: toGitCommitResolver(
-						NewRepositoryResolver(database.NewDB(r.db), fileMatch.Repo.ToRepo()),
+						NewRepositoryResolver(r.db, fileMatch.Repo.ToRepo()),
 						r.db,
 						fileMatch.CommitID,
 						nil,
@@ -460,7 +459,7 @@ func (r *searchResolver) showFilesWithTextMatches(first int32) suggester {
 					if fm, ok := res.(*result.FileMatch); ok {
 						fmResolver := &FileMatchResolver{
 							FileMatch:    *fm,
-							RepoResolver: NewRepositoryResolver(database.NewDB(r.db), fm.Repo.ToRepo()),
+							RepoResolver: NewRepositoryResolver(r.db, fm.Repo.ToRepo()),
 						}
 						suggestions = append(suggestions, gitTreeSuggestionResolver{
 							gitTreeEntry: fmResolver.File(),

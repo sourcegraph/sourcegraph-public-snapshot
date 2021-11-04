@@ -103,6 +103,10 @@ type searchClient interface {
 
 	OverwriteSettings(subjectID, contents string) error
 	AuthenticatedUserID() string
+	Repository(repositoryName string) (*gqltestutil.Repository, error)
+	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
+	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
+	DeleteSearchContext(id string) error
 }
 
 func testSearchClient(t *testing.T, client searchClient) {
@@ -228,32 +232,40 @@ func testSearchClient(t *testing.T, client searchClient) {
 		}
 	})
 
-	t.Run("repository groups", func(t *testing.T) {
-		const repoName = "github.com/sgtest/go-diff"
-		err := client.OverwriteSettings(client.AuthenticatedUserID(), fmt.Sprintf(`{"search.repositoryGroups":{"gql_test_group": ["%s"]}}`, repoName))
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run("context: search", func(t *testing.T) {
+		repo1, err := client.Repository("github.com/sgtest/java-langserver")
+		require.NoError(t, err)
+		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
+		require.NoError(t, err)
+
+		namespace := client.AuthenticatedUserID()
+		searchContextID, err := client.CreateSearchContext(
+			gqltestutil.CreateSearchContextInput{Name: "SearchContext", Namespace: &namespace, Public: true},
+			[]gqltestutil.SearchContextRepositoryRevisionsInput{
+				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
+				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
+			})
+		require.NoError(t, err)
+
 		defer func() {
-			err := client.OverwriteSettings(client.AuthenticatedUserID(), `{}`)
-			if err != nil {
-				t.Fatal(err)
-			}
+			err = client.DeleteSearchContext(searchContextID)
+			require.NoError(t, err)
 		}()
 
-		results, err := client.SearchFiles("repogroup:gql_test_group diff.")
-		if err != nil {
-			t.Fatal(err)
+		searchContext, err := client.GetSearchContext(searchContextID)
+		require.NoError(t, err)
+
+		query := fmt.Sprintf("context:%s type:repo", searchContext.Spec)
+		results, err := client.SearchRepositories(query)
+		require.NoError(t, err)
+
+		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
+		if missingRepos := results.Exists(wantRepos...); len(missingRepos) != 0 {
+			t.Fatalf("Missing repositories: %v", missingRepos)
 		}
 
-		// Make sure there are results and all results are from the same repository
-		if len(results.Results) == 0 {
-			t.Fatal("Unexpected zero result")
-		}
-		for _, r := range results.Results {
-			if r.Repository.Name != repoName {
-				t.Fatalf("Repository: want %q but got %q", repoName, r.Repository.Name)
-			}
+		if len(wantRepos) != len(results) {
+			t.Fatalf("want %d repositories, got %d", len(wantRepos), len(results))
 		}
 	})
 

@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/query"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -66,6 +65,7 @@ type RepoStore interface {
 	Transact(context.Context) (RepoStore, error)
 	With(basestore.ShareableStore) RepoStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
+	Done(error) error
 
 	Count(context.Context, ReposListOptions) (int, error)
 	Create(context.Context, ...*types.Repo) error
@@ -78,10 +78,10 @@ type RepoStore interface {
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListEnabledNames(context.Context) ([]string, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.RepoName, error)
-	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
+	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
-	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
+	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -395,6 +395,13 @@ const getSourcesByRepoQueryStr = `
 )
 `
 
+var minimalRepoColumns = []string{
+	"repo.id",
+	"repo.name",
+	"repo.private",
+	"repo.stars",
+}
+
 var repoColumns = []string{
 	"repo.id",
 	"repo.name",
@@ -413,11 +420,6 @@ var repoColumns = []string{
 	"repo.metadata",
 	"repo.blocked",
 	getSourcesByRepoQueryStr,
-}
-
-// id, name, private
-func minimalColumns(columns []string) []string {
-	return columns[:3]
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -547,11 +549,11 @@ type ReposListOptions struct {
 	IDs []api.RepoID
 
 	// UserID, if non zero, will limit the set of results to repositories added by the user
-	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	UserID int32
 
 	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
-	// through external services. Mutually exclusive with the ExternalServiceIDs option.
+	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
 	OrgID int32
 
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
@@ -576,10 +578,6 @@ type ReposListOptions struct {
 	// ExternalRepoExcludeContains is the list of specs to exclude repos using
 	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
 	ExternalRepoExcludeContains []api.ExternalRepoSpec
-
-	// PatternQuery is an expression tree of patterns to query. The atoms of
-	// the query are strings which are regular expression patterns.
-	PatternQuery query.Q
 
 	// NoForks excludes forks from the list.
 	NoForks bool
@@ -614,14 +612,8 @@ type ReposListOptions struct {
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
 
-	// CursorColumn contains the relevant column for cursor-based pagination (e.g. "name")
-	CursorColumn string
-
-	// CursorValue contains the relevant value for cursor-based pagination (e.g. "Zaphod").
-	CursorValue string
-
-	// CursorDirection contains the comparison for cursor-based pagination, all possible values are: next, prev.
-	CursorDirection string
+	// Cursors to efficiently paginate through large result sets.
+	Cursors Cursors
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -722,23 +714,24 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 	s.ensureStore()
 
-	if len(opt.OrderBy) == 0 {
+	// always having ID in ORDER BY helps Postgres create a more performant query plan
+	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
 	return s.listRepos(ctx, tr, opt)
 }
 
-// StreamRepoNames calls the given callback for each of the repositories names and ids that match the given options.
-func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, cb func(*types.RepoName)) (err error) {
-	tr, ctx := trace.New(ctx, "repos.StreamRepoNames", "")
+// StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
+func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
+	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 	s.ensureStore()
 
-	opt.Select = minimalColumns(repoColumns)
+	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
@@ -746,9 +739,9 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	var privateIDs []api.RepoID
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
-		var r types.RepoName
+		var r types.MinimalRepo
 		var private bool
-		err := rows.Scan(&r.ID, &r.Name, &private)
+		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars})
 		if err != nil {
 			return err
 		}
@@ -773,13 +766,13 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	return nil
 }
 
-// ListRepoNames returns a list of repositories names and ids.
-func (s *repoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	if Mocks.Repos.ListRepoNames != nil {
-		return Mocks.Repos.ListRepoNames(ctx, opt)
+// ListMinimalRepos returns a list of repositories names and ids.
+func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
+	if Mocks.Repos.ListMinimalRepos != nil {
+		return Mocks.Repos.ListMinimalRepos(ctx, opt)
 	}
 
-	return results, s.StreamRepoNames(ctx, opt, func(r *types.RepoName) {
+	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
 }
@@ -839,11 +832,13 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
-	cursorConds, err := parseCursorConds(opt)
-	if err != nil {
-		return nil, err
+	for _, c := range opt.Cursors {
+		cursorConds, err := parseCursorConds(c)
+		if err != nil {
+			return nil, err
+		}
+		where = append(where, cursorConds...)
 	}
-	where = append(where, cursorConds...)
 
 	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
 		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
@@ -863,27 +858,6 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	if opt.ExcludePattern != "" {
 		where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
-	}
-
-	if opt.PatternQuery != nil {
-		cond, err := query.Eval(opt.PatternQuery, func(q query.Q) (*sqlf.Query, error) {
-			pattern, ok := q.(string)
-			if !ok {
-				return nil, errors.Errorf("unexpected token in repo listing query: %q", q)
-			}
-			extraConds, err := parsePattern(pattern)
-			if err != nil {
-				return nil, err
-			}
-			if len(extraConds) == 0 {
-				return sqlf.Sprintf("TRUE"), nil
-			}
-			return sqlf.Join(extraConds, "AND"), nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		where = append(where, cond)
 	}
 
 	if len(opt.IDs) > 0 {
@@ -994,6 +968,10 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
+	} else if opt.SearchContextID != 0 {
+		// Joining on distinct search context repos to avoid returning duplicates
+		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
+		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposQuery, opt.UserID)
 		if opt.IncludeUserPublicRepos {
@@ -1004,10 +982,6 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	} else if opt.OrgID != 0 {
 		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
-	} else if opt.SearchContextID != 0 {
-		// Joining on distinct search context repos to avoid returning duplicates
-		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
-		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
@@ -1087,7 +1061,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
+func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
@@ -1135,7 +1109,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	defer rows.Close()
 
 	for rows.Next() {
-		var r types.RepoName
+		var r types.MinimalRepo
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning indexable repos")
 		}
@@ -1576,27 +1550,27 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and
 // if so performs the necessary transformations for it to be successful.
-func parseCursorConds(opt ReposListOptions) (conds []*sqlf.Query, err error) {
-	if opt.CursorColumn == "" || opt.CursorValue == "" {
+func parseCursorConds(c *Cursor) (conds []*sqlf.Query, err error) {
+	if c == nil || c.Column == "" || c.Value == "" {
 		return nil, nil
 	}
 	var direction string
-	switch opt.CursorDirection {
+	switch c.Direction {
 	case "next":
 		direction = ">="
 	case "prev":
 		direction = "<="
 	default:
-		return nil, errors.Errorf("missing or invalid cursor direction: %q", opt.CursorDirection)
+		return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
 	}
 
-	switch opt.CursorColumn {
+	switch c.Column {
 	case string(RepoListName):
-		conds = append(conds, sqlf.Sprintf("name "+direction+" %s", opt.CursorValue))
+		conds = append(conds, sqlf.Sprintf("name "+direction+" %s", c.Value))
 	case string(RepoListCreatedAt):
-		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", opt.CursorValue))
+		conds = append(conds, sqlf.Sprintf("created_at "+direction+" %s", c.Value))
 	default:
-		return nil, errors.Errorf("missing or invalid cursor: %q %q", opt.CursorColumn, opt.CursorValue)
+		return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
 	}
 	return conds, nil
 }

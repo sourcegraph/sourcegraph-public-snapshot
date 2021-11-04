@@ -20,7 +20,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -44,6 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/search/unindexed"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -60,7 +60,7 @@ func (c *SearchResultsResolver) Repositories() []*RepositoryResolver {
 	repos := c.Stats.Repos
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
 	for _, r := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
+		resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 	}
 	sort.Slice(resolvers, func(a, b int) bool {
 		return resolvers[a].ID() < resolvers[b].ID()
@@ -76,7 +76,7 @@ func (c *SearchResultsResolver) repositoryResolvers(mask search.RepoStatus) []*R
 	var resolvers []*RepositoryResolver
 	c.Stats.Status.Filter(mask, func(id api.RepoID) {
 		if r, ok := c.Stats.Repos[id]; ok {
-			resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(c.db), r.ToRepo()))
+			resolvers = append(resolvers, NewRepositoryResolver(c.db, r.ToRepo()))
 		}
 	})
 	sort.Slice(resolvers, func(a, b int) bool {
@@ -103,7 +103,7 @@ func (c *SearchResultsResolver) IndexUnavailable() bool {
 
 // SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
 type SearchResultsResolver struct {
-	db dbutil.DB
+	db database.DB
 	*SearchResults
 
 	// limit is the maximum number of SearchResults to send back to the user.
@@ -134,13 +134,13 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 	return matchesToResolvers(sr.db, limited)
 }
 
-func matchesToResolvers(db dbutil.DB, matches []result.Match) []SearchResultResolver {
+func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
-		Name types.RepoName
+		Name types.MinimalRepo
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
@@ -465,7 +465,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	if opts.effectiveRepoFieldValues != nil {
 		repoFilters = opts.effectiveRepoFieldValues
 	}
-	repoGroupFilters, _ := q.StringValues(query.FieldRepoGroup)
 
 	var settingForks, settingArchived bool
 	if v := r.UserSettings.SearchIncludeForks; v != nil {
@@ -512,7 +511,6 @@ func (r *searchResolver) toRepoOptions(q query.Q, opts resolveRepositoriesOpts) 
 	return search.RepoOptions{
 		RepoFilters:       repoFilters,
 		MinusRepoFilters:  minusRepoFilters,
-		RepoGroupFilters:  repoGroupFilters,
 		SearchContextSpec: searchContextSpec,
 		UserSettings:      r.UserSettings,
 		OnlyForks:         fork == query.Only,
@@ -546,7 +544,6 @@ func withMode(args search.TextParameters, st query.SearchType) search.TextParame
 				// We allow -repo: in global search.
 				return n.Negated
 			case
-				query.FieldRepoGroup,
 				query.FieldRepoHasFile:
 				return false
 			default:
@@ -628,15 +625,74 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 		// It which specializes search logic in doResults. In time, all
 		// of the above logic should be used to create search jobs
 		// across all of Sourcegraph.
-		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
-			jobs = append(jobs, &unindexed.StructuralSearch{
-				RepoFetcher: unindexed.NewRepoFetcher(r.stream, &args),
-				Mode:        args.Mode,
-				SearcherArgs: search.SearcherParameters{
+
+		globalSearch := args.Mode == search.ZoektGlobalSearch
+		skipUnindexed := args.Mode == search.SkipUnindexed || (globalSearch && envvar.SourcegraphDotComMode())
+		searcherOnly := args.Mode == search.SearcherOnly || (globalSearch && !envvar.SourcegraphDotComMode())
+		if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
+			if !skipUnindexed {
+				typ := search.TextRequest
+				// TODO(rvantonder): we don't always have to run
+				// this converter. It depends on whether we run
+				// a zoekt search at all.
+				zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+				if err != nil {
+					return nil, nil, err
+				}
+				zoektArgs := &search.ZoektParameters{
+					Query:          zoektQuery,
+					Typ:            typ,
+					FileMatchLimit: args.PatternInfo.FileMatchLimit,
+					Select:         args.PatternInfo.Select,
+					Zoekt:          args.Zoekt,
+				}
+
+				searcherArgs := &search.SearcherParameters{
 					SearcherURLs:    args.SearcherURLs,
 					PatternInfo:     args.PatternInfo,
 					UseFullDeadline: args.UseFullDeadline,
-				},
+				}
+
+				jobs = append(jobs, &unindexed.TextSearch{
+					ZoektArgs:         zoektArgs,
+					SearcherArgs:      searcherArgs,
+					FileMatchLimit:    args.PatternInfo.FileMatchLimit,
+					NotSearcherOnly:   !searcherOnly,
+					UseIndex:          args.PatternInfo.Index,
+					ContainsRefGlobs:  query.ContainsRefGlobs(q),
+					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
+				})
+			}
+		}
+
+		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
+			typ := search.TextRequest
+			zoektQuery, err := search.QueryToZoektQuery(args.PatternInfo, typ)
+			if err != nil {
+				return nil, nil, err
+			}
+			zoektArgs := &search.ZoektParameters{
+				Query:          zoektQuery,
+				Typ:            typ,
+				FileMatchLimit: args.PatternInfo.FileMatchLimit,
+				Select:         args.PatternInfo.Select,
+				Zoekt:          args.Zoekt,
+			}
+
+			searcherArgs := &search.SearcherParameters{
+				SearcherURLs:    args.SearcherURLs,
+				PatternInfo:     args.PatternInfo,
+				UseFullDeadline: args.UseFullDeadline,
+			}
+
+			jobs = append(jobs, &unindexed.StructuralSearch{
+				ZoektArgs:    zoektArgs,
+				SearcherArgs: searcherArgs,
+
+				NotSearcherOnly:   !searcherOnly,
+				UseIndex:          args.PatternInfo.Index,
+				ContainsRefGlobs:  query.ContainsRefGlobs(q),
+				OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
 			})
 		}
 	}
@@ -882,25 +938,23 @@ func (r *searchResolver) evaluate(ctx context.Context, q query.Basic) (*SearchRe
 }
 
 // shouldInvalidateRepoCache returns whether resolved repos should be invalidated when
-// evaluating subexpressions. If a query contains more than one repo, revision,
-// or repogroup field, we should invalidate resolved repos, since multiple
-// repos, revisions, or repogroups imply that different repos may need to be
+// evaluating subexpressions. If a query contains more than one repo or revision field,
+// we should invalidate resolved repos, since multiple
+// repos or revisions imply that different repos may need to be
 // resolved.
 func shouldInvalidateRepoCache(plan query.Plan) bool {
-	var seenRepo, seenRevision, seenRepoGroup, seenContext int
+	var seenRepo, seenRevision, seenContext int
 	query.VisitParameter(plan.ToParseTree(), func(field, _ string, _ bool, _ query.Annotation) {
 		switch field {
 		case query.FieldRepo:
 			seenRepo += 1
 		case query.FieldRev:
 			seenRevision += 1
-		case query.FieldRepoGroup:
-			seenRepoGroup += 1
 		case query.FieldContext:
 			seenContext += 1
 		}
 	})
-	return seenRepo+seenRepoGroup > 1 || seenRevision > 1 || seenContext > 1
+	return seenRepo > 1 || seenRevision > 1 || seenContext > 1
 }
 
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
@@ -1515,7 +1569,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
-		userPrivateRepos, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		userPrivateRepos, err := database.Repos(r.db).ListMinimalRepos(ctx, database.ReposListOptions{
 			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
@@ -1593,14 +1647,32 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		tr.LazyPrintf("adding error for missing repo revs - done")
 	}
 
-	agg.Send(streaming.SearchEvent{
-		Stats: streaming.Stats{
-			Repos:            resolved.RepoSet,
-			ExcludedForks:    resolved.ExcludedRepos.Forks,
-			ExcludedArchived: resolved.ExcludedRepos.Archived,
-		},
-	})
-	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", len(resolved.RepoSet), resolved.ExcludedRepos)
+	agg.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: resolved.RepoSet}})
+	tr.LazyPrintf("sending first stats (repos %d) - done", len(resolved.RepoSet))
+
+	{
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+
+			repositoryResolver := searchrepos.Resolver{DB: r.db}
+			excluded, err := repositoryResolver.Excluded(ctx, args.RepoOptions)
+			if err != nil {
+				agg.Error(err)
+				return
+			}
+
+			agg.Send(streaming.SearchEvent{
+				Stats: streaming.Stats{
+					ExcludedArchived: excluded.Archived,
+					ExcludedForks:    excluded.Forks,
+				},
+			})
+
+			tr.LazyPrintf("sent excluded stats %#v", excluded)
+		})
+	}
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
@@ -1609,7 +1681,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			defer wg.Done()
 			_ = agg.DoRepoSearch(ctx, args, int32(limit))
 		})
-
 	}
 
 	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {
@@ -1622,36 +1693,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 				notSearcherOnly := !searcherOnly
 
 				_ = agg.DoSymbolSearch(ctx, args, notSearcherOnly, false, limit)
-			})
-		}
-	}
-
-	if args.ResultTypes.Has(result.TypeFile | result.TypePath) {
-		if !skipUnindexed {
-			wg := waitGroup(true)
-			wg.Add(1)
-			goroutine.Go(func() {
-				defer wg.Done()
-
-				ctx, stream, cleanup := streaming.WithLimit(ctx, agg, int(args.PatternInfo.FileMatchLimit))
-				defer cleanup()
-
-				// This code path implies we've already decided to run global-search (3rd arg is always false).
-				zoektArgs, err := zoekt.NewIndexedSearchRequest(ctx, args, false, search.TextRequest, zoekt.MissingRepoRevStatus(stream))
-				if err != nil {
-					agg.Error(err)
-					return
-				}
-
-				searcherArgs := &search.SearcherParameters{
-					SearcherURLs:    args.SearcherURLs,
-					PatternInfo:     args.PatternInfo,
-					UseFullDeadline: args.UseFullDeadline,
-				}
-
-				notSearcherOnly := !searcherOnly
-
-				_ = agg.DoFilePathSearch(ctx, zoektArgs, searcherArgs, notSearcherOnly, stream)
 			})
 		}
 	}
@@ -1706,6 +1747,8 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			return waitGroup(args.ResultTypes.Without(result.TypeDiff) == 0)
 		case "Commit":
 			return waitGroup(args.ResultTypes.Without(result.TypeCommit) == 0)
+		case "Text":
+			return waitGroup(true)
 		case "Structural":
 			return waitGroup(true)
 		default:

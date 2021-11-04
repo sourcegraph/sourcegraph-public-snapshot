@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
@@ -52,7 +53,7 @@ func productLicenseByDBID(ctx context.Context, db dbutil.DB, id string) (*produc
 	if err != nil {
 		return nil, err
 	}
-	if err := backend.CheckSiteAdminOrSameUser(ctx, db, sub.v.UserID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), sub.v.UserID); err != nil {
 		return nil, err
 	}
 
@@ -112,7 +113,7 @@ func generateProductLicenseForSubscription(ctx context.Context, db dbutil.DB, su
 
 func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscription(ctx context.Context, args *graphqlbackend.GenerateProductLicenseForSubscriptionArgs) (graphqlbackend.ProductLicense, error) {
 	// 🚨 SECURITY: Only site admins may generate product licenses.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 		return nil, err
 	}
 	sub, err := productSubscriptionByID(ctx, r.DB, args.ProductSubscriptionID)
@@ -128,7 +129,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list product licenses.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.DB)); err != nil {
 		return nil, err
 	}
 

@@ -1,6 +1,6 @@
 # Developing the Sourcegraph web app
 
-Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](https://about.sourcegraph.com/handbook/engineering/languages/typescript).
+Guide to contribute to the Sourcegraph web app. Please also see our general [TypeScript documentation](../languages/typescript.md).
 
 ## Local development
 
@@ -12,7 +12,7 @@ Also, check out the web app [README](https://github.com/sourcegraph/sourcegraph/
 
 The `sg` CLI tool is required for key local development commands. Check out [the `sg` documentation](../sg/index.md).
 
-To install it, [see the instructions](../../getting-started/quickstart_3_install_sg.md).
+To install it, [see the instructions](../../getting-started/quickstart_1_install_sg.md).
 
 ### Commands
 

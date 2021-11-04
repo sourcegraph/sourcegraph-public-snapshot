@@ -123,4 +123,4 @@ func ResultCountFactor(numRepos int, fileMatchLimit int32, globalSearch bool) (k
 
 // repoRevFunc is a function which maps repository names returned from Zoekt
 // into the Sourcegraph's resolved repository revisions for the search.
-type repoRevFunc func(file *zoekt.FileMatch) (repo types.RepoName, revs []string)
+type repoRevFunc func(file *zoekt.FileMatch) (repo types.MinimalRepo, revs []string)

@@ -1,3 +1,4 @@
+import classNames from 'classnames'
 import { subYears, formatISO } from 'date-fns'
 import * as H from 'history'
 import AccountIcon from 'mdi-react/AccountIcon'
@@ -56,6 +57,7 @@ import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 
 import { TreeEntriesSection } from './TreeEntriesSection'
+import styles from './TreePage.module.scss'
 
 const fetchTreeCommits = memoizeObservable(
     (args: {
@@ -323,13 +325,12 @@ export const TreePage: React.FunctionComponent<Props> = ({
     )
 
     return (
-        <div className="tree-page">
-            <Container className="tree-page__container">
+        <div className={styles.treePage}>
+            <Container className={styles.container}>
                 <PageTitle title={getPageTitle()} />
                 {treeOrError === undefined ? (
                     <div>
-                        <LoadingSpinner className="icon-inline tree-page__entries-loader" /> Loading files and
-                        directories
+                        <LoadingSpinner className="icon-inline" /> Loading files and directories
                     </div>
                 ) : isErrorLike(treeOrError) ? (
                     // If the tree is actually a blob, be helpful and redirect to the blob page.
@@ -424,7 +425,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </header>
 
                         <ExtensionViewsSection
-                            className="tree-page__section mb-3"
+                            className={classNames('mb-3', styles.section)}
                             telemetryService={props.telemetryService}
                             settingsCascade={settingsCascade}
                             platformContext={props.platformContext}
@@ -433,7 +434,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             uri={uri}
                         />
 
-                        <section className="tree-page__section test-tree-entries mb-3">
+                        <section className={classNames('test-tree-entries mb-3', styles.section)}>
                             <h2>Files and directories</h2>
                             <TreeEntriesSection
                                 parentPath={filePath}
@@ -444,7 +445,7 @@ export const TreePage: React.FunctionComponent<Props> = ({
                         </section>
                         <ActionsContainer {...props} menu={ContributableMenu.DirectoryPage} empty={null}>
                             {items => (
-                                <section className="tree-page__section">
+                                <section className={styles.section}>
                                     <h2>Actions</h2>
                                     {items.map(item => (
                                         <ActionItem
@@ -458,11 +459,11 @@ export const TreePage: React.FunctionComponent<Props> = ({
                             )}
                         </ActionsContainer>
 
-                        <div className="tree-page__section">
+                        <div className={styles.section}>
                             <h2>Changes</h2>
                             <FilteredConnection<GitCommitFields, Pick<GitCommitNodeProps, 'className' | 'compact'>>
                                 location={props.location}
-                                className="mt-2 tree-page__section--commits"
+                                className="mt-2"
                                 listClassName="list-group list-group-flush"
                                 noun="commit in this tree"
                                 pluralNoun="commits in this tree"

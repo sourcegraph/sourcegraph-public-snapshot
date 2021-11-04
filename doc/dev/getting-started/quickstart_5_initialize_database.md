@@ -9,8 +9,7 @@ The development server startup script as well as the docker compose file provide
 To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
 
 ```sh
-export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
-createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+createdb --host=localhost --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
 ```
 
 You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.

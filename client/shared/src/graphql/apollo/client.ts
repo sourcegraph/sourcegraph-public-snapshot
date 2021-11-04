@@ -2,7 +2,7 @@ import { ApolloClient, createHttpLink, from, NormalizedCacheObject } from '@apol
 import { LocalStorageWrapper, CachePersistor } from 'apollo3-cache-persist'
 import { once } from 'lodash'
 
-import { GRAPHQL_URI } from '../constants'
+import { buildGraphQLUrl } from '../graphql'
 import { ConcurrentRequestsLink } from '../links/concurrent-requests-link'
 
 import { cache } from './cache'
@@ -26,7 +26,7 @@ const getApolloPersistCacheKey = (isAuthenticated: boolean): string =>
 export const getGraphQLClient = once(
     async (options: GetGraphqlClientOptions): Promise<GraphQLClient> => {
         const { headers, baseUrl, isAuthenticated } = options
-        const uri = baseUrl ? new URL(GRAPHQL_URI, baseUrl).href : GRAPHQL_URI
+        const uri = buildGraphQLUrl({ baseUrl })
 
         const persistor = new CachePersistor({
             cache,

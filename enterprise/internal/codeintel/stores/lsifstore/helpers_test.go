@@ -1,6 +1,7 @@
 package lsifstore
 
 import (
+	"bytes"
 	"os"
 	"strings"
 	"testing"
@@ -9,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const testBundleID = 39162
+const testBundleID = 1
 
 func populateTestStore(t testing.TB) *Store {
 	contents, err := os.ReadFile("./testdata/lsif-go@ad3507cb.sql")
@@ -29,12 +30,25 @@ func populateTestStore(t testing.TB) *Store {
 		}
 	}()
 
-	for _, line := range strings.Split(string(contents), "\n") {
-		if line == "" || strings.HasPrefix(line, "---") {
+	// Remove comments from the lines.
+	var withoutComments []byte
+	for _, line := range bytes.Split(contents, []byte{'\n'}) {
+		if string(line) == "" || bytes.HasPrefix(line, []byte("--")) {
 			continue
 		}
+		withoutComments = append(withoutComments, line...)
+		withoutComments = append(withoutComments, '\n')
+	}
 
-		if _, err := tx.Exec(line); err != nil {
+	// Execute each statement. Split on ";\n" because statements may have e.g. string literals that
+	// span multiple lines.
+	for _, statement := range strings.Split(string(withoutComments), ";\n") {
+		if strings.Contains(statement, "_schema_versions") {
+			// Statements which insert into lsif_data_*_schema_versions should not be executed, as
+			// these are already inserted during regular DB up migrations.
+			continue
+		}
+		if _, err := tx.Exec(statement); err != nil {
 			t.Fatalf("unexpected error loading database data: %s", err)
 		}
 	}
