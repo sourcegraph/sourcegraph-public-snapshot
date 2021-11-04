@@ -13,6 +13,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -710,6 +712,65 @@ func TestUpsertAuthorizationToExternalService(t *testing.T) {
 			}
 		})
 	}
+}
+
+// This test ensures under Sourcegraph.com mode, every call of `Create`,
+// `Upsert` and `Update` has the "authorization" field presented in the external
+// service config automatically.
+func TestExternalServicesStore_upsertAuthorizationToExternalService(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	db := dbtest.NewDB(t)
+	ctx := context.Background()
+
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(false)
+
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	externalServices := ExternalServices(db)
+
+	// Test Create method
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := externalServices.Create(ctx, confGet, es)
+	require.NoError(t, err)
+
+	got, err := externalServices.GetByID(ctx, es.ID)
+	require.NoError(t, err)
+	exists := gjson.Get(got.Config, "authorization").Exists()
+	assert.True(t, exists, `"authorization" field exists`)
+
+	// Reset Config field and test Upsert method
+	es.Config = `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`
+	err = externalServices.Upsert(ctx, es)
+	require.NoError(t, err)
+
+	got, err = externalServices.GetByID(ctx, es.ID)
+	require.NoError(t, err)
+	exists = gjson.Get(got.Config, "authorization").Exists()
+	assert.True(t, exists, `"authorization" field exists`)
+
+	// Reset Config field and test Update method
+	es.Config = `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`
+	err = externalServices.Update(ctx,
+		conf.Get().AuthProviders,
+		es.ID,
+		&ExternalServiceUpdate{
+			Config: &es.Config,
+		},
+	)
+	require.NoError(t, err)
+
+	got, err = externalServices.GetByID(ctx, es.ID)
+	require.NoError(t, err)
+	exists = gjson.Get(got.Config, "authorization").Exists()
+	assert.True(t, exists, `"authorization" field exists`)
 }
 
 func TestCountRepoCount(t *testing.T) {

@@ -176,7 +176,7 @@ type TextParameters struct {
 	Repos []*RepositoryRevisions
 
 	// perf: For global queries, we only resolve private repos.
-	UserPrivateRepos []types.RepoName
+	UserPrivateRepos []types.MinimalRepo
 	Mode             GlobalSearchMode
 
 	// Query is the parsed query from the user. You should be using Pattern

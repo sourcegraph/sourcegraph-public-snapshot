@@ -70,7 +70,7 @@ func NewGlobalZoektQuery(query zoektquery.Q, scope zoektquery.Q, includePrivate 
 // method only adds a set of private repositories to the scope, if the
 // construction of a GlobalZoektQuery was permitted to includePrivate
 // repositories.
-func (q *GlobalZoektQuery) ApplyPrivateFilter(userPrivateRepos []types.RepoName) {
+func (q *GlobalZoektQuery) ApplyPrivateFilter(userPrivateRepos []types.MinimalRepo) {
 	if q.includePrivate && len(userPrivateRepos) > 0 {
 		ids := make([]uint32, 0, len(userPrivateRepos))
 		for _, r := range userPrivateRepos {

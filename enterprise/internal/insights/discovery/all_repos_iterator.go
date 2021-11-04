@@ -18,7 +18,7 @@ import (
 
 // IndexableReposLister is a subset of the API exposed by the backend.ListIndexable.
 type IndexableReposLister interface {
-	List(ctx context.Context) ([]types.RepoName, error)
+	List(ctx context.Context) ([]types.MinimalRepo, error)
 }
 
 // RepoStore is a subset of the API exposed by the database.Repos() store.

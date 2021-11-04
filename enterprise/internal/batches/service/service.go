@@ -683,7 +683,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	}
 
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -723,7 +723,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
 		return nil, err
 	}
 
@@ -765,7 +765,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
 		return err
 	}
 
@@ -803,7 +803,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), c.InitialApplierID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), c.InitialApplierID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -854,7 +854,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), c.InitialApplierID)
+		err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), c.InitialApplierID)
 		if err != nil {
 			authErr = err
 		} else {
@@ -888,9 +888,9 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 
 func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db dbutil.DB, namespaceUserID, namespaceOrgID int32) (err error) {
 	if namespaceOrgID != 0 {
-		return backend.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
+		return backend.CheckOrgAccessOrSiteAdmin(ctx, database.NewDB(db), namespaceOrgID)
 	} else if namespaceUserID != 0 {
-		return backend.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
+		return backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(db), namespaceUserID)
 	} else {
 		return ErrNoNamespace
 	}
@@ -995,7 +995,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 	}
 
 	// 🚨 SECURITY: Only the author of the batch change can create jobs.
-	if err := backend.CheckSiteAdminOrSameUser(ctx, s.store.DB(), batchChange.InitialApplierID); err != nil {
+	if err := backend.CheckSiteAdminOrSameUser(ctx, database.NewDB(s.store.DB()), batchChange.InitialApplierID); err != nil {
 		return bulkGroupID, err
 	}
 

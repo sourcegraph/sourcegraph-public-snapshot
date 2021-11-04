@@ -64,7 +64,7 @@ func (r *userEmailResolver) VerificationPending() bool {
 func (r *userEmailResolver) User() *UserResolver { return r.user }
 
 func (r *userEmailResolver) ViewerCanManuallyVerify(ctx context.Context) (bool, error) {
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err == backend.ErrNotAuthenticated || err == backend.ErrMustBeSiteAdmin {
 		return false, nil
 	} else if err != nil {
 		return false, err

@@ -163,7 +163,7 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 
 // ListIndexable calls database.IndexableRepos.List, with tracing. It lists ALL
 // indexable repos which could include private user added repos.
-func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err error) {
+func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
@@ -178,13 +178,13 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.RepoName, err 
 	}
 
 	trueP := true
-	return s.store.ListRepoNames(ctx, database.ReposListOptions{Index: &trueP})
+	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{Index: &trueP})
 }
 
 // ListSearchable calls database.IndexableRepos.ListPublic, with tracing.
 // It lists all public indexable repos and also any private repos added by the
 // current user. Only used on sourcegraph.com where we don't have every repo indexed.
-func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err error) {
+func (s *repos) ListSearchable(ctx context.Context) (repos []types.MinimalRepo, err error) {
 	ctx, done := trace(ctx, "Repos", "ListSearchable", nil, &err)
 	defer func() {
 		if err == nil {
@@ -203,7 +203,7 @@ func (s *repos) ListSearchable(ctx context.Context) (repos []types.RepoName, err
 
 	// For authenticated users we also want to include any private repos they may have added
 	if a := actor.FromContext(ctx); a.IsAuthenticated() {
-		privateRepos, err := s.store.ListRepoNames(ctx, database.ReposListOptions{
+		privateRepos, err := s.store.ListMinimalRepos(ctx, database.ReposListOptions{
 			UserID:      a.UID,
 			OnlyPrivate: true,
 		})

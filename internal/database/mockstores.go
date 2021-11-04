@@ -11,23 +11,17 @@ var Mocks MockStores
 type MockStores struct {
 	AccessTokens MockAccessTokens
 
-	Repos           MockRepos
-	Orgs            MockOrgs
-	OrgMembers      MockOrgMembers
-	SavedSearches   MockSavedSearches
-	Settings        MockSettings
-	Users           MockUsers
-	UserCredentials MockUserCredentials
-	UserEmails      MockUserEmails
-	SubRepoPerms    MockSubRepoPerms
+	Repos         MockRepos
+	Orgs          MockOrgs
+	OrgMembers    MockOrgMembers
+	SavedSearches MockSavedSearches
+	Users         MockUsers
+	UserEmails    MockUserEmails
+	SubRepoPerms  MockSubRepoPerms
 
 	ExternalAccounts MockExternalAccounts
-
-	OrgInvitations MockOrgInvitations
 
 	ExternalServices MockExternalServices
 
 	Authz MockAuthz
-
-	FeatureFlags MockFeatureFlags
 }

@@ -53,10 +53,6 @@ func (s *settingsStore) Transact(ctx context.Context) (SettingsStore, error) {
 }
 
 func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.SettingsSubject, lastID *int32, authorUserID *int32, contents string) (latestSetting *api.Settings, err error) {
-	if Mocks.Settings.CreateIfUpToDate != nil {
-		return Mocks.Settings.CreateIfUpToDate(ctx, subject, lastID, authorUserID, contents)
-	}
-
 	if strings.TrimSpace(contents) == "" {
 		return nil, errors.Errorf("blank settings are invalid (you can clear the settings by entering an empty JSON object: {})")
 	}
@@ -110,10 +106,6 @@ func (o *settingsStore) CreateIfUpToDate(ctx context.Context, subject api.Settin
 }
 
 func (o *settingsStore) GetLatest(ctx context.Context, subject api.SettingsSubject) (*api.Settings, error) {
-	if Mocks.Settings.GetLatest != nil {
-		return Mocks.Settings.GetLatest(ctx, subject)
-	}
-
 	var cond *sqlf.Query
 	switch {
 	case subject.Org != nil:

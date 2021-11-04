@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -92,7 +91,7 @@ type RepositoryConnectionResolver interface {
 var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
-	db          dbutil.DB
+	db          database.DB
 	opt         database.ReposListOptions
 	cloned      bool
 	notCloned   bool
@@ -210,7 +209,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 			break
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(database.NewDB(r.db), repo))
+		resolvers = append(resolvers, NewRepositoryResolver(r.db, repo))
 	}
 	return resolvers, nil
 }
@@ -263,7 +262,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 		}()
 	}
 
-	count, err := database.Repos(r.db).Count(ctx, r.opt)
+	count, err := r.db.Repos().Count(ctx, r.opt)
 	return i32ptr(int32(count)), err
 }
 

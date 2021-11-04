@@ -20,7 +20,6 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -137,11 +136,11 @@ func (sr *SearchResultsResolver) Results() []SearchResultResolver {
 
 func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
 	type repoKey struct {
-		Name types.RepoName
+		Name types.MinimalRepo
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	getRepoResolver := func(repoName types.RepoName, rev string) *RepositoryResolver {
+	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
@@ -664,7 +663,6 @@ func (r *searchResolver) toSearchInputs(q query.Q) (*search.TextParameters, []ru
 					OnMissingRepoRevs: zoektutil.MissingRepoRevStatus(r.stream),
 				})
 			}
-
 		}
 
 		if r.PatternType == query.SearchTypeStructural && p.Pattern != "" {
@@ -1571,7 +1569,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		// Get all private repos for the the current actor. On sourcegraph.com, those are
 		// only the repos directly added by the user. Otherwise it's all repos the user has
 		// access to on all connected code hosts / external services.
-		userPrivateRepos, err := database.Repos(r.db).ListRepoNames(ctx, database.ReposListOptions{
+		userPrivateRepos, err := database.Repos(r.db).ListMinimalRepos(ctx, database.ReposListOptions{
 			UserID:       userID, // Zero valued when not in sourcegraph.com mode
 			OnlyPrivate:  true,
 			LimitOffset:  &database.LimitOffset{Limit: search.SearchLimits(conf.Get()).MaxRepos + 1},
@@ -1649,14 +1647,32 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 		tr.LazyPrintf("adding error for missing repo revs - done")
 	}
 
-	agg.Send(streaming.SearchEvent{
-		Stats: streaming.Stats{
-			Repos:            resolved.RepoSet,
-			ExcludedForks:    resolved.ExcludedRepos.Forks,
-			ExcludedArchived: resolved.ExcludedRepos.Archived,
-		},
-	})
-	tr.LazyPrintf("sending first stats (repos %d, excluded repos %+v) - done", len(resolved.RepoSet), resolved.ExcludedRepos)
+	agg.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: resolved.RepoSet}})
+	tr.LazyPrintf("sending first stats (repos %d) - done", len(resolved.RepoSet))
+
+	{
+		wg := waitGroup(true)
+		wg.Add(1)
+		goroutine.Go(func() {
+			defer wg.Done()
+
+			repositoryResolver := searchrepos.Resolver{DB: r.db}
+			excluded, err := repositoryResolver.Excluded(ctx, args.RepoOptions)
+			if err != nil {
+				agg.Error(err)
+				return
+			}
+
+			agg.Send(streaming.SearchEvent{
+				Stats: streaming.Stats{
+					ExcludedArchived: excluded.Archived,
+					ExcludedForks:    excluded.Forks,
+				},
+			})
+
+			tr.LazyPrintf("sent excluded stats %#v", excluded)
+		})
+	}
 
 	if args.ResultTypes.Has(result.TypeRepo) {
 		wg := waitGroup(true)
@@ -1665,7 +1681,6 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 			defer wg.Done()
 			_ = agg.DoRepoSearch(ctx, args, int32(limit))
 		})
-
 	}
 
 	if args.ResultTypes.Has(result.TypeSymbol) && args.PatternInfo.Pattern != "" {

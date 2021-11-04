@@ -58,7 +58,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 		}
 
 		// TODO(asdine): GetByIDs now returns the complete repo information rather that only a subset.
-		// Ensure this doesn't have an impact on performance and switch to using ListRepoNames if needed.
+		// Ensure this doesn't have an impact on performance and switch to using ListMinimalRepos if needed.
 		r.repos, r.err = database.Repos(r.db).GetByIDs(ctx, repoIDs...)
 		if r.err != nil {
 			return
@@ -76,7 +76,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 
 func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 
 func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *graphqlbackend.TotalCountArgs) (*int32, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil, err
 	}
 
@@ -103,7 +103,7 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *gra
 
 func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
 	// 🚨 SECURITY: Only site admins may access this method.
-	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(r.db)); err != nil {
 		return nil, err
 	}
 

@@ -79,10 +79,10 @@ type RepoStore interface {
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListEnabledNames(context.Context) ([]string, error)
-	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.RepoName, error)
-	ListRepoNames(context.Context, ReposListOptions) ([]types.RepoName, error)
+	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
+	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
-	StreamRepoNames(context.Context, ReposListOptions, func(*types.RepoName)) error
+	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -396,6 +396,13 @@ const getSourcesByRepoQueryStr = `
 )
 `
 
+var minimalRepoColumns = []string{
+	"repo.id",
+	"repo.name",
+	"repo.private",
+	"repo.stars",
+}
+
 var repoColumns = []string{
 	"repo.id",
 	"repo.name",
@@ -414,11 +421,6 @@ var repoColumns = []string{
 	"repo.metadata",
 	"repo.blocked",
 	getSourcesByRepoQueryStr,
-}
-
-// id, name, private
-func minimalColumns(columns []string) []string {
-	return columns[:3]
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -717,23 +719,24 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 	}
 	s.ensureStore()
 
-	if len(opt.OrderBy) == 0 {
+	// always having ID in ORDER BY helps Postgres create a more performant query plan
+	if len(opt.OrderBy) == 0 || (len(opt.OrderBy) == 1 && opt.OrderBy[0].Field != RepoListID) {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
 	return s.listRepos(ctx, tr, opt)
 }
 
-// StreamRepoNames calls the given callback for each of the repositories names and ids that match the given options.
-func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, cb func(*types.RepoName)) (err error) {
-	tr, ctx := trace.New(ctx, "repos.StreamRepoNames", "")
+// StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
+func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
+	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 	s.ensureStore()
 
-	opt.Select = minimalColumns(repoColumns)
+	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
@@ -741,9 +744,9 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	var privateIDs []api.RepoID
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
-		var r types.RepoName
+		var r types.MinimalRepo
 		var private bool
-		err := rows.Scan(&r.ID, &r.Name, &private)
+		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars})
 		if err != nil {
 			return err
 		}
@@ -768,13 +771,13 @@ func (s *repoStore) StreamRepoNames(ctx context.Context, opt ReposListOptions, c
 	return nil
 }
 
-// ListRepoNames returns a list of repositories names and ids.
-func (s *repoStore) ListRepoNames(ctx context.Context, opt ReposListOptions) (results []types.RepoName, err error) {
-	if Mocks.Repos.ListRepoNames != nil {
-		return Mocks.Repos.ListRepoNames(ctx, opt)
+// ListMinimalRepos returns a list of repositories names and ids.
+func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
+	if Mocks.Repos.ListMinimalRepos != nil {
+		return Mocks.Repos.ListMinimalRepos(ctx, opt)
 	}
 
-	return results, s.StreamRepoNames(ctx, opt, func(r *types.RepoName) {
+	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
 }
@@ -1084,7 +1087,7 @@ var listIndexableReposMinStars, _ = strconv.Atoi(env.Get(
 
 // ListIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
 // This includes all repos with >= SRC_INDEXABLE_REPOS_MIN_STARS stars as well as user added repos.
-func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.RepoName, err error) {
+func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable", "")
 	defer func() {
 		tr.SetError(err)
@@ -1132,7 +1135,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 	defer rows.Close()
 
 	for rows.Next() {
-		var r types.RepoName
+		var r types.MinimalRepo
 		if err := rows.Scan(&r.ID, &r.Name); err != nil {
 			return nil, errors.Wrap(err, "scanning indexable repos")
 		}

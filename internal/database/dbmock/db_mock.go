@@ -63,6 +63,9 @@ type MockDB struct {
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
+	// SubRepoPermsFunc is an instance of a mock function object controlling
+	// the behavior of the method SubRepoPerms.
+	SubRepoPermsFunc *DBSubRepoPermsFunc
 	// TemporarySettingsFunc is an instance of a mock function object
 	// controlling the behavior of the method TemporarySettings.
 	TemporarySettingsFunc *DBTemporarySettingsFunc
@@ -167,6 +170,11 @@ func NewMockDB() *MockDB {
 				return nil
 			},
 		},
+		SubRepoPermsFunc: &DBSubRepoPermsFunc{
+			defaultHook: func() database.SubRepoPermsStore {
+				return nil
+			},
+		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: func() database.TemporarySettingsStore {
 				return nil
@@ -251,6 +259,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
+		},
+		SubRepoPermsFunc: &DBSubRepoPermsFunc{
+			defaultHook: i.SubRepoPerms,
 		},
 		TemporarySettingsFunc: &DBTemporarySettingsFunc{
 			defaultHook: i.TemporarySettings,
@@ -1912,6 +1923,105 @@ func (c DBSettingsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBSubRepoPermsFunc describes the behavior when the SubRepoPerms method of
+// the parent MockDB instance is invoked.
+type DBSubRepoPermsFunc struct {
+	defaultHook func() database.SubRepoPermsStore
+	hooks       []func() database.SubRepoPermsStore
+	history     []DBSubRepoPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// SubRepoPerms delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) SubRepoPerms() database.SubRepoPermsStore {
+	r0 := m.SubRepoPermsFunc.nextHook()()
+	m.SubRepoPermsFunc.appendCall(DBSubRepoPermsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SubRepoPerms method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBSubRepoPermsFunc) SetDefaultHook(hook func() database.SubRepoPermsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SubRepoPerms method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBSubRepoPermsFunc) PushHook(hook func() database.SubRepoPermsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBSubRepoPermsFunc) SetDefaultReturn(r0 database.SubRepoPermsStore) {
+	f.SetDefaultHook(func() database.SubRepoPermsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBSubRepoPermsFunc) PushReturn(r0 database.SubRepoPermsStore) {
+	f.PushHook(func() database.SubRepoPermsStore {
+		return r0
+	})
+}
+
+func (f *DBSubRepoPermsFunc) nextHook() func() database.SubRepoPermsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBSubRepoPermsFunc) appendCall(r0 DBSubRepoPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBSubRepoPermsFuncCall objects describing
+// the invocations of this function.
+func (f *DBSubRepoPermsFunc) History() []DBSubRepoPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBSubRepoPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBSubRepoPermsFuncCall is an object that describes an invocation of
+// method SubRepoPerms on an instance of MockDB.
+type DBSubRepoPermsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SubRepoPermsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBSubRepoPermsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBSubRepoPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -1,4 +1,4 @@
-# Quickstart step 2: Get the code
+# Quickstart step 3: Get the code
 
 Run the following command in a folder where you want to keep a copy of the code. Command will create a new sub-folder (`sourcegraph`) in this folder.
 
@@ -20,4 +20,4 @@ It needs to be cloned into the same folder as `sourcegraph/sourcegraph`, so they
 
 > NOTE: Ensure that you periodically pull the latest changes from [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) as the secrets are updated from time to time.
 
-[< Previous](quickstart_1_install_dependencies.md) | [Next >](quickstart_3_install_sg.md)
+[< Previous](quickstart_2_install_dependencies.md) | [Next >](quickstart_4_start_docker.md)

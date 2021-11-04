@@ -8,7 +8,7 @@ import (
 )
 
 func TestSearchFiltersUpdate(t *testing.T) {
-	repo := types.RepoName{
+	repo := types.MinimalRepo{
 		Name: "foo",
 	}
 

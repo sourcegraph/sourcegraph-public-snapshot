@@ -138,15 +138,15 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
 		return true, nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.ListMinimalRepos = func(v0 context.Context, args database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
 
-		names := make([]types.RepoName, 0, len(args.ExternalRepos))
+		names := make([]types.MinimalRepo, 0, len(args.ExternalRepos))
 		for _, r := range args.ExternalRepos {
 			id, _ := strconv.Atoi(r.ID)
-			names = append(names, types.RepoName{ID: api.RepoID(id)})
+			names = append(names, types.MinimalRepo{ID: api.RepoID(id)})
 		}
 		return names, nil
 	}
@@ -230,11 +230,11 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
 		return true, nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.ListMinimalRepos = func(v0 context.Context, args database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []types.RepoName{{ID: 1}}, nil
+		return []types.MinimalRepo{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -324,11 +324,11 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
 		return true, nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.ListMinimalRepos = func(v0 context.Context, args database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		}
-		return []types.RepoName{{ID: 1}}, nil
+		return []types.MinimalRepo{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -445,7 +445,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
 		return true, nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.ListMinimalRepos = func(v0 context.Context, args database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		} else if len(args.ExternalRepoIncludeContains) == 0 {
@@ -453,7 +453,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 		} else if len(args.ExternalRepoExcludeContains) == 0 {
 			return nil, errors.New("ExternalRepoExcludeContains want non-zero but got zero")
 		}
-		return []types.RepoName{{ID: 1}}, nil
+		return []types.MinimalRepo{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil
@@ -515,7 +515,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	edb.Mocks.Perms.UserIsMemberOfOrgHasCodeHostConnection = func(context.Context, int32) (bool, error) {
 		return false, nil
 	}
-	database.Mocks.Repos.ListRepoNames = func(v0 context.Context, args database.ReposListOptions) ([]types.RepoName, error) {
+	database.Mocks.Repos.ListMinimalRepos = func(v0 context.Context, args database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if !args.OnlyPrivate {
 			return nil, errors.New("OnlyPrivate want true but got false")
 		} else if len(args.ExternalRepoIncludeContains) == 0 {
@@ -523,7 +523,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 		} else if len(args.ExternalRepoExcludeContains) == 0 {
 			return nil, errors.New("ExternalRepoExcludeContains want non-zero but got zero")
 		}
-		return []types.RepoName{{ID: 1}}, nil
+		return []types.MinimalRepo{{ID: 1}}, nil
 	}
 	database.Mocks.UserEmails.ListByUser = func(ctx context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		return nil, nil

@@ -31,7 +31,7 @@ Keep this process running in a terminal window to keep the databases running. Fo
 sg start
 ```
 
-**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](./quickstart_2_clone_repository.md)**: you want to start Sourcegraph OSS, do this:
+**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](./quickstart_3_clone_repository.md)**: you want to start Sourcegraph OSS, do this:
 
 ```
 sg start oss

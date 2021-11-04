@@ -58,7 +58,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		}
 
 		if namespaceUserID > 0 {
-			allowUserExternalServices, err := database.Users(r.db).CurrentUserAllowedExternalServices(ctx)
+			allowUserExternalServices, err := r.db.Users().CurrentUserAllowedExternalServices(ctx)
 			if err != nil {
 				return nil, err
 			}
@@ -94,7 +94,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		externalService.NamespaceOrgID = namespaceOrgID
 	}
 
-	if err := database.ExternalServices(r.db).Create(ctx, conf.Get, externalService); err != nil {
+	if err := r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
@@ -314,7 +314,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{db: database.NewDB(r.db), externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -371,7 +371,7 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{db: database.NewDB(r.db), externalService: svc})
 	}
 	return resolvers
 }

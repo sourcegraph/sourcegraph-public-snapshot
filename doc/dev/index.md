@@ -11,9 +11,9 @@ Sourcegraph development is open source at:
 
 A hands-on introduction for setting up your local development environment.
 
-- [Step 1: Install dependencies](getting-started/quickstart_1_install_dependencies.md)
-- [Step 2: Get the code](getting-started/quickstart_2_clone_repository.md)
-- [Step 3: Install `sg`](getting-started/quickstart_3_install_sg.md)
+- [Step 1: Install `sg`](getting-started/quickstart_1_install_sg.md)
+- [Step 2: Install dependencies](getting-started/quickstart_2_install_dependencies.md)
+- [Step 3: Get the code](getting-started/quickstart_3_clone_repository.md)
 - [Step 4: Start Docker](getting-started/quickstart_4_start_docker.md)
 - [Step 5: Initialize your database](getting-started/quickstart_5_initialize_database.md)
 - [Step 6: Configure HTTPS reverse proxy](getting-started/quickstart_6_configure_https_reverse_proxy.md)

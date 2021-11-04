@@ -558,10 +558,6 @@ func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[strin
 
 // GetOrgFeatureFlag returns the calculated flag value for the given organization, taking potential override into account
 func (f *featureFlagStore) GetOrgFeatureFlag(ctx context.Context, orgID int32, flagName string) (bool, error) {
-	if Mocks.FeatureFlags.GetOrgFeatureFlag != nil {
-		return Mocks.FeatureFlags.GetOrgFeatureFlag(ctx, orgID, flagName)
-	}
-
 	g, ctx := errgroup.WithContext(ctx)
 
 	var override *ff.Override

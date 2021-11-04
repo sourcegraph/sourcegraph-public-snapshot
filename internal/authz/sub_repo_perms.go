@@ -7,7 +7,9 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/gobwas/glob"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
 // RepoContent specifies data existing in a repo. It currently only supports
@@ -20,8 +22,14 @@ type RepoContent struct {
 
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
+//
+//go:generate ../../dev/mockgen.sh github.com/sourcegraph/sourcegraph/internal/authz -i SubRepoPermissionChecker -o mock_sub_repo_perms.go
 type SubRepoPermissionChecker interface {
-	CheckPermissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
+	// CurrentUserPermissions returns the level of access the authenticated user within
+	// the provided context has.
+	//
+	// If the context is unauthenticated, ErrUnauthenticated is returned.
+	CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error)
 }
 
 var _ SubRepoPermissionChecker = &SubRepoPermsClient{}
@@ -31,18 +39,52 @@ type SubRepoPermissionsGetter interface {
 	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]SubRepoPermissions, error)
 }
 
+// SubRepoPermissionsSupportedChecker should be used to quickly check whether
+// sub-repo permissions are supported for the given repo.
+type SubRepoPermissionsSupportedChecker interface {
+	Supported(ctx context.Context, repo api.RepoName) (bool, error)
+}
+
 // SubRepoPermsClient is responsible for checking whether a user has access to
 // data within a repo. Sub-repository permissions enforcement is on top of existing
 // repository permissions, which means the user must already have access to the
 // repository itself. The intention is for this client to be created once at startup
 // and passed in to all places that need to check sub repo permissions.
+//
+// Note that sub-repo permissions are currently opt-in via the
+// experimentalFeatures.enableSubRepoPermissions option.
 type SubRepoPermsClient struct {
+	SupportedChecker  SubRepoPermissionsSupportedChecker
 	PermissionsGetter SubRepoPermissionsGetter
 }
 
-func (s *SubRepoPermsClient) CheckPermissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+func (s *SubRepoPermsClient) CurrentUserPermissions(ctx context.Context, content RepoContent) (Perms, error) {
+	// Are sub-repo permissions enabled at the site level
+	if !conf.Get().ExperimentalFeatures.EnableSubRepoPermissions {
+		return Read, nil
+	}
+
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() {
+		return None, &ErrUnauthenticated{}
+	}
+
+	return s.permissions(ctx, a.UID, content)
+}
+
+func (s *SubRepoPermsClient) permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error) {
+	if s.SupportedChecker == nil {
+		return None, errors.New("SupportedChecker is nil")
+	}
 	if s.PermissionsGetter == nil {
-		return None, errors.New("SubRepoPermissionsGetter is nil")
+		return None, errors.New("PermissionsGetter is nil")
+	}
+
+	if supported, err := s.SupportedChecker.Supported(ctx, content.Repo); err != nil {
+		return None, errors.Wrap(err, "checking for sub-repo permissions support")
+	} else if !supported {
+		// We assume that repo level access has already been granted
+		return Read, nil
 	}
 
 	srp, err := s.PermissionsGetter.GetByUser(ctx, userID)

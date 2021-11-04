@@ -67,7 +67,7 @@ func TestCheckSearchLimits(t *testing.T) {
 		repoRevs := make([]*search.RepositoryRevisions, test.numRepoRevs)
 		for i := range repoRevs {
 			repoRevs[i] = &search.RepositoryRevisions{
-				Repo: types.RepoName{ID: api.RepoID(i)},
+				Repo: types.MinimalRepo{ID: api.RepoID(i)},
 			}
 		}
 
