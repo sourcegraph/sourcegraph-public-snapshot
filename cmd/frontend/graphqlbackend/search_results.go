@@ -1758,6 +1758,7 @@ func (r *searchResolver) doResults(ctx context.Context, args *search.TextParamet
 
 	// Start all specific search jobs, if any.
 	for _, job := range jobs {
+		job := job
 		wg := wgForJob(job)
 		wg.Add(1)
 		goroutine.Go(func() {
