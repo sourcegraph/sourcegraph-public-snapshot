@@ -443,8 +443,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 }
 
 func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
-	var seriesToAdd types.InsightSeries
-	var matchingSeries *types.InsightSeries
+	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
 
@@ -472,7 +471,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view typ
 			return errors.Wrap(err, "CreateSeries")
 		}
 	} else {
-		seriesToAdd = *matchingSeries
+		seriesToAdd = matchingSeries
 	}
 
 	// BUG: If the user tries to attach the same series (the same query and timescope) to an insight view multiple times,

@@ -648,7 +648,7 @@ type MatchSeriesArgs struct {
 	StepIntervalValue int
 }
 
-func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ *types.InsightSeries, found bool, _ error) {
+func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
 	where := sqlf.Sprintf(
 		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s",
 		args.Query, args.StepIntervalUnit, args.StepIntervalValue,
@@ -657,12 +657,12 @@ func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesA
 	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
 	rows, err := scanDataSeries(s.Query(ctx, q))
 	if err != nil {
-		return nil, false, err
+		return types.InsightSeries{}, false, err
 	}
 	if len(rows) == 0 {
-		return nil, false, nil
+		return types.InsightSeries{}, false, nil
 	}
-	return &rows[0], true, nil
+	return rows[0], true, nil
 }
 
 type UpdateFrontendSeriesArgs struct {
