@@ -125,7 +125,7 @@ func InitDB() (*sql.DB, error) {
 }
 
 // Main is the main entrypoint for the frontend server program.
-func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
+func Main(enterpriseSetupHook func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services) error {
 	ctx := context.Background()
 
 	log.SetFlags(0)
@@ -138,10 +138,11 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	ready := make(chan struct{})
 	go debugserver.NewServerRoutine(ready).Start()
 
-	db, err := InitDB()
+	sqlDB, err := InitDB()
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+	db := database.NewDB(sqlDB)
 
 	// override site config first
 	if err := overrideSiteConfig(ctx); err != nil {
@@ -176,7 +177,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	// Create an out-of-band migration runner onto which each enterprise init function
 	// can register migration routines to run in the background while they still have
 	// work remaining.
-	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
+	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, sqlDB)
 
 	// Run a background job to handle encryption of external service configuration.
 	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
@@ -267,7 +268,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return errors.New("dbconn.Global is nil when trying to parse GraphQL schema")
 	}
 
-	schema, err := graphqlbackend.NewSchema(database.NewDB(db), enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver, enterprise.SearchContextsResolver)
+	schema, err := graphqlbackend.NewSchema(db, enterprise.BatchChangesResolver, enterprise.CodeIntelResolver, enterprise.InsightsResolver, enterprise.AuthzResolver, enterprise.CodeMonitorsResolver, enterprise.LicenseResolver, enterprise.DotcomResolver, enterprise.SearchContextsResolver)
 	if err != nil {
 		return err
 	}
@@ -277,7 +278,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 		return err
 	}
 
-	server, err := makeExternalAPI(database.NewDB(db), schema, enterprise, rateLimitWatcher)
+	server, err := makeExternalAPI(db, schema, enterprise, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -329,7 +330,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db dbutil.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
