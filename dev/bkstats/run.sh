@@ -19,7 +19,6 @@ fi
 
 # Make this script independent of where it's called
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
-root_dir=$(pwd)
 
 set -eu
 
