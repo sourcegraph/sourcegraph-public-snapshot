@@ -24,7 +24,7 @@ type DocumentationSearchResultsResolver interface {
 }
 
 type DocumentationSearchResultResolver interface {
-	Lang() string
+	Language() string
 	RepoName() string
 	SearchKey() string
 	PathID() string
