@@ -1647,6 +1647,10 @@ type Search {
     The suggestions.
     """
     suggestions(first: Int): [SearchSuggestion!]!
+        @deprecated(
+            reason: "Suggestions now done with streaming search. This field is deprecated and will be removed in a future release."
+        )
+
     """
     A subset of results (excluding actual search results) which are heavily
     cached and thus quicker to query. Useful for e.g. querying sparkline
