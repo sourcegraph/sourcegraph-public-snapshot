@@ -43,3 +43,7 @@ var computeSchema string
 // searchContextsSchema is the Search Contexts raw graqhql schema.
 //go:embed search_contexts.graphql
 var searchContextsSchema string
+
+// enterpriseRepoSchema is the schema containing enterprise-only repository management functionalities
+//go:embed enterpriseRepoSchema.graphql
+var enterpriseRepoSchema string

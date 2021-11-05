@@ -4,6 +4,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -17,7 +18,7 @@ func marshalRepositoryCursor(cursor *database.Cursor) string {
 }
 
 // unmarshalRepositoryCursor unmarshals a repository pagination cursor.
-func unmarshalRepositoryCursor(cursor *string) (*database.Cursor, error) {
+func UnmarshalRepositoryCursor(cursor *string) (*database.Cursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}

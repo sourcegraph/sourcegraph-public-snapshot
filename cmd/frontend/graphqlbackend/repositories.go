@@ -34,7 +34,7 @@ type repositoryArgs struct {
 func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnectionResolver, error) {
 	opt := database.ReposListOptions{
 		OrderBy: database.RepoListOrderBy{{
-			Field:      toDBRepoListColumn(args.OrderBy),
+			Field:      ToDBRepoListColumn(args.OrderBy),
 			Descending: args.Descending,
 		}},
 	}
@@ -45,14 +45,14 @@ func (r *schemaResolver) Repositories(args *repositoryArgs) (*repositoryConnecti
 		opt.Query = *args.Query
 	}
 	if args.After != nil {
-		cursor, err := unmarshalRepositoryCursor(args.After)
+		cursor, err := UnmarshalRepositoryCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
 		cursor := database.Cursor{
-			Column: string(toDBRepoListColumn(args.OrderBy)),
+			Column: string(ToDBRepoListColumn(args.OrderBy)),
 		}
 
 		if args.Descending {
@@ -293,7 +293,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	)), nil
 }
 
-func toDBRepoListColumn(ob string) database.RepoListColumn {
+func ToDBRepoListColumn(ob string) database.RepoListColumn {
 	switch ob {
 	case "REPO_URI", "REPOSITORY_NAME":
 		return database.RepoListName
