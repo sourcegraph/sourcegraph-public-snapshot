@@ -57,7 +57,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"codemonitors":    codemonitors.Init,
 	"dotcom":          dotcom.Init,
 	"searchcontexts":  searchcontexts.Init,
-	"enterpriseRepos": repositories.Init,
+	"orgRepositories": repositories.Init,
 }
 
 func enterpriseSetupHook(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {

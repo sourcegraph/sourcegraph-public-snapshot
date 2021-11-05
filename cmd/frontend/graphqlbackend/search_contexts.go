@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -31,12 +30,6 @@ type SearchContextsResolver interface {
 
 	NodeResolvers() map[string]NodeByIDFunc
 	SearchContextsToResolvers(searchContexts []*types.SearchContext) []SearchContextResolver
-}
-
-type EnterpriseRepoResolver interface {
-	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *ListOrgRepositoriesArgs) RepositoryConnectionResolver) (RepositoryConnectionResolver, error)
-	PublicRepositories(ctx context.Context) ([]*RepositoryResolver, error)
-	UserRepositories(ctx context.Context, args *ListUserRepositoriesArgs) (RepositoryConnectionResolver, error)
 }
 
 type SearchContextResolver interface {

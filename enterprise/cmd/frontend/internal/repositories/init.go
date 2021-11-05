@@ -12,6 +12,6 @@ import (
 )
 
 func Init(ctx context.Context, db dbutil.DB, outOfBandMigrationRunner *oobmigration.Runner, enterpriseServices *enterprise.Services, observationContext *observation.Context) error {
-	enterpriseServices.EnterpriseRepoResolver = resolvers.NewResolver(database.NewDB(db))
+	enterpriseServices.OrgRepositoryResolver = resolvers.NewResolver(database.NewDB(db))
 	return nil
 }

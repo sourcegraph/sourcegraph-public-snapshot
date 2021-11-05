@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func (r *schemaResolver) Organizations(args *struct {
@@ -65,4 +66,8 @@ func (r *orgConnectionStaticResolver) Nodes() []*OrgResolver { return r.nodes }
 func (r *orgConnectionStaticResolver) TotalCount() int32     { return int32(len(r.nodes)) }
 func (r *orgConnectionStaticResolver) PageInfo() *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(false)
+}
+
+type OrgRepositoryResolver interface {
+	OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *ListOrgRepositoriesArgs) RepositoryConnectionResolver) (RepositoryConnectionResolver, error)
 }

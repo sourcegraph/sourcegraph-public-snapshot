@@ -299,10 +299,10 @@ type ListOrgRepositoriesArgs struct {
 }
 
 func (o *OrgResolver) Repositories(ctx context.Context, args *ListOrgRepositoriesArgs) (RepositoryConnectionResolver, error) {
-	if EnterpriseResolvers.enterpriseRepoResolver == nil {
+	if EnterpriseResolvers.orgRepositoryResolver == nil {
 		return nil, errors.New("listing organization repositories is not supported")
 	}
-	return EnterpriseResolvers.enterpriseRepoResolver.OrgRepositories(ctx, args, o.org, func(db database.DB, opt database.ReposListOptions, args *ListOrgRepositoriesArgs) RepositoryConnectionResolver {
+	return EnterpriseResolvers.orgRepositoryResolver.OrgRepositories(ctx, args, o.org, func(db database.DB, opt database.ReposListOptions, args *ListOrgRepositoriesArgs) RepositoryConnectionResolver {
 		return &repositoryConnectionResolver{
 			db:         db,
 			opt:        opt,

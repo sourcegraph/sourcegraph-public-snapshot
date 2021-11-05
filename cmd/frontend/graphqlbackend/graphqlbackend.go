@@ -342,7 +342,7 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchema(db database.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver, enterpriseRepoResolver EnterpriseRepoResolver) (*graphql.Schema, error) {
+func NewSchema(db database.DB, batchChanges BatchChangesResolver, codeIntel CodeIntelResolver, insights InsightsResolver, authz AuthzResolver, codeMonitors CodeMonitorsResolver, license LicenseResolver, dotcom DotcomRootResolver, searchContexts SearchContextsResolver, orgRepositoryResolver OrgRepositoryResolver) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
 
@@ -415,9 +415,9 @@ func NewSchema(db database.DB, batchChanges BatchChangesResolver, codeIntel Code
 		}
 	}
 
-	if enterpriseRepoResolver != nil {
-		EnterpriseResolvers.enterpriseRepoResolver = enterpriseRepoResolver
-		resolver.EnterpriseRepoResolver = enterpriseRepoResolver
+	if orgRepositoryResolver != nil {
+		EnterpriseResolvers.orgRepositoryResolver = orgRepositoryResolver
+		resolver.OrgRepositoryResolver = orgRepositoryResolver
 		schemas = append(schemas, enterpriseRepoSchema)
 	}
 
@@ -444,7 +444,7 @@ type schemaResolver struct {
 	LicenseResolver
 	DotcomRootResolver
 	SearchContextsResolver
-	EnterpriseRepoResolver
+	OrgRepositoryResolver
 
 	db                database.DB
 	repoupdaterClient *repoupdater.Client
@@ -517,7 +517,7 @@ var EnterpriseResolvers = struct {
 	licenseResolver        LicenseResolver
 	dotcomResolver         DotcomRootResolver
 	searchContextsResolver SearchContextsResolver
-	enterpriseRepoResolver EnterpriseRepoResolver
+	orgRepositoryResolver  OrgRepositoryResolver
 }{}
 
 // DEPRECATED

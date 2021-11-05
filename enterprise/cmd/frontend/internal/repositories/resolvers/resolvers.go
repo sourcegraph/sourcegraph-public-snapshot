@@ -10,15 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db database.DB) graphqlbackend.EnterpriseRepoResolver {
-	return &Resolver{db: db}
+func NewResolver(db database.DB) graphqlbackend.OrgRepositoryResolver {
+	return &resolver{db: db}
 }
 
-type Resolver struct {
+type resolver struct {
 	db database.DB
 }
 
-func (r *Resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *graphqlbackend.ListOrgRepositoriesArgs) graphqlbackend.RepositoryConnectionResolver) (graphqlbackend.RepositoryConnectionResolver, error) {
+func (r *resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *graphqlbackend.ListOrgRepositoriesArgs) graphqlbackend.RepositoryConnectionResolver) (graphqlbackend.RepositoryConnectionResolver, error) {
 	if err := backend.CheckOrgExternalServices(ctx, r.db, org.ID); err != nil {
 		return nil, err
 	}
@@ -76,12 +76,4 @@ func (r *Resolver) OrgRepositories(ctx context.Context, args *graphqlbackend.Lis
 	}
 
 	return resolverFn(r.db, opt, args), nil
-}
-func (r *Resolver) PublicRepositories(ctx context.Context) ([]*graphqlbackend.RepositoryResolver, error) {
-	return nil, nil
-
-}
-func (r *Resolver) UserRepositories(ctx context.Context, args *graphqlbackend.ListUserRepositoriesArgs) (graphqlbackend.RepositoryConnectionResolver, error) {
-	return nil, nil
-
 }
