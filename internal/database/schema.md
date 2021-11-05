@@ -87,7 +87,7 @@ Indexes:
  key          | text                     |           | not null | 
  value        | text                     |           | not null | 
  version      | integer                  |           | not null | 
- last_used_at | timestamp with time zone |           | not null | now()
+ last_used_at | timestamp with time zone |           |          | 
  created_at   | timestamp with time zone |           | not null | now()
 Indexes:
     "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
