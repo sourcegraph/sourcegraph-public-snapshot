@@ -417,7 +417,6 @@ var repoColumns = []string{
 	"repo.deleted_at",
 	"repo.metadata",
 	"repo.blocked",
-	getSourcesByRepoQueryStr,
 }
 
 func scanRepo(rows *sql.Rows, r *types.Repo) (err error) {
@@ -642,6 +641,10 @@ type ReposListOptions struct {
 	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
 	// with the table alias "gr".
 	joinGitserverRepos bool
+
+	// ExcludeSources, if true, will NULL out the Sources field on repo. Computing it is relatively costly
+	// and if it doesn't end up being used this is wasted compute.
+	ExcludeSources bool
 
 	*LimitOffset
 }
@@ -1001,6 +1004,11 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 
 	columns := repoColumns
+	if !opt.ExcludeSources {
+		columns = append(columns, getSourcesByRepoQueryStr)
+	} else {
+		columns = append(columns, "NULL")
+	}
 	if len(opt.Select) > 0 {
 		columns = opt.Select
 	}

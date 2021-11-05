@@ -107,6 +107,8 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	// Preload repos to support fast lookups by repo ID.
 	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
 		IDs: indexedIDs,
+		// Not needed here and expensive to compute for so many repos.
+		ExcludeSources: true,
 	})
 	reposMap := make(map[api.RepoID]*types.Repo, len(repos))
 	for _, repo := range repos {
