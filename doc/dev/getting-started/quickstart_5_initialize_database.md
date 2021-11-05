@@ -57,22 +57,17 @@ You need a fresh Postgres database and a database user that has full ownership o
 
     The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
 
-    Our configuration in `sg.config.yaml` (we'll see what `sg` is in the next step) sets values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your `~/.bashrc`:
+    Our `sg` configuration in `sg.config.yaml` sets values that work with the setup described here, but if you want to use differnt values you can overwrite them in `sg.config.overwite.yaml`, like this:
 
     ```
-    export PGPORT=5432
-    export PGHOST=localhost
-    export PGUSER=sourcegraph
-    export PGPASSWORD=sourcegraph
-    export PGDATABASE=sourcegraph
-    export PGSSLMODE=disable
+    env:
+      PGPORT=5432
+      PGHOST=localhost
+      PGUSER=sourcegraph
+      PGPASSWORD=sourcegraph
+      PGDATABASE=sourcegraph
+      PGSSLMODE=disable
     ```
-
-    You can also use a tool like [`envdir`][envdir] or [a `.dotenv` file][dotenv] to
-    source these env vars on demand when you start the server.
-
-    [envdir]: https://cr.yp.to/daemontools/envdir.html
-    [dotenv]: https://github.com/joho/godotenv
 
 ## More info
 
