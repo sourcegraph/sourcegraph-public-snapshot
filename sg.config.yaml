@@ -602,7 +602,7 @@ commands:
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      IMAGE=sourcegraph/grafana:dev ./docker-images/grafana/build.sh
+      ./docker-images/grafana/build.sh
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
