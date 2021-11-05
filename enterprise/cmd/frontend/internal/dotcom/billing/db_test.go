@@ -9,10 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "billing"
-}
-
 func TestDBUsersBillingCustomerID(t *testing.T) {
 	db := dbtesting.GetDB(t)
 	ctx := context.Background()
