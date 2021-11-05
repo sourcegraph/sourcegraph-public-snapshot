@@ -179,13 +179,13 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 	outOfBandMigrationRunner := newOutOfBandMigrationRunner(ctx, db)
 
 	// Run a background job to handle encryption of external service configuration.
-	extsvcMigrator := database.NewExternalServiceConfigMigratorWithDB(db)
+	extsvcMigrator := oobmigration.NewExternalServiceConfigMigratorWithDB(db)
 	extsvcMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extsvcMigrator.ID(), extsvcMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run external service encryption job: %v", err)
 	}
 	// Run a background job to handle encryption of external service configuration.
-	extAccMigrator := database.NewExternalAccountsMigratorWithDB(db)
+	extAccMigrator := oobmigration.NewExternalAccountsMigratorWithDB(db)
 	extAccMigrator.AllowDecrypt = os.Getenv("ALLOW_DECRYPT_MIGRATION") == "true"
 	if err := outOfBandMigrationRunner.Register(extAccMigrator.ID(), extAccMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run user external account encryption job: %v", err)
@@ -193,7 +193,7 @@ func Main(enterpriseSetupHook func(db dbutil.DB, outOfBandMigrationRunner *oobmi
 
 	// Run a background job to calculate the has_webhooks field on external
 	// service records.
-	webhookMigrator := database.NewExternalServiceWebhookMigratorWithDB(db)
+	webhookMigrator := oobmigration.NewExternalServiceWebhookMigratorWithDB(db)
 	if err := outOfBandMigrationRunner.Register(webhookMigrator.ID(), webhookMigrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
 		log.Fatalf("failed to run external service webhook job: %v", err)
 	}
