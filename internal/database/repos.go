@@ -76,7 +76,7 @@ type RepoStore interface {
 	GetFirstRepoNamesByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	ListEnabledNames(context.Context) ([]string, error)
+	ListEnabledNames(context.Context) ([]api.RepoName, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
@@ -1452,14 +1452,41 @@ WHERE deleted_at IS NULL
 AND repo.id = repo_ids.id::int
 `
 
-// ListEnabledNames returns a list of all enabled repo names. This is commonly
-// requested information by other services (repo-updater and
-// indexed-search). We special case just returning enabled names so that we
-// read much less data into memory.
-func (s *repoStore) ListEnabledNames(ctx context.Context) ([]string, error) {
+const listEnabledNamesQueryFmtstr = `
+-- source:internal/database/repos.go:ListEnabledNames
+SELECT
+	name
+FROM
+	repo
+WHERE
+	deleted_at IS NULL
+	AND
+	blocked IS NULL
+`
+
+// ListEnabledNames returns a list of all enabled repo names. This is used in the
+// repo purger. We special case just returning enabled names so that we read much
+// less data into memory.
+func (s *repoStore) ListEnabledNames(ctx context.Context) (values []api.RepoName, err error) {
 	s.ensureStore()
-	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
-	return basestore.ScanStrings(s.Query(ctx, q))
+
+	q := sqlf.Sprintf(listEnabledNamesQueryFmtstr)
+	rows, queryErr := s.Query(ctx, q)
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	for rows.Next() {
+		var value api.RepoName
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		values = append(values, value)
+	}
+
+	return values, nil
 }
 
 // GetFirstRepoNamesByCloneURL returns the first repo name in our database that
