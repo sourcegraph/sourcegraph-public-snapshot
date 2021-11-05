@@ -205,9 +205,12 @@ async function main(): Promise<void> {
 
         if (tab.url && changeInfo.status === 'complete') {
             checkUrlPermissions(tab.url)
-                .then(hasPermissions => {
+                .then(async hasPermissions => {
                     if (hasPermissions) {
-                        return browser.tabs.executeScript(tabId, { file: 'js/inject.bundle.js', runAt: 'document_end' })
+                        await browser.tabs.executeScript(tabId, {
+                            file: 'js/inject.bundle.js',
+                            runAt: 'document_end',
+                        })
                     }
                 })
                 .catch(console.warn)
