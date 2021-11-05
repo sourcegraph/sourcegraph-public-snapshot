@@ -12,6 +12,8 @@ echo "Checking for potential SVG optimizations"
 
 allSvgsOptimized() {
   for file in ./ui/assets/img/*.svg; do
+    # Instead of letting svgo update the actual files, we output to STDOUT and manually check each diff ourselves.
+    # By ensuring no files are actually modified, we can ensure that this lint check does not affect other checks.
     diff -w -q "$file" <(yarn run -s optimize-svg-assets -i "$file" -o -) || return 1
   done
 }
