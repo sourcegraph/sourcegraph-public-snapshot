@@ -239,7 +239,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
                         <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
                             <div className={styles.annotatedSearchInput}>
-                                <AnnotatedSearchInput />
+                                <AnnotatedSearchInput showSearchContext={searchContextsEnabled && showSearchContext} />
                             </div>
                         </Container>
                     )}

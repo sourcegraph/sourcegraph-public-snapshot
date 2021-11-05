@@ -65,9 +65,10 @@
     }
 
     &--non-interactive {
-        cursor: initial;
+        /* marked !important to overwrite .btn's cursor property */
+        cursor: unset !important;
 
-        &:hover {
+        &:not(.toggle--active):hover {
             background-color: transparent;
         }
     }

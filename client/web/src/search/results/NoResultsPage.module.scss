@@ -106,6 +106,9 @@
     }
 
     .fake-search-context-button {
+        /* marked !important to overwrite .btn's cursor property */
+        cursor: unset !important;
+
         &,
         &:hover {
             background-color: transparent;
