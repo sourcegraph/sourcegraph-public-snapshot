@@ -70,7 +70,6 @@ type RepoStore interface {
 	Count(context.Context, ReposListOptions) (int, error)
 	Create(context.Context, ...*types.Repo) error
 	Delete(context.Context, ...api.RepoID) error
-	ExternalServices(context.Context, api.RepoID) ([]*types.ExternalService, error)
 	Get(context.Context, api.RepoID) (*types.Repo, error)
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
@@ -1465,34 +1464,6 @@ func (s *repoStore) ListEnabledNames(ctx context.Context) ([]string, error) {
 	s.ensureStore()
 	q := sqlf.Sprintf("SELECT name FROM repo WHERE deleted_at IS NULL")
 	return basestore.ScanStrings(s.Query(ctx, q))
-}
-
-// ExternalServices lists the external services which include references to the given repo.
-func (s *repoStore) ExternalServices(ctx context.Context, repoID api.RepoID) ([]*types.ExternalService, error) {
-	rs, err := s.List(ctx, ReposListOptions{
-		IDs: []api.RepoID{repoID},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(rs) == 0 {
-		return nil, &RepoNotFoundErr{
-			ID: repoID,
-		}
-	}
-
-	svcIDs := rs[0].ExternalServiceIDs()
-	if len(svcIDs) == 0 {
-		return []*types.ExternalService{}, nil
-	}
-
-	opts := ExternalServicesListOptions{
-		IDs:              svcIDs,
-		OrderByDirection: "ASC",
-	}
-
-	return ExternalServicesWith(s).List(ctx, opts)
 }
 
 // GetFirstRepoNamesByCloneURL returns the first repo name in our database that

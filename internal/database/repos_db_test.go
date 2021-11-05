@@ -2149,53 +2149,6 @@ func TestRepos_ListRepos_UserPublicRepos(t *testing.T) {
 	}
 }
 
-func TestRepos_RepoExternalServices(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	confGet := func() *conf.Unified {
-		return &conf.Unified{}
-	}
-
-	services := types.MakeExternalServices()
-	service1 := services[0]
-	service2 := services[1]
-	if err := ExternalServices(db).Create(ctx, confGet, service1); err != nil {
-		t.Fatal(err)
-	}
-	if err := ExternalServices(db).Create(ctx, confGet, service2); err != nil {
-		t.Fatal(err)
-	}
-
-	repo1 := types.MakeGithubRepo(service1)
-	if err := Repos(db).Create(ctx, repo1); err != nil {
-		t.Fatal(err)
-	}
-
-	repo2 := types.MakeGitlabRepo(service2)
-	if err := Repos(db).Create(ctx, repo2); err != nil {
-		t.Fatal(err)
-	}
-
-	assertServices := func(repoID api.RepoID, want []*types.ExternalService) {
-		services, err := Repos(db).ExternalServices(ctx, repoID)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if diff := cmp.Diff(want, services); diff != "" {
-			t.Fatal(diff)
-		}
-	}
-
-	assertServices(repo1.ID, []*types.ExternalService{service1})
-	assertServices(repo2.ID, []*types.ExternalService{service2})
-}
-
 func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
