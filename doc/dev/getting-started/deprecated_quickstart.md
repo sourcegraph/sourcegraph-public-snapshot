@@ -128,7 +128,7 @@ Below are instructions to install these dependencies:
         set -x NVM_DIR ~/.nvm
         ```
 
-7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Cloning our repository](quickstart_3_clone_repository.md) for cloning the repository):
+7.  Install the current recommended version of Node JS by running the following in the `sourcegraph/sourcegraph` repository clone (See [Get the code](#get-the-code) for cloning the repository):
 
     ```
     nvm install
@@ -479,7 +479,7 @@ Keep this process running in a terminal window to keep the databases running. Fo
 sg start
 ```
 
-**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](./quickstart_3_clone_repository.md)**: you want to start Sourcegraph OSS, do this:
+**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](#get-the-code)**: you want to start Sourcegraph OSS, do this:
 
 ```
 sg start oss
