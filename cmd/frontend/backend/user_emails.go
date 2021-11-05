@@ -27,9 +27,9 @@ type userEmails struct{}
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bool, reason string, err error) {
+func checkEmailAbuse(ctx context.Context, db database.DB, userID int32) (abused bool, reason string, err error) {
 	if conf.EmailVerificationRequired() {
-		emails, err := database.UserEmails(db).ListByUser(ctx, database.UserEmailsListOptions{
+		emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 			UserID: userID,
 		})
 		if err != nil {
@@ -73,7 +73,7 @@ func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bo
 		// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
 		// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
 		// the name).
-		if ok, err := database.Users(db).CheckAndDecrementInviteQuota(ctx, userID); err != nil {
+		if ok, err := db.Users().CheckAndDecrementInviteQuota(ctx, userID); err != nil {
 			return false, "", err
 		} else if !ok {
 			return true, "email address quota exceeded (contact support to increase the quota)", nil
@@ -84,15 +84,15 @@ func checkEmailAbuse(ctx context.Context, db dbutil.DB, userID int32) (abused bo
 
 // Add adds an email address to a user. If email verification is required, it sends an email
 // verification email.
-func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email string) error {
+func (userEmails) Add(ctx context.Context, db database.DB, userID int32, email string) error {
 	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := CheckSiteAdminOrSameUser(ctx, database.NewDB(db), userID); err != nil {
+	if err := CheckSiteAdminOrSameUser(ctx, db, userID); err != nil {
 		return err
 	}
 
 	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
 	// following abuse prevention checks.
-	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, database.NewDB(db)) == nil; !isSiteAdmin {
+	if isSiteAdmin := CheckCurrentUserIsSiteAdmin(ctx, db) == nil; !isSiteAdmin {
 		abused, reason, err := checkEmailAbuse(ctx, db, userID)
 		if err != nil {
 			return err
@@ -115,18 +115,18 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 	// user that another user has already verified it, to avoid needlessly leaking the existence
 	// of emails.
 	var emailAlreadyExistsAndIsVerified bool
-	if _, err := database.Users(db).GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
+	if _, err := db.Users().GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
 		return err
 	} else if err == nil {
 		emailAlreadyExistsAndIsVerified = true
 	}
 
-	if err := database.UserEmails(db).Add(ctx, userID, email, code); err != nil {
+	if err := db.UserEmails().Add(ctx, userID, email, code); err != nil {
 		return err
 	}
 
 	if conf.EmailVerificationRequired() && !emailAlreadyExistsAndIsVerified {
-		usr, err := database.Users(db).GetByID(ctx, userID)
+		usr, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return err
 		}
@@ -134,7 +134,7 @@ func (userEmails) Add(ctx context.Context, db dbutil.DB, userID int32, email str
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
-		} else if err = database.UserEmails(db).SetLastVerification(ctx, userID, email, *code); err != nil {
+		} else if err = db.Users().SetLastVerification(ctx, userID, email, *code); err != nil {
 			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
