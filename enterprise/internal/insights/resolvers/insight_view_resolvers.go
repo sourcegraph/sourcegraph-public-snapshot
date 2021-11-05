@@ -221,23 +221,15 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	if args.Input.Dashboards != nil {
 		dashboardTx := r.dashboardStore.With(tx)
-
-		userIds, orgIds, err := getUserPermissions(ctx, database.Orgs(r.workerBaseStore.Handle().DB()))
+		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
 		if err != nil {
-			return nil, errors.Wrap(err, "getUserPermissions")
+			return nil, err
 		}
 
 		for _, id := range *args.Input.Dashboards {
 			dashboardID, err := unmarshalDashboardID(id)
 			if err != nil {
 				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
-			}
-
-			hasPermission, err := dashboardTx.HasDashboardPermission(ctx, []int{int(dashboardID.Arg)}, userIds, orgIds)
-			if err != nil {
-				return nil, errors.Wrapf(err, "HasDashboardPermission dashboardId:%s", id)
-			} else if !hasPermission {
-				return nil, errors.Newf("missing dashboard permissions dashboardId:%s", id)
 			}
 
 			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
@@ -429,4 +421,28 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		}
 	})
 	return r.views, r.next, r.err
+}
+
+func validateUserDashboardPermissions(ctx context.Context, store store.DashboardStore, externalIds []graphql.ID, orgStore database.OrgStore) error {
+	userIds, orgIds, err := getUserPermissions(ctx, orgStore)
+	if err != nil {
+		return errors.Wrap(err, "getUserPermissions")
+	}
+
+	unmarshaled := make([]int, 0, len(externalIds))
+	for _, id := range externalIds {
+		dashboardID, err := unmarshalDashboardID(id)
+		if err != nil {
+			return errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+		}
+		unmarshaled = append(unmarshaled, int(dashboardID.Arg))
+	}
+
+	hasPermission, err := store.HasDashboardPermission(ctx, unmarshaled, userIds, orgIds)
+	if err != nil {
+		return errors.Wrapf(err, "HasDashboardPermission")
+	} else if !hasPermission {
+		return errors.Newf("missing dashboard permission")
+	}
+	return nil
 }

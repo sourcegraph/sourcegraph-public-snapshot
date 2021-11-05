@@ -377,5 +377,5 @@ type DashboardStore interface {
 	CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error)
 	UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error)
 	DeleteDashboard(ctx context.Context, id int64) error
-	HasDashboardPermission(ctx context.Context, dashboardId int, userIds []int, orgIds []int) (bool, error)
+	HasDashboardPermission(ctx context.Context, dashboardId []int, userIds []int, orgIds []int) (bool, error)
 }
