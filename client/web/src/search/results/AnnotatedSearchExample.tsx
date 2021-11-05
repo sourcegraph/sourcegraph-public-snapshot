@@ -124,7 +124,7 @@ export const AnnotatedSearchInput: React.FunctionComponent<{ showSearchContext: 
                             By default, search terms are{' '}
                         </tspan>
                         <tspan x="0" y="16">
-                            interpretted literally (without regexp).
+                            interpreted literally (without regexp).
                         </tspan>
                     </text>
 
