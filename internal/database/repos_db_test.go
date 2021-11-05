@@ -750,43 +750,6 @@ func TestRepos_List_ids(t *testing.T) {
 	}
 }
 
-func TestRepos_List_serviceTypes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
-	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo())
-	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo())
-	both := append(mine, yours...)
-	all := append(both, others...)
-
-	tests := []struct {
-		name string
-		opt  ReposListOptions
-		want []*types.Repo
-	}{
-		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, mine},
-		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, yours},
-		{"Both", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, both},
-		{"Default", ReposListOptions{}, all},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).List(ctx, test.opt)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assertJSONEqual(t, test.want, repos)
-		})
-	}
-}
-
 func TestRepos_List_pagination(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -1326,43 +1289,6 @@ func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 	}{
 		{"Subset", ReposListOptions{IDs: mine.IDs()}, repoNamesFromRepos(mine)},
 		{"All", ReposListOptions{IDs: all.IDs()}, repoNamesFromRepos(all)},
-		{"Default", ReposListOptions{}, repoNamesFromRepos(all)},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repos, err := Repos(db).ListMinimalRepos(ctx, test.opt)
-			if err != nil {
-				t.Fatal(err)
-			}
-			assertJSONEqual(t, test.want, repos)
-		})
-	}
-}
-
-func TestRepos_ListMinimalRepos_serviceTypes(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	db := dbtest.NewDB(t)
-	ctx := actor.WithInternalActor(context.Background())
-
-	mine := mustCreate(ctx, t, db, types.MakeGithubRepo())
-	yours := mustCreate(ctx, t, db, types.MakeGitlabRepo())
-	others := mustCreate(ctx, t, db, types.MakeGitoliteRepo())
-	both := append(mine, yours...)
-	all := append(both, others...)
-
-	tests := []struct {
-		name string
-		opt  ReposListOptions
-		want []types.MinimalRepo
-	}{
-		{"OnlyGithub", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub}}, repoNamesFromRepos(mine)},
-		{"OnlyGitlab", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitLab}}, repoNamesFromRepos(yours)},
-		{"Both", ReposListOptions{ServiceTypes: []string{extsvc.TypeGitHub, extsvc.TypeGitLab}}, repoNamesFromRepos(both)},
 		{"Default", ReposListOptions{}, repoNamesFromRepos(all)},
 	}
 

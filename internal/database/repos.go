@@ -362,12 +362,15 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 }
 
 const listReposQueryFmtstr = `
+-- source: internal/database/repos.go:list
 %%s -- Populates "queryPrefix", i.e. CTEs
 SELECT %s
-FROM %%s
+FROM repo
+%%s
 WHERE
-%%s       -- Populates "queryConds"
-AND (%%s) -- Populates "authzConds"
+	%%s   -- Populates "queryConds"
+	AND
+	(%%s) -- Populates "authzConds"
 %%s       -- Populates "querySuffix"
 `
 
@@ -554,9 +557,6 @@ type ReposListOptions struct {
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
 	SearchContextID int64
-
-	// ServiceTypes of repos to list. When zero-valued, this is omitted from the predicate set.
-	ServiceTypes []string
 
 	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
@@ -823,7 +823,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 }
 
 func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Query, error) {
-	var ctes, from, where []*sqlf.Query
+	var ctes, joins, where []*sqlf.Query
 
 	// Cursor-based pagination requires parsing a handful of extra fields, which
 	// may result in additional query conditions.
@@ -857,15 +857,6 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 
 	if len(opt.IDs) > 0 {
 		where = append(where, sqlf.Sprintf("id = ANY (%s)", pq.Array(opt.IDs)))
-	}
-
-	if len(opt.ServiceTypes) > 0 {
-		ks := make([]*sqlf.Query, 0, len(opt.ServiceTypes))
-		for _, svcType := range opt.ServiceTypes {
-			ks = append(ks, sqlf.Sprintf("%s", strings.ToLower(svcType)))
-		}
-		where = append(where,
-			sqlf.Sprintf("LOWER(external_service_type) IN (%s)", sqlf.Join(ks, ",")))
 	}
 
 	if len(opt.ExternalRepos) > 0 {
@@ -965,25 +956,23 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
-		from = append(from, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
+		joins = append(joins, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
 	} else if opt.UserID != 0 {
-		userReposCTE := sqlf.Sprintf(userReposQuery, opt.UserID)
+		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
 		if opt.IncludeUserPublicRepos {
-			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposQuery, opt.UserID))
+			userReposCTE = sqlf.Sprintf("%s UNION %s", userReposCTE, sqlf.Sprintf(userPublicReposCTEFmtstr, opt.UserID))
 		}
 		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
-		from = append(from, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	} else if opt.OrgID != 0 {
-		from = append(from, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
 		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || !opt.MinLastChanged.IsZero() || opt.joinGitserverRepos {
-		from = append(from, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
-
-	fromClause := sqlf.Sprintf("repo %s", sqlf.Join(from, " "))
 
 	baseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
@@ -1024,18 +1013,18 @@ func (s *repoStore) listSQL(ctx context.Context, opt ReposListOptions) (*sqlf.Qu
 	return sqlf.Sprintf(
 		fmt.Sprintf(listReposQueryFmtstr, strings.Join(columns, ",")),
 		queryPrefix,
-		fromClause,
+		sqlf.Join(joins, "\n"),
 		queryConds,
 		authzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	), nil
 }
 
-const userReposQuery = `
+const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
-const userPublicReposQuery = `
+const userPublicReposCTEFmtstr = `
 SELECT repo_id as id FROM user_public_repos WHERE user_id = %d
 `
 
@@ -1489,6 +1478,21 @@ func (s *repoStore) ListEnabledNames(ctx context.Context) (values []api.RepoName
 	return values, nil
 }
 
+const getFirstRepoNamesByCloneURLQueryFmtstr = `
+-- source:internal/database/repos.go:GetFirstRepoNamesByCloneURL
+SELECT
+	name
+FROM
+	repo r
+JOIN
+	external_service_repos esr ON r.id = esr.repo_id
+WHERE
+	esr.clone_url = %s
+ORDER BY
+	r.updated_at DESC
+LIMIT 1
+`
+
 // GetFirstRepoNamesByCloneURL returns the first repo name in our database that
 // match the given clone url. If not repo is found, an empty string and nil error
 // are returned.
@@ -1499,15 +1503,7 @@ func (s *repoStore) GetFirstRepoNamesByCloneURL(ctx context.Context, cloneURL st
 
 	s.ensureStore()
 
-	name, _, err := basestore.ScanFirstString(
-		s.Query(ctx, sqlf.Sprintf(`
-SELECT name
-FROM repo r
-JOIN external_service_repos esr ON r.id = esr.repo_id
-WHERE clone_url = %s
-ORDER BY r.updated_at desc
-LIMIT 1
-`, cloneURL)))
+	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
 	}
@@ -1524,11 +1520,7 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
 			conds = append(conds, sqlf.Sprintf("TRUE"))
 		} else {
-			items := []*sqlf.Query{}
-			for _, v := range exact {
-				items = append(items, sqlf.Sprintf("%s", v))
-			}
-			conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+			conds = append(conds, sqlf.Sprintf("name = ANY (%s)", pq.Array(exact)))
 		}
 	}
 	if len(like) > 0 {
