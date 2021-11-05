@@ -687,6 +687,7 @@ commands:
 
   loki:
     cmd: |
+      echo "Loki: serving on http://localhost:3100"
       echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
       docker run --rm --name=loki \
         -p 3100:3100 -v $LOKI_DISK:/loki \
