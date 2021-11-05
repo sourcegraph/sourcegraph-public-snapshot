@@ -26,6 +26,8 @@ func init() {
 		c := conf.Get()
 		if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.EnableSubRepoPermissions {
 			atomic.StoreInt32(&subRepoPermsEnabledFlag, 1)
+		} else {
+			atomic.StoreInt32(&subRepoPermsEnabledFlag, 0)
 		}
 	})
 }
