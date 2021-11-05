@@ -284,7 +284,7 @@ func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlut
 	case string(database.RepoListCreatedAt):
 		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
 	}
-	return graphqlutil.NextPageCursor(marshalRepositoryCursor(
+	return graphqlutil.NextPageCursor(MarshalRepositoryCursor(
 		&database.Cursor{
 			Column:    cursor.Column,
 			Value:     value,

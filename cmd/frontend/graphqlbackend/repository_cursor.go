@@ -13,7 +13,7 @@ import (
 const repositoryCursorKind = "RepositoryCursor"
 
 // marshalRepositoryCursor marshals a repository pagination cursor.
-func marshalRepositoryCursor(cursor *database.Cursor) string {
+func MarshalRepositoryCursor(cursor *database.Cursor) string {
 	return string(relay.MarshalID(repositoryCursorKind, cursor))
 }
 

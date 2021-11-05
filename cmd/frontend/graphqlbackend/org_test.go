@@ -112,36 +112,33 @@ func TestOrganizationRepositories_enterprise(t *testing.T) {
 }
 
 func TestOrganizationRepositories_oss(t *testing.T) {
-	db := database.NewDB(nil)
-	resetMocks()
-	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
-		return &types.Org{ID: 1, Name: "acme"}, nil
+	orgs := dbmock.NewMockOrgStore()
+	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+	repo := &types.Repo{
+		Name: "acme-repo",
 	}
 	database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) (repos []*types.Repo, err error) {
 		return []*types.Repo{
-			{
-				Name: "acme-repo",
-			},
+			repo,
 		}, nil
 	}
-	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-		return &types.User{ID: 1}, nil
-	}
-	database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
-		return &types.OrgMembership{
-			OrgID:  1,
-			UserID: 1,
-		}, nil
-	}
-	database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
-		return true, nil
-	}
+
+	users := dbmock.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+
+	orgMembers := dbmock.NewMockOrgMemberStore()
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
+
+	featureFlags := dbmock.NewMockFeatureFlagStore()
+	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+
+	db := dbmock.NewMockDB()
+	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefaultReturn(users)
+	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-	defer func() {
-		resetMocks()
-	}()
 
 	RunTests(t, []*Test{
 		{
