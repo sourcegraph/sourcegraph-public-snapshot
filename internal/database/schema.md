@@ -630,7 +630,6 @@ Referenced by:
  public_argument   | jsonb                    |           | not null | '{}'::jsonb
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
-    "event_logs_anonymous_user_id" btree (anonymous_user_id)
     "event_logs_name" btree (name)
     "event_logs_source" btree (source)
     "event_logs_timestamp" btree ("timestamp")
@@ -806,6 +805,7 @@ Indexes:
     "gitserver_repos_cloning_status_idx" btree (repo_id) WHERE clone_status = 'cloning'::text
     "gitserver_repos_last_error_idx" btree (repo_id) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
+    "gitserver_repos_not_uncloned_idx" btree (repo_id) WHERE clone_status <> 'not_cloned'::text
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -1702,17 +1702,15 @@ Indexes:
     "repo_pkey" PRIMARY KEY, btree (id)
     "repo_external_unique_idx" UNIQUE, btree (external_service_type, external_service_id, external_id)
     "repo_name_unique" UNIQUE CONSTRAINT, btree (name) DEFERRABLE
-    "repo_archived" btree (archived)
-    "repo_blocked_idx" btree ((blocked IS NOT NULL))
-    "repo_created_at" btree (created_at)
-    "repo_fork" btree (fork)
-    "repo_is_not_blocked_idx" btree ((blocked IS NULL))
-    "repo_metadata_gin_idx" gin (metadata)
-    "repo_name_idx" btree (lower(name::text) COLLATE "C")
-    "repo_name_trgm" gin (lower(name::text) gin_trgm_ops)
-    "repo_non_deleted_id_name_idx" btree (id, name) WHERE deleted_at IS NULL
-    "repo_private" btree (private)
-    "repo_stars_idx" btree (stars DESC NULLS LAST)
+    "repo_archived_idx" btree (archived) INCLUDE (id, name, private) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_created_at_idx" btree (created_at) INCLUDE (id, name, private) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_fork_archived_idx" btree (fork, archived) INCLUDE (id, name, private) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_fork_idx" btree (fork) INCLUDE (id, name, private) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_id_idx" btree (id) INCLUDE (name, private) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_name_idx" btree (lower(name::text) COLLATE "C") INCLUDE (id, private) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_name_trgm" gin (lower(name::text) gin_trgm_ops) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_private_idx" btree (private) INCLUDE (id, name) WHERE deleted_at IS NULL AND blocked IS NULL
+    "repo_stars_idx" btree (stars DESC NULLS LAST) INCLUDE (id, name, private) WHERE deleted_at IS NULL AND blocked IS NULL
     "repo_uri_idx" btree (uri)
 Check constraints:
     "check_name_nonempty" CHECK (name <> ''::citext)
