@@ -34,6 +34,7 @@ type DB interface {
 	UserExternalAccounts() UserExternalAccountsStore
 	UserPublicRepos() UserPublicRepoStore
 	Users() UserStore
+	WebhookLogs(encryption.Key) WebhookLogStore
 }
 
 // NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
@@ -126,6 +127,10 @@ func (d *db) UserPublicRepos() UserPublicRepoStore {
 
 func (d *db) Users() UserStore {
 	return Users(d.DB)
+}
+
+func (d *db) WebhookLogs(key encryption.Key) WebhookLogStore {
+	return WebhookLogs(d.DB, key)
 }
 
 func (d *db) Unwrap() dbutil.DB {

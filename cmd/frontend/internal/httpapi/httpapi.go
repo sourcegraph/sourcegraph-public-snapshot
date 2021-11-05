@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -60,14 +62,17 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 	}
 
 	webhookhandlers.Init(db, &gh)
+	webhookMiddleware := webhooks.NewLogMiddleware(
+		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+	)
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(&gh))
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 
 	githubWebhook.Register(&gh)
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(&gh))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(gitlabWebhook))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(bitbucketServerWebhook))
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(gitlabWebhook)))
+	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(bitbucketServerWebhook)))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
 
 	if envvar.SourcegraphDotComMode() {

@@ -1404,6 +1404,38 @@ type Query {
     Retrieves the temporary settings for the current user.
     """
     temporarySettings: TemporarySettings!
+
+    """
+    Returns recently received webhooks that did not match an external service.
+
+    Only site admins can access this field.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
 }
 
 """
@@ -2145,6 +2177,38 @@ type ExternalService implements Node {
     so it should be used sparingly.
     """
     grantedScopes: [String!]
+
+    """
+    Returns recently received webhooks on this external service.
+
+    Only site admins may access this field.
+    """
+    webhookLogs(
+        """
+        Returns the first n webhook logs.
+        """
+        first: Int
+
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+
+        """
+        Only include webhook logs that resulted in errors.
+        """
+        onlyErrors: Boolean
+
+        """
+        Only include webhook logs on or after this time.
+        """
+        since: DateTime
+
+        """
+        Only include webhook logs on or before this time.
+        """
+        until: DateTime
+    ): WebhookLogConnection!
 }
 
 """
@@ -6287,4 +6351,89 @@ type TemporarySettings {
     A JSON string representing the temporary settings.
     """
     contents: String!
+}
+
+"""
+A list of logged webhook deliveries.
+"""
+type WebhookLogConnection {
+    """
+    A list of webhook logs.
+    """
+    nodes: [WebhookLog!]!
+
+    """
+    The total number of webhook logs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A single logged webhook delivery.
+"""
+type WebhookLog implements Node {
+    """
+    The webhook log ID.
+    """
+    id: ID!
+
+    """
+    The time the webhook was received at.
+    """
+    receivedAt: DateTime!
+
+    """
+    The external service the webhook was matched to, if any.
+    """
+    externalService: ExternalService
+
+    """
+    The HTTP status code returned from the webhook handler.
+    """
+    statusCode: Int!
+
+    """
+    The received webhook request.
+    """
+    request: WebhookLogMessage!
+
+    """
+    The response sent by the webhook handler.
+    """
+    response: WebhookLogMessage!
+}
+
+"""
+A HTTP message (request or response) within a webhook log.
+"""
+type WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A single HTTP header within a webhook log.
+"""
+type WebhookLogHeader {
+    """
+    The header name.
+    """
+    name: String!
+
+    """
+    The header values.
+    """
+    values: [String!]!
 }

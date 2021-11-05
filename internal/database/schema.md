@@ -724,6 +724,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
+    TABLE "webhook_logs" CONSTRAINT "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2188,6 +2189,27 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
+
+```
+
+# Table "public.webhook_logs"
+```
+       Column        |           Type           | Collation | Nullable |                 Default                  
+---------------------+--------------------------+-----------+----------+------------------------------------------
+ id                  | bigint                   |           | not null | nextval('webhook_logs_id_seq'::regclass)
+ received_at         | timestamp with time zone |           | not null | now()
+ external_service_id | integer                  |           |          | 
+ status_code         | integer                  |           | not null | 
+ request             | bytea                    |           | not null | 
+ response            | bytea                    |           | not null | 
+ encryption_key_id   | text                     |           | not null | 
+Indexes:
+    "webhook_logs_pkey" PRIMARY KEY, btree (id)
+    "webhook_logs_external_service_id_idx" btree (external_service_id)
+    "webhook_logs_received_at_idx" btree (received_at)
+    "webhook_logs_status_code_idx" btree (status_code)
+Foreign-key constraints:
+    "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
