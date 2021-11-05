@@ -68,8 +68,8 @@ func (j *indexingJob) Routines(ctx context.Context) ([]goroutine.BackgroundRouti
 	enqueuerDBStoreShim := &enqueuer.DBStoreShim{Store: dbStore}
 	policyMatcher := policies.NewMatcher(gitserverClient, policies.IndexingExtractor, false, true)
 	indexEnqueuer := enqueuer.NewIndexEnqueuer(enqueuerDBStoreShim, gitserverClient, repoupdater.DefaultClient, indexingConfigInst.AutoIndexEnqueuerConfig, observationContext)
-	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor", nil)
-	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing", nil)
+	syncMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_processor")
+	queueingMetrics := workerutil.NewMetrics(observationContext, "codeintel_dependency_index_queueing")
 
 	prometheus.DefaultRegisterer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 		Name: "src_codeintel_dependency_index_total",
