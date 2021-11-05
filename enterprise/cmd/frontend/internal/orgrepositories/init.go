@@ -1,10 +1,10 @@
-package repositories
+package orgrepositories
 
 import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repositories/resolvers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepositories/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"

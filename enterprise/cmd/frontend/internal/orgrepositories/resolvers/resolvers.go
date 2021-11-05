@@ -2,7 +2,8 @@ package resolvers
 
 import (
 	"context"
-	"errors"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"

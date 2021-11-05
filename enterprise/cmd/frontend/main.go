@@ -26,8 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	licensing "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/init"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/orgrepositories"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repositories"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -57,7 +57,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"codemonitors":    codemonitors.Init,
 	"dotcom":          dotcom.Init,
 	"searchcontexts":  searchcontexts.Init,
-	"orgRepositories": repositories.Init,
+	"orgRepositories": orgrepositories.Init,
 }
 
 func enterpriseSetupHook(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) enterprise.Services {
