@@ -602,7 +602,7 @@ commands:
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
 
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-      ./docker-images/grafana/build.sh
+      IMAGE=sourcegraph/grafana:dev ./docker-images/grafana/build.sh
     env:
       GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
       # Log file location: since we log outside of the Docker container, we should
@@ -687,6 +687,7 @@ commands:
 
   loki:
     cmd: |
+      echo "Loki: serving on http://localhost:3100"
       echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
       docker run --rm --name=loki \
         -p 3100:3100 -v $LOKI_DISK:/loki \
