@@ -208,7 +208,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
-		const minimumUpgradeableVersion = "3.32.0"
+		const minimumUpgradeableVersion = "3.33.0"
 
 		// Various integration tests
 		ops.Append(
@@ -217,6 +217,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			serverE2E(c.candidateImageTag()),
 			serverQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion))
+
+		// Upload logs up to this point
+		if c.RunType.Is(MainBranch) {
+			ops.Append(uploadBuildLogs("builds-and-tests"))
+		}
 
 		// All operations before this point are required
 		ops.Append(wait)
@@ -233,16 +238,17 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 
+		// Upload logs up to this point
+		if c.RunType.Is(MainBranch) {
+			ops.Append(uploadBuildLogs("publish"))
+		}
+
 		// Propagate changes elsewhere
 		if c.RunType.Is(MainBranch) {
 			ops.Append(
 				wait, // wait for all steps to pass
-				triggerUpdaterPipeline)
-		}
-
-		// Collect all build failures (if any) and upload them on Grafana Cloud.
-		if c.RunType.Is(MainBranch) {
-			ops.Append(uploadBuildLogs())
+				triggerUpdaterPipeline,
+				uploadBuildLogs("updater"))
 		}
 	}
 
