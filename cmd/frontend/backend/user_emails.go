@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -134,7 +133,7 @@ func (userEmails) Add(ctx context.Context, db database.DB, userID int32, email s
 		// Send email verification email.
 		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
 			return errors.Wrap(err, "SendUserEmailVerificationEmail")
-		} else if err = db.Users().SetLastVerification(ctx, userID, email, *code); err != nil {
+		} else if err = db.UserEmails().SetLastVerification(ctx, userID, email, *code); err != nil {
 			return errors.Wrap(err, "SetLastVerificationSentAt")
 		}
 	}
@@ -194,13 +193,13 @@ Please verify your email address on Sourcegraph ({{.Host}}) by clicking this lin
 
 // SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
 // The change is the information we want to provide the user about the change
-func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, db dbutil.DB, id int32, change string) error {
-	email, _, err := database.UserEmails(db).GetPrimaryEmail(ctx, id)
+func (userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, db database.DB, id int32, change string) error {
+	email, _, err := db.UserEmails().GetPrimaryEmail(ctx, id)
 	if err != nil {
 		log15.Warn("Failed to get user email", "error", err)
 		return err
 	}
-	usr, err := database.Users(db).GetByID(ctx, id)
+	usr, err := db.Users().GetByID(ctx, id)
 	if err != nil {
 		log15.Warn("Failed to get user from database", "error", err)
 		return err
