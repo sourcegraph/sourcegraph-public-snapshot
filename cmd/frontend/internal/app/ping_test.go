@@ -11,13 +11,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
-
-func init() {
-	dbtesting.DBNameSuffix = "app"
-}
 
 func TestLatestPingHandler(t *testing.T) {
 	t.Parallel()

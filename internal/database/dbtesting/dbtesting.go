@@ -46,11 +46,6 @@ func useFastPasswordMocks() {
 // BeforeTest functions are called before each test is run (by SetupGlobalTestDB).
 var BeforeTest []func()
 
-// DBNameSuffix must be set by DB test packages at init time to a value that is unique among all
-// other such values used by other DB test packages. This is necessary to ensure the tests do not
-// concurrently use the same DB (which would cause test failures).
-var DBNameSuffix = "database"
-
 var (
 	connectOnce sync.Once
 	connectErr  error
