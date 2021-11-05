@@ -5,7 +5,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 
@@ -119,13 +121,26 @@ type instruction struct {
 	readsBool string
 	ifBool    string
 	ifNotBool string
+
+	check func(context.Context) (bool, error)
+}
+
+func checkInPath(cmd string) func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		p, err := os.Executable()
+		if err != nil {
+			return false, err
+		}
+		return p != "", nil
+	}
 }
 
 var macOSInstructionsBeforeClone = []instruction{
 	{
-		comment: `Homewbrew is a tool to install programs on your machine that is very common on OSX.`,
+		comment: `Homebrew is the recommended tool to install programs on your machine.`,
 		prompt:  "Install homebrew",
 		command: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
+		check:   checkInPath("brew"),
 	},
 	{
 		prompt: `Install Docker`,
@@ -133,6 +148,7 @@ var macOSInstructionsBeforeClone = []instruction{
 
 Make sure to start /Applications/Docker.app after the installation finished`,
 		command: `brew install --cask docker`,
+		check:   checkInPath("docker"),
 	},
 	{
 		prompt:  `Install Git, Comby, SQLite tools, and jq`,
@@ -371,7 +387,7 @@ var cloneInstructions = []instruction{
 		command: `git clone git@github.com:sourcegraph/sourcegraph.git`,
 	},
 	{
-		prompt:    "Are you a Sourcegraph employee",
+		prompt:    "Are you a Sourcegraph employee?",
 		readsBool: "employee",
 	},
 	{
@@ -425,4 +441,78 @@ func getBool() bool {
 		return true
 	}
 	return false
+}
+
+func checkCommandOutputContains(cmd, contains string) func(context.Context) (bool, error) {
+	return func(ctx context.Context) (bool, error) {
+		elems := strings.Split(cmd, " ")
+		out, err := exec.Command(elems[0], elems[1:]...).CombinedOutput()
+		if err != nil {
+			return false, err
+		}
+		return strings.Contains(string(out), contains), nil
+	}
+}
+
+type dependency struct {
+	name  string
+	check func(context.Context) (bool, error)
+}
+
+var macOSDependencies = []dependency{
+	{name: "brew", check: checkInPath("brew")},
+	{name: "git", check: checkInPath("git")},
+	{name: "docker", check: checkInPath("docker")},
+	{name: "go", check: checkInPath("go")},
+	{name: "yarn", check: checkInPath("yarn")},
+	{name: "gnu-sed", check: checkInPath("gsed")},
+	{name: "comby", check: checkInPath("comby")},
+	{name: "pcre", check: checkInPath("pcregrep")},
+	{name: "sqlite", check: checkInPath("sqlite3")},
+	{name: "jq", check: checkInPath("jq")},
+	{name: "node", check: checkInPath("node")},
+}
+
+var linuxDependencies = []dependency{
+	{name: "git", check: checkInPath("git")},
+	{name: "docker", check: checkInPath("docker")},
+	{name: "go", check: checkInPath("go")},
+	{name: "yarn", check: checkInPath("yarn")},
+	{name: "gnu-sed", check: checkInPath("sed")},
+	{name: "comby", check: checkInPath("comby")},
+	{name: "libpcre3-dev", check: checkCommandOutputContains("ldconfig -p", "libpcre.so.3")},
+	{name: "sqlite", check: checkInPath("sqlite3")},
+	{name: "jq", check: checkInPath("jq")},
+	{name: "node", check: checkInPath("node")},
+}
+
+func sketch(ctx context.Context) {
+
+	currentOS := runtime.GOOS
+	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
+		currentOS = overridesOS
+	}
+
+	var deps []dependency
+	if currentOS == "darwin" {
+		deps = macOSDependencies
+	} else {
+		deps = linuxDependencies
+	}
+
+	for _, d := range deps {
+		fmt.Printf("Checking %q...", d.name)
+
+		ok, err := d.check(ctx)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if ok {
+			fmt.Printf("ok.")
+		} else {
+			fmt.Printf("oh no :(")
+		}
+	}
+
 }
