@@ -1,4 +1,10 @@
-# Quickstart step 2: Install dependencies
+# DEPRECATED Quickstart without `sg setup`
+
+The following instructions are from our old quickstart guide before we had `sg setup` guiding new users through the setup process.
+
+This guide is kept here until we're sure that `sg setup` is stable.
+
+## Install dependencies
 
 Sourcegraph has the following dependencies:
 
@@ -27,7 +33,7 @@ Below are instructions to install these dependencies:
 > - Running as system services might yield better performance, especially on macOS.
 > - No matter which option you choose, docker is required because the development server starts additional docker containers.
 
-## macOS
+### macOS
 
 1.  Install [Homebrew](https://brew.sh).
 2.  Install [Docker for Mac](https://docs.docker.com/docker-for-mac/).
@@ -136,7 +142,7 @@ Below are instructions to install these dependencies:
     instead, to ensure you get a Node version compatible with the current state
     of the sourcegraph repository.
 
-## Ubuntu
+### Ubuntu
 
 
 1. Add package repositories:
@@ -209,19 +215,19 @@ Below are instructions to install these dependencies:
     See the official [docker compose documentation](https://docs.docker.com/compose/install/) for more details on different installation options.
 
 
-## (optional) asdf
+### (optional) asdf
 
 [asdf](https://github.com/asdf-vm/asdf) is a CLI tool that manages runtime versions for a number of different languages and tools. It can be likened to a language-agnostic version of [nvm](https://github.com/nvm-sh/nvm) or [pyenv](https://github.com/pyenv/pyenv).
 
 We use asdf in buildkite to lock the versions of the tools that we use on a per-commit basis.
 
-### Install
+#### Install
 
-#### asdf binary
+##### asdf binary
 
 See the [installation instructions on the official asdf documentation](https://asdf-vm.com/#/core-manage-asdf?id=install).
 
-#### Plugins
+##### Plugins
 
 sourcegraph/sourcegraph uses the following plugins:
 
@@ -250,10 +256,270 @@ legacy_version_file = yes
 asdf plugin add yarn
 ```
 
-### Usage instructions
+#### Usage instructions
 
 [asdf](https://github.com/asdf-vm/asdf) uses versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) whenever a command is run from one of `sourcegraph/sourcegraph`'s subdirectories.
 
 You can install the all the versions specified in [.tool-versions](https://github.com/sourcegraph/sourcegraph/blob/main/.tool-versions) by running `asdf install`.
 
-[< Previous](quickstart_1_install_sg.md) | [Next >](quickstart_3_clone_repository.md)
+## Get the code
+
+Run the following command in a folder where you want to keep a copy of the code. Command will create a new sub-folder (`sourcegraph`) in this folder.
+
+```bash
+git clone https://github.com/sourcegraph/sourcegraph.git
+```
+
+### For Sourcegraph employees: clone shared configuration
+
+In order to run the local development environment as a Sourcegraph employee, you'll need to clone another repository: [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private). It contains convenient preconfigured settings and code host connections.
+
+It needs to be cloned into the same folder as `sourcegraph/sourcegraph`, so they sit alongside each other. To illustrate:
+
+```
+/dir
+ |-- dev-private
+ +-- sourcegraph
+```
+
+> NOTE: Ensure that you periodically pull the latest changes from [`sourcegraph/dev-private`](https://github.com/sourcegraph/dev-private) as the secrets are updated from time to time.
+
+## Start Docker
+
+### macOS
+
+#### Option A: Docker for Mac
+
+This is the easy way - just launch Docker.app and wait for it to finish loading.
+
+#### Option B: docker-machine
+
+The Docker daemon should be running in the background, which you can test by
+running `docker ps`. If you're on OS X and using `docker-machine` instead of
+Docker for Mac, you may have to run:
+
+```bash
+docker-machine start default
+eval $(docker-machine env)
+```
+
+### Ubuntu/Linux
+
+The docker daemon might already be running, but if necessary you can use the following commands to start it:
+
+```sh
+# as a system service
+sudo systemctl enable --now docker
+
+# manually
+dockerd
+```
+
+If you have issues running Docker, try [adding your user to the docker group][dockerGroup], and/or [updating the socket file permissions][socketPermissions], or try running these commands under `sudo`.
+
+[dockerGroup]: https://stackoverflow.com/a/48957722
+[socketPermissions]: https://stackoverflow.com/a/51362528
+
+## Initialize your database
+
+### With Docker
+
+The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
+
+The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.
+
+To initialize your database, you may have to set the appropriate environment variables before running the `createdb` command:
+
+```sh
+createdb --host=localhost --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+```
+
+You can also use the `PGDATA_DIR` environment variable to specify a local folder (instead of a volume) to store the database files. See the `dev/redis-postgres.yml` file for more details.
+
+This can also be spun up using [`sg run redis-postgres`](../background-information/sg/index.md), with the following `sg.config.override.yaml`:
+
+```yaml
+env:
+    PGHOST: localhost
+    PGPASSWORD: sourcegraph
+    PGUSER: sourcegraph
+```
+
+### Without Docker
+
+You need a fresh Postgres database and a database user that has full ownership of that database.
+
+1. Create a database for the current Unix user
+
+    ```
+    # For Linux users, first access the postgres user shell
+    sudo su - postgres
+    # For Mac OS users
+    sudo su - _postgres
+    ```
+
+    ```
+    createdb
+    ```
+
+2. Create the Sourcegraph user and password
+
+    ```
+    createuser --superuser sourcegraph
+    psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"
+    ```
+
+3. Create the Sourcegraph database
+
+    ```
+    createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph
+    ```
+
+4. Configure database settings in your environment
+
+    The Sourcegraph server reads PostgreSQL connection configuration from the [`PG*` environment variables](http://www.postgresql.org/docs/current/static/libpq-envars.html).
+
+    Our `sg` configuration in `sg.config.yaml` sets values that work with the setup described here, but if you want to use differnt values you can overwrite them in `sg.config.overwite.yaml`, like this:
+
+    ```
+    env:
+      PGPORT=5432
+      PGHOST=localhost
+      PGUSER=sourcegraph
+      PGPASSWORD=sourcegraph
+      PGDATABASE=sourcegraph
+      PGSSLMODE=disable
+    ```
+
+### More info
+
+For more information about data storage, [read our full PostgreSQL page](../background-information/postgresql.md).
+
+Migrations are applied automatically.
+
+
+## Configure HTTPS reverse proxy
+
+Sourcegraph's development environment ships with a [Caddy 2](https://caddyserver.com/) HTTPS reverse proxy that allows you to access your local sourcegraph instance via `https://sourcegraph.test:3443` (a fake domain with a self-signed certificate that's added to `/etc/hosts`).
+
+If you'd like Sourcegraph to be accessible under `https://sourcegraph.test` (port 443) instead, you can [set up authbind](https://medium.com/@steve.mu.dev/setup-authbind-on-mac-os-6aee72cb828) and set the environment variable `SOURCEGRAPH_HTTPS_PORT=443`.
+
+### Prerequisites
+
+In order to configure the HTTPS reverse-proxy, you'll need to edit `/etc/hosts` and initialize Caddy 2.
+
+### Add `sourcegraph.test` to `/etc/hosts`
+
+`sourcegraph.test` needs to be added to `/etc/hosts` as an alias to `127.0.0.1`. There are two main ways of accomplishing this:
+
+1. Manually append `127.0.0.1 sourcegraph.test` to `/etc/hosts`
+1. Use the provided `./dev/add_https_domain_to_hosts.sh` convenience script (sudo may be required).
+
+```bash
+> ./dev/add_https_domain_to_hosts.sh
+
+--- adding sourcegraph.test to '/etc/hosts' (you may need to enter your password)
+Password:
+Adding host(s) "sourcegraph.test" to IP address 127.0.0.1
+--- printing '/etc/hosts'
+...
+127.0.0.1        localhost sourcegraph.test
+...
+```
+
+### Initialize Caddy 2
+
+[Caddy 2](https://caddyserver.com/) automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them. The first time that Caddy runs, it needs `root/sudo` permissions to add
+its keys to your system's certificate store. You can get this out the way after installing Caddy 2 by running the following command and entering your password if prompted:
+
+```bash
+./dev/caddy.sh trust
+```
+
+Note: If you are using Firefox and have a master password set, the following prompt will come up first:
+
+```
+Enter Password or Pin for "NSS Certificate DB":
+```
+
+Enter your Firefox master password here and proceed. See [this issue on GitHub](https://github.com/FiloSottile/mkcert/issues/50) for more information.
+
+You might need to restart your web browsers in order for them to recognize the certificates.
+
+## Start the server
+
+### Configure `sg` to connect to databases
+
+If you chose to run PostgreSQL and Redis **without Docker** they should already be running. You can jump the next section.
+
+If you chose to run Redis and PostgreSQL **with Docker** to then we need to configure `sg` so it can connect to them.
+
+1. In the `sourcegraph` folder, create a `sg.config.overwrite.yaml` file with the following contents (don't worry, `sg.config.overwrite.yaml` files are ignored by `git` and serve as a place for your local configuration):
+
+    ```
+    env:
+        POSTGRES_HOST: localhost
+        PGPASSWORD: sourcegraph
+        PGUSER: sourcegraph
+    ```
+
+2. Start the databases:
+
+    ```
+    sg run redis-postgres
+    ```
+
+Keep this process running in a terminal window to keep the databases running. Follow the rest of the instructions in another terminal.
+
+### Start the server
+
+**If you are a Sourcegraph employee**: start the local development server for Sourcegraph Enterprise with the following command:
+
+```
+sg start
+```
+
+**If you are not a Sourcegraph employee and don't have access to [the `dev-private` repository](./quickstart_3_clone_repository.md)**: you want to start Sourcegraph OSS, do this:
+
+```
+sg start oss
+```
+
+This will continuously compile your code and live reload your locally running instance of Sourcegraph.
+
+Navigate your browser to https://sourcegraph.test:3443 to see if everything worked.
+
+If `sg` exits with errors or outputs errors, take a look at [Troubleshooting](../how-to/troubleshooting_local_development.md) or ask in the `#dev-experience` Slack channel.
+
+### Running the server in different configurations
+
+If you want to run the server in different configurations (with the monitoring stack, with code insights enabled, Sourcegraph OSS, ...), run the following:
+
+```
+sg start -help
+```
+
+That prints a list of possible configurations which you can start with `sg start`.
+
+For example, you can start Sourcegraph in the mode it uses on Sourcegraph.com by running the following in one terminal window
+
+```
+sg start dotcom
+```
+
+and then, in another terminal window, start the monitoring stack:
+
+```
+sg start monitoring
+```
+
+## Additional resources
+
+Congratulations on making it to the end of the quickstart guide!
+Here are some additional resources to help you go further:
+
+- [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md)
+- [How-to guides](../how-to/index.md), particularly:
+  - [Troubleshooting local development](../how-to/troubleshooting_local_development.md)
+- [Background information](../background-information/index.md) for more context
+

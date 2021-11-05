@@ -4,15 +4,13 @@ Have a look around, our code is on [GitHub](https://sourcegraph.com/github.com/s
 
 ## Quickstart
 
-- [Step 1: Install `sg`](quickstart_1_install_sg.md)
-- [Step 2: Run `sg setup`](quickstart_2_run_sg_setup.md)
-- [Step 3: Start the server](quickstart_3_start_server.md)
-- [Step 4: Additional resources](quickstart_4_additional_resources.md)
+- [Quickstart](quickstart.md)
 
 ## Troubleshooting
 
 ### Local development
 
+- [DEPRECATED: Quickstart without `sg`](deprecated_quickstart.md)
 - [How to debug live code](../how-to/debug_live_code.md)
 - [Set up local development with Zoekt and Sourcegraph](../how-to/zoekt_local_dev.md)
 - [Ignoring editor config files in Git](../how-to/ignoring_editor_config_files.md)
