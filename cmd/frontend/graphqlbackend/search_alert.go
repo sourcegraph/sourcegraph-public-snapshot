@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"path"
-	"sort"
 	"strings"
 	"sync"
 	"time"
