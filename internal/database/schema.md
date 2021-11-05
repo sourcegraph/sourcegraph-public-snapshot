@@ -724,7 +724,7 @@ Foreign-key constraints:
 Referenced by:
     TABLE "external_service_repos" CONSTRAINT "external_service_repos_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE DEFERRABLE
     TABLE "external_service_sync_jobs" CONSTRAINT "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
-    TABLE "webhook_logs" CONSTRAINT "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
+    TABLE "webhook_logs" CONSTRAINT "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -2209,7 +2209,7 @@ Indexes:
     "webhook_logs_received_at_idx" btree (received_at)
     "webhook_logs_status_code_idx" btree (status_code)
 Foreign-key constraints:
-    "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id)
+    "webhook_logs_external_service_id_fkey" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
