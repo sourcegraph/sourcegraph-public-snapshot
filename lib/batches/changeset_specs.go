@@ -174,6 +174,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 }
 
 type RepoFetcher func(context.Context, []string) (map[string]string, error)
+
 func BuildImportChangesetSpecs(ctx context.Context, importChangesets []ImportChangeset, repoFetcher RepoFetcher) (specs []*ChangesetSpec, errs error) {
 	if len(importChangesets) == 0 {
 		return nil, nil
