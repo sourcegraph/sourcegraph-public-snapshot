@@ -148,7 +148,10 @@ func (e ErrUnauthenticated) Error() string {
 func (e ErrUnauthenticated) Unauthenticated() bool { return true }
 
 // ErrUnimplemented indicates sync is unimplemented and its data should not be used.
+//
+// When returning this error, provide a pointer.
 type ErrUnimplemented struct {
+	// Feature indicates the unimplemented functionality.
 	Feature string
 }
 
