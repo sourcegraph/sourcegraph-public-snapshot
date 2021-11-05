@@ -68,7 +68,9 @@ export const QueryInputToggle: React.FunctionComponent<ToggleProps> = ({ onToggl
     const Icon = props.icon
     const isActive = props.isActive && !disabledRule
 
-    const interactiveProps = interactive ? { tabIndex: 0, dataTooltip: tooltipValue, onClick: onCheckboxToggled } : {}
+    const interactiveProps = interactive
+        ? { tabIndex: 0, 'data-tooltip': tooltipValue, onClick: onCheckboxToggled }
+        : {}
 
     return (
         // Click events here are defined in useEffect
