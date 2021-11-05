@@ -86,10 +86,10 @@ func setupExec(ctx context.Context, args []string) error {
 		}
 
 		if instruction.command != "" {
-			out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command in another terminal:"))
+			out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
 			out.Write(output.StyleBold.String() + output.Fg256Color(220).String() + strings.TrimSpace(instruction.command) + output.StyleReset.String() + "\n")
 
-			out.WriteLine(output.Linef("", output.StylePending, "Hit return to confirm that you ran the command..."))
+			out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
 			input := bufio.NewScanner(os.Stdin)
 			input.Scan()
 		}
@@ -113,8 +113,9 @@ type instruction struct {
 
 var macOSInstructions = []instruction{
 	{
+		comment: `Homewbrew is a tool to install programs on your machine that is very common on OSX.`,
 		prompt:  "Install homebrew",
-		command: "Open https://brew.sh and follow instructions there",
+		command: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`,
 	},
 	{
 		prompt:  `Install Docker`,
@@ -136,8 +137,7 @@ We provide a docker compose file at dev/redis-postgres.yml to make it easy to ru
 	{
 		ifNotBool: "docker",
 		prompt:    `Install PostgreSQL and Redis with the following commands`,
-		command: `brew install postgres
-brew install redis`,
+		command:   `brew install postgres redis`,
 	},
 	{
 		ifNotBool: "docker",
@@ -167,17 +167,17 @@ source ~/.bash_profile`,
 	{
 		prompt: `Install the Node Version Manager (nvm) using:`,
 		command: `NVM_VERSION="$(curl https://api.github.com/repos/nvm-sh/nvm/releases/latest | jq -r .name)"
-curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o install-nvm.sh
-sh install-nvm.sh`,
+curl -L https://raw.githubusercontent.com/nvm-sh/nvm/"$NVM_VERSION"/install.sh -o /tmp/install-nvm.sh
+sh /tmp/install-nvm.sh`,
 	},
 	{
-		prompt:  `After the install script is finished, re-source your shell profile (e.g., source ~/.zshrc) or restart your terminal session to pick up the nvm definitions. Re-running the install script will update the installation.`,
-		command: `source ~/.zshrc`,
+		prompt:  `After the install script is finished, restart your terminal session to pick up the nvm definitions.`,
+		command: `# Restart the other terminal you have been using to enter commands`,
 	},
 	{
 		prompt: `Install the current recommended version of Node JS by running the following in the sourcegraph/sourcegraph repository clone`,
 		comment: `After doing this, node -v should show the same version mentioned in .nvmrc at the root of the sourcegraph repository.
-		NOTE: Although there is a Homebrew package for Node, we advise using nvm instead, to ensure you get a Node version compatible with the current state of the sourcegraph repository.`,
+NOTE: Although there is a Homebrew package for Node, we advise using nvm instead, to ensure you get a Node version compatible with the current state of the sourcegraph repository.`,
 		command: `nvm install
 nvm use --delete-prefix`,
 	},
@@ -189,16 +189,6 @@ nvm use --delete-prefix`,
 
 The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.`,
 		command: `createdb --user=sourcegraph --owner=sourcegraph --host=localhost --encoding=UTF8 --template=template0 sourcegraph`,
-	},
-	{
-		ifBool: "docker",
-		prompt: `You can also use the PGDATA_DIR environment variable to specify a local folder (instead of a volume) to store the database files. See the dev/redis-postgres.yml file for more details.
-
-This can also be spun up using sg run redis-postgres, with the following sg.config.override.yaml:`,
-		command: `env:
-    PGHOST: localhost
-    PGPASSWORD: sourcegraph
-    PGUSER: sourcegraph`,
 	},
 	{
 		ifNotBool: "docker",
@@ -304,18 +294,7 @@ sudo systemctl enable --now redis-server.service`,
 		comment: `The Sourcegraph server reads PostgreSQL connection configuration from the PG* environment variables.
 
 The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.`,
-		command: `export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
-createdb --user=sourcegraph --owner=sourcegraph --host=localhost --encoding=UTF8 --template=template0 sourcegraph`,
-	},
-	{
-		ifBool: "docker",
-		prompt: `You can also use the PGDATA_DIR environment variable to specify a local folder (instead of a volume) to store the database files. See the dev/redis-postgres.yml file for more details.
-
-This can also be spun up using sg run redis-postgres, with the following sg.config.override.yaml:`,
-		command: `env:
-    PGHOST: localhost
-    PGPASSWORD: sourcegraph
-    PGUSER: sourcegraph`,
+		command: `createdb --user=sourcegraph --owner=sourcegraph --host=localhost --encoding=UTF8 --template=template0 sourcegraph`,
 	},
 	{
 		ifNotBool: "docker",
@@ -364,33 +343,16 @@ NOTE: Ensure that you periodically pull the latest changes from sourcegraph/dev-
 var httpReverseProxyInstructions = []instruction{
 	{
 		prompt: `Making sourcegraph.test accessible`,
-		comment: `Sourcegraph's development environment ships with a Caddy 2 HTTPS reverse proxy that allows you to access your local sourcegraph instance via https://sourcegraph.test:3443 (a fake domain with a self-signed certificate that's added to /etc/hosts).
+		comment: `In order to make Sourcegraph's development environment accessible under https://sourcegraph.test:3443 we need to add an entry to /etc/hosts.
 
-If you'd like Sourcegraph to be accessible under https://sourcegraph.test (port 443) instead, you can set up authbind and set the environment variable SOURCEGRAPH_HTTPS_PORT=443.
-
-Prerequisites:
-In order to configure the HTTPS reverse-proxy, you'll need to edit /etc/hosts and initialize Caddy 2.
-
-Add sourcegraph.test to /etc/hosts:
-sourcegraph.test needs to be added to /etc/hosts as an alias to 127.0.0.1.
-
-There are two main ways of accomplishing this:
-- Manually append 127.0.0.1 sourcegraph.test to /etc/hosts
-- Or use the provided ./dev/add_https_domain_to_hosts.sh convenience script (sudo may be required).`,
+The following command will add this entry. It may prompt you for your password.`,
 		command: `./dev/add_https_domain_to_hosts.sh`,
 	},
 	{
 		prompt: `Initialize Caddy 2`,
 		comment: `Caddy 2 automatically manages self-signed certificates and configures your system so that your web browser can properly recognize them.
-The first time that Caddy runs, it needs root/sudo permissions to add its keys to your system's certificate store.
-You can get this out the way after installing Caddy 2 by running the following command and entering your password if prompted:
 
-(firefox users) If you are using Firefox and have a master password set, the following prompt will come up first:
-  Enter Password or Pin for "NSS Certificate DB":
-  Enter your Firefox master password here and proceed.
-
-See this Github issue for more informations: https://github.com/FiloSottile/mkcert/issues/50
-`,
+The following command adds Caddy's keys to the system certificate store.`,
 		command: `./dev/caddy.sh trust`,
 	},
 }
