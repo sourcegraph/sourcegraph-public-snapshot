@@ -37,7 +37,7 @@ func setupExec(ctx context.Context, args []string) error {
 	out.Write("")
 
 	var instructions []instruction
-	instructions = append(instructions, codeInstructions...)
+	instructions = append(instructions, cloneInstructions...)
 
 	currentOS := runtime.GOOS
 	if overridesOS, ok := os.LookupEnv("SG_FORCE_OS"); ok {
@@ -149,8 +149,14 @@ brew services start redis`,
 	},
 	{
 		ifNotBool: "docker",
-		prompt:    `Ensure psql, the PostgreSQL command line client, is on your $PATH.`,
-		comment:   `Homebrew does not put it there by default. Homebrew gives you the command to run to insert psql in your path in the "Caveats" section of brew info postgresql. Alternatively, you can use the command below. It might need to be adjusted depending on your Homebrew prefix (/usr/local below) and shell (bash below).`,
+		prompt:    `Ensure psql, the PostgreSQL command line client, is available.`,
+		comment:   `If this command prints "OK", you are free to move to the next step. Otherwise, you installed a Homebrew recipe that does not modify your $PATH by default. If not the next step will address that`,
+		command:   `(hash psql && echo "OK") || echo "NOT OK"`,
+	},
+	{
+		ifNotBool: "docker",
+		prompt:    `Ensure psql, the PostgreSQL command line client, is available`,
+		comment:   `So if the previous command show "NOT OK", you can run the command below to fix that`,
 		command: `hash psql || { echo 'export PATH="/usr/local/opt/postgresql/bin:$PATH"' >> ~/.bash_profile }
 source ~/.bash_profile`,
 	},
@@ -183,8 +189,7 @@ nvm use --delete-prefix`,
 		comment: `The Sourcegraph server reads PostgreSQL connection configuration from the PG* environment variables.
 
 The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.`,
-		command: `export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
-createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
+		command: `createdb --user=sourcegraph --owner=sourcegraph --host=localhost --encoding=UTF8 --template=template0 sourcegraph`,
 	},
 	{
 		ifBool: "docker",
@@ -213,19 +218,6 @@ psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 		ifNotBool: "docker",
 		prompt:    `Create the Sourcegraph database`,
 		command:   `createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
-	},
-	{
-		ifNotBool: "docker",
-		prompt:    `Configure database settings in your environment`,
-		comment: `The Sourcegraph server reads PostgreSQL connection configuration from the PG* environment variables.
-
-Our configuration in sg.config.yaml (we'll see what sg is in the next step) sets values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your ~/.bashrc:`,
-		command: `export PGPORT=5432
-export PGHOST=localhost
-export PGUSER=sourcegraph
-export PGPASSWORD=sourcegraph
-export PGDATABASE=sourcegraph
-export PGSSLMODE=disable`,
 	},
 }
 
@@ -314,7 +306,7 @@ sudo systemctl enable --now redis-server.service`,
 
 The development server startup script as well as the docker compose file provide default settings, so it will work out of the box.`,
 		command: `export PGUSER=sourcegraph PGPASSWORD=sourcegraph PGDATABASE=sourcegraph
-createdb --user=sourcegraph --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
+createdb --user=sourcegraph --owner=sourcegraph --host=localhost --encoding=UTF8 --template=template0 sourcegraph`,
 	},
 	{
 		ifBool: "docker",
@@ -344,22 +336,9 @@ psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
 		prompt:    `Create the Sourcegraph database`,
 		command:   `createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
 	},
-	{
-		ifNotBool: "docker",
-		prompt:    `Configure database settings in your environment`,
-		comment: `The Sourcegraph server reads PostgreSQL connection configuration from the PG* environment variables.
-
-Our configuration in sg.config.yaml (we'll see what sg is in the next step) sets values that work with the setup described here, but if you are using different values you can overwrite them, for example, in your ~/.bashrc:`,
-		command: `export PGPORT=5432
-export PGHOST=localhost
-export PGUSER=sourcegraph
-export PGPASSWORD=sourcegraph
-export PGDATABASE=sourcegraph
-export PGSSLMODE=disable`,
-	},
 }
 
-var codeInstructions = []instruction{
+var cloneInstructions = []instruction{
 	{
 		prompt:  `Cloning the code`,
 		comment: `We're going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
