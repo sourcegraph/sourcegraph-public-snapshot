@@ -217,6 +217,28 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
 	}
+
+	if args.Input.Dashboards != nil {
+		dashboardTx := r.dashboardStore.With(tx)
+		err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, database.Orgs(r.postgresDB))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, id := range *args.Input.Dashboards {
+			dashboardID, err := unmarshalDashboardID(id)
+			if err != nil {
+				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			}
+
+			log15.Debug("AddView", "insightId", view.UniqueID, "dashboardId", dashboardID.Arg)
+			err = dashboardTx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{view.UniqueID})
+			if err != nil {
+				return nil, errors.Wrap(err, "AddViewsToDashboard")
+			}
+		}
+	}
+
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
 }
 
@@ -460,6 +482,30 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		}
 	})
 	return r.views, r.next, r.err
+}
+
+func validateUserDashboardPermissions(ctx context.Context, store store.DashboardStore, externalIds []graphql.ID, orgStore database.OrgStore) error {
+	userIds, orgIds, err := getUserPermissions(ctx, orgStore)
+	if err != nil {
+		return errors.Wrap(err, "getUserPermissions")
+	}
+
+	unmarshaled := make([]int, 0, len(externalIds))
+	for _, id := range externalIds {
+		dashboardID, err := unmarshalDashboardID(id)
+		if err != nil {
+			return errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+		}
+		unmarshaled = append(unmarshaled, int(dashboardID.Arg))
+	}
+
+	hasPermission, err := store.HasDashboardPermission(ctx, unmarshaled, userIds, orgIds)
+	if err != nil {
+		return errors.Wrapf(err, "HasDashboardPermission")
+	} else if !hasPermission {
+		return errors.Newf("missing dashboard permission")
+	}
+	return nil
 }
 
 func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {

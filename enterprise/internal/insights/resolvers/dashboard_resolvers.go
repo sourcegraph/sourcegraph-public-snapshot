@@ -321,7 +321,7 @@ func (r *Resolver) ensureDashboardPermission(ctx context.Context, dashboardId in
 		errors.Wrap(err, "getUserPermissions")
 		return
 	}
-	hasPermissionToUpdate, err := r.dashboardStore.HasDashboardPermission(ctx, dashboardId, userIds, orgIds)
+	hasPermissionToUpdate, err := r.dashboardStore.HasDashboardPermission(ctx, []int{dashboardId}, userIds, orgIds)
 	if err != nil {
 		errors.Wrap(err, "HasDashboardPermission")
 		return

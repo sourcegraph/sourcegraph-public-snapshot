@@ -563,6 +563,11 @@ input LineChartSearchInsightInput {
     The options for this line chart.
     """
     options: LineChartOptionsInput!
+
+    """
+    The dashboard IDs to associate this insight with once created.
+    """
+    dashboards: [ID!]
 }
 
 """
