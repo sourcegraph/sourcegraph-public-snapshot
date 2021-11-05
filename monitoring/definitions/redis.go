@@ -34,7 +34,7 @@ func Redis() *monitoring.Container {
 							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
 							Critical:      monitoring.Alert().LessOrEqual(1, nil).For(10 * time.Second),
 							PossibleSolutions: `
-								- Ensure redis-store is running and has not crashed.
+								- Ensure redis-store is running
 							`,
 							Interpretation: "A value of 1 indicates the service is currently running"},
 					}
