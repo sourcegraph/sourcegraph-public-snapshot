@@ -199,13 +199,6 @@ func (c *internalClient) SendEmail(ctx context.Context, message txtypes.Message)
 	return c.postInternal(ctx, "send-email", &message, nil)
 }
 
-// ReposListEnabled returns a list of all enabled repository names.
-func (c *internalClient) ReposListEnabled(ctx context.Context) ([]RepoName, error) {
-	var names []RepoName
-	err := c.postInternal(ctx, "repos/list-enabled", nil, &names)
-	return names, err
-}
-
 // MockInternalClientConfiguration mocks (*internalClient).Configuration.
 var MockInternalClientConfiguration func() (conftypes.RawUnified, error)
 

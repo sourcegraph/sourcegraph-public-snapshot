@@ -138,7 +138,7 @@ func NewMockRepoStore() *MockRepoStore {
 			},
 		},
 		ListEnabledNamesFunc: &RepoStoreListEnabledNamesFunc{
-			defaultHook: func(context.Context) ([]string, error) {
+			defaultHook: func(context.Context) ([]api.RepoName, error) {
 				return nil, nil
 			},
 		},
@@ -1448,15 +1448,15 @@ func (c RepoStoreListFuncCall) Results() []interface{} {
 // RepoStoreListEnabledNamesFunc describes the behavior when the
 // ListEnabledNames method of the parent MockRepoStore instance is invoked.
 type RepoStoreListEnabledNamesFunc struct {
-	defaultHook func(context.Context) ([]string, error)
-	hooks       []func(context.Context) ([]string, error)
+	defaultHook func(context.Context) ([]api.RepoName, error)
+	hooks       []func(context.Context) ([]api.RepoName, error)
 	history     []RepoStoreListEnabledNamesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListEnabledNames delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockRepoStore) ListEnabledNames(v0 context.Context) ([]string, error) {
+func (m *MockRepoStore) ListEnabledNames(v0 context.Context) ([]api.RepoName, error) {
 	r0, r1 := m.ListEnabledNamesFunc.nextHook()(v0)
 	m.ListEnabledNamesFunc.appendCall(RepoStoreListEnabledNamesFuncCall{v0, r0, r1})
 	return r0, r1
@@ -1465,7 +1465,7 @@ func (m *MockRepoStore) ListEnabledNames(v0 context.Context) ([]string, error) {
 // SetDefaultHook sets function that is called when the ListEnabledNames
 // method of the parent MockRepoStore instance is invoked and the hook queue
 // is empty.
-func (f *RepoStoreListEnabledNamesFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
+func (f *RepoStoreListEnabledNamesFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoName, error)) {
 	f.defaultHook = hook
 }
 
@@ -1473,7 +1473,7 @@ func (f *RepoStoreListEnabledNamesFunc) SetDefaultHook(hook func(context.Context
 // ListEnabledNames method of the parent MockRepoStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *RepoStoreListEnabledNamesFunc) PushHook(hook func(context.Context) ([]string, error)) {
+func (f *RepoStoreListEnabledNamesFunc) PushHook(hook func(context.Context) ([]api.RepoName, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1481,21 +1481,21 @@ func (f *RepoStoreListEnabledNamesFunc) PushHook(hook func(context.Context) ([]s
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *RepoStoreListEnabledNamesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]string, error) {
+func (f *RepoStoreListEnabledNamesFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]api.RepoName, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *RepoStoreListEnabledNamesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context) ([]string, error) {
+func (f *RepoStoreListEnabledNamesFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context) ([]api.RepoName, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoStoreListEnabledNamesFunc) nextHook() func(context.Context) ([]string, error) {
+func (f *RepoStoreListEnabledNamesFunc) nextHook() func(context.Context) ([]api.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1533,7 +1533,7 @@ type RepoStoreListEnabledNamesFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []string
+	Result0 []api.RepoName
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
