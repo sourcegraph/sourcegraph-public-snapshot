@@ -2180,6 +2180,8 @@ type ExternalService implements Node {
 
     """
     Returns recently received webhooks on this external service.
+
+    Only site admins may access this field.
     """
     webhookLogs(
         """
