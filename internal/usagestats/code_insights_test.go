@@ -272,12 +272,14 @@ func TestGetLangStatsInsights(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	orgId := int32(1)
 	want := []insights.LangStatsInsight{
 		{
 			ID:             "codeStatsInsights.insight.global.lang1",
 			Title:          "my insight",
 			Repository:     "github.com/sourcegraph/sourcegraph",
 			OtherThreshold: float32(0),
+			OrgID:          &orgId,
 		},
 	}
 

@@ -130,6 +130,8 @@ func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilte
 		if err != nil {
 			return []LangStatsInsight{}, err
 		}
+		userId := settings[i].Subject.User
+		orgId := settings[i].Subject.Org
 
 		for id, body := range raw {
 			var temp LangStatsInsight
@@ -138,6 +140,9 @@ func GetLangStatsInsights(ctx context.Context, db dbutil.DB, filter SettingFilte
 				// a deprecated schema collides with this field name, so skip any deserialization errors
 				continue
 			}
+			temp.UserID = userId
+			temp.OrgID = orgId
+
 			results = append(results, temp)
 		}
 	}
@@ -272,6 +277,8 @@ type LangStatsInsight struct {
 	Title          string
 	Repository     string
 	OtherThreshold float32
+	OrgID          *int32
+	UserID         *int32
 }
 
 type DefaultFilters struct {
