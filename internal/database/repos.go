@@ -1105,7 +1105,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	for rows.Next() {
 		var r types.MinimalRepo
-		if err := rows.Scan(&r.ID, &r.Name); err != nil {
+		if err := rows.Scan(&r.ID, &r.Name, &dbutil.NullInt{N: &r.Stars}); err != nil {
 			return nil, errors.Wrap(err, "scanning indexable repos")
 		}
 		results = append(results, r)
@@ -1120,7 +1120,7 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 const listIndexableReposQuery = `
 -- source: internal/database/repos.go:ListIndexableRepos
 SELECT
-	repo.id, repo.name
+	repo.id, repo.name, repo.stars
 FROM repo
 %s
 WHERE
