@@ -609,7 +609,7 @@ type ReposListOptions struct {
 	OrderBy RepoListOrderBy
 
 	// Cursors to efficiently paginate through large result sets.
-	Cursors Cursors
+	Cursors types.Cursors
 
 	// UseOr decides between ANDing or ORing the predicates together.
 	UseOr bool
@@ -1546,7 +1546,7 @@ func parsePattern(p string) ([]*sqlf.Query, error) {
 
 // parseCursorConds checks whether the query is using cursor-based pagination, and
 // if so performs the necessary transformations for it to be successful.
-func parseCursorConds(c *Cursor) (conds []*sqlf.Query, err error) {
+func parseCursorConds(c *types.Cursor) (conds []*sqlf.Query, err error) {
 	if c == nil || c.Column == "" || c.Value == "" {
 		return nil, nil
 	}

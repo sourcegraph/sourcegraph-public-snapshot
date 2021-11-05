@@ -43,7 +43,7 @@ type Resolved struct {
 
 	// Next points to the next page of resolved repository revisions. It will
 	// be nil if there are no more pages left.
-	Next database.Cursors
+	Next types.Cursors
 }
 
 func (r *Resolved) String() string {
@@ -182,11 +182,11 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	var next database.Cursors
+	var next types.Cursors
 	if len(repos) == limit+1 {
 		last := repos[len(repos)-1]
 		for _, o := range options.OrderBy {
-			c := database.Cursor{Column: string(o.Field)}
+			c := types.Cursor{Column: string(o.Field)}
 
 			switch c.Column {
 			case "stars":

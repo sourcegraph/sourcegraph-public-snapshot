@@ -9,7 +9,6 @@ import (
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -301,7 +300,7 @@ type RepoOptions struct {
 	CommitAfter       string
 	Visibility        query.RepoVisibility
 	Limit             int
-	Cursors           []*database.Cursor
+	Cursors           []*types.Cursor
 	CacheLookup       bool
 	Query             query.Q
 }

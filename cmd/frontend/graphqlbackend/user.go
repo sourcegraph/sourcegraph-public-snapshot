@@ -410,7 +410,7 @@ func (r *UserResolver) Repositories(ctx context.Context, args *ListUserRepositor
 		}
 		opt.Cursors = append(opt.Cursors, cursor)
 	} else {
-		opt.Cursors = append(opt.Cursors, &database.Cursor{Direction: "next"})
+		opt.Cursors = append(opt.Cursors, &types.Cursor{Direction: "next"})
 	}
 	if args.OrderBy == nil {
 		opt.OrderBy = database.RepoListOrderBy{{
