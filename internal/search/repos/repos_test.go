@@ -116,6 +116,7 @@ func TestRevisionValidation(t *testing.T) {
 					},
 				},
 			}},
+			wantErr: &MissingRepoRevsError{},
 		},
 		{
 			repoFilters:              []string{"repoFoo@revBar:bad_commit"},
@@ -169,7 +170,7 @@ func TestRevisionValidation(t *testing.T) {
 			if diff := cmp.Diff(tt.wantMissingRepoRevisions, resolved.MissingRepoRevs); diff != "" {
 				t.Error(diff)
 			}
-			if tt.wantErr != err {
+			if !errors.Is(err, tt.wantErr) {
 				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
 			}
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
