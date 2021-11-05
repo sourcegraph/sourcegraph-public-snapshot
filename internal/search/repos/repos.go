@@ -175,7 +175,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, err
 	}
 
-	if len(repos) == 0 && len(op.Cursors) == 0 {
+	if len(repos) == 0 && len(op.Cursors) == 0 { // Is the first page empty?
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
