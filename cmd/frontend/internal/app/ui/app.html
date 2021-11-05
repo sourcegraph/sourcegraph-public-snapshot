@@ -2,6 +2,26 @@
 <html lang="en" class="base">
 
 <head>
+
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Search Result SearchBox -->
+	<script type="application/ld+json">
+		{
+			"@context": "https://schema.org",
+			"@type": "WebSite",
+			"url": "https://sourcegraph.com",
+			"potentialAction": {
+				"@type": "SearchAction",
+				"target": {
+					"@type": "EntryPoint",
+					"urlTemplate": "https://sourcegraph.com/search?q={search_term_string}&utm_source=google-search-result&utm_campaign=google-search-result-searchbox"
+				},
+				"query-input": "required name=search_term_string"
+			}
+		}
+	</script>
+	<!-- End Google Search Result SearchBox -->
+	{{ end }}
 	{{.Injected.HeadTop}}
 	<meta charset="utf-8">
 	<meta http-equiv="x-ua-compatible" content="ie=edge">
