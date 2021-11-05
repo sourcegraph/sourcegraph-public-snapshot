@@ -15,6 +15,7 @@ import (
 type DB interface {
 	dbutil.DB
 	AccessTokens() AccessTokenStore
+	Authz() AuthzStore
 	EventLogs() EventLogStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
@@ -51,6 +52,10 @@ var _ DB = (*db)(nil)
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokens(d.DB)
+}
+
+func (d *db) Authz() AuthzStore {
+	return Authz(d.DB)
 }
 
 func (d *db) EventLogs() EventLogStore {

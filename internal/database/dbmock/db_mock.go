@@ -18,6 +18,9 @@ type MockDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
+	// AuthzFunc is an instance of a mock function object controlling the
+	// behavior of the method Authz.
+	AuthzFunc *DBAuthzFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
@@ -95,6 +98,11 @@ func NewMockDB() *MockDB {
 	return &MockDB{
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() database.AccessTokenStore {
+				return nil
+			},
+		},
+		AuthzFunc: &DBAuthzFunc{
+			defaultHook: func() database.AuthzStore {
 				return nil
 			},
 		},
@@ -222,6 +230,9 @@ func NewMockDBFrom(i database.DB) *MockDB {
 	return &MockDB{
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
+		},
+		AuthzFunc: &DBAuthzFunc{
+			defaultHook: i.Authz,
 		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
@@ -391,6 +402,105 @@ func (c DBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBAuthzFunc describes the behavior when the Authz method of the parent
+// MockDB instance is invoked.
+type DBAuthzFunc struct {
+	defaultHook func() database.AuthzStore
+	hooks       []func() database.AuthzStore
+	history     []DBAuthzFuncCall
+	mutex       sync.Mutex
+}
+
+// Authz delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Authz() database.AuthzStore {
+	r0 := m.AuthzFunc.nextHook()()
+	m.AuthzFunc.appendCall(DBAuthzFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Authz method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBAuthzFunc) SetDefaultHook(hook func() database.AuthzStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Authz method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBAuthzFunc) PushHook(hook func() database.AuthzStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *DBAuthzFunc) SetDefaultReturn(r0 database.AuthzStore) {
+	f.SetDefaultHook(func() database.AuthzStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *DBAuthzFunc) PushReturn(r0 database.AuthzStore) {
+	f.PushHook(func() database.AuthzStore {
+		return r0
+	})
+}
+
+func (f *DBAuthzFunc) nextHook() func() database.AuthzStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBAuthzFunc) appendCall(r0 DBAuthzFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBAuthzFuncCall objects describing the
+// invocations of this function.
+func (f *DBAuthzFunc) History() []DBAuthzFuncCall {
+	f.mutex.Lock()
+	history := make([]DBAuthzFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBAuthzFuncCall is an object that describes an invocation of method Authz
+// on an instance of MockDB.
+type DBAuthzFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.AuthzStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBAuthzFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBAuthzFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

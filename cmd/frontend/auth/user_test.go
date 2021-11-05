@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -396,7 +397,7 @@ func TestGetAndSaveUser(t *testing.T) {
 						}
 						op := c.op
 						op.CreateIfNotExist = createIfNotExist
-						userID, safeErr, err := GetAndSaveUser(ctx, db, op)
+						userID, safeErr, err := GetAndSaveUser(ctx, database.NewDB(db), op)
 						for _, v := range []struct {
 							label string
 							got   interface{}
@@ -474,20 +475,24 @@ func newMocks(t *testing.T, m mockParams) *mocks {
 }
 
 func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
+	t.Parallel()
+
 	user := &types.User{ID: 1, DisplayName: "", AvatarURL: ""}
 
-	database.Mocks.ExternalAccounts.LookupUserAndSave = func(extsvc.AccountSpec, extsvc.AccountData) (userID int32, err error) {
-		return user.ID, nil
-	}
-	database.Mocks.Users.GetByID = func(ctx context.Context, id int32) (*types.User, error) {
-		return user, nil
-	}
-	database.Mocks.Users.Update = func(userID int32, update database.UserUpdate) error {
+	users := dbmock.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(user, nil)
+	users.UpdateFunc.SetDefaultHook(func(_ context.Context, userID int32, update database.UserUpdate) error {
 		user.DisplayName = *update.DisplayName
 		user.AvatarURL = *update.AvatarURL
 		return nil
-	}
-	defer func() { database.Mocks = database.MockStores{} }()
+	})
+
+	externalAccounts := dbmock.NewMockUserExternalAccountsStore()
+	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
+
+	db := dbmock.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
 	// Customers can always set their own display name and avatar URL values, but when
 	// we encounter them via e.g. code host logins, we don't want to override anything
@@ -522,7 +527,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 				ExternalAccount: ext("github", "fake-service", "fake-client", "account-u1"),
 				UserProps:       database.NewUser{DisplayName: test.displayName, AvatarURL: test.avatarURL},
 			}
-			if _, _, err := GetAndSaveUser(ctx, nil, op); err != nil {
+			if _, _, err := GetAndSaveUser(ctx, db, op); err != nil {
 				t.Fatal(err)
 			}
 			if user.DisplayName != test.wantDisplayName {
@@ -546,29 +551,6 @@ type mockParams struct {
 	updateErr               error
 }
 
-func (m *mocks) apply() {
-	database.Mocks.ExternalAccounts = database.MockExternalAccounts{
-		LookupUserAndSave:    m.LookupUserAndSave,
-		AssociateUserAndSave: m.AssociateUserAndSave,
-		CreateUserAndSave:    m.CreateUserAndSave,
-	}
-	database.Mocks.Users = database.MockUsers{
-		GetByID:            m.GetByID,
-		GetByVerifiedEmail: m.GetByVerifiedEmail,
-		GetByUsername:      m.GetByUsername,
-		Update:             m.Update,
-	}
-	database.Mocks.Authz = database.MockAuthz{
-		GrantPendingPermissions: m.GrantPendingPermissions,
-	}
-}
-
-func (m *mocks) reset() {
-	database.Mocks.ExternalAccounts = database.MockExternalAccounts{}
-	database.Mocks.Users = database.MockUsers{}
-	database.Mocks.Authz = database.MockAuthz{}
-}
-
 // mocks provide mocking. It should only be used for one call of auth.GetAndSaveUser, because saves
 // are recorded in the mock struct but will not be reflected in the return values of the mocked
 // methods.
@@ -590,6 +572,29 @@ type mocks struct {
 
 	// calledGrantPendingPermissions tracks if database.Authz.GrantPendingPermissions method is called.
 	calledGrantPendingPermissions bool
+}
+
+func (m *mocks) apply() {
+	database.Mocks.ExternalAccounts = database.MockExternalAccounts{
+		LookupUserAndSave:    m.LookupUserAndSave,
+		AssociateUserAndSave: m.AssociateUserAndSave,
+		CreateUserAndSave:    m.CreateUserAndSave,
+	}
+	database.Mocks.Users = database.MockUsers{
+		GetByID:            m.GetByID,
+		GetByVerifiedEmail: m.GetByVerifiedEmail,
+		GetByUsername:      m.GetByUsername,
+		Update:             m.Update,
+	}
+	database.Mocks.Authz = database.MockAuthz{
+		GrantPendingPermissions: m.GrantPendingPermissions,
+	}
+}
+
+func (m *mocks) reset() {
+	database.Mocks.ExternalAccounts = database.MockExternalAccounts{}
+	database.Mocks.Users = database.MockUsers{}
+	database.Mocks.Authz = database.MockAuthz{}
 }
 
 // LookupUserAndSave mocks database.ExternalAccounts.LookupUserAndSave

@@ -98,7 +98,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	}
 
 	for i, attempt := range attempts {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, database.NewDB(s.db), auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username:        login,
 				Email:           attempt.email,
