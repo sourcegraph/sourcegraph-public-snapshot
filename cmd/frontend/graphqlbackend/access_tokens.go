@@ -80,7 +80,7 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 		return nil, errors.Errorf("all access tokens must have scope %q", authz.ScopeUserAll)
 	}
 
-	id, token, err := database.AccessTokens(r.db).Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
+	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, actor.FromContext(ctx).UID)
 
 	if conf.CanSendEmail() {
 		if err := backend.UserEmails.SendUserEmailOnFieldUpdate(ctx, r.db, userID, "created an access token"); err != nil {
