@@ -20,7 +20,8 @@ func Redis() *monitoring.Container {
 		Description: "Metrics from both redis databases.",
 		Templates:   nil,
 		Groups: []monitoring.Group{
-			{Title: "Redis Store",
+			{
+				Title: "Redis Store",
 				Hidden: false,
 				Rows: []monitoring.Row{
 					{
