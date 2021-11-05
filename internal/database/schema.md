@@ -79,6 +79,21 @@ Indexes:
 
 ```
 
+# Table "public.batch_spec_execution_cache_entries"
+```
+    Column    |           Type           | Collation | Nullable |                            Default                             
+--------------+--------------------------+-----------+----------+----------------------------------------------------------------
+ id           | bigint                   |           | not null | nextval('batch_spec_execution_cache_entries_id_seq'::regclass)
+ key          | text                     |           | not null | 
+ value        | text                     |           | not null | 
+ version      | integer                  |           | not null | 
+ last_used_at | timestamp with time zone |           |          | 
+ created_at   | timestamp with time zone |           | not null | now()
+Indexes:
+    "batch_spec_execution_cache_entries_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.batch_spec_resolution_jobs"
 ```
       Column       |           Type           | Collation | Nullable |                        Default                         
