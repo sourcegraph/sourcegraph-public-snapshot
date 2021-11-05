@@ -16,13 +16,13 @@ const belowArrowY = 150
 /**
  * Helper function to create "arrows" of the form
  *
- *         |                     |__________/
+ *         |                     |__________|
  *   ______|______                    |
  *  |            |                    |
  *
  * The function takes the X coordinate, the width and the position relative to
  * the input (above/below) as argument and computes the position and dimensions
- * the the four <line>s that make up this "arrow".
+ * of the four <line>s that make up this "arrow".
  */
 // eslint-disable-next-line id-length
 function arrow(x: number, width: number, position: 'above' | 'below'): React.ReactElement {
@@ -56,7 +56,7 @@ function arrow(x: number, width: number, position: 'above' | 'below'): React.Rea
 
 export const AnnotatedSearchInput: React.FunctionComponent<{ className?: string }> = React.memo(({ className }) => (
     // the viewBox is adjusted to "crop" the image to its content
-    // Original widht and height of the image was 800x270
+    // Original width and height of the image was 800x270
     <svg
         className={classNames(styles.annotatedSearchInput, className)}
         width="681"

@@ -63,4 +63,12 @@
             background-color: var(--primary);
         }
     }
+
+    &--non-interactive {
+        cursor: initial;
+
+        &:hover {
+            background-color: transparent;
+        }
+    }
 }

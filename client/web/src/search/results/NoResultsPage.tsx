@@ -9,10 +9,12 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
+import { SearchContextProps } from '..'
 import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
 import { useTemporarySetting } from '../../settings/temporary/useTemporarySetting'
 import { ModalVideo } from '../documentation/ModalVideo'
 import searchBoxStyle from '../input/SearchBox.module.scss'
+import searchContextDropDownStyles from '../input/SearchContextDropdown.module.scss'
 import { Toggles } from '../input/toggles/Toggles'
 
 import { AnnotatedSearchInput } from './AnnotatedSearchExample'
@@ -25,23 +27,13 @@ export enum SectionID {
     VIDEOS = 'videos',
 }
 
-const SearchContext: React.FunctionComponent<{}> = () => (
-    <div className={classNames('search-context-dropdown', styles.searchContext)}>
-        <div className="btn btn-link text-monospace search-context-dropdown__button dropdown-toggle">
-            <code className="search-context-dropdown__button-content">
-                <span className="search-filter-keyword">context:</span>
-                global
-            </code>
-        </div>
-    </div>
-)
-
 const noop = (): void => {}
 
 interface SearchInputExampleProps {
     showSearchContext: boolean
     query: string
     patternType?: SearchPatternType
+    runnable?: boolean
     onRun: () => void
 }
 
@@ -49,62 +41,82 @@ const SearchInputExample: React.FunctionComponent<SearchInputExampleProps> = ({
     showSearchContext,
     query,
     patternType = SearchPatternType.literal,
+    runnable = false,
     onRun,
 }) => {
-    const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
-    return (
-        <div className={styles.searchInputExample}>
-            <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchbox)}>
+    const example = (
+        <div className={classNames(searchBoxStyle.searchBox, styles.fakeSearchbox)}>
+            <div
+                className={classNames(
+                    searchBoxStyle.searchBoxBackgroundContainer,
+                    styles.fakeSearchboxBackgroundContainer,
+                    'flex-shrink-past-contents'
+                )}
+            >
+                {showSearchContext && (
+                    <>
+                        <div className={classNames(searchBoxStyle.searchBoxContextDropdown, styles.fakeSearchContext)}>
+                            <div
+                                className={classNames(
+                                    styles.fakeSearchContextButton,
+                                    searchContextDropDownStyles.button,
+                                    'btn btn-link text-monospace dropdown-toggle'
+                                )}
+                            >
+                                <code className={searchContextDropDownStyles.buttonContent}>
+                                    <span className="search-filter-keyword">context:</span>
+                                    global
+                                </code>
+                            </div>
+                        </div>
+                        <div className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)} />
+                    </>
+                )}
                 <div
                     className={classNames(
-                        searchBoxStyle.searchBoxBackgroundContainer,
-                        styles.fakeSearchboxBackgroundContainer,
+                        searchBoxStyle.searchBoxFocusContainer,
+                        styles.fakeSearchboxFocusContainer,
                         'flex-shrink-past-contents'
                     )}
                 >
-                    {showSearchContext && (
-                        <>
-                            <SearchContext />
-                            <div
-                                className={classNames(searchBoxStyle.searchBoxSeparator, styles.fakeSearchboxSeparator)}
-                            />
-                        </>
-                    )}
                     <div
                         className={classNames(
-                            searchBoxStyle.searchBoxFocusContainer,
-                            styles.fakeSearchboxFocusContainer,
+                            searchBoxStyle.searchBoxInput,
+                            styles.fakeSearchInput,
                             'flex-shrink-past-contents'
                         )}
                     >
-                        <div
-                            className={classNames(
-                                searchBoxStyle.searchBoxInput,
-                                styles.fakeSearchInput,
-                                'flex-shrink-past-contents'
-                            )}
-                        >
-                            <SyntaxHighlightedSearchQuery query={query} />
-                        </div>
-                    </div>
-                    <div className={styles.fakeSearchboxToggles}>
-                        <Toggles
-                            navbarSearchQuery={query}
-                            caseSensitive={false}
-                            patternType={patternType}
-                            setCaseSensitivity={noop}
-                            setPatternType={noop}
-                            settingsCascade={{ subjects: null, final: {} }}
-                            showCopyQueryButton={false}
-                        />
+                        <SyntaxHighlightedSearchQuery query={query} />
                     </div>
                 </div>
+                <div className={styles.fakeSearchboxToggles}>
+                    <Toggles
+                        navbarSearchQuery={query}
+                        caseSensitive={false}
+                        patternType={patternType}
+                        setCaseSensitivity={noop}
+                        setPatternType={noop}
+                        settingsCascade={{ subjects: null, final: {} }}
+                        showCopyQueryButton={false}
+                        interactive={false}
+                    />
+                </div>
             </div>
-            <Link onClick={onRun} className="ml-1 text-nowrap" to={{ pathname: '/search', search: builtURLQuery }}>
-                Run Search
-            </Link>
         </div>
     )
+
+    if (runnable) {
+        const builtURLQuery = buildSearchURLQuery(query, patternType, false, 'global')
+        return (
+            <Link onClick={onRun} to={{ pathname: '/search', search: builtURLQuery }}>
+                <div className={styles.searchInputExample}>
+                    {example}
+                    <span className="ml-2 text-nowrap">Run Search</span>
+                </div>
+            </Link>
+        )
+    }
+    return <div className={styles.searchInputExample}>{example}</div>
 }
 
 interface ContainerProps {
@@ -143,7 +155,7 @@ const Container: React.FunctionComponent<ContainerProps> = ({
 const videos = [
     {
         title: 'Three ways to search',
-        thumbnailPrefix: 'img/watch-and-learn',
+        thumbnailPrefix: 'img/vt-three-ways-to-search',
         src: 'https://www.youtube-nocookie.com/embed/XLfE2YuRwvw',
     },
     {
@@ -163,14 +175,19 @@ const videos = [
     },
 ]
 
-interface NoResultsPageProps extends ThemeProps, TelemetryProps {
-    showSearchContext: boolean
+interface NoResultsPageProps
+    extends ThemeProps,
+        TelemetryProps,
+        Pick<SearchContextProps, 'showSearchContext' | 'searchContextsEnabled'> {
+    isSourcegraphDotCom: boolean
 }
 
 export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
     showSearchContext,
+    searchContextsEnabled,
     isLightTheme,
     telemetryService,
+    isSourcegraphDotCom,
 }) => {
     const [hiddenSectionIDs, setHiddenSectionIds] = useTemporarySetting('search.hiddenNoResultsSections')
 
@@ -185,11 +202,11 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
     )
 
     return (
-        <>
+        <div className={styles.root}>
             <h2>Sourcegraph basics</h2>
-            <div className={styles.root}>
+            <div className={styles.panels}>
                 {!hiddenSectionIDs?.includes(SectionID.VIDEOS) && (
-                    <div className={styles.videoPanel}>
+                    <div className="mr-3">
                         <Container
                             sectionID={SectionID.VIDEOS}
                             title="Video explanations"
@@ -218,7 +235,7 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                         </Container>
                     </div>
                 )}
-                <div className={classNames(styles.mainPanels, 'flex-shrink-past-contents')}>
+                <div className="mr-3 flex-1 flex-shrink-past-contents">
                     {!hiddenSectionIDs?.includes(SectionID.SEARCH_BAR) && (
                         <Container sectionID={SectionID.SEARCH_BAR} title="The search bar" onClose={onClose}>
                             <div className={styles.annotatedSearchInput}>
@@ -246,38 +263,51 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                                 Try searching in regexp mode to match terms independently, similar to an AND search, but
                                 term ordering is maintained.
                             </p>
-                            <SearchInputExample
-                                showSearchContext={showSearchContext}
-                                query="repo:sourcegraph const Authentication"
-                                patternType={SearchPatternType.regexp}
-                                onRun={() =>
-                                    telemetryService.log('NoResultsSearchLiteral', { search: 'regexp search' })
-                                }
-                            />
+                            <p>
+                                <SearchInputExample
+                                    showSearchContext={searchContextsEnabled && showSearchContext}
+                                    query="repo:sourcegraph const Authentication"
+                                    patternType={SearchPatternType.regexp}
+                                    runnable={isSourcegraphDotCom}
+                                    onRun={() =>
+                                        telemetryService.log('NoResultsSearchLiteral', { search: 'regexp search' })
+                                    }
+                                />
+                            </p>
                         </Container>
                     )}
                     {!hiddenSectionIDs?.includes(SectionID.COMMON_PROBLEMS) && (
                         <Container sectionID={SectionID.COMMON_PROBLEMS} title="Common Problems" onClose={onClose}>
                             <h4>Finding a specific repository</h4>
                             <p>Repositories are specified by their org/repository-name convention:</p>
-                            <SearchInputExample
-                                showSearchContext={showSearchContext}
-                                query="repo:sourcegraph/about lang:go publish"
-                                onRun={() =>
-                                    telemetryService.log('NoResultsCommonProblems', { search: 'zfind specific repo' })
-                                }
-                            />
+                            <p>
+                                <SearchInputExample
+                                    showSearchContext={searchContextsEnabled && showSearchContext}
+                                    query="repo:sourcegraph/about lang:go publish"
+                                    runnable={isSourcegraphDotCom}
+                                    onRun={() =>
+                                        telemetryService.log('NoResultsCommonProblems', {
+                                            search: 'zfind specific repo',
+                                        })
+                                    }
+                                />
+                            </p>
                             <p>
                                 To search within all of an org’s repositories, specify only the org name and a trailing
                                 slash:
                             </p>
-                            <SearchInputExample
-                                showSearchContext={showSearchContext}
-                                query="repo:sourcegraph/ lang:go publish"
-                                onRun={() =>
-                                    telemetryService.log('NoResultsCommonProblems', { search: 'find specific repo' })
-                                }
-                            />
+                            <p>
+                                <SearchInputExample
+                                    showSearchContext={searchContextsEnabled && showSearchContext}
+                                    query="repo:sourcegraph/ lang:go publish"
+                                    runnable={isSourcegraphDotCom}
+                                    onRun={() =>
+                                        telemetryService.log('NoResultsCommonProblems', {
+                                            search: 'find specific repo',
+                                        })
+                                    }
+                                />
+                            </p>
                             <p>
                                 <small>
                                     <Link
@@ -291,22 +321,30 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
 
                             <h4>AND, OR, NOT</h4>
                             <p>Conditionals and grouping are possible within queries:</p>
-                            <SearchInputExample
-                                showSearchContext={showSearchContext}
-                                query="repo:sourcegraph/ (lang:typescript OR lang:go) auth"
-                                onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
-                            />
+                            <p>
+                                <SearchInputExample
+                                    showSearchContext={searchContextsEnabled && showSearchContext}
+                                    query="repo:sourcegraph/ (lang:typescript OR lang:go) auth"
+                                    runnable={isSourcegraphDotCom}
+                                    onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'and or' })}
+                                />
+                            </p>
 
                             <h4>Escaping</h4>
                             <p>
                                 Because our default mode is literal, escaping requires a dedicated filter. Use the
                                 content filter to include spaces and filter keywords in searches.
                             </p>
-                            <SearchInputExample
-                                showSearchContext={showSearchContext}
-                                query={'content:"class Vector"'}
-                                onRun={() => telemetryService.log('NoResultsCommonProblems', { search: 'escaping' })}
-                            />
+                            <p>
+                                <SearchInputExample
+                                    showSearchContext={searchContextsEnabled && showSearchContext}
+                                    query={'content:"class Vector"'}
+                                    runnable={isSourcegraphDotCom}
+                                    onRun={() =>
+                                        telemetryService.log('NoResultsCommonProblems', { search: 'escaping' })
+                                    }
+                                />
+                            </p>
                         </Container>
                     )}
 
@@ -351,6 +389,6 @@ export const NoResultsPage: React.FunctionComponent<NoResultsPageProps> = ({
                     )}
                 </div>
             </div>
-        </>
+        </div>
     )
 }
