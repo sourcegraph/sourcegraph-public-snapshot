@@ -37,7 +37,8 @@ func Redis() *monitoring.Container {
 								- Ensure redis-store is running and has not crashed.
 							`,
 							Interpretation: "A value of 1 indicates the service is currently running"},
-					}},
+					}
+				},
 			},
 			{
 				Title:  "Redis Cache",
