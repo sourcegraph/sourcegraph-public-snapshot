@@ -13,7 +13,7 @@ const issueFields = `
 	author { login }
 	assignees(first: 25) { nodes { login } }
 	labels(first: 25) { nodes { name } }
-	milestone { title }
+	milestone { title, number }
 `
 
 const pullRequestFields = issueFields + `

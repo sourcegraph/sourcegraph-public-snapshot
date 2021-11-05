@@ -179,11 +179,11 @@ func readFixturesFile() (trackingIssues []*Issue, issues []*Issue, pullRequests 
 }
 
 func writeFixturesFile(trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) error {
-	contents, err := json.Marshal(FixturePayload{
+	contents, err := json.MarshalIndent(FixturePayload{
 		TrackingIssues: trackingIssues,
 		Issues:         issues,
 		PullRequests:   pullRequests,
-	})
+	}, "", "  ")
 	if err != nil {
 		return err
 	}
