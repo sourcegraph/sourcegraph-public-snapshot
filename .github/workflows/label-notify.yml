@@ -14,7 +14,9 @@ jobs:
                   team/extensibility=@joelkw @muratsu
                   team/frontend-platform=@umpox @valerybugakov @5h1ru @pdubroy @taylorsperry
                   team/cloud=@RafLeszczynski
-                  team/search=@lguychard
+                  team/search-product=@benvenker @lguychard
+                  team/search-core=@jjeffwarner
+                  [deprecated]team/search=@lguychard
                   team/code-intelligence=@macraig
                   team/code-insights=@joelkw @felixfbecker @vovakulikov @unclejustin
                   team/distribution=@dan-mckean
