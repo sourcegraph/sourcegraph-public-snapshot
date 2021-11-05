@@ -362,7 +362,7 @@ export PGSSLMODE=disable`,
 var codeInstructions = []instruction{
 	{
 		prompt:  `Cloning the code`,
-		comment: `Run the following command in a folder where you want to keep a copy of the code. Command will create a new sub-folder (sourcegraph) in this folder.`,
+		comment: `We're going to clone the Sourcegraph repository. Make sure you execute the following command in a folder where you want to keep the repository. Command will create a new sub-folder (sourcegraph) in this folder.`,
 		command: `git clone https://github.com/sourcegraph/sourcegraph.git`,
 	},
 	{
