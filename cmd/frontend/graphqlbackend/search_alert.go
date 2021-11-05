@@ -281,28 +281,6 @@ func alertForMissingRepoRevs(missingRepoRevs []*search.RepositoryRevisions) *sea
 	}
 }
 
-// pathParentsByFrequency returns the most common path parents of the given paths.
-// For example, given paths [a/b a/c x/y], it would return [a x] because "a"
-// is a parent to 2 paths and "x" is a parent to 1 path.
-func pathParentsByFrequency(paths []string) []string {
-	var parents []string
-	parentFreq := map[string]int{}
-	for _, p := range paths {
-		parent := path.Dir(p)
-		if _, seen := parentFreq[parent]; !seen {
-			parents = append(parents, parent)
-		}
-		parentFreq[parent]++
-	}
-
-	sort.Slice(parents, func(i, j int) bool {
-		pi, pj := parents[i], parents[j]
-		fi, fj := parentFreq[pi], parentFreq[pj]
-		return fi > fj || (fi == fj && pi < pj) // freq desc, alpha asc
-	})
-	return parents
-}
-
 func (a searchAlert) wrapResults() *SearchResults {
 	return &SearchResults{Alert: &a}
 }
