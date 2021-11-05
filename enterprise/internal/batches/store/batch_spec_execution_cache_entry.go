@@ -124,7 +124,7 @@ func getBatchSpecExecutionCacheEntryQuery(opts *GetBatchSpecExecutionCacheEntryO
 	)
 }
 
-const markSkippedBatchSpecExecutionCacheEntrysQueryFmtstr = `
+const markUsedBatchSpecExecutionCacheEntryQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_execution_cache_entry.go:MarkUsedBatchSpecExecutionCacheEntry
 UPDATE
 	batch_spec_execution_cache_entries
@@ -141,7 +141,7 @@ func (s *Store) MarkUsedBatchSpecExecutionCacheEntry(ctx context.Context, id int
 	defer endObservation(1, observation.Args{})
 
 	q := sqlf.Sprintf(
-		markSkippedBatchSpecExecutionCacheEntrysQueryFmtstr,
+		markUsedBatchSpecExecutionCacheEntryQueryFmtstr,
 		s.now(),
 		id,
 	)
