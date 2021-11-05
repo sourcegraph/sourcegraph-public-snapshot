@@ -64,8 +64,8 @@ func HandleSiteInit(db database.DB) http.HandlerFunc {
 
 // checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
 // of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, db dbutil.DB, addr string) (abused bool, reason string, err error) {
-	email, err := database.UserEmails(db).GetLatestVerificationSentEmail(ctx, addr)
+func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused bool, reason string, err error) {
+	email, err := db.UserEmails().GetLatestVerificationSentEmail(ctx, addr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return false, "", nil
