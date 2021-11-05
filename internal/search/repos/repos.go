@@ -83,13 +83,10 @@ func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (
 				break
 			}
 		}
-
 		tr.LazyPrintf("resolved %d repos, %d missing", len(page.RepoRevs), len(page.MissingRepoRevs))
 
-		if r.Stream != nil {
-			r.Stream.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: page.RepoSet}})
-			tr.LazyPrintf("sent stats (repos %d) ", len(page.RepoSet))
-		}
+		r.Stream.Send(streaming.SearchEvent{Stats: streaming.Stats{Repos: page.RepoSet}})
+		tr.LazyPrintf("sent stats (repos %d) ", len(page.RepoSet))
 
 		if err = handle(&page); err != nil {
 			errs = multierror.Append(errs, err)
