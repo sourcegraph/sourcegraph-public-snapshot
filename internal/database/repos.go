@@ -151,10 +151,6 @@ func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 	}
 
 	repo := repos[0]
-	if repo.Private {
-		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, s.Handle().DB(), []api.RepoID{repo.ID})
-	}
 
 	return repo, repo.IsBlocked()
 }
