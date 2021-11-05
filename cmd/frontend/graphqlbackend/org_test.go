@@ -4,9 +4,12 @@ import (
 	"context"
 	"testing"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
@@ -41,15 +44,15 @@ func TestOrganization(t *testing.T) {
 	})
 }
 
-func TestOrganizationRepositories(t *testing.T) {
+func TestOrganizationRepositories_enterprise(t *testing.T) {
 	orgs := dbmock.NewMockOrgStore()
 	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
-
+	repo := &types.Repo{
+		Name: "acme-repo",
+	}
 	database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) (repos []*types.Repo, err error) {
 		return []*types.Repo{
-			{
-				Name: "acme-repo",
-			},
+			repo,
 		}, nil
 	}
 
@@ -72,7 +75,13 @@ func TestOrganizationRepositories(t *testing.T) {
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schema: func() *graphql.Schema {
+				parsedSchema, parseSchemaErr := NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, &fakeOrgRepoResolver{db: db, repo: repo})
+				if parseSchemaErr != nil {
+					t.Fatal(parseSchemaErr)
+				}
+				return parsedSchema
+			}(),
 			Query: `
 				{
 					organization(name: "acme") {
@@ -97,6 +106,63 @@ func TestOrganizationRepositories(t *testing.T) {
 					}
 				}
 			`,
+			Context: ctx,
+		},
+	})
+}
+
+func TestOrganizationRepositories_oss(t *testing.T) {
+	db := database.NewDB(nil)
+	resetMocks()
+	database.Mocks.Orgs.GetByName = func(context.Context, string) (*types.Org, error) {
+		return &types.Org{ID: 1, Name: "acme"}, nil
+	}
+	database.Mocks.Repos.List = func(context.Context, database.ReposListOptions) (repos []*types.Repo, err error) {
+		return []*types.Repo{
+			{
+				Name: "acme-repo",
+			},
+		}, nil
+	}
+	database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
+		return &types.User{ID: 1}, nil
+	}
+	database.Mocks.OrgMembers.GetByOrgIDAndUserID = func(ctx context.Context, orgID, userID int32) (*types.OrgMembership, error) {
+		return &types.OrgMembership{
+			OrgID:  1,
+			UserID: 1,
+		}, nil
+	}
+	database.Mocks.FeatureFlags.GetOrgFeatureFlag = func(ctx context.Context, orgID int32, flagName string) (bool, error) {
+		return true, nil
+	}
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+	defer func() {
+		resetMocks()
+	}()
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					organization(name: "acme") {
+						name,
+						repositories {
+							nodes {
+								name
+							}
+						}
+					}
+				}
+			`,
+			ExpectedErrors: []*errors.QueryError{{
+				Message:   `Cannot query field "repositories" on type "Org".`,
+				Locations: []errors.Location{{Line: 5, Column: 7}},
+				Rule:      "FieldsOnCorrectType",
+			}},
 			Context: ctx,
 		},
 	})
@@ -147,4 +213,26 @@ func TestUnmarshalOrgID(t *testing.T) {
 		_, err := UnmarshalOrgID(namespaceOrgID)
 		assert.Error(t, err)
 	})
+}
+
+type fakeOrgRepoResolver struct {
+	db   database.DB
+	repo *types.Repo
+}
+
+func (r *fakeOrgRepoResolver) OrgRepositories(ctx context.Context, args *ListOrgRepositoriesArgs, org *types.Org, resolverFn func(database.DB, database.ReposListOptions, *ListOrgRepositoriesArgs) RepositoryConnectionResolver) (RepositoryConnectionResolver, error) {
+	return r, nil
+}
+
+func (r fakeOrgRepoResolver) Nodes(ctx context.Context) ([]*RepositoryResolver, error) {
+	return []*RepositoryResolver{NewRepositoryResolver(r.db, r.repo)}, nil
+}
+
+func (r fakeOrgRepoResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error) {
+	one := int32(1)
+	return &one, nil
+}
+
+func (r fakeOrgRepoResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	return nil, nil
 }
