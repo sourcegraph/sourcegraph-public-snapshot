@@ -2386,7 +2386,7 @@ To learn more about Sourcegraph's alerting and how to set up alerts, see [our al
 
 **Possible solutions**
 
-- Ensure redis-store is running and has not crashed.
+- Ensure redis-store is running
 - More help interpreting this metric is available in the [dashboards reference](./dashboards.md#redis-redis-store-up).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 

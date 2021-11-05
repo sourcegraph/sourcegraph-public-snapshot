@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -15,13 +14,13 @@ func Redis() *monitoring.Container {
 	)
 
 	return &monitoring.Container{
-		Name:        "redis",
-		Title:       "Redis",
-		Description: "Metrics from both redis databases.",
-		Templates:   nil,
+		Name:                     "redis",
+		Title:                    "Redis",
+		Description:              "Metrics from both redis databases.",
+		NoSourcegraphDebugServer: true, // This is third-party service
 		Groups: []monitoring.Group{
 			{
-				Title: "Redis Store",
+				Title:  "Redis Store",
 				Hidden: false,
 				Rows: []monitoring.Row{
 					{
@@ -36,8 +35,9 @@ func Redis() *monitoring.Container {
 							PossibleSolutions: `
 								- Ensure redis-store is running
 							`,
-							Interpretation: "A value of 1 indicates the service is currently running"},
-					}
+							Interpretation: "A value of 1 indicates the service is currently running",
+						},
+					},
 				},
 			},
 			{
@@ -56,9 +56,9 @@ func Redis() *monitoring.Container {
 							PossibleSolutions: `
 								- Ensure redis-cache is running
 							`,
-							Interpretation: "A value of 1 indicates the service is currently running"
+							Interpretation: "A value of 1 indicates the service is currently running",
 						},
-					}
+					},
 				},
 			},
 			shared.NewProvisioningIndicatorsGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
@@ -66,7 +66,5 @@ func Redis() *monitoring.Container {
 			shared.NewKubernetesMonitoringGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewKubernetesMonitoringGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
 		},
-
-		NoSourcegraphDebugServer: false,
 	}
 }
