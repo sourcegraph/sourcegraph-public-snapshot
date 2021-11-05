@@ -55,7 +55,8 @@ func Redis() *monitoring.Container {
 								- Ensure redis-cache is running
 							`,
 							Interpretation: "A value of 1 indicates the service is currently running"},
-					}},
+					}
+				},
 			},
 			shared.NewProvisioningIndicatorsGroup(redisCache, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(redisStore, monitoring.ObservableOwnerDevOps, nil),
