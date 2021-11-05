@@ -41,7 +41,8 @@ var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionU
 var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
 
 type insightViewResolver struct {
-	view *types.Insight
+	view            *types.Insight
+	overrideFilters *types.InsightViewFilters
 
 	baseInsightResolver
 }
@@ -53,33 +54,45 @@ func (i *insightViewResolver) ID() graphql.ID {
 }
 
 func (i *insightViewResolver) DefaultFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
-	return &insightViewFiltersResolver{view: i.view}, nil
+	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
 type insightViewFiltersResolver struct {
-	view *types.Insight
+	filters *types.InsightViewFilters
 }
 
 func (i *insightViewFiltersResolver) IncludeRepoRegex(ctx context.Context) (*string, error) {
-	return i.view.Filters.IncludeRepoRegex, nil
+	return i.filters.IncludeRepoRegex, nil
 }
 
 func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*string, error) {
-	return i.view.Filters.ExcludeRepoRegex, nil
+	return i.filters.ExcludeRepoRegex, nil
 }
 
 func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
-	panic("implement me")
+	if i.overrideFilters != nil {
+		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
+	}
+	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
 func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
 	var resolvers []graphqlbackend.InsightSeriesResolver
+
+	var filters *types.InsightViewFilters
+	if i.overrideFilters != nil {
+		filters = i.overrideFilters
+	} else {
+		filters = &i.view.Filters
+	}
+
 	for j := range i.view.Series {
 		resolvers = append(resolvers, &insightSeriesResolver{
 			insightsStore:   i.timeSeriesStore,
 			workerBaseStore: i.workerBaseStore,
 			series:          i.view.Series[j],
 			metadataStore:   i.insightStore,
+			filters:         *filters,
 		})
 	}
 
@@ -199,23 +212,9 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 
 	for _, series := range args.Input.DataSeries {
-		created, err := tx.CreateSeries(ctx, types.InsightSeries{
-			SeriesID:            ksuid.New().String(), // ignoring sharing data series for now, we will just always generate unique series
-			Query:               series.Query,
-			CreatedAt:           time.Now(),
-			Repositories:        series.RepositoryScope.Repositories,
-			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
-			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
-		})
+		err = createAndAttachSeries(ctx, tx, view, series)
 		if err != nil {
-			return nil, errors.Wrap(err, "CreateSeries")
-		}
-		err = tx.AttachSeriesToView(ctx, created, view, types.InsightViewSeriesMetadata{
-			Label:  emptyIfNil(series.Options.Label),
-			Stroke: emptyIfNil(series.Options.LineColor),
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "AttachSeriesToView")
+			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
 	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: view.UniqueID}, nil
@@ -236,7 +235,15 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	// TODO: Check permissions #25971
 
-	_, err = tx.UpdateView(ctx, types.InsightView{
+	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetMapped")
+	}
+	if len(views) == 0 {
+		return nil, errors.New("No insight view found with this id")
+	}
+
+	view, err := tx.UpdateView(ctx, types.InsightView{
 		UniqueID: insightViewId,
 		Title:    emptyIfNil(args.Input.PresentationOptions.Title),
 		Filters: types.InsightViewFilters{
@@ -247,8 +254,55 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		return nil, errors.Wrap(err, "UpdateView")
 	}
 
-	// TODO: Update data series here #25979
+	for _, existingSeries := range views[0].Series {
+		if !seriesFound(existingSeries, args.Input.DataSeries) {
+			err = tx.RemoveSeriesFromView(ctx, existingSeries.SeriesID, view.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "RemoveSeriesFromView")
+			}
+		}
+	}
 
+	for _, series := range args.Input.DataSeries {
+		if series.SeriesId == nil {
+			err = createAndAttachSeries(ctx, tx, view, series)
+			if err != nil {
+				return nil, errors.Wrap(err, "createAndAttachSeries")
+			}
+		} else {
+			// If it's a frontend series, we can just update it.
+			existingRepos := getExistingSeriesRepositories(*series.SeriesId, views[0].Series)
+			if len(series.RepositoryScope.Repositories) > 0 && len(existingRepos) > 0 {
+				err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
+					SeriesID:          *series.SeriesId,
+					Query:             series.Query,
+					Repositories:      series.RepositoryScope.Repositories,
+					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
+					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
+				})
+				if err != nil {
+					return nil, errors.Wrap(err, "UpdateFrontendSeries")
+				}
+			} else {
+				err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
+				if err != nil {
+					return nil, errors.Wrap(err, "RemoveViewSeries")
+				}
+				err = createAndAttachSeries(ctx, tx, view, series)
+				if err != nil {
+					return nil, errors.Wrap(err, "createAndAttachSeries")
+				}
+			}
+
+			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
+				Label:  emptyIfNil(series.Options.Label),
+				Stroke: emptyIfNil(series.Options.LineColor),
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "UpdateViewSeries")
+			}
+		}
+	}
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, viewId: insightViewId}, nil
 }
 
@@ -335,7 +389,14 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 		return nil, err
 	}
 	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
+		if d.args.Filters != nil {
+			resolver.overrideFilters = &types.InsightViewFilters{
+				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
+				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
+			}
+		}
+		resolvers = append(resolvers, resolver)
 	}
 	return resolvers, nil
 }
@@ -399,4 +460,70 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		}
 	})
 	return r.views, r.next, r.err
+}
+
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	var seriesToAdd, matchingSeries types.InsightSeries
+	var foundSeries bool
+	var err error
+
+	// Don't try to match on frontend series
+	if len(series.RepositoryScope.Repositories) == 0 {
+		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+			Query:             series.Query,
+			StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
+			StepIntervalValue: int(series.TimeScope.StepInterval.Value)})
+		if err != nil {
+			return errors.Wrap(err, "FindMatchingSeries")
+		}
+	}
+
+	if !foundSeries {
+		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
+			SeriesID:            ksuid.New().String(),
+			Query:               series.Query,
+			CreatedAt:           time.Now(),
+			Repositories:        series.RepositoryScope.Repositories,
+			SampleIntervalUnit:  series.TimeScope.StepInterval.Unit,
+			SampleIntervalValue: int(series.TimeScope.StepInterval.Value),
+		})
+		if err != nil {
+			return errors.Wrap(err, "CreateSeries")
+		}
+	} else {
+		seriesToAdd = matchingSeries
+	}
+
+	// BUG: If the user tries to attach the same series (the same query and timescope) to an insight view multiple times,
+	// this will fail because it violates the unique key constraint. This will be solved by: #26905
+	// Alternately we could detect this and return an error?
+	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{
+		Label:  emptyIfNil(series.Options.Label),
+		Stroke: emptyIfNil(series.Options.LineColor),
+	})
+	if err != nil {
+		return errors.Wrap(err, "AttachSeriesToView")
+	}
+	return nil
+}
+
+func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
+	for i := range inputSeries {
+		if inputSeries[i].SeriesId == nil {
+			continue
+		}
+		if existingSeries.SeriesID == *inputSeries[i].SeriesId {
+			return true
+		}
+	}
+	return false
+}
+
+func getExistingSeriesRepositories(seriesId string, existingSeries []types.InsightViewSeries) []string {
+	for i := range existingSeries {
+		if existingSeries[i].SeriesID == seriesId {
+			return existingSeries[i].Repositories
+		}
+	}
+	return nil
 }

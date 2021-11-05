@@ -71,6 +71,10 @@ export function computeContext<T>(
         data['resource.extname'] = extname(component.resource)
         data['resource.language'] = component.model.languageId
         data['resource.type'] = 'textDocument'
+        const resourceURL = new URL(component.resource)
+        data['resource.repo'] = `${resourceURL.hostname}${resourceURL.pathname}`
+        data['resource.commit'] = resourceURL.search.slice(1)
+        data['resource.path'] = resourceURL.hash.slice(1)
 
         data['component.type'] = 'CodeEditor'
         // See above for why we disable eslint rules related to `any`.

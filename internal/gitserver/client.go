@@ -61,13 +61,11 @@ func ResetClientMocks() {
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
 func NewClient(cli httpcli.Doer) *Client {
-	// Temporarily add a SubRepoPermissionsChecker that gives access to all sub-repo
-	// content
-	pc := authz.NewMockSubRepoPermissionChecker()
-	pc.CurrentUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, content authz.RepoContent) (authz.Perms, error) {
-		return authz.Read, nil
-	})
-
+	// TODO: Supply implementations
+	pc := &authz.SubRepoPermsClient{
+		SupportedChecker:  nil,
+		PermissionsGetter: nil,
+	}
 	return &Client{
 		Addrs: func() []string {
 			return conf.Get().ServiceConnections.GitServers

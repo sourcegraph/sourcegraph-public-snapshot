@@ -184,7 +184,7 @@ export const GitCommitNode: React.FunctionComponent<GitCommitNodeProps> = ({
                 data-tooltip="View files at this commit"
             >
                 <FileDocumentIcon className="icon-inline mr-1" />
-                'View files in commit'
+                View files in commit
             </Link>
             {diffModeSelector()}
         </div>

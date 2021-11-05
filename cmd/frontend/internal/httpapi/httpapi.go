@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -60,14 +62,17 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 	}
 
 	webhookhandlers.Init(db, &gh)
+	webhookMiddleware := webhooks.NewLogMiddleware(
+		database.WebhookLogs(db, keyring.Default().WebhookLogKey),
+	)
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(&gh))
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 
 	githubWebhook.Register(&gh)
 
-	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(&gh))
-	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(gitlabWebhook))
-	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(bitbucketServerWebhook))
+	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
+	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(gitlabWebhook)))
+	m.Get(apirouter.BitbucketServerWebhooks).Handler(trace.Route(webhookMiddleware.Logger(bitbucketServerWebhook)))
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
 
 	if envvar.SourcegraphDotComMode() {
@@ -98,7 +103,7 @@ func NewHandler(db dbutil.DB, m *mux.Router, schema *graphql.Schema, githubWebho
 // 🚨 SECURITY: This handler should not be served on a publicly exposed port. 🚨
 // This handler is not guaranteed to provide the same authorization checks as
 // public API handlers.
-func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+func NewInternalHandler(m *mux.Router, db database.DB, schema *graphql.Schema, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
 	if m == nil {
 		m = apirouter.New(nil)
 	}
@@ -113,14 +118,16 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.ExternalServicesList).Handler(trace.Route(handler(serveExternalServicesList(db))))
 	m.Get(apirouter.PhabricatorRepoCreate).Handler(trace.Route(handler(servePhabricatorRepoCreate(db))))
 
-	reposStore := database.Repos(db)
-	reposList := &reposListServer{
-		ListIndexable:      backend.Repos.ListIndexable,
-		StreamMinimalRepos: reposStore.StreamMinimalRepos,
-		Indexers:           search.Indexers(),
+	// zoekt-indexserver endpoints
+	indexer := &searchIndexerServer{
+		ListIndexable:       backend.Repos.ListIndexable,
+		RepoStore:           database.Repos(db),
+		SearchContextsStore: database.SearchContexts(db),
+		Indexers:            search.Indexers(),
 	}
+	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(indexer.serveConfiguration)))
+	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(indexer.serveList)))
 
-	m.Get(apirouter.ReposIndex).Handler(trace.Route(handler(reposList.serveIndex)))
 	m.Get(apirouter.ReposListEnabled).Handler(trace.Route(handler(serveReposListEnabled(db))))
 	m.Get(apirouter.ReposGetByName).Handler(trace.Route(handler(serveReposGetByName)))
 	m.Get(apirouter.SettingsGetForSubject).Handler(trace.Route(handler(serveSettingsGetForSubject(db))))
@@ -146,7 +153,6 @@ func NewInternalHandler(m *mux.Router, db dbutil.DB, schema *graphql.Schema, new
 	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
-	m.Get(apirouter.SearchConfiguration).Handler(trace.Route(handler(serveSearchConfiguration(db))))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(database.NewDB(db))))
 

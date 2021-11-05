@@ -182,16 +182,19 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 	go func() {
 		defer close(monikerDefsChan)
 
-		for scheme, identMap := range maps.Definitions {
-			for ident, locations := range identMap {
-				select {
-				case monikerDefsChan <- MonikerLocations{
-					Scheme:     scheme,
-					Identifier: ident,
-					Locations:  locations,
-				}:
-				case <-ctx.Done():
-					return
+		for kind, kindMap := range maps.Definitions {
+			for scheme, identMap := range kindMap {
+				for ident, locations := range identMap {
+					select {
+					case monikerDefsChan <- MonikerLocations{
+						Kind:       kind,
+						Scheme:     scheme,
+						Identifier: ident,
+						Locations:  locations,
+					}:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		}
@@ -200,16 +203,19 @@ func GroupedBundleDataMapsToChans(ctx context.Context, maps *GroupedBundleDataMa
 	go func() {
 		defer close(monikerRefsChan)
 
-		for scheme, identMap := range maps.References {
-			for ident, locations := range identMap {
-				select {
-				case monikerRefsChan <- MonikerLocations{
-					Scheme:     scheme,
-					Identifier: ident,
-					Locations:  locations,
-				}:
-				case <-ctx.Done():
-					return
+		for kind, kindMap := range maps.References {
+			for scheme, identMap := range kindMap {
+				for ident, locations := range identMap {
+					select {
+					case monikerRefsChan <- MonikerLocations{
+						Kind:       kind,
+						Scheme:     scheme,
+						Identifier: ident,
+						Locations:  locations,
+					}:
+					case <-ctx.Done():
+						return
+					}
 				}
 			}
 		}
@@ -236,19 +242,25 @@ func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleD
 	for indexedResultChunk := range chans.ResultChunks {
 		resultChunkMap[indexedResultChunk.Index] = indexedResultChunk.ResultChunk
 	}
-	monikerDefsMap := make(map[string]map[string][]LocationData)
+	monikerDefsMap := make(map[string]map[string]map[string][]LocationData)
 	for monikerDefs := range chans.Definitions {
-		if _, exists := monikerDefsMap[monikerDefs.Scheme]; !exists {
-			monikerDefsMap[monikerDefs.Scheme] = make(map[string][]LocationData)
+		if _, exists := monikerDefsMap[monikerDefs.Kind]; !exists {
+			monikerDefsMap[monikerDefs.Kind] = make(map[string]map[string][]LocationData)
 		}
-		monikerDefsMap[monikerDefs.Scheme][monikerDefs.Identifier] = monikerDefs.Locations
+		if _, exists := monikerDefsMap[monikerDefs.Kind][monikerDefs.Scheme]; !exists {
+			monikerDefsMap[monikerDefs.Kind][monikerDefs.Scheme] = make(map[string][]LocationData)
+		}
+		monikerDefsMap[monikerDefs.Kind][monikerDefs.Scheme][monikerDefs.Identifier] = monikerDefs.Locations
 	}
-	monikerRefsMap := make(map[string]map[string][]LocationData)
+	monikerRefsMap := make(map[string]map[string]map[string][]LocationData)
 	for monikerRefs := range chans.References {
-		if _, exists := monikerRefsMap[monikerRefs.Scheme]; !exists {
-			monikerRefsMap[monikerRefs.Scheme] = make(map[string][]LocationData)
+		if _, exists := monikerRefsMap[monikerRefs.Kind]; !exists {
+			monikerRefsMap[monikerRefs.Kind] = make(map[string]map[string][]LocationData)
 		}
-		monikerRefsMap[monikerRefs.Scheme][monikerRefs.Identifier] = monikerRefs.Locations
+		if _, exists := monikerRefsMap[monikerRefs.Kind][monikerRefs.Scheme]; !exists {
+			monikerRefsMap[monikerRefs.Kind][monikerRefs.Scheme] = make(map[string][]LocationData)
+		}
+		monikerRefsMap[monikerRefs.Kind][monikerRefs.Scheme][monikerRefs.Identifier] = monikerRefs.Locations
 	}
 
 	return &GroupedBundleDataMaps{

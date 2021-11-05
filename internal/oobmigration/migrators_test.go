@@ -1,4 +1,4 @@
-package database
+package oobmigration
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -70,7 +71,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -132,7 +133,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -200,7 +201,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -261,7 +262,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -292,7 +293,7 @@ func TestExternalServiceConfigMigrator(t *testing.T) {
 			return &conf.Unified{}
 		}
 		for _, svc := range svcs {
-			if err := ExternalServices(db).Create(ctx, confGet, svc); err != nil {
+			if err := database.ExternalServices(db).Create(ctx, confGet, svc); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -394,7 +395,7 @@ func TestExternalAccountsMigrator(t *testing.T) {
 				AuthData: &authData,
 				Data:     &data,
 			}
-			_, err := ExternalAccounts(db).CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u-%d", i)}, spec, accData)
+			_, err := database.ExternalAccounts(db).CreateUserAndSave(ctx, database.NewUser{Username: fmt.Sprintf("u-%d", i)}, spec, accData)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -675,7 +676,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		t.Helper()
 		var svcs []*types.ExternalService
 
-		es := ExternalServices(db)
+		es := database.ExternalServices(db)
 		basestore := basestore.NewWithDB(db, sql.TxOptions{})
 
 		// Create a trivial external service of each kind, as well as duplicate
@@ -830,7 +831,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 	t.Run("Up", func(t *testing.T) {
 		db := dbtest.NewDB(t)
 		initSvcs := createExternalServices(t, ctx, db)
-		es := ExternalServices(db)
+		es := database.ExternalServices(db)
 
 		m := NewExternalServiceWebhookMigratorWithDB(db)
 		// Ensure that we have to run two Ups.
@@ -846,16 +847,16 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		assert.Nil(t, m.Up(ctx))
 
 		// Do we really have one external service left?
-		after, err := es.List(ctx, ExternalServicesListOptions{
-			noCachedWebhooks: true,
+		after, err := es.List(ctx, database.ExternalServicesListOptions{
+			NoCachedWebhooks: true,
 		})
 		assert.Nil(t, err)
 		assert.EqualValues(t, 1, len(after))
 
 		// Now we'll do the last one.
 		assert.Nil(t, m.Up(ctx))
-		after, err = es.List(ctx, ExternalServicesListOptions{
-			noCachedWebhooks: true,
+		after, err = es.List(ctx, database.ExternalServicesListOptions{
+			NoCachedWebhooks: true,
 		})
 		assert.Nil(t, err)
 		assert.EqualValues(t, 0, len(after))
@@ -863,7 +864,7 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 		// Finally, let's make sure we have the expected number of each: we
 		// should have three records with has_webhooks = true, and the rest
 		// should be has_webhooks = false.
-		svcs, err := es.List(ctx, ExternalServicesListOptions{})
+		svcs, err := es.List(ctx, database.ExternalServicesListOptions{})
 		assert.Nil(t, err)
 
 		hasWebhooks := 0

@@ -11,24 +11,24 @@
  * action icon. */
 export type BrowserActionIconState = 'active' | 'active-with-alert' | 'inactive'
 interface BrowserActionIconPaths {
-    '16': string
+    '32': string
     '48': string
     '128': string
 }
 
 const browserActionIconPaths: Record<BrowserActionIconState, BrowserActionIconPaths> = {
     active: {
-        '16': 'img/icon-16.png',
+        '32': 'img/icon-32.png',
         '48': 'img/icon-48.png',
         '128': 'img/icon-128.png',
     },
     'active-with-alert': {
-        '16': 'img/icon-active-with-alert-16.png',
+        '32': 'img/icon-active-with-alert-32.png',
         '48': 'img/icon-active-with-alert-48.png',
         '128': 'img/icon-active-with-alert-128.png',
     },
     inactive: {
-        '16': 'img/icon-inactive-16.png',
+        '32': 'img/icon-inactive-32.png',
         '48': 'img/icon-inactive-48.png',
         '128': 'img/icon-inactive-128.png',
     },

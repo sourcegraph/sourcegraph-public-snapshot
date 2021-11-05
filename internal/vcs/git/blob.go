@@ -92,7 +92,7 @@ func newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, 
 		return nil, err
 	}
 
-	perms, err := gitserver.DefaultClient.SubRepoPermissionsChecker.CurrentUserPermissions(ctx, authz.RepoContent{
+	perms, err := authz.CurrentUserPermissions(ctx, gitserver.DefaultClient.SubRepoPermissionsChecker, authz.RepoContent{
 		Repo: repo,
 		Path: name,
 	})

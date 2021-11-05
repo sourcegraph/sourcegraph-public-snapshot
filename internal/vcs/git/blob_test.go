@@ -6,6 +6,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+
+	"github.com/sourcegraph/sourcegraph/schema"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -83,14 +89,22 @@ func TestRead(t *testing.T) {
 func TestReadEnforcesSubRepoPermissions(t *testing.T) {
 	// Cannot run in parallel since we need a custom gitserver.DefaultClient
 	oldClient := gitserver.DefaultClient
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableSubRepoPermissions: true,
+			},
+		},
+	})
 	t.Cleanup(func() {
 		gitserver.DefaultClient = oldClient
+		conf.Mock(nil)
 	})
 
 	newClient := gitserver.NewClient(oldClient.HTTPClient)
 	newClient.Addrs = oldClient.Addrs
 	mc := authz.NewMockSubRepoPermissionChecker()
-	mc.CurrentUserPermissionsFunc.SetDefaultHook(func(ctx context.Context, content authz.RepoContent) (authz.Perms, error) {
+	mc.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
 		if content.Path == "file1" {
 			return authz.Read, nil
 		}
@@ -107,6 +121,9 @@ func TestReadEnforcesSubRepoPermissions(t *testing.T) {
 	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
 
 	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
 
 	tests := map[string]struct {
 		file    string

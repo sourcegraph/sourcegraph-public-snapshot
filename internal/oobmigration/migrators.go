@@ -1,4 +1,4 @@
-package database
+package oobmigration
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -252,7 +252,7 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := ExternalAccountsWith(tx)
+	store := database.ExternalAccountsWith(tx)
 	accounts, err := store.ListBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id = '' AND (account_data IS NOT NULL OR auth_data IS NOT NULL) ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
@@ -313,6 +313,10 @@ func (m *ExternalAccountsMigrator) Up(ctx context.Context) (err error) {
 	return nil
 }
 
+func strptr(s string) *string {
+	return &s
+}
+
 func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 	key := keyring.Default().UserExternalAccountKey
 	if key == nil {
@@ -331,7 +335,7 @@ func (m *ExternalAccountsMigrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := ExternalAccountsWith(tx)
+	store := database.ExternalAccountsWith(tx)
 	accounts, err := store.ListBySQL(ctx, sqlf.Sprintf("WHERE encryption_key_id != '' ORDER BY id ASC LIMIT %s FOR UPDATE SKIP LOCKED", m.BatchSize))
 	if err != nil {
 		return err
@@ -358,7 +362,7 @@ type ExternalServiceWebhookMigrator struct {
 	BatchSize int
 }
 
-var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
+var _ Migrator = &ExternalServiceWebhookMigrator{}
 
 func NewExternalServiceWebhookMigrator(store *basestore.Store) *ExternalServiceWebhookMigrator {
 	// Batch size arbitrarily chosen to match ExternalServiceConfigMigrator.
@@ -401,13 +405,13 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := ExternalServicesWith(tx)
+	store := database.ExternalServicesWith(tx)
 
-	svcs, err := store.List(ctx, ExternalServicesListOptions{
+	svcs, err := store.List(ctx, database.ExternalServicesListOptions{
 		OrderByDirection: "ASC",
-		LimitOffset:      &LimitOffset{Limit: m.BatchSize},
-		noCachedWebhooks: true,
-		forUpdate:        true,
+		LimitOffset:      &database.LimitOffset{Limit: m.BatchSize},
+		NoCachedWebhooks: true,
+		ForUpdate:        true,
 	})
 	if err != nil {
 		return err

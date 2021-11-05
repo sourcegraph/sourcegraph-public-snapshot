@@ -57,6 +57,7 @@ type LSIFStore interface {
 	WriteResultChunks(ctx context.Context, bundleID int, resultChunks chan precise.IndexedResultChunkData) error
 	WriteDefinitions(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
 	WriteReferences(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
+	WriteImplementations(ctx context.Context, bundleID int, monikerLocations chan precise.MonikerLocations) error
 	WriteDocumentationPages(ctx context.Context, upload dbstore.Upload, repo *types.Repo, isDefaultBranch bool, documentation chan *precise.DocumentationPageData, repositoryNameID int, languageNameID int) error
 	WriteDocumentationPathInfo(ctx context.Context, bundleID int, documentation chan *precise.DocumentationPathInfoData) error
 	WriteDocumentationMappings(ctx context.Context, bundleID int, mappings chan precise.DocumentationMapping) error
