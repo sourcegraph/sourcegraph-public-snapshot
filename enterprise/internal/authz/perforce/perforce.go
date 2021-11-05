@@ -182,7 +182,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 // FetchUserPermsByToken is the same as FetchUserPerms, but it only requires a
 // token.
 func (p *Provider) FetchUserPermsByToken(ctx context.Context, token string, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	return nil, errors.New("not implemented")
+	return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchUserPermsByToken"}
 }
 
 // getAllUserEmails returns a set of username <-> email pairs of all users in the Perforce server.
@@ -284,6 +284,11 @@ func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, 
 	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
 		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
 			repo.ServiceID, p.codeHost.ServiceID)
+	}
+
+	// Disable FetchRepoPerms until we implement sub-repo permissions for it.
+	if len(p.depots) > 0 {
+		return nil, &authz.ErrUnimplemented{Feature: "perforce.FetchRepoPerms for sub-repo permissions"}
 	}
 
 	// -a : Displays protection lines for all users. This option requires super
