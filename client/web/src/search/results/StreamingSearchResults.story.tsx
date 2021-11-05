@@ -65,6 +65,8 @@ const defaultProps: StreamingSearchResultsProps = {
     featureFlags: EMPTY_FEATURE_FLAGS,
     extensionViews: () => null,
     isSourcegraphDotCom: false,
+    showSearchContext: true,
+    searchContextsEnabled: true,
 }
 
 const { add } = storiesOf('web/search/results/StreamingSearchResults', module).addParameters({

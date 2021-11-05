@@ -23,20 +23,24 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
+import { SearchContextProps } from '..'
 import { SearchResult } from '../../components/SearchResult'
 
+import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 
 const initialItemsToShow = 15
 const incrementalItemsToShow = 10
 
-export interface StreamingSearchResultsListProps extends ThemeProps, SettingsCascadeProps, TelemetryProps {
+export interface StreamingSearchResultsListProps
+    extends ThemeProps,
+        SettingsCascadeProps,
+        TelemetryProps,
+        Pick<SearchContextProps, 'searchContextsEnabled' | 'showSearchContext'> {
+    isSourcegraphDotCom: boolean
     results?: AggregateStreamingSearchResults
-
     location: H.Location
-
     allExpanded: boolean
-
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 
@@ -47,6 +51,10 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
     fetchHighlightedFileLineRanges,
     settingsCascade,
     telemetryService,
+    isLightTheme,
+    isSourcegraphDotCom,
+    searchContextsEnabled,
+    showSearchContext,
 }) => {
     const [itemsToShow, setItemsToShow] = useState(initialItemsToShow)
     const onBottomHit = useCallback(
@@ -117,7 +125,21 @@ export const StreamingSearchResultsList: React.FunctionComponent<StreamingSearch
                 renderItem={renderResult}
             />
 
-            {itemsToShow >= (results?.results.length || 0) && <StreamingSearchResultFooter results={results} />}
+            {itemsToShow >= (results?.results.length || 0) && (
+                <StreamingSearchResultFooter results={results}>
+                    <>
+                        {results?.state === 'complete' && results?.results.length === 0 && (
+                            <NoResultsPage
+                                searchContextsEnabled={searchContextsEnabled}
+                                showSearchContext={showSearchContext}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                isLightTheme={isLightTheme}
+                                telemetryService={telemetryService}
+                            />
+                        )}
+                    </>
+                </StreamingSearchResultFooter>
+            )}
         </>
     )
 }
