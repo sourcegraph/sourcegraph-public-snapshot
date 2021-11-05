@@ -282,31 +282,32 @@ func TestMutation_CreateAccessToken(t *testing.T) {
 
 // 🚨 SECURITY: This tests that users can't delete tokens they shouldn't be allowed to delete.
 func TestMutation_DeleteAccessToken(t *testing.T) {
-	db := database.NewDB(nil)
-
-	mockAccessTokens := func(t *testing.T) {
-		database.Mocks.AccessTokens.DeleteByID = func(id int64) error {
+	newMockAccessTokens := func(t *testing.T) database.AccessTokenStore {
+		accessTokens := dbmock.NewMockAccessTokenStore()
+		accessTokens.DeleteByIDFunc.SetDefaultHook(func(_ context.Context, id int64) error {
 			if want := int64(1); id != want {
 				t.Errorf("got %q, want %q", id, want)
 			}
 			return nil
-		}
-		database.Mocks.AccessTokens.GetByID = func(id int64) (*database.AccessToken, error) {
+		})
+		accessTokens.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int64) (*database.AccessToken, error) {
 			if want := int64(1); id != want {
 				t.Errorf("got %d, want %d", id, want)
 			}
 			return &database.AccessToken{ID: 1, SubjectUserID: 2}, nil
-		}
+		})
+		return accessTokens
 	}
 
 	token1GQLID := graphql.ID("QWNjZXNzVG9rZW46MQ==")
 
 	t.Run("authenticated as user", func(t *testing.T) {
-		resetMocks()
-		mockAccessTokens(t)
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: 1, SiteAdmin: false}, nil
-		}
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+
 		RunTests(t, []*Test{
 			{
 				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
@@ -330,13 +331,13 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	})
 
 	t.Run("authenticated as different user who is a site-admin", func(t *testing.T) {
-		resetMocks()
 		const differentSiteAdminUID = 234
-		mockAccessTokens(t)
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) {
-			return &types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil
-		}
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
+
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		RunTests(t, []*Test{
 			{
@@ -361,17 +362,15 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
-		resetMocks()
-		mockAccessTokens(t)
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return nil, database.ErrNoCurrentUser }
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
-		database.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{Username: "username"}, nil
-		}
-		defer func() { database.Mocks.Users.GetByID = nil }()
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "username"}, nil)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		ctx := actor.WithActor(context.Background(), nil)
-		result, err := (&schemaResolver{db: database.NewDB(db)}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := (&schemaResolver{db: db}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
@@ -381,18 +380,17 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 	})
 
 	t.Run("authenticated as different non-site-admin user", func(t *testing.T) {
-		resetMocks()
 		const differentNonSiteAdminUID = 456
-		mockAccessTokens(t)
-		database.Mocks.Users.GetByCurrentAuthUser = func(ctx context.Context) (*types.User, error) { return &types.User{ID: differentNonSiteAdminUID}, nil }
-		defer func() { database.Mocks.Users.GetByCurrentAuthUser = nil }()
-		database.Mocks.Users.GetByID = func(_ context.Context, userID int32) (*types.User, error) {
-			return &types.User{Username: "username"}, nil
-		}
-		defer func() { database.Mocks.Users.GetByID = nil }()
+
+		users := dbmock.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: differentNonSiteAdminUID}, nil)
+		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "username"}, nil)
+		db := dbmock.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
-		result, err := (&schemaResolver{db: database.NewDB(db)}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		result, err := (&schemaResolver{db: db}).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
 		if err == nil {
 			t.Error("Expected error, but there was none")
 		}
