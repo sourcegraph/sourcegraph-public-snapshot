@@ -24,40 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
-// Lstat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
-// returned FileInfo describes the symbolic link.  Lstat makes no attempt to follow the link.
-func Lstat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Lstat")
-	span.SetTag("Commit", commit)
-	span.SetTag("Path", path)
-	defer span.Finish()
-
-	if err := checkSpecArgSafety(string(commit)); err != nil {
-		return nil, err
-	}
-
-	path = filepath.Clean(util.Rel(path))
-
-	if path == "." {
-		// Special case root, which is not returned by `git ls-tree`.
-		obj, err := gitserver.DefaultClient.GetObject(ctx, repo, string(commit)+"^{tree}")
-		if err != nil {
-			return nil, err
-		}
-		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
-	}
-
-	fis, err := lsTree(ctx, repo, commit, path, false)
-	if err != nil {
-		return nil, err
-	}
-	if len(fis) == 0 {
-		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
-	}
-
-	return fis[0], nil
-}
-
 // Stat returns a FileInfo describing the named file at commit.
 func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
 	if Mocks.Stat != nil {
@@ -75,7 +41,7 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 
 	path = util.Rel(path)
 
-	fi, err := Lstat(ctx, repo, commit, path)
+	fi, err := lStat(ctx, repo, commit, path)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +54,7 @@ func Stat(ctx context.Context, repo api.RepoName, commit api.CommitID, path stri
 		}
 		// Resolve relative links from the directory path is in
 		symlink := filepath.Join(filepath.Dir(path), string(b))
-		fi2, err := Lstat(ctx, repo, commit, symlink)
+		fi2, err := lStat(ctx, repo, commit, symlink)
 		if err != nil {
 			return nil, err
 		}
@@ -123,16 +89,6 @@ func ReadDir(ctx context.Context, repo api.RepoName, commit api.CommitID, path s
 	return lsTree(ctx, repo, commit, path, recurse)
 }
 
-// lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
-// (because non-root paths are likely to have a lower cache hit rate). It is intended to improve the
-// perceived performance of large monorepos, where the tree for a given repo+commit (usually the
-// repo's latest commit on default branch) will be requested frequently and would take multiple
-// seconds to compute if uncached.
-var (
-	lsTreeRootCacheMu sync.Mutex
-	lsTreeRootCache   = lru.New(5)
-)
-
 // LsFiles returns the output of `git ls-files`
 func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]string, error) {
 	if Mocks.LsFiles != nil {
@@ -152,6 +108,50 @@ func LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID) ([]str
 	}
 	return strings.Split(string(out), "\x00"), nil
 }
+
+// lStat returns a FileInfo describing the named file at commit. If the file is a symbolic link, the
+// returned FileInfo describes the symbolic link.  lStat makes no attempt to follow the link.
+func lStat(ctx context.Context, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat")
+	span.SetTag("Commit", commit)
+	span.SetTag("Path", path)
+	defer span.Finish()
+
+	if err := checkSpecArgSafety(string(commit)); err != nil {
+		return nil, err
+	}
+
+	path = filepath.Clean(util.Rel(path))
+
+	if path == "." {
+		// Special case root, which is not returned by `git ls-tree`.
+		obj, err := gitserver.DefaultClient.GetObject(ctx, repo, string(commit)+"^{tree}")
+		if err != nil {
+			return nil, err
+		}
+		return &util.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
+	}
+
+	fis, err := lsTree(ctx, repo, commit, path, false)
+	if err != nil {
+		return nil, err
+	}
+	if len(fis) == 0 {
+		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+	}
+
+	return fis[0], nil
+}
+
+// lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
+// (because non-root paths are likely to have a lower cache hit rate). It is intended to improve the
+// perceived performance of large monorepos, where the tree for a given repo+commit (usually the
+// repo's latest commit on default branch) will be requested frequently and would take multiple
+// seconds to compute if uncached.
+var (
+	lsTreeRootCacheMu sync.Mutex
+	lsTreeRootCache   = lru.New(5)
+)
 
 // lsTree returns ls of tree at path.
 func lsTree(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {

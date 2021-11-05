@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
 func TestSubRepoPermsInsert(t *testing.T) {
@@ -21,8 +21,8 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
+	prepareSubRepoTestData(ctx, t, db)
 	s := SubRepoPerms(db)
-	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
 	repoID := api.RepoID(1)
@@ -53,8 +53,8 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
+	prepareSubRepoTestData(ctx, t, db)
 	s := SubRepoPerms(db)
-	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
 	repoID := api.RepoID(1)
@@ -95,8 +95,8 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	db := dbtest.NewDB(t)
 
 	ctx := context.Background()
+	prepareSubRepoTestData(ctx, t, db)
 	s := SubRepoPerms(db)
-	prepareSubRepoTestData(ctx, t, s)
 
 	userID := int32(1)
 	repoID := api.RepoID(1)
@@ -143,7 +143,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 
 	ctx := context.Background()
 	s := SubRepoPerms(db)
-	prepareSubRepoTestData(ctx, t, s)
+	prepareSubRepoTestData(ctx, t, db)
 
 	userID := int32(1)
 	perms := authz.SubRepoPermissions{
@@ -184,19 +184,67 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	}
 }
 
-func prepareSubRepoTestData(ctx context.Context, t *testing.T, s *SubRepoPermsStore) {
+func TestSubRepoPermsRepoSupported(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	db := dbtest.NewDB(t)
+
+	ctx := context.Background()
+	s := SubRepoPerms(db)
+	prepareSubRepoTestData(ctx, t, db)
+
+	for _, tc := range []struct {
+		repo      api.RepoName
+		supported bool
+	}{
+		{
+			repo:      "github.com/foo/bar",
+			supported: false,
+		},
+		{
+			repo:      "perforce1",
+			supported: true,
+		},
+		{
+			repo:      "unknown",
+			supported: false,
+		},
+	} {
+		t.Run(string(tc.repo), func(t *testing.T) {
+			supported, err := s.RepoSupported(ctx, tc.repo)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if supported != tc.supported {
+				t.Fatalf("Want %v, got %v", tc.supported, supported)
+			}
+		})
+	}
+}
+
+func prepareSubRepoTestData(ctx context.Context, t *testing.T, db dbutil.DB) {
 	t.Helper()
 
 	// Prepare data
-	qs := []*sqlf.Query{
-		// ID=1, with newer code host connection sync
-		sqlf.Sprintf(`INSERT INTO users(username) VALUES ('alice')`),
-		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(1, 'github.com/foo/bar', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`),
-		sqlf.Sprintf(`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`),
+	qs := []string{
+		`INSERT INTO users(username) VALUES ('alice')`,
+
+		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(1, 'GitHub #1', 'GITHUB', '{}', 1, NOW() + INTERVAL '10min')`,
+		`INSERT INTO external_services(id, display_name, kind, config, namespace_user_id, last_sync_at) VALUES(2, 'Perforce #1', 'PERFORCE', '{}', 1, NOW() + INTERVAL '10min')`,
+
+		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(1, 'github.com/foo/bar', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==', 'github', 'https://github.com/')`,
+		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(2, 'github.com/foo/baz', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'github', 'https://github.com/')`,
+		`INSERT INTO repo(id, name, external_id, external_service_type, external_service_id) VALUES(3, 'perforce1', 'MDEwOlJlcG9zaXRvcnk0MTI4ODcwOB==', 'perforce', 'https://perforce.com/')`,
+
+		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(1, 1, 'cloneURL')`,
+		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(2, 1, 'cloneURL')`,
+		`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url) VALUES(3, 2, 'cloneURL')`,
 	}
 	for _, q := range qs {
-		if err := s.Exec(ctx, q); err != nil {
+		if _, err := db.ExecContext(ctx, q); err != nil {
 			t.Fatal(err)
 		}
 	}

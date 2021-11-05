@@ -27,11 +27,11 @@ func TestRanges(t *testing.T) {
 	testLocation8 := lsifstore.Location{DumpID: 52, Path: "a.go", Range: testRange4}
 
 	ranges := []lsifstore.CodeIntelligenceRange{
-		{Range: testRange1, HoverText: "text1", Definitions: nil, References: []lsifstore.Location{testLocation1}},
-		{Range: testRange2, HoverText: "text2", Definitions: []lsifstore.Location{testLocation2}, References: []lsifstore.Location{testLocation3}},
-		{Range: testRange3, HoverText: "text3", Definitions: []lsifstore.Location{testLocation4}, References: []lsifstore.Location{testLocation5}},
-		{Range: testRange4, HoverText: "text4", Definitions: []lsifstore.Location{testLocation6}, References: []lsifstore.Location{testLocation7}},
-		{Range: testRange5, HoverText: "text5", Definitions: []lsifstore.Location{testLocation8}, References: nil},
+		{Range: testRange1, HoverText: "text1", Definitions: nil, References: []lsifstore.Location{testLocation1}, Implementations: []lsifstore.Location{}},
+		{Range: testRange2, HoverText: "text2", Definitions: []lsifstore.Location{testLocation2}, References: []lsifstore.Location{testLocation3}, Implementations: []lsifstore.Location{}},
+		{Range: testRange3, HoverText: "text3", Definitions: []lsifstore.Location{testLocation4}, References: []lsifstore.Location{testLocation5}, Implementations: []lsifstore.Location{}},
+		{Range: testRange4, HoverText: "text4", Definitions: []lsifstore.Location{testLocation6}, References: []lsifstore.Location{testLocation7}, Implementations: []lsifstore.Location{}},
+		{Range: testRange5, HoverText: "text5", Definitions: []lsifstore.Location{testLocation8}, References: nil, Implementations: []lsifstore.Location{}},
 	}
 
 	mockLSIFStore.RangesFunc.PushReturn(ranges[0:1], nil)
@@ -70,11 +70,11 @@ func TestRanges(t *testing.T) {
 	adjustedLocation8 := AdjustedLocation{Dump: uploads[2], Path: "sub3/a.go", AdjustedCommit: "deadbeef", AdjustedRange: testRange4}
 
 	expectedRanges := []AdjustedCodeIntelligenceRange{
-		{Range: testRange1, HoverText: "text1", Definitions: []AdjustedLocation{}, References: []AdjustedLocation{adjustedLocation1}},
-		{Range: testRange2, HoverText: "text2", Definitions: []AdjustedLocation{adjustedLocation2}, References: []AdjustedLocation{adjustedLocation3}},
-		{Range: testRange3, HoverText: "text3", Definitions: []AdjustedLocation{adjustedLocation4}, References: []AdjustedLocation{adjustedLocation5}},
-		{Range: testRange4, HoverText: "text4", Definitions: []AdjustedLocation{adjustedLocation6}, References: []AdjustedLocation{adjustedLocation7}},
-		{Range: testRange5, HoverText: "text5", Definitions: []AdjustedLocation{adjustedLocation8}, References: []AdjustedLocation{}},
+		{Range: testRange1, HoverText: "text1", Definitions: []AdjustedLocation{}, References: []AdjustedLocation{adjustedLocation1}, Implementations: []AdjustedLocation{}},
+		{Range: testRange2, HoverText: "text2", Definitions: []AdjustedLocation{adjustedLocation2}, References: []AdjustedLocation{adjustedLocation3}, Implementations: []AdjustedLocation{}},
+		{Range: testRange3, HoverText: "text3", Definitions: []AdjustedLocation{adjustedLocation4}, References: []AdjustedLocation{adjustedLocation5}, Implementations: []AdjustedLocation{}},
+		{Range: testRange4, HoverText: "text4", Definitions: []AdjustedLocation{adjustedLocation6}, References: []AdjustedLocation{adjustedLocation7}, Implementations: []AdjustedLocation{}},
+		{Range: testRange5, HoverText: "text5", Definitions: []AdjustedLocation{adjustedLocation8}, References: []AdjustedLocation{}, Implementations: []AdjustedLocation{}},
 	}
 	if diff := cmp.Diff(expectedRanges, adjustedRanges); diff != "" {
 		t.Errorf("unexpected ranges (-want +got):\n%s", diff)

@@ -28,6 +28,13 @@ func (s *Store) References(ctx context.Context, bundleID int, path string, line,
 	return s.definitionsReferences(ctx, extractor, operation, bundleID, path, line, character, limit, offset)
 }
 
+// Implementations returns the set of locations implementing the symbol at the given position.
+func (s *Store) Implementations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
+	extractor := func(r precise.RangeData) precise.ID { return r.ImplementationResultID }
+	operation := s.operations.implementations
+	return s.definitionsReferences(ctx, extractor, operation, bundleID, path, line, character, limit, offset)
+}
+
 func (s *Store) definitionsReferences(ctx context.Context, extractor func(r precise.RangeData) precise.ID, operation *observation.Operation, bundleID int, path string, line, character, limit, offset int) (_ []Location, _ int, err error) {
 	ctx, traceLog, endObservation := operation.WithAndLogger(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),

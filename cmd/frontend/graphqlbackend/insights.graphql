@@ -195,7 +195,7 @@ extend type Query {
     """
     Return all insight views visible to the authenticated user.
     """
-    insightViews(first: Int, after: String, id: ID): InsightViewConnection!
+    insightViews(first: Int, after: String, id: ID, filters: InsightViewFiltersInput): InsightViewConnection!
 }
 
 extend type Mutation {
@@ -618,6 +618,10 @@ input InsightViewFiltersInput {
 Input for a line chart search insight data series.
 """
 input LineChartSearchInsightDataSeriesInput {
+    """
+    Unique ID for the series. Omit this field if it's a new series.
+    """
+    seriesId: String
     """
     The query string.
     """

@@ -11,7 +11,7 @@ import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 import { BrandedStory } from '../BrandedStory'
 
 import { Panel } from './Panel'
-import { panels, panelProps, panelActions, panelMenus } from './Panel.fixtures'
+import { panels, panelProps, panelActions, panelMenus, CODE_EDITOR_FIXTURE } from './Panel.fixtures'
 
 const decorator: DecoratorFn = story => (
     <BrandedStory styles={webStyles} initialEntries={[{ pathname: '/', hash: `#tab=${panels[0].id}` }]}>
@@ -43,6 +43,7 @@ export const WithActions: Story = () => (
                     registerContributions: () => pretendProxySubscribable(EMPTY).subscribe(noop as any),
                     haveInitialExtensionsLoaded: () => pretendProxySubscribable(of(true)),
                     getPanelViews: () => pretendProxySubscribable(of(panels)),
+                    getActiveViewComponentChanges: () => pretendProxySubscribable(of(CODE_EDITOR_FIXTURE)),
                     getActiveCodeEditorPosition: () => pretendProxySubscribable(of(null)),
                 })
             ),

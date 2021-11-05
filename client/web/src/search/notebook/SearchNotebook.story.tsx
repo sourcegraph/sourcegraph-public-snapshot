@@ -28,6 +28,9 @@ add('default', () => (
             <SearchNotebook
                 {...props}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}
@@ -48,6 +51,9 @@ add('default read-only', () => (
                 {...props}
                 isReadOnly={true}
                 isMacPlatform={true}
+                isSourcegraphDotCom={true}
+                showSearchContext={true}
+                searchContextsEnabled={true}
                 globbing={true}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 streamSearch={() => NEVER}

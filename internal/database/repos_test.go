@@ -87,7 +87,7 @@ func TestParseIncludePattern(t *testing.T) {
 			like:  []string{`%sourcegraph%`},
 			exact: []string{"github.com/foo/bar"},
 			pattern: []*sqlf.Query{
-				sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%"),
+				sqlf.Sprintf(`(name = ANY (%s) OR lower(name) LIKE %s)`, "%!s(*pq.StringArray=&[github.com/foo/bar])", "%sourcegraph%"),
 			},
 		},
 	}
@@ -126,7 +126,7 @@ func TestParseIncludePattern(t *testing.T) {
 
 func queriesToString(qs []*sqlf.Query) string {
 	q := sqlf.Join(qs, "AND")
-	return fmt.Sprintf("%s %v", q.Query(sqlf.PostgresBindVar), q.Args())
+	return fmt.Sprintf("%s %s", q.Query(sqlf.PostgresBindVar), q.Args())
 }
 
 func TestRepos_Count(t *testing.T) {

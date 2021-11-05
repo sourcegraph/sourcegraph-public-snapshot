@@ -83,7 +83,7 @@ export interface RepoContainerContext
         ActivationProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         ActionItemsBarProps,
         SearchStreamingProps,
@@ -106,6 +106,8 @@ export interface RepoContainerContext
     showSearchNotebook: boolean
 
     isMacPlatform: boolean
+
+    isSourcegraphDotCom: boolean
 }
 
 /** A sub-route of {@link RepoContainer}. */
@@ -126,7 +128,7 @@ interface RepoContainerProps
         ExtensionAlertProps,
         PatternTypeProps,
         CaseSensitivityProps,
-        Pick<SearchContextProps, 'selectedSearchContextSpec'>,
+        Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled' | 'showSearchContext'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
         SearchStreamingProps,
@@ -144,6 +146,7 @@ interface RepoContainerProps
     globbing: boolean
     showSearchNotebook: boolean
     isMacPlatform: boolean
+    isSourcegraphDotCom: boolean
 }
 
 export const HOVER_COUNT_KEY = 'hover-count'

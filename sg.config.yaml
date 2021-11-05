@@ -714,6 +714,21 @@ checks:
     cmd: docker version
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
 
+  docker-compose:
+    cmd: docker-compose version
+    failMessage: "Failed to run 'docker-compose version'. Please make sure Docker is running."
+
+  go:
+    cmd: go version || (echo "➡️ Install Go or make it sure it is in the \$PATH" && exit 1)
+    failMessage: 'Failed to run go'
+
+  go-version:
+    cmd: |
+      go_version=#$(go version | cut -d' ' -f 3 | sed 's/go//')
+      tools_version=$(cat .tool-versions | grep golang | sed 's/golang //')
+      [ "$go_version" = "$tools_version" ] || (echo "➡️ Need go version $tools_version, but got $go_version instead" && exit 1)
+    failMessage: 'Incorrect go version'
+
   redis:
     cmd: (command -v redis-cli && redis-cli -p 6379 PING) || docker-compose -f dev/redis-postgres.yml exec -T redis redis-cli PING
     failMessage: 'Failed to connect to Redis on port 6379. Please make sure Redis is running.'

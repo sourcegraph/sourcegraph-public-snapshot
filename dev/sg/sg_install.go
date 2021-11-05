@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -165,22 +164,4 @@ func installExec(ctx context.Context, args []string) error {
 	stdout.Out.Writef("Restart your shell and run 'sg logo' to make sure it worked!")
 
 	return nil
-}
-
-func getBool() bool {
-	var s string
-
-	fmt.Printf("(y/N): ")
-	_, err := fmt.Scan(&s)
-	if err != nil {
-		panic(err)
-	}
-
-	s = strings.TrimSpace(s)
-	s = strings.ToLower(s)
-
-	if s == "y" || s == "yes" {
-		return true
-	}
-	return false
 }

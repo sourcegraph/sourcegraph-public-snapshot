@@ -111,7 +111,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				Kinds:                test.kinds,
 				AfterID:              test.afterID,
 				OnlyCloudDefault:     test.onlyCloudDefault,
-				noCachedWebhooks:     test.noCachedWebhooks,
+				NoCachedWebhooks:     test.noCachedWebhooks,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {

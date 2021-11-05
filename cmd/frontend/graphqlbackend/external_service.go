@@ -184,3 +184,7 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 	}
 	return &scopes, nil
 }
+
+func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
+	return newWebhookLogConnectionResolver(ctx, r.db, args, r.externalService.ID)
+}

@@ -462,10 +462,25 @@ func scanSearchContexts(rows *sql.Rows) ([]*types.SearchContext, error) {
 }
 
 var getSearchContextRepositoryRevisionsFmtStr = `
-SELECT sc.repo_id, sc.revision, r.name
-FROM search_context_repos sc
+-- source:internal/database/search_contexts.go:GetSearchContextRepositoryRevisions
+SELECT
+	sc.repo_id,
+	sc.revision,
+	r.name
+FROM
+	search_context_repos sc
 JOIN
-	(SELECT id, name FROM repo WHERE deleted_at IS NULL AND (%s)) r -- populates authzConds
+	(
+		SELECT
+			id,
+			name
+		FROM repo
+		WHERE
+			deleted_at IS NULL
+			AND
+			blocked IS NULL
+			AND (%s) -- populates authzConds
+	) r
 	ON r.id = sc.repo_id
 WHERE sc.search_context_id = %d
 `
@@ -484,7 +499,10 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+
+	defer func() {
+		err = basestore.CloseRows(rows, err)
+	}()
 
 	repositoryIDsToRevisions := map[int32][]string{}
 	repositoryIDsToName := map[int32]string{}
@@ -513,6 +531,7 @@ func (s *searchContextsStore) GetSearchContextRepositoryRevisions(ctx context.Co
 	}
 
 	sort.Slice(out, func(i, j int) bool { return out[i].Repo.ID < out[j].Repo.ID })
+
 	return out, nil
 }
 

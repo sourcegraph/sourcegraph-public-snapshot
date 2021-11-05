@@ -57,4 +57,7 @@ var (
 
 	StyleLinesDeleted = Fg256Color(196)
 	StyleLinesAdded   = Fg256Color(2)
+
+	// Colors
+	StyleYellow = Fg256Color(220)
 )

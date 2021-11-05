@@ -306,6 +306,9 @@ export function createExtensionHostAPI(state: ExtensionHostState): FlatExtension
             }
         },
 
+        // For filtering visible panels by DocumentSelector
+        getActiveViewComponentChanges: () => proxySubscribable(state.activeViewComponentChanges),
+
         // For panel view location provider arguments
         getActiveCodeEditorPosition: () =>
             proxySubscribable(

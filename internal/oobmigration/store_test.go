@@ -15,10 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
 
-func init() {
-	dbtesting.DBNameSuffix = "oobmigration"
-}
-
 func TestList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

@@ -18,6 +18,7 @@ type Issue struct {
 	Labels              []string
 	Assignees           []string
 	Milestone           string
+	MilestoneNumber     int
 	Author              string
 	CreatedAt           time.Time
 	UpdatedAt           time.Time
