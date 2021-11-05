@@ -180,7 +180,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	var next types.Cursors
-	if len(repos) == limit+1 {
+	if len(repos) == limit+1 { // Do we have a next page?
 		last := repos[len(repos)-1]
 		for _, o := range options.OrderBy {
 			c := types.Cursor{Column: string(o.Field)}
