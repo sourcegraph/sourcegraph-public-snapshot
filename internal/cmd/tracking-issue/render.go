@@ -482,7 +482,7 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 
 	milestoneFragment := ""
 	if issue.Milestone != "" {
-		milestoneFragment = fmt.Sprintf("\u00A0\u00A0 🏳️\u00A0[%s](https://github.com/%s/milestones/%d)", issue.Milestone, issue.Repository, issue.MilestoneNumber)
+		milestoneFragment = fmt.Sprintf("\u00A0\u00A0 🏳️\u00A0[%s](https://github.com/%s/milestone/%d)", issue.Milestone, issue.Repository, issue.MilestoneNumber)
 	}
 
 	emojis := Emojis(issue.SafeLabels(), issue.Repository, issue.Body, nil)
