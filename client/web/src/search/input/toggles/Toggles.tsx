@@ -63,7 +63,6 @@ export const Toggles: React.FunctionComponent<TogglesProps> = (props: TogglesPro
         selectedSearchContextSpec,
         submitSearch,
         showCopyQueryButton = true,
-        interactive = false,
     } = props
 
     const structuralSearchDisabled = window.context?.experimentalFeatures?.structuralSearch === 'disabled'
