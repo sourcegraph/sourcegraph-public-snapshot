@@ -501,10 +501,6 @@ var (
 		Name: "src_repo_sync_state_counter",
 		Help: "Incremented each time we check the state of repo",
 	}, []string{"type"})
-	repoSyncStatePercentComplete = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_repo_sync_state_percent_complete",
-		Help: "Percent complete for the current sync run, from 0 to 100",
-	})
 	repoStateUpsertCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repo_sync_state_upsert_counter",
 		Help: "Incremented each time we upsert repo state in the database",
@@ -573,20 +569,11 @@ func (s *Server) syncRepoState(addrs []string, batchSize, perSecond int, fullSyn
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
 	}
 
-	totalRepos, err := database.Repos(s.DB).Count(ctx, database.ReposListOptions{})
-	if err != nil {
-		return errors.Wrap(err, "counting repos")
-	}
-
-	var count int
 	options := database.IterateRepoGitserverStatusOptions{}
 	if !fullSync {
 		options.OnlyWithoutShard = true
 	}
-	err = store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
-		count++
-		repoSyncStatePercentComplete.Set((float64(count) / float64(totalRepos)) * 100)
-
+	err := store.IterateRepoGitserverStatus(ctx, options, func(repo types.RepoGitserverStatus) error {
 		repoSyncStateCounter.WithLabelValues("check").Inc()
 		// Ensure we're only dealing with repos we are responsible for
 		if addr := gitserver.AddrForRepo(repo.Name, addrs); !s.hostnameMatch(addr) {
