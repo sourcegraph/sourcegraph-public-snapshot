@@ -87,7 +87,7 @@ func setupExec(ctx context.Context, args []string) error {
 
 		if instruction.command != "" {
 			out.WriteLine(output.Line("", output.StyleSuggestion, "Run the following command(s) in another terminal:\n"))
-			out.Write(output.StyleBold.String() + output.Fg256Color(220).String() + strings.TrimSpace(instruction.command) + output.StyleReset.String() + "\n")
+			out.WriteLine(output.Line("", output.CombineStyles(output.StyleBold, output.StyleYellow), strings.TrimSpace(instruction.command)))
 
 			out.WriteLine(output.Linef("", output.StyleSuggestion, "Hit return to confirm that you ran the command..."))
 			input := bufio.NewScanner(os.Stdin)
