@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtesting"
 )
 
@@ -16,7 +17,9 @@ func init() {
 }
 
 func TestGetFirstServiceVersion(t *testing.T) {
-	db := database.NewDB(dbtesting.GetDB(t))
+	t.Parallel()
+
+	db := database.NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 
@@ -40,7 +43,9 @@ func TestGetFirstServiceVersion(t *testing.T) {
 }
 
 func TestUpdateServiceVersion(t *testing.T) {
-	db := database.NewDB(dbtesting.GetDB(t))
+	t.Parallel()
+
+	db := database.NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 	for _, tc := range []struct {
