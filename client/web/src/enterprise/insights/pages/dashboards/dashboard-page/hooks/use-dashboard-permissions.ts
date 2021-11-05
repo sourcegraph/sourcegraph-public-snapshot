@@ -27,6 +27,15 @@ export function useDashboardPermissions(
     dashboard: InsightDashboard | undefined,
     supportedSubjects?: SupportedInsightSubject[]
 ): DashboardPermissions {
+    if (dashboard && 'grants' in dashboard) {
+        // This means we're using the graphql api.
+        // Since the api only returns info the user can see
+        // We can safely assume the user has permission to edit the dashboard
+        return {
+            isConfigurable: true,
+        }
+    }
+
     if (isVirtualDashboard(dashboard)) {
         return {
             isConfigurable: false,
