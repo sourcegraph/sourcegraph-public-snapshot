@@ -69,7 +69,7 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		OrderByDirection: "ASC",
 	}
 
-	svcs, err := database.ExternalServices(r.db).List(ctx, opts)
+	svcs, err := r.db.ExternalServices().List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
