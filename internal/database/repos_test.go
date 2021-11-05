@@ -87,7 +87,7 @@ func TestParseIncludePattern(t *testing.T) {
 			like:  []string{`%sourcegraph%`},
 			exact: []string{"github.com/foo/bar"},
 			pattern: []*sqlf.Query{
-				sqlf.Sprintf(`(name IN (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%"),
+				sqlf.Sprintf(`(name = ANY (%s) OR lower(name) LIKE %s)`, "github.com/foo/bar", "%sourcegraph%"),
 			},
 		},
 	}

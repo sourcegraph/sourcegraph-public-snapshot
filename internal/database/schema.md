@@ -670,6 +670,7 @@ Check constraints:
  org_id              | integer |           |          | 
 Indexes:
     "external_service_repos_repo_id_external_service_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_service_id)
+    "external_service_repos_clone_url_idx" btree (clone_url)
     "external_service_repos_idx" btree (external_service_id, repo_id)
     "external_service_repos_org_id_idx" btree (org_id) WHERE org_id IS NOT NULL
     "external_service_user_repos_idx" btree (user_id, repo_id) WHERE user_id IS NOT NULL
