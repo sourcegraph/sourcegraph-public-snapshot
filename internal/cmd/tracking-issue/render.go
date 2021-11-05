@@ -437,10 +437,10 @@ func (ar *AssigneeRenderer) resetDisplayFlags() {
 
 // doRenderIssue returns the given issue rendered in markdown.
 func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string {
-	issueURL := issue.URL
+	url := issue.URL
 	if issue.Milestone != milestone && contains(issue.Labels, fmt.Sprintf("planned/%s", milestone)) {
 		// deprioritized
-		issueURL = fmt.Sprintf("~%s~", issueURL)
+		url = fmt.Sprintf("~%s~", url)
 	}
 
 	pullRequestFragment := ""
@@ -495,7 +495,7 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 			"- [x] (🏁 %s) %s %s%s%s%s\n",
 			formatTimeSince(issue.ClosedAt),
 			// GitHub automatically expands the URL to a status icon + title
-			issueURL,
+			url,
 			pullRequestFragment,
 			estimateFragment,
 			emojis,
@@ -506,7 +506,7 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 	return fmt.Sprintf(
 		"- [ ] %s %s%s%s%s\n",
 		// GitHub automatically expands the URL to a status icon + title
-		issueURL,
+		url,
 		pullRequestFragment,
 		estimateFragment,
 		emojis,
