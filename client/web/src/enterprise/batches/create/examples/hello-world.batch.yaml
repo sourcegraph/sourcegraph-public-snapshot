@@ -3,7 +3,7 @@ description: Add Hello World to READMEs
 
 # Find all repositories that contain a README.md file.
 on:
-  - repositoriesMatchingQuery: file:README.md
+  - repositoriesMatchingQuery: file:README.md count:100
 
 # In each repository, run this command. Each repository's resulting diff is captured.
 steps:
@@ -17,4 +17,3 @@ changesetTemplate:
   branch: hello-world # Push the commit to this branch.
   commit:
     message: Append Hello World to all README.md files
-  published: false

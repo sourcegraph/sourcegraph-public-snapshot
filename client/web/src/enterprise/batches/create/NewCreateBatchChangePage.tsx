@@ -52,6 +52,7 @@ import {
     replaceBatchSpecInput,
 } from './backend'
 import { MonacoBatchSpecEditor } from './editor/MonacoBatchSpecEditor'
+import helloWorldSample from './examples/hello-world.batch.yaml'
 import styles from './NewCreateBatchChangePage.module.scss'
 import { excludeRepo } from './yaml-util'
 
@@ -138,7 +139,7 @@ export const NewCreateBatchChangePage: React.FunctionComponent<CreateBatchChange
 
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [previewID, setPreviewID] = useState<Scalars['ID']>()
-    const [code, setCode] = useState<string>('name: ')
+    const [code, setCode] = useState<string>(helloWorldSample)
 
     const submitBatchSpec = useCallback<React.MouseEventHandler>(async () => {
         if (!previewID) {
