@@ -355,27 +355,23 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                 options: { title: insight.title },
             }
 
+            if (dashboard?.id) {
+                input.dashboards = [dashboard.id]
+            }
+
             return from(
-                (async () => {
-                    const { data } = await this.apolloClient.mutate<CreateInsightResult>({
-                        mutation: gql`
-                            mutation CreateInsight($input: LineChartSearchInsightInput!) {
-                                createLineChartSearchInsight(input: $input) {
-                                    view {
-                                        id
-                                    }
+                this.apolloClient.mutate<CreateInsightResult>({
+                    mutation: gql`
+                        mutation CreateInsight($input: LineChartSearchInsightInput!) {
+                            createLineChartSearchInsight(input: $input) {
+                                view {
+                                    id
                                 }
                             }
-                        `,
-                        variables: { input },
-                    })
-
-                    // TODO [VK] add attach to dashboard API call with newly create id and dashboard id
-                    const insightId = data?.createLineChartSearchInsight.view.id ?? ''
-                    const dashboardId = dashboard?.id ?? ''
-
-                    console.log(`Add insight with id ${insightId} to dashboard with id ${dashboardId}`)
-                })()
+                        }
+                    `,
+                    variables: { input },
+                })
             )
         }
 
