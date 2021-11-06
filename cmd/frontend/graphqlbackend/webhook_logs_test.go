@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
@@ -50,7 +51,9 @@ func TestWebhookLogsArgs(t *testing.T) {
 			"all arguments": {
 				id: webhookLogsExternalServiceID{1},
 				input: webhookLogsArgs{
-					First:      intPtr(25),
+					ConnectionArgs: graphqlutil.ConnectionArgs{
+						First: int32Ptr(25),
+					},
 					After:      stringPtr("40"),
 					OnlyErrors: boolPtr(true),
 					Since:      timePtr(now),
@@ -152,7 +155,9 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 		r := &webhookLogConnectionResolver{
 			args: &webhookLogsArgs{
-				First: intPtr(20),
+				ConnectionArgs: graphqlutil.ConnectionArgs{
+					First: int32Ptr(20),
+				},
 			},
 			externalServiceID: webhookLogsExternalServiceID{1},
 			store:             store,
@@ -183,7 +188,9 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 		r := &webhookLogConnectionResolver{
 			args: &webhookLogsArgs{
-				First: intPtr(20),
+				ConnectionArgs: graphqlutil.ConnectionArgs{
+					First: int32Ptr(20),
+				},
 			},
 			externalServiceID: webhookLogsExternalServiceID{1},
 			store:             store,
@@ -217,7 +224,9 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 		r := &webhookLogConnectionResolver{
 			args: &webhookLogsArgs{
-				First: intPtr(20),
+				ConnectionArgs: graphqlutil.ConnectionArgs{
+					First: int32Ptr(20),
+				},
 			},
 			externalServiceID: webhookLogsExternalServiceID{1},
 			store:             store,
@@ -277,7 +286,7 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 }
 
 func boolPtr(v bool) *bool           { return &v }
-func intPtr(v int) *int              { return &v }
+func int32Ptr(v int32) *int32        { return &v }
 func int64Ptr(v int64) *int64        { return &v }
 func stringPtr(v string) *string     { return &v }
 func timePtr(v time.Time) *time.Time { return &v }

@@ -22,7 +22,7 @@ import (
 // access to webhook logs: the webhookLogs method on the top level query, and on
 // the ExternalService type.
 type webhookLogsArgs struct {
-	First      *int
+	graphqlutil.ConnectionArgs
 	After      *string
 	OnlyErrors *bool
 	Since      *time.Time
@@ -62,7 +62,7 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 	}
 
 	if args.First != nil {
-		opts.Limit = *args.First
+		opts.Limit = int(*args.First)
 	} else {
 		opts.Limit = 50
 	}
