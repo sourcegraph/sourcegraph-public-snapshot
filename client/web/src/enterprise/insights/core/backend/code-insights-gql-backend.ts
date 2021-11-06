@@ -155,7 +155,6 @@ const mapInsightView = (insight: GetInsightsResult['insightViews']['nodes'][0]):
 const mapInsightFields = (insight: GetInsightsResult['insightViews']['nodes'][0]): InsightFields => ({
     id: insight.id,
     title: insight.presentation.title,
-    description: '',
     series: insight.dataSeries.map(series => ({
         label: series.label,
         points: series.points,
@@ -313,7 +312,6 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                         createViewContent(
                             {
                                 id: insight.id,
-                                description: '',
                                 title: insight.title,
                                 series: insightFields.series,
                             },
