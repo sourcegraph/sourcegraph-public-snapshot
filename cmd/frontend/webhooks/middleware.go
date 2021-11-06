@@ -60,6 +60,7 @@ func (mw *LogMiddleware) Logger(next http.Handler) http.Handler {
 		// most importantly, the status code.
 		writer := &responseWriter{
 			ResponseWriter: w,
+			statusCode:     200,
 		}
 
 		// The external service ID is looked up within the webhook handler, but
@@ -110,11 +111,7 @@ type responseWriter struct {
 var _ http.ResponseWriter = &responseWriter{}
 
 func (rw *responseWriter) Write(data []byte) (int, error) {
-	if rw.statusCode == 0 {
-		rw.statusCode = http.StatusOK
-	}
 	rw.buf.Write(data)
-
 	return rw.ResponseWriter.Write(data)
 }
 
