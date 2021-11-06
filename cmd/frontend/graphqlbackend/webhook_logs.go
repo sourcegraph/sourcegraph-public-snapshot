@@ -29,11 +29,34 @@ type webhookLogsArgs struct {
 	Until      *time.Time
 }
 
+// webhookLogsExternalServiceID is used to represent an external service ID,
+// which may be a constant defined below to represent all or unmatched external
+// services.
+type webhookLogsExternalServiceID struct {
+	id int64
+}
+
+var (
+	webhookLogsAllExternalServices      = webhookLogsExternalServiceID{-1}
+	webhookLogsUnmatchedExternalService = webhookLogsExternalServiceID{0}
+)
+
+func (id webhookLogsExternalServiceID) toListOpt() *int64 {
+	switch id {
+	case webhookLogsAllExternalServices:
+		return nil
+	case webhookLogsUnmatchedExternalService:
+		fallthrough
+	default:
+		return &id.id
+	}
+}
+
 // toListOpts transforms the GraphQL webhookLogsArgs into options that can be
 // provided to the WebhookLogStore's Count and List methods.
-func (args *webhookLogsArgs) toListOpts(externalServiceID int64) (database.WebhookLogListOpts, error) {
+func (args *webhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalServiceID) (database.WebhookLogListOpts, error) {
 	opts := database.WebhookLogListOpts{
-		ExternalServiceID: &externalServiceID,
+		ExternalServiceID: externalServiceID.toListOpt(),
 		Since:             args.Since,
 		Until:             args.Until,
 	}
@@ -59,15 +82,25 @@ func (args *webhookLogsArgs) toListOpts(externalServiceID int64) (database.Webho
 	return opts, nil
 }
 
+type globalWebhookLogsArgs struct {
+	webhookLogsArgs
+	OnlyUnmatched *bool
+}
+
 // WebhookLogs is the top level query used to return webhook logs that weren't
 // resolved to a specific external service.
-func (r *schemaResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
-	return newWebhookLogConnectionResolver(ctx, r.db, args, 0)
+func (r *schemaResolver) WebhookLogs(ctx context.Context, args *globalWebhookLogsArgs) (*webhookLogConnectionResolver, error) {
+	externalServiceID := webhookLogsAllExternalServices
+	if unmatched := args.OnlyUnmatched; unmatched != nil && *unmatched {
+		externalServiceID = webhookLogsUnmatchedExternalService
+	}
+
+	return newWebhookLogConnectionResolver(ctx, r.db, &args.webhookLogsArgs, externalServiceID)
 }
 
 type webhookLogConnectionResolver struct {
 	args              *webhookLogsArgs
-	externalServiceID int64
+	externalServiceID webhookLogsExternalServiceID
 	store             database.WebhookLogStore
 
 	once sync.Once
@@ -76,7 +109,10 @@ type webhookLogConnectionResolver struct {
 	err  error
 }
 
-func newWebhookLogConnectionResolver(ctx context.Context, db database.DB, args *webhookLogsArgs, externalServiceID int64) (*webhookLogConnectionResolver, error) {
+func newWebhookLogConnectionResolver(
+	ctx context.Context, db database.DB, args *webhookLogsArgs,
+	externalServiceID webhookLogsExternalServiceID,
+) (*webhookLogConnectionResolver, error) {
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
