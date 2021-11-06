@@ -1,0 +1,6 @@
+.logs {
+    display: grid;
+    grid-template-columns: [caret] min-content [status] min-content [service] minmax(min-content, 1fr) [timestamp] min-content;
+    align-items: center;
+    gap: 0.667rem;
+}
