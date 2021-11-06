@@ -50,6 +50,7 @@ import {
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
     InsightCreateInput,
+    ReachableInsight,
 } from './code-insights-backend-types'
 import { createViewContent } from './utils/create-view-content'
 
@@ -272,7 +273,18 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
 
     public findInsightByName = (input: FindInsightByNameInput): Observable<Insight | null> =>
         this.getInsights().pipe(map(insights => insights.find(insight => insight.title === input.name) || null))
-    public getReachableInsights = errorMockMethod('getReachableInsights')
+    public getReachableInsights = (subjectId: string): Observable<ReachableInsight[]> =>
+        this.getInsights().pipe(
+            map(insights =>
+                insights.map(insight => ({
+                    ...insight,
+                    owner: {
+                        id: '',
+                        name: '',
+                    },
+                }))
+            )
+        )
 
     // TODO: Rethink all of this method. Currently `createViewContent` expects a different format of
     // the `Insight` type than we use elsewhere. This is a temporary solution to make the code
