@@ -56,7 +56,7 @@ export const InsightCreationPage: React.FunctionComponent<InsightCreationPagePro
         return <LoadingSpinner />
     }
 
-    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<void> => {
+    const handleInsightCreateRequest = async (event: InsightCreateEvent): Promise<unknown> => {
         const { insight } = event
 
         return createInsight({ insight, dashboard }).toPromise()

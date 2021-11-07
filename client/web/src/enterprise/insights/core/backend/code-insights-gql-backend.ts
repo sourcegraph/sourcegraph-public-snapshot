@@ -5,6 +5,7 @@ import { map, mapTo, switchMap } from 'rxjs/operators'
 import { LineChartContent, PieChartContent } from 'sourcegraph'
 
 import { ViewContexts } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
+import { UpdateLineChartSearchInsightInput } from '@sourcegraph/shared/src/graphql-operations'
 import { fromObservableQuery } from '@sourcegraph/shared/src/graphql/apollo'
 import { isDefined } from '@sourcegraph/shared/src/util/types'
 import {
@@ -22,6 +23,7 @@ import {
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     TimeIntervalStepUnit,
+    UpdateLineChartSearchInsightResult,
 } from '@sourcegraph/web/src/graphql-operations'
 
 import {
@@ -32,7 +34,11 @@ import {
     isSearchBasedInsight,
     SearchBasedInsight,
 } from '../types'
-import { isSearchBackendBasedInsight, SearchBackendBasedInsight } from '../types/insight/search-insight'
+import {
+    isSearchBackendBasedInsight,
+    SearchBackendBasedInsight,
+    SearchBasedBackendFilters,
+} from '../types/insight/search-insight'
 import { SupportedInsightSubject } from '../types/subjects'
 
 import { InsightStillProcessingError } from './api/get-backend-insight'
@@ -50,6 +56,7 @@ import {
     GetLangStatsInsightContentInput,
     GetSearchInsightContentInput,
     InsightCreateInput,
+    InsightUpdateInput,
     ReachableInsight,
 } from './code-insights-backend-types'
 import { createViewContent } from './utils/create-view-content'
@@ -336,26 +343,7 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         const { insight, dashboard } = input
 
         if (isSearchBasedInsight(insight)) {
-            // Prepare repository insight array
-            const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
-
-            const [unit, value] = getStepInterval(insight)
-            const input: LineChartSearchInsightInput = {
-                dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
-                    query: series.query,
-                    options: {
-                        label: series.name,
-                        lineColor: series.stroke,
-                    },
-                    repositoryScope: { repositories },
-                    timeScope: { stepInterval: { unit, value } },
-                })),
-                options: { title: insight.title },
-            }
-
-            if (dashboard?.id) {
-                input.dashboards = [dashboard.id]
-            }
+            const input: LineChartSearchInsightInput = this.prepareSearchInsightCreateInput(insight, dashboard)
 
             return from(
                 this.apolloClient.mutate<CreateInsightResult>({
@@ -378,7 +366,34 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     }
 
     public createInsightWithNewFilters = errorMockMethod('createInsightWithNewFilters')
-    public updateInsight = errorMockMethod('updateInsight')
+    public updateInsight = (input: InsightUpdateInput): Observable<void[]> => {
+        // Extracting mutations here to make it easier to support different types of insights
+        const updateLineChartSearchInsightMutation = gql`
+            mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
+                updateLineChartSearchInsight(input: $input, id: $id) {
+                    view {
+                        id
+                    }
+                }
+            }
+        `
+
+        const insight = input.newInsight
+        const oldInsight = input.oldInsight
+
+        if (isSearchBasedInsight(insight)) {
+            const input: UpdateLineChartSearchInsightInput = this.prepareSearchInsightUpdateInput(insight)
+
+            return from(
+                this.apolloClient.mutate<UpdateLineChartSearchInsightResult>({
+                    mutation: updateLineChartSearchInsightMutation,
+                    variables: { input, id: oldInsight.id },
+                })
+            ).pipe(mapTo([]))
+        }
+
+        return of()
+    }
     public deleteInsight = errorMockMethod('deleteInsight')
 
     // Dashboards
@@ -514,4 +529,59 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions
     public getResolvedSearchRepositories = getResolvedSearchRepositories
+
+    private prepareSearchInsightCreateInput(
+        insight: SearchBasedInsight,
+        dashboard: InsightDashboard | null
+    ): LineChartSearchInsightInput {
+        const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
+
+        const [unit, value] = getStepInterval(insight)
+        const input: LineChartSearchInsightInput = {
+            dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+                query: series.query,
+                options: {
+                    label: series.name,
+                    lineColor: series.stroke,
+                },
+                repositoryScope: { repositories },
+                timeScope: { stepInterval: { unit, value } },
+            })),
+            options: { title: insight.title },
+        }
+
+        if (dashboard?.id) {
+            input.dashboards = [dashboard.id]
+        }
+        return input
+    }
+
+    private prepareSearchInsightUpdateInput(
+        insight: SearchBasedInsight & { filters?: SearchBasedBackendFilters }
+    ): UpdateLineChartSearchInsightInput {
+        const repositories = !isSearchBackendBasedInsight(insight) ? insight.repositories : []
+
+        const [unit, value] = getStepInterval(insight)
+        const input: UpdateLineChartSearchInsightInput = {
+            dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+                query: series.query,
+                options: {
+                    label: series.name,
+                    lineColor: series.stroke,
+                },
+                repositoryScope: { repositories },
+                timeScope: { stepInterval: { unit, value } },
+            })),
+            presentationOptions: {
+                title: insight.title,
+            },
+            viewControls: {
+                filters: {
+                    includeRepoRegex: insight.filters?.includeRepoRegexp,
+                    excludeRepoRegex: insight.filters?.excludeRepoRegexp,
+                },
+            },
+        }
+        return input
+    }
 }
