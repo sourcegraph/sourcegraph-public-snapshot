@@ -39,6 +39,20 @@ export const queryWebhookLogs = (
                 displayName
             }
             statusCode
+            request {
+                ...WebhookLogMessageFields
+            }
+            response {
+                ...WebhookLogMessageFields
+            }
+        }
+
+        fragment WebhookLogMessageFields on WebhookLogMessage {
+            headers {
+                name
+                values
+            }
+            body
         }
     `
 
