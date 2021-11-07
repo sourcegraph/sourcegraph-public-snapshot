@@ -91,6 +91,7 @@ export const queryWebhookLogs = (
             query ServiceWebhookLogs($first: Int, $after: String, $id: ID!, $onlyErrors: Boolean!) {
                 node(id: $id) {
                     ... on ExternalService {
+                        __typename
                         webhookLogs(first: $first, after: $after, onlyErrors: $onlyErrors) {
                             ...WebhookLogConnectionFields
                         }
@@ -109,10 +110,10 @@ export const queryWebhookLogs = (
     ).pipe(
         map(dataOrThrowErrors),
         map(result => {
-            if (result.node?.__typename !== 'ExternalService') {
-                throw new Error('unexpected non ExternalService node')
+            if (result.node?.__typename === 'ExternalService') {
+                return result.node.webhookLogs
             }
-            return result.node.webhookLogs
+            throw new Error('unexpected non ExternalService node')
         })
     )
 }

@@ -49,15 +49,16 @@ export const WebhookLogPageHeader: React.FunctionComponent<Props> = ({
                 <select
                     className={classNames('form-control', styles.control)}
                     onChange={({ target: { value } }) => onSelect(value)}
+                    value={externalService}
                 >
-                    <option key="all" value="all" selected={externalService === 'all'}>
+                    <option key="all" value="all">
                         All webhooks
                     </option>
-                    <option key="unmatched" value="unmatched" selected={externalService === 'selected'}>
+                    <option key="unmatched" value="unmatched">
                         Unmatched webhooks
                     </option>
                     {data?.externalServices.nodes.map(({ displayName, id }) => (
-                        <option key={id} value={id} selected={externalService === id}>
+                        <option key={id} value={id}>
                             {displayName}
                         </option>
                     ))}

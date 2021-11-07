@@ -1,3 +1,4 @@
+import { format } from 'date-fns'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import React, { useCallback, useState } from 'react'
@@ -40,8 +41,10 @@ export const WebhookLogNode: React.FunctionComponent<Props> = ({
             <span className="text-center">
                 <StatusCode code={statusCode} />
             </span>
-            <span>{externalService ? externalService.displayName : 'Unmatched'}</span>
-            <span>{receivedAt}</span>
+            <span>
+                {externalService ? externalService.displayName : <span className="text-danger">Unmatched</span>}
+            </span>
+            <span className={styles.receivedAt}>{format(Date.parse(receivedAt), 'Ppp')}</span>
             {isExpanded && (
                 <div className={styles.expanded}>
                     <Tabs size="small">
