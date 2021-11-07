@@ -77,6 +77,8 @@ func TestLogMiddleware(t *testing.T) {
 		store.CreateFunc.SetDefaultHook(func(c context.Context, log *types.WebhookLog) error {
 			assert.Equal(t, es, *log.ExternalServiceID)
 			assert.Equal(t, http.StatusCreated, log.StatusCode)
+			assert.Equal(t, "GET", log.Request.Method)
+			assert.Equal(t, "HTTP/1.1", log.Request.Version)
 			assert.Equal(t, "bar", log.Response.Header.Get("foo"))
 			assert.Equal(t, content, log.Response.Body)
 

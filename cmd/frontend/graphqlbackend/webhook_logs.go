@@ -232,8 +232,8 @@ func (r *webhookLogResolver) StatusCode() int32 {
 	return int32(r.log.StatusCode)
 }
 
-func (r *webhookLogResolver) Request() *webhookLogMessageResolver {
-	return &webhookLogMessageResolver{message: &r.log.Request}
+func (r *webhookLogResolver) Request() *webhookLogRequestResolver {
+	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &r.log.Request}}
 }
 
 func (r *webhookLogResolver) Response() *webhookLogMessageResolver {
@@ -258,6 +258,22 @@ func (r *webhookLogMessageResolver) Headers() []*webhookLogHeaderResolver {
 
 func (r *webhookLogMessageResolver) Body() string {
 	return string(r.message.Body)
+}
+
+type webhookLogRequestResolver struct {
+	webhookLogMessageResolver
+}
+
+func (r *webhookLogRequestResolver) Method() string {
+	return r.message.Method
+}
+
+func (r *webhookLogRequestResolver) URL() string {
+	return r.message.URL
+}
+
+func (r *webhookLogRequestResolver) Version() string {
+	return r.message.Version
 }
 
 type webhookLogHeaderResolver struct {

@@ -6407,18 +6407,63 @@ type WebhookLog implements Node {
     """
     The received webhook request.
     """
-    request: WebhookLogMessage!
+    request: WebhookLogRequest!
 
     """
     The response sent by the webhook handler.
     """
-    response: WebhookLogMessage!
+    response: WebhookLogResponse!
 }
 
 """
 A HTTP message (request or response) within a webhook log.
 """
-type WebhookLogMessage {
+interface WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+}
+
+"""
+A HTTP request within a webhook log.
+"""
+type WebhookLogRequest implements WebhookLogMessage {
+    """
+    The headers in the HTTP message.
+    """
+    headers: [WebhookLogHeader!]!
+
+    """
+    The body content of the HTTP message.
+    """
+    body: String!
+
+    """
+    The method used in the HTTP request.
+    """
+    method: String!
+
+    """
+    The requested URL.
+    """
+    url: String!
+
+    """
+    The HTTP version in use.
+    """
+    version: String!
+}
+
+"""
+A HTTP response within a webhook log.
+"""
+type WebhookLogResponse implements WebhookLogMessage {
     """
     The headers in the HTTP message.
     """
