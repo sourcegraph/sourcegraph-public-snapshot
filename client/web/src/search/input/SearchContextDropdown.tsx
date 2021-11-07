@@ -80,6 +80,8 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen])
 
+    const isUserAnOrgMember = authenticatedUser?.organizations.nodes.length !== 0
+
     return (
         <Dropdown
             isOpen={isOpen}
@@ -111,7 +113,7 @@ export const SearchContextDropdown: React.FunctionComponent<SearchContextDropdow
                 </code>
             </DropdownToggle>
             <DropdownMenu positionFixed={true} className={styles.menu}>
-                {isSourcegraphDotCom && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
+                {isSourcegraphDotCom && !isUserAnOrgMember && !hasUserAddedRepositories && !hasUsedNonGlobalContext ? (
                     <SearchContextCtaPrompt
                         telemetryService={telemetryService}
                         authenticatedUser={authenticatedUser}
