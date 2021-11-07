@@ -5,6 +5,8 @@ import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 
 import { WebhookLogMessageFields, WebhookLogRequestFields } from '../../graphql-operations'
 
+import styles from './MessagePanel.module.scss'
+
 export interface Props {
     className?: string
     message: WebhookLogMessageFields
@@ -74,7 +76,7 @@ export const MessagePanel: React.FunctionComponent<Props> = ({ className, messag
     return (
         <div className={className}>
             <CodeSnippet language="http" code={rawHeaders} />
-            <CodeSnippet language={language} code={body} />
+            <CodeSnippet className={styles.body} language={language} code={body} />
         </div>
     )
 }
