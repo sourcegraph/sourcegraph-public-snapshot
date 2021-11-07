@@ -222,7 +222,7 @@ func (r *webhookLogResolver) ReceivedAt() DateTime {
 
 func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
 	if r.log.ExternalServiceID == nil {
-		return nil, errors.New("no external service attached to webhook log")
+		return nil, nil
 	}
 
 	return externalServiceByID(ctx, r.db, marshalExternalServiceID(*r.log.ExternalServiceID))
