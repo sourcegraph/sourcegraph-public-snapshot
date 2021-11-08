@@ -32,13 +32,11 @@ type webhookLogsArgs struct {
 // webhookLogsExternalServiceID is used to represent an external service ID,
 // which may be a constant defined below to represent all or unmatched external
 // services.
-type webhookLogsExternalServiceID struct {
-	id int64
-}
+type webhookLogsExternalServiceID int64
 
 var (
-	webhookLogsAllExternalServices      = webhookLogsExternalServiceID{-1}
-	webhookLogsUnmatchedExternalService = webhookLogsExternalServiceID{0}
+	webhookLogsAllExternalServices      webhookLogsExternalServiceID = -1
+	webhookLogsUnmatchedExternalService webhookLogsExternalServiceID = 0
 )
 
 func (id webhookLogsExternalServiceID) toListOpt() *int64 {
@@ -48,7 +46,8 @@ func (id webhookLogsExternalServiceID) toListOpt() *int64 {
 	case webhookLogsUnmatchedExternalService:
 		fallthrough
 	default:
-		return &id.id
+		i := int64(id)
+		return &i
 	}
 }
 

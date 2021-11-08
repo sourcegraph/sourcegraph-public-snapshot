@@ -49,7 +49,7 @@ func TestWebhookLogsArgs(t *testing.T) {
 				},
 			},
 			"all arguments": {
-				id: webhookLogsExternalServiceID{1},
+				id: webhookLogsExternalServiceID(1),
 				input: webhookLogsArgs{
 					ConnectionArgs: graphqlutil.ConnectionArgs{
 						First: int32Ptr(25),
@@ -159,7 +159,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 					First: int32Ptr(20),
 				},
 			},
-			externalServiceID: webhookLogsExternalServiceID{1},
+			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
 		}
 
@@ -192,7 +192,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 					First: int32Ptr(20),
 				},
 			},
-			externalServiceID: webhookLogsExternalServiceID{1},
+			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
 		}
 
@@ -228,7 +228,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 					First: int32Ptr(20),
 				},
 			},
-			externalServiceID: webhookLogsExternalServiceID{1},
+			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
 		}
 
@@ -246,7 +246,7 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 			args: &webhookLogsArgs{
 				OnlyErrors: boolPtr(true),
 			},
-			externalServiceID: webhookLogsExternalServiceID{1},
+			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
 		}
 
@@ -276,7 +276,7 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 			args: &webhookLogsArgs{
 				OnlyErrors: boolPtr(true),
 			},
-			externalServiceID: webhookLogsExternalServiceID{1},
+			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
 		}
 
