@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"reflect"
 	"sort"
@@ -14,9 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
@@ -299,6 +302,86 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 			_, _ = getRevsForMatchedRepo("foo", pats)
 		}
 	})
+}
+
+func TestResolverPaginate(t *testing.T) {
+	ctx := context.Background()
+	db := database.NewDB(dbtest.NewDB(t))
+
+	for i := 1; i <= 5; i++ {
+		r := types.MinimalRepo{
+			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
+			Stars: i * 100,
+		}
+
+		if err := db.Repos().Create(ctx, r.ToRepo()); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	all, err := (&Resolver{DB: db}).Resolve(ctx, search.RepoOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	setOf := func(repos []*search.RepositoryRevisions) map[api.RepoID]types.MinimalRepo {
+		m := make(map[api.RepoID]types.MinimalRepo, len(repos))
+		for _, r := range repos {
+			m[r.Repo.ID] = r.Repo
+		}
+		return m
+	}
+
+	for _, tc := range []struct {
+		name  string
+		opts  search.RepoOptions
+		pages []Resolved
+		err   error
+	}{
+		{
+			name:  "no cursors",
+			opts:  search.RepoOptions{},
+			pages: []Resolved{all},
+		},
+		{
+			name: "with limit",
+			opts: search.RepoOptions{
+				Limit: 3,
+			},
+			pages: []Resolved{
+				{
+					RepoRevs: all.RepoRevs[:3],
+					RepoSet:  setOf(all.RepoRevs[:3]),
+					Next: types.Cursors{
+						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
+						{Column: "id", Direction: "next", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+					},
+				},
+				{
+					RepoRevs: all.RepoRevs[3:],
+					RepoSet:  setOf(all.RepoRevs[3:]),
+				},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Resolver{Opts: tc.opts, DB: db, Stream: streaming.StreamFunc(func(streaming.SearchEvent) {})}
+
+			var pages []Resolved
+			err := r.Paginate(ctx, func(page *Resolved) error {
+				pages = append(pages, *page)
+				return nil
+			})
+
+			if !errors.Is(err, tc.err) {
+				t.Errorf("%s unexpected error (-have, +want):\n%s", tc.name, cmp.Diff(err, tc.err))
+			}
+
+			if diff := cmp.Diff(pages, tc.pages); diff != "" {
+				t.Errorf("%s unexpected pages (-have, +want):\n%s", tc.name, diff)
+			}
+		})
+	}
 }
 
 func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
